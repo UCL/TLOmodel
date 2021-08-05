@@ -298,20 +298,11 @@ class Tb(Module):
         'spec_clinical': Parameter(
             Types.REAL, 'specificity of clinical diagnosis in detecting TB'
         ),
-        'prob_tx_success_new': Parameter(
-            Types.REAL, 'Probability of treatment success for new TB cases'
-        ),
-        'prob_tx_success_prev': Parameter(
-            Types.REAL, 'Probability of treatment success for previously treated cases'
-        ),
-        'prob_tx_success_hiv': Parameter(
-            Types.REAL, 'Probability of treatment success for PLHIV'
+        'prob_tx_success_ds': Parameter(
+            Types.REAL, 'Probability of treatment success for new and relapse TB cases'
         ),
         'prob_tx_success_mdr': Parameter(
             Types.REAL, 'Probability of treatment success for MDR-TB cases'
-        ),
-        'prob_tx_success_extra': Parameter(
-            Types.REAL, 'Probability of treatment success for extrapulmonary TB cases'
         ),
         'prob_tx_success_0_4': Parameter(
             Types.REAL, 'Probability of treatment success for children aged 0-4 years'
@@ -949,7 +940,7 @@ class Tb(Module):
         if (
             (district in high_risk_districts.district_name.values)
             & eligible
-            & (self.rng.rand() < ipt_coverage_plhiv)
+            & (self.rng.rand() < ipt_coverage_plhiv.values)
         ):
             # Schedule the TB treatment event:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -1252,40 +1243,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         p = self.module.parameters
         rng = self.module.rng
 
-        # check across population on tb treatment
-
-        # ---------------------- treatment failure ---------------------- #
-        # sample some to have treatment failure
-        random_var = rng.random_sample(size=len(df))
-        ds_tx_failure_idx = df.loc[df.is_alive &
-                                   df.tb_on_treatment &
-                                   ~df.tb_treated_mdr &
-                                   (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
-                                   ~df.tb_ever_treated &
-                                   (random_var < (1 - p['prob_tx_success_new']))].index
-
-        # all mdr cases on ds tx will fail
-        failure_due_to_mdr_idx = df.loc[df.is_alive &
-                                        df.tb_on_treatment &
-                                        ~df.tb_treated_mdr &
-                                        (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
-                                        ~df.tb_ever_treated &
-                                        (df.tb_strain == 'mdr')].index
-
-        # join two indices together
-        ds_tx_failure = list(ds_tx_failure_idx) + list(failure_due_to_mdr_idx)
-
-        if ds_tx_failure:
-            df.loc[ds_tx_failure, 'tb_treatment_failure'] = True
-            df.loc[ds_tx_failure, 'tb_ever_treated'] = True  # ensure classed as retreatment case
-
-            for person in ds_tx_failure:
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    HSI_Tb_ScreeningAndRefer(person_id=person, module=self.module),
-                    topen=self.sim.date,
-                    tclose=None,
-                    priority=0
-                )
+        # check across population on tb treatment and end treatment if required
 
         # ---------------------- treatment end: first case ds-tb (6 months) ---------------------- #
         # end treatment for new tb (ds) cases
@@ -1314,18 +1272,80 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         end_tx_idx = end_ds_tx_idx.union(end_ds_retx_idx)
         end_tx_idx = end_tx_idx.union(end_mdr_tx_idx)
 
-        # remove any treatment failure indices from the treatment end indices
-        cure_idx = list(set(end_tx_idx) - set(ds_tx_failure))
+        # ---------------------- treatment failure ---------------------- #
+        # sample some to have treatment failure
+        random_var = rng.random_sample(size=len(df))
+        ds_tx_failure0_4_idx = df.loc[df.is_alive &
+                                   df.tb_on_treatment &
+                                   ~df.tb_treated_mdr &
+                                   (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
+                                   ~df.tb_ever_treated &
+                                    (df.age_years < 5) &
+                                   (random_var < (1 - p['prob_tx_success_0_4']))].index
 
-        # change individual properties to off treatment
-        df.loc[cure_idx, 'tb_diagnosed'] = False
-        df.loc[cure_idx, 'tb_on_treatment'] = False
-        df.loc[cure_idx, 'tb_treated_mdr'] = False
+        ds_tx_failure5_14_idx = df.loc[df.is_alive &
+                                   df.tb_on_treatment &
+                                   ~df.tb_treated_mdr &
+                                   (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
+                                   ~df.tb_ever_treated &
+                                    (df.age_years.between(5,14)) &
+                                   (random_var < (1 - p['prob_tx_success_5_14']))].index
+
+        ds_tx_failure_adult_idx = df.loc[df.is_alive &
+                                   df.tb_on_treatment &
+                                   ~df.tb_treated_mdr &
+                                   (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
+                                   ~df.tb_ever_treated &
+                                    (df.age_years.between(5,14)) &
+                                   (random_var < (1 - p['prob_tx_success_ds']))].index
+
+        # all mdr cases on ds tx will fail
+        failure_in_mdr_with_ds_tx_idx = df.loc[df.is_alive &
+                                        df.tb_on_treatment &
+                                        ~df.tb_treated_mdr &
+                                        (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
+                                        ~df.tb_ever_treated &
+                                        (df.tb_strain == 'mdr')].index
+
+        # some mdr cases on mdr treatment will fail
+        failure_due_to_mdr_idx = df.loc[df.is_alive &
+                                        df.tb_on_treatment &
+                                        df.tb_treated_mdr &
+                                        (df.tb_date_treated < (now - pd.DateOffset(days=p['mdr_treatment_length']))) &
+                                        ~df.tb_ever_treated &
+                                        (df.tb_strain == 'mdr')].index
+
+        # join indices of failing cases together
+        tx_failure = list(ds_tx_failure0_4_idx) + \
+                        list(ds_tx_failure5_14_idx) + \
+                        list(ds_tx_failure_adult_idx) + \
+                        list(failure_in_mdr_with_ds_tx_idx) + \
+                        list(failure_due_to_mdr_idx)
+
+        if tx_failure:
+            df.loc[tx_failure, 'tb_treatment_failure'] = True
+            df.loc[tx_failure, 'tb_ever_treated'] = True  # ensure classed as retreatment case
+
+            for person in tx_failure:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    HSI_Tb_ScreeningAndRefer(person_id=person, module=self.module),
+                    topen=self.sim.date,
+                    tclose=None,
+                    priority=0
+                )
+
+        # remove any treatment failure indices from the treatment end indices
+        cure_idx = list(set(end_tx_idx) - set(tx_failure))
+
+        # change individual properties for all to off treatment
+        df.loc[end_tx_idx, 'tb_diagnosed'] = False
+        df.loc[end_tx_idx, 'tb_on_treatment'] = False
+        df.loc[end_tx_idx, 'tb_treated_mdr'] = False
         # this will indicate that this person has had one complete course of tb treatment
         # subsequent infections will be classified as retreatment
-        df.loc[cure_idx, 'tb_ever_treated'] = True
+        df.loc[end_tx_idx, 'tb_ever_treated'] = True
 
-        # move infection status back to latent
+        # if cured, move infection status back to latent
         df.loc[cure_idx, 'tb_inf'] = 'latent'
         df.loc[cure_idx, 'tb_strain'] = 'none'
         df.loc[cure_idx, 'tb_smear'] = False
@@ -1519,9 +1539,10 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             ipt_year = ipt.loc[ipt.year == self.sim.date.year]
             ipt_coverage_paed = ipt_year.coverage_paediatric
 
-            if (district in p['tb_high_risk_distr'].district_name.values) & (
-                self.module.rng.rand() < ipt_coverage_paed
+            if (district in p['tb_high_risk_distr'].district_name.values.any()) & (
+                self.module.rng.rand() < ipt_coverage_paed.values
             ):
+
                 # randomly sample from <5 yr olds within district
                 ipt_eligible = df.loc[
                     (df.age_years <= 5)
@@ -1893,9 +1914,9 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
 
         # use linear model to determine whether this person will die:
         rng = self.module.rng.rand()
-        result = self.module.lm['death_rate'].predict(df.loc[[person_id]], rng=rng).values[0]
+        result = self.module.lm['death_rate'].predict(df.loc[[person_id]]).values[0]
 
-        if result:
+        if result < rng:
             logger.debug(key='message',
                          data=f'TbDeathEvent: scheduling death for person {person_id}')
             self.sim.schedule_event(

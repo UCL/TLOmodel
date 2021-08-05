@@ -4,6 +4,7 @@ import pickle
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -32,9 +33,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2012, 1, 1)
 popsize = 5000
-
 
 # set up the log config
 log_config = {
@@ -76,9 +76,6 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
 # change IPT high-risk districts to all districts for national-level model
 all_districts = pd.read_excel(resourcefilepath / 'ResourceFile_TB.xlsx', sheet_name='all_districts')
 sim.modules['Tb'].parameters['tb_high_risk_distr'] = all_districts.district_name.values
-# change IPT coverage to reflect national average
-
-
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
