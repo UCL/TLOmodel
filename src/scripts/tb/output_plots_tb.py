@@ -154,25 +154,42 @@ plt.legend(['Model', 'Data'])
 plt.show()
 
 
-
-
 # HIV - prevalence among 15-49 year-olds
 prev_and_inc_over_time = output['tlo.methods.hiv'][
     'summary_inc_and_prev_for_adults_and_children_and_fsw']
 prev_and_inc_over_time = prev_and_inc_over_time.set_index('date')
 
-# todo add mphia and dhs
-plt.style.use("ggplot")
-plt.plot(prev_and_inc_over_time['hiv_prev_adult_1549'] * 100)  # model outputs
-plt.fill_between(
-    data_hiv_unaids.year,
-    data_hiv_unaids['prevalence_age15plus_lower'],
-    data_hiv_unaids['prevalence_age15plus_upper'],
-    alpha=0.5, color="mediumseagreen",
+make_plot(
+    title_str="HIV Prevalence in Adults (15-49) (%)",
+    model=prev_and_inc_over_time['hiv_prev_adult_1549'] * 100,
+    data_mid=data_hiv_unaids['prevalence_age15plus'],
+    data_low=data_hiv_unaids['prevalence_age15plus_lower'],
+    data_high=data_hiv_unaids['prevalence_age15plus_upper']
 )
-plt.plot(data_hiv_unaids.year, data_hiv_unaids['prevalence_age15plus'], color="mediumseagreen")  # UNAIDS
-plt.plot(2015, data_hiv_mphia_prev.loc[
-    data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"], "x")  # MPHIA
+# MPHIA
+plt.plot(prev_and_inc_over_time.index[6], data_hiv_mphia_prev.loc[
+    data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"].values[0], 'gx')
+# DHS
+x_values = [prev_and_inc_over_time.index[0], prev_and_inc_over_time.index[5]]
+y_values = data_hiv_dhs_prev.loc[
+                (data_hiv_dhs_prev.Year >= 2010), "HIV prevalence among general population 15-49"]
+y_lower = abs(y_values - (data_hiv_dhs_prev.loc[
+                (data_hiv_dhs_prev.Year >= 2010), "HIV prevalence among general population 15-49 lower"]))
+y_upper = abs(y_values - (data_hiv_dhs_prev.loc[
+                (data_hiv_dhs_prev.Year >= 2010), "HIV prevalence among general population 15-49 upper"]))
+plt.errorbar(x_values, y_values,
+             yerr=[y_lower, y_upper], fmt='o')
+plt.ylim((0, 15))
+plt.xlabel("Year")
+plt.ylabel("Prevalence (%)")
+plt.legend(["TLO", "UNAIDS", "MPHIA", "DHS"])
+plt.show()
+
+
+
+
+
+
 
 
 plt.scatter(data_hiv_dhs_prev["Year"],
@@ -183,13 +200,22 @@ plt.errorbar(data_hiv_dhs_prev["Year"], data_hiv_dhs_prev["HIV prevalence among 
                    data_hiv_dhs_prev["HIV prevalence among general population 15-49 upper"]], linestyle='')
 
 
-plt.title("HIV Prevalence in Adults (15-49) (%)")
 plt.xlabel("Year")
 plt.ylabel("Prevalence (%)")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
 plt.legend(["TLO", "UNAIDS", "MPHIA", "DHS"])
 plt.show()
+
+
+
+
+
+
+
+
+
+
 
 # HIV Incidence 15-49
 make_plot(
