@@ -37,7 +37,7 @@ def make_plot(
     plt.legend(['Model', 'Data'])
     plt.gca().set_ylim(bottom=0)
     # plt.savefig(outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
-    plt.show()
+    # plt.show()
 
 
 # ---------------------------------------------------------------------- #
@@ -49,10 +49,20 @@ end_date = 2020
 # load all the data for calibration
 
 # TB WHO data
-data_tb_who = pd.read_excel(resourcefilepath / 'ResourceFile_TB.xlsx', sheet_name='WHO_activeTB2020')
+xls_tb = pd.ExcelFile(resourcefilepath / 'ResourceFile_TB.xlsx')
+
+data_tb_who = pd.read_excel(xls_tb, sheet_name='WHO_activeTB2020')
+data_tb_who = data_tb_who.loc[(data_tb_who.year >= 2010)]  # include only years post-2010
 data_tb_who.index = pd.to_datetime(data_tb_who['year'], format='%Y')
 data_tb_who = data_tb_who.drop(columns=['year'])
 
+# TB latent data (Houben & Dodd 2016)
+data_tb_latent = pd.read_excel(xls_tb, sheet_name='latent_TB2014_summary')
+data_tb_latent_all_ages = data_tb_latent.loc[data_tb_latent.Age_group == '0_80']
+data_tb_latent_estimate = data_tb_latent_all_ages.proportion_latent_TB.values[0]
+data_tb_latent_lower = abs(data_tb_latent_all_ages.proportion_latent_TB_lower.values[0] - data_tb_latent_estimate)
+data_tb_latent_upper = abs(data_tb_latent_all_ages.proportion_latent_TB_upper.values[0] - data_tb_latent_estimate)
+data_tb_latent_yerr = [data_tb_latent_lower, data_tb_latent_upper]
 
 # HIV resourcefile
 xls = pd.ExcelFile(resourcefilepath / 'ResourceFile_HIV.xlsx')
@@ -92,7 +102,9 @@ for year in years:
 
 py.index = pd.to_datetime(years, format='%Y')
 
+# ---------------------------------------------------------------------- #
 # ------------------------- DISEASE BURDEN ------------------------- #
+
 
 # Active TB incidence per 100,000 person-years - annual outputs
 TB_inc = output['tlo.methods.tb']['tb_incidence']
@@ -107,6 +119,8 @@ make_plot(
     data_low=data_tb_who['incidence_per_100k_low'],
     data_high=data_tb_who['incidence_per_100k_high']
 )
+plt.show()
+
 
 # latent TB prevalence
 latentTB_prev = output['tlo.methods.tb']['tb_prevalence']
@@ -116,6 +130,13 @@ make_plot(
     title_str="Latent TB prevalence",
     model=latentTB_prev['tbPrevLatent'],
 )
+plt.ylim((0, 0.22))
+# add latent TB estimate from Houben & Dodd 2016
+plt.errorbar(latentTB_prev.index[6], data_tb_latent_estimate,
+             yerr=[[data_tb_latent_yerr[0]], [data_tb_latent_yerr[1]]], fmt='o')
+plt.legend(['Model', 'Data'])
+plt.show()
+
 
 # proportion TB cases that are MDR
 mdr = output['tlo.methods.tb']['tb_mdr']
@@ -125,6 +146,15 @@ make_plot(
     title_str="Proportion of active cases that are MDR",
     model=mdr['tbPropActiveCasesMdr'],
 )
+# data from ResourceFile_TB sheet WHO_mdrTB2017
+plt.errorbar(mdr.index[7], 0.0075,
+             yerr=[[0.0059], [0.0105]], fmt='o')
+plt.legend(['Model', 'Data'])
+
+plt.show()
+
+
+
 
 # HIV - prevalence among 15-49 year-olds
 prev_and_inc_over_time = output['tlo.methods.hiv'][
@@ -188,7 +218,7 @@ make_plot(
     model=prev_and_inc_over_time['hiv_prev_fsw'] * 100,
 )
 
-
+# ---------------------------------------------------------------------- #
 # ------------------------- DEATHS ------------------------- #
 
 # deaths
@@ -201,6 +231,7 @@ deaths_TB = deaths.drop(index=to_drop[to_drop].index).copy()
 deaths_TB['year'] = deaths_TB.index.year  # count by year
 tot_tb_non_hiv_deaths = deaths_TB.groupby(by=['year']).size()
 tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format='%Y')
+# todo add mortality rate to this df???
 
 # TB/HIV deaths
 to_drop = (deaths.cause != 'AIDS_TB')
@@ -229,6 +260,7 @@ tot_aids_deaths.index = pd.to_datetime(tot_aids_deaths.index, format='%Y')
 # plots
 
 
+# ---------------------------------------------------------------------- #
 # ------------------------- PROGRAM OUTPUTS ------------------------- #
 
 # treatment coverage

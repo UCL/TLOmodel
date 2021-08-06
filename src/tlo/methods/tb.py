@@ -128,6 +128,8 @@ class Tb(Module):
         # ------------------ natural history ------------------ #
         'prob_latent_tb_0_14': Parameter(Types.REAL, 'probability of latent infection in ages 0-14 years'),
         'prob_latent_tb_15plus': Parameter(Types.REAL, 'probability of latent infection in ages 15+'),
+        'incidence_active_tb_2010_per100k': Parameter(Types.REAL,
+                                                      'incidence of active tb in 2010 per 100,000 population'),
         'transmission_rate': Parameter(Types.REAL, 'TB transmission rate, calibrated'),
         'mixing_parameter': Parameter(Types.REAL,
                                       'mixing parameter adjusts transmission rate for force of infection '
@@ -531,6 +533,31 @@ class Tb(Module):
 
         df.loc[idx_new_latent_mdr, 'tb_strain'] = 'mdr'
 
+    def baseline_active(self, population):
+        """
+        sample from the baseline population to assign active tb infections
+        using 2010 incidence estimates
+        no differences in baseline active tb by age/sex
+        """
+
+        df = population.props
+        now = self.sim.date
+        p = self.parameters
+
+        eligible_for_active_tb = df.loc[df.is_alive &
+                                        (df.tb_inf == 'uninfected')].index
+
+        sample_active_tb = self.rng.random_sample(len(df)) < p['incidence_active_tb_2010_per100k']
+        active_tb_idx = eligible_for_active_tb[sample_active_tb]
+
+        # schedule for time now up to 1 year
+        for person_id in active_tb_idx:
+            date_progression = now + \
+                               pd.DateOffset(days=self.rng.randint(0, 365))
+            self.sim.schedule_event(
+                TbActiveEvent(self, person_id), date_progression
+            )
+
     def progression_to_active(self, population):
         # from the new latent infections, select and schedule progression to active disease
 
@@ -539,24 +566,20 @@ class Tb(Module):
         rng = self.rng
         now = self.sim.date
 
-        # remove individuals not alive
-        # when HIV not registered, properties of newly appended rows for dummy properties set to nan -> error
-        df_tmp = df.loc[df.is_alive]
-
         # ------------------ fast progressors ------------------ #
-        eligible_for_fast_progression = df_tmp.loc[(df_tmp.tb_date_latent == now) &
-                                                   df_tmp.is_alive &
-                                                   (df_tmp.age_years >= 15) &
-                                                   ~df_tmp.hv_inf].index
+        eligible_for_fast_progression = df.loc[(df.tb_date_latent == now) &
+                                                   df.is_alive &
+                                                   (df.age_years >= 15) &
+                                                   ~df.hv_inf].index
 
         will_progress = rng.random_sample(len(eligible_for_fast_progression)) < p['prop_fast_progressor']
         fast = eligible_for_fast_progression[will_progress]
 
         # hiv-positive
-        eligible_for_fast_progression_hiv = df_tmp.loc[(df_tmp.tb_date_latent == now) &
-                                                       df_tmp.is_alive &
-                                                       (df_tmp.age_years >= 15) &
-                                                       df_tmp.hv_inf].index
+        eligible_for_fast_progression_hiv = df.loc[(df.tb_date_latent == now) &
+                                                       df.is_alive &
+                                                       (df.age_years >= 15) &
+                                                       df.hv_inf].index
 
         will_progress = rng.random_sample(len(eligible_for_fast_progression_hiv)) < p['prop_fast_progressor_hiv']
         fast_hiv = eligible_for_fast_progression_hiv[will_progress]
@@ -694,7 +717,7 @@ class Tb(Module):
         # ------------------ infection status ------------------ #
 
         self.baseline_latent(population)  # allocate baseline prevalence of latent infections
-        self.progression_to_active(population)  # allocate active infections from baseline prevalence
+        self.baseline_active(population)  # allocate active infections from baseline population
 
     def initialise_simulation(self, sim):
         """
