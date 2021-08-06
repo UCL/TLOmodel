@@ -1,6 +1,8 @@
 """ load the outputs from a simulation and plot the results with comparison data """
 
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
+
 import pandas as pd
 import datetime
 import pickle
@@ -72,6 +74,7 @@ xls.sheet_names
 data_hiv_unaids = pd.read_excel(xls, sheet_name='unaids_infections_art2021')
 data_hiv_unaids.index = pd.to_datetime(data_hiv_unaids['year'], format='%Y')
 data_hiv_unaids = data_hiv_unaids.drop(columns=['year'])
+
 
 # MPHIA HIV data - age-structured
 data_hiv_mphia_inc = pd.read_excel(xls, sheet_name='MPHIA_incidence2015')
@@ -166,9 +169,11 @@ make_plot(
     data_low=data_hiv_unaids['prevalence_age15plus_lower'],
     data_high=data_hiv_unaids['prevalence_age15plus_upper']
 )
+
 # MPHIA
 plt.plot(prev_and_inc_over_time.index[6], data_hiv_mphia_prev.loc[
     data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"].values[0], 'gx')
+
 # DHS
 x_values = [prev_and_inc_over_time.index[0], prev_and_inc_over_time.index[5]]
 y_values = data_hiv_dhs_prev.loc[
@@ -182,38 +187,18 @@ plt.errorbar(x_values, y_values,
 plt.ylim((0, 15))
 plt.xlabel("Year")
 plt.ylabel("Prevalence (%)")
-plt.legend(["TLO", "UNAIDS", "MPHIA", "DHS"])
+
+red_line = mlines.Line2D([], [], color='C3',
+                         markersize=15, label='TLO')
+blue_line = mlines.Line2D([], [], color='C0',
+                          markersize=15, label='UNAIDS')
+green_cross = mlines.Line2D([], [], linewidth=0, color='g', marker='x',
+                          markersize=7, label='MPHIA')
+orange_ci = mlines.Line2D([], [], color='C1', marker='.',
+                          markersize=15, label='DHS')
+plt.legend(handles=[red_line, blue_line, green_cross, orange_ci])
+
 plt.show()
-
-
-
-
-
-
-
-
-plt.scatter(data_hiv_dhs_prev["Year"],
-            data_hiv_dhs_prev["HIV prevalence among general population 15-49"], c='red')  # DHS
-
-plt.errorbar(data_hiv_dhs_prev["Year"], data_hiv_dhs_prev["HIV prevalence among general population 15-49"],
-             yerr=[data_hiv_dhs_prev["HIV prevalence among general population 15-49 lower"],
-                   data_hiv_dhs_prev["HIV prevalence among general population 15-49 upper"]], linestyle='')
-
-
-plt.xlabel("Year")
-plt.ylabel("Prevalence (%)")
-plt.xticks(rotation=90)
-plt.gca().set_xlim(start_date, end_date)
-plt.legend(["TLO", "UNAIDS", "MPHIA", "DHS"])
-plt.show()
-
-
-
-
-
-
-
-
 
 
 
