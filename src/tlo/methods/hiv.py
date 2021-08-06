@@ -38,6 +38,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import create_age_range_lookup
+from tlo.methods.tb import HSI_Tb_ScreeningAndRefer
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -210,6 +211,8 @@ class Hiv(Module):
             Types.REAL, "Weibull shape parameter for mortality in infants who are infected after birth"),
 
         # Uptake of Interventions
+        "hiv_testing_rates": Parameter(
+            Types.REAL, "annual rates of testing for children and adults"),
         "prob_spontaneous_test_12m": Parameter(
             Types.REAL, "Probability that a person will seek HIV testing per 12 month period."),
         "prob_start_art_after_hiv_test": Parameter(
@@ -266,6 +269,9 @@ class Hiv(Module):
 
         # Load assumed time since infected at baseline (year 2010)
         p["time_inf"] = workbook["time_since_infection_at_baselin"]
+
+        # Load reported hiv testing rates
+        p["hiv_testing_rates"] = workbook["MoH_numbers_tests"]
 
         # Load assumed ART coverage at baseline (year 2010)
         p["art_coverage"] = workbook["art_coverage"]
@@ -1070,10 +1076,11 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
 
         df = population.props
-        params = self.module.parameters
+        p = self.module.parameters
+        rng = self.module.rng
 
         fraction_of_year_between_polls = self.frequency.months / 12
-        beta = params["beta"] * fraction_of_year_between_polls
+        beta = p["beta"] * fraction_of_year_between_polls
 
         # ----------------------------------- HORIZONTAL TRANSMISSION -----------------------------------
         def horizontal_transmission(to_sex, from_sex):
@@ -1115,10 +1122,23 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         horizontal_transmission(from_sex='F', to_sex='M')
 
         # ----------------------------------- SPONTANEOUS TESTING -----------------------------------
-        prob_spontaneous_test = self.module.lm['lm_spontaneous_test_12m'].predict(
-            df.loc[df.is_alive]) * fraction_of_year_between_polls
-        will_test = self.module.rng.random_sample(len(prob_spontaneous_test)) < prob_spontaneous_test
-        idx_will_test = will_test[will_test].index
+        # extract annual testing rates from MoH Reports
+        test_rates = p['hiv_testing_rates']
+        testing_rate_children = test_rates.loc[test_rates.year == self.sim.date.year, 'annual_testing_rate_children']
+        testing_rate_adults = test_rates.loc[test_rates.year == self.sim.date.year, 'annual_testing_rate_adults']
+        random_draw = rng.random_sample(size=len(df))
+
+        child_tests_idx = df.loc[df.is_alive &
+                                 ~df.hv_diagnosed &
+                                 (df.age_years < 15) &
+                                 (random_draw < testing_rate_children)].index
+
+        adult_tests_idx = df.loc[df.is_alive &
+                                 ~df.hv_diagnosed &
+                                 (df.age_years >= 15) &
+                                 (random_draw < testing_rate_adults)].index
+
+        idx_will_test = child_tests_idx.union(adult_tests_idx)
 
         for person_id in idx_will_test:
             date_test = self.sim.date + \
@@ -1411,7 +1431,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # also screen for tb
                     if 'Tb' in self.sim.modules:
                         self.sim.modules['HealthSystem'].schedule_hsi_event(
-                            self.sim.modules['Tb'].HSI_Tb_ScreeningAndRefer(person_id=person_id, module='Tb'),
+                            HSI_Tb_ScreeningAndRefer(person_id=person_id, module=self.sim.modules['Tb']),
                             topen=self.sim.date,
                             tclose=None,
                             priority=0
@@ -1628,7 +1648,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # also screen for tb
         if 'Tb' in self.sim.modules:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                self.sim.modules['Tb'].HSI_Tb_ScreeningAndRefer(person_id=person_id, module='Tb'),
+                HSI_Tb_ScreeningAndRefer(person_id=person_id, module=self.sim.modules['Tb']),
                 topen=self.sim.date,
                 tclose=None,
                 priority=0

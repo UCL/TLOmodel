@@ -161,8 +161,6 @@ plt.gca().set_xlim(start_date, end_date)
 plt.legend(["TLO", "UNAIDS", "MPHIA", "DHS"])
 plt.show()
 
-
-
 # HIV Incidence 15-49
 make_plot(
     title_str="HIV Incidence in Adults (15-49) (per 100 pyar)",
@@ -205,7 +203,7 @@ tot_tb_non_hiv_deaths = deaths_TB.groupby(by=['year']).size()
 tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format='%Y')
 
 # TB/HIV deaths
-to_drop = (deaths.cause != 'AIDS_non_TB')
+to_drop = (deaths.cause != 'AIDS_TB')
 deaths_TB_HIV = deaths.drop(index=to_drop[to_drop].index).copy()
 deaths_TB_HIV['year'] = deaths_TB_HIV.index.year  # count by year
 tot_tb_hiv_deaths = deaths_TB_HIV.groupby(by=['year']).size()
@@ -217,21 +215,16 @@ total_tb_deaths.index = pd.to_datetime(total_tb_deaths.index, format='%Y')
 
 # mortality rates per 100k person-years
 total_tb_deaths_rate = (total_tb_deaths / py) * 100000
-
 tot_tb_hiv_deaths_rate = (tot_tb_hiv_deaths / py) * 100000
-
 tot_tb_non_hiv_deaths_rate = (tot_tb_non_hiv_deaths / py) * 100000
 
 # AIDS DEATHS
-deaths = output['tlo.methods.demography']['death'].copy()
-deaths = deaths.set_index('date')
 # limit to deaths among aged 15+
-to_drop = ((deaths.age < 15) | (deaths.cause != 'AIDS'))
-deaths = deaths.drop(index=to_drop[to_drop].index)
-
-# count by year:
+to_drop = ((deaths.age < 15) | (deaths.cause != 'AIDS_TB') | (deaths.cause != 'AIDS_non_TB'))
+deaths_AIDS = deaths.drop(index=to_drop[to_drop].index)
 deaths['year'] = deaths.index.year
 tot_aids_deaths = deaths.groupby(by=['year']).size()
+tot_aids_deaths.index = pd.to_datetime(tot_aids_deaths.index, format='%Y')
 
 # plots
 

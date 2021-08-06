@@ -322,18 +322,18 @@ class Tb(Module):
         'prop_ltfu_retx': Parameter(
             Types.REAL, 'Proportion lost to follow-up during retreatment'
         ),
-        'rate_testing_tb': Parameter(
-            Types.REAL,
-            'rate of presenting for TB screening and testing for people with active TB',
-        ),
-        'rr_testing_non_tb': Parameter(
+        # 'rate_testing_tb': Parameter(
+        #     Types.REAL,
+        #     'rate of presenting for TB screening and testing for people with active TB',
+        # ),
+        'rate_testing_general_pop': Parameter(
             Types.REAL,
             'rate ratio for TB testing without active TB compared with ative TB cases',
         ),
-        'rate_testing_hiv': Parameter(
-            Types.REAL,
-            'rate of presenting for TB screening and testing for HIV-positive people with active TB',
-        ),
+        # 'rate_testing_hiv': Parameter(
+        #     Types.REAL,
+        #     'rate of presenting for TB screening and testing for HIV-positive people with active TB',
+        # ),
         'presump_testing': Parameter(
             Types.REAL, 'probability of an individual without tb requesting tb test'
         ),
@@ -369,6 +369,7 @@ class Tb(Module):
 
         p = self.parameters
 
+        # assume cases distributed equally across districts!!
         p['prop_active_2010'] = workbook['cases2010district']
 
         p['pulm_tb'] = workbook['pulm_tb']
@@ -1102,7 +1103,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = rng.random_sample(size=len(df))
         screen_idx = df.index[
-            df.is_alive & (random_draw < p['rate_testing_tb'])
+            df.is_alive & (random_draw < p['rate_testing_general_pop'])
             ]
 
         for person in screen_idx:
