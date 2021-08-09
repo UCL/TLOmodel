@@ -1243,7 +1243,7 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
 
             if 'Hiv' in self.sim.modules:
                 self.sim.schedule_event(hiv.HivAidsOnsetEvent(
-                    self.sim.modules['Hiv'], person_id, cause=self.module), now
+                    self.sim.modules['Hiv'], person_id, cause='AIDS_TB'), now
                 )
 
         # -------- 5) schedule TB death --------
