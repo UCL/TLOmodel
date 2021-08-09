@@ -114,10 +114,9 @@ class BedDays:
         # Refresh the hs_in_patient status
         self.refresh_in_patient_status()
 
-        """
-        NB. This is skipped on the first day of the simulation as there is nothing to log from yesterday and the tracker
-        is already set.
-        """
+        # NB. This is skipped on the first day of the simulation as there is nothing to log from yesterday and the
+        # tracker is already set.
+
         if not self.hs_module.sim.date == self.hs_module.sim.start_date:
             self.log_yesterday_info_from_all_bed_trackers()
             self.move_each_tracker_by_one_day()
@@ -139,7 +138,7 @@ class BedDays:
             new_index = pd.DatetimeIndex(new_index)
 
             # update the index
-            tracker = tracker.set_index(pd.DatetimeIndex(new_index)).sort_index()
+            tracker = tracker.set_index(new_index).sort_index()
 
             # save the updated tracker
             self.bed_tracker[bed_type] = tracker
@@ -162,11 +161,10 @@ class BedDays:
         Generate a blank footprint for the bed-days
         :return: a footprint of the correct format, specifying no bed days
         """
-        self.bed_types = self.get_bed_types()
         assert 0 < len(self.bed_types), "No bed types have been defined"
-        return dict(zip(self.bed_types, [0] * len(self.bed_types)))
+        return {b: 0 for b in self.bed_types}
 
-    def check_beddays_footrpint_format(self, beddays_footprint):
+    def check_beddays_footprint_format(self, beddays_footprint):
         """Check that the format of the beddays footprint is correct"""
         assert type(beddays_footprint) is dict
         assert len(self.bed_types) == len(beddays_footprint)
@@ -325,5 +323,5 @@ class BedDays:
 
         # if any "date of last day in bed" in not null and in the future, then the person is an in-patient:
         df.loc[df.is_alive, "hs_is_inpatient"] = \
-            ((~df.loc[df.is_alive, exit_cols].isnull()) & ~(
-                df.loc[df.is_alive, exit_cols] < self.hs_module.sim.date)).any(axis=1)
+            (df.loc[df.is_alive, exit_cols].notnull() & (
+                    df.loc[df.is_alive, exit_cols] >= self.hs_module.sim.date)).any(axis=1)

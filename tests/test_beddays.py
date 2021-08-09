@@ -163,8 +163,8 @@ def test_bed_days_basics(tmpdir):
     hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
 
     # 2) Check that HSI_Event come with correctly formatted bed-days footprints, whether explicitly defined or not.
-    hs.bed_days.check_beddays_footrpint_format(hsi_nobd.BEDDAYS_FOOTPRINT)
-    hs.bed_days.check_beddays_footrpint_format(hsi_bd.BEDDAYS_FOOTPRINT)
+    hs.bed_days.check_beddays_footprint_format(hsi_nobd.BEDDAYS_FOOTPRINT)
+    hs.bed_days.check_beddays_footprint_format(hsi_bd.BEDDAYS_FOOTPRINT)
 
     # 3) Check that helper-function to make footprints works as expected:
     assert {'non_bed_space': 0, 'general_bed': 0, 'high_dependency_bed': 0} == hsi_nobd.BEDDAYS_FOOTPRINT

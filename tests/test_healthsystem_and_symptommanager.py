@@ -580,6 +580,7 @@ def test_use_of_helper_function_get_all_consumables():
     # Create simulation with the healthsystem and DummyModule
     sim = Simulation(start_date=start_date, seed=0)
     sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
         DummyModule()
     )
@@ -625,6 +626,8 @@ def test_use_of_helper_function_get_all_consumables():
         def apply(self, person_id, squeeze_factor):
             pass
 
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=100))
     hsi_event = HSI_Dummy(module=sim.modules['DummyModule'], person_id=0)
 
     # Test using item_codes:

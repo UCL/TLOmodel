@@ -258,7 +258,6 @@ class HealthSystem(Module):
         """
         # Load the 'raw' ResourceFile_Consumabes that is loaded in to self.parameters['Consumables']
         raw = self.parameters['Consumables']
-
         # -------------------------------------------------------------------------------------------------
         # Create a pd.DataFrame that maps pkg code (as index) to item code:
         # This is used to quickly look-up which items are required in each package
@@ -431,7 +430,7 @@ class HealthSystem(Module):
 
             if 'BedDays' in self.sim.modules:
                 assert 'BEDDAYS_FOOTPRINT' in dir(hsi_event)
-                self.sim.modules['BedDays'].check_beddays_footrpint_format(hsi_event.BEDDAYS_FOOTPRINT)
+                self.sim.modules['BedDays'].check_beddays_footprint_format(hsi_event.BEDDAYS_FOOTPRINT)
 
             # That it has a list for the other disease that will be alerted when it is run and that this make sense
             assert 'ALERT_OTHER_DISEASES' in dir(hsi_event)
