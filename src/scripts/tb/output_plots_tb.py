@@ -66,19 +66,29 @@ data_tb_latent_lower = abs(data_tb_latent_all_ages.proportion_latent_TB_lower.va
 data_tb_latent_upper = abs(data_tb_latent_all_ages.proportion_latent_TB_upper.values[0] - data_tb_latent_estimate)
 data_tb_latent_yerr = [data_tb_latent_lower, data_tb_latent_upper]
 
+
 # HIV resourcefile
 xls = pd.ExcelFile(resourcefilepath / 'ResourceFile_HIV.xlsx')
-
 
 # HIV UNAIDS data
 data_hiv_unaids = pd.read_excel(xls, sheet_name='unaids_infections_art2021')
 data_hiv_unaids.index = pd.to_datetime(data_hiv_unaids['year'], format='%Y')
 data_hiv_unaids = data_hiv_unaids.drop(columns=['year'])
 
+# HIV UNAIDS data
+data_hiv_unaids_deaths = pd.read_excel(xls, sheet_name='unaids_mortality_dalys2021')
+data_hiv_unaids_deaths.index = pd.to_datetime(data_hiv_unaids_deaths['year'], format='%Y')
+data_hiv_unaids_deaths = data_hiv_unaids_deaths.drop(columns=['year'])
+
 # AIDSinfo (UNAIDS)
 data_hiv_aidsinfo = pd.read_excel(xls, sheet_name='children0_14_prev_AIDSinfo')
 data_hiv_aidsinfo.index = pd.to_datetime(data_hiv_aidsinfo['year'], format='%Y')
 data_hiv_aidsinfo = data_hiv_aidsinfo.drop(columns=['year'])
+
+# unaids program performance
+data_hiv_program = pd.read_excel(xls, sheet_name='unaids_program_perf')
+data_hiv_program.index = pd.to_datetime(data_hiv_program['year'], format='%Y')
+data_hiv_program = data_hiv_program.drop(columns=['year'])
 
 # MPHIA HIV data - age-structured
 data_hiv_mphia_inc = pd.read_excel(xls, sheet_name='MPHIA_incidence2015')
@@ -95,6 +105,16 @@ data_hiv_mphia_prev = pd.read_excel(xls, sheet_name='MPHIA_prevalence_art2015')
 
 # DHS HIV data
 data_hiv_dhs_prev = pd.read_excel(xls, sheet_name='DHS_prevalence')
+
+# MoH HIV testing data
+data_hiv_moh_tests = pd.read_excel(xls, sheet_name='MoH_numbers_tests')
+data_hiv_moh_tests.index = pd.to_datetime(data_hiv_moh_tests['year'], format='%Y')
+data_hiv_moh_tests = data_hiv_moh_tests.drop(columns=['year'])
+
+# MoH HIV ART data
+# todo this is quarterly
+data_hiv_moh_art = pd.read_excel(xls, sheet_name='MoH_number_art')
+
 
 
 # ---------------------------------------------------------------------- #
@@ -171,7 +191,7 @@ make_plot(
 # data from ResourceFile_TB sheet WHO_mdrTB2017
 plt.errorbar(mdr.index[7], 0.0075,
              yerr=[[0.0059], [0.0105]], fmt='o')
-plt.legend(['Model', 'Data'])
+plt.legend(['TLO', 'WHO'])
 
 plt.show()
 
@@ -267,21 +287,21 @@ red_line = mlines.Line2D([], [], color='C3',
                          markersize=15, label='TLO')
 blue_line = mlines.Line2D([], [], color='C0',
                           markersize=15, label='UNAIDS')
-orange_ci = mlines.Line2D([], [], color='C1', marker='.',
-                          markersize=15, label='MPHIA')
-plt.legend(handles=[red_line, blue_line, orange_ci])
+green_cross = mlines.Line2D([], [], linewidth=0, color='g', marker='x',
+                          markersize=7, label='MPHIA')
+plt.legend(handles=[red_line, blue_line, green_cross])
 
 plt.show()
-
 
 
 # ---------------------------------------------------------------------- #
 
 # HIV Incidence Children
 make_plot(
-    title_str="HIV Prevalence in Children (0-14) (per 100 pyar)",
+    title_str="HIV Incidence in Children (0-14) (per 100 pyar)",
     model=prev_and_inc_over_time['hiv_child_inc'] * 100,
 )
+plt.show()
 
 
 # ---------------------------------------------------------------------- #
@@ -291,6 +311,7 @@ make_plot(
     title_str="HIV Prevalence among Female Sex Workers (%)",
     model=prev_and_inc_over_time['hiv_prev_fsw'] * 100,
 )
+plt.show()
 
 
 # ---------------------------------------------------------------------- #
@@ -303,16 +324,17 @@ deaths = output['tlo.methods.demography']['death'].copy()  # outputs individual 
 deaths = deaths.set_index('date')
 
 # TB deaths will exclude TB/HIV
-to_drop = (deaths.cause != 'TB')
-deaths_TB = deaths.drop(index=to_drop[to_drop].index).copy()
+# keep if cause = TB
+keep = (deaths.cause == 'TB')
+deaths_TB = deaths.loc[keep].copy()
 deaths_TB['year'] = deaths_TB.index.year  # count by year
 tot_tb_non_hiv_deaths = deaths_TB.groupby(by=['year']).size()
 tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format='%Y')
-# todo add mortality rate to this df???
+
 
 # TB/HIV deaths
-to_drop = (deaths.cause != 'AIDS_TB')
-deaths_TB_HIV = deaths.drop(index=to_drop[to_drop].index).copy()
+keep = (deaths.cause == 'AIDS_TB')
+deaths_TB_HIV = deaths.loc[keep].copy()
 deaths_TB_HIV['year'] = deaths_TB_HIV.index.year  # count by year
 tot_tb_hiv_deaths = deaths_TB_HIV.groupby(by=['year']).size()
 tot_tb_hiv_deaths.index = pd.to_datetime(tot_tb_hiv_deaths.index, format='%Y')
@@ -321,24 +343,39 @@ tot_tb_hiv_deaths.index = pd.to_datetime(tot_tb_hiv_deaths.index, format='%Y')
 total_tb_deaths = tot_tb_non_hiv_deaths.add(tot_tb_hiv_deaths, fill_value=0)
 total_tb_deaths.index = pd.to_datetime(total_tb_deaths.index, format='%Y')
 
-# mortality rates per 100k person-years
-total_tb_deaths_rate = (total_tb_deaths / py) * 100000
-tot_tb_hiv_deaths_rate = (tot_tb_hiv_deaths / py) * 100000
-tot_tb_non_hiv_deaths_rate = (tot_tb_non_hiv_deaths / py) * 100000
+# tb mortality rates per 100k person-years
+total_tb_deaths_rate_100kpy = (total_tb_deaths / py) * 100000
+tot_tb_hiv_deaths_rate_100kpy = (tot_tb_hiv_deaths / py) * 100000
+tot_tb_non_hiv_deaths_rate_100kpy = (tot_tb_non_hiv_deaths / py) * 100000
 
 # AIDS DEATHS
-# limit to deaths among aged 15+
-to_drop = ((deaths.age < 15) | (deaths.cause != 'AIDS_TB') | (deaths.cause != 'AIDS_non_TB'))
-deaths_AIDS = deaths.drop(index=to_drop[to_drop].index)
-deaths['year'] = deaths.index.year
-tot_aids_deaths = deaths.groupby(by=['year']).size()
+# limit to deaths among aged 15+, include HIV/TB deaths
+keep = ((deaths.age >= 15) & ((deaths.cause == 'AIDS_TB') | (deaths.cause == 'AIDS_non_TB')))
+deaths_AIDS = deaths.loc[keep].copy()
+deaths_AIDS['year'] = deaths_AIDS.index.year
+tot_aids_deaths = deaths_AIDS.groupby(by=['year']).size()
 tot_aids_deaths.index = pd.to_datetime(tot_aids_deaths.index, format='%Y')
 
-# plots
+# aids mortality rates per 1000 person-years
+total_aids_deaths_rate_1000py = (tot_aids_deaths / py) * 1000
+
+# ---------------------------------------------------------------------- #
+
+# AIDS deaths (including HIV/TB deaths)
+make_plot(
+    title_str='Mortality to HIV-AIDS per 1000 capita',
+    model=total_aids_deaths_rate_1000py,
+    data_mid=data_hiv_unaids_deaths['AIDS_mortality_per_1000'],
+    data_low=data_hiv_unaids_deaths['AIDS_mortality_per_1000_lower'],
+    data_high=data_hiv_unaids_deaths['AIDS_mortality_per_1000_upper']
+)
+
+plt.show()
 
 
 # ---------------------------------------------------------------------- #
-# ------------------------- PROGRAM OUTPUTS ------------------------- #
+# %%: PROGRAM OUTPUTS
+# ---------------------------------------------------------------------- #
 
 # treatment coverage
 Tb_tx_coverage = output['tlo.methods.tb']['tb_treatment']
@@ -348,50 +385,102 @@ Tb_tx_coverage.index = pd.to_datetime(Tb_tx_coverage.index)
 cov_over_time = output['tlo.methods.hiv']['hiv_program_coverage']
 cov_over_time = cov_over_time.set_index('date')
 
+# ---------------------------------------------------------------------- #
+
 # Treatment Cascade ("90-90-90") Plot for Adults
-dx = cov_over_time['dx_adult']
-art_among_dx = cov_over_time['art_coverage_adult'] / dx
-vs_among_art = cov_over_time['art_coverage_adult_VL_suppression']
+dx = cov_over_time['dx_adult'] * 100
+art_among_dx = (cov_over_time['art_coverage_adult'] / cov_over_time['dx_adult']) * 100
+vs_among_art = (cov_over_time['art_coverage_adult_VL_suppression']) * 100
+
 pd.concat({'diagnosed': dx,
            'art_among_diagnosed': art_among_dx,
            'vs_among_those_on_art': vs_among_art
            }, axis=1).plot()
+
+plt.gca().spines['right'].set_color('none')
+plt.gca().spines['top'].set_color('none')
 plt.title('ART Cascade for Adults (15+)')
-plt.savefig(outputpath / ("HIV_art_cascade_adults" + datestamp + ".pdf"), format='pdf')
+# plt.savefig(outputpath / ("HIV_art_cascade_adults" + datestamp + ".pdf"), format='pdf')
+
+# data from UNAIDS 2021
+# todo scatter the error bars
+# unaids: diagnosed
+x_values = data_hiv_program.index
+y_values = data_hiv_program["percent_know_status"]
+y_lower = abs(y_values - data_hiv_program["percent_know_status_lower"])
+y_upper = abs(y_values - data_hiv_program["percent_know_status_upper"])
+plt.errorbar(x_values, y_values, yerr=[y_lower, y_upper], ls='none',
+             marker='o', markeredgecolor='C0', markerfacecolor='C0', ecolor="C0")
+
+# unaids: diagnosed and on art
+x_values = data_hiv_program.index + pd.DateOffset(months=3)
+y_values = data_hiv_program["percent_know_status_on_art"]
+y_lower = abs(y_values - data_hiv_program["percent_know_status_on_art_lower"])
+y_upper = abs(y_values - data_hiv_program["percent_know_status_on_art_upper"])
+plt.errorbar(x_values, y_values, yerr=[y_lower, y_upper], ls='none',
+             marker='o', markeredgecolor='C1', markerfacecolor='C1', ecolor="C1")
+
+# unaids: virally suppressed
+x_values = data_hiv_program.index + pd.DateOffset(months=6)
+y_values = data_hiv_program["percent_on_art_viral_suppr"]
+y_lower = abs(y_values - data_hiv_program["percent_on_art_viral_suppr_lower"])
+y_upper = abs(y_values - data_hiv_program["percent_on_art_viral_suppr_upper"])
+y_values.index=x_values
+y_lower.index=x_values
+y_lower.index=x_values
+plt.errorbar(x_values, y_values, yerr=[y_lower, y_upper], ls='none',
+             marker='o', markeredgecolor='g', markerfacecolor='g', ecolor="g")
+
 plt.show()
+
+# ---------------------------------------------------------------------- #
 
 # Per capita testing rates - data from MoH quarterly reports
 make_plot(
     title_str="Per capita testing rates for adults (15+)",
     model=cov_over_time["per_capita_testing_rate"],
-    data_mid=data["adult_tests_per_capita"]
+    data_mid=data_hiv_moh_tests["annual_testing_rate_adults"]
 )
+plt.legend(['TLO', 'MoH'])
+
+plt.show()
+
+# ---------------------------------------------------------------------- #
 
 # Percent on ART
 make_plot(
     title_str="Percent of Adults (15+) on ART",
     model=cov_over_time["art_coverage_adult"] * 100,
-    data_mid=data["percent15plus_on_art"],
-    data_low=data["percent15plus_on_art_lower"],
-    data_high=data["percent15plus_on_art_upper"]
+    data_mid=data_hiv_unaids["ART_coverage_all_HIV_adults"],
+    data_low=data_hiv_unaids["ART_coverage_all_HIV_adults_lower"],
+    data_high=data_hiv_unaids["ART_coverage_all_HIV_adults_upper"]
 )
+plt.legend(['TLO', 'UNAIDS'])
+
+plt.show()
+
+# ---------------------------------------------------------------------- #
 
 # Circumcision
 make_plot(
     title_str="Proportion of Men (15+) That Are Circumcised",
     model=cov_over_time["prop_men_circ"]
 )
+plt.show()
+# ---------------------------------------------------------------------- #
 
 # PrEP among FSW
 make_plot(
     title_str="Proportion of FSW That Are On PrEP",
     model=cov_over_time["prop_fsw_on_prep"]
 )
+plt.show()
+# ---------------------------------------------------------------------- #
 
 # Behaviour Change
 make_plot(
     title_str="Proportion of Adults (15+) Exposed to Behaviour Change Intervention",
     model=cov_over_time["prop_adults_exposed_to_behav_intv"]
 )
-
+plt.show()
 
