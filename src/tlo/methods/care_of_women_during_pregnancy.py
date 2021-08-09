@@ -1370,8 +1370,6 @@ class CareOfWomenDuringPregnancy(Module):
                 consumables['Items'] ==
                 'vitamin B12 (cyanocobalamine) 1 mg/ml, 1 ml, inj._100_IDA', 'Item_Code'])[0]
 
-        # TODO: add consumables (needle, syringe, gloves)
-
         # If iron or folate deficient, a woman will need to take additional daily supplements. If B12 deficient this
         # should occur monthly
         consumables_ifa = {
@@ -1626,7 +1624,8 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
-        # Define the consumable package code
+        # todo: delete if appropriate
+        """# Define the consumable package code
         pkg_code_eclampsia_and_spe = pd.unique(
             consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
                             'Intervention_Pkg_Code'])[0]
@@ -1636,6 +1635,29 @@ class CareOfWomenDuringPregnancy(Module):
 
         # If available deliver the treatment
         if all_available:
+            df.at[individual_id, 'ac_mag_sulph_treatment'] = True
+            logger.debug(key='msg', data=f'Mother {individual_id} has received magnesium sulphate during her admission '
+                                         f'for severe pre-eclampsia/eclampsia')
+        """
+
+        item_code_mag_sulph = pd.unique(
+            consumables.loc[consumables['Items'] == 'Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule',
+                            'Item_Code'])[0]
+        item_code_needle = pd.unique(
+            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+
+        consumables_eclampsia_treatment = {
+            'Intervention_Package_Code': {},
+            'Item_Code': {item_code_mag_sulph: 2,
+                          item_code_needle: 1}}
+
+        # Then query if these consumables are available during this HSI
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=hsi_event,
+            cons_req_as_footprint=consumables_eclampsia_treatment)
+
+        # If they hydralazine is available we assume the intervention can be delivered
+        if outcome_of_request_for_consumables['Item_Code'][item_code_mag_sulph]:
             df.at[individual_id, 'ac_mag_sulph_treatment'] = True
             logger.debug(key='msg', data=f'Mother {individual_id} has received magnesium sulphate during her admission '
                                          f'for severe pre-eclampsia/eclampsia')
@@ -3068,36 +3090,54 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
         abortion_complications = self.sim.modules['PregnancySupervisor'].abortion_complications
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
+        # todo: i think this needs to just be simplified for now (i.e. remove the treatment proporty as a bitset)
+
         if not mother.is_alive:
             return
 
         # We check only women with complications post abortion are sent to this event
         assert abortion_complications.has_any([person_id], 'sepsis', 'haemorrhage', 'injury', 'other', first=True)
 
-        # Check the availability of consumables
-        pkg_code_infection = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Post-abortion case management',
-                            'Intervention_Pkg_Code'])[0]
+        # Define the consumables and check their availability
+        item_code_metro = pd.unique(
+            consumables.loc[consumables['Items'] == 'Metronidazole, injection, 500 mg in 100 ml vial',
+                            'Item_Code'])[0]
+        item_code_genta = pd.unique(
+            consumables.loc[consumables['Items'] == 'Gentamycin, injection, 40 mg/ml in 2 ml vial',
+                            'Item_Code'])[0]
+        item_code_miso= pd.unique(
+            consumables.loc[consumables['Items'] == 'Misoprostol, tablet, 200 mcg',
+                            'Item_Code'])[0]
+        item_code_wfi = pd.unique(
+            consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
+        item_code_needle = pd.unique(
+            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+        item_code_gloves = pd.unique(
+            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
 
-        all_available = self.get_all_consumables(
-            pkg_codes=[pkg_code_infection])
+        consumables_for_pac = {
+            'Intervention_Package_Code': {},
+            'Item_Code': {item_code_metro: 1, item_code_genta: 1, item_code_miso: 1,
+                          item_code_wfi: 1, item_code_needle: 1, item_code_gloves: 1}}
 
-        # If consumables are available then individual interventions can be delivered
-        if all_available:
-            evac_procedures = ['d_and_c', 'mva', 'misoprostol']
-            probability_of_evac_procedure = params['prob_evac_procedure_pac']
-            random_draw = self.module.rng.choice(evac_procedures, p=probability_of_evac_procedure)
+        # Then query if these consumables are available during this HSI
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=consumables_for_pac)
+
+        if outcome_of_request_for_consumables['Item_Code'][item_code_miso]:
+            random_draw = self.module.rng.choice(['d_and_c', 'mva', 'misoprostol'], p=params['prob_evac_procedure_pac'])
             self.module.pac_interventions.set(person_id, random_draw)
 
         # Women who are septic following their abortion are given antibiotics
-        if abortion_complications.has_any([person_id], 'sepsis', first=True):
-            if all_available:
-                self.module.pac_interventions.set(person_id, 'antibiotics')
+        if abortion_complications.has_any([person_id], 'sepsis', first=True) and \
+            (outcome_of_request_for_consumables['Item_Code'][item_code_metro]) or \
+           (outcome_of_request_for_consumables['Item_Code'][item_code_genta]):
+            self.module.pac_interventions.set(person_id, 'antibiotics')
 
         # Minor injuries following induced abortion are treated
         if abortion_complications.has_any([person_id], 'injury', first=True):
-            if all_available:
-                self.module.pac_interventions.set(person_id, 'injury_repair')
+            self.module.pac_interventions.set(person_id, 'injury_repair')
 
         # And women who experience haemorrhage are provided with blood
         if abortion_complications.has_any([person_id], 'haemorrhage', first=True):
