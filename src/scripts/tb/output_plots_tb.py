@@ -68,16 +68,29 @@ data_tb_latent_yerr = [data_tb_latent_lower, data_tb_latent_upper]
 
 # HIV resourcefile
 xls = pd.ExcelFile(resourcefilepath / 'ResourceFile_HIV.xlsx')
-xls.sheet_names
+
 
 # HIV UNAIDS data
 data_hiv_unaids = pd.read_excel(xls, sheet_name='unaids_infections_art2021')
 data_hiv_unaids.index = pd.to_datetime(data_hiv_unaids['year'], format='%Y')
 data_hiv_unaids = data_hiv_unaids.drop(columns=['year'])
 
+# AIDSinfo (UNAIDS)
+data_hiv_aidsinfo = pd.read_excel(xls, sheet_name='children0_14_prev_AIDSinfo')
+data_hiv_aidsinfo.index = pd.to_datetime(data_hiv_aidsinfo['year'], format='%Y')
+data_hiv_aidsinfo = data_hiv_aidsinfo.drop(columns=['year'])
 
 # MPHIA HIV data - age-structured
 data_hiv_mphia_inc = pd.read_excel(xls, sheet_name='MPHIA_incidence2015')
+data_hiv_mphia_inc_estimate = data_hiv_mphia_inc.loc[
+             (data_hiv_mphia_inc.age == "15-49"), "total_percent_annual_incidence"].values[0]
+data_hiv_mphia_inc_lower = data_hiv_mphia_inc.loc[
+             (data_hiv_mphia_inc.age == "15-49"), "total_percent_annual_incidence_lower"].values[0]
+data_hiv_mphia_inc_upper = data_hiv_mphia_inc.loc[
+             (data_hiv_mphia_inc.age == "15-49"), "total_percent_annual_incidence_upper"].values[0]
+data_hiv_mphia_inc_yerr = [abs(data_hiv_mphia_inc_lower - data_hiv_mphia_inc_estimate),
+                           abs(data_hiv_mphia_inc_upper - data_hiv_mphia_inc_estimate)]
+
 data_hiv_mphia_prev = pd.read_excel(xls, sheet_name='MPHIA_prevalence_art2015')
 
 # DHS HIV data
@@ -105,9 +118,13 @@ for year in years:
 
 py.index = pd.to_datetime(years, format='%Y')
 
-# ---------------------------------------------------------------------- #
-# ------------------------- DISEASE BURDEN ------------------------- #
 
+# ---------------------------------------------------------------------- #
+# %%: DISEASE BURDEN
+# ---------------------------------------------------------------------- #
+
+
+# ----------------------------- TB -------------------------------------- #
 
 # Active TB incidence per 100,000 person-years - annual outputs
 TB_inc = output['tlo.methods.tb']['tb_incidence']
@@ -124,6 +141,7 @@ make_plot(
 )
 plt.show()
 
+# ---------------------------------------------------------------------- #
 
 # latent TB prevalence
 latentTB_prev = output['tlo.methods.tb']['tb_prevalence']
@@ -140,6 +158,7 @@ plt.errorbar(latentTB_prev.index[6], data_tb_latent_estimate,
 plt.legend(['Model', 'Data'])
 plt.show()
 
+# ---------------------------------------------------------------------- #
 
 # proportion TB cases that are MDR
 mdr = output['tlo.methods.tb']['tb_mdr']
@@ -156,15 +175,16 @@ plt.legend(['Model', 'Data'])
 
 plt.show()
 
+# ----------------------------- HIV -------------------------------------- #
 
-# HIV - prevalence among 15-49 year-olds
 prev_and_inc_over_time = output['tlo.methods.hiv'][
     'summary_inc_and_prev_for_adults_and_children_and_fsw']
 prev_and_inc_over_time = prev_and_inc_over_time.set_index('date')
 
+# HIV - prevalence among in adults aged 15+
 make_plot(
-    title_str="HIV Prevalence in Adults (15-49) (%)",
-    model=prev_and_inc_over_time['hiv_prev_adult_1549'] * 100,
+    title_str="HIV Prevalence in Adults Aged 15+ (%)",
+    model=prev_and_inc_over_time['hiv_prev_adult_15plus'] * 100,
     data_mid=data_hiv_unaids['prevalence_age15plus'],
     data_low=data_hiv_unaids['prevalence_age15plus_lower'],
     data_high=data_hiv_unaids['prevalence_age15plus_upper']
@@ -188,6 +208,7 @@ plt.ylim((0, 15))
 plt.xlabel("Year")
 plt.ylabel("Prevalence (%)")
 
+# handles for legend
 red_line = mlines.Line2D([], [], color='C3',
                          markersize=15, label='TLO')
 blue_line = mlines.Line2D([], [], color='C0',
@@ -201,21 +222,60 @@ plt.legend(handles=[red_line, blue_line, green_cross, orange_ci])
 plt.show()
 
 
+# ---------------------------------------------------------------------- #
 
 # HIV Incidence 15-49
 make_plot(
     title_str="HIV Incidence in Adults (15-49) (per 100 pyar)",
     model=prev_and_inc_over_time['hiv_adult_inc_1549'] * 100,
-    data_mid=data_hiv_unaids['inc_15_49_per1000'] / 10,
-    data_low=data_hiv_unaids['inc_15_49_per1000lower'] / 10,
-    data_high=data_hiv_unaids['inc_15_49_per1000upper'] / 10
+    data_mid=data_hiv_unaids['incidence_per_1000'] / 10,
+    data_low=data_hiv_unaids['incidence_per_1000_lower'] / 10,
+    data_high=data_hiv_unaids['incidence_per_1000_upper'] / 10
 )
+
+# MPHIA
+plt.errorbar(prev_and_inc_over_time.index[6], data_hiv_mphia_inc_estimate,
+             yerr=[[data_hiv_mphia_inc_yerr[0]], [data_hiv_mphia_inc_yerr[1]]], fmt='o')
+
+# handles for legend
+red_line = mlines.Line2D([], [], color='C3',
+                         markersize=15, label='TLO')
+blue_line = mlines.Line2D([], [], color='C0',
+                          markersize=15, label='UNAIDS')
+orange_ci = mlines.Line2D([], [], color='C1', marker='.',
+                          markersize=15, label='MPHIA')
+plt.legend(handles=[red_line, blue_line, orange_ci])
+
+plt.show()
+
+# ---------------------------------------------------------------------- #
 
 # HIV Prevalence Children
 make_plot(
     title_str="HIV Prevalence in Children (0-14) (%)",
     model=prev_and_inc_over_time['hiv_prev_child'] * 100,
+    data_mid=data_hiv_aidsinfo['prevalence_0_14'] * 100,
+    data_low=data_hiv_aidsinfo['prevalence_0_14_lower'] * 100,
+    data_high=data_hiv_aidsinfo['prevalence_0_14_upper'] * 100
 )
+# MPHIA
+plt.plot(prev_and_inc_over_time.index[6], data_hiv_mphia_prev.loc[
+    data_hiv_mphia_prev.age == "Total 0-14", "total percent hiv positive"].values[0], 'gx')
+
+# handles for legend
+red_line = mlines.Line2D([], [], color='C3',
+                         markersize=15, label='TLO')
+blue_line = mlines.Line2D([], [], color='C0',
+                          markersize=15, label='UNAIDS')
+orange_ci = mlines.Line2D([], [], color='C1', marker='.',
+                          markersize=15, label='MPHIA')
+plt.legend(handles=[red_line, blue_line, orange_ci])
+
+plt.show()
+
+
+
+# ---------------------------------------------------------------------- #
 
 # HIV Incidence Children
 make_plot(
@@ -223,14 +283,20 @@ make_plot(
     model=prev_and_inc_over_time['hiv_child_inc'] * 100,
 )
 
+
+# ---------------------------------------------------------------------- #
+
 # HIV prevalence among female sex workers:
 make_plot(
     title_str="HIV Prevalence among Female Sex Workers (%)",
     model=prev_and_inc_over_time['hiv_prev_fsw'] * 100,
 )
 
+
 # ---------------------------------------------------------------------- #
-# ------------------------- DEATHS ------------------------- #
+# %%: DEATHS
+# ---------------------------------------------------------------------- #
+
 
 # deaths
 deaths = output['tlo.methods.demography']['death'].copy()  # outputs individual deaths
