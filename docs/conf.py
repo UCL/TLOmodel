@@ -12,6 +12,9 @@ import sys
 
 sys.path.insert(0, os.path.abspath('../..')), os.path.abspath('../src')
 
+sys.path.append(os.path.abspath("./_ext"))
+
+
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
@@ -22,7 +25,9 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
+    'rawfiles'
 ]
+
 if os.getenv('SPELLCHECK'):
     extensions += 'sphinxcontrib.spelling',
     spelling_show_suggestions = True
@@ -51,12 +56,17 @@ if not on_rtd:  # only set the theme if we're building docs locally
 html_use_smartypants = True
 html_last_updated_fmt = '%b %d, %Y'
 html_split_index = False
+html_show_copyright = False
 html_sidebars = {
     '**': ['searchbox.html', 'globaltoc.html', 'sourcelink.html'],
 }
 html_short_title = '%s-%s' % (project, version)
 
 html_static_path = ['_static']
+html_extra_path = ['./.nojekyll', './.gitattributes']
+html_favicon = 'favicon.png'
+
+rawfiles = ['.github']
 
 html_context = {
     'css_files': [
@@ -101,6 +111,9 @@ autodoc_default_options = {
 # The checker can't see private repos
 linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*',
                     'https://www.who.int/bulletin/volumes/88/8/09-068213/en/nn']
+linkcheck_timeout = 10
+linkcheck_anchors = False
+
 
 # Stop displaying fully-qualified domain names of classes.
 # e.g. rather than "class A.B.C", just say "class C".

@@ -7,6 +7,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    care_of_women_during_pregnancy,
     chronicsyndrome,
     contraception,
     demography,
@@ -18,6 +19,8 @@ from tlo.methods import (
     healthsystem,
     labour,
     mockitis,
+    newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -51,6 +54,7 @@ def run_simulation_with_set_service_coverage_parameter(service_availability, hea
 
     # Register the appropriate modules
     sim.register(
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         demography.Demography(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
@@ -63,6 +67,8 @@ def run_simulation_with_set_service_coverage_parameter(service_availability, hea
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         contraception.Contraception(resourcefilepath=resourcefilepath),
         labour.Labour(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
         depression.Depression(resourcefilepath=resourcefilepath),
     )
@@ -126,6 +132,7 @@ def run_simulation_with_intvs_maximised():
 
     # Register the appropriate modules
     sim.register(
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         demography.Demography(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
@@ -139,6 +146,8 @@ def run_simulation_with_intvs_maximised():
         contraception.Contraception(resourcefilepath=resourcefilepath),
         labour.Labour(resourcefilepath=resourcefilepath),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
         depression.Depression(resourcefilepath=resourcefilepath),
         mockitis.Mockitis(),
         chronicsyndrome.ChronicSyndrome(),
