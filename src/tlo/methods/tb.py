@@ -547,7 +547,7 @@ class Tb(Module):
         eligible_for_active_tb = df.loc[df.is_alive &
                                         (df.tb_inf == 'uninfected')].index
 
-        sample_active_tb = self.rng.random_sample(len(df)) < p['incidence_active_tb_2010_per100k']
+        sample_active_tb = self.rng.random_sample(len(eligible_for_active_tb)) < (p['incidence_active_tb_2010_per100k'] / 100000)
         active_tb_idx = eligible_for_active_tb[sample_active_tb]
 
         # schedule for time now up to 1 year
@@ -1070,7 +1070,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # look up value for each row in df
         foi_for_individual = df['district_of_residence'].map(foi_dict)
-        foi_for_individual = foi_for_individual.fillna(0)  # newly added rows to df will have nan entries
+        # foi_for_individual = foi_for_individual.fillna(0)  # newly added rows to df will have nan entries
 
         # -------------- national-level transmission -------------- #
 

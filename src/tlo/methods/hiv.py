@@ -1124,8 +1124,15 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # ----------------------------------- SPONTANEOUS TESTING -----------------------------------
         # extract annual testing rates from MoH Reports
         test_rates = p['hiv_testing_rates']
-        testing_rate_children = test_rates.loc[test_rates.year == self.sim.date.year, 'annual_testing_rate_children']
-        testing_rate_adults = test_rates.loc[test_rates.year == self.sim.date.year, 'annual_testing_rate_adults']
+
+        # if year later than 2020, set testing rates to those reported in 2020
+        if self.sim.date.year < 2021:
+            current_year = self.sim.date.year
+        else:
+            current_year = 2020
+
+        testing_rate_children = test_rates.loc[test_rates.year == current_year, 'annual_testing_rate_children'].values[0]
+        testing_rate_adults = test_rates.loc[test_rates.year == current_year, 'annual_testing_rate_adults'].values[0]
         random_draw = rng.random_sample(size=len(df))
 
         child_tests_idx = df.loc[df.is_alive &
