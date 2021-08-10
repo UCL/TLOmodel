@@ -20,7 +20,8 @@ from tlo.analysis.utils import (
     make_calendar_period_lookup,
     make_calendar_period_type,
     parse_log_file,
-    format_gbd
+    format_gbd,
+    compare_number_of_deaths
 )
 from tlo.methods import (
     care_of_women_during_pregnancy,
@@ -59,8 +60,8 @@ def run():
 
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
-    end_date = Date(2049, 12, 31)
-    pop_size = 20000
+    end_date = Date(2099, 12, 31)
+    pop_size = 5000
 
     # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
     # `log_config` arguments, these will override the default behaviour.
@@ -95,7 +96,7 @@ def run():
 
 
 # date-stamp to label log files and any other outputs
-datestamp = "__2020_06_16"
+datestamp = "__2021_08_10"
 resourcefilepath = "./resources"
 outputpath = Path("./outputs")
 
@@ -106,7 +107,7 @@ sim = run()
 filename = sim.log_filepath
 
 # OR:
-# filename = Path('outputs/demography_calibrations__2021-07-01T205832.log')
+#filename = Path('demography_calibrations__2021-08-07T134821.log')
 
 
 # %% Run Analysis
@@ -333,3 +334,7 @@ ax.set_xlabel('Age Group')
 ax.set_ylabel('Number per period')
 plt.savefig(outputpath / ("Deaths_By_Age_" + datestamp + ".pdf"), format='pdf')
 plt.show()
+
+# %% Causes of Deaths
+
+death_summary = compare_number_of_deaths(parsed_output, resourcefilepath)

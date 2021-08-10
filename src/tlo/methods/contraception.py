@@ -413,7 +413,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         p = self.module.parameters
         rng = self.module.rng
 
-        c_multiplier = p['r_init_year'].at[self.sim.date.year, 'r_init_year']
+        c_multiplier = p['r_init_year'].at[self.sim.date.year, 'r_init_year1']
         co_start_prob_by_age = p['contraception_initiation1'].mul(c_multiplier)
         co_start_prob_by_age['not_using'] = 1 - co_start_prob_by_age.sum(axis=1)
 
@@ -426,6 +426,10 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
         # select a random contraceptive for everyone not currently using
         random_co = df.loc[individuals_not_using, 'age_years'].apply(pick_random_contraceptive)
+
+        # don't allow female sterilization to any woman below 30
+        #female_sterilization = random_co.index[random_co == 'female_sterilization']
+        #df.index[female_sterilization & (df.age_years.between(15, 29))]] == [random_co == 'not_using']
 
         # get index of all those now using
         now_using_co = random_co.index[random_co != 'not_using']
@@ -483,7 +487,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         p = self.module.parameters
         rng = self.module.rng
 
-        c_multiplier = p['r_discont_year'].at[self.sim.date.year, 'r_discont_year']
+        c_multiplier = p['r_discont_year'].at[self.sim.date.year, 'r_discont_year1']
         c_adjustment = p['contraception_discontinuation'].mul(c_multiplier)
 
         def get_prob_discontinued(row):
