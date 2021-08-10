@@ -1182,7 +1182,7 @@ class Labour(Module):
                                                                'type': 'sepsis',
                                                                'timing': 'intrapartum'})
 
-            else:
+            elif complication == 'uterine_rupture':
                 df.at[individual_id, 'la_uterine_rupture'] = True
                 self.sim.modules['PregnancySupervisor'].store_dalys_in_mni(individual_id, f'{complication}_onset')
                 logger.info(key='maternal_complication', data={'person': individual_id,

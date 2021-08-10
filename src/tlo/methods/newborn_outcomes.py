@@ -635,9 +635,6 @@ class NewbornOutcomes(Module):
         if df.at[child_id, 'nb_encephalopathy'] != 'none' or df.at[child_id, 'nb_preterm_respiratory_distress']:
             df.at[child_id, 'nb_not_breathing_at_birth'] = True
 
-            logger.info(key='newborn_complication', data={'newborn': child_id,
-                                                          'type': 'not_breathing_at_birth'})
-
         # Otherwise we use the linear model to calculate risk of inadequate breathing due to other causes not
         # explicitly modelled
         elif self.eval(self.nb_linear_models['not_breathing_at_birth'], child_id):
