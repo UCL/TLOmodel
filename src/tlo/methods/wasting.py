@@ -199,7 +199,7 @@ class Wasting(Module):
 
         # Store the symptoms that this module will use:
         self.symptoms = {
-            'palmar_pallor',
+            # 'palmar_pallor',
             'weight_loss',
             'poor_appetite',
             'lethargic',
