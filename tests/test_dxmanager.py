@@ -43,7 +43,7 @@ def bundle():
                                      'item_code_for_consumable_that_is_not_available',
                                      'item_code_for_consumable_that_is_available'])
     # Establish the simulation object
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1))
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -62,7 +62,6 @@ def bundle():
                  chronicsyndrome.ChronicSyndrome())
 
     # Run the simulation and flush the logger
-    sim.seed_rngs(0)
     sim.make_initial_population(n=2000)
     sim.simulate(end_date=Date(year=2010, month=1, day=31))
 

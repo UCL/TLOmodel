@@ -151,37 +151,6 @@ class Simulation:
             module.sim = self
             module.read_parameters('')
 
-    def seed_rngs(self, seed):
-        """Seed the random number generator (RNG) for simulation and registered modules
-
-        This method is deprecated, with the recommended approach to setting the seed
-        for the simulation instance and registered modules being to pass a ``seed``
-        argument when initialising the `Simulation` instance.
-
-        The ``Simulation`` instance RNG is seeded from a NumPy ``SeedSequence`` object,
-        with entropy seeded from the provided ``seed`` value. Each module then has its
-        own RNG with separate state, which is seeded by a ``SeedSequence` spawned from
-        the simulation level ``SeedSequence``.
-
-        :param seed: The seed for the top-level ``SeedSequence`` used to seed the
-            simulation RNG.
-        """
-        logger.warning(
-            key='warning',
-            data='seed_rngs() is deprecated. Provide `seed` argument to Simulation().'
-        )
-        self._seed_seq = np.random.SeedSequence(seed)
-        self.rng = np.random.RandomState(np.random.MT19937(self._seed_seq))
-        logger.info(
-            key='info', data=f'Simulation RNG user seed: {self._seed_seq.entropy}'
-            )
-        module_seed_seqs = self._seed_seq.spawn(len(self.modules))
-        for module, seed_seq in zip(self.modules.values(), module_seed_seqs):
-            logger.info(
-                key='info', data=f'{module.name} RNG auto seed: {seed_seq.entropy}'
-            )
-            module.rng = np.random.RandomState(np.random.MT19937(seed_seq))
-
     def make_initial_population(self, *, n):
         """Create the initial population to simulate.
 
