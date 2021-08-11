@@ -36,17 +36,16 @@ data_hiv_mphia_inc = pd.read_excel(xls, sheet_name='MPHIA_incidence2015')
 data_hiv_mphia_prev = pd.read_excel(xls, sheet_name='MPHIA_prevalence_art2015')
 
 data_dict['mphia_inc_2015'] = data_hiv_mphia_inc.loc[
-    (data_hiv_mphia_inc.age == "15-49"), "total_percent_annual_incidence"].values[0]
-
+    (data_hiv_mphia_inc.age == "15-49"), "total_percent_annual_incidence"].values[0]  # inc
 data_dict['mphia_prev_2015'] = data_hiv_mphia_prev.loc[
-    data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"].values[0]
+    data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"].values[0]  # prev
 
 # DHS HIV data
 data_hiv_dhs_prev = pd.read_excel(xls, sheet_name='DHS_prevalence')
 data_dict['dhs_prev_2010'] = data_hiv_dhs_prev.loc[
-    (data_hiv_dhs_prev.Year == 2010), "HIV prevalence among general population 15-49"]
+    (data_hiv_dhs_prev.Year == 2010), "HIV prevalence among general population 15-49"].values[0]
 data_dict['dhs_prev_2015'] = data_hiv_dhs_prev.loc[
-    (data_hiv_dhs_prev.Year == 2015), "HIV prevalence among general population 15-49"]
+    (data_hiv_dhs_prev.Year == 2015), "HIV prevalence among general population 15-49"].values[0]
 
 ## TB
 # TB WHO data
@@ -95,7 +94,7 @@ model_weight = 0.5
 
 # function which returns weighted mean of model outputs compared with data
 # requires model outputs as inputs
-def weighted_mean(model_outputs, data_items):
+def weighted_mean(model_dict, data_dict):
     # assert model_output is not empty
 
     # return calibration score (weighted mean deviance)
@@ -104,17 +103,22 @@ def weighted_mean(model_outputs, data_items):
     # then weighted sum of all components -> calibration score
 
     def deviance_function(data, model):
-        deviance = math.sqrt(((data - model) ^ 2) / data)
+
+        deviance = math.sqrt(((data - model) ** 2) / data)
 
         return deviance
 
     # hiv prevalence in adults 15-49: dhs 2010, 2015
-    hiv_prev_dhs = sum(deviance_function(data_items['dhs_prev_2010'], model_outputs['hiv_prev_adult_2010']),
-                   deviance_function(data_items['dhs_prev_2015'], model_outputs['hiv_prev_adult_2015'])) / 2
+    hiv_prev_dhs = (
+        deviance_function(data_dict['dhs_prev_2010'], model_dict['hiv_prev_adult_2010']) +
+        deviance_function(data_dict['dhs_prev_2015'], model_dict['hiv_prev_adult_2015'])
+    ) / 2
 
     # hiv prevalence mphia
+    hiv_prev_mphia = deviance_function(data_dict['mphia_prev_2015'], model_dict['hiv_prev_adult_2015'])
 
     # hiv incidence mphia
+    hiv_inc_mphia = deviance_function(data_dict['mphia_inc_2015'], model_dict['hiv_inc_adult_2015'])
 
     # aids deaths unaids
 
@@ -122,24 +126,38 @@ def weighted_mean(model_outputs, data_items):
 
     # tb death rate ntp
 
-    calibration_score = hiv_prev_dhs
+    calibration_score = hiv_prev_dhs + hiv_prev_mphia + hiv_inc_mphia
+
     return (calibration_score)
 
 
 # -------------------------------- CALIBRATION RESULTS -------------------------------- #
 
 # read in all output files
+# todo this will be replaced with a read in loop for batch files
+# load the results - desktop sample run
+with open(outputpath / 'default_run.pickle', 'rb') as f:
+    output = pickle.load(f)
 
 # get logged outputs for calibration into dict
 model_dict = {}
 
 # -------------------------------- MODEL OUTPUTS -------------------------------- #
-prev_and_inc_over_time = output['tlo.methods.hiv'][
-    'summary_inc_and_prev_for_adults_and_children_and_fsw']
-prev_and_inc_over_time = prev_and_inc_over_time.set_index('date')
 
-# HIV - prevalence among in adults aged 15+
-prev_and_inc_over_time['hiv_prev_adult_15plus'] * 100
+
+# HIV - prevalence among in adults aged 15-49
+model_hiv_prev = output['tlo.methods.hiv'][
+    'summary_inc_and_prev_for_adults_and_children_and_fsw']
+model_dict['hiv_prev_adult_2010'] = (model_hiv_prev.loc[
+    (model_hiv_prev.date == '2010-01-01'), 'hiv_prev_adult_1549'].values[0]) * 100
+model_dict['hiv_prev_adult_2015'] = (model_hiv_prev.loc[
+    (model_hiv_prev.date == '2015-01-01'), 'hiv_prev_adult_1549'].values[0]) * 100
+
+# hiv incidence in adults aged 15-49
+model_dict['hiv_inc_adult_2015'] = (model_hiv_prev.loc[
+    (model_hiv_prev.date == '2015-01-01'), 'hiv_adult_inc_1549'].values[0]) * 100
+
+
 
 # compute calibration score for each
 
