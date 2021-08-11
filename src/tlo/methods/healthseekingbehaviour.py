@@ -224,11 +224,9 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         """Select rows of `persons` dataframe with any symptoms columns non-zero."""
         if len(symptoms) == 0:
             raise ValueError('At least one symptom must be specified')
-        return persons.query(
-            # `sy_{symptom}` column being non-zero indicates symptom present and we
-            # perform logical-or of this condition across all symptoms
-            ' | '.join([f'(sy_{symptom} > 0)' for symptom in symptoms])
-        )
+        return persons[
+            (persons[[f'sy_{symptom}' for symptom in symptoms]] != 0).any(axis=1)
+        ]
 
     def apply(self, population):
         """Determine if persons with newly onset acute generic symptoms will seek care.
