@@ -89,6 +89,7 @@ class Tb(Module):
         # ------------------ testing status ------------------ #
         'tb_ever_tested': Property(Types.BOOL, 'ever had a tb test'),
         'tb_diagnosed': Property(Types.BOOL, 'person has current diagnosis of active tb'),
+        'tb_date_diagnosed': Property(Types.DATE, 'date most recent tb diagnosis'),
         'tb_diagnosed_mdr': Property(Types.BOOL, 'person has current diagnosis of active mdr-tb'),
 
         # ------------------ treatment status ------------------ #
@@ -703,6 +704,7 @@ class Tb(Module):
         # ------------------ testing status ------------------ #
         df['tb_ever_tested'] = False
         df['tb_diagnosed'] = False
+        df['tb_date_diagnosed'] = pd.NaT
         df['tb_diagnosed_mdr'] = False
 
         # ------------------ treatment status ------------------ #
@@ -888,6 +890,7 @@ class Tb(Module):
         df.at[child_id, 'tb_ever_tested'] = False
 
         df.at[child_id, 'tb_diagnosed'] = False
+        df.at[child_id, 'tb_date_diagnosed'] = pd.NaT
         df.at[child_id, 'tb_diagnosed_mdr'] = False
 
         # ------------------ treatment status ------------------ #
@@ -1540,6 +1543,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 )
                 if test_result and (person['tb_strain'] == 'mdr'):
                     df.at[person_id, 'tb_diagnosed_mdr'] = True
+                    df.at[person_id, 'tb_date_diagnosed'] = now
 
                 # if xpert not available perform sputum test
                 if test_result is None:
@@ -1560,6 +1564,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             # if any test returns positive result, refer for appropriate treatment
             if test_result:
                 df.at[person_id, 'tb_diagnosed'] = True
+                df.at[person_id, 'tb_date_diagnosed'] = now
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
@@ -1655,6 +1660,7 @@ class HSI_Tb_Xray(HSI_Event, IndividualScopeEventMixin):
         # if test returns positive result, refer for appropriate treatment
         if test_result:
             df.at[person_id, 'tb_diagnosed'] = True
+            df.at[person_id, 'tb_date_diagnosed'] = self.sim.date
 
         self.sim.modules['HealthSystem'].schedule_hsi_event(
             HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
@@ -1831,6 +1837,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
                 # if xpert test returns mdr-tb diagnosis
                 if test_result and (df.at[person_id, 'tb_strain'] == 'mdr'):
                     df.at[person_id, 'tb_diagnosed_mdr'] = True
+                    # already diagnosed with active tb so don't update tb_date_diagnosed
                     df.at[person_id, 'tb_treatment_failure'] = True
 
                     # restart treatment (new regimen) if newly diagnosed with mdr-tb
@@ -2099,6 +2106,12 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     },
                     )
 
+        # ------------------------------------ CASE NOTIFICATIONS ------------------------------------
+        # number diagnoses (new, relapse, reinfection) in last timeperiod
+        new_tb_diagnosis = len(
+            df[(df.tb_date_diagnosed > (now - DateOffset(months=self.repeat)))]
+        )
+
         # ------------------------------------ TREATMENT ------------------------------------
         # number of tb cases initiated treatment in last timeperiod / new active cases
         new_tb_tx = len(
@@ -2112,6 +2125,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='tb_treatment',
                     description='TB treatment coverage',
                     data={
+                        'tbNewDiagnosis': new_tb_diagnosis,
                         'tbTreatmentCoverage': tx_coverage,
                     },
                     )
