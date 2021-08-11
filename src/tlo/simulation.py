@@ -18,6 +18,73 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+class ModuleDependencyError(Exception):
+    """Raised when a module dependency is missing or there are circular dependencies."""
+
+
+def _topological_sort(
+    module_instances, get_dependencies=lambda module: module.INIT_DEPENDENCIES,
+):
+    """Generator which yields topological sort of modules based on their dependencies.
+
+    A topological sort of a dependency graph is ordered such that any dependencies of a
+    node in the graph are guaranteed to be yielded before the node itself. This
+    implementation uses a depth-first search algorithm
+    (https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search).
+
+    :param module_instances: The set of module instances to topologically sort. The
+        yielded module instances will consist of all nodes in this set which must
+        include instances of their (recursive) dependencies.
+    :param get_dependencies: Function which given a module gets the set of module
+        dependencies. Defaults to returing the ``Module.INIT_DEPENDENCIES`` class
+        attribute.
+    """
+    visited, currently_processing = set(), set()
+    module_instance_map = {type(module): module for module in module_instances}
+
+    def depth_first_search(module):
+        if module not in visited:
+            if module in currently_processing:
+                raise ModuleDependencyError(
+                    f'Module {module.__name__} has circular dependencies.'
+                )
+            currently_processing.add(module)
+            for dependency in sorted(
+                get_dependencies(module),
+                key=lambda m: m.__name__
+            ):
+                if dependency not in module_instance_map:
+                    alternatives_with_instances = [
+                        alternative for alternative in dependency.ALTERNATIVES
+                        if alternative in module_instance_map
+                    ]
+                    if len(alternatives_with_instances) == 0:
+                        raise ModuleDependencyError(
+                            f'Module {module.__name__} depends on {dependency.__name__}'
+                            ' which is missing from modules to register as are all of '
+                            f'the alternatives (if any) in {dependency.ALTERNATIVES}.'
+                        )
+                    elif len(alternatives_with_instances) > 1:
+                        raise ModuleDependencyError(
+                            f'Module {module.__name__} depends on {dependency.__name__}'
+                            ' which is missing from modules to register and there are '
+                            f'multiple alternatives {alternatives_with_instances} '
+                            'being registered so which to use to resolve dependency is '
+                            'ambiguous.'
+                        )
+                    else:
+                        yield from depth_first_search(alternatives_with_instances[0])
+
+                else:
+                    yield from depth_first_search(dependency)
+            currently_processing.remove(module)
+            visited.add(module)
+            yield module_instance_map[module]
+
+    for module_instance in module_instances:
+        yield from depth_first_search(type(module_instance))
+
+
 class Simulation:
     """The main control centre for a simulation.
 
@@ -129,7 +196,7 @@ class Simulation:
         :param modules: the disease module(s) to use as part of this simulation.
             Multiple modules may be given as separate arguments to one call.
         """
-        for module in modules:
+        for module in _topological_sort(modules):
             assert module.name not in self.modules, (
                 'A module named {} has already been registered'.format(module.name))
 
