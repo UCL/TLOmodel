@@ -21,6 +21,9 @@ logger.setLevel(logging.INFO)
 class ModuleDependencyError(Exception):
     """Raised when a module dependency is missing or there are circular dependencies."""
 
+class MultipleModuleInstanceError(Exception):
+    """Raised when multiple instances of the same module are registered."""
+
 
 def _topological_sort(
     module_instances, get_dependencies=lambda module: module.INIT_DEPENDENCIES,
@@ -40,7 +43,15 @@ def _topological_sort(
         attribute.
     """
     visited, currently_processing = set(), set()
+    module_instances = list(module_instances)
     module_instance_map = {type(module): module for module in module_instances}
+    if len(module_instance_map) != len(module_instances):
+        raise MultipleModuleInstanceError(
+            'Multiple instances of one or more `Module` subclasses were passed to the '
+            'Simulation.register method. If you are sure this is correct, you can '
+            'disable this check (and the automatic dependency sorting) by setting '
+            'check_and_sort_modules=False in Simulation.register.'
+        )
 
     def depth_first_search(module):
         if module not in visited:
@@ -58,20 +69,25 @@ def _topological_sort(
                         alternative for alternative in dependency.ALTERNATIVES
                         if alternative in module_instance_map
                     ]
-                    if len(alternatives_with_instances) == 0:
-                        raise ModuleDependencyError(
+                    if len(alternatives_with_instances) != 1:
+                        message = (
                             f'Module {module.__name__} depends on {dependency.__name__}'
-                            ' which is missing from modules to register as are all of '
-                            f'the alternatives (if any) in {dependency.ALTERNATIVES}.'
+                            ' which is missing from modules to register'
                         )
-                    elif len(alternatives_with_instances) > 1:
-                        raise ModuleDependencyError(
-                            f'Module {module.__name__} depends on {dependency.__name__}'
-                            ' which is missing from modules to register and there are '
-                            f'multiple alternatives {alternatives_with_instances} '
-                            'being registered so which to use to resolve dependency is '
-                            'ambiguous.'
-                        )
+                        if len(dependency.ALTERNATIVES) == 0:
+                            message += '.'
+                        elif len(alternatives_with_instances) == 0:
+                            alt_string = ", ".join(
+                                m.__name__ for m in dependency.ALTERNATIVES)
+                            message += f' as are all of the alternatives: {alt_string}.'
+                        else:
+                            message += (
+                                'and there are multiple alternatives '
+                                f'({alternatives_with_instances}) registered so which '
+                                'to use to resolve dependency is ambiguous.'
+                            )
+                        raise ModuleDependencyError(message)
+
                     else:
                         yield from depth_first_search(alternatives_with_instances[0])
 
@@ -190,13 +206,23 @@ class Simulation:
     def _set_module_log_level(self, module_path, level):
         logging.set_logging_levels({module_path: level}, [module_path])
 
-    def register(self, *modules):
+    def register(self, *modules, check_and_sort_modules=True):
         """Register one or more disease modules with the simulation.
 
         :param modules: the disease module(s) to use as part of this simulation.
             Multiple modules may be given as separate arguments to one call.
+        :param check_and_sort_modules: Whether to check if all of each modules declared
+            dependencies have been included in the set of modules to be registered, and
+            to automatically sort the modules so that any dependencies of a module are
+            initialised before the module. An ``ModuleDependencyError`` exception will
+            be raised if there are missing dependencies or circular dependencies between
+            modules that cannot be resolved. If this flag is set to `True` there is also
+            a requirement that at most one instance of each module is registered and
+            ``MultipleModuleInstanceError`` will be raised if this is not the case.
         """
-        for module in _topological_sort(modules):
+        if check_and_sort_modules:
+            modules = _topological_sort(modules)
+        for module in modules:
             assert module.name not in self.modules, (
                 'A module named {} has already been registered'.format(module.name))
 
