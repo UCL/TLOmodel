@@ -30,8 +30,10 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
 from tlo.methods.causes import Cause
-from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.symptommanager import Symptom
+from tlo.methods.demography import Demography
+from tlo.methods.enhanced_lifestyle import Lifestyle
+from tlo.methods.healthsystem import HSI_Event, HealthSystem
+from tlo.methods.symptommanager import Symptom, SymptomManager
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -55,6 +57,8 @@ class Diarrhoea(Module):
         'astrovirus',
         'tEPEC'
     ]
+
+    INIT_DEPENDENCIES = {Demography, Lifestyle, HealthSystem, SymptomManager}
 
     # Declare Metadata
     METADATA = {

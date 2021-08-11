@@ -16,10 +16,11 @@ from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, Reg
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
-from tlo.methods.demography import InstantaneousDeath
+from tlo.methods.demography import Demography, InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.symptommanager import Symptom
+from tlo.methods.enhanced_lifestyle import Lifestyle
+from tlo.methods.healthsystem import HSI_Event, HealthSystem
+from tlo.methods.symptommanager import Symptom, SymptomManager
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -34,6 +35,8 @@ class OesophagealCancer(Module):
         self.linear_models_for_progession_of_oc_status = dict()
         self.lm_onset_dysphagia = None
         self.daly_wts = dict()
+
+    INIT_DEPENDENCIES = {Demography, HealthSystem, Lifestyle, SymptomManager}
 
     # Declare Metadata
     METADATA = {

@@ -6,8 +6,9 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
-from tlo.methods.demography import InstantaneousDeath
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.demography import Demography, InstantaneousDeath
+from tlo.methods.healthburden import HealthBurden
+from tlo.methods.healthsystem import HSI_Event, HealthSystem
 
 # todo: note this code is becoming very depracated and does not include health interactions
 
@@ -20,6 +21,8 @@ class Epilepsy(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+    INIT_DEPENDENCIES = {Demography, HealthBurden, HealthSystem}
 
     # Declare Metadata
     METADATA = {

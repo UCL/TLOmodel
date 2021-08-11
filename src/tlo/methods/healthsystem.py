@@ -21,6 +21,7 @@ import tlo
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
+from tlo.methods.demography import Demography
 from tlo.methods.dxmanager import DxManager
 
 logger = logging.getLogger(__name__)
@@ -53,6 +54,8 @@ class HealthSystem(Module):
         "general_bed",
         "non_bed_space",
     ]
+
+    INIT_DEPENDENCIES = {Demography}
 
     PARAMETERS = {
         'Officer_Types': Parameter(Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),

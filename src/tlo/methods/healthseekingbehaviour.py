@@ -13,10 +13,13 @@ from tlo import DateOffset, Module, Parameter, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
+from tlo.methods.demography import Demography
+from tlo.methods.healthsystem import HealthSystem
 from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericEmergencyFirstApptAtFacilityLevel1,
     HSI_GenericFirstApptAtFacilityLevel1,
 )
+from tlo.methods.symptommanager import SymptomManager
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -32,6 +35,8 @@ class HealthSeekingBehaviour(Module):
     to if the symptom is associated with a particular effect.
 
     """
+
+    INIT_DEPENDENCIES = {Demography, HealthSystem, SymptomManager}
 
     # Declare Metadata
     METADATA = {Metadata.USES_HEALTHSYSTEM}

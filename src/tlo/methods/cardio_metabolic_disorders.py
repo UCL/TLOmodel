@@ -15,7 +15,10 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods import demography as de
 from tlo.methods.causes import Cause
-from tlo.methods.demography import InstantaneousDeath
+from tlo.methods.demography import Demography, InstantaneousDeath
+from tlo.methods.enhanced_lifestyle import Lifestyle
+from tlo.methods.healthsystem import HealthSystem
+from tlo.methods.symptommanager import SymptomManager
 
 # from tlo.methods.healthsystem import HSI_Event
 
@@ -45,6 +48,8 @@ class CardioMetabolicDisorders(Module):
     # save a master list of the events that are covered in this module
     events = ['ever_stroke',
               'ever_heart_attack']
+
+    INIT_DEPENDENCIES = {Demography, Lifestyle, HealthSystem, SymptomManager}
 
     # Declare Metadata (this is for a typical 'Disease Module')
     METADATA = {

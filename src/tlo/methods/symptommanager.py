@@ -20,6 +20,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
+from tlo.methods.demography import Demography
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -151,6 +152,8 @@ class SymptomManager(Module):
      handled here. This module can also causes symptoms that are not related to any disease module (representing those
      caused by conditions not represented explicitly in the model).
     """
+
+    INIT_DEPENDENCIES = {Demography}
 
     # Declare Metadata
     METADATA = {}

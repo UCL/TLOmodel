@@ -14,6 +14,7 @@ from tlo.methods.causes import (
     collect_causes_from_disease_modules,
     create_mappers_from_causes_to_label,
 )
+from tlo.methods.demography import Demography
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -34,6 +35,8 @@ class HealthBurden(Module):
         self.YearsLivedWithDisability = None
         self.recognised_modules_names = None
         self.causes_of_disability = None
+
+    INIT_DEPENDENCIES = {Demography}
 
     # Declare Metadata
     METADATA = {}

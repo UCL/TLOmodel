@@ -182,6 +182,16 @@ class Module:
     `sim`
         The simulation this module is part of, once registered.
     """
+
+    # Subclasses can override this to declare the set of initialisation dependencies
+    # Declares modules that need to be registered in simulation and initialised before
+    # this module
+    INIT_DEPENDENCIES = frozenset()
+
+    # Subclasses can override this to declare the set of alternative modules that can be
+    # used in place of this module by modules which require this module as a dependency
+    ALTERNATIVES = frozenset()
+
     # Subclasses can override this set to add metadata tags to their class
     # See tlo.methods.Metadata class
     METADATA = {}
