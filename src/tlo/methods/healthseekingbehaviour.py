@@ -199,7 +199,7 @@ class HealthSeekingBehaviour(Module):
                 ),
                 # Second set of predictors are the symptom specific odd ratios
                 *(
-                    Predictor(f'sy_{symptom}').when(True, odds_ratios[symptom])
+                    Predictor(f'sy_{symptom}').when('>0', odds_ratios[symptom])
                     for symptom in care_seeking_symptoms
                 )
             )
