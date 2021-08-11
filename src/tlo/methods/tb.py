@@ -534,30 +534,30 @@ class Tb(Module):
 
         df.loc[idx_new_latent_mdr, 'tb_strain'] = 'mdr'
 
-    def baseline_active(self, population):
-        """
-        sample from the baseline population to assign active tb infections
-        using 2010 incidence estimates
-        no differences in baseline active tb by age/sex
-        """
-
-        df = population.props
-        now = self.sim.date
-        p = self.parameters
-
-        eligible_for_active_tb = df.loc[df.is_alive &
-                                        (df.tb_inf == 'uninfected')].index
-
-        sample_active_tb = self.rng.random_sample(len(eligible_for_active_tb)) < (p['incidence_active_tb_2010_per100k'] / 100000)
-        active_tb_idx = eligible_for_active_tb[sample_active_tb]
-
-        # schedule for time now up to 1 year
-        for person_id in active_tb_idx:
-            date_progression = now + \
-                               pd.DateOffset(days=self.rng.randint(0, 365))
-            self.sim.schedule_event(
-                TbActiveEvent(self, person_id), date_progression
-            )
+    # def baseline_active(self, population):
+    #     """
+    #     sample from the baseline population to assign active tb infections
+    #     using 2010 incidence estimates
+    #     no differences in baseline active tb by age/sex
+    #     """
+    #
+    #     df = population.props
+    #     now = self.sim.date
+    #     p = self.parameters
+    #
+    #     eligible_for_active_tb = df.loc[df.is_alive &
+    #                                     (df.tb_inf == 'uninfected')].index
+    #
+    #     sample_active_tb = self.rng.random_sample(len(eligible_for_active_tb)) < (p['incidence_active_tb_2010_per100k'] / 100000)
+    #     active_tb_idx = eligible_for_active_tb[sample_active_tb]
+    #
+    #     # schedule for time now up to 1 year
+    #     for person_id in active_tb_idx:
+    #         date_progression = now + \
+    #                            pd.DateOffset(days=self.rng.randint(0, 365))
+    #         self.sim.schedule_event(
+    #             TbActiveEvent(self, person_id), date_progression
+    #         )
 
     def progression_to_active(self, population):
         # from the new latent infections, select and schedule progression to active disease
@@ -719,7 +719,7 @@ class Tb(Module):
         # ------------------ infection status ------------------ #
 
         self.baseline_latent(population)  # allocate baseline prevalence of latent infections
-        self.baseline_active(population)  # allocate active infections from baseline population
+        # self.baseline_active(population)  # allocate active infections from baseline population
 
     def initialise_simulation(self, sim):
         """

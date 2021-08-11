@@ -172,19 +172,17 @@ def weighted_mean(model_dict, data_dict):
     return (calibration_score)
 
 
-# -------------------------------- CALIBRATION RESULTS -------------------------------- #
+# -------------------------------- MODEL OUTPUTS -------------------------------- #
 
 # read in all output files
 # todo this will be replaced with a read in loop for batch files
+
 # load the results - desktop sample run
 with open(outputpath / 'default_run.pickle', 'rb') as f:
     output = pickle.load(f)
 
 # get logged outputs for calibration into dict
 model_dict = {}
-
-# -------------------------------- MODEL OUTPUTS -------------------------------- #
-
 
 # HIV - prevalence among in adults aged 15-49
 model_hiv_prev = output['tlo.methods.hiv'][
@@ -253,9 +251,9 @@ tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format
 # tb mortality rates per 100k person-years
 model_dict['TB_mortality_per_100k'] = (tot_tb_non_hiv_deaths / py) * 100000
 
-
-
+# -------------------------------- CALIBRATION RESULTS -------------------------------- #
 
 # compute calibration score for each
+calibration_score = weighted_mean(data_dict, model_dict)
 
 # select best-fitting model
