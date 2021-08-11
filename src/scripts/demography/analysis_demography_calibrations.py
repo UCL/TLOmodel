@@ -336,5 +336,7 @@ plt.savefig(outputpath / ("Deaths_By_Age_" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
 # %% Causes of Deaths
-
-death_summary = compare_number_of_deaths(parsed_output, resourcefilepath)
+log_file_location = Path('./outputs/demography_calibrations__2021-08-07T124051.log')
+resource_file_location = Path('./resources')
+death_summary = compare_number_of_deaths(log_file_location, resource_file_location)
+#death_summary = compare_number_of_deaths(parsed_output, resourcefilepath)
