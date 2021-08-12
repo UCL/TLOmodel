@@ -11,12 +11,9 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
-from tlo.methods.contraception import Contraception
-from tlo.methods.demography import Demography
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.enhanced_lifestyle import Lifestyle
-from tlo.methods.healthsystem import HealthSystem, HSI_Event
-from tlo.methods.symptommanager import Symptom, SymptomManager
+from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -32,7 +29,7 @@ class Depression(Module):
         self.resourcefilepath = resourcefilepath
 
     INIT_DEPENDENCIES = {
-        Demography, Contraception, HealthSystem, Lifestyle, SymptomManager
+        'Demography', 'Contraception', 'HealthSystem', 'Lifestyle', 'SymptomManager'
     }
 
     # Declare Metadata

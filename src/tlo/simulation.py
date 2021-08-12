@@ -43,9 +43,8 @@ def _topological_sort(
         dependencies. Defaults to returing the ``Module.INIT_DEPENDENCIES`` class
         attribute.
     """
-    visited, currently_processing = set(), set()
     module_instances = list(module_instances)
-    module_instance_map = {type(module): module for module in module_instances}
+    module_instance_map = {type(module).__name__: module for module in module_instances}
     if len(module_instance_map) != len(module_instances):
         raise MultipleModuleInstanceError(
             'Multiple instances of one or more `Module` subclasses were passed to the '
@@ -53,38 +52,32 @@ def _topological_sort(
             'disable this check (and the automatic dependency sorting) by setting '
             'check_and_sort_modules=False in Simulation.register.'
         )
+    visited, currently_processing = set(), set()
 
     def depth_first_search(module):
         if module not in visited:
             if module in currently_processing:
                 raise ModuleDependencyError(
-                    f'Module {module.__name__} has circular dependencies.'
+                    f'Module {module} has circular dependencies.'
                 )
             currently_processing.add(module)
-            for dependency in sorted(
-                get_dependencies(module),
-                key=lambda m: m.__name__
-            ):
+            for dependency in sorted(get_dependencies(module_instance_map[module])):
                 if dependency not in module_instance_map:
                     alternatives_with_instances = [
-                        alternative for alternative in dependency.ALTERNATIVES
-                        if alternative in module_instance_map
+                        name for name, instance in module_instance_map.items()
+                        if dependency in instance.ALTERNATIVE_TO
                     ]
                     if len(alternatives_with_instances) != 1:
                         message = (
-                            f'Module {module.__name__} depends on {dependency.__name__}'
-                            ' which is missing from modules to register'
+                            f'Module {module} depends on {dependency} which is '
+                            'missing from modules to register'
                         )
-                        if len(dependency.ALTERNATIVES) == 0:
-                            message += '.'
-                        elif len(alternatives_with_instances) == 0:
-                            alt_string = ", ".join(
-                                m.__name__ for m in dependency.ALTERNATIVES)
-                            message += f' as are all of the alternatives: {alt_string}.'
+                        if len(alternatives_with_instances) == 0:
+                            message += ' as are any alternatives to {dependency}.'
                         else:
                             message += (
                                 'and there are multiple alternatives '
-                                f'({alternatives_with_instances}) registered so which '
+                                f'({alternatives_with_instances}) so which '
                                 'to use to resolve dependency is ambiguous.'
                             )
                         raise ModuleDependencyError(message)
@@ -99,7 +92,7 @@ def _topological_sort(
             yield module_instance_map[module]
 
     for module_instance in module_instances:
-        yield from depth_first_search(type(module_instance))
+        yield from depth_first_search(type(module_instance).__name__)
 
 
 class Simulation:

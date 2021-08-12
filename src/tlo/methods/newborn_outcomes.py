@@ -9,13 +9,10 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, demography, newborn_outcomes_lm
 from tlo.methods.causes import Cause
-from tlo.methods.demography import Demography
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HealthSystem, HSI_Event
+from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.postnatal_supervisor import HSI_PostnatalSupervisor_NeonatalWardInpatientCare
-from tlo.methods.simplified_births import SimplifiedBirths
-from tlo.methods.symptommanager import SymptomManager
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -47,9 +44,7 @@ class NewbornOutcomes(Module):
         # in the LoggingEvent to calculate key outcomes (i.e. incidence rates, neonatal mortality rate etc)
         self.newborn_complication_tracker = dict()
 
-    INIT_DEPENDENCIES = {Demography, HealthSystem, SymptomManager}
-
-    ALTERNATIVES = {SimplifiedBirths}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,

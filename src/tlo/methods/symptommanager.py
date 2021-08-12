@@ -20,7 +20,6 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
-from tlo.methods.demography import Demography
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -153,7 +152,7 @@ class SymptomManager(Module):
      caused by conditions not represented explicitly in the model).
     """
 
-    INIT_DEPENDENCIES = {Demography}
+    INIT_DEPENDENCIES = {'Demography'}
 
     # Declare Metadata
     METADATA = {}

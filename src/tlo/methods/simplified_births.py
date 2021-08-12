@@ -8,7 +8,6 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
-from tlo.methods.demography import Demography
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -18,7 +17,15 @@ class SimplifiedBirths(Module):
     """
     A simplified births module responsible for generating births in a simplified way and assign mother ids to newborns.
     """
-    INIT_DEPENDENCIES = {Demography}
+    INIT_DEPENDENCIES = {'Demography'}
+
+    ALTERNATIVE_TO = {
+        'Contraception',
+        'Labour',
+        'NewbornOutcomes',
+        'PostnatalSupervisor',
+        'PregnancySupervisor'
+    }
 
     METADATA = {}
 

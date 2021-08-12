@@ -8,14 +8,10 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, labour_lm
 from tlo.methods.causes import Cause
-from tlo.methods.demography import Demography
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.enhanced_lifestyle import Lifestyle
-from tlo.methods.healthsystem import HealthSystem, HSI_Event
+from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneEvent
-from tlo.methods.pregnancy_supervisor import PregnancySupervisor
-from tlo.methods.simplified_births import SimplifiedBirths
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -48,9 +44,9 @@ class Labour(Module):
         self.possible_intrapartum_complications = list()
         self.possible_postpartum_complications = list()
 
-    INIT_DEPENDENCIES = {Demography, Lifestyle, HealthSystem, PregnancySupervisor}
-
-    ALTERNATIVES = {SimplifiedBirths}
+    INIT_DEPENDENCIES = {
+        'Demography', 'Lifestyle', 'HealthSystem', 'PregnancySupervisor'
+    }
 
     METADATA = {
         Metadata.DISEASE_MODULE,

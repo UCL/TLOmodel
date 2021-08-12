@@ -188,9 +188,9 @@ class Module:
     # this module
     INIT_DEPENDENCIES = frozenset()
 
-    # Subclasses can override this to declare the set of alternative modules that can be
-    # used in place of this module by modules which require this module as a dependency
-    ALTERNATIVES = frozenset()
+    # Subclasses can override this to declare the set of modules that this module can be
+    # used in place of as a dependency
+    ALTERNATIVE_TO = frozenset()
 
     # Subclasses can override this set to add metadata tags to their class
     # See tlo.methods.Metadata class

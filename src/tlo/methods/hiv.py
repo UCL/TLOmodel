@@ -34,11 +34,9 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
 from tlo.methods.causes import Cause
-from tlo.methods.demography import Demography
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.enhanced_lifestyle import Lifestyle
-from tlo.methods.healthsystem import HealthSystem, HSI_Event
-from tlo.methods.symptommanager import Symptom, SymptomManager
+from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
@@ -63,7 +61,7 @@ class Hiv(Module):
         self.lm = dict()
         self.footprints_for_consumables_required = dict()
 
-    INIT_DEPENDENCIES = {Demography, Lifestyle, HealthSystem, SymptomManager}
+    INIT_DEPENDENCIES = {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,

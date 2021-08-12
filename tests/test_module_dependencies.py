@@ -10,9 +10,6 @@ import pytest
 
 import tlo.methods
 from tlo import Date, Module, Simulation
-from tlo.methods.hiv import DummyHivModule
-from tlo.methods.skeleton import Skeleton
-from tlo.methods.tb import Tb
 from tlo.simulation import ModuleDependencyError
 
 try:
@@ -25,27 +22,33 @@ simulation_start_date = Date(2010, 1, 1)
 simulation_end_date = Date(2011, 1, 1)
 simulation_seed = 645407762
 simulation_initial_population = 10
-excluded_modules = {Module, Skeleton, Tb, DummyHivModule}
 
 
-def is_valid_tlo_module_class(obj):
+def is_valid_tlo_module_class(obj, excluded_modules):
     return (
         inspect.isclass(obj)
         and issubclass(obj, Module)
-        and obj not in excluded_modules
+        and obj.__name__ not in excluded_modules
     )
 
 
-def get_all_module_classes():
+def get_module_class_map(excluded_modules):
     methods_package_path = os.path.dirname(inspect.getfile(tlo.methods))
-    module_classes = set()
+    module_classes = {}
     for _, methods_module_name, _ in pkgutil.iter_modules([methods_package_path]):
         methods_module = importlib.import_module(f'tlo.methods.{methods_module_name}')
-        module_classes |= {
-            obj for _, obj in inspect.getmembers(methods_module)
-            if is_valid_tlo_module_class(obj)
-        }
+        for _, obj in inspect.getmembers(methods_module):
+            if is_valid_tlo_module_class(obj, excluded_modules):
+                if module_classes.get(obj.__name__) not in {None, obj}:
+                    raise RuntimeError(
+                        f'Multiple modules with name {obj.__name__} are defined'
+                    )
+                else:
+                    module_classes[obj.__name__] = obj
     return module_classes
+
+
+module_class_map = get_module_class_map({'Module', 'Skeleton', 'Tb', 'DummyHivModule'})
 
 
 def get_dependencies_and_initialise(module_class, excluded_module_classes=None):
@@ -55,8 +58,8 @@ def get_dependencies_and_initialise(module_class, excluded_module_classes=None):
 
     def depth_first_search(module_class):
         if module_class not in (visited | excluded_module_classes):
-            for dependency in module_class.INIT_DEPENDENCIES:
-                yield from depth_first_search(dependency)
+            for dependency_name in module_class.INIT_DEPENDENCIES:
+                yield from depth_first_search(module_class_map[dependency_name])
             visited.add(module_class)
             yield module_class(resourcefilepath=resourcefilepath)
 
@@ -68,7 +71,7 @@ def sim():
     return Simulation(start_date=simulation_start_date, seed=simulation_seed)
 
 
-@pytest.fixture(params=get_all_module_classes())
+@pytest.fixture(params=module_class_map.values())
 def module_class(request):
     return request.param
 
@@ -80,7 +83,7 @@ def dependent_module_pair():
         pass
 
     class Module2(Module):
-        INIT_DEPENDENCIES = {Module1}
+        INIT_DEPENDENCIES = {'Module1'}
 
     return Module1, Module2
 
@@ -98,7 +101,7 @@ def test_circular_dependency_raises_error_on_register(sim, dependent_module_pair
 
     Module1, Module2 = dependent_module_pair
 
-    Module1.INIT_DEPENDENCIES |= {Module2}
+    Module1.INIT_DEPENDENCIES |= {'Module2'}
 
     with pytest.raises(ModuleDependencyError, match="circular"):
         sim.register(Module1(), Module2())
@@ -124,16 +127,17 @@ def test_module_init_dependencies_complete(sim, module_class):
             f"Module {module_class.__name__} appears to be missing dependencies "
             f"required to run initialise_population and initialise_simulation in the "
             f"INIT_DEPENDENCIES class attribute which is currently set to "
-            f"{{{', '.join(m.__name__ for m in module_class.INIT_DEPENDENCIES)}}}."
+            f"{{{', '.join(module_class.INIT_DEPENDENCIES)}}}."
         )
 
 
 def test_module_init_dependencies_all_required(sim, module_class):
     """Check that all INIT_DEPENDENCIES are required for successful initialisation"""
-    for dependency in module_class.INIT_DEPENDENCIES:
+    for dependency_name in module_class.INIT_DEPENDENCIES:
+        dependency_class = module_class_map[dependency_name]
         try:
             register_modules_and_initialise(
-                sim, get_dependencies_and_initialise(module_class, {dependency})
+                sim, get_dependencies_and_initialise(module_class, {dependency_class})
             )
         except Exception:
             # This is the expected behaviour i.e. that trying to initialise with
@@ -141,7 +145,7 @@ def test_module_init_dependencies_all_required(sim, module_class):
             pass
         else:
             pytest.fail(
-                f'The dependency {dependency.__name__} of {module_class.__name__} '
+                f'The dependency {dependency_name} of {module_class.__name__} '
                 'does not appear to be required to run initialise_population and '
                 'initialise_simulation without errors and so should be removed '
                 f'from {module_class.__name__}.INIT_DEPENDENCIES'

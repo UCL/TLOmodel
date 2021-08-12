@@ -8,11 +8,9 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, postnatal_supervisor_lm
 from tlo.methods.causes import Cause
-from tlo.methods.demography import Demography
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HealthSystem, HSI_Event
+from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
-from tlo.methods.simplified_births import SimplifiedBirths
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -49,9 +47,7 @@ class PostnatalSupervisor(Module):
         # in the LoggingEvent to calculate key outcomes (i.e. incidence rates, neonatal mortality rate etc)
         self.postnatal_tracker = dict()
 
-    INIT_DEPENDENCIES = {Demography, HealthSystem}
-
-    ALTERNATIVES = {SimplifiedBirths}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem'}
 
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHSYSTEM,

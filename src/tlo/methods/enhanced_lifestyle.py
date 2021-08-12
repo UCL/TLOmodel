@@ -10,7 +10,6 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
-from tlo.methods.demography import Demography
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -30,7 +29,7 @@ class Lifestyle(Module):
         super().__init__(name)
         self.resourcefilepath: Path = resourcefilepath
 
-    INIT_DEPENDENCIES = {Demography}
+    INIT_DEPENDENCIES = {'Demography'}
 
     # Declare Metadata
     METADATA = {}

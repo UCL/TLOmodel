@@ -5,8 +5,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
-from tlo.methods.demography import Demography
-from tlo.methods.healthsystem import HealthSystem, HSI_Event
+from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -18,7 +17,7 @@ class Epi(Module):
     it sets up the vaccination schedule for all children from birth
     """
 
-    INIT_DEPENDENCIES = {Demography, HealthSystem}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem'}
 
     # Declare Metadata
     METADATA = {Metadata.USES_HEALTHSYSTEM}

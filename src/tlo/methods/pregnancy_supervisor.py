@@ -8,8 +8,6 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, labour
 from tlo.methods.causes import Cause
-from tlo.methods.demography import Demography
-from tlo.methods.simplified_births import SimplifiedBirths
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -42,9 +40,7 @@ class PregnancySupervisor(Module):
         # This variable will store a Bitset handler for the property ps_abortion_complications
         self.abortion_complication = None
 
-    INIT_DEPENDENCIES = {Demography}
-
-    ALTERNATIVES = {SimplifiedBirths}
+    INIT_DEPENDENCIES = {'Demography'}
 
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHBURDEN}

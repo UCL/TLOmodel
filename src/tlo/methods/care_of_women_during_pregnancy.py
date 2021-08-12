@@ -7,13 +7,11 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import Metadata
-from tlo.methods.demography import Demography
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HealthSystem, HSI_Event
+from tlo.methods.healthsystem import HSI_Event
 # from tlo.methods.tb import HSI_TbScreening
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.labour import LabourOnsetEvent
-from tlo.methods.pregnancy_supervisor import PregnancySupervisor
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -51,7 +49,7 @@ class CareOfWomenDuringPregnancy(Module):
         # logging event
         self.anc_tracker = dict()
 
-    INIT_DEPENDENCIES = {Demography, HealthSystem, PregnancySupervisor}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'PregnancySupervisor'}
 
     METADATA = {
         Metadata.USES_HEALTHSYSTEM,

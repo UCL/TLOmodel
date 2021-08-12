@@ -12,11 +12,9 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, demography
 from tlo.methods.causes import Cause
-from tlo.methods.contraception import Contraception
-from tlo.methods.demography import Demography
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HealthSystem, HSI_Event
-from tlo.methods.symptommanager import Symptom, SymptomManager
+from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -36,7 +34,9 @@ class Malaria(Module):
         self.itn_irs = None
         self.all_inc = None
 
-    INIT_DEPENDENCIES = {Demography, Contraception, HealthSystem, SymptomManager}
+    INIT_DEPENDENCIES = {
+        'Demography', 'Contraception', 'HealthSystem', 'SymptomManager'
+    }
 
     METADATA = {
         Metadata.DISEASE_MODULE,

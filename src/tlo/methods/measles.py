@@ -7,9 +7,8 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
-from tlo.methods.demography import Demography
-from tlo.methods.healthsystem import HealthSystem, HSI_Event
-from tlo.methods.symptommanager import Symptom, SymptomManager
+from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -37,7 +36,7 @@ class Measles(Module):
             'eye_complaint'
         }
 
-    INIT_DEPENDENCIES = {Demography, HealthSystem, SymptomManager}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
     # declare metadata
     METADATA = {

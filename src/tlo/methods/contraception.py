@@ -10,8 +10,6 @@ import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
-from tlo.methods.demography import Demography
-from tlo.methods.simplified_births import SimplifiedBirths
 from tlo.util import transition_states
 
 logger = logging.getLogger(__name__)
@@ -30,9 +28,7 @@ class Contraception(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-    INIT_DEPENDENCIES = {Demography}
-
-    ALTERNATIVES = {SimplifiedBirths}
+    INIT_DEPENDENCIES = {'Demography'}
 
     # Declare Metadata
     METADATA = {}
