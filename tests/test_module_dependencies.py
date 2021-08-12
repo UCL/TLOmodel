@@ -66,6 +66,7 @@ def get_dependencies_and_initialise(module_class, excluded_module_classes=None):
 def sim():
     return Simulation(start_date=simulation_start_date, seed=simulation_seed)
 
+
 @pytest.fixture(params=get_all_module_classes())
 def module_class(request):
     return request.param

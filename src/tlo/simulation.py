@@ -21,6 +21,7 @@ logger.setLevel(logging.INFO)
 class ModuleDependencyError(Exception):
     """Raised when a module dependency is missing or there are circular dependencies."""
 
+
 class MultipleModuleInstanceError(Exception):
     """Raised when multiple instances of the same module are registered."""
 
