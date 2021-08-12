@@ -269,13 +269,13 @@ class Demography(Module):
 
         df.loc[child_id, child.keys()] = child.values()
 
-        # Log the birth:
-        logger.info(
-            key='on_birth',
-            data={'mother': mother_id,
-                  'child': child_id,
-                  'mother_age': df.at[mother_id, 'age_years']}
-        )
+#       # Log the birth:
+#       logger.info(
+#           key='on_birth',
+#           data={'mother': mother_id,
+#                 'child': child_id,
+#                 'mother_age': df.at[mother_id, 'age_years']}
+#       )
 
     def on_simulation_end(self):
         """Things to do at end of the simulation:
@@ -312,14 +312,14 @@ class Demography(Module):
 
         # 3) Output to the log mappers for causes of death
         mapper_from_tlo_causes, mapper_from_gbd_causes = self.create_mappers_from_causes_of_death_to_label()
-        logger.info(
-            key='mapper_from_tlo_cause_to_common_label',
-            data=mapper_from_tlo_causes
-        )
-        logger.info(
-            key='mapper_from_gbd_cause_to_common_label',
-            data=mapper_from_gbd_causes
-        )
+#       logger.info(
+#           key='mapper_from_tlo_cause_to_common_label',
+#           data=mapper_from_tlo_causes
+#       )
+#       logger.info(
+#           key='mapper_from_gbd_cause_to_common_label',
+#           data=mapper_from_gbd_causes
+#       )
 
     def do_death(self, individual_id: int, cause: str, originating_module: Module):
         """Register and log the death of an individual from a specific cause.
@@ -361,12 +361,12 @@ class Demography(Module):
                 'pregnancy': person['is_pregnant'],
             })
 
-        logger.info(key='death', data=data_to_log_for_each_death)
+#       logger.info(key='death', data=data_to_log_for_each_death)
 
         # - log all the properties for the deceased person
-        logger.info(key='properties_of_deceased_persons',
-                    data=person.to_dict(),
-                    description='values of all properties at the time of death for deceased persons')
+#       logger.info(key='properties_of_deceased_persons',
+#                   data=person.to_dict(),
+#                   description='values of all properties at the time of death for deceased persons')
 
         # Report the deaths to the healthburden module (if present) so that it tracks the live years lost
         if 'HealthBurden' in self.sim.modules.keys():
@@ -530,11 +530,11 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
         # Get the proportion of the total death rates that the OtherDeathPollEvent must represent (and log it)
         prop_of_deaths_to_represent = self.get_proportion_of_deaths_to_represent_as_other_deaths()
-        logger.info(
-            key='other_deaths',
-            data=prop_of_deaths_to_represent.reset_index().to_dict(),
-            description='proportion of all deaths that are represented as OtherDeaths'
-        )
+#       logger.info(
+#           key='other_deaths',
+#           data=prop_of_deaths_to_represent.reset_index().to_dict(),
+#           description='proportion of all deaths that are represented as OtherDeaths'
+#       )
 
         # Mulitiply probabilities by the proportion of deaths that are to be represented by OtherDeathPollEvent
         all_cause_mort_risk['age_group'] = all_cause_mort_risk['age_years'].map(self.module.AGE_RANGE_LOOKUP)
@@ -646,21 +646,21 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # 2) Compute Statistics for the log
         sex_count = df[df.is_alive].groupby('sex').size()
 
-        logger.info(
-            key='population',
-            data={'total': sum(sex_count),
-                  'male': sex_count['M'],
-                  'female': sex_count['F']
-                  })
+#       logger.info(
+#           key='population',
+#           data={'total': sum(sex_count),
+#                 'male': sex_count['M'],
+#                 'female': sex_count['F']
+#                 })
 
         # (nb. if you groupby both sex and age_range, you weirdly lose categories where size==0, so
         # get the counts separately.)
         m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range').size()
         f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
 
-        logger.info(key='age_range_m', data=m_age_counts.to_dict())
+#       logger.info(key='age_range_m', data=m_age_counts.to_dict())
 
-        logger.info(key='age_range_f', data=f_age_counts.to_dict())
+#       logger.info(key='age_range_f', data=f_age_counts.to_dict())
 
         # Output by single year of age for under-fives
         # (need to guarantee output always is for each of the years - even if size() is 0)
@@ -669,11 +669,11 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             fill_value=0
         )
 
-        logger.info(key='num_children', data=num_children.to_dict())
+#       logger.info(key='num_children', data=num_children.to_dict())
 
         # Output the person-years lived by single year of age in the past year
         py = self.module.calc_py_lived_in_last_year()
-        logger.info(key='person_years', data=py.to_dict())
+#       logger.info(key='person_years', data=py.to_dict())
 
 
 def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False):

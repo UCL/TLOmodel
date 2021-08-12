@@ -10,15 +10,19 @@ from matplotlib import pyplot as plt
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import (
+    contraception,
     demography,
-    diarrhoea,
-    dx_algorithm_child,
+    epilepsy,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    simplified_births,
+    labour,
+    pregnancy_supervisor,
     symptommanager,
+    care_of_women_during_pregnancy,
+    newborn_outcomes,
+    postnatal_supervisor
 )
 
 # %%
@@ -32,7 +36,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 20_000
+popsize = 190000
 
 log_config = {
     'filename': 'LogFile',
@@ -44,18 +48,22 @@ log_config = {
 }
 
 # add file handler for the purpose of logging
-sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
+sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
              enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
              symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
              healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-             dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-             diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+             epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
+             contraception.Contraception(resourcefilepath=resourcefilepath),
+             labour.Labour(resourcefilepath=resourcefilepath),
+             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+             newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+             postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
              )
 
 sim.make_initial_population(n=popsize)
@@ -63,6 +71,25 @@ sim.simulate(end_date=end_date)
 
 # Get the output from the logfile
 output = parse_log_file(sim.log_filepath)
+
+
+
+
+
+
+
+comparison = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=resourcefilepath)
+# Make a simple bar chart
+comparison.loc[('2015-2019', slice(None), '20-24', 'Epilepsy')].sum().plot.bar()
+plt.title('Deaths per year due to Epilepsy, 2015-2019')
+plt.tight_layout()
+plt.show()
+
+
+
+
+
+"""
 
 # %% ----------------------------  INCIDENCE RATE OF DIARRHOEA BY PATHOGEN  ----------------------------
 
@@ -299,3 +326,5 @@ plt.title('Case Fatality Rate for Diarrhoea')
 plt.ylabel('Deaths per 100k Cases')
 plt.xlabel('Age-Group')
 plt.show()
+
+"""

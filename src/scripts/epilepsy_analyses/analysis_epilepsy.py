@@ -1,23 +1,24 @@
-import datetime
-from pathlib import Path
-
-import pandas as pd
-from matplotlib import pyplot as plt
-
-from tlo import Date, Simulation, logging
+from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    contraception,
     demography,
+    depression,
     enhanced_lifestyle,
-    epilepsy,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    labour,
+    pregnancy_supervisor,
     symptommanager,
+    care_of_women_during_pregnancy,
+    newborn_outcomes,
+    postnatal_supervisor,
+    epilepsy
 )
 
-# Where will outputs go
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
+# Path to the resource files used by the disease and intervention methods
+resources = "./resources"
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -44,14 +45,23 @@ sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
 
 # Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
-             symptommanager.SymptomManager(resourcefilepath=resourcefilepath)
-             )
+sim.register(
+    demography.Demography(resourcefilepath=resources),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
+    healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
+    symptommanager.SymptomManager(resourcefilepath=resources),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
+    healthburden.HealthBurden(resourcefilepath=resources),
+    contraception.Contraception(resourcefilepath=resources),
+    labour.Labour(resourcefilepath=resources),
+    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+    depression.Depression(resourcefilepath=resources),
+    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resources),
+    newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
+    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
+    epilepsy.Epilepsy(resourcefilepath=resources)
+)
+
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
@@ -62,8 +72,8 @@ sim.simulate(end_date=end_date)
 output = parse_log_file(sim.log_filepath)
 
 prop_seiz_stat_0 = pd.Series(
-    output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_0'].values,
-    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
+    output['tlo.methods.epilepsy']['summary_stats_per_3m']['prop_seiz_stat_0'].values,
+    index=output['tlo.methods.epilepsy']['summary_stats_per_3m']['date'])
 
 prop_seiz_stat_0.plot()
 plt.show()
