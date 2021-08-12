@@ -11,6 +11,7 @@ import copy
 from pathlib import Path
 from scipy.stats import norm
 
+import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
@@ -19,6 +20,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
+from tlo.methods.causes import Cause
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -45,6 +47,16 @@ class Wasting(Module):
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
         Metadata.USES_HEALTHBURDEN
+    }
+
+    # Declare Causes of Death
+    CAUSES_OF_DEATH = {
+        'SAM': Cause(gbd_causes='Protein-energy malnutrition', label='Childhood Wasting')
+    }
+
+    # Declare Causes of Death and Disability
+    CAUSES_OF_DISABILITY = {
+        'SAM': Cause(gbd_causes='Protein-energy malnutrition', label='Childhood Wasting')
     }
 
     wasting_states = ['WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2']
@@ -194,12 +206,9 @@ class Wasting(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        # dict to hold the probability of onset of different symptoms:
-        self.prob_symptoms = dict()
-
         # Store the symptoms that this module will use:
         self.symptoms = {
-            # 'palmar_pallor',
+            'palmar_pallor',
             'weight_loss',
             'poor_appetite',
             'lethargic',
@@ -270,7 +279,7 @@ class Wasting(Module):
                                                        f'resourcefile.'
 
         # Declare symptoms that this module will cause and which are not included in the generic symptoms:
-        generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
+        generic_symptoms = self.sim.modules['SymptomManager'].generic_symptoms
         for symptom_name in self.symptoms:
             if symptom_name not in generic_symptoms:
                 self.sim.modules['SymptomManager'].register_symptom(
@@ -679,7 +688,7 @@ class Wasting(Module):
                     LinearModelType.MULTIPLICATIVE,
                     intercept,
                     Predictor('age_exact_years').when('<0.5', p['base_inc_rate_wasting_by_agegp'][0])
-                                                .when('.between(0.5,0.9999)', p['base_inc_rate_wasting_by_agegp'][1])
+                                                .when('<1.0', p['base_inc_rate_wasting_by_agegp'][1])
                                                 .when('.between(1,1.9999)', p['base_inc_rate_wasting_by_agegp'][2])
                                                 .when('.between(2,2.9999)', p['base_inc_rate_wasting_by_agegp'][3])
                                                 .when('.between(3,3.9999)', p['base_inc_rate_wasting_by_agegp'][4])
@@ -701,9 +710,10 @@ class Wasting(Module):
             target_mean = p[f'base_inc_rate_wasting_by_agegp'][2]
             actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1) &
                                                      (df.un_WHZ_category == 'WHZ>=-2')]).mean()
-            scaled_intercept = 1.0 * (target_mean / actual_mean) if \
-                (target_mean != 0 and actual_mean != 0) else 1.0
+            scaled_intercept = 1.0 * (target_mean / actual_mean) \
+                if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
             scaled_lm = make_lm_wasting_incidence(intercept=scaled_intercept)
+
             return scaled_lm
 
         self.wasting_incidence_equation = make_scaled_lm_wasting_incidence()
@@ -759,7 +769,7 @@ class Wasting(Module):
                     intercept,
                     Predictor('un_am_treatment_type').when('none', p['base_death_rate_untreated_SAM']).otherwise(0.0),
                     Predictor('un_sam_with_complications').when(True,
-                                                                p['rr_SAM_death_with_complications']).otherwise(0.0),
+                                                                p['rr_SAM_death_with_complications']),
                     Predictor().when('(un_am_bilateral_oedema == False) & '
                                      '(un_WHZ_category == "WHZ<-3") & (un_am_MUAC_category == "115-<125mm")',
                                      p['rr_SAM_death_WHZ<-3_only']),
@@ -785,8 +795,8 @@ class Wasting(Module):
             actual_mean = unscaled_lm.predict(
                 df.loc[df.is_alive & ((df.age_exact_years > 0.5) & (df.age_exact_years < 5)) &
                        (df.un_clinical_acute_malnutrition == 'SAM')]).mean()
-            scaled_intercept = 1.0 * (target_mean / actual_mean) if \
-                (target_mean != 0 and actual_mean != 0) else 1.0
+            scaled_intercept = 1.0 * (target_mean / actual_mean) \
+                if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
             scaled_lm = make_lm_sam_death(intercept=scaled_intercept)
             return scaled_lm
 
@@ -851,7 +861,7 @@ class Wasting(Module):
                 symptom_string=symptom,
                 add_or_remove="+",
                 disease_module=self,
-                duration_in_days=None,
+                # duration_in_days=None,
             )
 
     def do_when_acute_malnutrition_assessment(self, person_id):
@@ -1164,11 +1174,13 @@ class AcuteMalnutritionDeathPollingEvent(RegularEvent, PopulationScopeEventMixin
                 self.sim.schedule_event(
                     event=SevereAcuteMalnutritionDeathEvent(module=self.module, person_id=person),
                     date=self.sim.date)
+                # df.at[person, 'un_sam_death_date'] = self.sim.date
             else:
                 # schedule death according to duration
                 self.sim.schedule_event(
                     event=SevereAcuteMalnutritionDeathEvent(module=self.module, person_id=person),
                     date=death_date)
+                # df.at[person, 'un_sam_death_date'] = death_date
 
         # # # # # # # # # # # # # # # # # # # # # IMPROVEMENT FROM SAM TO MAM # # # # # # # # # # # # # # # # # # # # #
         # SAM = severe wasting (WHZ<-3) and/or MUAC <115mm, or nutritional oedema
