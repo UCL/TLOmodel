@@ -10,7 +10,7 @@ from tlo.methods import Metadata, postnatal_supervisor_lm
 from tlo.methods.causes import Cause
 from tlo.methods.demography import Demography
 from tlo.methods.dxmanager import DxTest
-from tlo.methods.healthsystem import HSI_Event, HealthSystem
+from tlo.methods.healthsystem import HealthSystem, HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.simplified_births import SimplifiedBirths
 from tlo.util import BitsetHandler

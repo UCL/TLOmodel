@@ -19,7 +19,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.demography import Demography, InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.enhanced_lifestyle import Lifestyle
-from tlo.methods.healthsystem import HSI_Event, HealthSystem
+from tlo.methods.healthsystem import HealthSystem, HSI_Event
 from tlo.methods.symptommanager import Symptom, SymptomManager
 
 logger = logging.getLogger(__name__)

@@ -8,7 +8,7 @@ from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.demography import Demography, InstantaneousDeath
 from tlo.methods.healthburden import HealthBurden
-from tlo.methods.healthsystem import HSI_Event, HealthSystem
+from tlo.methods.healthsystem import HealthSystem, HSI_Event
 
 # todo: note this code is becoming very depracated and does not include health interactions
 

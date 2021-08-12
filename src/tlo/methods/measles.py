@@ -8,7 +8,7 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.demography import Demography
-from tlo.methods.healthsystem import HSI_Event, HealthSystem
+from tlo.methods.healthsystem import HealthSystem, HSI_Event
 from tlo.methods.symptommanager import Symptom, SymptomManager
 
 logger = logging.getLogger(__name__)
