@@ -3,16 +3,17 @@
 import importlib
 import inspect
 import os
-from pathlib import Path
 import pkgutil
+from pathlib import Path
 
 import pytest
+
+import tlo.methods
 from tlo import Date, Module, Simulation
 from tlo.methods.hiv import DummyHivModule
 from tlo.methods.skeleton import Skeleton
 from tlo.methods.tb import Tb
 from tlo.simulation import ModuleDependencyError
-import tlo.methods
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
