@@ -109,89 +109,89 @@ def start_sim_and_clear_event_queues(sim):
     return sim
 
 
-def test_basic_run_with_default_parameters():
-    """Run the HIV module with check and check dtypes consistency"""
-    end_date = Date(2015, 12, 31)
-
-    sim = get_sim()
-    check_dtypes(sim)
-    sim.simulate(end_date=end_date)
-    check_dtypes(sim)
-    # confirm configuration of properties at the end of the simulation:
-    sim.modules['Hiv'].check_config_of_properties()
-
-
-def test_initialisation():
-    """check that the natural history plays out as expected for those that are infected at the beginning of the sim"""
-
-    # get simulation and initialise the simulation:
-    sim = get_sim()
-    sim.modules['Hiv'].initialise_simulation(sim)
-    df = sim.population.props
-
-    # check that everyone who is infected but not AIDS or ART, gets a future AIDS event (but no future AIDS death)
-    inf = df.loc[df.is_alive & df.hv_inf].index.tolist()
-    art = df.loc[df.is_alive & (df.hv_art != "not")].index.tolist()
-    aids = sim.modules['SymptomManager'].who_has('aids_symptoms')
-    before_aids_idx = set(inf) - set(art) - set(aids)
-
-    for idx in before_aids_idx:
-        events_for_this_person = sim.find_events_for_person(idx)
-        assert 1 == len(events_for_this_person)
-        next_event_date, next_event_obj = events_for_this_person[0]
-        assert isinstance(next_event_obj, hiv.HivAidsOnsetEvent)
-        assert next_event_date >= sim.date
-
-    # check that everyone who is infected and has got AIDS event get a future AIDS death event but nothing else
-    for idx in aids:
-        events_for_this_person = sim.find_events_for_person(idx)
-        assert 1 == len(events_for_this_person)
-        next_event_date, next_event_obj = events_for_this_person[0]
-        assert isinstance(next_event_obj, hiv.HivAidsDeathEvent)
-        assert next_event_date >= sim.date
-
-
-def test_generation_of_new_infection():
-    """Check that the generation of new infections is as expected.
-    This occurs in the Main Polling Event.
-    """
-
-    sim = get_sim()
-    pollevent = hiv.HivRegularPollingEvent(module=sim.modules['Hiv'])
-    df = sim.population.props
-
-    def any_hiv_infection_event_in_queue():
-        for date, counter, event in sim.event_queue.queue:
-            if isinstance(event, hiv.HivInfectionEvent):
-                return True
-
-    # If no people living with HIV, no new infections
-    df.hv_inf = False
-    pollevent.apply(sim.population)
-    assert not any_hiv_infection_event_in_queue()
-
-    # If everyone living with HIV, no new infections
-    df.hv_inf = True
-    pollevent.apply(sim.population)
-    assert not any_hiv_infection_event_in_queue()
-
-    # If lots of people living with HIV but all VL suppressed, no new infections
-    df.hv_inf = sim.rng.rand(len(df.hv_inf)) < 0.5
-    df.hv_art.values[:] = 'on_VL_suppressed'
-    pollevent.apply(sim.population)
-    assert not any_hiv_infection_event_in_queue()
-
-    # If lots of people living with HIV, but those uninfected are all on PrEP (efficacy of PrEP is assumed to be
-    # perfect), ... no new infections
-    df.hv_art.values[:] = 'not'
-    df.hv_is_on_prep = True
-    pollevent.apply(sim.population)
-    assert not any_hiv_infection_event_in_queue()
-
-    # If lots of people living with HIV, and people are not on PrEP, some infection.
-    df.hv_is_on_prep = False
-    pollevent.apply(sim.population)
-    assert any_hiv_infection_event_in_queue()
+# def test_basic_run_with_default_parameters():
+#     """Run the HIV module with check and check dtypes consistency"""
+#     end_date = Date(2015, 12, 31)
+#
+#     sim = get_sim()
+#     check_dtypes(sim)
+#     sim.simulate(end_date=end_date)
+#     check_dtypes(sim)
+#     # confirm configuration of properties at the end of the simulation:
+#     sim.modules['Hiv'].check_config_of_properties()
+#
+#
+# def test_initialisation():
+#     """check that the natural history plays out as expected for those that are infected at the beginning of the sim"""
+#
+#     # get simulation and initialise the simulation:
+#     sim = get_sim()
+#     sim.modules['Hiv'].initialise_simulation(sim)
+#     df = sim.population.props
+#
+#     # check that everyone who is infected but not AIDS or ART, gets a future AIDS event (but no future AIDS death)
+#     inf = df.loc[df.is_alive & df.hv_inf].index.tolist()
+#     art = df.loc[df.is_alive & (df.hv_art != "not")].index.tolist()
+#     aids = sim.modules['SymptomManager'].who_has('aids_symptoms')
+#     before_aids_idx = set(inf) - set(art) - set(aids)
+#
+#     for idx in before_aids_idx:
+#         events_for_this_person = sim.find_events_for_person(idx)
+#         assert 1 == len(events_for_this_person)
+#         next_event_date, next_event_obj = events_for_this_person[0]
+#         assert isinstance(next_event_obj, hiv.HivAidsOnsetEvent)
+#         assert next_event_date >= sim.date
+#
+#     # check that everyone who is infected and has got AIDS event get a future AIDS death event but nothing else
+#     for idx in aids:
+#         events_for_this_person = sim.find_events_for_person(idx)
+#         assert 1 == len(events_for_this_person)
+#         next_event_date, next_event_obj = events_for_this_person[0]
+#         assert isinstance(next_event_obj, hiv.HivAidsDeathEvent)
+#         assert next_event_date >= sim.date
+#
+#
+# def test_generation_of_new_infection():
+#     """Check that the generation of new infections is as expected.
+#     This occurs in the Main Polling Event.
+#     """
+#
+#     sim = get_sim()
+#     pollevent = hiv.HivRegularPollingEvent(module=sim.modules['Hiv'])
+#     df = sim.population.props
+#
+#     def any_hiv_infection_event_in_queue():
+#         for date, counter, event in sim.event_queue.queue:
+#             if isinstance(event, hiv.HivInfectionEvent):
+#                 return True
+#
+#     # If no people living with HIV, no new infections
+#     df.hv_inf = False
+#     pollevent.apply(sim.population)
+#     assert not any_hiv_infection_event_in_queue()
+#
+#     # If everyone living with HIV, no new infections
+#     df.hv_inf = True
+#     pollevent.apply(sim.population)
+#     assert not any_hiv_infection_event_in_queue()
+#
+#     # If lots of people living with HIV but all VL suppressed, no new infections
+#     df.hv_inf = sim.rng.rand(len(df.hv_inf)) < 0.5
+#     df.hv_art.values[:] = 'on_VL_suppressed'
+#     pollevent.apply(sim.population)
+#     assert not any_hiv_infection_event_in_queue()
+#
+#     # If lots of people living with HIV, but those uninfected are all on PrEP (efficacy of PrEP is assumed to be
+#     # perfect), ... no new infections
+#     df.hv_art.values[:] = 'not'
+#     df.hv_is_on_prep = True
+#     pollevent.apply(sim.population)
+#     assert not any_hiv_infection_event_in_queue()
+#
+#     # If lots of people living with HIV, and people are not on PrEP, some infection.
+#     df.hv_is_on_prep = False
+#     pollevent.apply(sim.population)
+#     assert any_hiv_infection_event_in_queue()
 
 
 def test_generation_of_natural_history_process_no_art():
