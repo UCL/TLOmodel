@@ -561,7 +561,7 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
 
     # decrease progression to severe of wasting - so all children stay in moderate wasting state only
     params = sim.modules['Wasting'].parameters
-    params['progression_severe_wasting_by_agegp'] = [0.0 for v in params['progression_severe_wasting_by_agegp']]
+    # params['progression_severe_wasting_by_agegp'] = 0.0
 
     sim.modules['Wasting'].severe_wasting_progression_equation = LinearModel(
         LinearModelType.MULTIPLICATIVE, 0.0)
@@ -713,8 +713,6 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     # Run the death event that was originally scheduled - this should have no effect and the person should not die
     sim.date = date_of_scheduled_death
     death_event.apply(person_id=person_id)
-
-    # Check properties of this individual: (should now be dead)
     person = df.loc[person_id]
     assert person['is_alive']
 
@@ -723,3 +721,288 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     # assert 0 == sim.modules['Alri'].logging_event.trackers['recovered_cases'].report_current_total()
     # assert 0 == sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
     # assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
+
+
+def test_treatment(tmpdir):
+    """ Test that providing a treatment prevent death and causes there to be a
+    CureEvent (ClinicalAcuteMalnutritionRecoveryEvent) Scheduled """
+    """
+    This test sets the linear model of acute_malnutrition_recovery_based_on_interventions to be 1.0 (100% cure rate),
+    when this lm is called in the do_when_am_treatment function (usually called in HSIs), 100% cure rate schedules the
+    ClinicalAcuteMalnutritionRecoveryEvent (CureEvent).
+    Death is prevented.  ---> check
+    """
+
+    dur = pd.DateOffset(days=0)
+    popsize = 100
+    sim = get_sim(tmpdir)
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + dur)
+    sim.event_queue.queue = []  # clear the queue
+
+    # Make 100% death rate by replacing with empty linear model 1.0
+    sim.modules['Wasting'].sam_death_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 1.0)
+
+    # increase incidence of wasting and progression to severe
+    params = sim.modules['Wasting'].parameters
+    params['base_inc_rate_wasting_by_agegp'] = [5 * v for v in params['base_inc_rate_wasting_by_agegp']]
+    params['progression_severe_wasting_by_agegp'] = [5 * v for v in params['progression_severe_wasting_by_agegp']]
+    # increase parameters in moderate wasting for clinical SAM (MUAC and oedema) to be polled for death
+    params['proportion_-3<=WHZ<-2_with_MUAC<115mm'] = [5 * params['proportion_-3<=WHZ<-2_with_MUAC<115mm']]
+    params['proportion_-3<=WHZ<-2_with_MUAC_115-<125mm'] = [params['proportion_-3<=WHZ<-2_with_MUAC_115-<125mm'] / 5]
+    params['proportion_oedema_with_WHZ<-2'] = 0.9
+
+    # Get person to use:
+    df = sim.population.props
+    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+    person_id = under5s.index[0]
+    assert df.loc[person_id, 'un_WHZ_category'] == 'WHZ>=-2'
+
+    # Run Wasting Polling event to get new incident cases:
+    polling = WastingPollingEvent(module=sim.modules['Wasting'])
+    polling.apply(sim.population)
+
+    # Check properties of this individual: (should now be moderately wasted with a scheduled progression to severe date)
+    person = df.loc[person_id]
+    assert person['un_ever_wasted']
+    assert person['un_WHZ_category'] == '-3<=WHZ<-2'
+    assert person['un_last_wasting_date_of_onset'] == sim.date
+    assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
+    assert pd.isnull(person['un_am_recovery_date'])
+    assert pd.isnull(person['un_sam_death_date'])
+
+    # Check that there is a ProgressionSevereWastingEvent scheduled for this person:
+    progression_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
+                               isinstance(event_tuple[1], ProgressionSevereWastingEvent)
+                               ][0]
+    date_of_scheduled_progression = progression_event_tuple[0]
+    progression_event = progression_event_tuple[1]
+    assert date_of_scheduled_progression > sim.date
+
+    # Run the progression to severe wasting event:
+    sim.date = date_of_scheduled_progression
+    progression_event.apply(person_id=person_id)
+
+    # Check properties of this individual: (should now be severely wasted and without a scheduled death date)
+    person = df.loc[person_id]
+    assert person['un_ever_wasted']
+    assert person['un_WHZ_category'] == 'WHZ<-3'
+    assert person['un_clinical_acute_malnutrition'] == 'SAM'
+    assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
+    assert pd.isnull(person['un_am_recovery_date'])
+    assert pd.isnull(person['un_sam_death_date'])
+
+    # Run Death Polling Polling event to apply death:
+    death_polling = AcuteMalnutritionDeathPollingEvent(module=sim.modules['Wasting'])
+    death_polling.apply(sim.population)
+
+    # Check that there is a SevereAcuteMalnutritionDeathEvent scheduled for this person:
+    death_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
+                         isinstance(event_tuple[1], SevereAcuteMalnutritionDeathEvent)
+                         ][0]
+    date_of_scheduled_death = death_event_tuple[0]
+    death_event = death_event_tuple[1]
+    assert date_of_scheduled_death > sim.date
+
+    # # change coverage and treatment effectiveness set to be 100%
+    # params['coverage_supplementary_feeding_program'] = 1.0
+    # params['coverage_outpatient_therapeutic_care'] = 1.0
+    # params['coverage_inpatient_care'] = 1.0
+    # params['recovery_rate_with_soy_RUSF'] = 1.0
+    # params['recovery_rate_with_CSB++'] = 1.0
+    # params['recovery_rate_with_standard_RUTF'] = 1.0
+    # params['recovery_rate_with_inpatient_care'] = 1.0
+
+    # Make 100% death rate by replacing with empty linear model 1.0
+    for am in ['MAM', 'SAM']:
+        sim.modules['Wasting'].acute_malnutrition_recovery_based_on_interventions[am] = LinearModel(
+            LinearModelType.MULTIPLICATIVE, 1.0)
+
+    # Run the 'do_when_am_treatment' function
+    interventions = ['SFP', 'OTC', 'ITC']
+    for int in interventions:
+        sim.modules['Wasting'].do_when_am_treatment(person_id=person_id, intervention=int)
+
+    # Run the death event that was originally scheduled - this should have no effect and the person should not die
+    sim.date = date_of_scheduled_death
+    death_event.apply(person_id=person_id)
+    person = df.loc[person_id]
+    assert person['is_alive']
+
+    print(sim.find_events_for_person(person_id))
+
+    # Check that a CureEvent has been scheduled
+    cure_event = [event_tuple[1] for event_tuple in sim.find_events_for_person(person_id) if
+                  isinstance(event_tuple[1], ClinicalAcuteMalnutritionRecoveryEvent)][0]
+
+    # Run the CureEvent
+    cure_event.apply(person_id=person_id)
+
+    # Check that the person is not infected and is alive still:
+    person = df.loc[person_id]
+    assert person['is_alive']
+    assert person['un_WHZ_category'] == 'WHZ>=-2'
+    assert not pd.isnull(person['un_am_recovery_date'])
+    assert pd.isnull(person['un_sam_death_date'])
+
+
+def test_use_of_HSI(tmpdir):
+    """ Check that the HSIs works"""
+    dur = pd.DateOffset(days=0)
+    popsize = 100
+    sim = get_sim(tmpdir)
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + dur)
+    sim.event_queue.queue = []  # clear the queue
+
+    # Make 100% death rate by replacing with empty linear model 1.0
+    sim.modules['Wasting'].sam_death_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 1.0)
+
+    # increase incidence of wasting
+    params = sim.modules['Wasting'].parameters
+    params['base_inc_rate_wasting_by_agegp'] = [5 * v for v in params['base_inc_rate_wasting_by_agegp']]
+
+    # reduce progression to severe wasting
+    params['progression_severe_wasting_by_agegp'] = [v == 0.0 for v in params['progression_severe_wasting_by_agegp']]
+
+    # decrease MUAC and oedema parameters in moderate wasting for clinical SAM
+    params['proportion_-3<=WHZ<-2_with_MUAC<115mm'] = 0.0  # no SAM with moderate wasting
+    params['proportion_oedema_with_WHZ<-2'] = 0.0  # no SAM based on oedema
+    params['prevalence_nutritional_oedema'] = 0.0  # no SAM based on oedema
+
+    # Get person to use:
+    df = sim.population.props
+    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+    person_id = under5s.index[0]
+    assert df.loc[person_id, 'un_WHZ_category'] == 'WHZ>=-2'
+
+    # Run Wasting Polling event to get new incident cases:
+    polling = WastingPollingEvent(module=sim.modules['Wasting'])
+    polling.apply(sim.population)
+
+    # Check properties of this individual: (should now be moderately wasted with a scheduled progression to severe date)
+    person = df.loc[person_id]
+    assert person['un_ever_wasted']
+    assert person['un_WHZ_category'] == '-3<=WHZ<-2'
+    assert person['un_clinical_acute_malnutrition'] == 'MAM'
+    assert person['un_last_wasting_date_of_onset'] == sim.date
+    assert pd.isnull(person['un_am_recovery_date'])
+    assert pd.isnull(person['un_sam_death_date'])
+    # Check not on treatment:
+    assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
+
+    # Run the HSI event
+    hsi = HSI_supplementary_feeding_programme_for_MAM(person_id=person_id, module=sim.modules['Wasting'])
+    hsi.run(squeeze_factor=0.0)
+
+    # Check that person is now on treatment:
+    assert sim.date == df.at[person_id, 'un_acute_malnutrition_tx_start_date']
+
+    # Check that a CureEvent has been scheduled
+    cure_event = [event_tuple[1] for event_tuple in sim.find_events_for_person(person_id) if
+                  isinstance(event_tuple[1], ClinicalAcuteMalnutritionRecoveryEvent)][0]
+
+    # Run the CureEvent
+    cure_event.apply(person_id=person_id)
+
+    # Check that the person is cured and is alive still:
+    person = df.loc[person_id]
+    assert person['is_alive']
+    assert person['un_WHZ_category'] == 'WHZ>=-2'
+    assert person['un_clinical_acute_malnutrition'] == 'well'
+    assert not pd.isnull(person['un_am_recovery_date'])
+    assert pd.isnull(person['un_sam_death_date'])
+
+
+
+    # # Check that there is a ProgressionSevereWastingEvent scheduled for this person:
+    # progression_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
+    #                            isinstance(event_tuple[1], ProgressionSevereWastingEvent)
+    #                            ][0]
+    # date_of_scheduled_progression = progression_event_tuple[0]
+    # progression_event = progression_event_tuple[1]
+    # assert date_of_scheduled_progression > sim.date
+    #
+    # # Run the progression to severe wasting event:
+    # sim.date = date_of_scheduled_progression
+    # progression_event.apply(person_id=person_id)
+    #
+    # # Check properties of this individual: (should now be severely wasted and without a scheduled death date)
+    # person = df.loc[person_id]
+    # assert person['un_ever_wasted']
+    # assert person['un_WHZ_category'] == 'WHZ<-3'
+    # assert person['un_clinical_acute_malnutrition'] == 'SAM'
+    # assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
+    # assert pd.isnull(person['un_am_recovery_date'])
+    # assert pd.isnull(person['un_sam_death_date'])
+    #
+    # # Check not on treatment:
+    # assert not df.at[person_id, 'ri_on_treatment']
+    # assert pd.isnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
+    #
+    # # Run the HSI event
+    # hsi = HSI_supplementary_feeding_programme_for_MAM(person_id=person_id, module=sim.modules['Wasting'])
+    # hsi.run(squeeze_factor=0.0)
+    #
+    # # Check that person is now on treatment:
+    # assert sim.date == df.at[person_id, 'ri_ALRI_tx_start_date']
+
+
+
+    # # Run Death Polling Polling event to apply death:
+    # death_polling = AcuteMalnutritionDeathPollingEvent(module=sim.modules['Wasting'])
+    # death_polling.apply(sim.population)
+    #
+    # # Check that there is a SevereAcuteMalnutritionDeathEvent scheduled for this person:
+    # death_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
+    #                      isinstance(event_tuple[1], SevereAcuteMalnutritionDeathEvent)
+    #                      ][0]
+    # date_of_scheduled_death = death_event_tuple[0]
+    # death_event = death_event_tuple[1]
+    # assert date_of_scheduled_death > sim.date
+    #
+    # # # change coverage and treatment effectiveness set to be 100%
+    # # params['coverage_supplementary_feeding_program'] = 1.0
+    # # params['coverage_outpatient_therapeutic_care'] = 1.0
+    # # params['coverage_inpatient_care'] = 1.0
+    # # params['recovery_rate_with_soy_RUSF'] = 1.0
+    # # params['recovery_rate_with_CSB++'] = 1.0
+    # # params['recovery_rate_with_standard_RUTF'] = 1.0
+    # # params['recovery_rate_with_inpatient_care'] = 1.0
+    #
+    # # Make 100% death rate by replacing with empty linear model 1.0
+    # for am in ['MAM', 'SAM']:
+    #     sim.modules['Wasting'].acute_malnutrition_recovery_based_on_interventions[am] = LinearModel(
+    #         LinearModelType.MULTIPLICATIVE, 1.0)
+    #
+    # # Run the 'do_when_am_treatment' function
+    # interventions = ['SFP', 'OTC', 'ITC']
+    # for int in interventions:
+    #     sim.modules['Wasting'].do_when_am_treatment(person_id=person_id, intervention=int)
+    #
+    # # Run the death event that was originally scheduled - this should have no effect and the person should not die
+    # sim.date = date_of_scheduled_death
+    # death_event.apply(person_id=person_id)
+    # person = df.loc[person_id]
+    # assert person['is_alive']
+    #
+    # print(sim.find_events_for_person(person_id))
+    #
+    # # Check that a CureEvent has been scheduled
+    # cure_event = [event_tuple[1] for event_tuple in sim.find_events_for_person(person_id) if
+    #               isinstance(event_tuple[1], ClinicalAcuteMalnutritionRecoveryEvent)][0]
+    #
+    # # Run the CureEvent
+    # cure_event.apply(person_id=person_id)
+    #
+    # # Check that the person is not infected and is alive still:
+    # person = df.loc[person_id]
+    # assert person['is_alive']
+    # assert person['un_WHZ_category'] == 'WHZ>=-2'
+    # assert not pd.isnull(person['un_am_recovery_date'])
+    # assert pd.isnull(person['un_sam_death_date'])
+    #

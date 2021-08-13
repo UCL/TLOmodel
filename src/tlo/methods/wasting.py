@@ -726,12 +726,11 @@ class Wasting(Module):
                         1.0,
                         Predictor('age_exact_years')
                         .when('<0.5', p['progression_severe_wasting_by_agegp'][0])
-                        .when('.between(0.5,0.9999)', p['progression_severe_wasting_by_agegp'][1]),
-                        Predictor('age_years')
-                        .when('.between(1,1)', p['progression_severe_wasting_by_agegp'][2])
-                        .when('.between(2,2)', p['progression_severe_wasting_by_agegp'][3])
-                        .when('.between(3,3)', p['progression_severe_wasting_by_agegp'][4])
-                        .when('.between(4,4)', p['progression_severe_wasting_by_agegp'][5])
+                        .when('.between(0.5,0.9999)', p['progression_severe_wasting_by_agegp'][1])
+                        .when('.between(1,1.9999)', p['progression_severe_wasting_by_agegp'][2])
+                        .when('.between(2,2.9999)', p['progression_severe_wasting_by_agegp'][3])
+                        .when('.between(3,3.9999)', p['progression_severe_wasting_by_agegp'][4])
+                        .when('.between(4,4.9999)', p['progression_severe_wasting_by_agegp'][5])
                         .otherwise(0.0),
                         )
 
@@ -930,6 +929,8 @@ class Wasting(Module):
         :return:
         """
         df = self.sim.population.props
+        # Log that the treatment is provided:
+        df.at[person_id, 'un_acute_malnutrition_tx_start_date'] = self.sim.date
 
         if intervention == 'SFP':
             mam_recovery = self.acute_malnutrition_recovery_based_on_interventions['MAM'].predict(
@@ -1214,6 +1215,9 @@ class SevereAcuteMalnutritionDeathEvent(Event, IndividualScopeEventMixin):
 
         # The event should not run if the person is not currently alive
         if not df.at[person_id, 'is_alive']:
+            return
+
+        if df.at[person_id, 'un_acute_malnutrition_tx_start_date'] < self.sim.date:
             return
 
         # Check if this person should still die from SAM:
