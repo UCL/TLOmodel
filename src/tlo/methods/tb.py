@@ -159,10 +159,6 @@ class Tb(Module):
         'rr_relapse_hiv': Parameter(
             Types.REAL, 'relative risk of relapse for HIV-positive people'
         ),
-        'r_trans_mdr': Parameter(
-            Types.REAL,
-            'relative transmissibility of MDR compared with drug-susceptible TB',
-        ),
 
         # ------------------ progression ------------------ #
         'prop_fast_progressor': Parameter(
@@ -402,7 +398,9 @@ class Tb(Module):
             Symptom(name='fatigue')
         )
         self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='night_sweats')
+            Symptom(name='night_sweats',
+                    odds_ratio_health_seeking_in_adults=1.0,
+                    odds_ratio_health_seeking_in_children=1.0)
         )
 
     def pre_initialise_population(self):
@@ -752,6 +750,10 @@ class Tb(Module):
             ]
         )[0]
 
+        tb_sputum_test_cons_footprint = {
+            'Intervention_Package_Code': {pkg_sputum: 1}, 'Item_Code': {}
+        }
+
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             tb_sputum_test=DxTest(
                 property='tb_smear',
@@ -760,6 +762,7 @@ class Tb(Module):
                 cons_req_as_footprint={'Intervention_Package_Code': {pkg_sputum: 1}, 'Item_Code': {}}
             )
         )
+        self.footprints_for_consumables_required['tb_sputum_test'] = tb_sputum_test_cons_footprint
 
         # TB GeneXpert
         pkg_xpert = pd.unique(
@@ -777,6 +780,8 @@ class Tb(Module):
                 cons_req_as_footprint={'Intervention_Package_Code': {pkg_xpert: 1}, 'Item_Code': {}}
             )
         )
+        # todo add consumables required: footprints_for_consumables_required
+
 
         # TB Chest x-ray
         pkg_xray = pd.unique(
@@ -792,6 +797,7 @@ class Tb(Module):
                 cons_req_as_footprint={'Intervention_Package_Code': {pkg_xray: 1}, 'Item_Code': {}}
             )
         )
+        # todo add consumables required: footprints_for_consumables_required
 
         # 4) -------- Define the treatment options --------
 
@@ -1963,13 +1969,16 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
 
         if result < rng:
             logger.debug(key='message',
-                         data=f'TbDeathEvent: scheduling death for person {person_id}')
-            self.sim.schedule_event(
-                demography.InstantaneousDeath(
-                    self.module, person_id, cause=self.cause
-                ),
-                self.sim.date,
-            )
+                         data=f'TbDeathEvent: cause this death for person {person_id}')
+            # self.sim.schedule_event(
+            #     demography.InstantaneousDeath(
+            #         self.module, person_id, cause=self.cause
+            #     ),
+            #     self.sim.date,
+            # )
+            self.sim.modules['Demography'].do_death(
+                individual_id=person_id, cause=self.cause,
+                originating_module=self.module)
 
 
 # ---------------------------------------------------------------------------

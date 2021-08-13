@@ -72,8 +72,6 @@ data_dict['ntp_case_notification_per_100k'] = data_tb_ntp.loc[(data_tb_ntp.year 
 # TB mortality per 100k excluding HIV: 2010-2017
 data_dict['who_tb_deaths_per_100k'] = data_tb_who.loc[(data_tb_who.year >= 2010), 'mortality_tb_excl_hiv_per_100k']
 
-
-
 # need weights for each data item
 model_weight = 0.5
 
@@ -163,13 +161,13 @@ def weighted_mean(model_dict, data_dict):
     calibration_score = hiv_prev_dhs + \
                         hiv_prev_mphia + \
                         hiv_inc_mphia + \
-                        hiv_deaths_unaids + \
+                        (hiv_deaths_unaids * model_weight) + \
                         tb_incidence_who + \
                         tb_latent_prev + \
                         tb_cnr_ntp + \
                         tb_mortality_who
 
-    return (calibration_score)
+    return calibration_score
 
 
 # -------------------------------- MODEL OUTPUTS -------------------------------- #

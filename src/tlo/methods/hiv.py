@@ -659,6 +659,10 @@ class Hiv(Module):
             consumables["Intervention_Pkg"] == "HIV Testing Services",
             "Intervention_Pkg_Code"].values[0]
 
+        hiv_rapid_test_cons_footprint = {
+            'Intervention_Package_Code': {pkg_code_hiv_rapid_test: 1}, 'Item_Code': {}
+        }
+
         # NB. The rapid test is assumed to be 100% specific and sensitive. This is used to guarantee that all persons
         #  that start ART are truly HIV-pos.
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
@@ -667,6 +671,8 @@ class Hiv(Module):
                 cons_req_as_footprint={'Intervention_Package_Code': {pkg_code_hiv_rapid_test: 1}, 'Item_Code': {}}
             )
         )
+        self.footprints_for_consumables_required['hiv_rapid_test'] = hiv_rapid_test_cons_footprint
+
 
         # Test for Early Infect Diagnosis
         #  - Consumables required:
@@ -685,6 +691,10 @@ class Hiv(Module):
             consumables.loc[consumables["Items"] == "HIV EIA Elisa test", "Item_Code"]
         )[0]
 
+        hiv_early_infant_test_cons_footprint = {
+            'Intervention_Package_Code': {}, 'Item_Code': {item1: 1, item2: 1, item3: 1}
+        }
+
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             hiv_early_infant_test=DxTest(
                 property='hv_inf',
@@ -693,11 +703,12 @@ class Hiv(Module):
                 cons_req_as_footprint={'Intervention_Package_Code': {}, 'Item_Code': {item1: 1, item2: 1, item3: 1}}
             )
         )
+        self.footprints_for_consumables_required['hiv_early_infant_test'] = hiv_early_infant_test_cons_footprint
 
         # 7) Look-up and store the codes for the consumables used in the interventions.
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
-        # Circumcison:
+        # Circumcision:
         pkg_codes_for_circ = pd.unique(
             consumables.loc[
                 consumables["Intervention_Pkg"] == "Male circumcision ",
