@@ -463,7 +463,7 @@ def test_nat_hist_death(tmpdir):
     sim.simulate(end_date=start_date + dur)
     sim.event_queue.queue = []  # clear the queue
 
-    # Make 100% death rate by replacing with empty linear model 1.0)
+    # Make 100% death rate by replacing with empty linear model 1.0
     sim.modules['Wasting'].sam_death_equation = LinearModel(
         LinearModelType.MULTIPLICATIVE, 1.0)
 
@@ -541,3 +541,185 @@ def test_nat_hist_death(tmpdir):
     # assert 0 == sim.modules['Alri'].logging_event.trackers['recovered_cases'].report_current_total()
     # assert 1 == sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
     # assert 0 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
+
+
+def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
+    """Show that if a cure event is run before when a person was going to recover naturally, it cause the episode to
+    end earlier."""
+
+    dur = pd.DateOffset(days=0)
+    popsize = 100
+    sim = get_sim(tmpdir)
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + dur)
+    sim.event_queue.queue = []  # clear the queue
+
+    # Make 0% death rate by replacing with empty linear model 0.0
+    sim.modules['Wasting'].sam_death_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 0.0)
+
+    # decrease progression to severe of wasting - so all children stay in moderate wasting state only
+    params = sim.modules['Wasting'].parameters
+    params['progression_severe_wasting_by_agegp'] = [0.0 for v in params['progression_severe_wasting_by_agegp']]
+
+    sim.modules['Wasting'].severe_wasting_progression_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 0.0)
+
+    # Get person to use:
+    df = sim.population.props
+    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+    person_id = under5s.index[0]
+    assert df.loc[person_id, 'un_WHZ_category'] == 'WHZ>=-2'
+
+    # Run Wasting Polling event to get new incident cases:
+    polling = WastingPollingEvent(module=sim.modules['Wasting'])
+    polling.apply(sim.population)
+
+    # Check properties of this individual: (should now be moderately wasted without progression to severe)
+    person = df.loc[person_id]
+    assert person['un_ever_wasted']
+    assert person['un_WHZ_category'] == '-3<=WHZ<-2'
+    assert person['un_last_wasting_date_of_onset'] == sim.date
+    assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
+    assert pd.isnull(person['un_am_recovery_date'])
+    assert pd.isnull(person['un_sam_death_date'])
+
+    print(sim.find_events_for_person(person_id))
+
+    # Check that there is a WastingNaturalRecoveryEvent scheduled for this person:
+    recov_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
+                         isinstance(event_tuple[1], WastingNaturalRecoveryEvent)
+                         ][0]
+    date_of_scheduled_recov = recov_event_tuple[0]
+    recov_event = recov_event_tuple[1]
+    assert date_of_scheduled_recov > sim.date
+
+    # Run a Cure Event
+    cure_event = ClinicalAcuteMalnutritionRecoveryEvent(person_id=person_id, module=sim.modules['Wasting'])
+    cure_event.apply(person_id=person_id)
+
+    # Check that the person is not wasted and is alive still:
+    person = df.loc[person_id]
+    assert person['is_alive']
+    assert person['un_WHZ_category'] == 'WHZ>=-2'
+    assert not pd.isnull(person['un_am_recovery_date'])
+    assert pd.isnull(person['un_sam_death_date'])
+
+    # Run the recovery event that was originally scheduled - this should have no effect
+    sim.date = date_of_scheduled_recov
+    recov_event.apply(person_id=person_id)
+    person = df.loc[person_id]
+    assert person['is_alive']
+    assert person['un_WHZ_category'] == 'WHZ>=-2'
+    assert not pd.isnull(person['un_am_recovery_date'])
+    assert pd.isnull(person['un_sam_death_date'])
+
+    # # check it's logged (one infection + one cure)
+    # assert 1 == sim.modules['Alri'].logging_event.trackers['incident_cases'].report_current_total()
+    # assert 0 == sim.modules['Alri'].logging_event.trackers['recovered_cases'].report_current_total()
+    # assert 0 == sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
+    # assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
+
+
+def test_nat_hist_cure_if_death_scheduled(tmpdir):
+    """Show that if a cure event is run before when a person was going to die, it cause the episode to end without
+    the person dying."""
+
+    dur = pd.DateOffset(days=0)
+    popsize = 100
+    sim = get_sim(tmpdir)
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + dur)
+    sim.event_queue.queue = []  # clear the queue
+
+    # Make 100% death rate by replacing with empty linear model 1.0
+    sim.modules['Wasting'].sam_death_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 1.0)
+
+    # increase incidence of wasting and progression to severe
+    params = sim.modules['Wasting'].parameters
+    params['base_inc_rate_wasting_by_agegp'] = [5 * v for v in params['base_inc_rate_wasting_by_agegp']]
+    params['progression_severe_wasting_by_agegp'] = [5 * v for v in params['progression_severe_wasting_by_agegp']]
+    # increase parameters in moderate wasting for clinical SAM (MUAC and oedema) to be polled for death
+    params['proportion_-3<=WHZ<-2_with_MUAC<115mm'] = [5 * params['proportion_-3<=WHZ<-2_with_MUAC<115mm']]
+    params['proportion_-3<=WHZ<-2_with_MUAC_115-<125mm'] = [params['proportion_-3<=WHZ<-2_with_MUAC_115-<125mm'] / 5]
+    params['proportion_oedema_with_WHZ<-2'] = 0.9
+
+    # Get person to use:
+    df = sim.population.props
+    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+    person_id = under5s.index[0]
+    assert df.loc[person_id, 'un_WHZ_category'] == 'WHZ>=-2'
+
+    # Run Wasting Polling event to get new incident cases:
+    polling = WastingPollingEvent(module=sim.modules['Wasting'])
+    polling.apply(sim.population)
+
+    # Check properties of this individual: (should now be moderately wasted with a scheduled progression to severe date)
+    person = df.loc[person_id]
+    assert person['un_ever_wasted']
+    assert person['un_WHZ_category'] == '-3<=WHZ<-2'
+    assert person['un_last_wasting_date_of_onset'] == sim.date
+    assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
+    assert pd.isnull(person['un_am_recovery_date'])
+    assert pd.isnull(person['un_sam_death_date'])
+
+    # Check that there is a ProgressionSevereWastingEvent scheduled for this person:
+    progression_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
+                               isinstance(event_tuple[1], ProgressionSevereWastingEvent)
+                               ][0]
+    date_of_scheduled_progression = progression_event_tuple[0]
+    progression_event = progression_event_tuple[1]
+    assert date_of_scheduled_progression > sim.date
+
+    # Run the progression to severe wasting event:
+    sim.date = date_of_scheduled_progression
+    progression_event.apply(person_id=person_id)
+
+    # Check properties of this individual: (should now be severely wasted and without a scheduled death date)
+    person = df.loc[person_id]
+    assert person['un_ever_wasted']
+    assert person['un_WHZ_category'] == 'WHZ<-3'
+    assert person['un_clinical_acute_malnutrition'] == 'SAM'
+    assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
+    assert pd.isnull(person['un_am_recovery_date'])
+    assert pd.isnull(person['un_sam_death_date'])
+
+    # Run Death Polling Polling event to apply death:
+    death_polling = AcuteMalnutritionDeathPollingEvent(module=sim.modules['Wasting'])
+    death_polling.apply(sim.population)
+
+    # Check that there is a SevereAcuteMalnutritionDeathEvent scheduled for this person:
+    death_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
+                         isinstance(event_tuple[1], SevereAcuteMalnutritionDeathEvent)
+                         ][0]
+    date_of_scheduled_death = death_event_tuple[0]
+    death_event = death_event_tuple[1]
+    assert date_of_scheduled_death > sim.date
+
+    # Run a Cure Event now
+    cure_event = ClinicalAcuteMalnutritionRecoveryEvent(person_id=person_id, module=sim.modules['Wasting'])
+    cure_event.apply(person_id=person_id)
+
+    # Check that the person is not wasted and is alive still:
+    person = df.loc[person_id]
+    assert person['is_alive']
+    assert person['un_WHZ_category'] == 'WHZ>=-2'
+    assert not pd.isnull(person['un_am_recovery_date'])
+    assert pd.isnull(person['un_sam_death_date'])
+
+    # Run the death event that was originally scheduled - this should have no effect and the person should not die
+    sim.date = date_of_scheduled_death
+    death_event.apply(person_id=person_id)
+
+    # Check properties of this individual: (should now be dead)
+    person = df.loc[person_id]
+    assert person['is_alive']
+
+    # check it's logged (one infection + one cure)
+    # assert 1 == sim.modules['Alri'].logging_event.trackers['incident_cases'].report_current_total()
+    # assert 0 == sim.modules['Alri'].logging_event.trackers['recovered_cases'].report_current_total()
+    # assert 0 == sim.modules['Alri'].logging_event.trackers['deaths'].report_current_total()
+    # assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
