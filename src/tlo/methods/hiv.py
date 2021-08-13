@@ -137,12 +137,6 @@ class Hiv(Module):
         "rr_fsw": Parameter(Types.REAL, "Relative risk of HIV with female sex work"),
         "rr_circumcision": Parameter(Types.REAL, "Relative risk of HIV with circumcision"),
         "rr_preg": Parameter(Types.REAL, "Relative risk of HIV during pregnancy and postpartum period"),
-        "rr_prep_high_adherence": Parameter(Types.REAL,
-                                            "Relative risk of HIV when adherence of prep treatment program is >70%"),
-        "rr_prep_mid_adherence": Parameter(Types.REAL,
-                                           "Relative risk of HIV when adherence of prep treatment program is 40-70%"),
-        "rr_prep_low_adherence": Parameter(Types.REAL,
-                                           "Relative risk of HIV when adherence of prep treatment program is <40%"),
         "rr_rural": Parameter(Types.REAL, "Relative risk of HIV in rural location"),
         "rr_windex_poorer": Parameter(Types.REAL, "Relative risk of HIV with wealth level poorer"),
         "rr_windex_middle": Parameter(Types.REAL, "Relative risk of HIV with wealth level middle"),
@@ -165,6 +159,12 @@ class Hiv(Module):
         "proportion_reduction_in_risk_of_hiv_aq_if_on_prep": Parameter(
             Types.REAL,
             "Proportion reduction in risk of HIV acquisition if on PrEP. 0 for no efficacy; 1.0 for perfect efficacy."),
+        "rr_prep_high_adherence": Parameter(Types.REAL,
+                                            "Relative risk of HIV when adherence of prep treatment program is >70%"),
+        "rr_prep_mid_adherence": Parameter(Types.REAL,
+                                           "Relative risk of HIV when adherence of prep treatment program is 40-70%"),
+        "rr_prep_low_adherence": Parameter(Types.REAL,
+                                           "Relative risk of HIV when adherence of prep treatment program is <40%"),
 
         # Natural history - survival (adults)
         "mean_months_between_aids_and_death": Parameter(
@@ -341,6 +341,7 @@ class Hiv(Module):
             Predictor('hv_prep_adherence').when('High', p["rr_prep_high_adherence"]),
             Predictor('hv_prep_adherence').when('Mid', p["rr_prep_mid_adherence"]),
             Predictor('hv_prep_adherence').when('Low', p["rr_prep_low_adherence"]),
+            #Predictor('hv_prep_adherence).when('NA', p["rr_prep_NA_adherence]),
             Predictor('li_urban').when(False, p["rr_rural"]),
             Predictor('li_wealth')  .when(2, p["rr_windex_poorer"])
                                     .when(3, p["rr_windex_middle"])
@@ -1179,25 +1180,6 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
 
-# class HivRegularPollingEventforPrEP(RegularEvent, PopulationScopeEventMixin):
-#     """This event occurs regularly at 1 month intervals and assigns pregnant women to PrEP
-#     """
-#
-#     def __init__(self, module):
-#         super().__init__(module, frequency=DateOffset(months=1))
-#
-#     def apply(self, population):
-#         df = population.props
-#
-#         # 1. Get and hold index of pregnant women who are on their first antenatal care visit
-#         preg_idx = df.loc[df.is_alive & df.is_pregnant].index
-#
-#         # 2. Schedule eligible individuals to PrEP
-#         for person_id in preg_idx:
-#             self.sim.modules['HealthSystem'].schedule_hsi_event(
-#                 hsi_event=HSI_Hiv_StartOrContinuePregnantWomenOnPrep(person_id=person_id, module=self.module),
-#                 priority=0,
-#                 topen=self.sim.date)
 
 
 # ---------------------------------------------------------------------------
@@ -1371,7 +1353,7 @@ class Hiv_DecisionToStartOrContinuePregnantWomenOnPrEP(Event, IndividualScopeEve
         # If the person is no longer alive, no longer pregnant/breastfeeding or is diagnosed with HIV they will not
         # start or continue on PrEP
         if (~person["is_alive"] or
-            (~person["is_pregnant"] or person["si_date_of_last_delivery"] < self.sim.date - pd.DateOffset(months=18)) or
+            (~person["is_pregnant"] or (person["si_date_of_last_delivery"] < (self.sim.date - pd.DateOffset(months=18)))) or
             person["hv_diagnosed"] or
             (self.sim.date.year < p["prep_start_year_preg"])):
             return
@@ -1401,7 +1383,7 @@ class Hiv_DecisionToStartOrContinuePregnantWomenOnPrEP(Event, IndividualScopeEve
         # if currently on PrEP, random draw to continue or default
         # conditions: must be either pregnant or breastfeeding
         if person["hv_is_on_prep_preg"] and \
-            (person["is_pregnant"] or person["si_date_of_last_delivery"] > self.sim.date - pd.DateOffset(months=18)):
+            (person["is_pregnant"] or (person["si_date_of_last_delivery"] > self.sim.date - pd.DateOffset(months=18))):
 
             if (m.rng.random_sample() < p['probability_of_pregnant_woman_being_retained_on_prep_every_3_months']):
 
@@ -1573,23 +1555,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                                 priority=0
                             )
 
-                    # If person is pregnant, and not currently on PrEP then consider referring to PrEP
-                    # available 2021 onwards
-                    # todo this has been replaced by a call within simplified births
-                    # if (
-                    #     (person['is_pregnant']) &
-                    #     ~person['hv_is_on_prep_preg'] &
-                    #     ~person['hv_defaulted_on_prep_preg'] &
-                    #     ~person['hv_is_on_prep'] &
-                    #     (self.sim.date.year >= self.module.parameters['prep_start_year_preg'])
-                    # ):
-                    #     if self.module.lm['lm_prep_preg'].predict(df.loc[[person_id]], self.module.rng):
-                    #         self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    #             HSI_Hiv_StartOrContinuePregnantWomenOnPrep(person_id=person_id, module=self.module),
-                    #             topen=self.sim.date,
-                    #             tclose=None,
-                    #             priority=0
-                    #         )
+
         else:
             # Test was not possible, so do nothing:
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'VCTNegative': 1})
@@ -1712,7 +1678,7 @@ class HSI_Hiv_StartOrContinuePregnantWomenOnPrep(HSI_Event, IndividualScopeEvent
         # - has previously defaulted from PrEP
 
         if (~person["is_alive"] or
-            (~person["is_pregnant"] or person["si_date_of_last_delivery"] < self.sim.date - pd.DateOffset(months=18)) or
+            (~person["is_pregnant"] or (person["si_date_of_last_delivery"] < (self.sim.date - pd.DateOffset(months=18)))) or
             person["hv_diagnosed"] or
             person["hv_defaulted_on_prep_preg"] or
             (now.year < p["prep_start_year_preg"])):
@@ -2039,6 +2005,16 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     df.age_years.between(15, 49)
                     ]) / n_fsw
 
+        # hiv prev among pregnant women
+        n_preg = len(df.loc[df.is_alive & df.is_pregnant])
+
+        prev_hiv_preg = 0 if n_preg == 0 else \
+            len(df.loc[
+                df.is_alive &
+                df.hv_inf &
+                df.is_pregnant
+                ]) / n_preg
+
         # hiv prev among pregnant and breastfeeding women
         n_preg_and_bf = len(df.loc[df.is_alive & (df.is_pregnant | (df.si_date_of_last_delivery > (now - DateOffset(months=18))))])
 
@@ -2058,7 +2034,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                  )])
 
         denom_preg = len(df[df.is_alive & ~df.hv_inf & df.is_pregnant])
-        #preg_inc = (n_new_infections_preg / denom_preg)
+        preg_inc = (n_new_infections_preg / denom_preg)
 
         n_new_infections_bf = len(
             df.loc[
@@ -2068,16 +2044,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                  )])
 
         denom_bf = len(df[df.is_alive & ~df.hv_inf & (df.si_date_of_last_delivery > (now - DateOffset(months=18)))])
-        #bf_inc = (n_new_infections_bf / denom_bf)
-
-        #n_new_infections_preg_and_bf = len(
-        #    df.loc[
-        #        (df.is_alive
-        #         & (df.is_pregnant ^ (df.si_date_of_last_delivery < (now - DateOffset(months=18))))
-        #         & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
-        #         )])
-
-        #denom_preg_and_bf = len(df[df.is_alive & ~df.hv_inf & (df.is_pregnant ^ (df.si_date_of_last_delivery < (now - DateOffset(months=18))))])
 
         n_new_infections_preg_and_bf = n_new_infections_preg + n_new_infections_bf
         denom_preg_and_bf = denom_preg + denom_bf
@@ -2094,7 +2060,9 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         "hiv_adult_inc_1549": adult_inc_1549,
                         "hiv_child_inc": child_inc,
                         "hiv_prev_fsw": prev_hiv_fsw,
+                        "hiv_prev_preg": prev_hiv_preg,
                         "hiv_prev_preg_and_bf": prev_hiv_preg_and_bf,
+                        "hiv_preg_inc": preg_inc,
                         "hiv_preg_and_bf_inc": preg_and_bf_inc,
                     }
                     )
