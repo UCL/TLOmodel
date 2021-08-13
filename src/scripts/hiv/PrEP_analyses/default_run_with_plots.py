@@ -360,7 +360,7 @@ tot_aids_deaths.index = pd.to_datetime(tot_aids_deaths.index, format='%Y')
 
 
 # aids mortality rates per 1000 person-years
-total_aids_deaths_rate_1000py = (tot_aids_deaths / py) * 1000
+total_aids_deaths_rate_100000py = (tot_aids_deaths / py) * 100000
 
 # ---------------------------------------------------------------------- #
 
