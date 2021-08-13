@@ -1218,13 +1218,13 @@ class SevereAcuteMalnutritionDeathEvent(Event, IndividualScopeEventMixin):
 
         # Check if this person should still die from SAM:
         if pd.isnull(df.at[person_id, 'un_am_recovery_date']):
-            # Implement the death:
+            # Cause the death to happen immediately
             df.at[person_id, 'un_sam_death_date'] = self.sim.date
-            self.sim.schedule_event(
-                demography.InstantaneousDeath(
-                    self.module,
-                    person_id,
-                    cause='SAM'), self.sim.date)
+            self.sim.modules['Demography'].do_death(
+                individual_id=person_id,
+                cause='SAM',
+                originating_module=self.module
+            )
 
 
 class WastingNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
