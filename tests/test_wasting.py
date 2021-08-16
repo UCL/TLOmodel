@@ -764,28 +764,110 @@ def test_use_of_HSI(tmpdir):
     assert not pd.isnull(person['un_am_recovery_date'])
     assert pd.isnull(person['un_sam_death_date'])
 
-# TODO: do the HSI tests for SAM, with complication, witout complcations and respective HSIs
 
-    # # Check that there is a ProgressionSevereWastingEvent scheduled for this person:
-    # progression_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-    #                            isinstance(event_tuple[1], ProgressionSevereWastingEvent)
-    #                            ][0]
-    # date_of_scheduled_progression = progression_event_tuple[0]
-    # progression_event = progression_event_tuple[1]
-    # assert date_of_scheduled_progression > sim.date
-    #
-    # # Run the progression to severe wasting event:
-    # sim.date = date_of_scheduled_progression
-    # progression_event.apply(person_id=person_id)
-    #
-    # # Check properties of this individual: (should now be severely wasted and without a scheduled death date)
-    # person = df.loc[person_id]
-    # assert person['un_ever_wasted']
-    # assert person['un_WHZ_category'] == 'WHZ<-3'
-    # assert person['un_clinical_acute_malnutrition'] == 'SAM'
-    # assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
-    # assert pd.isnull(person['un_am_recovery_date'])
-    # assert pd.isnull(person['un_sam_death_date'])
+def test_use_of_HSI_OTP(tmpdir):
+    """ Check that the HSI_outpatient_therapeutic_programme_for_SAM works"""
+
+    def test_use_of_HSI_for_SAM(complications):
+        dur = pd.DateOffset(days=0)
+        popsize = 100
+        sim = get_sim(tmpdir)
+
+        sim.make_initial_population(n=popsize)
+        sim.simulate(end_date=start_date + dur)
+        sim.event_queue.queue = []  # clear the queue
+
+        # Make 100% death rate by replacing with empty linear model 1.0
+        sim.modules['Wasting'].sam_death_equation = LinearModel(
+            LinearModelType.MULTIPLICATIVE, 1.0)
+
+        # increase incidence of wasting
+        params = sim.modules['Wasting'].parameters
+        params['base_inc_rate_wasting_by_agegp'] = [5 * v for v in params['base_inc_rate_wasting_by_agegp']]
+
+        # increase progression to severe wasting
+        params['progression_severe_wasting_by_agegp'] = [v == 1.0 for v in params['progression_severe_wasting_by_agegp']]
+
+        # remove the probability of complications in SAM
+        if complications:
+            params['prob_complications_in_SAM'] = 1.0  # only SAM with complications
+        else:
+            params['prob_complications_in_SAM'] = 0.0  # no SAM with complications
+
+        # Get person to use:
+        df = sim.population.props
+        under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+        person_id = under5s.index[0]
+        assert df.loc[person_id, 'un_WHZ_category'] == 'WHZ>=-2'
+
+        # Run Wasting Polling event to get new incident cases:
+        polling = WastingPollingEvent(module=sim.modules['Wasting'])
+        polling.apply(sim.population)
+
+        # Check properties of this individual:
+        person = df.loc[person_id]
+        assert person['un_ever_wasted']
+        assert person['un_WHZ_category'] == '-3<=WHZ<-2'
+        assert person['un_last_wasting_date_of_onset'] == sim.date
+        assert pd.isnull(person['un_am_recovery_date'])
+        assert pd.isnull(person['un_sam_death_date'])
+        # Check not on treatment:
+        assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
+
+        # Check that there is a ProgressionSevereWastingEvent scheduled for this person:
+        progression_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
+                                   isinstance(event_tuple[1], ProgressionSevereWastingEvent)
+                                   ][0]
+        date_of_scheduled_progression = progression_event_tuple[0]
+        progression_event = progression_event_tuple[1]
+        assert date_of_scheduled_progression > sim.date
+
+        # Run the progression to severe wasting event:
+        sim.date = date_of_scheduled_progression
+        progression_event.apply(person_id=person_id)
+
+        # Check properties of this individual: (should now be severely wasted and without a scheduled death date)
+        person = df.loc[person_id]
+        assert person['un_ever_wasted']
+        assert person['un_WHZ_category'] == 'WHZ<-3'
+        assert person['un_clinical_acute_malnutrition'] == 'SAM'
+        assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
+        assert pd.isnull(person['un_am_recovery_date'])
+        assert pd.isnull(person['un_sam_death_date'])
+
+        # Run the HSI event
+        if complications:
+            hsi = HSI_inpatient_care_for_complicated_SAM(person_id=person_id, module=sim.modules['Wasting'])
+            hsi.run(squeeze_factor=0.0)
+        else:
+            hsi = HSI_outpatient_therapeutic_programme_for_SAM(person_id=person_id, module=sim.modules['Wasting'])
+            hsi.run(squeeze_factor=0.0)
+
+        # Check that person is now on treatment:
+        assert sim.date == df.at[person_id, 'un_acute_malnutrition_tx_start_date']
+
+        # Check that a CureEvent has been scheduled
+        cure_event = [event_tuple[1] for event_tuple in sim.find_events_for_person(person_id) if
+                      isinstance(event_tuple[1], ClinicalAcuteMalnutritionRecoveryEvent)][0]
+
+        # Run the CureEvent
+        cure_event.apply(person_id=person_id)
+
+        # Check that the person is cured and is alive still:
+        person = df.loc[person_id]
+        assert person['is_alive']
+        assert person['un_WHZ_category'] == 'WHZ>=-2'
+        assert person['un_clinical_acute_malnutrition'] == 'well'
+        assert not pd.isnull(person['un_am_recovery_date'])
+        assert pd.isnull(person['un_sam_death_date'])
+
+    test_use_of_HSI_for_SAM(complications=True)
+    test_use_of_HSI_for_SAM(complications=False)
+
+
+# todo: other modules properties in Wasting, change to simplified births
+
+
     #
     # # Check not on treatment:
     # assert not df.at[person_id, 'ri_on_treatment']
