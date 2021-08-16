@@ -17,6 +17,7 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
 from tlo.methods import (
     bladder_cancer,
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -24,6 +25,8 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
+    newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -36,8 +39,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 190000
+end_date = Date(2011, 1, 1)
+popsize = 1900
 
 
 def run_sim(service_availability):
@@ -56,6 +59,9 @@ def run_sim(service_availability):
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
                  )
     # Run the simulation
     sim.make_initial_population(n=popsize)
@@ -87,7 +93,7 @@ def get_summary_stats(logfile):
     }
     counts_by_cascade = pd.DataFrame(summary)
     # 3) DALYS wrt age (total over whole simulation)
-    dalys = output['tlo.methods.healthburden']['DALYS']
+    dalys = output['tlo.methods.healthburden']['dalys']
     dalys = dalys.groupby(by=['age_range']).sum()
     dalys.index = dalys.index.astype(make_age_grp_types())
     dalys = dalys.sort_index()
