@@ -4,7 +4,7 @@ from tlo.methods import (
     care_of_women_during_pregnancy,
     contraception,
     demography,
-    epilepsy,
+    depression,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -14,9 +14,6 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
-    care_of_women_during_pregnancy,
-    newborn_outcomes,
-    postnatal_supervisor
 )
 
 
@@ -38,8 +35,8 @@ def run():
 
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
-    end_date = Date(2010, 4, 2)
-    pop_size = 100000
+    end_date = Date(2014, 7, 1)
+    pop_size = 10000
 
     # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
     # `log_config` arguments, these will override the default behaviour.
@@ -66,10 +63,7 @@ def run():
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
-        epilepsy.Epilepsy(resourcefilepath=resources),
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resources),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources)
+        depression.Depression(resourcefilepath=resources),
     )
 
     sim.make_initial_population(n=pop_size)

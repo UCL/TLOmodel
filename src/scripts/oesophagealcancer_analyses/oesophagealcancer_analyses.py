@@ -49,7 +49,7 @@ popsize = 5000
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -67,8 +67,6 @@ def run_sim(service_availability):
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
                  )
-
-    sim.seed_rngs(0)
 
     # Establish the logger
     logfile = sim.configure_logging(filename="LogFile")

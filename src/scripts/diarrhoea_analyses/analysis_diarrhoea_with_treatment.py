@@ -1,4 +1,7 @@
-
+"""
+This will run the Diarrhoea Module and plot the rate of death for diarrhoea overall and compare with data.
+There is treatment.
+"""
 
 # %% Import Statements and initial declarations
 import datetime
@@ -39,7 +42,7 @@ log_config = {
     'custom_levels': {
         '*': logging.WARNING,
         'tlo.methods.demography': logging.INFO,
-        'tlo.methods.epilepsy': logging.INFO
+        'tlo.methods.diarrhoea': logging.INFO
     }
 }
 
@@ -252,29 +255,6 @@ death_rate_comparison = pd.Series(
 death_rate_comparison.plot.bar()
 plt.title('Death Rate to Diarrhoea in Under 5s')
 plt.savefig(outputpath / ("Diarrhoea_death_rate_0-5_year_olds" + datestamp + ".pdf"), format='pdf')
-plt.show()
-
-# %% Plot total numbers of death against comparable estimate from GBD
-
-# Get comparison
-comparison = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=resourcefilepath)
-
-# Make a simple bar chart
-comparison.loc[('2015-2019', slice(None), '0-4', 'Childhood Diarrhoea')].sum().plot.bar()
-plt.title('Deaths per year due to Childhood Diarrhoea, 2015-2019')
-plt.tight_layout()
-plt.show()
-
-# %% Look at Case Fatality Rate
-cfr = dict()
-for age_grp in ['0y', '1y', '2-4y']:
-    cfr[age_grp] = deaths[age_grp] / counts[age_grp].apply(pd.Series).sum(axis=1)
-cfr = pd.DataFrame(cfr).drop(index=2015).mean() * 100_000
-
-cfr.plot.bar()
-plt.title('Case Fatality Rate for Diarrhoea')
-plt.ylabel('Deaths per 100k Cases')
-plt.xlabel('Age-Group')
 plt.show()
 
 # %% Plot total numbers of death against comparable estimate from GBD

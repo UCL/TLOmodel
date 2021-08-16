@@ -729,7 +729,6 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.eventsTracker = {'SelfHarmEvents': 0, 'SuicideEvents': 0}
 
 
-
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------

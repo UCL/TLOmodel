@@ -15,7 +15,7 @@ popsize = 10000
 @pytest.fixture(scope='module')
 def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
 
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
@@ -26,7 +26,6 @@ def simulation():
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         epilepsy.Epilepsy(resourcefilepath=resourcefilepath)
     )
-    sim.seed_rngs(0)
     return sim
 
 
