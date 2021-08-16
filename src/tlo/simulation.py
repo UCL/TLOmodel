@@ -70,14 +70,11 @@ class Simulation:
         self.configure_logging(**log_config)
 
         # random number generator
-        if seed is None:
-            seed = np.random.randint(2 ** 31 - 1)
-            seed_from = 'auto'
-        else:
-            seed_from = 'user'
+        seed_from = 'auto' if seed is None else 'user'
         self._seed = seed
+        self._seed_seq = np.random.SeedSequence(seed)
         logger.info(key='info', data=f'Simulation RNG {seed_from} seed: {self._seed}')
-        self.rng = np.random.RandomState(self._seed)
+        self.rng = np.random.RandomState(np.random.MT19937(self._seed_seq))
 
     def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
                           custom_levels: Dict[str, int] = None):
@@ -129,14 +126,17 @@ class Simulation:
         :param modules: the disease module(s) to use as part of this simulation.
             Multiple modules may be given as separate arguments to one call.
         """
-        for module in modules:
+        # Iterate over modules and per-module seed sequences spawned from simulation
+        # level seed sequence
+        for module, seed_seq in zip(modules, self._seed_seq.spawn(len(modules))):
             assert module.name not in self.modules, (
                 'A module named {} has already been registered'.format(module.name))
 
-            # set the rng seed for the registered module
-            module_seed = self.rng.randint(2 ** 31 - 1)
-            logger.info(key='info', data=f'{module.name} RNG auto seed: {module_seed}')
-            module.rng = np.random.RandomState(module_seed)
+            # Seed the RNG for the registered module using spawned seed sequence
+            logger.info(
+                key='info', data=f'{module.name} RNG auto seed: {seed_seq.entropy}'
+            )
+            module.rng = np.random.RandomState(np.random.MT19937(seed_seq))
 
             # if user provided custom log levels
             if self._custom_log_levels is not None:
@@ -150,24 +150,6 @@ class Simulation:
             self.modules[module.name] = module
             module.sim = self
             module.read_parameters('')
-
-    def seed_rngs(self, seed):
-        """Seed the random number generator (RNG) for the Simulation instance and registered modules
-
-        The Simulation instance has its RNG seeded with the supplied value. Each module has its own
-        RNG with its own state, which is seeded using a random integer drawn from the (newly seeded)
-        Simulation RNG
-
-        :param seed: the seed for the Simulation RNG. If seed is not provided, a random seed will be
-            used.
-        """
-        logger.warning(key='warning', data='seed_rngs() is deprecated. Provide `seed` argument to Simulation().')
-        self.rng.seed(seed)
-        logger.info(key='info', data=f'Simulation RNG user seed: {seed}')
-        for module in self.modules.values():
-            module_seed = self.rng.randint(2 ** 31 - 1)
-            logger.info(key='info', data=f'{module.name} RNG auto seed: {module_seed}')
-            module.rng = np.random.RandomState(module_seed)
 
     def make_initial_population(self, *, n):
         """Create the initial population to simulate.
