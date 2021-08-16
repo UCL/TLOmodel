@@ -164,6 +164,7 @@ def test_basic_run_with_high_incidence_hypertension():
     assert df.loc[df.is_alive & (df.age_years >= 20)].nc_hypertension.all()
     assert df.loc[df.is_alive & (df.age_years >= 20)].nc_chronic_ischemic_hd.all()
 
+
 def hsi_checks(sim):
     """
     Basic checks for the module: types of columns, onset and deaths of each condition and event
