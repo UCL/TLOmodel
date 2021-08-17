@@ -52,7 +52,7 @@ Is it right that 'danger_signs' is an indepednet symptom? It seems like this is 
  course of a diagnosis (like in diarrhoea module).
 """
 
-
+from itertools import chain
 from collections import defaultdict
 from pathlib import Path
 
@@ -76,7 +76,7 @@ logger.setLevel(logging.INFO)
 # ---------------------------------------------------------------------------------------------------------
 
 class Alri(Module):
-    """This is the disease module for Acute Lower Respiritory Infections."""
+    """This is the disease module for Acute Lower Respiratory Infections."""
 
     # Declare Metadata
     METADATA = {
@@ -117,21 +117,17 @@ class Alri(Module):
     }
 
     # Make set of all pathogens combined:
-    all_pathogens = set()
-    for t in pathogens.values():
-        all_pathogens.update(list(t))
+    all_pathogens = set(chain.from_iterable(pathogens.values()))
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        f"ALRI_{path}":
-            Cause(gbd_causes={'Lower respiratory infections'}, label='Lower respiratory infections')
+        f"ALRI_{path}": Cause(gbd_causes={'Lower respiratory infections'}, label='Lower respiratory infections')
         for path in all_pathogens
     }
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        f"ALRI_{path}":
-            Cause(gbd_causes={'Lower respiratory infections'}, label='Lower respiratory infections')
+        f"ALRI_{path}": Cause(gbd_causes={'Lower respiratory infections'}, label='Lower respiratory infections')
         for path in all_pathogens
     }
 
@@ -704,7 +700,7 @@ class Alri(Module):
         self.models = None
 
         # Maximum duration of an episode (beginning with inection and ending with recovery)
-        self.max_duration_of_epsiode = None
+        self.max_duration_of_episode = None
 
         # dict to hold the DALY weights
         self.daly_wts = dict()
@@ -718,8 +714,8 @@ class Alri(Module):
         * Define symptoms
         """
         self.load_parameters_from_dataframe(
-            pd.read_excel(
-                Path(self.resourcefilepath) / 'ResourceFile_Alri.xlsx', sheet_name='Parameter_values'))
+            pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Alri.xlsx', sheet_name='Parameter_values')
+        )
 
         self.check_params_read_in_ok()
 
@@ -751,11 +747,10 @@ class Alri(Module):
 
     def pre_initialise_population(self):
         """Define columns for complications at run-time"""
-        Alri.PROPERTIES.update({
-            f"ri_complication_{complication}": Property(Types.BOOL,
-                                                        f"Whether this person has complication {complication}")
-            for complication in self.complications
-        })
+        for complication in self.complications:
+            Alri.PROPERTIES[f"ri_complication_{complication}"] = Property(
+                Types.BOOL, f"Whether this person has complication {complication}"
+            )
 
     def initialise_population(self, population):
         """
@@ -813,7 +808,7 @@ class Alri(Module):
             self.daly_wts['daly_very_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=46)
 
         # Define the max episode duration
-        self.max_duration_of_epsiode = DateOffset(days=self.parameters['days_between_treatment_and_cure'])
+        self.max_duration_of_episode = DateOffset(days=self.parameters['days_between_treatment_and_cure'])
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -959,7 +954,7 @@ class Alri(Module):
             (df.loc[not_curr_inf, 'ri_end_of_current_episode'] <= self.sim.date) |
             (
                 (df.loc[not_curr_inf, 'ri_end_of_current_episode'] - self.sim.date).dt.days
-                <= self.max_duration_of_epsiode.days
+                <= self.max_duration_of_episode.days
             )
                 ).all()
 
@@ -1038,10 +1033,10 @@ class Models:
             matches the specified value in the model when averaged across the population
             """
 
-            def make_naive_linear_model(patho, intercept=1.0):
+            def make_naive_linear_model(_patho, intercept=1.0):
                 """Make the linear model based exactly on the parameters specified"""
 
-                base_inc_rate = f'base_inc_rate_ALRI_by_{patho}'
+                base_inc_rate = f'base_inc_rate_ALRI_by_{_patho}'
                 return LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     intercept,
@@ -1081,8 +1076,7 @@ class Models:
         # apply the reduced risk of acquisition for those vaccinated
         if pathogen == "Strep_pneumoniae_PCV13":
             baseline.loc[df['va_pneumo_all_doses']] *= p['rr_infection_strep_with_pneumococcal_vaccine']
-
-        if pathogen == "Hib":
+        elif pathogen == "Hib":
             baseline.loc[df['va_hib_all_doses']] *= p['rr_infection_hib_haemophilus_vaccine']
 
         return baseline
@@ -1110,7 +1104,7 @@ class Models:
                 # likely to be 'viral_pneumonia' (if there is no secondary bacterial infection)
                 if p['prob_viral_pneumonia_bacterial_coinfection'] > self.rng.rand():
                     bacterial_coinfection = self.secondary_bacterial_infection(va_pneumo_all_doses)
-                    disease_type = 'bacterial_pneumonia' if ~pd.isnull(bacterial_coinfection) else 'viral_pneumonia'
+                    disease_type = 'bacterial_pneumonia' if pd.notnull(bacterial_coinfection) else 'viral_pneumonia'
                 else:
                     bacterial_coinfection = np.nan
                     disease_type = 'viral_pneumonia'
@@ -1118,7 +1112,7 @@ class Models:
                 # likely to be 'bronchiolitis' (if there is no secondary bacterial infection)
                 if p['prob_secondary_bacterial_infection_in_bronchiolitis'] > self.rng.rand():
                     bacterial_coinfection = self.secondary_bacterial_infection(va_pneumo_all_doses)
-                    disease_type = 'bacterial_pneumonia' if ~pd.isnull(bacterial_coinfection) else 'bronchiolitis'
+                    disease_type = 'bacterial_pneumonia' if pd.notnull(bacterial_coinfection) else 'bronchiolitis'
                 else:
                     bacterial_coinfection = np.nan
                     disease_type = 'bronchiolitis'
@@ -1163,7 +1157,7 @@ class Models:
         has_secondary_bacterial_inf = ~pd.isnull(person['ri_secondary_bacterial_pathogen'])
         disease_type = person['ri_disease_type']
 
-        probs = defaultdict(lambda: 0.0)
+        probs = defaultdict(float)
 
         if primary_path_is_bacterial or has_secondary_bacterial_inf:
             for c in ['pneumothorax', 'pleural_effusion', 'lung_abscess', 'sepsis', 'meningitis', 'hypoxia']:
@@ -1178,15 +1172,12 @@ class Models:
                 probs[c] += p[f"prob_{c}_by_bronchiolitis"]
 
         # determine which complications are onset:
-        complications = set()
-        for k, v in probs.items():
-            if v > self.rng.rand():
-                complications.update([k])
+        complications = {c for c, p in probs.items() if p > self.rng.rand()}
 
         # Determine if repiratory failure should also be onset (this depends on whether or not hypoxia is onset):
         if 'hypoxia' in complications:
             if p['prob_respiratory_failure_when_SpO2<93%'] > self.rng.rand():
-                complications.update(['respiratory_failure'])
+                complications.add('respiratory_failure')
 
         return complications
 
@@ -1200,7 +1191,7 @@ class Models:
         # 'respiratory_failure':
         if person['ri_complication_pneumothorax'] and ~person['ri_complication_respiratory_failure']:
             if p['prob_pneumothorax_to_respiratory_failure'] > self.rng.rand():
-                complications.update(['respiratory_failure'])
+                complications.add('respiratory_failure')
 
         # 'sepsis'
         if ~person['ri_complication_sepsis']:
@@ -1211,7 +1202,7 @@ class Models:
                 prob += p['prob_empyema_to_sepsis']
 
             if p['prob_pneumothorax_to_respiratory_failure'] > self.rng.rand():
-                complications.update(['sepsis'])
+                complications.add('sepsis')
 
         return complications
 
@@ -1234,10 +1225,7 @@ class Models:
         }
 
         # determine which symptoms are onset:
-        symptoms = set()
-        for k, v in probs.items():
-            if v > self.rng.rand():
-                symptoms.update([k])
+        symptoms = {s for s, p in probs.items() if p > self.rng.rand()}
 
         return symptoms
 
@@ -1295,10 +1283,7 @@ class Models:
             raise ValueError
 
         # determine which symptoms are onset:
-        symptoms = set()
-        for k, v in probs.items():
-            if v > self.rng.rand():
-                symptoms.update([k])
+        symptoms = {s for s, p in probs.items() if p > self.rng.rand()}
 
         return symptoms
 
@@ -1315,7 +1300,7 @@ class Models:
         # The effect of age:
         if person['age_years'] == 1:
             risk *= p['rr_death_ALRI_age12to23mo']
-        elif (2 <= person['age_years'] <= 4):
+        elif 2 <= person['age_years'] <= 4:
             risk *= p['rr_death_ALRI_age24to59mo']
 
         # The effect of complications:
@@ -1376,10 +1361,8 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Compute the incidence rate for each person getting Alri and then convert into a probability
         # getting all children that do not currently have an Alri episode (never had or last episode resolved)
         mask_could_get_new_alri_event = (
-            df['is_alive'] &
-            (df['age_years'] < 5) &
-            ~df['ri_current_infection_status'] &
-            ((df['ri_end_of_current_episode'] < self.sim.date) | pd.isnull(df['ri_end_of_current_episode']))
+            df.is_alive & (df.age_years < 5) & ~df.ri_current_infection_status &
+            ((df.ri_end_of_current_episode < self.sim.date) | pd.isnull(df.ri_end_of_current_episode))
         )
 
         # Compute the incidence rate for each person acquiring Alri
@@ -1452,15 +1435,15 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         models = m.models
 
         # The event should not run if the person is not currently alive:
-        if not person['is_alive']:
+        if not person.is_alive:
             return
 
         # Add this case to the counter:
-        self.module.logging_event.new_case(age=person['age_years'], pathogen=self.pathogen)
+        self.module.logging_event.new_case(age=person.age_years, pathogen=self.pathogen)
 
         # ----------------- Determine the Alri disease type and bacterial coinfection for this case -----------------
         disease_type, bacterial_coinfection = models.determine_disease_type_and_secondary_bacterial_coinfection(
-            age=person['age_years'], pathogen=self.pathogen, va_pneumo_all_doses=person['va_pneumo_all_doses'])
+            age=person.age_years, pathogen=self.pathogen, va_pneumo_all_doses=person.va_pneumo_all_doses)
 
         # ----------------------- Duration of the Alri event -----------------------
         duration_in_days_of_alri = rng.randint(1, 8)  # assumes uniform interval around mean duration with range 4 days
@@ -1470,7 +1453,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         # Define 'episode end' date. This the date when this episode ends. It is the last possible data that any HSI
         # could affect this episode.
-        episode_end = date_of_outcome + m.max_duration_of_epsiode
+        episode_end = date_of_outcome + m.max_duration_of_episode
 
         # Update the properties in the dataframe:
         df.loc[person_id,
@@ -1571,13 +1554,13 @@ class AlriDelayedOnsetComplication(Event, IndividualScopeEventMixin):
         m = self.module
 
         # Do nothing if person is not alive:
-        if not df.at[person_id, 'is_alive']:
+        if not person.is_alive:
             return
 
         # If person is infected, not on treatment and does not already have the complication, add this complication:
         if (
-            person['ri_current_infection_status'] and
-            ~person['ri_on_treatment'] and
+            person.ri_current_infection_status and
+            ~person.ri_on_treatment and
             ~person[f'ri_complication_{self.complication}']
         ):
             df.at[person_id, f'ri_complication_{self.complication}'] = True
@@ -1599,19 +1582,19 @@ class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
 
         # The event should not run if the person is not currently alive
-        if not person['is_alive']:
+        if not person.is_alive:
             return
 
         # Check if person should really recover:
         if (
-            person['ri_current_infection_status'] and
-            (person['ri_scheduled_recovery_date'] == self.sim.date) and
-            pd.isnull(person['ri_scheduled_death_date'])
+            person.ri_current_infection_status and
+            (person.ri_scheduled_recovery_date == self.sim.date) and
+            pd.isnull(person.ri_scheduled_death_date)
         ):
             # Log the recovery
             self.module.logging_event.new_recovered_case(
-                age=person['age_years'],
-                pathogen=person['ri_primary_pathogen']
+                age=person.age_years,
+                pathogen=person.ri_primary_pathogen
             )
 
             # Do the episode:
@@ -1630,17 +1613,15 @@ class AlriCureEvent(Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
 
         # The event should not run if the person is not currently alive
-        if not person['is_alive']:
+        if not person.is_alive:
             return
 
         # Check if person should really be cured:
-        if (
-            person['ri_current_infection_status']
-        ):
+        if person.ri_current_infection_status:
             # Log the cure:
-            pathogen = person['ri_primary_pathogen']
+            pathogen = person.ri_primary_pathogen
             self.module.logging_event.new_cured_case(
-                age=df.at[person_id, 'age_years'],
+                age=person.age_years,
                 pathogen=pathogen
             )
 
@@ -1661,17 +1642,17 @@ class AlriDeathEvent(Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
 
         # The event should not run if the person is not currently alive
-        if not person['is_alive']:
+        if not person.is_alive:
             return
 
         # Check if person should really die of Alri:
         if (
-            person['ri_current_infection_status'] and
-            (person['ri_scheduled_death_date'] == self.sim.date) and
-            pd.isnull(person['ri_scheduled_recovery_date'])
+            person.ri_current_infection_status and
+            (person.ri_scheduled_death_date == self.sim.date) and
+            pd.isnull(person.ri_scheduled_recovery_date)
         ):
             # Do the death:
-            pathogen = person['ri_primary_pathogen']
+            pathogen = person.ri_primary_pathogen
             self.module.sim.modules['Demography'].do_death(
                 individual_id=person_id,
                 cause='ALRI_' + pathogen,
@@ -1680,7 +1661,7 @@ class AlriDeathEvent(Event, IndividualScopeEventMixin):
 
             # Log the death in the Alri logging system
             self.module.logging_event.new_death(
-                age=df.at[person_id, 'age_years'],
+                age=person.age_years,
                 pathogen=pathogen
             )
 
@@ -1709,7 +1690,7 @@ class HSI_Alri_GenericTreatment(HSI_Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
 
         # Exit if the person is not alive or is not currently infected:
-        if not (person['is_alive'] and person['ri_current_infection_status']):
+        if not (person.is_alive and person.ri_current_infection_status):
             return
 
         # For example, say that probability of cure = 1.0
