@@ -256,6 +256,13 @@ class HealthSystem(Module):
         caps = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Daily_Capabilities.csv')
         self.parameters['Daily_Capabilities'] = caps.iloc[:, 1:]
         self.reformat_daily_capabilities()  # Reformats this table to include zero where capacity is not available
+        # Store set of officers with non-zero daily availability for checking scheduled
+        # HSI events do not make appointment time requests of unavailable officers
+        self._officers_with_availability = set(
+            self.parameters['Daily_Capabilities'].index[
+                (self.parameters['Daily_Capabilities']['Total_Minutes_Per_Day'] > 0)
+            ]
+        )
 
         # Read in ResourceFile_Consumables and then process it to create the data structures needed
         # NB. Modules can use this to look-up what consumables they need.
@@ -511,15 +518,18 @@ class HealthSystem(Module):
                 f"An appointment type has been requested at a facility level for which "
                 f"it is not possible: {hsi_event.TREATMENT_ID}"
             )
-            # 6) Check that event (if individual level) is able to run with this configuration of officers
-            # (ie. Check that this does not demand officers that are never available at a particular facility)
-            caps = self.parameters['Daily_Capabilities']
+            # 6) Check that event (if individual level) is able to run with this
+            # configuration of officers (i.e. check that this does not demand officers
+            # that are never available at a particular facility)
             footprint = self.get_appt_footprint_as_time_request(hsi_event=hsi_event)
-            footprint_is_possible = (caps.loc[footprint, 'Total_Minutes_Per_Day'] > 0).all()
-            if not footprint_is_possible:
-                logger.warning(key="message",
-                               data=f"The expected footprint is not possible with the configuration of officers: "
-                                    f"{hsi_event.TREATMENT_ID}.")
+            if not self._officers_with_availability.issuperset(footprint.keys()):
+                logger.warning(
+                    key="message",
+                    data=(
+                        "The expected footprint is not possible with the configuration "
+                        f"of officers: {hsi_event.TREATMENT_ID}."
+                    )
+                )
 
         #  Manipulate the priority level if needed
         # If ignoring the priority in scheduling, then over-write the provided priority information
@@ -660,28 +670,27 @@ class HealthSystem(Module):
         assert abs(capabilities_ex['Total_Minutes_Per_Day'].sum() - capabilities['Total_Minutes_Per_Day'].sum()) < 1e-7
         assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
 
+        # Apply the capabilities coefficient
+        capabilities_ex['Total_Minutes_Per_Day'] *= self.capabilities_coefficient
+
         # Updates the capabilities table with the reformatted version
         self.parameters['Daily_Capabilities'] = capabilities_ex
 
     def get_capabilities_today(self):
         """
-        Get the capabilities of the health system today
+        Get the capabilities of the health system today.
         returns: DataFrame giving minutes available for each officer type in each facility type
 
-        Functions can go in here in the future that could expand the time available, simulating increasing efficiency.
-        (The concept of a productivitiy ratio raised by Martin Chalkley). For now just have a single scaling value,
-        named capabilities_coefficient.
+        Functions can go in here in the future that could expand the time available,
+        simulating increasing efficiency (the concept of a productivitiy ratio raised
+        by Martin Chalkley).
+
+        For now this method does nothing.
+
+        Note that the scaling by `capabilities_coefficient` is applied on the initial
+        processing of the `Daily_Capabilities` data in `reformat_daily_capabilities`.
         """
-
-        # Get the capabilities data as they are imported
-        capabilities_today = self.parameters['Daily_Capabilities']
-
-        # apply the capabilities_coefficient
-        capabilities_today['Total_Minutes_Per_Day'] = (
-            capabilities_today['Total_Minutes_Per_Day'] * self.capabilities_coefficient
-        )
-
-        return capabilities_today
+        return self.parameters['Daily_Capabilities']
 
     def get_blank_appt_footprint(self):
         """
@@ -819,7 +828,8 @@ class HealthSystem(Module):
             (position in array matches that in the all_call_today list).
         """
 
-        # 1) Compute the load factors for each officer type at each facility that is called-upon in this list of HSIs
+        # 1) Compute the load factors for each officer type at each facility that is
+        # called-upon in this list of HSIs
         total_available = current_capabilities['Total_Minutes_Per_Day']
         load_factor = {}
         for officer, call in total_footprint.items():
@@ -831,10 +841,11 @@ class HealthSystem(Module):
             else:
                 load_factor[officer] = max(call / availability - 1, 0)
 
-        # 5) Convert these load-factors into an overall 'squeeze' signal for eachHSI, based on the highest load-factor
-        # of any officer required
+        # 5) Convert these load-factors into an overall 'squeeze' signal for each HSI,
+        # based on the highest load-factor of any officer required (or zero if event
+        # has an empty footprint)
         squeeze_factor_per_hsi_event = np.array([
-            max(load_factor[officer] for officer in footprint)
+            max((load_factor[officer] for officer in footprint), default=0)
             for footprint in footprints_per_event
         ])
 
@@ -1075,19 +1086,17 @@ class HealthSystem(Module):
         total_calls = total_calls_per_officer.sum()
 
         assert len(comparison) == len(current_capabilities)
-        assert (
-            abs(comparison['Minutes_Used'].sum() - total_calls) <= 0.0001 * total_calls
-        )
+        assert np.isclose(comparison['Minutes_Used'].sum(), total_calls)
 
         # Sum within each Facility_ID using groupby (Index of 'summary' is Facility_ID)
         summary = comparison.groupby('Facility_ID')[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
 
         # Compute Fraction of Time Used Across All Facilities
-        fraction_time_used_across_all_facilities = 0.0  # no capabilities or nan arising
-        if summary['Total_Minutes_Per_Day'].sum() > 0:
-            fraction_time_used_across_all_facilities = (
-                summary['Minutes_Used'].sum() / summary['Total_Minutes_Per_Day'].sum()
-            )
+        total_available = summary['Total_Minutes_Per_Day'].sum()
+        fraction_time_used_across_all_facilities = (
+            total_calls / total_available if total_available > 0
+            else 0  # no capabilities or nan arising
+        )
 
         # Compute Fraction of Time Used In Each Facility
         summary['Fraction_Time_Used'] = summary['Minutes_Used'] / summary['Total_Minutes_Per_Day']
