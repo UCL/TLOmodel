@@ -428,7 +428,6 @@ class MeaslesVaccineEvent(Event, IndividualScopeEventMixin):
 class MeaslesRubellaVaccineEvent(Event, IndividualScopeEventMixin):
     """ give measles/rubella vaccine """
     def apply(self, person_id):
-        df = self.sim.population.props
         self.module.increment_dose(person_id, "measles")
         self.module.increment_dose(person_id, "rubella")
 
@@ -656,7 +655,6 @@ class HSI_PneumoVaccine(HsiBaseVaccine):
         return "Epi_Pneumo"
 
     def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
         outcome = self.request_vax_consumables(
             items=[
                 ("Pneumococcal vaccine", 1),
@@ -682,7 +680,6 @@ class HSI_MeaslesRubellaVaccine(HsiBaseVaccine):
         return "Epi_MeaslesRubella"
 
     def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
         outcome = self.request_vax_consumables(
            packages=[("Measles rubella vaccine", 1)]
         )
@@ -726,8 +723,6 @@ class HSI_TdVaccine(HsiBaseVaccine):
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key="debug", data=f"HSI_TdVaccine: giving Td vaccine to {person_id}")
-
-        df = self.sim.population.props
 
         # this package DOES NOT include syringe disposal box
         outcome = self.request_vax_consumables(packages=[("Tetanus toxoid (pregnant women)", 1)])
