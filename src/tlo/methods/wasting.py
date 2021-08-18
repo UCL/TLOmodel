@@ -1620,3 +1620,50 @@ class WastingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                             '48_59mo': currently_wasted_age_48_59mo}
 
         logger.info(key='wasting_prevalence_count', data=currently_wasted)
+
+
+class PropertiesOfOtherModules(Module):
+    """For the purpose of the testing, this module generates the properties upon which the Wasting module relies"""
+
+    PROPERTIES = {
+        'hv_inf': Property(Types.BOOL, 'temporary property'),
+        'nb_low_birth_weight_status': Property(Types.CATEGORICAL, 'temporary property',
+                                               categories=['extremely_low_birth_weight', 'very_low_birth_weight',
+                                                           'low_birth_weight', 'normal_birth_weight']),
+        'nb_size_for_gestational_age': Property(Types.CATEGORICAL, 'temporary property',
+                                                categories=['small_for_gestational_age',
+                                                            'average_for_gestational_age']),
+        'nb_late_preterm': Property(Types.BOOL, 'temporary property'),
+        'nb_early_preterm': Property(Types.BOOL, 'temporary property'),
+
+        'nb_breastfeeding_status': Property(Types.CATEGORICAL, 'temporary property',
+                                            categories=['none', 'non_exclusive', 'exclusive']),
+
+    }
+
+    def __init__(self, name=None):
+        super().__init__(name)
+
+    def read_parameters(self, data_folder):
+        pass
+
+    def initialise_population(self, population):
+        df = population.props
+        df.loc[df.is_alive, 'hv_inf'] = False
+        df.loc[df.is_alive, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
+        df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'exclusive'
+        df.loc[df.is_alive, 'nb_size_for_gestational_age'] = 'average_for_gestational_age'
+        df.loc[df.is_alive, 'nb_late_preterm'] = False
+        df.loc[df.is_alive, 'nb_early_preterm'] = False
+
+    def initialise_simulation(self, sim):
+        pass
+
+    def on_birth(self, mother, child):
+        df = self.sim.population.props
+        df.at[child, 'hv_inf'] = False
+        df.at[child, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
+        df.at[child, 'nb_breastfeeding_status'] = 'exclusive'
+        df.at[child, 'nb_size_for_gestational_age'] = 'average_for_gestational_age'
+        df.at[child, 'nb_late_preterm'] = False
+        df.at[child, 'nb_early_preterm'] = False
