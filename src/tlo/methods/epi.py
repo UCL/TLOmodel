@@ -355,18 +355,6 @@ class Epi(Module):
         if df.at[person_id, f"va_{vaccine}"] >= self.all_doses[vaccine]:
             df.at[person_id, f"va_{vaccine}_all_doses"] = True
 
-# ---------------------------------------------------------------------------------
-# Population-Level Events for Updating Properties
-# ---------------------------------------------------------------------------------
-
-
-class UpdateProperties(RegularEvent, PopulationScopeEventMixin):
-    """Event occuring daily that calls `updates_all_does_properties`"""
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(days=1))
-
-    def apply(self, population):
-        self.module.update_all_doses_properties()
 
 # ---------------------------------------------------------------------------------
 # Individually Scheduled Vaccine Events
