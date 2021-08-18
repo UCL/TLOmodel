@@ -215,7 +215,7 @@ class Epi(Module):
 
         # Initialise all the properties that this module looks after:
         df.at[child_id, "va_bcg"] = False
-        df.at[child_id, [
+        df.loc[child_id, [
             "va_opv",
             "va_dtp",
             "va_hib",
@@ -227,7 +227,7 @@ class Epi(Module):
             "va_td"]
         ] = 0
 
-        df.at[child_id, [
+        df.loc[child_id, [
             "va_bcg_all_doses",
             "va_opv_all_doses",
             "va_dtp_all_doses",
