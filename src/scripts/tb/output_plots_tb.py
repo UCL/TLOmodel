@@ -66,6 +66,10 @@ data_tb_latent_lower = abs(data_tb_latent_all_ages.proportion_latent_TB_lower.va
 data_tb_latent_upper = abs(data_tb_latent_all_ages.proportion_latent_TB_upper.values[0] - data_tb_latent_estimate)
 data_tb_latent_yerr = [data_tb_latent_lower, data_tb_latent_upper]
 
+# TB treatment coverage
+data_tb_ntp = pd.read_excel(xls_tb, sheet_name='NTP2019')
+data_tb_ntp.index = pd.to_datetime(data_tb_ntp['year'], format='%Y')
+data_tb_ntp = data_tb_ntp.drop(columns=['year'])
 
 # HIV resourcefile
 xls = pd.ExcelFile(resourcefilepath / 'ResourceFile_HIV.xlsx')
@@ -357,14 +361,14 @@ tot_aids_deaths = deaths_AIDS.groupby(by=['year']).size()
 tot_aids_deaths.index = pd.to_datetime(tot_aids_deaths.index, format='%Y')
 
 # aids mortality rates per 1000 person-years
-total_aids_deaths_rate_1000py = (tot_aids_deaths / py) * 1000
+total_aids_deaths_rate_100kpy = (tot_aids_deaths / py) * 100000
 
 # ---------------------------------------------------------------------- #
 
 # AIDS deaths (including HIV/TB deaths)
 make_plot(
     title_str='Mortality to HIV-AIDS per 1000 capita',
-    model=total_aids_deaths_rate_1000py,
+    model=total_aids_deaths_rate_100kpy,
     data_mid=data_hiv_unaids_deaths['AIDS_mortality_per_1000'],
     data_low=data_hiv_unaids_deaths['AIDS_mortality_per_1000_lower'],
     data_high=data_hiv_unaids_deaths['AIDS_mortality_per_1000_upper']
@@ -451,9 +455,9 @@ plt.show()
 
 # Per capita testing rates - data from MoH quarterly reports
 make_plot(
-    title_str="Per capita testing rates for adults (15+)",
+    title_str="Per capita testing rates for all ages",
     model=cov_over_time["per_capita_testing_rate"],
-    data_mid=data_hiv_moh_tests["annual_testing_rate_adults"]
+    data_mid=data_hiv_moh_tests["annual_testing_rate_all_ages"]
 )
 plt.legend(['TLO', 'MoH'])
 
@@ -498,3 +502,14 @@ make_plot(
 )
 plt.show()
 
+# ---------------------------------------------------------------------- #
+
+# TB treatment coverage
+make_plot(
+    title_str="Percent of TB cases treated",
+    model=Tb_tx_coverage["tbTreatmentCoverage"] * 100,
+    data_mid=data_tb_ntp["treatment_coverage"],
+)
+plt.legend(['TLO', 'NTP'])
+
+plt.show()

@@ -337,13 +337,13 @@ class Tb(Module):
             Types.REAL, 'probability of an individual without tb requesting tb test'
         ),
         'ds_treatment_length': Parameter(
-            Types.REAL, 'length of treatment for drug-susceptible tb (first case) in days'
+            Types.REAL, 'length of treatment for drug-susceptible tb (first case) in months'
         ),
         'ds_retreatment_length': Parameter(
-            Types.REAL, 'length of treatment for drug-susceptible tb (secondary case) in days'
+            Types.REAL, 'length of treatment for drug-susceptible tb (secondary case) in months'
         ),
         'mdr_treatment_length': Parameter(
-            Types.REAL, 'length of treatment for mdr-tb in days'
+            Types.REAL, 'length of treatment for mdr-tb in months'
         ),
         'prob_retained_ipt_6_months': Parameter(
             Types.REAL, 'probability of being retained on IPT every 6 months if still eligible'
@@ -1284,6 +1284,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         rng = self.module.rng
 
         # check across population on tb treatment and end treatment if required
+        # if current date is after (treatment start date + treatment length) -> end tx
 
         # ---------------------- treatment end: first case ds-tb (6 months) ---------------------- #
         # end treatment for new tb (ds) cases
@@ -1291,7 +1292,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         end_ds_tx_idx = df.loc[df.is_alive &
                                df.tb_on_treatment &
                                ~df.tb_treated_mdr &
-                               (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
+                               (now > (df.tb_date_treated + pd.DateOffset(months=p['ds_treatment_length']))) &
                                ~df.tb_ever_treated].index
 
         # ---------------------- treatment end: retreatment ds-tb (7 months) ---------------------- #
@@ -1301,15 +1302,14 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         end_ds_retx_idx = df.loc[df.is_alive &
                                  df.tb_on_treatment &
                                  ~df.tb_treated_mdr &
-                                 (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_retreatment_length']))) &
+                                 (now > (df.tb_date_treated + pd.DateOffset(months=p['ds_retreatment_length']))) &
                                  df.tb_ever_treated].index
 
         # ---------------------- treatment end: mdr-tb (24 months) ---------------------- #
         # end treatment for mdr-tb cases
         end_mdr_tx_idx = df.loc[df.is_alive &
                                 df.tb_treated_mdr &
-                                (df.tb_date_treated < (
-                                    now - pd.DateOffset(days=p['mdr_treatment_length'])))].index
+                                (now > (df.tb_date_treated + pd.DateOffset(months=p['mdr_treatment_length'])))].index
 
         # join indices
         end_tx_idx = end_ds_tx_idx.union(end_ds_retx_idx)
@@ -1321,45 +1321,43 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
 
         # children aged 0-4 ds-tb
         ds_tx_failure0_4_idx = df.loc[df.is_alive &
-                                   df.tb_on_treatment &
-                                   ~df.tb_treated_mdr &
-                                   (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
-                                   ~df.tb_ever_treated &
-                                    (df.age_years < 5) &
-                                   (random_var < (1 - p['prob_tx_success_0_4']))].index
+                                      df.tb_on_treatment &
+                                      ~df.tb_treated_mdr &
+                                      (now > (df.tb_date_treated + pd.DateOffset(months=p['ds_treatment_length']))) &
+                                      ~df.tb_ever_treated &
+                                      (df.age_years < 5) &
+                                      (random_var < (1 - p['prob_tx_success_0_4']))].index
 
         # children aged 5-14 ds-tb
         ds_tx_failure5_14_idx = df.loc[df.is_alive &
                                    df.tb_on_treatment &
                                    ~df.tb_treated_mdr &
-                                   (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
+                                       (now > (df.tb_date_treated + pd.DateOffset(months=p['ds_treatment_length']))) &
                                    ~df.tb_ever_treated &
-                                    (df.age_years.between(5,14)) &
+                                    (df.age_years.between(5, 14)) &
                                    (random_var < (1 - p['prob_tx_success_5_14']))].index
 
         # adults ds-tb
         ds_tx_failure_adult_idx = df.loc[df.is_alive &
                                    df.tb_on_treatment &
                                    ~df.tb_treated_mdr &
-                                   (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
-                                   ~df.tb_ever_treated &
-                                    (df.age_years.between(5,14)) &
+                                         (now > (df.tb_date_treated + pd.DateOffset(months=p['ds_treatment_length']))) &
+                                    (df.age_years >= 15) &
                                    (random_var < (1 - p['prob_tx_success_ds']))].index
 
         # all mdr cases on ds tx will fail
         failure_in_mdr_with_ds_tx_idx = df.loc[df.is_alive &
                                         df.tb_on_treatment &
                                         ~df.tb_treated_mdr &
-                                        (df.tb_date_treated < (now - pd.DateOffset(days=p['ds_treatment_length']))) &
-                                        ~df.tb_ever_treated &
+                                               (now > (df.tb_date_treated + pd.DateOffset(
+                                                   months=p['ds_treatment_length']))) &
                                         (df.tb_strain == 'mdr')].index
 
         # some mdr cases on mdr treatment will fail
         failure_due_to_mdr_idx = df.loc[df.is_alive &
                                         df.tb_on_treatment &
                                         df.tb_treated_mdr &
-                                        (df.tb_date_treated < (now - pd.DateOffset(days=p['mdr_treatment_length']))) &
-                                        ~df.tb_ever_treated &
+                                        (now > (df.tb_date_treated + pd.DateOffset(months=p['mdr_treatment_length']))) &
                                         (df.tb_strain == 'mdr')].index
 
         # join indices of failing cases together
@@ -1394,7 +1392,6 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
 
         # if cured, move infection status back to latent
         df.loc[cure_idx, 'tb_inf'] = 'latent'
-        df.loc[cure_idx, 'tb_strain'] = 'none'
         df.loc[cure_idx, 'tb_smear'] = False
 
 
@@ -1965,17 +1962,12 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
 
         # use linear model to determine whether this person will die:
         rng = self.module.rng.rand()
-        result = self.module.lm['death_rate'].predict(df.loc[[person_id]]).values[0]
+        result = self.module.lm['death_rate'].predict(df.loc[[person_id]], rng=rng)
 
-        if result < rng:
+        if result:
             logger.debug(key='message',
                          data=f'TbDeathEvent: cause this death for person {person_id}')
-            # self.sim.schedule_event(
-            #     demography.InstantaneousDeath(
-            #         self.module, person_id, cause=self.cause
-            #     ),
-            #     self.sim.date,
-            # )
+
             self.sim.modules['Demography'].do_death(
                 individual_id=person_id, cause=self.cause,
                 originating_module=self.module)
@@ -2005,17 +1997,17 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # number of new active cases
         new_tb_cases = len(
-            df[(df.tb_date_active > (now - DateOffset(months=self.repeat)))]
+            df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))]
         )
 
         # number of latent cases
         new_latent_cases = len(
-            df[(df.tb_date_latent > (now - DateOffset(months=self.repeat)))]
+            df[(df.tb_date_latent >= (now - DateOffset(months=self.repeat)))]
         )
 
         # number of new active cases in HIV+
         inc_active_hiv = len(
-            df[(df.tb_date_active > (now - DateOffset(months=self.repeat))) & df.hv_inf]
+            df[(df.tb_date_active >= (now - DateOffset(months=self.repeat))) & df.hv_inf]
         )
 
         # proportion of active TB cases in the last year who are HIV-positive
@@ -2099,7 +2091,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO this will exclude mdr cases occurring in the last timeperiod but already cured
         new_mdr_cases = len(
             df[(df.tb_strain == 'mdr')
-               & (df.tb_date_active > (now - DateOffset(months=self.repeat)))]
+               & (df.tb_date_active >= (now - DateOffset(months=self.repeat)))]
         )
 
         if new_mdr_cases:
@@ -2118,16 +2110,20 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ------------------------------------ CASE NOTIFICATIONS ------------------------------------
         # number diagnoses (new, relapse, reinfection) in last timeperiod
         new_tb_diagnosis = len(
-            df[(df.tb_date_diagnosed > (now - DateOffset(months=self.repeat)))]
+            df[(df.tb_date_diagnosed >= (now - DateOffset(months=self.repeat)))]
         )
 
         # ------------------------------------ TREATMENT ------------------------------------
-        # number of tb cases initiated treatment in last timeperiod / new active cases
+        # number of tb cases who became active in last timeperiod and initiated treatment
         new_tb_tx = len(
-            df[(df.tb_date_treated > (now - DateOffset(months=self.repeat)))]
+            df[(df.tb_date_active >= (now - DateOffset(months=self.repeat))) &
+               (df.tb_date_treated >= (now - DateOffset(months=self.repeat)))]
         )
+
+        # treatment coverage: if became active and was treated in last timeperiod
         if new_tb_cases:
             tx_coverage = new_tb_tx / new_tb_cases
+            # assert tx_coverage <= 1
         else:
             tx_coverage = 0
 

@@ -1282,7 +1282,7 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         if df.at[person_id, "hv_art"] == "on_VL_suppressed":
             return
 
-        if self.cause == 'Tb':
+        if self.cause == 'AIDS_TB':
             # Cause the death to happen immediately, cause defined by TB status
             self.sim.modules['Demography'].do_death(
                 individual_id=person_id,
@@ -1823,7 +1823,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[
                 (df.age_years >= 15)
                 & df.is_alive
-                & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
+                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
                 ]
         )
         denom_adults_15plus = len(df[df.is_alive & ~df.hv_inf & (df.age_years >= 15)])
@@ -1833,7 +1833,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[
                 df.age_years.between(15, 49)
                 & df.is_alive
-                & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
+                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
                 ]
         )
         denom_adults_1549 = len(df[df.is_alive & ~df.hv_inf & df.age_years.between(15, 49)])
@@ -1844,7 +1844,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[
                 (df.age_years < 15)
                 & df.is_alive
-                & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
+                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
                 ]
         )
         denom_children = len(df[df.is_alive & ~df.hv_inf & (df.age_years < 15)])
@@ -1897,7 +1897,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # proportion of adult population tested in past year
         n_tested = len(df.loc[df.is_alive & (df.hv_number_tests > 0) & (df.age_years >= 15) &
-                              (df.hv_last_test_date > (now - DateOffset(months=self.repeat)))])
+                              (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))])
         n_pop = len(df.loc[df.is_alive & (df.age_years >= 15)])
         tested = (n_tested / n_pop)
 
@@ -1905,7 +1905,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         testing_by_sex = {}
         for sex in ['F', 'M']:
             n_tested = len(df.loc[(df.sex == sex) & (df.hv_number_tests > 0) & (df.age_years >= 15) &
-                                  (df.hv_last_test_date > (now - DateOffset(months=self.repeat)))])
+                                  (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))])
             n_pop = len(df.loc[(df.sex == sex) & (df.age_years >= 15)])
             testing_by_sex[sex] = (n_tested / n_pop)
 

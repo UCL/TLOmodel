@@ -314,7 +314,7 @@ def test_treatment_schedule():
     assert not df.at[person_id, 'tb_on_treatment']
     assert not df.at[person_id, 'tb_treated_mdr']
     assert df.at[person_id, 'tb_inf'] == 'latent'
-    assert df.at[person_id, 'tb_strain'] == 'none'
+    assert df.at[person_id, 'tb_strain'] == 'ds'  # should not have changed
     assert not df.at[person_id, 'tb_smear']
 
 
@@ -333,7 +333,7 @@ def test_treatment_failure():
     sim.make_initial_population(n=popsize)
 
     # change prob treatment success - all treatment will fail
-    sim.modules['Tb'].parameters['prob_tx_success_new'] = 0.0
+    sim.modules['Tb'].parameters['prob_tx_success_ds'] = 0.0
 
     # simulate for 0 days, just get everything set up (dxtests etc)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -376,6 +376,8 @@ def test_treatment_failure():
     tx_start = tb.HSI_Tb_StartTreatment(person_id=person_id,
                                         module=sim.modules['Tb'])
     tx_start.apply(person_id=person_id, squeeze_factor=0.0)
+
+    assert df.at[person_id, 'tb_on_treatment']
 
     # end treatment, change sim.date so person will be ready to stop treatment
     sim.date = Date(2010, 12, 31)
@@ -628,78 +630,6 @@ def test_relapse_risk():
     assert isinstance(next_event_for_person0, tb.TbActiveEvent)
 
 
-def test_run_without_hiv():
-    """
-    test running without hiv
-    check smear positive rates in hiv- and hiv+ to confirm process still working with dummy property
-    """
-    try:
-        resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    except NameError:
-        # running interactively
-        resourcefilepath = 'resources'
-
-    start_date = Date(2010, 1, 1)
-    end_date = Date(2012, 12, 31)
-    popsize = 100
-
-    sim = Simulation(start_date=start_date, seed=30)
-
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=False,
-                     ignore_cons_constraints=True),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath),
-                 tb.Tb(resourcefilepath=resourcefilepath),
-                 )
-
-    # Make the population
-    sim.make_initial_population(n=popsize)
-
-    df = sim.population.props
-
-    # check properties assigned correctly for baseline population
-    # should be some latent infections, no active infections
-    num_latent = len(df[(df.tb_inf == 'latent') & df.is_alive])
-    prev_latent = num_latent / len(df[df.is_alive])
-    assert prev_latent > 0
-
-    assert not pd.isnull(df.loc[~df.date_of_birth.isna() & df.is_alive, [
-        'tb_inf',
-        'tb_strain',
-        'tb_date_latent']
-                         ]).all().all()
-
-    # no-one should be on tb treatment yet
-    assert not df.tb_on_treatment.any()
-    assert pd.isnull(df.tb_date_treated).all()
-
-    assert not df.hv_inf.any()
-    assert (df.sy_aids_symptoms == 0).all()
-    assert (df.hv_art == 'not').all()
-
-    # run the simulation
-    sim.simulate(end_date=end_date)
-    check_dtypes(sim)
-
-    df = sim.population.props  # updated dataframe
-
-    # some should have treatment dates
-    assert not pd.isnull(df.loc[~df.date_of_birth.isna() & df.is_alive, [
-        'tb_on_treatment',
-        'tb_date_treated',
-        'tb_ever_treated',
-        'tb_diagnosed']
-                         ]).all().all()
-
-
 def test_ipt_to_child_of_tb_mother():
     """
     if child born to mother with diagnosed tb, check give ipt
@@ -862,8 +792,7 @@ def test_cause_of_death():
     sim = get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
 
     # set mortality rates to 1
-    sim.modules['Tb'].parameters['monthly_prob_tb_mortality'] = 1.0
-    sim.modules['Tb'].parameters['monthly_prob_tb_mortality_hiv'] = 1.0
+    sim.modules['Tb'].parameters['death_rate_smear_pos_untreated'] = 1.0
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -873,7 +802,7 @@ def test_cause_of_death():
 
     df = sim.population.props
 
-    # create person with tb
+    # create person with tb, no HIV
     person_id0 = 0
     df.at[person_id0, 'tb_inf'] = 'active'
     df.at[person_id0, 'tb_strain'] = 'ds'
@@ -881,17 +810,53 @@ def test_cause_of_death():
     df.at[person_id0, 'tb_smear'] = True
     df.at[person_id0, 'hv_inf'] = False
 
+    # schedule death through TbDeathEvent
+    result = sim.modules['Tb'].lm['death_rate'].predict(df.loc[[person_id0]], rng=sim.rng)
+
+    if result:
+        sim.modules['Demography'].do_death(
+            individual_id=person_id0, cause='TB',
+            originating_module=sim.modules['Tb'])
+
+    assert not df.at[person_id0, 'is_alive']
+    assert df.at[person_id0, 'cause_of_death'] == "TB"
+
     # create person with tb-hiv
     person_id1 = 1
-    df.at[person_id1, 'tb_inf'] = 'active'
+    df.at[person_id1, 'tb_inf'] = 'latent'
     df.at[person_id1, 'tb_strain'] = 'ds'
     df.at[person_id1, 'tb_date_active'] = sim.date
     df.at[person_id1, 'tb_smear'] = True
     df.at[person_id1, 'hv_inf'] = True
 
-    # schedule death for both through TbDeathEvent
-    death_event = tb.TbDeathEvent(module=sim.modules['Tb'])
-    death_event.apply(population=sim.population)
+    # check AIDS onset scheduled through TbActiveEvent
+    active_event_run = tb.TbActiveEvent(module=sim.modules['Tb'], person_id=person_id1)
+    active_event_run.apply(person_id1)
 
-    assert df.at[person_id0, 'cause_of_death'] == "TB"
-    assert df.at[person_id1, 'cause_of_death'] == "AIDS_TB"
+    # check properties set
+    assert df.at[person_id1, 'tb_inf'] == 'active'
+    assert df.at[person_id1, 'tb_date_active'] == sim.date
+    assert df.at[person_id1, 'tb_smear']
+
+    # find the AIDS onset event for this person
+    date_aids_event, aids_event = \
+        [ev for ev in sim.find_events_for_person(person_id1) if isinstance(ev[1], hiv.HivAidsOnsetEvent)][0]
+    assert date_aids_event == sim.date
+
+    # run the AIDS onset event for this person - this will schedule AIDS death:
+    aids_event.apply(person_id=person_id1)
+    assert "aids_symptoms" in sim.modules['SymptomManager'].has_what(person_id1)
+
+    # schedule AIDS death - cause AIDS_TB
+    date_aids_death_event, aids_death_event = \
+        [ev for ev in sim.find_events_for_person(person_id1) if isinstance(ev[1], hiv.HivAidsDeathEvent)][0]
+    assert date_aids_death_event > sim.date
+
+    # run the AIDS death event for this person:
+    aids_death_event.apply(person_id1)
+
+    # confirm the person is dead
+    assert False is bool(df.at[person_id1, "is_alive"])
+    assert sim.date == df.at[person_id1, "date_of_death"]
+    assert "AIDS_TB" == df.at[person_id1, "cause_of_death"]
+
