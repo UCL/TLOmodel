@@ -42,7 +42,7 @@ start_date = Date(2010, 1, 1)
 
 def get_sim(tmpdir):
     """Return simulation objection with Alri and other necessary modules registered."""
-    sim = Simulation(start_date=start_date, seed=0, show_progress_bar=False, log_config={
+    sim = Simulation(start_date=start_date, seed=1, show_progress_bar=False, log_config={
         'filename': 'tmp',
         'directory': tmpdir,
         'custom_levels': {
@@ -667,7 +667,8 @@ def test_delayed_onset_complications(tmpdir):
     assert not df.loc[person_id, 'ri_current_infection_status']
 
     # Run incident case:
-    pathogen = list(sim.modules['Alri'].all_pathogens)[0]
+    pathogen = 'other_Strepto_Enterococci'
+        # <-- a bacterial infection can lead to delayed symptoms of sepsis and respiratory_failure
     incidentcase = AlriIncidentCase(module=sim.modules['Alri'], person_id=person_id, pathogen=pathogen)
     incidentcase.apply(person_id=person_id)
 
