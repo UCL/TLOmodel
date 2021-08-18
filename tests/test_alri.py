@@ -838,4 +838,4 @@ def test_sample_outcome(tmpdir):
 
     for op in ['A', 'B', 'C']:
         prob = df.loc[2, op]
-        assert res[2].value_counts()[op] == pytest.approx(df.loc[2, op] * n, abs=np.sqrt(n * prob * (1 - prob)))
+        assert res[2].value_counts()[op] == pytest.approx(df.loc[2, op] * n, abs=2 * np.sqrt(n * prob * (1 - prob)))
