@@ -1154,7 +1154,7 @@ class Models:
 
         primary_path_is_bacterial = person['ri_primary_pathogen'] in self.module.pathogens['bacterial']
         primary_path_is_viral = person['ri_primary_pathogen'] in self.module.pathogens['viral']
-        has_secondary_bacterial_inf = ~pd.isnull(person['ri_secondary_bacterial_pathogen'])
+        has_secondary_bacterial_inf = pd.notnull(person.ri_secondary_bacterial_pathogen)
         disease_type = person['ri_disease_type']
 
         probs = defaultdict(float)
