@@ -28,7 +28,7 @@ class Epi(Module):
 
     PROPERTIES = {
         # -- Properties for the number of doses received of each vaccine --
-        "va_bcg": Property(Types.BOOL, "received bcg vaccination"),
+        "va_bcg": Property(Types.INT, "number of doses of BCG vaccination"),
         "va_opv": Property(Types.INT, "number of doses of OPV vaccine received"),
         "va_dtp": Property(Types.INT, "number of doses of DTP vaccine received"),
         "va_hib": Property(Types.INT, "number of doses of Hib vaccine received"),
@@ -95,8 +95,8 @@ class Epi(Module):
         p = self.parameters
 
         # Set default for properties
-        df.loc[df.is_alive, "va_bcg"] = False
         df.loc[df.is_alive, [
+            "va_bcg"
             "va_opv",
             "va_dtp",
             "va_hib",
@@ -105,6 +105,7 @@ class Epi(Module):
             "va_rota",
             "va_measles",
             "va_rubella",
+            "va_hpv",
             "va_td"]
         ] = 0
 
@@ -140,7 +141,7 @@ class Epi(Module):
         # there are individuals who have high probability of getting all vaccines
         # some individuals will have consistently poor coverage
         random_draw = self.rng.random_sample(len(df_vaccine_baseline))
-        df.loc[df.is_alive & (random_draw < df_vaccine_baseline["BCG"]), "va_bcg"] = True
+        df.loc[df.is_alive & (random_draw < df_vaccine_baseline["BCG"]), "va_bcg"] = 1
 
         # Polio OPV
         # from 1980-2009 average opv3 coverage is 79.5% (WHO estimates): all 3 doses OPV
@@ -214,8 +215,8 @@ class Epi(Module):
         district = df.at[child_id, 'district_num_of_residence']
 
         # Initialise all the properties that this module looks after:
-        df.at[child_id, "va_bcg"] = False
         df.loc[child_id, [
+            "va_bcg",
             "va_opv",
             "va_dtp",
             "va_hib",
@@ -224,6 +225,7 @@ class Epi(Module):
             "va_rota",
             "va_measles",
             "va_rubella",
+            "va_hpv",
             "va_td"]
         ] = 0
 
@@ -357,6 +359,12 @@ class Epi(Module):
                 df.loc[df.is_alive, f"va_{_vacc}"] >= _max
             )
 
+    def administer_vaccine(self, person_id, vaccine):
+        df = self.population.props
+        df.at[person_id, f"va_{vaccine}"] += 1
+        if df.at[person_id, f"va_{vaccine}"] >= self.all_doses[vaccine]:
+            df.at[person_id, f"va_{vaccine}_all_doses"] = True
+
 # ---------------------------------------------------------------------------------
 # Population-Level Events for Updating Properties
 # ---------------------------------------------------------------------------------
@@ -380,7 +388,7 @@ class BcgVaccineEvent(Event, IndividualScopeEventMixin):
     """ give BCG vaccine at birth """
     def apply(self, person_id):
         df = self.sim.population.props
-        df.at[person_id, "va_bcg"] = True
+        self.module.administer_vaccine(person_id, "bcg")
 
 
 class OpvEvent(Event, IndividualScopeEventMixin):
@@ -579,7 +587,7 @@ class HSI_BcgVaccine(HsiBaseVaccine):
 
         df = self.sim.population.props
 
-        if not df.at[person_id, "va_bcg"]:
+        if df.at[person_id, "va_bcg"] < self.module.all_doses["bcg"]:
             outcome = self.request_vax_consumables(
                 items=[
                     ("BCG vaccine", 1),
@@ -592,8 +600,7 @@ class HSI_BcgVaccine(HsiBaseVaccine):
             bcg_vax, syringe, safety_box = outcome["Item_Code"].keys()
 
             if outcome["Item_Code"][bcg_vax] & outcome["Item_Code"][syringe]:
-
-                df.at[person_id, "va_bcg"] = True
+                self.module.administer_vaccine(person_id, "bcg")
 
 
 class HSI_opv(HsiBaseVaccine):
