@@ -96,7 +96,7 @@ class Epi(Module):
 
         # Set default for properties
         df.loc[df.is_alive, [
-            "va_bcg"
+            "va_bcg",
             "va_opv",
             "va_dtp",
             "va_hib",
@@ -168,13 +168,11 @@ class Epi(Module):
         # by Jan 2010, anyone <=30 years has 77.2% prob of having vaccine
         df.loc[df.is_alive & (random_draw < df_vaccine_baseline["MCV1"]), "va_measles"] = 3
 
-        # update the 'all_doses' properties
-        self.update_all_doses_properties()
+        # update the 'all_doses' properties for initial population
+        for vaccine, max_dose in self.all_doses.items():
+            df.loc[df.is_alive, f"va_{vaccine}_all_doses"] = df.loc[df.is_alive, f"va_{vaccine}"] >= max_dose
 
     def initialise_simulation(self, sim):
-        # schedule the UpdateProperties event
-        sim.schedule_event(UpdateProperties(self), sim.date)
-
         # add an event to log to screen
         sim.schedule_event(EpiLoggingEvent(self), sim.date + DateOffset(years=1))
         # HPV vaccine given from 2018 onwards
@@ -351,16 +349,8 @@ class Epi(Module):
         health_values = pd.Series(index=df.index[df.is_alive], data=0)
         return health_values  # returns the series
 
-    def update_all_doses_properties(self):
-        """"Update the properties indicating whether the person has received all the doses of each vaccine"""
+    def increment_dose(self, person_id, vaccine):
         df = self.sim.population.props
-        for _vacc, _max in self.all_doses.items():
-            df.loc[df.is_alive, f"va_{_vacc}_all_doses"] = (
-                df.loc[df.is_alive, f"va_{_vacc}"] >= _max
-            )
-
-    def administer_vaccine(self, person_id, vaccine):
-        df = self.population.props
         df.at[person_id, f"va_{vaccine}"] += 1
         if df.at[person_id, f"va_{vaccine}"] >= self.all_doses[vaccine]:
             df.at[person_id, f"va_{vaccine}_all_doses"] = True
@@ -387,68 +377,60 @@ class UpdateProperties(RegularEvent, PopulationScopeEventMixin):
 class BcgVaccineEvent(Event, IndividualScopeEventMixin):
     """ give BCG vaccine at birth """
     def apply(self, person_id):
-        df = self.sim.population.props
-        self.module.administer_vaccine(person_id, "bcg")
+        self.module.increment_dose(person_id, "bcg")
 
 
 class OpvEvent(Event, IndividualScopeEventMixin):
     """ give oral poliovirus vaccine (OPV) """
     def apply(self, person_id):
-        df = self.sim.population.props
-        df.at[person_id, "va_opv"] += 1
+        self.module.increment_dose(person_id, "opv")
 
 
 class DtpHepVaccineEvent(Event, IndividualScopeEventMixin):
     """ give DTP_Hep vaccine """
     def apply(self, person_id):
-        df = self.sim.population.props
-        df.at[person_id, "va_dtp"] += 1
-        df.at[person_id, "va_hep"] += 1
+        self.module.increment_dose(person_id, "dtp")
+        self.module.increment_dose(person_id, "hep")
 
 
 class DtpHibHepVaccineEvent(Event, IndividualScopeEventMixin):
     """ give DTP_Hib_Hep vaccine """
     def apply(self, person_id):
-        df = self.sim.population.props
-        df.at[person_id, "va_dtp"] += 1
-        df.at[person_id, "va_hep"] += 1
-        df.at[person_id, "va_hib"] += 1
+        self.module.increment_dose(person_id, "dtp")
+        self.module.increment_dose(person_id, "hep")
+        self.module.increment_dose(person_id, "hib")
 
 
 class RotavirusVaccineEvent(Event, IndividualScopeEventMixin):
     """ give Rotavirus vaccine """
     def apply(self, person_id):
-        df = self.sim.population.props
-        df.at[person_id, "va_rota"] += 1
+        self.module.increment_dose(person_id, "rota")
 
 
 class PneumococcalVaccineEvent(Event, IndividualScopeEventMixin):
     """ give Pneumococcal vaccine (PCV) """
     def apply(self, person_id):
-        df = self.sim.population.props
-        df.at[person_id, "va_pneumo"] += 1
+        self.module.increment_dose(person_id, "pneumo")
 
 
 class HibVaccineEvent(Event, IndividualScopeEventMixin):
     """ give Haemophilus influenza B vaccine """
     def apply(self, person_id):
-        df = self.sim.population.props
-        df.at[person_id, "va_hib"] += 1
+        self.module.increment_dose(person_id, "hib")
 
 
 class MeaslesVaccineEvent(Event, IndividualScopeEventMixin):
     """ give measles vaccine """
     def apply(self, person_id):
-        df = self.sim.population.props
-        df.at[person_id, "va_measles"] += 1
+        self.module.increment_dose(person_id, "measles")
 
 
 class MeaslesRubellaVaccineEvent(Event, IndividualScopeEventMixin):
     """ give measles/rubella vaccine """
     def apply(self, person_id):
         df = self.sim.population.props
-        df.at[person_id, "va_measles"] += 1
-        df.at[person_id, "va_rubella"] += 1
+        self.module.increment_dose(person_id, "measles")
+        self.module.increment_dose(person_id, "rubella")
 
 
 class HpvScheduleEvent(RegularEvent, PopulationScopeEventMixin):
@@ -600,7 +582,7 @@ class HSI_BcgVaccine(HsiBaseVaccine):
             bcg_vax, syringe, safety_box = outcome["Item_Code"].keys()
 
             if outcome["Item_Code"][bcg_vax] & outcome["Item_Code"][syringe]:
-                self.module.administer_vaccine(person_id, "bcg")
+                self.module.increment_dose(person_id, "bcg")
 
 
 class HSI_opv(HsiBaseVaccine):
@@ -614,8 +596,7 @@ class HSI_opv(HsiBaseVaccine):
         outcome = self.request_vax_consumables(items=[("Polio vaccine", 1)])
 
         if all(outcome["Item_Code"].values()):
-            df = self.sim.population.props
-            df.at[person_id, "va_opv"] += 1
+            self.module.increment_dose(person_id, "opv")
 
 
 class HSI_DtpHibHepVaccine(HsiBaseVaccine):
@@ -639,10 +620,9 @@ class HSI_DtpHibHepVaccine(HsiBaseVaccine):
 
         if outcome["Item_Code"][penta_vax] & outcome["Item_Code"][syringe]:
             logger.debug(key="debug", data=f"Penta vax is available, so administer to {person_id}")
-            df = self.sim.population.props
-            df.at[person_id, "va_dtp"] += 1
-            df.at[person_id, "va_hib"] += 1
-            df.at[person_id, "va_hep"] += 1
+            self.module.increment_dose(person_id, "dtp")
+            self.module.increment_dose(person_id, "hib")
+            self.module.increment_dose(person_id, "hep")
 
         else:
             logger.debug(key="debug", data=f"Penta vax is not available for person {person_id}")
@@ -660,12 +640,12 @@ class HSI_RotaVaccine(HsiBaseVaccine):
         # available from 2012 onwards
         df = self.sim.population.props
 
-        if df.at[person_id, "va_rota"] < 2:
+        if df.at[person_id, "va_rota"] < self.module.all_doses["rota"]:
             outcome = self.request_vax_consumables(items=[("Rotavirus vaccine", 1)])
 
             if all(outcome["Item_Code"]):
                 logger.debug(key="debug", data=f"Rotavirus vaccine is available, so administer to {person_id}")
-                df.at[person_id, "va_rota"] += 1
+                self.module.increment_dose(person_id, "rota")
             else:
                 logger.debug(key="debug", data=f"Rotavirus vaccine is not available for person {person_id}")
 
@@ -691,7 +671,7 @@ class HSI_PneumoVaccine(HsiBaseVaccine):
         # check if pneumococcal vaccine available and current year 2012 onwards
         if outcome["Item_Code"][pneumo_vax] & outcome["Item_Code"][syringe]:
             logger.debug(key="debug", data=f"Pneumococcal vaccine is available, so administer to {person_id}")
-            df.at[person_id, "va_pneumo"] += 1
+            self.module.increment_dose(person_id, "pneumo")
         else:
             logger.debug(key="debug", data=f"Pneumococcal vaccine is NOT available for {person_id}")
 
@@ -711,9 +691,8 @@ class HSI_MeaslesRubellaVaccine(HsiBaseVaccine):
         if all(outcome["Intervention_Package_Code"].values()):
             logger.debug(key="debug",
                          data=f"HSI_MeaslesRubellaVaccine: measles+rubella vaccine is available for {person_id}")
-            df.at[person_id, "va_measles"] += 1
-            df.at[person_id, "va_rubella"] += 1
-
+            self.module.increment_dose(person_id, "measles")
+            self.module.increment_dose(person_id, "rubella")
         else:
             logger.debug(key="debug",
                          data=f"HSI_MeaslesRubellaVaccine: measles+rubella vaccine is NOT available for {person_id}")
@@ -728,12 +707,12 @@ class HSI_HpvVaccine(HsiBaseVaccine):
         logger.debug(key="debug", data=f"HSI_HpvVaccine: giving hpv vaccine to {person_id}")
         df = self.sim.population.props
 
-        if df.at[person_id, "va_hpv"] < 2:
+        if df.at[person_id, "va_hpv"] < self.module.all_doses["hpv"]:
             # this package includes syringe disposal box
             outcome = self.request_vax_consumables(packages=[("HPV vaccine", 1)])
 
             if all(outcome["Intervention_Package_Code"].values()):
-                df.at[person_id, "va_hpv"] += 1
+                self.module.increment_dose(person_id, "hpv")
 
 
 # TODO this will be called by the antenatal care module as part of routine care
@@ -753,7 +732,7 @@ class HSI_TdVaccine(HsiBaseVaccine):
         # this package DOES NOT include syringe disposal box
         outcome = self.request_vax_consumables(packages=[("Tetanus toxoid (pregnant women)", 1)])
         if all(outcome["Intervention_Package_Code"].values()):
-            df.at[person_id, "va_td"] += 1
+            self.module.increment_dose(person_id, "td")
 
 
 # ---------------------------------------------------------------------------------
