@@ -52,8 +52,8 @@ Is it right that 'danger_signs' is an indepednet symptom? It seems like this is 
  course of a diagnosis (like in diarrhoea module).
 """
 
-from itertools import chain
 from collections import defaultdict
+from itertools import chain
 from pathlib import Path
 
 import numpy as np
