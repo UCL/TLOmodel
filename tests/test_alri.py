@@ -587,14 +587,15 @@ def test_immediate_onset_complications(tmpdir):
     person_id = under5s.index[0]
     assert not df.loc[person_id, 'ri_current_infection_status']
 
-    # Run incident case:
-    pathogen = list(sim.modules['Alri'].all_pathogens)[0]
+    # Run incident case for a viral pathogen:
+    pathogen = 'other_viral_pathogens'
     incidentcase = AlriIncidentCase(module=sim.modules['Alri'], person_id=person_id, pathogen=pathogen)
     incidentcase.apply(person_id=person_id)
 
-    # Check has some complications (all that can be onset immediately: i.e. all complications except 'empyema')
+    # Check has some complications ['pneumothorax', 'pleural_effusion', 'sepsis', 'hypoxia'] are present for all
+    #  disease causes by viruses
     complications_cols = [
-        f"ri_complication_{complication}" for complication in (sim.modules['Alri'].complications - {'empyema'})
+        f"ri_complication_{complication}" for complication in ['pneumothorax', 'pleural_effusion', 'sepsis', 'hypoxia']
     ]
     assert df.loc[person_id, complications_cols].all()
 
