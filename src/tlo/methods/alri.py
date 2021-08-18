@@ -1029,8 +1029,9 @@ class Models:
 
         def make_scaled_linear_model_for_incidence(patho):
             """Makes the unscaled linear model with default intercept of 1. Calculates the mean incidents rate for
-            0-year-olds and then creates a new linear model with adjusted intercept so incidents in 0-year-olds
-            matches the specified value in the model when averaged across the population
+            0-year-olds and then creates a new linear model with adjusted intercept so incidence in 0-year-olds
+            matches the specified value in the model when averaged across the population. This will return an unscaled
+            linear model if there are no 0-year-olds in the population.
             """
 
             def make_naive_linear_model(_patho, intercept=1.0):
@@ -1052,15 +1053,22 @@ class Models:
                                                         .otherwise(p['rr_ALRI_not_excl_breastfeeding'])
                 )
 
-            unscaled_lm = make_naive_linear_model(patho)
-            target_mean = p[f'base_inc_rate_ALRI_by_{patho}'][0]
-            actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()
-            scaled_intercept = 1.0 * (target_mean / actual_mean)
-            scaled_lm = make_naive_linear_model(patho, intercept=scaled_intercept)
+            zeroyearolds = df.is_alive & (df.age_years == 0)
 
-            # check by applying the model to mean incidence of 0-year-olds
-            assert (target_mean - scaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
-            return scaled_lm
+            if len(df.is_alive & (df.age_years == 0)) > 0:
+                # If some 0 year-olds then can do scaling:
+                unscaled_lm = make_naive_linear_model(patho)
+                target_mean = p[f'base_inc_rate_ALRI_by_{patho}'][0]
+                actual_mean = unscaled_lm.predict(df.loc[zeroyearolds]).mean()
+                scaled_intercept = 1.0 * (target_mean / actual_mean)
+                scaled_lm = make_naive_linear_model(patho, intercept=scaled_intercept)
+
+                # check by applying the model to mean incidence of 0-year-olds
+                assert (target_mean - scaled_lm.predict(df.loc[zeroyearolds]).mean()) < 1e-10
+                return scaled_lm
+            else:
+                # If not 0 year-olds then cannot do scaling, return unscaled linear model
+                return unscaled_lm
 
         for patho in self.module.all_pathogens:
             self.incidence_equations_by_pathogen[patho] = make_scaled_linear_model_for_incidence(patho)
