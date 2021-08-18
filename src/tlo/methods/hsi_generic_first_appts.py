@@ -324,67 +324,8 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                 # take a blood pressure measurement for proportion of individuals who have not been diagnosed and
                 # are either over 50 or younger than 50 but are selected to get tested
                 cmd = self.sim.modules['CardioMetabolicDisorders']
+                cmd.schedule_hsi_events_for_cmd(person_id=person_id, hsi_event=self)
 
-                def get_time_since_last_test(current_date, date_of_last_test):
-                    return (current_date.year - date_of_last_test.year) * 12 + \
-                            (current_date.month - date_of_last_test.month)
-
-                for condition in cmd.conditions:
-                    # if the person hasn't been diagnosed and they don't have symptoms of the condition...
-                    if (~df.at[person_id, f'nc_{condition}_ever_diagnosed']) and \
-                            (f'{condition}_symptoms' not in symptoms):
-                        # if they haven't been tested within the last 6 months...
-                        if df.at[person_id, f'nc_{condition}_ever_tested']:
-                            num_months_since_last_test = get_time_since_last_test(
-                                self.sim.date, df.at[person_id, f'nc_{condition}_date_last_test'])
-                            if num_months_since_last_test >= 6 and condition != 'chronic_ischemic_hd':
-                                # and if they're over 50 or are chosen to be tested with some probability...
-                                if df.at[person_id, 'age_years'] >= 50 or self.module.rng.rand() < cmd.parameters[
-                                        f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
-                                    # initiate HSI event
-                                    hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
-                                        module=cmd,
-                                        person_id=person_id,
-                                        condition=f'{condition}'
-                                    )
-                                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                                        hsi_event,
-                                        priority=0,
-                                        topen=self.sim.date,
-                                        tclose=None
-                                    )
-                            # else if never tested, test if over 50 or chosen to be tested with some probability
-                        else:
-                            if condition != 'chronic_ischemic_hd':
-                                if df.at[person_id, 'age_years'] >= 50 or self.module.rng.rand() < cmd.parameters[
-                                        f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
-                                    # initiate HSI event
-                                    hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
-                                        module=cmd,
-                                        person_id=person_id,
-                                        condition=f'{condition}'
-                                    )
-                                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                                        hsi_event,
-                                        priority=0,
-                                        topen=self.sim.date,
-                                        tclose=None
-                                    )
-
-                        # If the symptoms include those for an CMD condition, then begin investigation for condition
-                    elif ~df.at[person_id, f'nc_{condition}_ever_diagnosed'] and f'{condition}_symptoms' in \
-                            symptoms:
-                        hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
-                            module=cmd,
-                            person_id=person_id,
-                            condition=f'{condition}'
-                        )
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(
-                            hsi_event,
-                            priority=0,
-                            topen=self.sim.date,
-                            tclose=None
-                        )
 
     def did_not_run(self):
         logger.debug(key='message',

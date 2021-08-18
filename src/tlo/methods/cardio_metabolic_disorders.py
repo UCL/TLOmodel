@@ -77,7 +77,7 @@ class CardioMetabolicDisorders(Module):
                 'Stroke',
                 'Chronic kidney disease'
             ],
-                  label='NCD')
+                label='NCD')
     }
 
     # create separate dicts for params for conditions and events
@@ -482,49 +482,49 @@ class CardioMetabolicDisorders(Module):
             baseline_annual_probability,
             Predictor('sex').when('M', p['rr_male']),
             Predictor('age_years').when('.between(0, 4)', p['rr_0_4'])
-            .when('.between(5, 9)', p['rr_5_9'])
-            .when('.between(10, 14)', p['rr_10_14'])
-            .when('.between(15, 19)', p['rr_15_19'])
-            .when('.between(20, 24)', p['rr_20_24'])
-            .when('.between(25, 29)', p['rr_25_29'])
-            .when('.between(30, 34)', p['rr_30_34'])
-            .when('.between(35, 39)', p['rr_35_39'])
-            .when('.between(40, 44)', p['rr_40_44'])
-            .when('.between(45, 49)', p['rr_45_49'])
-            .when('.between(50, 54)', p['rr_50_54'])
-            .when('.between(55, 59)', p['rr_55_59'])
-            .when('.between(60, 64)', p['rr_60_64'])
-            .when('.between(65, 69)', p['rr_65_69'])
-            .when('.between(70, 74)', p['rr_70_74'])
-            .when('.between(75, 79)', p['rr_75_79'])
-            .when('.between(80, 84)', p['rr_80_84'])
-            .when('.between(85, 89)', p['rr_85_89'])
-            .when('.between(90, 94)', p['rr_90_94'])
-            .when('.between(95, 99)', p['rr_95_99'])
-            .otherwise(p['rr_100']),
+                .when('.between(5, 9)', p['rr_5_9'])
+                .when('.between(10, 14)', p['rr_10_14'])
+                .when('.between(15, 19)', p['rr_15_19'])
+                .when('.between(20, 24)', p['rr_20_24'])
+                .when('.between(25, 29)', p['rr_25_29'])
+                .when('.between(30, 34)', p['rr_30_34'])
+                .when('.between(35, 39)', p['rr_35_39'])
+                .when('.between(40, 44)', p['rr_40_44'])
+                .when('.between(45, 49)', p['rr_45_49'])
+                .when('.between(50, 54)', p['rr_50_54'])
+                .when('.between(55, 59)', p['rr_55_59'])
+                .when('.between(60, 64)', p['rr_60_64'])
+                .when('.between(65, 69)', p['rr_65_69'])
+                .when('.between(70, 74)', p['rr_70_74'])
+                .when('.between(75, 79)', p['rr_75_79'])
+                .when('.between(80, 84)', p['rr_80_84'])
+                .when('.between(85, 89)', p['rr_85_89'])
+                .when('.between(90, 94)', p['rr_90_94'])
+                .when('.between(95, 99)', p['rr_95_99'])
+                .otherwise(p['rr_100']),
             Predictor('li_urban').when(True, p['rr_urban']),
             Predictor('li_wealth').when('1', p['rr_wealth_1'])
-            .when('2', p['rr_wealth_2'])
-            .when('3', p['rr_wealth_3'])
-            .when('4', p['rr_wealth_4'])
-            .when('5', p['rr_wealth_5']),
+                .when('2', p['rr_wealth_2'])
+                .when('3', p['rr_wealth_3'])
+                .when('4', p['rr_wealth_4'])
+                .when('5', p['rr_wealth_5']),
             Predictor('li_bmi').when('1', p['rr_bmi_1'])
-            .when('2', p['rr_bmi_2'])
-            .when('3', p['rr_bmi_3'])
-            .when('4', p['rr_bmi_4'])
-            .when('5', p['rr_bmi_5']),
+                .when('2', p['rr_bmi_2'])
+                .when('3', p['rr_bmi_3'])
+                .when('4', p['rr_bmi_4'])
+                .when('5', p['rr_bmi_5']),
             Predictor('li_low_ex').when(True, p['rr_low_exercise']),
             Predictor('li_high_salt').when(True, p['rr_high_salt']),
             Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
             Predictor('li_tob').when(True, p['rr_tobacco']),
             Predictor('li_ex_alc').when(True, p['rr_alcohol']),
             Predictor('li_mar_stat').when('1', p['rr_marital_status_1'])
-            .when('2', p['rr_marital_status_2'])
-            .when('3', p['rr_marital_status_3']),
+                .when('2', p['rr_marital_status_2'])
+                .when('3', p['rr_marital_status_3']),
             Predictor('li_in_ed').when(True, p['rr_in_education']),
             Predictor('li_ed_lev').when('1', p['rr_current_education_level_1'])
-            .when('2', p['rr_current_education_level_2'])
-            .when('3', p['rr_current_education_level_3']),
+                .when('2', p['rr_current_education_level_2'])
+                .when('3', p['rr_current_education_level_3']),
             Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
             Predictor('li_no_access_handwashing').when(True, p['rr_no_access_handwashing']),
             Predictor('li_no_clean_drinking_water').when(True, p['rr_no_clean_drinking_water']),
@@ -638,6 +638,74 @@ class CardioMetabolicDisorders(Module):
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
         pass
+
+    def schedule_hsi_events_for_cmd(self, person_id, hsi_event):
+        """
+        This is called by the HSI generic first appts module whenever a person attends an appointment.
+        """
+
+        def get_time_since_last_test(current_date, date_of_last_test):
+            return (current_date.year - date_of_last_test.year) * 12 + \
+                   (current_date.month - date_of_last_test.month)
+
+        df = self.sim.population.props
+        symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
+
+        for condition in self.conditions:
+            # if the person hasn't been diagnosed and they don't have symptoms of the condition...
+            if (~df.at[person_id, f'nc_{condition}_ever_diagnosed']) and (f'{condition}_symptoms' not in symptoms):
+                # if they haven't been tested within the last 6 months...
+                if df.at[person_id, f'nc_{condition}_ever_tested']:
+                    num_months_since_last_test = get_time_since_last_test(
+                        self.sim.date, df.at[person_id, f'nc_{condition}_date_last_test'])
+                    if num_months_since_last_test >= 6 and condition != 'chronic_ischemic_hd':
+                        # and if they're over 50 or are chosen to be tested with some probability...
+                        if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
+                                f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
+                            # initiate HSI event
+                            hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
+                                module=self,
+                                person_id=person_id,
+                                condition=f'{condition}'
+                            )
+                            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                                hsi_event,
+                                priority=0,
+                                topen=self.sim.date,
+                                tclose=None
+                            )
+                    # else if never tested, test if over 50 or chosen to be tested with some probability
+                else:
+                    if condition != 'chronic_ischemic_hd':
+                        if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
+                                f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
+                            # initiate HSI event
+                            hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
+                                module=self,
+                                person_id=person_id,
+                                condition=f'{condition}'
+                            )
+                            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                                hsi_event,
+                                priority=0,
+                                topen=self.sim.date,
+                                tclose=None
+                            )
+
+                # If the symptoms include those for an CMD condition, then begin investigation for condition
+            elif ~df.at[person_id, f'nc_{condition}_ever_diagnosed'] and f'{condition}_symptoms' in \
+                symptoms:
+                hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
+                    module=self,
+                    person_id=person_id,
+                    condition=f'{condition}'
+                )
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event,
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+                )
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1111,7 +1179,7 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
         if 'test_item_code' in self.module.parameters[f'{self.condition}_hsi']:
             # check if consumables are available
             all_available = self.get_all_consumables(item_codes=[self.module.parameters[
-                                                                         f'{self.condition}_hsi'].test_item_code])
+                                                                     f'{self.condition}_hsi'].test_item_code])
         else:
             all_available = True
 
