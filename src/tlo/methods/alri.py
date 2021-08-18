@@ -1195,13 +1195,13 @@ class Models:
 
         # 'sepsis'
         if ~person['ri_complication_sepsis']:
-            prob = 0.0
+            prob_sepsis = 0.0
             if person['ri_complication_lung_abscess']:
-                prob += p['prob_lung_abscess_to_sepsis']
+                prob_sepsis += p['prob_lung_abscess_to_sepsis']
             if person['ri_complication_empyema']:
-                prob += p['prob_empyema_to_sepsis']
+                prob_sepsis += p['prob_empyema_to_sepsis']
 
-            if p['prob_pneumothorax_to_respiratory_failure'] > self.rng.rand():
+            if prob_sepsis > self.rng.rand():
                 complications.add('sepsis')
 
         return complications
