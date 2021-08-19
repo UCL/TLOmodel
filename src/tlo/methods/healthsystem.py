@@ -12,7 +12,7 @@ import heapq as hp
 import inspect
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -37,6 +37,15 @@ class AppointmentSubunit(NamedTuple):
     """Component of an appointment relating to a specific officer type."""
     officer_type: str
     time_taken: float
+
+
+class HSIEventDetails(NamedTuple):
+    """Non-target specific details of a health system interaction event."""
+    event_name: str
+    module_name: str
+    treatment_id: str
+    facility_level: Optional[int]
+    appt_footprint: Tuple
 
 
 class HealthSystem(Module):
@@ -105,7 +114,8 @@ class HealthSystem(Module):
         capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
         disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
         disable_and_reject_all=False,  # disable healthsystem and no HSI runs
-        store_hsi_events_that_have_run=False  # convenience function for debugging
+        store_hsi_events_that_have_run=False,  # convenience function for debugging
+        record_hsi_event_details=False,  # Whether to record details of HSI events used
     ):
 
         super().__init__(name)
@@ -151,6 +161,13 @@ class HealthSystem(Module):
         self.store_hsi_events_that_have_run = store_hsi_events_that_have_run
         if self.store_hsi_events_that_have_run:
             self.store_of_hsi_events_that_have_run = list()
+
+        # If record_hsi_event_details == True, a set will be built during the simulation
+        # containing HSIEventDetails tuples corresponding to all HSI_Event instances
+        # used in the simulation
+        self.record_hsi_event_details = record_hsi_event_details
+        if record_hsi_event_details:
+            self.hsi_event_details = set()
 
         # Create store for ending in-patient status
         self.list_of_cols_with_internal_dates = dict()
@@ -256,6 +273,13 @@ class HealthSystem(Module):
         caps = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Daily_Capabilities.csv')
         self.parameters['Daily_Capabilities'] = caps.iloc[:, 1:]
         self.reformat_daily_capabilities()  # Reformats this table to include zero where capacity is not available
+        # Store set of officers with non-zero daily availability for checking scheduled
+        # HSI events do not make appointment time requests of unavailable officers
+        self._officers_with_availability = set(
+            self.parameters['Daily_Capabilities'].index[
+                (self.parameters['Daily_Capabilities']['Total_Minutes_Per_Day'] > 0)
+            ]
+        )
 
         # Read in ResourceFile_Consumables and then process it to create the data structures needed
         # NB. Modules can use this to look-up what consumables they need.
@@ -511,15 +535,18 @@ class HealthSystem(Module):
                 f"An appointment type has been requested at a facility level for which "
                 f"it is not possible: {hsi_event.TREATMENT_ID}"
             )
-            # 6) Check that event (if individual level) is able to run with this configuration of officers
-            # (ie. Check that this does not demand officers that are never available at a particular facility)
-            caps = self.parameters['Daily_Capabilities']
+            # 6) Check that event (if individual level) is able to run with this
+            # configuration of officers (i.e. check that this does not demand officers
+            # that are never available at a particular facility)
             footprint = self.get_appt_footprint_as_time_request(hsi_event=hsi_event)
-            footprint_is_possible = (caps.loc[footprint, 'Total_Minutes_Per_Day'] > 0).all()
-            if not footprint_is_possible:
-                logger.warning(key="message",
-                               data=f"The expected footprint is not possible with the configuration of officers: "
-                                    f"{hsi_event.TREATMENT_ID}.")
+            if not self._officers_with_availability.issuperset(footprint.keys()):
+                logger.warning(
+                    key="message",
+                    data=(
+                        "The expected footprint is not possible with the configuration "
+                        f"of officers: {hsi_event.TREATMENT_ID}."
+                    )
+                )
 
         #  Manipulate the priority level if needed
         # If ignoring the priority in scheduling, then over-write the provided priority information
@@ -1059,6 +1086,22 @@ class HealthSystem(Module):
         if self.store_hsi_events_that_have_run:
             log_info['date'] = self.sim.date
             self.store_of_hsi_events_that_have_run.append(log_info)
+        if self.record_hsi_event_details:
+            self.hsi_event_details.add(
+                HSIEventDetails(
+                    event_name=type(hsi_event).__name__,
+                    module_name=type(hsi_event.module).__name__,
+                    treatment_id=hsi_event.TREATMENT_ID,
+                    facility_level=getattr(
+                        hsi_event, 'ACCEPTED_FACILITY_LEVEL', None
+                    ),
+                    appt_footprint=(
+                        tuple(actual_appt_footprint)
+                        if actual_appt_footprint is not None
+                        else tuple(getattr(hsi_event, 'EXPECTED_APPT_FOOTPRINT', {}))
+                    )
+                )
+            )
 
     def log_current_capabilities(self, current_capabilities, total_footprint):
         """
@@ -1076,19 +1119,17 @@ class HealthSystem(Module):
         total_calls = total_calls_per_officer.sum()
 
         assert len(comparison) == len(current_capabilities)
-        assert (
-            abs(comparison['Minutes_Used'].sum() - total_calls) <= 0.0001 * total_calls
-        )
+        assert np.isclose(comparison['Minutes_Used'].sum(), total_calls)
 
         # Sum within each Facility_ID using groupby (Index of 'summary' is Facility_ID)
         summary = comparison.groupby('Facility_ID')[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
 
         # Compute Fraction of Time Used Across All Facilities
-        fraction_time_used_across_all_facilities = 0.0  # no capabilities or nan arising
-        if summary['Total_Minutes_Per_Day'].sum() > 0:
-            fraction_time_used_across_all_facilities = (
-                summary['Minutes_Used'].sum() / summary['Total_Minutes_Per_Day'].sum()
-            )
+        total_available = summary['Total_Minutes_Per_Day'].sum()
+        fraction_time_used_across_all_facilities = (
+            total_calls / total_available if total_available > 0
+            else 0  # no capabilities or nan arising
+        )
 
         # Compute Fraction of Time Used In Each Facility
         summary['Fraction_Time_Used'] = summary['Minutes_Used'] / summary['Total_Minutes_Per_Day']

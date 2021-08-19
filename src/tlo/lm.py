@@ -340,6 +340,7 @@ class LinearModel(object):
         self,
         df: pd.DataFrame,
         rng: Optional[np.random.RandomState] = None,
+        squeeze_single_row_output=True,
         **kwargs
     ) -> pd.Series:
         """Evaluate linear model output for a given set of input data.
@@ -350,6 +351,9 @@ class LinearModel(object):
           be boolean ``Series`` corresponding to Bernoulli random variables sampled
           according to probabilities specified by model output. Otherwise model
           output directly returned.
+        :param squeeze_single_row_output: If ``rng`` argument is not ``None`` and this
+          argument is set to ``True``, the output for a ``df`` input with a single-row
+          will be a scalar boolean value rather than a boolean ``Series``.
         :param **kwargs: Values for any external variables included in model
           predictors.
         """
@@ -406,7 +410,7 @@ class LinearModel(object):
             outcome = rng.random_sample(len(result)) < result
             # pop the boolean out of the series if we have a single row,
             # otherwise return the series
-            if len(outcome) == 1:
+            if len(outcome) == 1 and squeeze_single_row_output:
                 return outcome.iloc[0]
             else:
                 return outcome
