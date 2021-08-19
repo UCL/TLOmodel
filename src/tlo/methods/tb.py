@@ -416,6 +416,7 @@ class Tb(Module):
             Predictor('age_years').when('<15', p["prob_latent_tb_0_14"]).otherwise(p["prob_latent_tb_15plus"]),
         )
 
+        # todo replace with va_bcg_all_doses
         # adults progressing to active disease
         self.lm['active_tb'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,

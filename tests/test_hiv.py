@@ -81,7 +81,10 @@ def get_sim(use_simplified_birth=True):
     # Edit the efficacy of PrEP to be perfect (for the purpose of these tests)
     sim.modules['Hiv'].parameters['proportion_reduction_in_risk_of_hiv_aq_if_on_prep'] = 1.0
     # Let there be a 100% probability of TestAndRefer events being scheduled
-    sim.modules['Hiv'].parameters['prob_spontaneous_test_12m'] = 1.0
+    # sim.modules['Hiv'].parameters['prob_spontaneous_test_12m'] = 1.0
+    testing_rates = sim.modules['Hiv'].parameters['hiv_testing_rates']
+    testing_rates['annual_testing_rate_children'] = 1.0
+    testing_rates['annual_testing_rate_adults'] = 1.0
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -429,7 +432,6 @@ def test_mtct_during_breastfeeding_if_mother_infected_during_breastfeeding():
         ev for ev in sim.find_events_for_person(child_id) if isinstance(ev[1], hiv.HivInfectionDuringBreastFeedingEvent)
     ])
 
-
 def test_test_and_refer_event_scheduled_by_main_event_poll():
     """Check that the main event poll causes there to be event of the HSI_TestAndRefer"""
 
@@ -439,7 +441,8 @@ def test_test_and_refer_event_scheduled_by_main_event_poll():
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
     df = sim.population.props
 
-    # Control the number of people for whom there should be a TestAndReferEvent (parameter for prob of testing is 100%)
+    # Control the number of people for whom there should be a TestAndReferEvent
+    # (parameter for prob of testing is 100% for adults and children - set in get_sim()
     num_not_diagnosed = sum(~df.hv_diagnosed & df.is_alive)
 
     # Run a polling event
@@ -501,7 +504,7 @@ def test_aids_symptoms_lead_to_treatment_being_initiated():
     # Let one person have HIV and let AIDS be onset for that one person
     person_id = 0
     df.at[person_id, 'hv_inf'] = True
-    aids_event = HivAidsOnsetEvent(person_id=person_id, module=sim.modules['Hiv'])
+    aids_event = HivAidsOnsetEvent(person_id=person_id, module=sim.modules['Hiv'], cause='Hiv')
     aids_event.apply(person_id)
 
     # Confirm that they have aids symptoms and an AIDS death schedule
