@@ -43,9 +43,6 @@ def _parse_line(line):
     try:
         parsed = literal_eval(parts[4])
     except ValueError:
-        # When playing around with the capabilities coefficient, I had a ValueError here from there not being any
-        # mapping for inf, created the mapping here
-        # parsed = eval(parts[4], {'Timestamp': pd.Timestamp, 'nan': np.nan, 'NaT': pd.NaT, 'inf': float('Inf')})
         parsed = eval(parts[4], {'Timestamp': pd.Timestamp, 'nan': np.nan, 'NaT': pd.NaT})
 
     info = {
