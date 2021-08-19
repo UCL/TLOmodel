@@ -132,10 +132,6 @@ class CardioMetabolicDisorders(Module):
         f"nc_{p}_date_diagnosis": Property(Types.DATE, f"When someone has  been diagnosed with {p}") for p
         in conditions
     }
-    condition_ever_tested_list = {
-        f"nc_{p}_ever_tested": Property(Types.BOOL, f"Whether someone has  been tested for {p}") for p
-        in conditions
-    }
     condition_date_of_last_test_list = {
         f"nc_{p}_date_last_test": Property(Types.DATE, f"When someone has  last been tested for {p}") for p
         in conditions
@@ -159,8 +155,8 @@ class CardioMetabolicDisorders(Module):
     }
 
     PROPERTIES = {**condition_list, **event_list, **condition_diagnosis_list, **condition_date_diagnosis_list,
-                  **condition_ever_tested_list, **condition_date_of_last_test_list, **condition_medication_list,
-                  **event_diagnosis_list, **event_date_diagnosis_list, **event_medication_list,
+                  **condition_date_of_last_test_list, **condition_medication_list, **event_diagnosis_list,
+                  **event_date_diagnosis_list, **event_medication_list,
                   'nc_ever_weight_loss_treatment': Property(Types.BOOL,
                                                             'whether or not the person has ever had weight loss '
                                                             'treatment'),
@@ -325,7 +321,6 @@ class CardioMetabolicDisorders(Module):
                     age_max = age_max + 20
             # ----- Set ever tested, date of last test, ever_diagnosed, date of diagnosis, and on_medication to false
             # / NaT for everyone
-            df.loc[df.is_alive, f'nc_{condition}_ever_tested'] = False
             df.loc[df.is_alive, f'nc_{condition}_date_last_test'] = pd.NaT
             df.loc[df.is_alive, f'nc_{condition}_ever_diagnosed'] = False
             df.loc[df.is_alive, f'nc_{condition}_date_diagnosis'] = pd.NaT
@@ -570,7 +565,6 @@ class CardioMetabolicDisorders(Module):
             df.at[child_id, f'nc_{condition}'] = False
             df.at[child_id, f'nc_{condition}_ever_diagnosed'] = False
             df.at[child_id, f'nc_{condition}_date_diagnosis'] = pd.NaT
-            df.at[child_id, f'nc_{condition}_ever_tested'] = False
             df.at[child_id, f'nc_{condition}_date_last_test'] = pd.NaT
             df.at[child_id, f'nc_{condition}_on_medication'] = False
         for event in self.events:
@@ -655,7 +649,7 @@ class CardioMetabolicDisorders(Module):
                 # if the person hasn't been diagnosed and they don't have symptoms of the condition...
                 if (~df.at[person_id, f'nc_{condition}_ever_diagnosed']) and (f'{condition}_symptoms' not in symptoms):
                     # if they haven't been tested within the last 6 months...
-                    if df.at[person_id, f'nc_{condition}_ever_tested']:
+                    if ~pd.isnull(df.at[person_id, f'nc_{condition}_date_last_test']):
                         if get_time_since_last_test(
                             current_date=self.sim.date, date_of_last_test=df.at[
                                 person_id, f'nc_{condition}_date_last_test']):
@@ -1110,7 +1104,6 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
                 hsi_event=self
             )
             df.at[person_id, f'nc_{self.condition}_date_last_test'] = self.sim.date
-            df.at[person_id, f'nc_{self.condition}_ever_tested'] = True
             if dx_result:
                 # record date of diagnosis:
                 df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
@@ -1189,7 +1182,6 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
                 hsi_event=self
             )
             df.at[person_id, f'nc_{self.condition}_date_last_test'] = self.sim.date
-            df.at[person_id, f'nc_{self.condition}_ever_tested'] = True
             if dx_result:
                 # record date of diagnosis:
                 df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
