@@ -330,11 +330,11 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     df = self.sim.population.props
                     road_traffic_injuries = self.sim.modules['RTI']
                     # Check they haven't died from another source
-                    if (pd.isnull(df.loc[person_id, 'cause_of_death'])) & (not df.loc[person_id, 'rt_diagnosed']):
-                        df.loc[person_id, 'rt_diagnosed'] = True
+                    if pd.isnull(df.at[person_id, 'cause_of_death']) and not df.at[person_id, 'rt_diagnosed']:
+                        df.at[person_id, 'rt_diagnosed'] = True
                         road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)
-                        if df.loc[person_id, 'rt_in_shock']:
-                            self.sim.modules['RTI'].rti_ask_for_shock_treatment(person_id)
+                        if df.at[person_id, 'rt_in_shock']:
+                            road_traffic_injuries.rti_ask_for_shock_treatment(person_id)
 
     def did_not_run(self):
         logger.debug(key='message',
@@ -546,11 +546,12 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         if 'RTI' in self.sim.modules:
             if 'severe_trauma' in symptoms:
+                road_traffic_injuries = self.sim.modules['RTI']
                 df = self.sim.population.props
                 # Check they haven't died from another source
-                if (pd.isnull(df.loc[person_id, 'cause_of_death'])) & (not df.loc[person_id, 'rt_diagnosed']):
-                    if df.loc[person_id, 'rt_in_shock']:
-                        self.sim.modules['RTI'].rti_ask_for_shock_treatment(person_id)
+                if pd.isnull(df.at[person_id, 'cause_of_death']) and not df.at[person_id, 'rt_diagnosed']:
+                    if df.at[person_id, 'rt_in_shock']:
+                        road_traffic_injuries.rti_ask_for_shock_treatment(person_id)
                     consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
                     columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
@@ -559,7 +560,6 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
                     # Request multiple x-rays here, note that the diagradio requirement for the appointment footprint
                     # is dealt with in the RTI module itself.
-                    road_traffic_injuries = self.sim.modules['RTI']
                     fracture_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
                     idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, fracture_codes)
                     if counts >= 1:
@@ -583,7 +583,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                             logger.debug(f'Person %d had x-rays for their {counts} fractures')
                         else:
                             logger.debug('Total amount of x-rays required for person %d unavailable', person_id)
-                    df.loc[person_id, 'rt_diagnosed'] = True
+                    df.at[person_id, 'rt_diagnosed'] = True
 
                     road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)
 
