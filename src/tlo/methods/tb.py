@@ -1961,7 +1961,7 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
                      data=f'TbDeathEvent: checking whether death should occur for person {person_id}')
 
         # use linear model to determine whether this person will die:
-        rng = self.module.rng.rand()
+        rng = self.module.rng
         result = self.module.lm['death_rate'].predict(df.loc[[person_id]], rng=rng)
 
         if result:
