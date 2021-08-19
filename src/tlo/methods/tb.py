@@ -416,12 +416,11 @@ class Tb(Module):
             Predictor('age_years').when('<15', p["prob_latent_tb_0_14"]).otherwise(p["prob_latent_tb_15plus"]),
         )
 
-        # todo replace with va_bcg_all_doses
         # adults progressing to active disease
         self.lm['active_tb'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["prog_active"],
-            Predictor('va_bcg').when(True, p['rr_tb_bcg']),
+            Predictor('va_bcg_all_doses').when(True, p['rr_tb_bcg']),
             Predictor('hv_inf').when(True, p['rr_tb_hiv']),
             Predictor('sy_aids_symptoms').when(True, p['rr_tb_aids']),
             Predictor('hv_art').when("on_VL_suppressed", p['rr_tb_art_adult']),
@@ -450,7 +449,7 @@ class Tb(Module):
                 .when('<10', p['prog_5_10yr'])
                 .when('<15', p['prog_10yr']),
             Predictor().when(
-                'va_bcg & hv_inf & (age_years <10)',
+                'va_bcg_all_doses & hv_inf & (age_years <10)',
                 p['rr_tb_bcg']),
             Predictor('hv_art').when("on_VL_suppressed", p['rr_tb_art_child']),
             Predictor().when(
@@ -1108,7 +1107,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # adjust individual risk by bcg status
         risk_tb = pd.Series(foi_for_individual.values, dtype=float, index=df.index)  # individual risk
         risk_tb += foi_national  # add in background risk (national)
-        risk_tb.loc[df.va_bcg & df.age_years < 10] *= p['rr_bcg_inf']
+        risk_tb.loc[df.va_bcg_all_doses & df.age_years < 10] *= p['rr_bcg_inf']
         risk_tb.loc[~df.is_alive] = 0
 
         # get a list of random numbers between 0 and 1 for each infected individual
