@@ -17,9 +17,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-# todo: **** See if it makes sense to make this not a stand-alone module (that must be registered in the simulation)
-#  but instead just a class that is used internally by health system. This would be much more desirable.
-
 class BedDays:
     """
     The BedDays class. This is expected to be registered in the HealthSystem module.
@@ -27,6 +24,9 @@ class BedDays:
 
     def __init__(self, hs_module):
         self.hs_module = hs_module
+
+        # determine the facility_id
+        self.the_facility_id = 0  # todo - make this specific to the district/region using person_id
 
         # Number of days to the last day of bed_tracker
         self.days_until_last_day_of_bed_tracker = 150
@@ -244,8 +244,6 @@ class BedDays:
         if 'bed_tracker' not in dir(self):
             return
 
-        # determine the facility_id
-        the_facility_id = 0  # todo - make this specific to the district/region using person_id
         operation = -1 if add_footprint else 1
 
         for bed_type in self.bed_types:
@@ -255,7 +253,8 @@ class BedDays:
             if pd.isna(date_start_this_bed or date_end_this_bed):  # filter empty bed days
                 pass
             else:
-                self.bed_tracker[bed_type].loc[date_start_this_bed: date_end_this_bed, the_facility_id] += operation
+                self.bed_tracker[bed_type].loc[date_start_this_bed: date_end_this_bed, self.the_facility_id] += \
+                    operation
 
     def compute_dates_of_bed_use(self, footprint):
         """Helper function to compute the dates of entry/exit from beds of each type according to a bed-days footprint

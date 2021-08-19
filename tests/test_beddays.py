@@ -154,8 +154,8 @@ def test_bed_days_basics(tmpdir):
         assert set(date_range) == set(dates_in_log)
 
         # Check columns (for each facility_ID) are as expected:
-        assert [str(x) for x in hs.parameters['BedCapacity']['Facility_ID'].values] == \
-               log[bed_type].columns.drop(['date', 'date_of_bed_occupancy']).values
+        assert ([str(x) for x in hs.parameters['BedCapacity']['Facility_ID'].values] ==
+                log[bed_type].columns.drop(['date', 'date_of_bed_occupancy']).values).all()
 
     # 1) Create instances of the HSIs for a person
     person_id = 0
@@ -559,3 +559,42 @@ def test_bed_days_basics_with_healthsystem_disabled():
     assert hsi_bd.this_ran
 
     assert not sim.population.props.at[0, 'is_alive']  # person 0 has died
+
+
+def test_the_use_of_beds_from_multiple_facilities():
+    sim = Simulation(start_date=start_date)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+    )
+
+    # call HealthSystem Module to initialise BedDays class
+    hs = sim.modules['HealthSystem']
+
+    # Create a 21 day simulation
+    days_sim = hs.bed_days.days_until_last_day_of_bed_tracker
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=days_sim))
+
+    # reset bed days tracker to the start_date of the simulation
+    hs.bed_days.initialise_beddays_tracker()
+
+    # 1) create a footprint
+    general_bed_dur = 4
+    footprint = {'high_dependency_bed': 0, 'general_bed': general_bed_dur, 'non_bed_space': 0}
+
+    sim.date = start_date
+
+    general_bed_capacity = hs.parameters['BedCapacity']['general_bed']
+
+    # impose bed days footprint on both facilities
+    for general_id in range(0, 2):
+        hs.bed_days.the_facility_id = general_id
+        hs.bed_days.impose_beddays_footprint(person_id=general_id, footprint=footprint)
+
+        # check if impose footprint works as expected
+        tracker = hs.bed_days.bed_tracker['general_bed'][general_id]
+
+        assert ([general_bed_capacity.loc[general_bed_capacity.index[general_id]] - 1] * general_bed_dur + [
+            general_bed_capacity.loc[general_bed_capacity.index[general_id]]] * (
+                        days_sim + 1 - general_bed_dur) == tracker.values).all()
