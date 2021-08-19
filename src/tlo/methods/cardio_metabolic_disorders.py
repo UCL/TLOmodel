@@ -645,8 +645,7 @@ class CardioMetabolicDisorders(Module):
         """
 
         def get_time_since_last_test(current_date, date_of_last_test):
-            return (current_date.year - date_of_last_test.year) * 12 + \
-                   (current_date.month - date_of_last_test.month)
+            return (current_date - date_of_last_test).days > 365.25/2
 
         df = self.sim.population.props
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
