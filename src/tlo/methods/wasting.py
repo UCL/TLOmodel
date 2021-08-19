@@ -1176,6 +1176,7 @@ class AcuteMalnutritionDeathPollingEvent(RegularEvent, PopulationScopeEventMixin
                     date=self.sim.date)
                 # df.at[person, 'un_sam_death_date'] = self.sim.date
             else:
+                print(self.sim.date, death_date)
                 # schedule death according to duration
                 self.sim.schedule_event(
                     event=SevereAcuteMalnutritionDeathEvent(module=self.module, person_id=person),

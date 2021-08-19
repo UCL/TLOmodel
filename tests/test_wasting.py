@@ -173,7 +173,7 @@ def check_dtypes(sim):
 def test_basic_run(tmpdir):
     """Short run of the module using default parameters with check on dtypes"""
     dur = pd.DateOffset(months=3)
-    popsize = 100
+    popsize = 1000
     sim = get_sim(tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
@@ -207,7 +207,7 @@ def test_wasting_polling(tmpdir):
     """Check polling events leads to incident cases"""
     # get simulation object:
     dur = pd.DateOffset(days=0)
-    popsize = 100
+    popsize = 1000
     sim = get_sim(tmpdir)
 
     # Make incidence of alri very high :
@@ -238,7 +238,7 @@ def test_wasting_polling(tmpdir):
 def test_recovery_moderate_wasting(tmpdir):
     """Check natual recovery of moderate wasting """
     dur = pd.DateOffset(days=0)
-    popsize = 100
+    popsize = 1000
     sim = get_sim(tmpdir)
 
     sim.make_initial_population(n=popsize)
@@ -250,8 +250,8 @@ def test_recovery_moderate_wasting(tmpdir):
         LinearModelType.MULTIPLICATIVE, 0.0)
 
     # increase incidence of wasting
-    params = sim.modules['Wasting'].parameters
-    params['base_inc_rate_wasting_by_agegp'] = [1.0 == v for v in params['base_inc_rate_wasting_by_agegp']]
+    sim.modules['Wasting'].wasting_incidence_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 1.0)
 
     # remove progression to severe wasting
     sim.modules['Wasting'].severe_wasting_progression_equation = LinearModel(
@@ -299,7 +299,7 @@ def test_recovery_severe_wasting(tmpdir):
     """ Check natural recovery to MAM by removing death rate for those with severe wasting,
      and check the onset of symptoms with SAM and revolving of symptoms when recovered to MAM """
     dur = pd.DateOffset(days=0)
-    popsize = 100
+    popsize = 1000
     sim = get_sim(tmpdir)
 
     sim.make_initial_population(n=popsize)
@@ -310,11 +310,9 @@ def test_recovery_severe_wasting(tmpdir):
     sim.modules['Wasting'].sam_death_equation = LinearModel(
         LinearModelType.MULTIPLICATIVE, 0.0)
 
-    # increase incidence of wasting
-    params = sim.modules['Wasting'].parameters
-    params['base_inc_rate_wasting_by_agegp'] = [1.0 == v for v in params['base_inc_rate_wasting_by_agegp']]
-
-    # increase progression to severe
+    # increase incidence of wasting and progression to severe
+    sim.modules['Wasting'].wasting_incidence_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 1.0)
     sim.modules['Wasting'].severe_wasting_progression_equation = LinearModel(
         LinearModelType.MULTIPLICATIVE, 1.0)
 
@@ -392,7 +390,7 @@ def test_nat_hist_death(tmpdir):
     """Check: Wasting onset --> death"""
     """ Check if the risk of death is 100% does everyone with SAM die? """
     dur = pd.DateOffset(days=0)
-    popsize = 100
+    popsize = 1000
     sim = get_sim(tmpdir)
 
     sim.make_initial_population(n=popsize)
@@ -403,12 +401,11 @@ def test_nat_hist_death(tmpdir):
     sim.modules['Wasting'].sam_death_equation = LinearModel(
         LinearModelType.MULTIPLICATIVE, 1.0)
 
-    params = sim.modules['Wasting'].parameters
-
-    # increase incidence of wasting
-    params['base_inc_rate_wasting_by_agegp'] = [1.0 == v for v in params['base_inc_rate_wasting_by_agegp']]
-    # increase progression to severe of wasting
-    params['progression_severe_wasting_by_agegp'] = [1.0 == v for v in params['progression_severe_wasting_by_agegp']]
+    # increase incidence of wasting and progression to severe
+    sim.modules['Wasting'].wasting_incidence_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 1.0)
+    sim.modules['Wasting'].severe_wasting_progression_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 1.0)
 
     # Get the children to use:
     df = sim.population.props
@@ -478,7 +475,7 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
     end earlier."""
 
     dur = pd.DateOffset(days=0)
-    popsize = 100
+    popsize = 1000
     sim = get_sim(tmpdir)
 
     sim.make_initial_population(n=popsize)
@@ -489,10 +486,11 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
     sim.modules['Wasting'].sam_death_equation = LinearModel(
         LinearModelType.MULTIPLICATIVE, 0.0)
 
-    # decrease progression to severe of wasting - so all children stay in moderate wasting state only
-    params = sim.modules['Wasting'].parameters
-    # params['progression_severe_wasting_by_agegp'] = 0.0
+    # increase incidence of wasting
+    sim.modules['Wasting'].wasting_incidence_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 1.0)
 
+    # decrease progression to severe of wasting - so all children stay in moderate wasting state only
     sim.modules['Wasting'].severe_wasting_progression_equation = LinearModel(
         LinearModelType.MULTIPLICATIVE, 0.0)
 
@@ -551,7 +549,7 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     the person dying."""
 
     dur = pd.DateOffset(days=0)
-    popsize = 100
+    popsize = 1000
     sim = get_sim(tmpdir)
 
     sim.make_initial_population(n=popsize)
@@ -563,10 +561,12 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
         LinearModelType.MULTIPLICATIVE, 1.0)
 
     # increase incidence of wasting and progression to severe
-    params = sim.modules['Wasting'].parameters
-    params['base_inc_rate_wasting_by_agegp'] = [5 * v for v in params['base_inc_rate_wasting_by_agegp']]
-    params['progression_severe_wasting_by_agegp'] = [5 * v for v in params['progression_severe_wasting_by_agegp']]
+    sim.modules['Wasting'].wasting_incidence_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 1.0)
+    sim.modules['Wasting'].severe_wasting_progression_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 1.0)
     # increase parameters in moderate wasting for clinical SAM (MUAC and oedema) to be polled for death
+    params = sim.modules['Wasting'].parameters
     params['proportion_-3<=WHZ<-2_with_MUAC<115mm'] = [5 * params['proportion_-3<=WHZ<-2_with_MUAC<115mm']]
     params['proportion_-3<=WHZ<-2_with_MUAC_115-<125mm'] = [params['proportion_-3<=WHZ<-2_with_MUAC_115-<125mm'] / 5]
     params['proportion_oedema_with_WHZ<-2'] = 0.9
@@ -650,9 +650,10 @@ def test_treatment(tmpdir):
     ClinicalAcuteMalnutritionRecoveryEvent (CureEvent).
     Death is prevented.  ---> check
     """
+    # TODO: CHECK THIS - MAYBE NOT NEEDED
 
     dur = pd.DateOffset(days=0)
-    popsize = 100
+    popsize = 1000
     sim = get_sim(tmpdir)
 
     sim.make_initial_population(n=popsize)
@@ -664,10 +665,13 @@ def test_treatment(tmpdir):
         LinearModelType.MULTIPLICATIVE, 1.0)
 
     # increase incidence of wasting and progression to severe
-    params = sim.modules['Wasting'].parameters
-    params['base_inc_rate_wasting_by_agegp'] = [5 * v for v in params['base_inc_rate_wasting_by_agegp']]
-    params['progression_severe_wasting_by_agegp'] = [5 * v for v in params['progression_severe_wasting_by_agegp']]
+    sim.modules['Wasting'].wasting_incidence_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 1.0)
+    sim.modules['Wasting'].severe_wasting_progression_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 1.0)
+
     # increase parameters in moderate wasting for clinical SAM (MUAC and oedema) to be polled for death
+    params = sim.modules['Wasting'].parameters
     params['proportion_-3<=WHZ<-2_with_MUAC<115mm'] = [5 * params['proportion_-3<=WHZ<-2_with_MUAC<115mm']]
     params['proportion_-3<=WHZ<-2_with_MUAC_115-<125mm'] = [params['proportion_-3<=WHZ<-2_with_MUAC_115-<125mm'] / 5]
     params['proportion_oedema_with_WHZ<-2'] = 0.9
@@ -769,7 +773,7 @@ def test_treatment(tmpdir):
 def test_use_of_HSI(tmpdir):
     """ Check that the HSIs works"""
     dur = pd.DateOffset(days=0)
-    popsize = 100
+    popsize = 1000
     sim = get_sim(tmpdir)
 
     sim.make_initial_population(n=popsize)
@@ -781,13 +785,15 @@ def test_use_of_HSI(tmpdir):
         LinearModelType.MULTIPLICATIVE, 1.0)
 
     # increase incidence of wasting
-    params = sim.modules['Wasting'].parameters
-    params['base_inc_rate_wasting_by_agegp'] = [5 * v for v in params['base_inc_rate_wasting_by_agegp']]
+    sim.modules['Wasting'].wasting_incidence_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 1.0)
 
     # reduce progression to severe wasting
-    params['progression_severe_wasting_by_agegp'] = [v == 0.0 for v in params['progression_severe_wasting_by_agegp']]
+    sim.modules['Wasting'].severe_wasting_progression_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 0.0)
 
     # decrease MUAC and oedema parameters in moderate wasting for clinical SAM
+    params = sim.modules['Wasting'].parameters
     params['proportion_-3<=WHZ<-2_with_MUAC<115mm'] = 0.0  # no SAM with moderate wasting
     params['proportion_oedema_with_WHZ<-2'] = 0.0  # no SAM based on oedema
     params['prevalence_nutritional_oedema'] = 0.0  # no SAM based on oedema
@@ -841,7 +847,7 @@ def test_use_of_HSI_for_SAM(tmpdir):
 
     def test_use_of_HSI_by_complication(complications):
         dur = pd.DateOffset(days=0)
-        popsize = 100
+        popsize = 1000
         sim = get_sim(tmpdir)
 
         sim.make_initial_population(n=popsize)
@@ -852,14 +858,19 @@ def test_use_of_HSI_for_SAM(tmpdir):
         sim.modules['Wasting'].sam_death_equation = LinearModel(
             LinearModelType.MULTIPLICATIVE, 1.0)
 
-        # increase incidence of wasting
-        params = sim.modules['Wasting'].parameters
-        params['base_inc_rate_wasting_by_agegp'] = [5 * v for v in params['base_inc_rate_wasting_by_agegp']]
+        # Make 100% treatment effectiveness by replacing with empty linear model 1.0
+        for am in ['MAM', 'SAM']:
+            sim.modules['Wasting'].acute_malnutrition_recovery_based_on_interventions[am] = LinearModel(
+                LinearModelType.MULTIPLICATIVE, 1.0)
 
-        # increase progression to severe wasting
-        params['progression_severe_wasting_by_agegp'] = [v == 1.0 for v in params['progression_severe_wasting_by_agegp']]
+        # increase incidence of wasting and progression to severe
+        sim.modules['Wasting'].wasting_incidence_equation = LinearModel(
+            LinearModelType.MULTIPLICATIVE, 1.0)
+        sim.modules['Wasting'].severe_wasting_progression_equation = LinearModel(
+            LinearModelType.MULTIPLICATIVE, 1.0)
 
         # remove the probability of complications in SAM
+        params = sim.modules['Wasting'].parameters
         if complications:
             params['prob_complications_in_SAM'] = 1.0  # only SAM with complications
         else:
@@ -917,6 +928,8 @@ def test_use_of_HSI_for_SAM(tmpdir):
         # Check that person is now on treatment:
         assert sim.date == df.at[person_id, 'un_acute_malnutrition_tx_start_date']
 
+        print(sim.find_events_for_person(person_id))
+
         # Check that a CureEvent has been scheduled
         cure_event = [event_tuple[1] for event_tuple in sim.find_events_for_person(person_id) if
                       isinstance(event_tuple[1], ClinicalAcuteMalnutritionRecoveryEvent)][0]
@@ -935,70 +948,3 @@ def test_use_of_HSI_for_SAM(tmpdir):
     test_use_of_HSI_by_complication(complications=True)
     test_use_of_HSI_by_complication(complications=False)
 
-
-    # # Check not on treatment:
-    # assert not df.at[person_id, 'ri_on_treatment']
-    # assert pd.isnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
-    #
-    # # Run the HSI event
-    # hsi = HSI_supplementary_feeding_programme_for_MAM(person_id=person_id, module=sim.modules['Wasting'])
-    # hsi.run(squeeze_factor=0.0)
-    #
-    # # Check that person is now on treatment:
-    # assert sim.date == df.at[person_id, 'ri_ALRI_tx_start_date']
-
-
-
-    # # Run Death Polling Polling event to apply death:
-    # death_polling = AcuteMalnutritionDeathPollingEvent(module=sim.modules['Wasting'])
-    # death_polling.apply(sim.population)
-    #
-    # # Check that there is a SevereAcuteMalnutritionDeathEvent scheduled for this person:
-    # death_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-    #                      isinstance(event_tuple[1], SevereAcuteMalnutritionDeathEvent)
-    #                      ][0]
-    # date_of_scheduled_death = death_event_tuple[0]
-    # death_event = death_event_tuple[1]
-    # assert date_of_scheduled_death > sim.date
-    #
-    # # # change coverage and treatment effectiveness set to be 100%
-    # # params['coverage_supplementary_feeding_program'] = 1.0
-    # # params['coverage_outpatient_therapeutic_care'] = 1.0
-    # # params['coverage_inpatient_care'] = 1.0
-    # # params['recovery_rate_with_soy_RUSF'] = 1.0
-    # # params['recovery_rate_with_CSB++'] = 1.0
-    # # params['recovery_rate_with_standard_RUTF'] = 1.0
-    # # params['recovery_rate_with_inpatient_care'] = 1.0
-    #
-    # # Make 100% death rate by replacing with empty linear model 1.0
-    # for am in ['MAM', 'SAM']:
-    #     sim.modules['Wasting'].acute_malnutrition_recovery_based_on_interventions[am] = LinearModel(
-    #         LinearModelType.MULTIPLICATIVE, 1.0)
-    #
-    # # Run the 'do_when_am_treatment' function
-    # interventions = ['SFP', 'OTC', 'ITC']
-    # for int in interventions:
-    #     sim.modules['Wasting'].do_when_am_treatment(person_id=person_id, intervention=int)
-    #
-    # # Run the death event that was originally scheduled - this should have no effect and the person should not die
-    # sim.date = date_of_scheduled_death
-    # death_event.apply(person_id=person_id)
-    # person = df.loc[person_id]
-    # assert person['is_alive']
-    #
-    # print(sim.find_events_for_person(person_id))
-    #
-    # # Check that a CureEvent has been scheduled
-    # cure_event = [event_tuple[1] for event_tuple in sim.find_events_for_person(person_id) if
-    #               isinstance(event_tuple[1], ClinicalAcuteMalnutritionRecoveryEvent)][0]
-    #
-    # # Run the CureEvent
-    # cure_event.apply(person_id=person_id)
-    #
-    # # Check that the person is not infected and is alive still:
-    # person = df.loc[person_id]
-    # assert person['is_alive']
-    # assert person['un_WHZ_category'] == 'WHZ>=-2'
-    # assert not pd.isnull(person['un_am_recovery_date'])
-    # assert pd.isnull(person['un_sam_death_date'])
-    #
