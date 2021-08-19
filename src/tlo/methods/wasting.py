@@ -1029,10 +1029,6 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[wasted[wasted].index, 'un_WHZ_category'] = '-3<=WHZ<-2'  # start as moderate wasting
         df.loc[wasted[wasted].index, 'un_am_treatment_type'] = 'none'  # start without treatment
 
-        # update clinical symptoms for moderate wasting
-        for person in wasted[wasted].index:
-            self.module.wasting_clinical_symptoms(person_id=person)
-
         # -------------------------------------------------------------------------------------------
         # Add this incident case to the tracker
         for person in wasted[wasted].index:
@@ -1346,6 +1342,11 @@ class UpdateToMAM(Event, IndividualScopeEventMixin):
         df.at[person_id, 'un_am_recovery_date'] = pd.NaT
         df.at[person_id, 'un_am_discharge_date'] = pd.NaT
         df.at[person_id, 'un_am_treatment_type'] = 'not_applicable'  # will start the process again
+
+        # this will clear all wasting symptoms (applicable for SAM, not MAM)
+        self.sim.modules["SymptomManager"].clear_symptoms(
+            person_id=person_id, disease_module=self.module
+        )
 
 
 class HSI_supplementary_feeding_programme_for_MAM(HSI_Event, IndividualScopeEventMixin):
