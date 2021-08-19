@@ -3,9 +3,11 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
+from pandas import DateOffset
 
-from tlo import Date, Simulation, logging
+from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
@@ -54,10 +56,7 @@ def test_no_health_system(tmpdir):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
             resourcefilepath=resourcefilepath,
-            service_availability=[],  # no services allowed
-            mode_appt_constraints=2,  # hard constraints
-            ignore_priority=True,
-            capabilities_coefficient=0.0  # no officer time
+            disable_and_reject_all=True
         ),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -100,12 +99,7 @@ def test_epi_scheduling_hsi_events(tmpdir):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
             resourcefilepath=resourcefilepath,
-            service_availability=["*"],  # all services allowed
-            ignore_cons_constraints=True,
-            ignore_priority=True,
-            capabilities_coefficient=1.0,  # full capacity
-            mode_appt_constraints=0,  # no constraints
-            disable=False
+            disable=True
         ),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -140,3 +134,55 @@ def test_epi_scheduling_hsi_events(tmpdir):
     # check only 3 doses max of dtp/pneumo
     assert (df.va_dtp <= 3).all()
     assert (df.va_pneumo <= 3).all()
+
+
+def test_all_doses_properties():
+    """check alignment between "number of doses" properties and "all_doses" properties"""
+
+    # Make Dummy class and event to check alignment of the properties:
+    class DummyModule(Module):
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            self.sim.schedule_event(
+                CheckProperties(self.sim.modules['Epi']),
+                self.sim.date
+            )
+
+        def on_birth(self, mother, child):
+            pass
+
+    class CheckProperties(RegularEvent, PopulationScopeEventMixin):
+        def __init__(self, module):
+            super().__init__(module, frequency=DateOffset(days=1))
+
+        def apply(self, population):
+            """This checks that there is an alignment between the properties for the number of doses received of each
+            vaccine and the all_doses_received properties
+            """
+            df = self.sim.population.props
+            for _vacc, _max in self.module.all_doses.items():
+                properties_aligned = (
+                    df.loc[df.is_alive, f"va_{_vacc}_all_doses"] == (df.loc[df.is_alive, f"va_{_vacc}"] >= _max)
+                ).all()
+                assert properties_aligned, f"On {self.sim.date} and for vaccine {_vacc}, there is a mismatch between" \
+                                           f" the all-doses and number-of-doses."
+
+    sim = Simulation(start_date=start_date)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+        epi.Epi(resourcefilepath=resourcefilepath),
+        DummyModule()
+    )
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
