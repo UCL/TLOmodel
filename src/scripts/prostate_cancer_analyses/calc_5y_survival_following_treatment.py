@@ -42,7 +42,7 @@ end_date = Date(2030, 1, 1)
 popsize = 10000
 
 # Establish the simulation object and set the seed
-sim = Simulation(start_date=start_date)
+sim = Simulation(start_date=start_date, seed=0)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -55,8 +55,6 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
              prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath)
              )
-
-sim.seed_rngs(0)
 
 # Make there be a very high initial prevalence in the first stage and no on-going new incidence and no treatment to
 # begin with:

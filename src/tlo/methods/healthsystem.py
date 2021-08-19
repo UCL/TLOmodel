@@ -12,7 +12,7 @@ import heapq as hp
 import inspect
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -37,6 +37,15 @@ class AppointmentSubunit(NamedTuple):
     """Component of an appointment relating to a specific officer type."""
     officer_type: str
     time_taken: float
+
+
+class HSIEventDetails(NamedTuple):
+    """Non-target specific details of a health system interaction event."""
+    event_name: str
+    module_name: str
+    treatment_id: str
+    facility_level: Optional[int]
+    appt_footprint: Tuple
 
 
 class HealthSystem(Module):
@@ -105,7 +114,8 @@ class HealthSystem(Module):
         capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
         disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
         disable_and_reject_all=False,  # disable healthsystem and no HSI runs
-        store_hsi_events_that_have_run=False  # convenience function for debugging
+        store_hsi_events_that_have_run=False,  # convenience function for debugging
+        record_hsi_event_details=False,  # Whether to record details of HSI events used
     ):
 
         super().__init__(name)
@@ -151,6 +161,13 @@ class HealthSystem(Module):
         self.store_hsi_events_that_have_run = store_hsi_events_that_have_run
         if self.store_hsi_events_that_have_run:
             self.store_of_hsi_events_that_have_run = list()
+
+        # If record_hsi_event_details == True, a set will be built during the simulation
+        # containing HSIEventDetails tuples corresponding to all HSI_Event instances
+        # used in the simulation
+        self.record_hsi_event_details = record_hsi_event_details
+        if record_hsi_event_details:
+            self.hsi_event_details = set()
 
         # Create store for ending in-patient status
         self.list_of_cols_with_internal_dates = dict()
@@ -256,6 +273,13 @@ class HealthSystem(Module):
         caps = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Daily_Capabilities.csv')
         self.parameters['Daily_Capabilities'] = caps.iloc[:, 1:]
         self.reformat_daily_capabilities()  # Reformats this table to include zero where capacity is not available
+        # Store set of officers with non-zero daily availability for checking scheduled
+        # HSI events do not make appointment time requests of unavailable officers
+        self._officers_with_availability = set(
+            self.parameters['Daily_Capabilities'].index[
+                (self.parameters['Daily_Capabilities']['Total_Minutes_Per_Day'] > 0)
+            ]
+        )
 
         # Read in ResourceFile_Consumables and then process it to create the data structures needed
         # NB. Modules can use this to look-up what consumables they need.
@@ -463,10 +487,9 @@ class HealthSystem(Module):
 
         # 2) Check that topen, tclose and priority are valid
 
-        # If there is no specified tclose time then set this to the later of (i) the day after the end of the
-        # simulation, (ii) the day after topen
+        # If there is no specified tclose time then set this to a week after topen
         if tclose is None:
-            tclose = max(self.sim.end_date + DateOffset(days=1), topen + DateOffset(days=1))
+            tclose = topen + DateOffset(days=7)
 
         # Check topen is not in the past
         assert topen >= self.sim.date
@@ -512,15 +535,18 @@ class HealthSystem(Module):
                 f"An appointment type has been requested at a facility level for which "
                 f"it is not possible: {hsi_event.TREATMENT_ID}"
             )
-            # 6) Check that event (if individual level) is able to run with this configuration of officers
-            # (ie. Check that this does not demand officers that are never available at a particular facility)
-            caps = self.parameters['Daily_Capabilities']
+            # 6) Check that event (if individual level) is able to run with this
+            # configuration of officers (i.e. check that this does not demand officers
+            # that are never available at a particular facility)
             footprint = self.get_appt_footprint_as_time_request(hsi_event=hsi_event)
-            footprint_is_possible = (caps.loc[footprint, 'Total_Minutes_Per_Day'] > 0).all()
-            if not footprint_is_possible:
-                logger.warning(key="message",
-                               data=f"The expected footprint is not possible with the configuration of officers: "
-                                    f"{hsi_event.TREATMENT_ID}.")
+            if not self._officers_with_availability.issuperset(footprint.keys()):
+                logger.warning(
+                    key="message",
+                    data=(
+                        "The expected footprint is not possible with the configuration "
+                        f"of officers: {hsi_event.TREATMENT_ID}."
+                    )
+                )
 
         #  Manipulate the priority level if needed
         # If ignoring the priority in scheduling, then over-write the provided priority information
@@ -661,28 +687,27 @@ class HealthSystem(Module):
         assert abs(capabilities_ex['Total_Minutes_Per_Day'].sum() - capabilities['Total_Minutes_Per_Day'].sum()) < 1e-7
         assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
 
+        # Apply the capabilities coefficient
+        capabilities_ex['Total_Minutes_Per_Day'] *= self.capabilities_coefficient
+
         # Updates the capabilities table with the reformatted version
         self.parameters['Daily_Capabilities'] = capabilities_ex
 
     def get_capabilities_today(self):
         """
-        Get the capabilities of the health system today
+        Get the capabilities of the health system today.
         returns: DataFrame giving minutes available for each officer type in each facility type
 
-        Functions can go in here in the future that could expand the time available, simulating increasing efficiency.
-        (The concept of a productivitiy ratio raised by Martin Chalkley). For now just have a single scaling value,
-        named capabilities_coefficient.
+        Functions can go in here in the future that could expand the time available,
+        simulating increasing efficiency (the concept of a productivitiy ratio raised
+        by Martin Chalkley).
+
+        For now this method does nothing.
+
+        Note that the scaling by `capabilities_coefficient` is applied on the initial
+        processing of the `Daily_Capabilities` data in `reformat_daily_capabilities`.
         """
-
-        # Get the capabilities data as they are imported
-        capabilities_today = self.parameters['Daily_Capabilities']
-
-        # apply the capabilities_coefficient
-        capabilities_today['Total_Minutes_Per_Day'] = (
-            capabilities_today['Total_Minutes_Per_Day'] * self.capabilities_coefficient
-        )
-
-        return capabilities_today
+        return self.parameters['Daily_Capabilities']
 
     def get_blank_appt_footprint(self):
         """
@@ -733,34 +758,48 @@ class HealthSystem(Module):
 
     def get_appt_footprint_as_time_request(self, hsi_event, actual_appt_footprint=None):
         """
-        This will take an HSI event and return the required appointments in terms of the time required of each
-        Officer Type in each Facility ID.
-        The index will identify the Facility ID and the Officer Type in the same format as is used in
-        Daily_Capabilities.
+        This will take an HSI event and return the required appointments in terms of the
+        time required of each Officer Type in each Facility ID.
+        The index will identify the Facility ID and the Officer Type in the same format
+        as is used in Daily_Capabilities.
 
         :param hsi_event: The HSI event
-        :param actual_appt_footprint: The actual appt footprint (optional) if different to that in the HSI_event
-        :return: A series that gives the time required for each officer-type in each facility_ID
+        :param actual_appt_footprint: The actual appt footprint (optional) if different
+            to that in the HSI event.
+        :return: A Counter that gives the times required for each officer-type in each
+            facility_ID, where this time is non-zero.
         """
+        # If specified use actual_appt_footprint otherwise use EXPECTED_APPT_FOOTPRINT
+        the_appt_footprint = (
+            hsi_event.EXPECTED_APPT_FOOTPRINT if actual_appt_footprint is None else
+            actual_appt_footprint
+        )
+        # Check in time request cache in event if a time request corresponding to the
+        # current relevant event attributes and appointment footprint has previously
+        # been stored, and if so return this
+        cache_key = (
+            hsi_event.target,
+            hsi_event.ACCEPTED_FACILITY_LEVEL,
+            tuple(the_appt_footprint)
+        )
+        cached_time_request = hsi_event._cached_time_requests.get(cache_key)
+        if cached_time_request is not None:
+            return cached_time_request
 
-        # Gather useful information
+        # No entry in cache so compute time request
+
+        # Appointment times for each facility and officer combination
         appt_times = self.parameters['Appt_Time_Table']
 
-        # Gather information about the HSI event
+        # Facility level required by this event
         the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
-
-        # Get the appt_footprint
-        if actual_appt_footprint is None:
-            # use the appt_footprint in the hsi_event
-            the_appt_footprint = hsi_event.EXPECTED_APPT_FOOTPRINT
-        else:
-            # use the actual_appt_provided
-            the_appt_footprint = actual_appt_footprint
 
         # Get the (one) health_facility available to this person (based on their
         # district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL:
         the_facility = self.get_facility_info(hsi_event)
 
+        # Accumulate appointment times for specified footprint using times from
+        # appointment times table
         appt_footprint_times = Counter()
         for appt_type in the_appt_footprint:
             try:
@@ -775,6 +814,9 @@ class HealthSystem(Module):
                 appt_footprint_times[
                     f"FacilityID_{the_facility.id}_Officer_{appt_info.officer_type}"
                 ] += appt_info.time_taken
+
+        # Cache the time request to avoid having to recompute on subsequent calls
+        hsi_event._cached_time_requests[cache_key] = appt_footprint_times
 
         return appt_footprint_times
 
@@ -803,7 +845,8 @@ class HealthSystem(Module):
             (position in array matches that in the all_call_today list).
         """
 
-        # 1) Compute the load factors for each officer type at each facility that is called-upon in this list of HSIs
+        # 1) Compute the load factors for each officer type at each facility that is
+        # called-upon in this list of HSIs
         total_available = current_capabilities['Total_Minutes_Per_Day']
         load_factor = {}
         for officer, call in total_footprint.items():
@@ -815,10 +858,11 @@ class HealthSystem(Module):
             else:
                 load_factor[officer] = max(call / availability - 1, 0)
 
-        # 5) Convert these load-factors into an overall 'squeeze' signal for eachHSI, based on the highest load-factor
-        # of any officer required
+        # 5) Convert these load-factors into an overall 'squeeze' signal for each HSI,
+        # based on the highest load-factor of any officer required (or zero if event
+        # has an empty footprint)
         squeeze_factor_per_hsi_event = np.array([
-            max(load_factor[officer] for officer in footprint)
+            max((load_factor[officer] for officer in footprint), default=0)
             for footprint in footprints_per_event
         ])
 
@@ -1042,6 +1086,22 @@ class HealthSystem(Module):
         if self.store_hsi_events_that_have_run:
             log_info['date'] = self.sim.date
             self.store_of_hsi_events_that_have_run.append(log_info)
+        if self.record_hsi_event_details:
+            self.hsi_event_details.add(
+                HSIEventDetails(
+                    event_name=type(hsi_event).__name__,
+                    module_name=type(hsi_event.module).__name__,
+                    treatment_id=hsi_event.TREATMENT_ID,
+                    facility_level=getattr(
+                        hsi_event, 'ACCEPTED_FACILITY_LEVEL', None
+                    ),
+                    appt_footprint=(
+                        tuple(actual_appt_footprint)
+                        if actual_appt_footprint is not None
+                        else tuple(getattr(hsi_event, 'EXPECTED_APPT_FOOTPRINT', {}))
+                    )
+                )
+            )
 
     def log_current_capabilities(self, current_capabilities, total_footprint):
         """
@@ -1059,19 +1119,17 @@ class HealthSystem(Module):
         total_calls = total_calls_per_officer.sum()
 
         assert len(comparison) == len(current_capabilities)
-        assert (
-            abs(comparison['Minutes_Used'].sum() - total_calls) <= 0.0001 * total_calls
-        )
+        assert np.isclose(comparison['Minutes_Used'].sum(), total_calls)
 
         # Sum within each Facility_ID using groupby (Index of 'summary' is Facility_ID)
         summary = comparison.groupby('Facility_ID')[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
 
         # Compute Fraction of Time Used Across All Facilities
-        fraction_time_used_across_all_facilities = 0.0  # no capabilities or nan arising
-        if summary['Total_Minutes_Per_Day'].sum() > 0:
-            fraction_time_used_across_all_facilities = (
-                summary['Minutes_Used'].sum() / summary['Total_Minutes_Per_Day'].sum()
-            )
+        total_available = summary['Total_Minutes_Per_Day'].sum()
+        fraction_time_used_across_all_facilities = (
+            total_calls / total_available if total_available > 0
+            else 0  # no capabilities or nan arising
+        )
 
         # Compute Fraction of Time Used In Each Facility
         summary['Fraction_Time_Used'] = summary['Minutes_Used'] / summary['Total_Minutes_Per_Day']
@@ -1457,11 +1515,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         footprints_of_all_individual_level_hsi_event[ev_num] = updated_call
                         total_footprint -= original_call
                         total_footprint += updated_call
-                        squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(
-                            footprints_per_event=footprints_of_all_individual_level_hsi_event,
-                            total_footprint=total_footprint,
-                            current_capabilities=current_capabilities,
-                        )
+                        if self.module.mode_appt_constraints != 0:
+                            # only need to recompute squeeze factors if running with constraints
+                            # i.e. mode != 0
+                            squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(
+                                footprints_per_event=footprints_of_all_individual_level_hsi_event,
+                                total_footprint=total_footprint,
+                                current_capabilities=current_capabilities,
+                            )
                     else:
                         # no actual footprint is returned so take the expected initial declaration as the actual
                         actual_appt_footprint = event.EXPECTED_APPT_FOOTPRINT
@@ -1537,6 +1598,7 @@ class HSI_Event:
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
         self._received_info_about_bed_days = None
+        self._cached_time_requests = {}
 
     @property
     def bed_days_allocated_to_this_event(self):
@@ -1581,8 +1643,9 @@ class HSI_Event:
 
     def run(self, squeeze_factor):
         """Make the event happen."""
-        self.apply(self.target, squeeze_factor)
+        updated_appt_footprint = self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
+        return updated_appt_footprint
 
     def get_all_consumables(self, item_codes=None, pkg_codes=None, footprint=None):
         """Helper function to allow for getting and checking of entire set of consumables.
