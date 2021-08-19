@@ -8,7 +8,9 @@ In addition,
 
 * A high-level overview of the design of the model is provided here: :download:`.docx <./write-ups/Framework.docx>`;
 
-* The entire code is fully documented under :doc:`References <reference/index>`.
+* The entire code is fully documented under :doc:`Reference <reference/index>`.
+
+* A list of the health system interaction events defined in the model is provided :doc:`here <hsi_events>`.
 
 
 Core Functions
@@ -95,3 +97,9 @@ Non-Communicable Conditions
     * **Depression**: Depression, self-harm and suicide, and the treatment of depression. :download:`.docx <./write-ups/Depression.docx>`
 
     * **Epilepsy** Epilepsy and its treatment. :download:`.docx <./write-ups/Epilepsy.docx>`
+
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   hsi_events
