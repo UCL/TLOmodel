@@ -1080,9 +1080,6 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     event=WastingNaturalRecoveryEvent(module=self.module, person_id=person),
                     date=outcome_date)
 
-            # update clinical symptoms for severe wasting ------------------------
-            self.module.wasting_clinical_symptoms(person_id=person)
-
         # ------------------------------------------------------------------------------------------
         # # # # # # # # # UPDATE PROPERTIES RELATED TO CLINICAL ACUTE MALNUTRITION # # # # # # # # #
         # ------------------------------------------------------------------------------------------
@@ -1092,6 +1089,12 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # determine the presence of bilateral oedema / oedematous malnutrition -----
         # determine the clinical state of acute malnutrition, and check complications if SAM
         self.module.population_poll_clinical_am(df)
+
+        # then, update clinical symptoms for those with severe acute malnutrition
+        children_with_sam = df.loc[df.is_alive & (df.age_exact_years < 5) &
+                                   (df.un_clinical_acute_malnutrition == 'SAM')]
+        for person in children_with_sam.index:
+            self.module.wasting_clinical_symptoms(person_id=person)
 
 
 class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
