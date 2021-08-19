@@ -21,8 +21,8 @@ import tlo
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
-from tlo.methods.dxmanager import DxManager
 from tlo.methods.bed_days import BedDays
+from tlo.methods.dxmanager import DxManager
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -313,8 +313,8 @@ class HealthSystem(Module):
 
         # Check that set of districts of residence in population are subset o districts from
         # Facilities_For_Each_District resource file
-        pop = self.sim.population.props
-        districts_of_residence = set(pop[pop.is_alive]["district_of_residence"].unique())
+        df = self.sim.population.props
+        districts_of_residence = set(df.loc[df.is_alive, "district_of_residence"].cat.categories)
         assert all(
             districts_of_residence.issubset(per_level_facilities.keys())
             for per_level_facilities in self.parameters["Facilities_For_Each_District"]
@@ -1103,7 +1103,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        # 0) Refesh information ready for new day:
+        # 0) Refresh information ready for new day:
         # - Update Bed Days trackers:
         self.module.bed_days.processing_at_start_of_new_day()
 

@@ -107,8 +107,8 @@ class BedDays:
 
     def processing_at_start_of_new_day(self):
         """Things to do at the start of each new day:
-        * refreshing inpatient status
-        * Log yesterdays usage of beds
+        * Refresh inpatient status
+        * Log yesterday's usage of beds
         * Move the tracker by one day
         """
         # Refresh the hs_in_patient status
@@ -117,7 +117,7 @@ class BedDays:
         # NB. This is skipped on the first day of the simulation as there is nothing to log from yesterday and the
         # tracker is already set.
 
-        if not self.hs_module.sim.date == self.hs_module.sim.start_date:
+        if self.hs_module.sim.date != self.hs_module.sim.start_date:
             self.log_yesterday_info_from_all_bed_trackers()
             self.move_each_tracker_by_one_day()
 
@@ -173,7 +173,7 @@ class BedDays:
         assert beddays_footprint['non_bed_space'] == 0, "A request cannot be made for this type of bed"
 
     def impose_beddays_footprint(self, person_id, footprint):
-        """This is called to reflect that a new occupany of bed-days should be recorded:
+        """This is called to reflect that a new occupancy of bed-days should be recorded:
         * Cause to be reflected in the bed_tracker that an hsi_event is being run that will cause bed to be
          occupied.
         * Update the property ```hs_is_inpatient``` to show that this person is now an in-patient
@@ -210,7 +210,7 @@ class BedDays:
     def apply_footprint(self, person_id, footprint):
         """Edit the internal properties in the dataframe to reflect this in-patient stay"""
 
-        # check that the number of inpatient days does not exceed the maximum of 21 days
+        # check that the number of inpatient days does not exceed the maximum of 150 days
         if self.days_until_last_day_of_bed_tracker < sum(footprint.values()):
             logger.warning(key='warning', data=f'the requested bed days in footprint is greater than the'
                                                f'tracking period, {footprint}')
@@ -241,7 +241,7 @@ class BedDays:
             The latter is used to when a footprint is removed when a person dies or before a new footprint is added.
         """
         # Exit silently if bed_tracker has not been initialised
-        if 'bed_tracker' not in dir(self):
+        if not hasattr(self, 'bed_tracker'):
             return
 
         operation = -1 if add_footprint else 1
