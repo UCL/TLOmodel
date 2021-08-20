@@ -3,6 +3,7 @@ Classes and functions that support declarations of causes of death and disabilit
 """
 
 from collections import defaultdict
+from typing import Union
 
 import pandas as pd
 
@@ -14,7 +15,7 @@ class Cause:
     'gbd_causes': set of strings for causes in the GBD datasets to which this cause is equivalent.
     'cause_of_death': the (single) category to which this cause belongs and should be labelled in output statistics.
     """
-    def __init__(self, label: str, gbd_causes: set = None):
+    def __init__(self, label: str, gbd_causes: Union[set, str] = None):
         """Do basic type checking."""
         assert (type(label) is str) and (label != '')
         self.label = label
