@@ -347,9 +347,7 @@ class CardioMetabolicDisorders(Module):
             df.loc[df.is_alive, f'nc_{event}_on_medication'] = False
 
         # ----- Generate the initial "risk score" for the population based on exercise, diet, tobacco, alcohol, BMI:
-        df.loc[df.is_alive, 'nc_risk_score'] = (df[[
-            'li_low_ex', 'li_high_salt', 'li_high_sugar', 'li_tob', 'li_ex_alc']] > 0).sum(1)
-        df.loc[df['li_bmi'] >= 3, ['nc_risk_score']] += 1
+        self.generate_risk_score()
 
         # ----- Set all other parameters to False / NaT
         df.loc[df.is_alive, 'nc_ever_weight_loss_treatment'] = False
@@ -575,6 +573,15 @@ class CardioMetabolicDisorders(Module):
         df.at[child_id, 'nc_risk_score'] = 0
         df.at[child_id, 'nc_n_conditions'] = 0
         df.at[child_id, 'nc_condition_combos'] = False
+
+    def generate_risk_score(self):
+        """
+        Generates or updates the risk score for individuals at initialisation of population
+        """
+        df = self.sim.population.props
+        df.loc[df.is_alive, 'nc_risk_score'] = (df[[
+            'li_low_ex', 'li_high_salt', 'li_high_sugar', 'li_tob', 'li_ex_alc']] > 0).sum(1)
+        df.loc[df['li_bmi'] >= 3, ['nc_risk_score']] += 1
 
 
     def report_daly_values(self):
@@ -813,6 +820,9 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                     schedule_death_to_occur_before_next_poll(person_id, event,
                                                              m.parameters['interval_between_polls'])
 
+        # Update risk score
+        self.module.generate_risk_score()
+
 
 class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
     """
@@ -861,9 +871,10 @@ class CardioMetabolicDisordersDeathEvent(Event, IndividualScopeEventMixin):
         if df.at[person_id, f'nc_{self.condition}']:
 
             if df.at[person_id, f'nc_{self.condition}_on_medication']:
-                reduction_in_death_risk = self.module.rng.uniform(low=0.2, high=0.6, size=1)  # not data for now
+                # TODO: @britta replace with data
+                reduction_in_death_risk = self.module.rng.uniform(low=0.2, high=0.6, size=1)
 
-                if self.module.rng.rand() < reduction_in_death_risk:
+                if self.module.rng.rand() > reduction_in_death_risk:
                     logger.debug(key="CardioMetabolicDisordersDeathEvent",
                                  data=f"CardioMetabolicDisordersDeathEvent: scheduling death for treated "
                                       f"{person_id} on {self.sim.date}")
@@ -1022,11 +1033,6 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
         # output entire dataframe for logistic regression
         # df = population.props
         # df.to_csv('df_for_regression.csv')
-
-        # Update risk score
-        df['nc_risk_score'] = (df[[
-            'li_low_ex', 'li_high_salt', 'li_high_sugar', 'li_tob', 'li_ex_alc']] > 0).sum(1)
-        df.loc[df['li_bmi'] >= 3, ['nc_risk_score']] += 1
 
 
 # ---------------------------------------------------------------------------------------------------------
