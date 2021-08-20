@@ -739,7 +739,9 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                                                        df.loc[symptom_eligible_population])
                 idx_symptom_onset = symptom_onset[symptom_onset].index
                 if idx_symptom_onset.any():
-                    # schedule symptom onset some time in next 12 months
+                    # schedule symptom onset some time before next polling event
+                    days_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) \
+                                                    / np.timedelta64(1, 'D')
                     for symptom in self.module.prob_symptoms[condition].keys():
                         lm_init_symptoms = LinearModel(
                             LinearModelType.MULTIPLICATIVE,
@@ -747,11 +749,12 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                             Predictor(f'nc_{condition}').when(True, 1.0)
                                 .otherwise(0.0))
                         has_symptom_at_init = lm_init_symptoms.predict(df.loc[df.is_alive], self.module.rng)
+                        date_onset = self.sim.date + DateOffset(days=rng.randint(0, days_until_next_polling_event))
                         self.sim.modules['SymptomManager'].change_symptom(
                             person_id=has_symptom_at_init.index[has_symptom_at_init].tolist(),
                             symptom_string=f'{symptom}',
                             add_or_remove='+',
-                            date_of_onset=self.sim.date + DateOffset(days=rng.randint(7, 365)),
+                            date_of_onset=date_onset,
                             disease_module=self.sim.modules['CardioMetabolicDisorders'])
 
             # -------------------------------------------------------------------------------------------
