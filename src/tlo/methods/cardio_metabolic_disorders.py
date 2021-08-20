@@ -325,7 +325,7 @@ class CardioMetabolicDisorders(Module):
             df.loc[df.is_alive, f'nc_{condition}_on_medication'] = False
 
             # ----- Impose the symptom on random sample of those with each condition to have:
-            # TODO: make linear model data-specific and add in needed complexity
+            # TODO: @britta make linear model data-specific and add in needed complexity
             for symptom in self.prob_symptoms[condition].keys():
                 lm_init_symptoms = LinearModel(
                     LinearModelType.MULTIPLICATIVE,
@@ -732,7 +732,7 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             # Add incident cases to the tracker
             current_incidence_df[condition] = df.loc[idx_acquires_condition].groupby('age_range').size()
 
-            # Schedule symptom onset
+            # Schedule symptom onset for both those with new onset of condition and those who already have condition
             if len(self.module.lms_symptoms[condition]) > 0:
                 symptom_eligible_population = df.is_alive & df[f'nc_{condition}']
                 symptom_onset = lmpredict_rtn_a_series(self.module.lms_symptoms[condition][f'{condition}_symptoms'],
