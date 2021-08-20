@@ -33,6 +33,9 @@ class RTI(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
+    INJURY_COLUMNS = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+                      'rt_injury_7', 'rt_injury_8']
+
     INJURY_CODES = ['none', '112', '113', '133', '133a', '133b', '133c', '133d', '134', '134a',
                     '134b', '135', '1101', '1114', '211', '212', '241', '2101', '2114', '291',
                     '342', '343', '361', '363', '322', '323', '3101', '3113', '412', '414',
@@ -1188,9 +1191,7 @@ class RTI(Module):
         """
         df = self.sim.population.props
         # Filter the dataframe by the columns the injuries are stored in
-        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                   'rt_injury_7', 'rt_injury_8']
-        persons_injuries = df.loc[[person_id], columns]
+        persons_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
 
         # TODO: these codes can be setup once and stored
         codes_requiring_xrays = list()
@@ -1329,9 +1330,7 @@ class RTI(Module):
         # Check to see whether they have been sent here from A and E
         assert df.loc[person_id, 'rt_diagnosed']
         # Get the relevant information about their injuries
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # check this person is injured, search they have an injury code that isn't "none"
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries,
                                                       self.PROPERTIES.get('rt_injury_1').categories[1:])
@@ -1389,9 +1388,7 @@ class RTI(Module):
         assert len(set(person.rt_injuries_for_major_surgery) & set(surgically_treated_codes)) > 0, \
             'This person has asked for surgery but does not have an appropriate injury'
         # isolate the relevant injury information
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # Check whether the person sent to surgery has an injury which actually requires surgery
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries, surgically_treated_codes)
         assert counts > 0, 'This person has been sent to major surgery without the right injuries'
@@ -1445,9 +1442,7 @@ class RTI(Module):
         assert len(set(df.loc[person_id, 'rt_injuries_for_minor_surgery']) & set(surgically_treated_codes)) > 0, \
             'This person has asked for a minor surgery but does not need it'
         # Isolate the relevant injury information
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # Check whether the person requesting minor surgeries has an injury that requires minor surgery
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries, surgically_treated_codes)
         assert counts > 0
@@ -1472,9 +1467,7 @@ class RTI(Module):
         # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to rti
         assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
         # Isolate the relevant injury information
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # check this person is injured, search they have an injury code that isn't "none".
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries,
                                                       self.PROPERTIES.get('rt_injury_1').categories[1:])
@@ -1504,9 +1497,7 @@ class RTI(Module):
         # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to rti
         assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
         # Isolate the relevant injury information
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         laceration_codes = ['1101', '2101', '3101', '4101', '5101', '6101', '7101', '8101']
         # Check they have a laceration which needs stitches
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries, laceration_codes)
@@ -1557,9 +1548,7 @@ class RTI(Module):
         # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to rti
         assert person.rt_med_int, 'person not been through rti med int'
         # Isolate the relevant injury information
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         burn_codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
         # Check to see whether they have a burn which needs treatment
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries, burn_codes)
@@ -1590,9 +1579,7 @@ class RTI(Module):
         # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to rti
         assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
         # Isolate the relevant injury information
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         fracture_codes = ['712a', '712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
         # check that the codes assigned for treatment by rt_injuries_to_cast and the codes treated by rti_fracture_cast
         # coincide
@@ -1628,9 +1615,7 @@ class RTI(Module):
         # Isolate the relevant injury information
 
         open_fracture_codes = ['813bo', '813co', '813do', '813eo']
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # Check that they have an open fracture
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries, open_fracture_codes)
         assert counts > 0, "This person has requested open fracture treatment but doesn't require one"
@@ -1662,9 +1647,7 @@ class RTI(Module):
         # Isolate the relevant injury information
         codes_for_tetanus = ['1101', '2101', '3101', '4101', '5101', '7101', '8101',
                              '1114', '2114', '3113', '4113', '5113', '7113', '8113']
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # Check that they have a burn/laceration
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries, codes_for_tetanus)
         assert counts > 0, "This person has requested a tetanus jab but doesn't require one"
@@ -1693,9 +1676,8 @@ class RTI(Module):
         """
         df = self.sim.population.props
         # Isolate the relevant injury information
-        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                   'rt_injury_7', 'rt_injury_8']
-        df = df.loc[[person_id], columns]
+        df = df.loc[[person_id], RTI.INJURY_COLUMNS]
+
         # Set up the number to iterate over
         injury_numbers = range(1, 9)
         # create empty variables to return if the search doesn't find a code/column
@@ -1733,9 +1715,7 @@ class RTI(Module):
         """
         df = self.sim.population.props
         # Isolate the relevant injury information
-        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                   'rt_injury_7', 'rt_injury_8']
-        df = df.loc[[person_id], columns]
+        df = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # create empty variables to return the columns and codes of the treated injuries
         columns_to_return = []
         codes_to_return = []
@@ -1778,9 +1758,7 @@ class RTI(Module):
                       'RTI_death_shock']
         assert (sum(~df.loc[injured_index, 'cause_of_death'].isin(rti_deaths)) == len(injured_index)) & \
                (sum(df.loc[injured_index, 'rt_imm_death']) == 0)
-        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                   'rt_injury_7', 'rt_injury_8']
-        selected_for_rti_inj = df.loc[injured_index, columns]
+        selected_for_rti_inj = df.loc[injured_index, RTI.INJURY_COLUMNS]
         # =============================== AIS region 1: head ==========================================================
         # ------ Find those with skull fractures and update rt_fracture to match and call for treatment ---------------
         idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['112'])
@@ -2072,9 +2050,7 @@ class RTI(Module):
 
         df = self.sim.population.props
         # Check everyone here has at least one injury to be alter the daly weight to
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # check this person is injured, search they have an injury code that isn't "none"
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries,
                                                       self.PROPERTIES.get('rt_injury_1').categories[1:])
@@ -2254,9 +2230,7 @@ class RTI(Module):
                           'P673b', 'P674a', 'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884',
                           '813bo', '813co', '813do', '813eo']
         relevant_codes = np.intersect1d(codes, swapping_codes)
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # check this person is injured, search they have an injury code that is swappable
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries, relevant_codes.tolist())
         assert counts > 0, 'This person has asked to swap an injury code, but it is not swap-able'
@@ -2434,12 +2408,10 @@ class RTI(Module):
         """
         df = self.sim.population.props
         # Isolate the relevant injury information
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
         permanent_injuries = ['P133', 'P133a', 'P133b', 'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135', 'P673',
                               'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676', 'P782a',
                               'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # Iterate over the codes
         for code in tloinjcodes:
             if code in permanent_injuries:
@@ -3715,11 +3687,9 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: improve this section, currently using a blanket assumption that those with internal bleeding or open
         # fractures will have shock, this is a temporary fix.
         internal_bleeding_codes = ['361', '363', '461', '463', '813bo', '813co', '813do', '813eo']
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6', 'rt_injury_7',
-                'rt_injury_8']
         df = self.sim.population.props
 
-        shock_index, counts = road_traffic_injuries.rti_find_and_count_injuries(df.loc[df.rt_road_traffic_inc, cols],
+        shock_index, counts = road_traffic_injuries.rti_find_and_count_injuries(df.loc[df.rt_road_traffic_inc, RTI.INJURY_COLUMNS],
                                                                                 internal_bleeding_codes)
         df.loc[shock_index, 'rt_in_shock'] = True
         # ========================== Decide survival time without medical intervention ================================
@@ -3893,17 +3863,15 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                     df.loc[[person], 'rt_recovery_no_med'] = True
                     # Reset the date to check if they die
                     df.loc[[person], 'rt_date_death_no_med'] = pd.NaT
-                    cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                            'rt_injury_7', 'rt_injury_8']
                     swapping_codes = ['712c', '811', '813a', '813b', '813c']
                     road_traffic_injuries = self.sim.modules['RTI']
                     # If those who haven't sought health care have an injury for which we have a daly code
                     # associated with that injury long term without treatment, swap it
                     # Iterate over the person's injuries
-                    injuries = df.loc[[person], cols].values.tolist()
+                    injuries = df.loc[[person], RTI.INJURY_COLUMNS].values.tolist()
                     # Cannot iterate correctly over list like [[1,2,3]], so need to flatten
                     flattened_injuries = [item for sublist in injuries for item in sublist if item != 'none']
-                    persons_injuries = df.loc[[person], cols]
+                    persons_injuries = df.loc[[person], RTI.INJURY_COLUMNS]
                     for code in flattened_injuries:
                         swapable_code = np.intersect1d(code, swapping_codes)
                         if len(swapable_code) > 0:
@@ -3965,7 +3933,7 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                             df.loc[person, 'rt_disability'] = 1
                         # If they don't have a swappable code, schedule the healing of the injury
                         # get the persons injuries
-                        persons_injuries = df.loc[[person], cols]
+                        persons_injuries = df.loc[[person], RTI.INJURY_COLUMNS]
                         non_empty_injuries = persons_injuries[persons_injuries != "none"]
                         non_empty_injuries = non_empty_injuries.dropna(axis=1)
                         injury_columns = non_empty_injuries.columns
@@ -4170,12 +4138,10 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                 if not pd.isnull(date):
                     assert date >= self.sim.date, 'recovery date assigned to past'
         default_recovery = [pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT]
-        injury_cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                       'rt_injury_7', 'rt_injury_8']
         # Iterate over all the injured people who are having medical treatment
         for person in recovery_dates.index:
             # Iterate over all the dates in 'rt_date_to_remove_daly'
-            persons_injuries = df.loc[[person], injury_cols]
+            persons_injuries = df.loc[[person], RTI.INJURY_COLUMNS]
             for date in df.loc[person, 'rt_date_to_remove_daly']:
                 # check if the recovery date is today
                 if date == now:
@@ -4186,9 +4152,7 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                     # Set the healed injury recovery data back to the default state
                     df.loc[person, 'rt_date_to_remove_daly'][dateindex] = pd.NaT
                     # Remove the daly weight associated with the healed injury code
-                    cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                            'rt_injury_7', 'rt_injury_8']
-                    person_injuries = df.loc[[person], cols]
+                    person_injuries = df.loc[[person], RTI.INJURY_COLUMNS]
                     idx, counts = RTI.rti_find_and_count_injuries(person_injuries, self.module.INJURY_CODES[1:])
                     if counts == 0:
                         pass
@@ -4330,9 +4294,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         self.major_surgery_counts = 0
         self.minor_surgery_counts = 0
         # Isolate the relevant injury information
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # ------------------------------- Skull fractures -------------------------------------------------------------
         # Check if the person has a skull fracture and whether the skull fracture is a depressed skull fracture. If the
         # fracture is depressed, schedule a surgery.
@@ -4961,9 +4923,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # Remove the scheduled death without medical intervention
         df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
         # Isolate relevant injury information
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         non_empty_injuries = person_injuries[person_injuries != "none"]
         injury_columns = non_empty_injuries.columns
         # Check that those who arrive here are alive and have been through the first generic appointment, and didn't
@@ -5205,7 +5165,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
             if pd.isnull(time):
                 idx_for_untreated_injuries.append(index)
         for idx in idx_for_untreated_injuries:
-            untreated_injury_cols.append(cols[idx])
+            untreated_injury_cols.append(RTI.INJURY_COLUMNS[idx])
         person_untreated_injuries = df.loc[[person_id], untreated_injury_cols]
         idx, fracturecounts = road_traffic_injuries.rti_find_and_count_injuries(person_untreated_injuries, codes)
         if fracturecounts > 0 & df.loc[person_id, 'is_alive']:
@@ -5391,8 +5351,6 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         road_traffic_injuries = self.sim.modules['RTI']
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         # isolate the relevant injury information
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
         # Find the untreated injuries
         idx_for_untreated_injuries = []
         untreated_injury_cols = []
@@ -5400,7 +5358,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             if pd.isnull(time):
                 idx_for_untreated_injuries.append(index)
         for idx in idx_for_untreated_injuries:
-            untreated_injury_cols.append(cols[idx])
+            untreated_injury_cols.append(RTI.INJURY_COLUMNS[idx])
         person_injuries = df.loc[[person_id], untreated_injury_cols]
 
         # check if they have a fracture that requires a cast
@@ -5478,7 +5436,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                 df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.date + \
                                                                                 DateOffset(weeks=7)
                 assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
-            person_injuries = df.loc[person_id, cols]
+            person_injuries = df.loc[person_id, RTI.INJURY_COLUMNS]
             non_empty_injuries = person_injuries[person_injuries != "none"]
             injury_columns = non_empty_injuries.keys()
 
@@ -5536,9 +5494,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         road_traffic_injuries = self.sim.modules['RTI']
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         # isolate the relevant injury information
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # check if they have a fracture that requires a cast
         codes = ['813bo', '813co', '813do', '813eo']
         idx, open_fracture_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
@@ -5686,9 +5642,7 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
             return hs.get_blank_appt_footprint()
         road_traffic_injuries = self.sim.modules['RTI']
 
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         codes = ['1101', '2101', '3101', '4101', '5101', '7101', '8101']
         idx, lacerationcounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         # Check the person sent here didn't die due to rti, has been through A&E, through Med int
@@ -5800,9 +5754,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
             return hs.get_blank_appt_footprint()
         road_traffic_injuries = self.sim.modules['RTI']
 
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
         idx, burncounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         # check the person sent here didn't die due to rti, has been through A and E and had RTI_med_int
@@ -5859,9 +5811,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 # estimate burns take 4 weeks to heal
                 df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=4)
                 assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-                cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                        'rt_injury_7', 'rt_injury_8']
-                persons_injuries = df.loc[[person_id], cols]
+                persons_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
                 non_empty_injuries = persons_injuries[persons_injuries != "none"]
                 non_empty_injuries = non_empty_injuries.dropna(axis=1)
                 swapping_codes = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a',
@@ -5928,9 +5878,7 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # check the person sent here hasn't died due to rti, has been through A and E and had RTI_med_int
         assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
         assert df.loc[person_id, 'rt_med_int'], 'This person has not been through rti med int'
@@ -6000,9 +5948,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
         # Check that the person sent here is alive, has been through A&E and RTI_Med_int
         assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
         assert df.loc[person_id, 'rt_med_int'], 'This person has not been through rti med int'
-        cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                'rt_injury_7', 'rt_injury_8']
-        person_injuries = df.loc[[person_id], cols]
+        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         road_traffic_injuries = self.sim.modules['RTI']
         pain_level = "none"
@@ -6334,8 +6280,6 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
         assert df.loc[person_id, 'rt_med_int'], 'This person has not been through rti med int'
         # Isolate the relevant injury information
-        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                   'rt_injury_7', 'rt_injury_8']
         surgically_treated_codes = ['112', '811', '812', '813a', '813b', '813c', '133a', '133b', '133c', '133d', '134a',
                                     '134b', '135', '552', '553', '554', '342', '343', '414', '361', '363',
                                     '782', '782a', '782b', '782c', '783', '822a', '882', '883', '884',
@@ -6353,7 +6297,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             additional_codes = ['441', '443', '453', '453a', '453b', '463']
             for code in additional_codes:
                 surgically_treated_codes.append(code)
-        persons_injuries = df.loc[[person_id], columns]
+        persons_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         injuries_to_be_treated = df.loc[person_id, 'rt_injuries_for_major_surgery']
         assert len(set(injuries_to_be_treated) & set(surgically_treated_codes)) > 0, \
             'This person has asked for surgery but does not have an appropriate injury'
@@ -6699,11 +6643,9 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
             return hs.get_blank_appt_footprint()
         rng = self.module.rng
         road_traffic_injuries = self.sim.modules['RTI']
-        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                   'rt_injury_7', 'rt_injury_8']
         surgically_treated_codes = ['322', '211', '212', '323', '722', '291', '241', '811', '812', '813a', '813b',
                                     '813c']
-        persons_injuries = df.loc[[person_id], columns]
+        persons_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # =========================================== Tests ============================================================
         # check the people sent here hasn't died due to rti, have had their injuries diagnosed and been through RTI_Med
         assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
@@ -7057,8 +6999,6 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
         # self.scheduled_death = 0
         df = self.sim.population.props
         # =========================================== Tests ============================================================
-        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                   'rt_injury_7', 'rt_injury_8']
         non_lethal_injuries = ['241', '291', '322', '323', '461', '442', '1101', '2101', '3101', '4101', '5101', '7101',
                                '8101', '722', '822a', '822b']
         severeinjurycodes = ['133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135',
@@ -7071,7 +7011,7 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
         fractureinjurycodes = ['112', '113', '211', '212', '412', '612', '712', '712a', '712b', '712c', '811',
                                '812', '813', '813a', '813b', '813c']
         burninjurycodes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
-        persons_injuries = df.loc[[person_id], columns]
+        persons_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         non_empty_injuries = persons_injuries[persons_injuries != "none"]
         non_empty_injuries = non_empty_injuries.dropna(axis=1)
         untreated_injuries = []
@@ -7187,10 +7127,8 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         if len(df.loc[df.is_alive]) > 750000:
             df.to_csv(f"C:/Users/Robbie Manning Smith/Documents/Dataframe_dump/{time_stamped_file_name}.csv")
         road_traffic_injuries = self.sim.modules['RTI']
-        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                   'rt_injury_7', 'rt_injury_8']
         thoseininjuries = df.loc[df.rt_road_traffic_inc]
-        df_injuries = thoseininjuries.loc[:, columns]
+        df_injuries = thoseininjuries.loc[:, RTI.INJURY_COLUMNS]
         # ==================================== Number of injuries =====================================================
         #
         oneinjury = len(df_injuries.loc[df_injuries['rt_injury_2'] == 'none'])
