@@ -4075,6 +4075,11 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
             if not pd.isnull(value).all():
                 relevant_population.append(idx)
 
+        # TODO: above could be
+        #  any_not_null = df.loc[df.is_alive, 'rt_date_to_remove_daly'].apply(lambda x: pd.notnull(x).any())
+        #  relevant_population = any_not_null.index[any_not_null]
+
+
         # Isolate the relevant information
         recovery_dates = df.loc[relevant_population]['rt_date_to_remove_daly']
         for person in recovery_dates.index:
@@ -4082,6 +4087,7 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                 date = recovery_dates[person][idx]
                 if not pd.isnull(date):
                     assert date >= self.sim.date, 'recovery date assigned to past'
+                    # TODO: move this check into the loop over person -> dates below, and remove this loop
         default_recovery = [pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT]
         # Iterate over all the injured people who are having medical treatment
         for person in recovery_dates.index:
@@ -4104,6 +4110,7 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                     else:
                         road_traffic_injuries.rti_alter_daly_post_treatment(person, code_to_remove)
                     # Check whether all their injuries are healed so the injury properties can be reset
+                    # TODO: perhaps better move the block for condition below out off the loop over recovery dates
                     if df.loc[person, 'rt_date_to_remove_daly'] == default_recovery:
                         # remove the injury severity as person is uninjured
                         df.loc[person, 'rt_inj_severity'] = "none"
@@ -4134,6 +4141,8 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                         # check that all codes in rt_injuries_to_cast are removed
                         for code in df.loc[person, 'rt_injuries_to_cast']:
                             idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
+                            # FIXME: check - shouldn't the below be `counts > 0`? otherwise code is never removed
+                            #  from property
                             if counts == 0:
                                 # if for some reason the code hasn't been removed, remove it
                                 df.loc[person, 'rt_injuries_to_cast'].remove(code)
