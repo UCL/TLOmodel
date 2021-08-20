@@ -1758,266 +1758,132 @@ class RTI(Module):
         assert (sum(~df.loc[injured_index, 'cause_of_death'].isin(rti_deaths)) == len(injured_index)) & \
                (sum(df.loc[injured_index, 'rt_imm_death']) == 0)
         selected_for_rti_inj = df.loc[injured_index, RTI.INJURY_COLUMNS]
-        # =============================== AIS region 1: head ==========================================================
-        # ------ Find those with skull fractures and update rt_fracture to match and call for treatment ---------------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['112'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_unspecified_skull_fracture
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['113'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_basilar_skull_fracture
-        # ------ Find those with traumatic brain injury and update rt_tbi to match and call the TBI treatment ---------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['133a'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_subarachnoid_hematoma
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['133b'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_brain_contusion
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['133c'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_intraventricular_haemorrhage
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['133d'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_subgaleal_hematoma
 
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['134a'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_epidural_hematoma
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['134b'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_subdural_hematoma
+        daly_lookup = {
+            # =============================== AIS region 1: head =======================================================
+            # ------ Find those with skull fractures and update rt_fracture to match and call for treatment ------------
+            '112': self.daly_wt_unspecified_skull_fracture,
+            '113': self.daly_wt_basilar_skull_fracture,
+            # ------ Find those with traumatic brain injury and update rt_tbi to match and call the TBI treatment-------
+            '133a': self.daly_wt_subarachnoid_hematoma,
+            '133b': self.daly_wt_brain_contusion,
+            '133c': self.daly_wt_intraventricular_haemorrhage,
+            '133d': self.daly_wt_subgaleal_hematoma,
+            '134a': self.daly_wt_epidural_hematoma,
+            '134b': self.daly_wt_subdural_hematoma,
+            '135': self.daly_wt_diffuse_axonal_injury,
+            '1101': self.daly_wt_facial_soft_tissue_injury,
+            '1114': self.daly_wt_burns_greater_than_20_percent_body_area,
+            # =============================== AIS region 2: face =======================================================
+            # ----------------------- Find those with facial fractures and assign DALY weight --------------------------
+            '211': self.daly_wt_facial_fracture,
+            '212': self.daly_wt_facial_fracture,
+            # ----------------- Find those with lacerations/soft tissue injuries and assign DALY weight ----------------
+            '2101': self.daly_wt_facial_soft_tissue_injury,
+            # ----------------- Find those with eye injuries and assign DALY weight ------------------------------------
+            '291': self.daly_wt_eye_injury,
+            '241': self.daly_wt_facial_soft_tissue_injury,
+            '2114': self.daly_wt_burns_greater_than_20_percent_body_area,
+            # =============================== AIS region 3: Neck =======================================================
+            # -------------------------- soft tissue injuries and internal bleeding-------------------------------------
+            '342': self.daly_wt_neck_internal_bleeding,
+            '343': self.daly_wt_neck_internal_bleeding,
+            '361': self.daly_wt_neck_internal_bleeding,
+            '363': self.daly_wt_neck_internal_bleeding,
+            # -------------------------------- neck vertebrae dislocation ----------------------------------------------
+            '322': self.daly_wt_neck_dislocation,
+            '323': self.daly_wt_neck_dislocation,
+            '3101': self.daly_wt_facial_soft_tissue_injury,
+            '3113': self.daly_wt_burns_less_than_20_percent_body_area_without_treatment,
+            # ================================== AIS region 4: Thorax ==================================================
+            # --------------------------------- fractures & flail chest ------------------------------------------------
+            '412': self.daly_wt_rib_fracture,
+            '414': self.daly_wt_flail_chest,
+            # ------------------------------------ Internal bleeding ---------------------------------------------------
+            # chest wall bruises/hematoma
+            '461': self.daly_wt_chest_wall_bruises_hematoma,
+            '463': self.daly_wt_hemothorax,
+            # -------------------------------- Internal organ injury ---------------------------------------------------
+            '453a': self.daly_wt_diaphragm_rupture,
+            '453b': self.daly_wt_lung_contusion,
+            # ----------------------------------- Soft tissue injury ---------------------------------------------------
+            '442': self.daly_wt_surgical_emphysema,
+            # ---------------------------------- Pneumothoraxs ---------------------------------------------------------
+            '441': self.daly_wt_closed_pneumothorax,
+            '443': self.daly_wt_open_pneumothorax,
+            '4104': self.daly_wt_facial_soft_tissue_injury,
+            '4113': self.daly_wt_burns_less_than_20_percent_body_area_without_treatment,
+            # ================================== AIS region 5: Abdomen =================================================
+            '552': self.daly_wt_abd_internal_organ_injury,
+            '553': self.daly_wt_abd_internal_organ_injury,
+            '554': self.daly_wt_abd_internal_organ_injury,
+            '5101': self.daly_wt_facial_soft_tissue_injury,
+            '5113': self.daly_wt_burns_less_than_20_percent_body_area_without_treatment,
+            # =================================== AIS region 6: spine ==================================================
+            # ----------------------------------- vertebrae fracture ---------------------------------------------------
+            '612': self.daly_wt_vertebrae_fracture,
+            # ---------------------------------- Spinal cord injuries --------------------------------------------------
+            '673a': self.daly_wt_spinal_cord_lesion_neck_without_treatment,
+            '673b': self.daly_wt_spinal_cord_lesion_below_neck_without_treatment,
+            '674a': self.daly_wt_spinal_cord_lesion_neck_without_treatment,
+            '675a': self.daly_wt_spinal_cord_lesion_neck_without_treatment,
+            '674b': self.daly_wt_spinal_cord_lesion_below_neck_without_treatment,
+            '675b': self.daly_wt_spinal_cord_lesion_below_neck_without_treatment,
+            '676': self.daly_wt_spinal_cord_lesion_neck_without_treatment,
+            # ============================== AIS body region 7: upper extremities ======================================
+            # ------------------------------------------ fractures -----------------------------------------------------
+            # Fracture to Clavicle, scapula, humerus, Hand/wrist, Radius/ulna
+            '712a': self.daly_wt_clavicle_scapula_humerus_fracture,
+            '712b': self.daly_wt_hand_wrist_fracture_without_treatment,
+            '712c': self.daly_wt_radius_ulna_fracture_short_term_with_without_treatment,
+            # ------------------------------------ Dislocation of shoulder ---------------------------------------------
+            '722': self.daly_wt_dislocated_shoulder,
+            # ------------------------------------------ Amputations ---------------------------------------------------
+            # Amputation of fingers, Unilateral upper limb amputation, Thumb amputation
+            '782a': self.daly_wt_amputated_finger,
+            '782b': self.daly_wt_unilateral_arm_amputation_without_treatment,
+            '782c': self.daly_wt_amputated_thumb,
+            '783': self.daly_wt_bilateral_arm_amputation_without_treatment,
+            # ----------------------------------- cuts and bruises -----------------------------------------------------
+            '7101': self.daly_wt_facial_soft_tissue_injury,
+            '7113': self.daly_wt_burns_less_than_20_percent_body_area_without_treatment,
+            # ============================== AIS body region 8: Lower extremities ======================================
+            # ------------------------------------------ Fractures -----------------------------------------------------
+            # Broken foot
+            '811': self.daly_wt_foot_fracture_short_term_with_without_treatment,
+            # Broken foot (open), currently combining the daly weight used for open wounds and the fracture
+            '813do': self.daly_wt_foot_fracture_short_term_with_without_treatment + self.daly_wt_facial_soft_tissue_injury,
+            # Broken patella, tibia, fibula
+            '812': self.daly_wt_patella_tibia_fibula_fracture_without_treatment,
+            # Broken foot (open), currently combining the daly weight used for open wounds and the fracture
+            '813eo': self.daly_wt_patella_tibia_fibula_fracture_without_treatment + self.daly_wt_facial_soft_tissue_injury,
+            # Broken Hip, Pelvis, Femur other than femoral neck
+            '813a': self.daly_wt_hip_fracture_short_term_with_without_treatment,
+            '813b': self.daly_wt_pelvis_fracture_short_term,
+            # broken pelvis (open)
+            '813bo': self.daly_wt_pelvis_fracture_short_term + self.daly_wt_facial_soft_tissue_injury,
+            '813c': self.daly_wt_femur_fracture_short_term,
+            # broken femur (open)
+            '813co': self.daly_wt_femur_fracture_short_term + self.daly_wt_facial_soft_tissue_injury,
+            # -------------------------------------- Dislocations ------------------------------------------------------
+            # Dislocated hip, knee
+            '822a': self.daly_wt_dislocated_hip,
+            '822b': self.daly_wt_dislocated_knee,
+            # --------------------------------------- Amputations ------------------------------------------------------
+            # toes
+            '882': self.daly_wt_amputated_toes,
+            # Unilateral lower limb amputation
+            '883': self.daly_wt_unilateral_lower_limb_amputation_without_treatment,
+            # Bilateral lower limb amputation
+            '884': self.daly_wt_bilateral_lower_limb_amputation_without_treatment,
+            # ------------------------------------ cuts and bruises ----------------------------------------------------
+            '8101': self.daly_wt_facial_soft_tissue_injury,
+            '8113': self.daly_wt_burns_less_than_20_percent_body_area_without_treatment
+        }
 
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['135'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_diffuse_axonal_injury
+        daly_change = selected_for_rti_inj.applymap(lambda code: daly_lookup.get(code, 0)).sum(axis=1)
+        df.loc[injured_index, 'rt_disability'] += daly_change
 
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['1101'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['1114'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_burns_greater_than_20_percent_body_area
-
-        # =============================== AIS region 2: face ==========================================================
-        # ----------------------- Find those with facial fractures and assign DALY weight -----------------------------
-        codes = ['211', '212']
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, codes)
-        if counts > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_facial_fracture
-
-        # ----------------- Find those with lacerations/soft tissue injuries and assign DALY weight -------------------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['2101'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
-
-        # ----------------- Find those with eye injuries and assign DALY weight ---------------------------------------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['291'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_eye_injury
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['241'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
-
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['2114'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_burns_greater_than_20_percent_body_area
-        # =============================== AIS region 3: Neck ==========================================================
-        # -------------------------- soft tissue injuries and internal bleeding----------------------------------------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['342', '343', '361', '363'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_neck_internal_bleeding
-        # -------------------------------- neck vertebrae dislocation ------------------------------------------------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['322', '323'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_neck_dislocation
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['3101'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['3113'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_burns_less_than_20_percent_body_area_without_treatment
-        # ================================== AIS region 4: Thorax =====================================================
-        # --------------------------------- fractures & flail chest ---------------------------------------------------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['412'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_rib_fracture
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['414'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_flail_chest
-        # ------------------------------------ Internal bleeding ------------------------------------------------------
-        # chest wall bruises/hematoma
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['461'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_chest_wall_bruises_hematoma
-        # hemothorax
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['463'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_hemothorax
-        # -------------------------------- Internal organ injury ------------------------------------------------------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['453a'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_diaphragm_rupture
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['453b'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_lung_contusion
-        # ----------------------------------- Soft tissue injury ------------------------------------------------------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['442'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_surgical_emphysema
-        # ---------------------------------- Pneumothoraxs ------------------------------------------------------------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['441'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_closed_pneumothorax
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['443'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_open_pneumothorax
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['4101'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['4113'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_burns_less_than_20_percent_body_area_without_treatment
-        # ================================== AIS region 5: Abdomen ====================================================
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['552', '553', '554'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_abd_internal_organ_injury
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['5101'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['5113'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_burns_less_than_20_percent_body_area_without_treatment
-        # =================================== AIS region 6: spine =====================================================
-        # ----------------------------------- vertebrae fracture ------------------------------------------------------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['612'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_vertebrae_fracture
-        # ---------------------------------- Spinal cord injuries -----------------------------------------------------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['673a'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_spinal_cord_lesion_neck_without_treatment
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['673b'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_spinal_cord_lesion_below_neck_without_treatment
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['674a', '675a'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_spinal_cord_lesion_neck_without_treatment
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['674b', '675b'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_spinal_cord_lesion_below_neck_without_treatment
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['676'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_spinal_cord_lesion_neck_without_treatment
-
-        # ============================== AIS body region 7: upper extremities ======================================
-        # ------------------------------------------ fractures ------------------------------------------------------
-        # Fracture to Clavicle, scapula, humerus, Hand/wrist, Radius/ulna
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['712a'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_clavicle_scapula_humerus_fracture
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['712b'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_hand_wrist_fracture_without_treatment
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['712c'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_radius_ulna_fracture_short_term_with_without_treatment
-
-        # ------------------------------------ Dislocation of shoulder ---------------------------------------------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['722'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_dislocated_shoulder
-        # ------------------------------------------ Amputations -----------------------------------------------------
-        # Amputation of fingers, Unilateral upper limb amputation, Thumb amputation
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['782a'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_amputated_finger
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['782b'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_unilateral_arm_amputation_without_treatment
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['782c'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_amputated_thumb
-
-        # Bilateral upper limb amputation
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['783'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_bilateral_arm_amputation_without_treatment
-        # ----------------------------------- cuts and bruises --------------------------------------------------------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['7101'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['7113'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_burns_less_than_20_percent_body_area_without_treatment
-        # ============================== AIS body region 8: Lower extremities ========================================
-        # ------------------------------------------ Fractures -------------------------------------------------------
-        # Broken foot
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['811'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_foot_fracture_short_term_with_without_treatment
-        # Broken foot (open), currently combining the daly weight used for open wounds and the fracture
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['813do'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_foot_fracture_short_term_with_without_treatment + \
-                                            self.daly_wt_facial_soft_tissue_injury
-        # Broken patella, tibia, fibula
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['812'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_patella_tibia_fibula_fracture_without_treatment
-        # Broken foot (open), currently combining the daly weight used for open wounds and the fracture
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['813eo'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_patella_tibia_fibula_fracture_without_treatment + \
-                                            self.daly_wt_facial_soft_tissue_injury
-        # Broken Hip, Pelvis, Femur other than femoral neck
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['813a'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_hip_fracture_short_term_with_without_treatment
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['813b'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_pelvis_fracture_short_term
-        # broken pelvis (open)
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['813bo'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_pelvis_fracture_short_term + \
-                                            self.daly_wt_facial_soft_tissue_injury
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['813c'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_femur_fracture_short_term
-        # broken femur (open)
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['813co'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_femur_fracture_short_term + \
-                                            self.daly_wt_facial_soft_tissue_injury
-        # -------------------------------------- Dislocations -------------------------------------------------------
-        # Dislocated hip, knee
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['822a'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_dislocated_hip
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['822b'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_dislocated_knee
-        # --------------------------------------- Amputations ------------------------------------------------------
-        # toes
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['882'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_amputated_toes
-        # Unilateral lower limb amputation
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['883'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_unilateral_lower_limb_amputation_without_treatment
-        # Bilateral lower limb amputation
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['884'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_bilateral_lower_limb_amputation_without_treatment
-        # ------------------------------------ cuts and bruises -----------------------------------------------------
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['8101'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
-
-        idx, counts = RTI.rti_find_and_count_injuries(selected_for_rti_inj, ['8113'])
-        if len(idx) > 0:
-            df.loc[idx, 'rt_disability'] += self.daly_wt_burns_less_than_20_percent_body_area_without_treatment
         # Store the true sum of DALY weights in the df
         df.loc[injured_index, 'rt_debugging_DALY_wt'] = df.loc[injured_index, 'rt_disability']
         # Find who's disability burden is greater than one
