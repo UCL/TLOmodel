@@ -2231,85 +2231,41 @@ class RTI(Module):
         relevant_codes = np.intersect1d(codes, swapping_codes)
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # check this person is injured, search they have an injury code that is swappable
-        idx, counts = RTI.rti_find_and_count_injuries(person_injuries, relevant_codes.tolist())
+        idx, counts = RTI.rti_find_and_count_injuries(person_injuries, list(relevant_codes))
         assert counts > 0, 'This person has asked to swap an injury code, but it is not swap-able'
+
+        daly_weight_change_lookup = {
+            '712b': -self.daly_wt_hand_wrist_fracture_without_treatment + self.daly_wt_hand_wrist_fracture_with_treatment,
+            '812': -self.daly_wt_patella_tibia_fibula_fracture_without_treatment + self.daly_wt_patella_tibia_fibula_fracture_with_treatment,
+            '3113': -self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
+            '4113': -self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
+            '5113': -self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
+            '7113': -self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
+            '8113': -self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
+            '813a': -self.daly_wt_hip_fracture_short_term_with_without_treatment + self.daly_wt_hip_fracture_long_term_with_treatment,
+            '813b': -self.daly_wt_pelvis_fracture_short_term + self.daly_wt_pelvis_fracture_long_term,
+            '813bo': -self.daly_wt_pelvis_fracture_short_term + self.daly_wt_pelvis_fracture_long_term,
+            'P673a': -self.daly_wt_spinal_cord_lesion_neck_without_treatment + self.daly_wt_spinal_cord_lesion_neck_with_treatment,
+            'P673b': -self.daly_wt_spinal_cord_lesion_below_neck_without_treatment + self.daly_wt_spinal_cord_lesion_below_neck_with_treatment,
+            'P674a': -self.daly_wt_spinal_cord_lesion_neck_without_treatment + self.daly_wt_spinal_cord_lesion_neck_with_treatment,
+            'P674b': -self.daly_wt_spinal_cord_lesion_below_neck_without_treatment + self.daly_wt_spinal_cord_lesion_below_neck_with_treatment,
+            'P675a': -self.daly_wt_spinal_cord_lesion_neck_without_treatment + self.daly_wt_spinal_cord_lesion_neck_with_treatment,
+            'P675b': -self.daly_wt_spinal_cord_lesion_below_neck_without_treatment + self.daly_wt_spinal_cord_lesion_below_neck_with_treatment,
+            'P676': -self.daly_wt_spinal_cord_lesion_neck_without_treatment + self.daly_wt_spinal_cord_lesion_neck_with_treatment,
+            'P782b': -self.daly_wt_unilateral_arm_amputation_without_treatment + self.daly_wt_unilateral_arm_amputation_with_treatment,
+            'P783': -self.daly_wt_bilateral_arm_amputation_without_treatment + self.daly_wt_bilateral_arm_amputation_with_treatment,
+            'P883': -self.daly_wt_unilateral_lower_limb_amputation_without_treatment + self.daly_wt_unilateral_lower_limb_amputation_with_treatment,
+            'P884': -self.daly_wt_bilateral_lower_limb_amputation_without_treatment + self.daly_wt_bilateral_lower_limb_amputation_with_treatment
+        }
+
         # Iterate over the relevant codes
         for code in relevant_codes:
             # swap the relevant code's daly weight, from the daly weight associated with the injury without treatment
             # and the daly weight for the disability with treatment.
             # keep track of the changes to the daly weights
-            change_in_daly_weights = 0
-            if code == '712b':
-                change_in_daly_weights += - self.daly_wt_hand_wrist_fracture_without_treatment + \
-                                          self.daly_wt_hand_wrist_fracture_with_treatment
-            if code == '812':
-                change_in_daly_weights += - self.daly_wt_patella_tibia_fibula_fracture_without_treatment + \
-                                          self.daly_wt_patella_tibia_fibula_fracture_with_treatment
-            if code == '3113':
-                change_in_daly_weights += \
-                    - self.daly_wt_burns_less_than_20_percent_body_area_without_treatment \
-                    + self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
-
-            if code == '4113':
-                change_in_daly_weights += \
-                    - self.daly_wt_burns_less_than_20_percent_body_area_without_treatment \
-                    + self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
-            if code == '5113':
-                change_in_daly_weights += \
-                    - self.daly_wt_burns_less_than_20_percent_body_area_without_treatment \
-                    + self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
-            if code == '7113':
-                change_in_daly_weights += \
-                    - self.daly_wt_burns_less_than_20_percent_body_area_without_treatment \
-                    + self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
-            if code == '8113':
-                change_in_daly_weights += \
-                    - self.daly_wt_burns_less_than_20_percent_body_area_without_treatment \
-                    + self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
-            if code == '813a':
-                change_in_daly_weights += - self.daly_wt_hip_fracture_short_term_with_without_treatment + \
-                                          self.daly_wt_hip_fracture_long_term_with_treatment
-            if code == '813b':
-                change_in_daly_weights += - self.daly_wt_pelvis_fracture_short_term + \
-                                          self.daly_wt_pelvis_fracture_long_term
-            if code == '813bo':
-                change_in_daly_weights += - self.daly_wt_pelvis_fracture_short_term + \
-                                          self.daly_wt_pelvis_fracture_long_term
-            if code == 'P673a':
-                change_in_daly_weights += - self.daly_wt_spinal_cord_lesion_neck_without_treatment + \
-                                          self.daly_wt_spinal_cord_lesion_neck_with_treatment
-            if code == 'P673b':
-                change_in_daly_weights += - self.daly_wt_spinal_cord_lesion_below_neck_without_treatment + \
-                                          self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
-            if code == 'P674a':
-                change_in_daly_weights += - self.daly_wt_spinal_cord_lesion_neck_without_treatment + \
-                                          self.daly_wt_spinal_cord_lesion_neck_with_treatment
-            if code == 'P674b':
-                change_in_daly_weights += - self.daly_wt_spinal_cord_lesion_below_neck_without_treatment + \
-                                          self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
-            if code == 'P675a':
-                change_in_daly_weights += - self.daly_wt_spinal_cord_lesion_neck_without_treatment + \
-                                          self.daly_wt_spinal_cord_lesion_neck_with_treatment
-            if code == 'P675b':
-                change_in_daly_weights += - self.daly_wt_spinal_cord_lesion_below_neck_without_treatment + \
-                                          self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
-            if code == 'P676':
-                change_in_daly_weights += - self.daly_wt_spinal_cord_lesion_neck_without_treatment + \
-                                          self.daly_wt_spinal_cord_lesion_neck_with_treatment
-            if code == 'P782b':
-                change_in_daly_weights += - self.daly_wt_unilateral_arm_amputation_without_treatment + \
-                                          self.daly_wt_unilateral_arm_amputation_with_treatment
-            if code == 'P783':
-                change_in_daly_weights += - self.daly_wt_bilateral_arm_amputation_without_treatment + \
-                                          self.daly_wt_bilateral_arm_amputation_with_treatment
-            if code == 'P883':
-                change_in_daly_weights += - self.daly_wt_unilateral_lower_limb_amputation_without_treatment \
-                                          + self.daly_wt_unilateral_lower_limb_amputation_with_treatment
-            if code == 'P884':
-                change_in_daly_weights += - self.daly_wt_bilateral_lower_limb_amputation_without_treatment \
-                                          + self.daly_wt_bilateral_lower_limb_amputation_with_treatment
             # update the disability burdens
-            df.loc[person_id, 'rt_debugging_DALY_wt'] += change_in_daly_weights
+            df.loc[person_id, 'rt_debugging_DALY_wt'] += daly_weight_change_lookup[code]
+
         # Check that the person's true disability burden is positive
         assert np.round(df.loc[person_id, 'rt_debugging_DALY_wt'], 4) >= 0, (person_injuries.values,
                                                                              df.loc[person_id, 'rt_debugging_DALY_wt'])
