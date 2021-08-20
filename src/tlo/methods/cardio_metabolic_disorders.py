@@ -325,6 +325,7 @@ class CardioMetabolicDisorders(Module):
             df.loc[df.is_alive, f'nc_{condition}_on_medication'] = False
 
             # ----- Impose the symptom on random sample of those with each condition to have:
+            # TODO: make linear model data-specific and add in needed complexity
             for symptom in self.prob_symptoms[condition].keys():
                 lm_init_symptoms = LinearModel(
                     LinearModelType.MULTIPLICATIVE,
@@ -575,37 +576,6 @@ class CardioMetabolicDisorders(Module):
         df.at[child_id, 'nc_n_conditions'] = 0
         df.at[child_id, 'nc_condition_combos'] = False
 
-    def get_all_consumables(self, hsi_event, condition, type_of_consumable):
-        """
-        This function defines all consumables and determines the outcome of the request for consumables from the
-        health system.
-        :param hsi_event: HSI event in which the function has been called
-        """
-
-        # Define the consumables to get
-        if type_of_consumable == 'test':
-            consumables_to_get = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {self.parameters[f'{condition}_hsi'].test_item_code: 1}}
-        elif type_of_consumable == 'medication':
-            consumables_to_get = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {self.parameters[f'{condition}_hsi'].medication_item_code: 1}}
-        elif type_of_consumable == 'emergency_medication':
-            consumables_to_get = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {self.parameters[f'{condition}_hsi'].emergency_medication_item_code: 1}}
-
-        # Confirm availability of consumables
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_to_get)
-
-        # As with previous interventions - condition on consumables and probability intervention is delivered
-        if outcome_of_request_for_consumables['Item_Code'][f'item_code_{condition}_{type_of_consumable}']:
-            return True
-        else:
-            return False
 
     def report_daly_values(self):
         """Report DALY values to the HealthBurden module"""
@@ -1087,15 +1057,18 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
         # Ignore this event if the person is no longer alive:
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
-        # Figure out availability of any consumables needed for the test:
+        # Check availability of test
         if 'test_item_code' in self.module.parameters[f'{self.condition}_hsi']:
             # check if consumables are available
-            all_available = self.get_all_consumables(item_codes=[self.module.parameters[
-                                                                     f'{self.condition}_hsi'].test_item_code])
+            item_code = self.module.parameters[f'{self.condition}_hsi']['test_item_code']
+            result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self,
+                cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
+            )['Item_Code'][item_code]
         else:
-            all_available = True
+            result_of_cons_request = True
 
-        if all_available:
+        if result_of_cons_request:
             # Run a test to diagnose whether the person has condition:
             dx_result = hs.dx_manager.run_dx_test(
                 dx_tests_to_run=f'assess_{self.condition}',
@@ -1168,12 +1141,15 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
         # Figure out availability of any consumables needed for the test:
         if 'test_item_code' in self.module.parameters[f'{self.condition}_hsi']:
             # check if consumables are available
-            all_available = self.get_all_consumables(item_codes=[self.module.parameters[
-                                                                     f'{self.condition}_hsi'].test_item_code])
+            item_code = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
+            result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self,
+                cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
+            )['Item_Code'][item_code]
         else:
-            all_available = True
+            result_of_cons_request = True
 
-        if all_available:
+        if result_of_cons_request:
             # Run a test to diagnose whether the person has condition:
             dx_result = hs.dx_manager.run_dx_test(
                 dx_tests_to_run=f'assess_{self.condition}',
@@ -1428,9 +1404,12 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             df.at[person_id, f'nc_{self.event}_ever_diagnosed'] = True
             if squeeze_factor < 0.5:
                 # If squeeze factor is not too large:
-                all_available = self.get_all_consumables(item_codes=[
-                    self.module.parameters[f'{self.event}_hsi'].emergency_medication_item_code])
-                if all_available:
+                item_code = self.module.parameters[f'{self.event}_hsi'].get('emergency_medication_item_code')
+                result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=self,
+                    cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
+                )['Item_Code'][item_code]
+                if result_of_cons_request:
                     logger.debug(key='debug', data='Treatment will be provided.')
                     treatmentworks = self.module.rng.rand() < 0.5  # made up number for now
                     if treatmentworks:
