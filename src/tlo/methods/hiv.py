@@ -1989,21 +1989,20 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         denom_children = len(df[df.is_alive & ~df.hv_inf & (df.age_years < 15)])
         child_inc = (n_new_infections_children / denom_children)
 
-        # hiv prev among female sex workers (aged 15-49)
-        n_fsw = len(df.loc[
+        # hiv prev among women of a reproductive age (aged 15-49)
+        n_women_reproductive_age = len(df.loc[
                         df.is_alive &
-                        df.li_is_sexworker &
                         (df.sex == "F") &
                         df.age_years.between(15, 49)
                         ])
-        prev_hiv_fsw = 0 if n_fsw == 0 else \
+        prev_hiv_women_reproductive_age = 0 if n_women_reproductive_age == 0 else \
             len(df.loc[
                     df.is_alive &
                     df.hv_inf &
-                    df.li_is_sexworker &
                     (df.sex == "F") &
                     df.age_years.between(15, 49)
-                    ]) / n_fsw
+                    ]) / n_women_reproductive_age
+
 
         # hiv prev among pregnant women
         n_preg = len(df.loc[df.is_alive & df.is_pregnant])
@@ -2024,6 +2023,18 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 df.hv_inf &
                 (df.is_pregnant | (df.si_date_of_last_delivery > (now - DateOffset(months=18))))
                 ]) / n_preg_and_bf
+
+        # incidence in the period since the last log for women of a reproductive age (denominator is approximate)
+        n_new_infections_women_reproductive_age = len(
+            df.loc[
+                df.is_alive &
+                (df.sex == "F") &
+                (df.age_years.between(15,49)) &
+                (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
+                ]
+        )
+        denom_women_reproductive_age = len(df[df.is_alive & (df.sex == "F") & ~df.hv_inf & (df.age_years.between(15,49))])
+        women_reproductive_age_inc = (n_new_infections_women_reproductive_age / denom_women_reproductive_age)
 
         # incidence in the period since the last log for pregnant and breastfeeding women
         n_new_infections_preg = len(
@@ -2049,6 +2060,12 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         denom_preg_and_bf = denom_preg + denom_bf
         preg_and_bf_inc = (n_new_infections_preg_and_bf / denom_preg_and_bf)
 
+        # MTCT Rate
+        infected_mother = df.mother_id & df.hv_inf
+        n_children_born_to_infected_mothers = len(df[(df.age_years <15) & df.hv_inf & infected_mother])
+        mtct = n_new_infections_children / n_children_born_to_infected_mothers
+
+
         logger.info(key='summary_inc_and_prev_for_adults_and_children_and_fsw',
                     description='Summary of HIV among adult (15+ and 15-49) and children (0-14s) and female sex workers'
                                 ' (15-49)',
@@ -2059,11 +2076,13 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         "hiv_adult_inc_15plus": adult_inc_15plus,
                         "hiv_adult_inc_1549": adult_inc_1549,
                         "hiv_child_inc": child_inc,
-                        "hiv_prev_fsw": prev_hiv_fsw,
+                        "hiv_prev_women_reproductive_age": prev_hiv_women_reproductive_age,
                         "hiv_prev_preg": prev_hiv_preg,
                         "hiv_prev_preg_and_bf": prev_hiv_preg_and_bf,
                         "hiv_preg_inc": preg_inc,
                         "hiv_preg_and_bf_inc": preg_and_bf_inc,
+                        "hiv_women_reproductive_age_inc": women_reproductive_age_inc,
+                        "mtct": mtct,
                     }
                     )
 
@@ -2124,10 +2143,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[df.is_alive & df.hv_behaviour_change & (df.age_years >= 15)]
         ) / len(df[df.is_alive & (df.age_years >= 15)])
 
-        # ------------------------------------ PREP AMONG FSW ------------------------------------
-        prop_fsw_on_prep = 0 if n_fsw == 0 else len(
-            df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15) & df.hv_is_on_prep]
-        ) / len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)])
 
         # -------------------------- PREP AMONG PREGNANT AND BREASTFEEDING WOMEN ---------------
 
@@ -2155,7 +2170,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         "art_coverage_child": art_cov_children,
                         "art_coverage_child_VL_suppression": art_cov_vs_children,
                         "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
-                        "prop_fsw_on_prep": prop_fsw_on_prep,
                         "prop_preg_and_bf_on_prep": prop_preg_and_bf_on_prep,
                         "prop_men_circ": prop_men_circ
                     }
