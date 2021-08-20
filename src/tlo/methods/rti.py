@@ -2406,36 +2406,20 @@ class RTI(Module):
         return days_until_treatment_end
 
     @staticmethod
-    def rti_find_and_count_injuries(dataframe, tloinjcodes):
+    def rti_find_and_count_injuries(persons_injury_properties, injury_codes):
         """
-        A function that searches a user given dataframe for a list of injuries (tloinjcodes). If the injury code is
+        A function that searches a user given dataframe for a list of injuries (injury_codes). If the injury code is
         found in the dataframe, this function returns the index for who has the injury/injuries and the number of
         injuries found. This function works much faster if the dataframe is smaller, hence why the searched dataframe
         is a parameter in the function.
 
-        :param dataframe: The dataframe to search for the tlo injury codes in
-        :param tloinjcodes: The injury codes to search for in the data frame
+        :param persons_injury_properties: The dataframe to search for the tlo injury codes in
+        :param injury_codes: The injury codes to search for in the data frame
         :return: the df index of who has the injuries and how many injuries in the search were found.
         """
-        # create empty index and outputs to append to
-        index = pd.Index([])
-        # set the number of found injuries to zero by default
-        counts = 0
-        # reformat the person's injury dataframes to a list
-        peoples_injuries = [item for sublist in dataframe.values.tolist() for item in sublist]
-        # get the relevant codes to search over
-        relevant_codes = np.intersect1d(peoples_injuries, tloinjcodes)
-        for code in relevant_codes:
-            for col in dataframe.columns:
-                # Find where a searched for injury code is in the columns, store the matches in counts
-                counts += len(dataframe[dataframe[col] == code])
-                if len(dataframe[dataframe[col] == code]) > 0:
-                    # If you find a matching code, update the index to include the matching person
-                    inj = dataframe.apply(lambda row: row.astype(str).str.contains(code).any(0), axis=1)
-                    injidx = inj.index[inj]
-                    index = index.union(injidx)
-        # return the idx of people with the corresponding injuries and the number of corresponding injuries found
-        return index, counts
+        injury_counts = persons_injury_properties.isin(injury_codes).sum(axis=1)
+        people_with_given_injuries = injury_counts[injury_counts > 0]
+        return people_with_given_injuries.index, people_with_given_injuries.sum()
 
     def rti_treated_injuries(self, person_id, tloinjcodes):
         """
