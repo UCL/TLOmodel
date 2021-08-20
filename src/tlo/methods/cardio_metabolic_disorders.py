@@ -1083,7 +1083,7 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
                 topen=self.sim.date,
                 tclose=None
             )
-        elif df.at[person_id, 'li_bmi'] >= 3:  # change to be if individual has >2 risk factors
+        elif df.at[person_id, 'nc_risk_score'] >= 2:
             self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
             # Schedule a post-weight loss event for 6-9 months for individual to potentially lose weight:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
