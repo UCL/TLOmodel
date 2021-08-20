@@ -2292,43 +2292,33 @@ class RTI(Module):
         """
         p = self.parameters
         df = self.sim.population.props
+
+        # FIXME: this line doesn't do anything
         if not pd.isnull(df.loc[person_id, 'cause_of_death']):
             pass
-        # Load the parameters needed to determine the length of stay
-        mean_los_ISS_less_than_4 = p['mean_los_ISS_less_than_4']
-        sd_los_ISS_less_than_4 = p['sd_los_ISS_less_than_4']
-        mean_los_ISS_4_to_8 = p['mean_los_ISS_4_to_8']
-        sd_los_ISS_4_to_8 = p['sd_los_ISS_4_to_8']
-        mean_los_ISS_9_to_15 = p['mean_los_ISS_9_to_15']
-        sd_los_ISS_9_to_15 = p['sd_los_ISS_9_to_15']
-        mean_los_ISS_16_to_24 = p['mean_los_ISS_16_to_24']
-        sd_los_ISS_16_to_24 = p['sd_los_ISS_16_to_24']
-        mean_los_ISS_more_than_25 = p['mean_los_ISS_more_than_25']
-        sd_los_ISS_more_that_25 = p['sd_los_ISS_more_that_25']
-        days_until_treatment_end = 0  # default value to be changed
+
+        def draw_days(_mean, _sd):
+            return int(self.rng.normal(_mean, _sd, 1))
+
         # Create the length of stays required for each ISS score boundaries and check that they are >=0
-        if df.iloc[person_id]['rt_ISS_score'] < 4:
-            inpatient_days_ISS_less_than_4 = int(self.rng.normal(mean_los_ISS_less_than_4,
-                                                                 sd_los_ISS_less_than_4, 1))
-            days_until_treatment_end = inpatient_days_ISS_less_than_4
-        if 4 <= df.iloc[person_id]['rt_ISS_score'] < 9:
-            inpatient_days_ISS_4_to_8 = int(self.rng.normal(mean_los_ISS_4_to_8,
-                                                            sd_los_ISS_4_to_8, 1))
-            days_until_treatment_end = inpatient_days_ISS_4_to_8
-        if 9 <= df.iloc[person_id]['rt_ISS_score'] < 16:
-            inpatient_days_ISS_9_to_15 = int(self.rng.normal(mean_los_ISS_9_to_15,
-                                                             sd_los_ISS_9_to_15, 1))
-            days_until_treatment_end = inpatient_days_ISS_9_to_15
-        if 16 <= df.iloc[person_id]['rt_ISS_score'] < 25:
-            inpatient_days_ISS_16_to_24 = int(self.rng.normal(mean_los_ISS_16_to_24,
-                                                              sd_los_ISS_16_to_24, 1))
-            days_until_treatment_end = inpatient_days_ISS_16_to_24
-        if 25 <= df.iloc[person_id]['rt_ISS_score']:
-            inpatient_days_ISS_more_than_25 = int(self.rng.normal(mean_los_ISS_more_than_25,
-                                                                  sd_los_ISS_more_that_25, 1))
-            days_until_treatment_end = inpatient_days_ISS_more_than_25
+        rt_iss_score = df.loc[person_id, 'rt_ISS_score']
+
+        if rt_iss_score < 4:
+            days_until_treatment_end = draw_days(p["mean_los_ISS_less_than_4"], p["sd_los_ISS_less_than_4"])
+        elif 4 <= rt_iss_score < 9:
+            days_until_treatment_end = draw_days(p["mean_los_ISS_4_to_8"], p["sd_los_ISS_4_to_8"])
+        elif 9 <= rt_iss_score < 16:
+            days_until_treatment_end = draw_days(p["mean_los_ISS_9_to_15"], p["sd_los_ISS_9_to_15"])
+        elif 16 <= rt_iss_score < 25:
+            days_until_treatment_end = draw_days(p["mean_los_ISS_16_to_24"], p["sd_los_ISS_16_to_24"])
+        elif 25 <= rt_iss_score:
+            days_until_treatment_end = draw_days(p["mean_los_ISS_more_than_25"], p["sd_los_ISS_more_that_25"])
+        else:
+            days_until_treatment_end = 0
+
         if days_until_treatment_end < 0:
             days_until_treatment_end = 0
+
         # Return the LOS
         return days_until_treatment_end
 
