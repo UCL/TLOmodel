@@ -1191,63 +1191,61 @@ class RTI(Module):
         columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                    'rt_injury_7', 'rt_injury_8']
         persons_injuries = df.loc[[person_id], columns]
+
+        # TODO: these codes can be setup once and stored
+        codes_requiring_xrays = list()
+        codes_requiring_ct_scan = list()
+
         # ================================ Fractures require x-rays ============================================
         # Do they have a fracture which needs an x ray
-        fracture_codes = ['112', '113', '211', '212', '412', '414', '612',
-                          '712a', '712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b',
-                          '813bo', '813co', '813do', '813eo']
-        idx, counts = self.rti_find_and_count_injuries(persons_injuries, fracture_codes)
-        if len(idx) > 0:
-            the_appt_footprint['DiagRadio'] = 1
+        codes = ['112', '113', '211', '212', '412', '414', '612', '712a', '712b', '712c', '811', '812',
+                 '813a', '813b', '813c', '822a', '822b', '813bo', '813co', '813do', '813eo']
+        codes_requiring_xrays.extend(codes)
+
         # ========================= Traumatic brain injuries require ct scan ===================================
         # Do they have a TBI which needs a ct-scan
         codes = ['133', '134', '135']
-        idx, counts = self.rti_find_and_count_injuries(persons_injuries, codes)
-        if len(idx) > 0:
-            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+        codes_requiring_ct_scan.extend(codes)
+
         # ============================= Abdominal trauma requires ct scan ======================================
         # Do they have abdominal trauma
         codes = ['552', '553', '554']
-        idx, counts = self.rti_find_and_count_injuries(persons_injuries, codes)
-        if len(idx) > 0:
-            the_appt_footprint['Tomography'] = 1
+        codes_requiring_ct_scan.extend(codes)
 
         # ============================== Spinal cord injury require x ray ======================================
         # Do they have a spinal cord injury
         codes = ['673', '674', '675', '676']
-        idx, counts = self.rti_find_and_count_injuries(persons_injuries, codes)
-        if len(idx) > 0:
-            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
+        codes_requiring_xrays.extend(codes)
 
         # ============================== Dislocations require x ray ============================================
         # Do they have a dislocation
         codes = ['322', '323', '722', '822']
-        idx, counts = self.rti_find_and_count_injuries(persons_injuries, codes)
-        if len(idx) > 0:
-            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
+        codes_requiring_xrays.extend(codes)
 
         # --------------------------------- Soft tissue injury in neck -----------------------------------------
         # Do they have soft tissue injury in the neck which requires a ct scan and an x ray
         codes = ['342', '343']
-        idx, counts = self.rti_find_and_count_injuries(persons_injuries, codes)
-        if len(idx) > 0:
-            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
-            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
+        codes_requiring_ct_scan.extend(codes)
+        codes_requiring_xrays.extend(codes)
 
         # --------------------------------- Soft tissue injury in thorax/ lung injury --------------------------
         # Do they have soft tissue injury in the thorax which requires a ct scan and x ray
         codes = ['441', '443', '453']
-        idx, counts = self.rti_find_and_count_injuries(persons_injuries, codes)
-        if len(idx) > 0:
-            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
-            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
+        codes_requiring_ct_scan.extend(codes)
+        codes_requiring_xrays.extend(codes)
 
         # ----------------------------- Internal bleeding ------------------------------------------------------
         # Do they have internal bleeding which requires a ct scan
         codes = ['361', '363', '461', '463']
-        idx, counts = self.rti_find_and_count_injuries(persons_injuries, codes)
-        if len(idx) > 0:
-            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+        codes_requiring_ct_scan.extend(codes)
+
+        def adjust_appt_footprint(_codes, _requirement):
+            _, counts = self.rti_find_and_count_injuries(persons_injuries, _codes)
+            if counts > 0:
+                the_appt_footprint[_requirement] = 1
+
+        adjust_appt_footprint(codes_requiring_xrays, 'DiagRadio')
+        adjust_appt_footprint(codes_requiring_ct_scan, 'Tomography')
 
     def initialise_population(self, population):
         """Sets up the default properties used in the RTI module and applies them to the dataframe. The default state
