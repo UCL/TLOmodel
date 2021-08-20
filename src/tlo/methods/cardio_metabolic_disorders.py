@@ -1084,18 +1084,19 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
                 tclose=None
             )
         elif df.at[person_id, 'nc_risk_score'] >= 2:
-            self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
-            # Schedule a post-weight loss event for 6-9 months for individual to potentially lose weight:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_WeightLossCheck(
-                    module=self.module,
-                    person_id=person_id,
-                    condition=self.condition
-                ),
-                topen=self.sim.date + DateOffset(months=6),
-                tclose=self.sim.date + DateOffset(months=9),
-                priority=0
-            )
+            if df.at[person_id, 'is_alive']:
+                self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
+                # Schedule a post-weight loss event for 6-9 months for individual to potentially lose weight:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_CardioMetabolicDisorders_WeightLossCheck(
+                        module=self.module,
+                        person_id=person_id,
+                        condition=self.condition
+                    ),
+                    topen=self.sim.date + DateOffset(months=6),
+                    tclose=self.sim.date + DateOffset(months=9),
+                    priority=0
+                )
 
     def did_not_run(self):
         pass
