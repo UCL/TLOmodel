@@ -1141,7 +1141,6 @@ class RTI(Module):
                 p[key] = hb.get_daly_weight(sequlae_code=value)
 
             # self.sim.modules["HealthSystem"].register_disease_module(self)
-        p = self.parameters
         # ================== Test the parameter distributions to see whether they sum to roughly one ===============
         # test the distribution of the number of injured body regions
         assert 0.9999 < sum(p['number_of_injured_body_regions_distribution'][1]) < 1.0001, \
