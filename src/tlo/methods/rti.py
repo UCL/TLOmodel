@@ -2260,7 +2260,7 @@ class RTI(Module):
                 'rt_injury_7', 'rt_injury_8']
         person_injuries = df.loc[[person_id], cols]
         # check this person is injured, search they have an injury code that is swappable
-        idx, counts = RTI.rti_find_and_count_injuries(person_injuries, relevant_codes)
+        idx, counts = RTI.rti_find_and_count_injuries(person_injuries, relevant_codes.tolist())
         assert counts > 0, 'This person has asked to swap an injury code, but it is not swap-able'
         # Iterate over the relevant codes
         for code in relevant_codes:
@@ -2406,7 +2406,7 @@ class RTI(Module):
         return days_until_treatment_end
 
     @staticmethod
-    def rti_find_and_count_injuries(persons_injury_properties, injury_codes):
+    def rti_find_and_count_injuries(persons_injury_properties: pd.DataFrame, injury_codes: list):
         """
         A function that searches a user given dataframe for a list of injuries (injury_codes). If the injury code is
         found in the dataframe, this function returns the index for who has the injury/injuries and the number of
@@ -2417,6 +2417,8 @@ class RTI(Module):
         :param injury_codes: The injury codes to search for in the data frame
         :return: the df index of who has the injuries and how many injuries in the search were found.
         """
+        assert isinstance(persons_injury_properties, pd.DataFrame)
+        assert isinstance(injury_codes, list)
         injury_counts = persons_injury_properties.isin(injury_codes).sum(axis=1)
         people_with_given_injuries = injury_counts[injury_counts > 0]
         return people_with_given_injuries.index, people_with_given_injuries.sum()
@@ -4175,7 +4177,7 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
         # Iterate over all the injured people who are having medical treatment
         for person in recovery_dates.index:
             # Iterate over all the dates in 'rt_date_to_remove_daly'
-            persons_injuries = df.loc[person, injury_cols]
+            persons_injuries = df.loc[[person], injury_cols]
             for date in df.loc[person, 'rt_date_to_remove_daly']:
                 # check if the recovery date is today
                 if date == now:
@@ -4188,10 +4190,8 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                     # Remove the daly weight associated with the healed injury code
                     cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                             'rt_injury_7', 'rt_injury_8']
-                    person_injuries = df.loc[person, cols]
-                    idx, counts = \
-                        RTI.rti_find_and_count_injuries(person_injuries,
-                                                        self.module.PROPERTIES.get('rt_injury_1').categories[1:])
+                    person_injuries = df.loc[[person], cols]
+                    idx, counts = RTI.rti_find_and_count_injuries(person_injuries, self.module.INJURY_CODES[1:])
                     if counts == 0:
                         pass
                     else:
@@ -7333,19 +7333,19 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
                     description='data on where the lacerations occurred on the body')
         # Log where the burns are located on the body
         burncodes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
-        idx, skullburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, burncodes[0])
+        idx, skullburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[0]])
         self.burndist[0] = skullburncounts
-        idx, faceburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, burncodes[1])
+        idx, faceburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[1]])
         self.burndist[1] = faceburncounts
-        idx, neckburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, burncodes[2])
+        idx, neckburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[2]])
         self.burndist[2] = neckburncounts
-        idx, thorburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, burncodes[3])
+        idx, thorburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[3]])
         self.burndist[3] = thorburncounts
-        idx, abdburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, burncodes[4])
+        idx, abdburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[4]])
         self.burndist[4] = abdburncounts
-        idx, upperexburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, burncodes[5])
+        idx, upperexburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[5]])
         self.burndist[6] = upperexburncounts
-        idx, lowerexburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, burncodes[6])
+        idx, lowerexburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[6]])
         self.burndist[7] = lowerexburncounts
         dict_to_output = {
             'total_head_laceration': self.burndist[0],
