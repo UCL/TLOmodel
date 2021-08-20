@@ -37,7 +37,7 @@ def check_dtypes(simulation):
 
 def create_basic_rti_sim(population_size):
     # create the basic outline of an rti simulation object
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
@@ -51,7 +51,6 @@ def create_basic_rti_sim(population_size):
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
                  )
 
-    sim.seed_rngs(0)
     sim.make_initial_population(n=population_size)
     return sim
 
@@ -113,7 +112,7 @@ def test_module_properties():
 
 def test_with_more_modules():
     # Run the simulation with multiple modules, see if any errors or unexpected changes to the datatypes occurs
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
 
     # Register the core modules
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -132,7 +131,6 @@ def test_with_more_modules():
                  dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
 
-    sim.seed_rngs(0)
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -145,7 +143,7 @@ def test_with_more_modules():
 def test_run_health_system_high_squeeze():
     """This test runs a simulation in which the contents of scheduled HSIs will not be performed because the squeeze
     factor is too high. Therefore it tests the logic in the did_not_run functions of the RTI HSIs"""
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
 
     # Register the modules and change healthsystem parameters
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -163,8 +161,6 @@ def test_run_health_system_high_squeeze():
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
-    # create seed
-    sim.seed_rngs(0)
     # make the initial population
     sim.make_initial_population(n=popsize)
     # Run the simulation
@@ -177,7 +173,7 @@ def test_run_health_system_events_wont_run():
     """
     Test the model with no service availability
     """
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
 
     # Register the core modules, make service availability = []
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -192,8 +188,6 @@ def test_run_health_system_events_wont_run():
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
-    # create simulation seed
-    sim.seed_rngs(0)
     # make initial population
     sim.make_initial_population(n=popsize)
     # Run the simulation
@@ -239,7 +233,7 @@ def test_no_capabilities():
     :return:
     """
     # Register the core modules, make capabilities coefficient = 0.0
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
@@ -253,8 +247,6 @@ def test_no_capabilities():
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
-    # create simulation seed
-    sim.seed_rngs(0)
     # make initial population
     sim.make_initial_population(n=popsize)
     # Run the simulation
@@ -269,7 +261,7 @@ def test_health_system_disabled():
     :return:
     """
     # create simulation object
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
     # get resource file path
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     # register modules, health system is disabled
@@ -284,8 +276,6 @@ def test_health_system_disabled():
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
-    # create random reed
-    sim.seed_rngs(0)
     # make the initial population
     sim.make_initial_population(n=popsize)
     # run the simulation
