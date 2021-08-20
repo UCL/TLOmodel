@@ -1062,270 +1062,84 @@ class RTI(Module):
 
     def read_parameters(self, data_folder):
         """ Reads the parameters used in the RTI module"""
+        p = self.parameters
+
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_RTI.xlsx', sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
-        if "HealthBurden" in self.sim.modules.keys():
+        if "HealthBurden" in self.sim.modules:
             # get the DALY weights of the seq associated with road traffic injuries
-            self.parameters["daly_wt_unspecified_skull_fracture"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1674
-            )
-            self.parameters["daly_wt_basilar_skull_fracture"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1675
-            )
-            self.parameters["daly_wt_epidural_hematoma"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1676
-            )
-            self.parameters["daly_wt_subdural_hematoma"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1677
-            )
-            self.parameters["daly_wt_subarachnoid_hematoma"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1678
-            )
-            self.parameters["daly_wt_brain_contusion"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1679
-            )
-            self.parameters["daly_wt_intraventricular_haemorrhage"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1680
-            )
-            self.parameters["daly_wt_diffuse_axonal_injury"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1681
-            )
-            self.parameters["daly_wt_subgaleal_hematoma"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1682
-            )
-            self.parameters["daly_wt_midline_shift"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1683
-            )
-            self.parameters["daly_wt_facial_fracture"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1684
-            )
-            self.parameters["daly_wt_facial_soft_tissue_injury"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1685
-            )
-            self.parameters["daly_wt_eye_injury"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1686
-            )
-            self.parameters["daly_wt_neck_soft_tissue_injury"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1687
-            )
-            self.parameters["daly_wt_neck_internal_bleeding"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1688
-            )
-            self.parameters["daly_wt_neck_dislocation"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1689
-            )
-            self.parameters["daly_wt_chest_wall_bruises_hematoma"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1690
-            )
-            self.parameters["daly_wt_hemothorax"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1691
-            )
-            self.parameters["daly_wt_lung_contusion"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1692
-            )
-            self.parameters["daly_wt_diaphragm_rupture"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1693
-            )
-            self.parameters["daly_wt_rib_fracture"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1694
-            )
-            self.parameters["daly_wt_flail_chest"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1695
-            )
-            self.parameters["daly_wt_chest_wall_laceration"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1696
-            )
-            self.parameters["daly_wt_closed_pneumothorax"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1697
-            )
-            self.parameters["daly_wt_open_pneumothorax"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1698
-            )
-            self.parameters["daly_wt_surgical_emphysema"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1699
-            )
-            self.parameters["daly_wt_abd_internal_organ_injury"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1700
-            )
-            self.parameters["daly_wt_spinal_cord_lesion_neck_with_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1701
-            )
-            self.parameters["daly_wt_spinal_cord_lesion_neck_without_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1702
-            )
-            self.parameters["daly_wt_spinal_cord_lesion_below_neck_with_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1703
-            )
-            self.parameters["daly_wt_spinal_cord_lesion_below_neck_without_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1704
-            )
-            self.parameters["daly_wt_vertebrae_fracture"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1705
-            )
-            self.parameters["daly_wt_clavicle_scapula_humerus_fracture"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1706
-            )
-            self.parameters["daly_wt_hand_wrist_fracture_with_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1707
-            )
-            self.parameters["daly_wt_hand_wrist_fracture_without_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1708
-            )
-            self.parameters["daly_wt_radius_ulna_fracture_short_term_with_without_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1709
-            )
-            self.parameters["daly_wt_radius_ulna_fracture_long_term_without_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1710
-            )
-            self.parameters["daly_wt_dislocated_shoulder"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1711
-            )
-            self.parameters["daly_wt_amputated_finger"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1712
-            )
-            self.parameters["daly_wt_amputated_thumb"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1713
-            )
-            self.parameters["daly_wt_unilateral_arm_amputation_with_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1714
-            )
-            self.parameters["daly_wt_unilateral_arm_amputation_without_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1715
-            )
-            self.parameters["daly_wt_bilateral_arm_amputation_with_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1716
-            )
-            self.parameters["daly_wt_bilateral_arm_amputation_without_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1717
-            )
-            self.parameters["daly_wt_foot_fracture_short_term_with_without_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1718
-            )
-            self.parameters["daly_wt_foot_fracture_long_term_without_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1719
-            )
-            self.parameters["daly_wt_patella_tibia_fibula_fracture_with_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1720
-            )
-            self.parameters["daly_wt_patella_tibia_fibula_fracture_without_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1721
-            )
-            self.parameters["daly_wt_hip_fracture_short_term_with_without_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1722
-            )
-            self.parameters["daly_wt_hip_fracture_long_term_with_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1723
-            )
-            self.parameters["daly_wt_hip_fracture_long_term_without_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1724
-            )
-            self.parameters["daly_wt_pelvis_fracture_short_term"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1725
-            )
-            self.parameters["daly_wt_pelvis_fracture_long_term"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1726
-            )
-            self.parameters["daly_wt_femur_fracture_short_term"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1727
-            )
-            self.parameters["daly_wt_femur_fracture_long_term_without_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1728
-            )
-            self.parameters["daly_wt_dislocated_hip"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1729
-            )
-            self.parameters["daly_wt_dislocated_knee"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1730
-            )
-            self.parameters["daly_wt_amputated_toes"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1731
-            )
-            self.parameters["daly_wt_unilateral_lower_limb_amputation_with_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1732
-            )
-            self.parameters["daly_wt_unilateral_lower_limb_amputation_without_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1733
-            )
-            self.parameters["daly_wt_bilateral_lower_limb_amputation_with_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1734
-            )
-            self.parameters["daly_wt_bilateral_lower_limb_amputation_without_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1735
-            )
-            self.parameters["daly_wt_burns_greater_than_20_percent_body_area"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1736
-            )
-            self.parameters["daly_wt_burns_less_than_20_percent_body_area_with_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1737
-            )
-            self.parameters["daly_wt_burns_less_than_20_percent_body_area_without_treatment"] = self.sim.modules[
-                "HealthBurden"].get_daly_weight(
-                sequlae_code=1738
-            )
+            daly_sequlae_codes = {
+                'daly_wt_unspecified_skull_fracture': 1674,
+                'daly_wt_basilar_skull_fracture': 1675,
+                'daly_wt_epidural_hematoma': 1676,
+                'daly_wt_subdural_hematoma': 1677,
+                'daly_wt_subarachnoid_hematoma': 1678,
+                'daly_wt_brain_contusion': 1679,
+                'daly_wt_intraventricular_haemorrhage': 1680,
+                'daly_wt_diffuse_axonal_injury': 1681,
+                'daly_wt_subgaleal_hematoma': 1682,
+                'daly_wt_midline_shift': 1683,
+                'daly_wt_facial_fracture': 1684,
+                'daly_wt_facial_soft_tissue_injury': 1685,
+                'daly_wt_eye_injury': 1686,
+                'daly_wt_neck_soft_tissue_injury': 1687,
+                'daly_wt_neck_internal_bleeding': 1688,
+                'daly_wt_neck_dislocation': 1689,
+                'daly_wt_chest_wall_bruises_hematoma': 1690,
+                'daly_wt_hemothorax': 1691,
+                'daly_wt_lung_contusion': 1692,
+                'daly_wt_diaphragm_rupture': 1693,
+                'daly_wt_rib_fracture': 1694,
+                'daly_wt_flail_chest': 1695,
+                'daly_wt_chest_wall_laceration': 1696,
+                'daly_wt_closed_pneumothorax': 1697,
+                'daly_wt_open_pneumothorax': 1698,
+                'daly_wt_surgical_emphysema': 1699,
+                'daly_wt_abd_internal_organ_injury': 1700,
+                'daly_wt_spinal_cord_lesion_neck_with_treatment': 1701,
+                'daly_wt_spinal_cord_lesion_neck_without_treatment': 1702,
+                'daly_wt_spinal_cord_lesion_below_neck_with_treatment': 1703,
+                'daly_wt_spinal_cord_lesion_below_neck_without_treatment': 1704,
+                'daly_wt_vertebrae_fracture': 1705,
+                'daly_wt_clavicle_scapula_humerus_fracture': 1706,
+                'daly_wt_hand_wrist_fracture_with_treatment': 1707,
+                'daly_wt_hand_wrist_fracture_without_treatment': 1708,
+                'daly_wt_radius_ulna_fracture_short_term_with_without_treatment': 1709,
+                'daly_wt_radius_ulna_fracture_long_term_without_treatment': 1710,
+                'daly_wt_dislocated_shoulder': 1711,
+                'daly_wt_amputated_finger': 1712,
+                'daly_wt_amputated_thumb': 1713,
+                'daly_wt_unilateral_arm_amputation_with_treatment': 1714,
+                'daly_wt_unilateral_arm_amputation_without_treatment': 1715,
+                'daly_wt_bilateral_arm_amputation_with_treatment': 1716,
+                'daly_wt_bilateral_arm_amputation_without_treatment': 1717,
+                'daly_wt_foot_fracture_short_term_with_without_treatment': 1718,
+                'daly_wt_foot_fracture_long_term_without_treatment': 1719,
+                'daly_wt_patella_tibia_fibula_fracture_with_treatment': 1720,
+                'daly_wt_patella_tibia_fibula_fracture_without_treatment': 1721,
+                'daly_wt_hip_fracture_short_term_with_without_treatment': 1722,
+                'daly_wt_hip_fracture_long_term_with_treatment': 1723,
+                'daly_wt_hip_fracture_long_term_without_treatment': 1724,
+                'daly_wt_pelvis_fracture_short_term': 1725,
+                'daly_wt_pelvis_fracture_long_term': 1726,
+                'daly_wt_femur_fracture_short_term': 1727,
+                'daly_wt_femur_fracture_long_term_without_treatment': 1728,
+                'daly_wt_dislocated_hip': 1729,
+                'daly_wt_dislocated_knee': 1730,
+                'daly_wt_amputated_toes': 1731,
+                'daly_wt_unilateral_lower_limb_amputation_with_treatment': 1732,
+                'daly_wt_unilateral_lower_limb_amputation_without_treatment': 1733,
+                'daly_wt_bilateral_lower_limb_amputation_with_treatment': 1734,
+                'daly_wt_bilateral_lower_limb_amputation_without_treatment': 1735,
+                'daly_wt_burns_greater_than_20_percent_body_area': 1736,
+                'daly_wt_burns_less_than_20_percent_body_area_with_treatment': 1737,
+                'daly_wt_burns_less_than_20_percent_body_area_without_treatment': 1738,
+            }
+
+            hb = self.sim.modules["HealthBurden"]
+            for key, value in daly_sequlae_codes.items():
+                p[key] = hb.get_daly_weight(sequlae_code=value)
+
             # self.sim.modules["HealthSystem"].register_disease_module(self)
         p = self.parameters
         # ================== Test the parameter distributions to see whether they sum to roughly one ===============
