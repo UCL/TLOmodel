@@ -743,19 +743,13 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                     days_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) \
                                                     / np.timedelta64(1, 'D')
                     for symptom in self.module.prob_symptoms[condition].keys():
-                        lm_init_symptoms = LinearModel(
-                            LinearModelType.MULTIPLICATIVE,
-                            self.module.prob_symptoms[condition].get(f'{symptom}'),
-                            Predictor(f'nc_{condition}').when(True, 1.0)
-                                .otherwise(0.0))
-                        has_symptom_at_init = lm_init_symptoms.predict(df.loc[df.is_alive], self.module.rng)
                         date_onset = self.sim.date + DateOffset(days=rng.randint(0, days_until_next_polling_event))
                         self.sim.modules['SymptomManager'].change_symptom(
-                            person_id=has_symptom_at_init.index[has_symptom_at_init].tolist(),
+                            person_id=idx_symptom_onset.tolist(),
                             symptom_string=f'{symptom}',
                             add_or_remove='+',
                             date_of_onset=date_onset,
-                            disease_module=self.sim.modules['CardioMetabolicDisorders'])
+                            disease_module=self.module)
 
             # -------------------------------------------------------------------------------------------
 
