@@ -408,7 +408,8 @@ class CardioMetabolicDisorders(Module):
         # NB. Specificity is assumed to be 100%
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             assess_diabetes=DxTest(
-                property='nc_diabetes'
+                property='nc_diabetes',
+                cons_req_as_item_code=self.parameters['diabetes_hsi']['test_item_code']
             )
         )
         # Create the diagnostic representing the assessment for whether a person is diagnosed with hypertension:
@@ -428,7 +429,8 @@ class CardioMetabolicDisorders(Module):
         # Create the diagnostic representing the assessment for whether a person is diagnosed with CKD
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             assess_chronic_kidney_disease=DxTest(
-                property='nc_chronic_kidney_disease'
+                property='nc_chronic_kidney_disease',
+                cons_req_as_item_code=self.parameters['chronic_kidney_disease_hsi']['test_item_code']
             )
         )
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
@@ -582,7 +584,6 @@ class CardioMetabolicDisorders(Module):
         df.loc[df.is_alive, 'nc_risk_score'] = (df[[
             'li_low_ex', 'li_high_salt', 'li_high_sugar', 'li_tob', 'li_ex_alc']] > 0).sum(1)
         df.loc[df['li_bmi'] >= 3, ['nc_risk_score']] += 1
-
 
     def report_daly_values(self):
         """Report DALY values to the HealthBurden module"""
@@ -820,9 +821,6 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                     schedule_death_to_occur_before_next_poll(person_id, event,
                                                              m.parameters['interval_between_polls'])
 
-        # Update risk score
-        self.module.generate_risk_score()
-
 
 class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
     """
@@ -1034,6 +1032,9 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
         # df = population.props
         # df.to_csv('df_for_regression.csv')
 
+        # Update risk score
+        self.module.generate_risk_score()
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
@@ -1060,52 +1061,41 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
         # Ignore this event if the person is no longer alive:
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
-        # Check availability of test
-        if 'test_item_code' in self.module.parameters[f'{self.condition}_hsi']:
-            # check if consumables are available
-            item_code = self.module.parameters[f'{self.condition}_hsi']['test_item_code']
-            result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
-            )['Item_Code'][item_code]
-        else:
-            result_of_cons_request = True
 
-        if result_of_cons_request:
-            # Run a test to diagnose whether the person has condition:
-            dx_result = hs.dx_manager.run_dx_test(
-                dx_tests_to_run=f'assess_{self.condition}',
-                hsi_event=self
+        # Run a test to diagnose whether the person has condition:
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run=f'assess_{self.condition}',
+            hsi_event=self
+        )
+        df.at[person_id, f'nc_{self.condition}_date_last_test'] = self.sim.date
+        if dx_result:
+            # record date of diagnosis:
+            df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
+            df.at[person_id, f'nc_{self.condition}_ever_diagnosed'] = True
+            # start weight loss recommendation:
+            hs.schedule_hsi_event(
+                hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                    module=self.module,
+                    person_id=person_id,
+                    condition=f'{self.condition}'
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
             )
-            df.at[person_id, f'nc_{self.condition}_date_last_test'] = self.sim.date
-            if dx_result:
-                # record date of diagnosis:
-                df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
-                df.at[person_id, f'nc_{self.condition}_ever_diagnosed'] = True
-                # start weight loss recommendation:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
-                        module=self.module,
-                        person_id=person_id,
-                        condition=f'{self.condition}'
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
-            elif df.at[person_id, 'li_bmi'] >= 3:  # change to be if individual has >2 risk factors
-                self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
-                # Schedule a post-weight loss event for 6-9 months for individual to potentially lose weight:
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event=HSI_CardioMetabolicDisorders_WeightLossCheck(
-                        module=self.module,
-                        person_id=person_id,
-                        condition=self.condition
-                    ),
-                    topen=self.sim.date + DateOffset(months=6),
-                    tclose=self.sim.date + DateOffset(months=9),
-                    priority=0
-                )
+        elif df.at[person_id, 'li_bmi'] >= 3:  # change to be if individual has >2 risk factors
+            self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
+            # Schedule a post-weight loss event for 6-9 months for individual to potentially lose weight:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_CardioMetabolicDisorders_WeightLossCheck(
+                    module=self.module,
+                    person_id=person_id,
+                    condition=self.condition
+                ),
+                topen=self.sim.date + DateOffset(months=6),
+                tclose=self.sim.date + DateOffset(months=9),
+                priority=0
+            )
 
     def did_not_run(self):
         pass
