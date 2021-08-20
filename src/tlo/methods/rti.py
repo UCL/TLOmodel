@@ -1367,8 +1367,9 @@ class RTI(Module):
         :return: n/a
         """
         df = self.sim.population.props
+        person = df.loc[person_id]
         # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to rti
-        assert df.at[person_id, 'rt_med_int'], 'person sent here not been through RTI_MedInt'
+        assert person.rt_med_int, 'person sent here not been through RTI_MedInt'
         # Determine what injuries are able to be treated by surgery by checking the injury codes which are currently
         # treated in this simulation, it seems there is a limited available to treat spinal cord injuries and chest
         # trauma in Malawi, so these are initially left out, but we will test different scenarios to see what happens
@@ -1385,17 +1386,14 @@ class RTI(Module):
         if 'include_spine_surgery' in self.allowed_interventions:
             additional_codes = ['673a', '673b', '674a', '674b', '675a', '675b', '676', 'P673a', 'P673b', 'P674',
                                 'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676']
-            for code in additional_codes:
-                surgically_treated_codes.append(code)
+            surgically_treated_codes.extend(additional_codes)
         # If we allow surgical treatment of chest trauma, extend the surgically treated codes to include chest trauma
         # codes.
         if 'include_thoroscopy' in self.allowed_interventions:
             additional_codes = ['441', '443', '453', '453a', '453b', '463']
-            for code in additional_codes:
-                surgically_treated_codes.append(code)
-        assert len(set(df.loc[person_id, 'rt_injuries_for_major_surgery']) & set(surgically_treated_codes)) > 0, \
+            surgically_treated_codes.extend(additional_codes)
+        assert len(set(person.rt_injuries_for_major_surgery) & set(surgically_treated_codes)) > 0, \
             'This person has asked for surgery but does not have an appropriate injury'
-        person = df.iloc[person_id]
         # isolate the relevant injury information
         cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                 'rt_injury_7', 'rt_injury_8']
@@ -1403,11 +1401,11 @@ class RTI(Module):
         # Check whether the person sent to surgery has an injury which actually requires surgery
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries, surgically_treated_codes)
         assert counts > 0, 'This person has been sent to major surgery without the right injuries'
-        assert len(df.loc[person_id, 'rt_injuries_for_major_surgery']) > 0
-        for code in df.loc[person_id, 'rt_injuries_for_major_surgery']:
+        assert len(person.rt_injuries_for_major_surgery) > 0
+        for code in person.rt_injuries_for_major_surgery:
             column, found_code = self.rti_find_injury_column(person_id, [code])
             index_in_rt_recovery_dates = int(column[-1]) - 1
-            if not pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates]):
+            if not pd.isnull(person.rt_date_to_remove_daly[index_in_rt_recovery_dates]):
                 df.loc[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates] = pd.NaT
         # If this person is alive schedule major surgeries
         if person.is_alive:
