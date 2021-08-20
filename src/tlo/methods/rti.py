@@ -1278,16 +1278,18 @@ class RTI(Module):
         df.loc[df.is_alive, 'rt_disability'] = 0  # default: no DALY
         df.loc[df.is_alive, 'rt_date_inj'] = pd.NaT
         df.loc[df.is_alive, 'rt_med_int'] = False
+        df.loc[df.is_alive, 'rt_in_icu_or_hdu'] = False
         df.loc[df.is_alive, 'rt_MAIS_military_score'] = 0
         df.loc[df.is_alive, 'rt_date_death_no_med'] = pd.NaT
         df.loc[df.is_alive, 'rt_debugging_DALY_wt'] = 0
-        for index, row in df.iterrows():
-            df.at[index, 'rt_date_to_remove_daly'] = [pd.NaT] * 8  # no one has any injuries to remove dalys for
-            df.at[index, 'rt_injuries_to_cast'] = []
-            df.at[index, 'rt_injuries_for_minor_surgery'] = []
-            df.at[index, 'rt_injuries_for_major_surgery'] = []
-            df.at[index, 'rt_injuries_to_heal_with_time'] = []
-            df.at[index, 'rt_injuries_for_open_fracture_treatment'] = []
+
+        alive_count = sum(df.is_alive)
+        df.loc[df.is_alive, 'rt_date_to_remove_daly'] = pd.Series([[pd.NaT] * 8 for r in range(alive_count)])
+        df.loc[df.is_alive, 'rt_injuries_to_cast'] = pd.Series([[] for r in range(alive_count)])
+        df.loc[df.is_alive, 'rt_injuries_for_minor_surgery'] = pd.Series([[] for r in range(alive_count)])
+        df.loc[df.is_alive, 'rt_injuries_for_major_surgery'] = pd.Series([[] for r in range(alive_count)])
+        df.loc[df.is_alive, 'rt_injuries_to_heal_with_time'] = pd.Series([[] for r in range(alive_count)])
+        df.loc[df.is_alive, 'rt_injuries_for_open_fracture_treatment'] = pd.Series([[] for r in range(alive_count)])
 
     def initialise_simulation(self, sim):
         """At the start of the simulation we schedule a logging event, which records the relevant information
