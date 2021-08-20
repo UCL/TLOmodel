@@ -304,6 +304,15 @@ class BedDays:
                 # NB. The '+1' accounts for the fact that 'today' is included
         return remaining_footprint
 
+    def get_persons_level2_facility_id(self, persons_id, facility_level):
+        """Helper function to find the facility at which an HSI event will take place"""
+        # Gather information about the HSI event
+        the_district = self.hs_module.sim.population.props.at[persons_id, 'district_of_residence']
+        the_level = facility_level
+
+        # Return an id of the (one) health_facility available to this person (based on their district)
+        return self.hs_module.parameters["Facilities_For_Each_District"][the_level][the_district][0]
+
     def remove_beddays_footprint(self, person_id):
         """Helper function that will remove from the bed-days tracker the days of bed-days remaining for a person.
         This is called when the person dies or when a new footprint is imposed"""

@@ -560,6 +560,8 @@ def test_bed_days_basics_with_healthsystem_disabled():
 
     assert not sim.population.props.at[0, 'is_alive']  # person 0 has died
 
+    print(f'the details are{hs.bed_days.get_persons_level2_facility_id(person_id, hsi_bd.ACCEPTED_FACILITY_LEVEL)}')
+
 
 def test_the_use_of_beds_from_multiple_facilities():
     sim = Simulation(start_date=start_date)
@@ -597,4 +599,4 @@ def test_the_use_of_beds_from_multiple_facilities():
 
         assert ([general_bed_capacity.loc[general_bed_capacity.index[general_id]] - 1] * general_bed_dur + [
             general_bed_capacity.loc[general_bed_capacity.index[general_id]]] * (
-                        days_sim + 1 - general_bed_dur) == tracker.values).all()
+                    days_sim + 1 - general_bed_dur) == tracker.values).all()
