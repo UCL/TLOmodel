@@ -1544,6 +1544,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     dx_tests_to_run='tb_xpert_test',
                     hsi_event=self
                 )
+
                 if test_result and (person['tb_strain'] == 'mdr'):
                     df.at[person_id, 'tb_diagnosed_mdr'] = True
                     df.at[person_id, 'tb_date_diagnosed'] = now

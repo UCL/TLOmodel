@@ -710,6 +710,9 @@ def test_mdr():
     # they will enter the sim.event_queue
     sim = get_sim(use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
 
+    # change sensitivity of xpert test to ensure mdr diagnosis on treatment failure
+    sim.modules['Tb'].parameters['sens_xpert'] = 1.0
+
     # Make the population
     sim.make_initial_population(n=popsize)
 
@@ -763,6 +766,7 @@ def test_mdr():
 
     # check individual properties consistent with treatment failure
     assert df.at[person_id, 'tb_treatment_failure']
+    assert df.at[person_id, 'tb_ever_treated']
 
     # next screening should pick up case as retreatment / mdr
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
