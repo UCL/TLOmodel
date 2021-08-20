@@ -21,14 +21,6 @@ from tlo.methods import (
     healthsystem,
     simplified_births,
     symptommanager,
-    contraception,
-    labour,
-    pregnancy_supervisor,
-    newborn_outcomes,
-    care_of_women_during_pregnancy,
-    postnatal_supervisor
-
-
 )
 
 from tlo.methods.healthsystem import HSI_Event
@@ -85,89 +77,87 @@ def check_dtypes(sim):
     assert (df.dtypes == orig.dtypes).all()
 
 
-# def check_configuration_of_properties(sim):
-#     # check that the properties are ok:
-#
-#     df = sim.population.props
-#
-#     # Those that were never wasted, should have normal WHZ score:
-#     assert (df.loc[~df.un_ever_wasted & ~df.date_of_birth.isna(), 'un_WHZ_category'] == 'WHZ>=-2').all().all()
-#
-#     # Those that were never wasted and not clinically malnourished,
-#     # should have not_applicable/null values for all the other properties:
-#     # assert pd.isnull(df.loc[~df.un_ever_wasted & ~df.date_of_birth.isna() &
-#     #                         (df.un_clinical_acute_malnutrition == 'well'),
-#     #                         ['un_last_wasting_date_of_onset',
-#     #                          'un_sam_death_date',
-#     #                          'un_am_recovery_date',
-#     #                          'un_am_discharge_date',
-#     #                          'un_acute_malnutrition_tx_start_date']
-#     #                         ]).all().all()
-#
-#     # Those that were ever wasted, should have a WHZ socre below <-2
-#     # assert (df.loc[df.un_ever_wasted, 'un_WHZ_category'] != 'WHZ>=-2').all().all()
-#
-#     # Those that had wasting and no treatment, should have either a recovery date or a death_date
-#     # (but not both)
-#     has_recovery_date = ~pd.isnull(df.loc[df.un_ever_wasted & pd.isnull(df.un_acute_malnutrition_tx_start_date),
-#                                           'un_am_recovery_date'])
-#     has_death_date = ~pd.isnull(df.loc[df.un_ever_wasted & pd.isnull(df.un_acute_malnutrition_tx_start_date),
-#                                        'un_sam_death_date'])
-#
-#     has_recovery_date_or_death_date = has_recovery_date | has_death_date
-#     has_both_recovery_date_and_death_date = has_recovery_date & has_death_date
-#     # assert has_recovery_date_or_death_date.all()
-#     assert not has_both_recovery_date_and_death_date.any()
-#
-#     # Those for whom the death date has past should be dead
-#     assert not df.loc[df.un_ever_wasted & (df['un_sam_death_date'] < sim.date), 'is_alive'].any()
-#     assert not df.loc[(df.un_clinical_acute_malnutrition == 'SAM') & (
-#         df['un_sam_death_date'] < sim.date), 'is_alive'].any()
-#
-#     # Check that those in a current episode have symptoms of diarrhoea [caused by the diarrhoea module]
-#     #  but not others (among those who are alive)
-#     has_symptoms_of_wasting = set(sim.modules['SymptomManager'].who_has('weight_loss'))
-#     has_symptoms = set([p for p in has_symptoms_of_wasting if
-#                         'Wasting' in sim.modules['SymptomManager'].causes_of(p, 'weight_loss')
-#                         ])
-#
-#     in_current_episode_before_recovery = \
-#         df.is_alive & \
-#         df.un_ever_wasted & \
-#         (df.un_last_wasting_date_of_onset <= sim.date) & \
-#         (sim.date <= df.un_am_recovery_date)
-#     set_of_person_id_in_current_episode_before_recovery = set(
-#         in_current_episode_before_recovery[in_current_episode_before_recovery].index
-#     )
-#
-#     in_current_episode_before_death = \
-#         df.is_alive & \
-#         df.un_ever_wasted & \
-#         (df.un_last_wasting_date_of_onset <= sim.date) & \
-#         (sim.date <= df.un_sam_death_date)
-#     set_of_person_id_in_current_episode_before_death = set(
-#         in_current_episode_before_death[in_current_episode_before_death].index
-#     )
-#
-#     in_current_episode_before_cure = \
-#         df.is_alive & \
-#         df.un_ever_wasted & \
-#         (df.un_last_wasting_date_of_onset <= sim.date) & \
-#         (df.un_acute_malnutrition_tx_start_date <= sim.date) & \
-#         pd.isnull(df.un_am_recovery_date) & \
-#         pd.isnull(df.un_sam_death_date)
-#     set_of_person_id_in_current_episode_before_cure = set(
-#         in_current_episode_before_cure[in_current_episode_before_cure].index
-#     )
-#
-#     assert set() == set_of_person_id_in_current_episode_before_recovery.intersection(
-#         set_of_person_id_in_current_episode_before_death
-#     )
-#
-#     set_of_person_id_in_current_episode = set_of_person_id_in_current_episode_before_recovery.union(
-#         set_of_person_id_in_current_episode_before_death, set_of_person_id_in_current_episode_before_cure
-#     )
-#     assert set_of_person_id_in_current_episode == has_symptoms
+def check_configuration_of_properties(sim):
+    # check that the properties are ok:
+
+    df = sim.population.props
+
+    # Those that were never wasted, should have normal WHZ score:
+    assert (df.loc[~df.un_ever_wasted & ~df.date_of_birth.isna(), 'un_WHZ_category'] == 'WHZ>=-2').all().all()
+
+    # Those that were never wasted and not clinically malnourished,
+    # should have not_applicable/null values for all the other properties:
+    # assert pd.isnull(df.loc[(~df.un_ever_wasted & ~df.date_of_birth.isna() &
+    #                         (df.un_clinical_acute_malnutrition == 'well')),
+    #                         ['un_last_wasting_date_of_onset',
+    #                          'un_sam_death_date'
+    #                          ]
+    #                         ]).all().all()
+
+    # # Those that were ever wasted, should have a WHZ score below <-2
+    # assert (df.loc[df.un_ever_wasted, 'un_WHZ_category'] != 'WHZ>=-2').all().all()
+    #
+    # # Those that had wasting and no treatment, should have either a recovery date or a death_date
+    # # (but not both)
+    # has_recovery_date = ~pd.isnull(df.loc[df.un_ever_wasted & pd.isnull(df.un_acute_malnutrition_tx_start_date),
+    #                                       'un_am_recovery_date'])
+    # has_death_date = ~pd.isnull(df.loc[df.un_ever_wasted & pd.isnull(df.un_acute_malnutrition_tx_start_date),
+    #                                    'un_sam_death_date'])
+
+    # has_recovery_date_or_death_date = has_recovery_date | has_death_date
+    # has_both_recovery_date_and_death_date = has_recovery_date & has_death_date
+    # # assert has_recovery_date_or_death_date.all()
+    # assert not has_both_recovery_date_and_death_date.any()
+
+    # Those for whom the death date has past should be dead
+    assert not df.loc[df.un_ever_wasted & (df['un_sam_death_date'] < sim.date), 'is_alive'].any()
+    assert not df.loc[(df.un_clinical_acute_malnutrition == 'SAM') & (
+        df['un_sam_death_date'] < sim.date), 'is_alive'].any()
+
+    # Check that those in a current episode have symptoms of diarrhoea [caused by the diarrhoea module]
+    #  but not others (among those who are alive)
+    has_symptoms_of_wasting = set(sim.modules['SymptomManager'].who_has('weight_loss'))
+    has_symptoms = set([p for p in has_symptoms_of_wasting if
+                        'Wasting' in sim.modules['SymptomManager'].causes_of(p, 'weight_loss')
+                        ])
+
+    in_current_episode_before_recovery = \
+        df.is_alive & \
+        df.un_ever_wasted & \
+        (df.un_last_wasting_date_of_onset <= sim.date) & \
+        (sim.date <= df.un_am_recovery_date)
+    set_of_person_id_in_current_episode_before_recovery = set(
+        in_current_episode_before_recovery[in_current_episode_before_recovery].index
+    )
+
+    in_current_episode_before_death = \
+        df.is_alive & \
+        df.un_ever_wasted & \
+        (df.un_last_wasting_date_of_onset <= sim.date) & \
+        (sim.date <= df.un_sam_death_date)
+    set_of_person_id_in_current_episode_before_death = set(
+        in_current_episode_before_death[in_current_episode_before_death].index
+    )
+
+    in_current_episode_before_cure = \
+        df.is_alive & \
+        df.un_ever_wasted & \
+        (df.un_last_wasting_date_of_onset <= sim.date) & \
+        (df.un_acute_malnutrition_tx_start_date <= sim.date) & \
+        pd.isnull(df.un_am_recovery_date) & \
+        pd.isnull(df.un_sam_death_date)
+    set_of_person_id_in_current_episode_before_cure = set(
+        in_current_episode_before_cure[in_current_episode_before_cure].index
+    )
+
+    assert set() == set_of_person_id_in_current_episode_before_recovery.intersection(
+        set_of_person_id_in_current_episode_before_death
+    )
+
+    set_of_person_id_in_current_episode = set_of_person_id_in_current_episode_before_recovery.union(
+        set_of_person_id_in_current_episode_before_death, set_of_person_id_in_current_episode_before_cure
+    )
+    assert set_of_person_id_in_current_episode == has_symptoms
 
 
 def test_basic_run(tmpdir):
@@ -178,29 +168,7 @@ def test_basic_run(tmpdir):
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
     check_dtypes(sim)
-
-
-# def test_basic_run_lasting_two_years(tmpdir):
-#     """Check logging results in a run of the model for two years, with daily property config checking"""
-#     dur = pd.DateOffset(years=2)
-#     popsize = 500
-#     sim = get_sim(tmpdir)
-#     sim.make_initial_population(n=popsize)
-#     sim.simulate(end_date=start_date + dur)
-#
-#     # Read the log for the population counts of incidence:
-#     log_counts = parse_log_file(sim.log_filepath)['tlo.methods.wasting']['event_counts']
-#     assert 0 < log_counts['incident_cases'].sum()
-#     assert 0 < log_counts['recovered_cases'].sum()
-#     assert 0 < log_counts['deaths'].sum()
-#     assert 0 == log_counts['cured_cases'].sum()
-#
-#     # Read the log for the one individual being tracked:
-#     log_one_person = parse_log_file(sim.log_filepath)['tlo.methods.alri']['log_individual']
-#     log_one_person['date'] = pd.to_datetime(log_one_person['date'])
-#     log_one_person = log_one_person.set_index('date')
-#     assert log_one_person.index.equals(pd.date_range(sim.start_date, sim.end_date - pd.DateOffset(days=1)))
-#     assert set(log_one_person.columns) == set(sim.modules['Alri'].PROPERTIES.keys())
+    check_configuration_of_properties(sim)
 
 
 def test_wasting_polling(tmpdir):
@@ -716,7 +684,7 @@ def test_treatment(tmpdir):
     assert pd.isnull(person['un_am_recovery_date'])
     assert pd.isnull(person['un_sam_death_date'])
 
-    # Run Death Polling Polling event to apply death:
+    # Run Death Polling event to apply death:
     death_polling = AcuteMalnutritionDeathPollingEvent(module=sim.modules['Wasting'])
     death_polling.apply(sim.population)
 
@@ -753,7 +721,7 @@ def test_treatment(tmpdir):
     person = df.loc[person_id]
     assert person['is_alive']
 
-    print(sim.find_events_for_person(person_id))
+    # print(sim.find_events_for_person(person_id))
 
     # Check that a CureEvent has been scheduled
     cure_event = [event_tuple[1] for event_tuple in sim.find_events_for_person(person_id) if
@@ -770,7 +738,7 @@ def test_treatment(tmpdir):
     assert pd.isnull(person['un_sam_death_date'])
 
 
-def test_use_of_HSI(tmpdir):
+def test_use_of_HSI_for_MAM(tmpdir):
     """ Check that the HSIs works"""
     dur = pd.DateOffset(days=0)
     popsize = 1000
@@ -875,6 +843,19 @@ def test_use_of_HSI_for_SAM(tmpdir):
             params['prob_complications_in_SAM'] = 1.0  # only SAM with complications
         else:
             params['prob_complications_in_SAM'] = 0.0  # no SAM with complications
+
+        # # change coverage and treatment effectiveness set to be 100%
+        # params['coverage_supplementary_feeding_program'] = 1.0
+        # params['coverage_outpatient_therapeutic_care'] = 1.0
+        # params['coverage_inpatient_care'] = 1.0
+        # params['recovery_rate_with_soy_RUSF'] = 1.0
+        # params['recovery_rate_with_CSB++'] = 1.0
+        # params['recovery_rate_with_standard_RUTF'] = 1.0
+        # params['recovery_rate_with_inpatient_care'] = 1.0
+
+        # Make 100% death rate by replacing with empty linear model 1.0
+        sim.modules['Wasting'].acute_malnutrition_recovery_based_on_interventions['SAM'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE, 1.0)
 
         # Get person to use:
         df = sim.population.props

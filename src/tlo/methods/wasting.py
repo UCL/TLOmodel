@@ -852,9 +852,8 @@ class Wasting(Module):
         if df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM':
             return
 
-        # currently symptoms list is applied to all
+        # currently symptoms list is applied to all (who are SAM)
         for symptom in self.symptoms:
-            # this also schedules symptom resolution in 5 days
             self.sim.modules["SymptomManager"].change_symptom(
                 person_id=person_id,
                 symptom_string=symptom,
@@ -1176,7 +1175,6 @@ class AcuteMalnutritionDeathPollingEvent(RegularEvent, PopulationScopeEventMixin
                     date=self.sim.date)
                 # df.at[person, 'un_sam_death_date'] = self.sim.date
             else:
-                print(self.sim.date, death_date)
                 # schedule death according to duration
                 self.sim.schedule_event(
                     event=SevereAcuteMalnutritionDeathEvent(module=self.module, person_id=person),
