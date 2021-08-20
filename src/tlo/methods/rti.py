@@ -1307,17 +1307,13 @@ class RTI(Module):
         haven't then it asks whether they should die away from their injuries
         """
         # Begin modelling road traffic injuries
-        event = RTIPollingEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=0))
+        sim.schedule_event(RTIPollingEvent(self), sim.date + DateOffset(months=0))
         # Begin checking whether the persons injuries are healed
-        event = RTI_Recovery_Event(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=0))
+        sim.schedule_event(RTI_Recovery_Event(self), sim.date + DateOffset(months=0))
         # Begin checking whether those with untreated injuries die
-        event = RTI_Check_Death_No_Med(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=0))
+        sim.schedule_event(RTI_Check_Death_No_Med(self), sim.date + DateOffset(months=0))
         # Begin logging the RTI events
-        event = RTI_Logging_Event(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=1))
+        sim.schedule_event(RTI_Logging_Event(self), sim.date + DateOffset(months=1))
 
     def rti_do_when_diagnosed(self, person_id):
         """
