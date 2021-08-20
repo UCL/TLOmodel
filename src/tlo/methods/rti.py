@@ -1171,7 +1171,7 @@ class RTI(Module):
         probabilities = [val for key, val in p.items() if 'prob_' in key]
         for probability in probabilities:
             assert 0 <= probability <= 1, "Probability is not a feasible value"
-        # create a generic severe trauma symtom, which forces people into the health system
+        # create a generic severe trauma symptom, which forces people into the health system
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(
                 name='severe_trauma',
@@ -1332,8 +1332,7 @@ class RTI(Module):
         # Get the relevant information about their injuries
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # check this person is injured, search they have an injury code that isn't "none"
-        idx, counts = RTI.rti_find_and_count_injuries(person_injuries,
-                                                      self.PROPERTIES.get('rt_injury_1').categories[1:])
+        _, counts = RTI.rti_find_and_count_injuries(person_injuries, RTI.INJURY_CODES[1:])
         # also test whether the regular injury symptom has been given to the person via spurious symptoms
         assert (counts > 0) or self.sim.modules['SymptomManager'].spurious_symptoms, \
             'This person has asked for medical treatment despite not being injured'
