@@ -1284,12 +1284,12 @@ class RTI(Module):
         df.loc[df.is_alive, 'rt_debugging_DALY_wt'] = 0
 
         alive_count = sum(df.is_alive)
-        df.loc[df.is_alive, 'rt_date_to_remove_daly'] = pd.Series([[pd.NaT] * 8 for r in range(alive_count)])
-        df.loc[df.is_alive, 'rt_injuries_to_cast'] = pd.Series([[] for r in range(alive_count)])
-        df.loc[df.is_alive, 'rt_injuries_for_minor_surgery'] = pd.Series([[] for r in range(alive_count)])
-        df.loc[df.is_alive, 'rt_injuries_for_major_surgery'] = pd.Series([[] for r in range(alive_count)])
-        df.loc[df.is_alive, 'rt_injuries_to_heal_with_time'] = pd.Series([[] for r in range(alive_count)])
-        df.loc[df.is_alive, 'rt_injuries_for_open_fracture_treatment'] = pd.Series([[] for r in range(alive_count)])
+        df.loc[df.is_alive, 'rt_date_to_remove_daly'] = pd.Series([[pd.NaT] * 8 for _ in range(alive_count)])
+        df.loc[df.is_alive, 'rt_injuries_to_cast'] = pd.Series([[] for _ in range(alive_count)])
+        df.loc[df.is_alive, 'rt_injuries_for_minor_surgery'] = pd.Series([[] for _ in range(alive_count)])
+        df.loc[df.is_alive, 'rt_injuries_for_major_surgery'] = pd.Series([[] for _ in range(alive_count)])
+        df.loc[df.is_alive, 'rt_injuries_to_heal_with_time'] = pd.Series([[] for _ in range(alive_count)])
+        df.loc[df.is_alive, 'rt_injuries_for_open_fracture_treatment'] = pd.Series([[] for _ in range(alive_count)])
 
     def initialise_simulation(self, sim):
         """At the start of the simulation we schedule a logging event, which records the relevant information
