@@ -5,13 +5,16 @@ Run on the batch system using:
 """
 import datetime
 import pickle
-import pathlib import Path
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as pd
+import numpy as np
 
-from tlo import Date, Simulation, logging
+from tlo import Date
+from tlo import logging
 from tlo.analysis.utils import parse_log_file
+from tlo.scenario import BaseScenario
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
@@ -24,8 +27,6 @@ from tlo.methods import (
     hiv
 )
 
-
-from tlo.scenario import BaseScenario
 
 
 class TestScenario(BaseScenario):
