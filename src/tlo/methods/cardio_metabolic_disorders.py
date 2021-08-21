@@ -1155,29 +1155,17 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
                 df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
                 df.at[person_id, f'nc_{self.condition}_ever_diagnosed'] = True
 
-                if self.condition != 'chronic_kidney_disease':
-                    # start weight loss recommendation and medication for all other conditions
-                    hs.schedule_hsi_event(
-                        hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
-                            module=self.module,
-                            person_id=person_id,
-                            condition=self.condition
-                        ),
-                        priority=0,
-                        topen=self.sim.date,
-                        tclose=None
-                    )
-                else:
-                    hs.schedule_hsi_event(
-                        hsi_event=HSI_CardioMetabolicDisorders_StartCKDMedication(
-                            module=self.module,
-                            person_id=person_id,
-                            condition=self.condition
-                        ),
-                        priority=0,
-                        topen=self.sim.date,
-                        tclose=None
-                    )
+                # start weight loss recommendation (except for CKD) and medication for all conditions
+                hs.schedule_hsi_event(
+                    hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                        module=self.module,
+                        person_id=person_id,
+                        condition=self.condition
+                    ),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+                )
 
     def did_not_run(self):
         pass
@@ -1199,18 +1187,20 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         self.condition = condition
 
     def apply(self, person_id, squeeze_factor):
-        self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
-        # Schedule a post-weight loss event for 6-9 months for individual to potentially lose weight:
-        self.sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_CardioMetabolicDisorders_WeightLossCheck(
-                module=self.module,
-                person_id=person_id,
-                condition=self.condition
-            ),
-            topen=self.sim.date + DateOffset(months=6),
-            tclose=self.sim.date + DateOffset(months=9),
-            priority=0
-        )
+        # don't advise those with CKD to lose weight, but do so for all other conditions
+        if self.condition != 'chronic_kidney_disease':
+            self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
+            # Schedule a post-weight loss event for 6-9 months for individual to potentially lose weight:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_CardioMetabolicDisorders_WeightLossCheck(
+                    module=self.module,
+                    person_id=person_id,
+                    condition=self.condition
+                ),
+                topen=self.sim.date + DateOffset(months=6),
+                tclose=self.sim.date + DateOffset(months=9),
+                priority=0
+            )
 
         # start medication
         df = self.sim.population.props
