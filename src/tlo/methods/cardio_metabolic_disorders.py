@@ -1254,48 +1254,6 @@ class HSI_CardioMetabolicDisorders_WeightLossCheck(HSI_Event, IndividualScopeEve
                 self.sim.population.props.at[person_id, 'nc_weight_loss_worked'] = True
 
 
-class HSI_CardioMetabolicDisorders_StartCKDMedication(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event in which a person is started on treatment.
-    The facility_level is modified as a input parameter.
-    """
-
-    def __init__(self, module, person_id, condition):
-        super().__init__(module, person_id=person_id)
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_Medication_Start'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-        self.condition = condition
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        # If person is already on medication, do not do anything
-        if df.at[person_id, f'nc_{self.condition}_on_medication']:
-            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        assert df.at[
-            person_id, f'nc_{self.condition}_ever_diagnosed'], "The person is not diagnosed and so should not be " \
-                                                               "receiving an HSI. "
-        # Check availability of medication for condition
-        item_code = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
-        result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
-        )['Item_Code'][item_code]
-        if result_of_cons_request:
-            # If medication is available, flag as being on medication
-            df.at[person_id, f'nc_{self.condition}_on_medication'] = True
-            # Schedule their next HSI for a refill of medication in one month
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_Refill_Medication(person_id=person_id, module=self.module,
-                                                                         condition=self.condition),
-                priority=1,
-                topen=self.sim.date + DateOffset(months=1),
-                tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
-            )
-
-
 class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event in which a person seeks a refill prescription of medication.
