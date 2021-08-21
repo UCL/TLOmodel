@@ -1356,8 +1356,10 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                     treatmentworks = self.module.rng.rand() < 0.5  # made up number for now
                     if treatmentworks:
                         # remove all symptoms of event instantly
-                        self.sim.modules['SymptomManager'].clear_symptoms(
+                        self.sim.modules['SymptomManager'].change_symptom(
                             person_id=person_id,
+                            symptom_string=f'{self.event}_damage',
+                            add_or_remove='-',
                             disease_module=self.module)
                         # start the person on regular medication
                         self.sim.modules['HealthSystem'].schedule_hsi_event(
