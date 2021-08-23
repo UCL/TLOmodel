@@ -1979,6 +1979,10 @@ def unpack_raw_output_dict(raw_dict):
 class DummyHivModule(Module):
     """Dummy HIV Module - it's only job is to create and maintain the 'hv_inf' property.
      This can be used in test files."""
+
+    INIT_DEPENDENCIES = {"Demography"}
+    ALTERNATIVE_TO = {"Hiv"}
+
     PROPERTIES = {'hv_inf': Property(Types.BOOL, "DUMMY version of the property for hv_inf")}
 
     def __init__(self, name=None, hiv_prev=0.1):
