@@ -73,7 +73,7 @@ def _topological_sort(
                             'missing from modules to register'
                         )
                         if len(alternatives_with_instances) == 0:
-                            message += ' as are any alternatives to {dependency}.'
+                            message += f' as are any alternatives to {dependency}.'
                         else:
                             message += (
                                 'and there are multiple alternatives '
