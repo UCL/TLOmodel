@@ -12,6 +12,7 @@ from pathlib import Path
 import tlo.methods
 from tlo import Date, Module, Simulation
 from tlo.methods import (
+    alri,
     bladder_cancer,
     breast_cancer,
     cardio_metabolic_disorders,
@@ -44,6 +45,11 @@ from tlo.methods.healthsystem import HSI_Event, HSIEventDetails
 
 # Dependencies of each Module subclass on other Module subclasses
 module_dependencies = {
+    alri.Alri: (
+        demography.Demography,
+        healthsystem.HealthSystem,
+        symptommanager.SymptomManager,
+    ),
     bladder_cancer.BladderCancer: (
         demography.Demography,
         enhanced_lifestyle.Lifestyle,
@@ -249,6 +255,8 @@ def get_hsi_event_classes_per_module(excluded_modules):
         elif len(tlo_module_classes) == 2 and module_name == 'hiv':
             # Use full HIV module rather than dummy module
             tlo_module_class = hiv.Hiv
+        elif len(tlo_module_classes) == 2 and module_name == 'alri':
+            tlo_module_class = alri.Alri
         else:
             raise RuntimeError(
                 f'Module {module_name} defines HSI events but contains '
