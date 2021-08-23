@@ -155,6 +155,14 @@ parser.add_argument(
     help="Save the final population dataframe to a pickle file",
     action="store_true"
 )
+parser.add_argument(
+    "--record-hsi-event-details",
+    help=(
+        "Keep a record of set of non-target specific details of HSI events that are "
+        "run and output to a JSON file 'hsi_event_details.json' in output directory."
+    ),
+    action="store_true"
+)
 args = parser.parse_args()
 
 if args.ignore_warnings:
@@ -209,6 +217,7 @@ sim.register(
         disable=args.disable_health_system,
         mode_appt_constraints=args.mode_appt_constraints,
         capabilities_coefficient=args.capabilities_coefficient,
+        record_hsi_event_details=args.record_hsi_event_details
     ),
     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
     dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
@@ -246,3 +255,7 @@ if args.save_final_population:
 
 if args.parse_log_file:
     log_df = parse_log_file(sim.log_filepath)
+
+if args.record_hsi_event_details:
+    with open(args.output_dir / "hsi_event_details.json", "w") as f:
+        json.dump(list(sim.modules['HealthSystem'].hsi_event_details), f)
