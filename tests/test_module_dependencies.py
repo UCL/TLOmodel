@@ -48,7 +48,15 @@ def get_module_class_map(excluded_modules):
     return module_classes
 
 
-module_class_map = get_module_class_map({'Module', 'Skeleton', 'Tb', 'DummyHivModule'})
+module_class_map = get_module_class_map(
+    excluded_modules={
+        'Module',
+        'Skeleton',
+        'Tb',
+        'DummyHivModule',
+        'PropertiesOfOtherModules'
+    }
+)
 
 
 def get_dependencies_and_initialise(module_class, excluded_module_classes=None):

@@ -78,6 +78,8 @@ logger.setLevel(logging.INFO)
 class Alri(Module):
     """This is the disease module for Acute Lower Respiratory Infections."""
 
+    INIT_DEPENDENCIES = {'Demography', 'Hiv', 'Lifestyle', 'NewbornOutcomes', 'SymptomManager'}
+
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -1849,6 +1851,9 @@ class AlriIndividualLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 class PropertiesOfOtherModules(Module):
     """For the purpose of the testing, this module generates the properties upon which the Alri module relies"""
+
+    INIT_DEPENDENCIES = {'Demography'}
+    ALTERNATIVE_TO = {'Hiv', 'Epi'}
 
     PROPERTIES = {
         'hv_inf': Property(Types.BOOL, 'temporary property'),
