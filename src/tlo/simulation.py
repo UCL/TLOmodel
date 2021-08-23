@@ -11,88 +11,12 @@ from typing import Dict, Union
 import numpy as np
 
 from tlo import Date, Population, logging
+from tlo.dependencies import topologically_sort_modules
 from tlo.events import IndividualScopeEventMixin
 from tlo.progressbar import ProgressBar
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-
-class ModuleDependencyError(Exception):
-    """Raised when a module dependency is missing or there are circular dependencies."""
-
-
-class MultipleModuleInstanceError(Exception):
-    """Raised when multiple instances of the same module are registered."""
-
-
-def _topological_sort(
-    module_instances, get_dependencies=lambda module: module.INIT_DEPENDENCIES,
-):
-    """Generator which yields topological sort of modules based on their dependencies.
-
-    A topological sort of a dependency graph is ordered such that any dependencies of a
-    node in the graph are guaranteed to be yielded before the node itself. This
-    implementation uses a depth-first search algorithm
-    (https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search).
-
-    :param module_instances: The set of module instances to topologically sort. The
-        yielded module instances will consist of all nodes in this set which must
-        include instances of their (recursive) dependencies.
-    :param get_dependencies: Function which given a module gets the set of module
-        dependencies. Defaults to returing the ``Module.INIT_DEPENDENCIES`` class
-        attribute.
-    """
-    module_instances = list(module_instances)
-    module_instance_map = {type(module).__name__: module for module in module_instances}
-    if len(module_instance_map) != len(module_instances):
-        raise MultipleModuleInstanceError(
-            'Multiple instances of one or more `Module` subclasses were passed to the '
-            'Simulation.register method. If you are sure this is correct, you can '
-            'disable this check (and the automatic dependency sorting) by setting '
-            'check_and_sort_modules=False in Simulation.register.'
-        )
-    visited, currently_processing = set(), set()
-
-    def depth_first_search(module):
-        if module not in visited:
-            if module in currently_processing:
-                raise ModuleDependencyError(
-                    f'Module {module} has circular dependencies.'
-                )
-            currently_processing.add(module)
-            for dependency in sorted(get_dependencies(module_instance_map[module])):
-                if dependency not in module_instance_map:
-                    alternatives_with_instances = [
-                        name for name, instance in module_instance_map.items()
-                        if dependency in instance.ALTERNATIVE_TO
-                    ]
-                    if len(alternatives_with_instances) != 1:
-                        message = (
-                            f'Module {module} depends on {dependency} which is '
-                            'missing from modules to register'
-                        )
-                        if len(alternatives_with_instances) == 0:
-                            message += f' as are any alternatives to {dependency}.'
-                        else:
-                            message += (
-                                ' and there are multiple alternatives '
-                                f'({alternatives_with_instances}) so which '
-                                'to use to resolve dependency is ambiguous.'
-                            )
-                        raise ModuleDependencyError(message)
-
-                    else:
-                        yield from depth_first_search(alternatives_with_instances[0])
-
-                else:
-                    yield from depth_first_search(dependency)
-            currently_processing.remove(module)
-            visited.add(module)
-            yield module_instance_map[module]
-
-    for module_instance in module_instances:
-        yield from depth_first_search(type(module_instance).__name__)
 
 
 class Simulation:
@@ -212,7 +136,7 @@ class Simulation:
             ``MultipleModuleInstanceError`` will be raised if this is not the case.
         """
         if check_and_sort_modules:
-            modules = list(_topological_sort(modules))
+            modules = list(topologically_sort_modules(modules))
         # Iterate over modules and per-module seed sequences spawned from simulation
         # level seed sequence
         for module, seed_seq in zip(modules, self._seed_seq.spawn(len(modules))):

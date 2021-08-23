@@ -1,16 +1,16 @@
 """Tests for automatic checking and ordering of method module dependencies."""
 
-import importlib
-import inspect
 import os
-import pkgutil
 from pathlib import Path
 
 import pytest
 
-import tlo.methods
 from tlo import Date, Module, Simulation
-from tlo.simulation import ModuleDependencyError
+from tlo.dependencies import (
+    ModuleDependencyError,
+    get_dependencies_and_initialise,
+    get_module_class_map,
+)
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
@@ -24,54 +24,7 @@ simulation_seed = 645407762
 simulation_initial_population = 10
 
 
-def is_valid_tlo_module_class(obj, excluded_modules):
-    return (
-        inspect.isclass(obj)
-        and issubclass(obj, Module)
-        and obj.__name__ not in excluded_modules
-    )
-
-
-def get_module_class_map(excluded_modules):
-    methods_package_path = os.path.dirname(inspect.getfile(tlo.methods))
-    module_classes = {}
-    for _, methods_module_name, _ in pkgutil.iter_modules([methods_package_path]):
-        methods_module = importlib.import_module(f'tlo.methods.{methods_module_name}')
-        for _, obj in inspect.getmembers(methods_module):
-            if is_valid_tlo_module_class(obj, excluded_modules):
-                if module_classes.get(obj.__name__) not in {None, obj}:
-                    raise RuntimeError(
-                        f'Multiple modules with name {obj.__name__} are defined'
-                    )
-                else:
-                    module_classes[obj.__name__] = obj
-    return module_classes
-
-
-module_class_map = get_module_class_map(
-    excluded_modules={
-        'Module',
-        'Skeleton',
-        'Tb',
-        'DummyHivModule',
-        'PropertiesOfOtherModules'
-    }
-)
-
-
-def get_dependencies_and_initialise(module_class, excluded_module_classes=None):
-    visited = set()
-    if excluded_module_classes is None:
-        excluded_module_classes = set()
-
-    def depth_first_search(module_class):
-        if module_class not in (visited | excluded_module_classes):
-            for dependency_name in module_class.INIT_DEPENDENCIES:
-                yield from depth_first_search(module_class_map[dependency_name])
-            visited.add(module_class)
-            yield module_class(resourcefilepath=resourcefilepath)
-
-    yield from depth_first_search(module_class)
+module_class_map = get_module_class_map(excluded_modules={'Module', 'Skeleton', 'Tb'})
 
 
 @pytest.fixture
@@ -128,7 +81,11 @@ def test_module_init_dependencies_complete(sim, module_class):
     """Check declared INIT_DEPENDENCIES are sufficient for successful initialisation"""
     try:
         register_modules_and_initialise(
-            sim, get_dependencies_and_initialise(module_class)
+            sim, get_dependencies_and_initialise(
+                module_class,
+                module_class_map=module_class_map,
+                resourcefilepath=resourcefilepath
+            )
         )
     except Exception:
         pytest.fail(
@@ -145,7 +102,12 @@ def test_module_init_dependencies_all_required(sim, module_class):
         dependency_class = module_class_map[dependency_name]
         try:
             register_modules_and_initialise(
-                sim, get_dependencies_and_initialise(module_class, {dependency_class})
+                sim, get_dependencies_and_initialise(
+                    module_class,
+                    module_class_map=module_class_map,
+                    excluded_module_classes={dependency_class},
+                    resourcefilepath=resourcefilepath
+                )
             )
         except Exception:
             # This is the expected behaviour i.e. that trying to initialise with
