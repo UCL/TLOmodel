@@ -212,7 +212,7 @@ class Simulation:
             ``MultipleModuleInstanceError`` will be raised if this is not the case.
         """
         if check_and_sort_modules:
-            modules = _topological_sort(modules)
+            modules = list(_topological_sort(modules))
         # Iterate over modules and per-module seed sequences spawned from simulation
         # level seed sequence
         for module, seed_seq in zip(modules, self._seed_seq.spawn(len(modules))):
