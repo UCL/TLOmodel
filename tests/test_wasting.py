@@ -178,7 +178,7 @@ def test_wasting_polling(tmpdir):
     popsize = 1000
     sim = get_sim(tmpdir)
 
-    # Make incidence of alri very high :
+    # Make incidence of wasting very high :
     params = sim.modules['Wasting'].parameters
     for p in params:
         if p.startswith('base_inc_rate_wasting_by_agegp'):

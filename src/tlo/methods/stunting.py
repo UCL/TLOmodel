@@ -429,17 +429,19 @@ class Stunting(Module):
                                      p['rr_stunting_no_exclusive_breastfeeding']),
                     Predictor().when('(nb_breastfeeding_status == "none") & (age_exact_years.between(0.5,2))',
                                      p['rr_stunting_no_continued_breastfeeding']),
-                    Predictor('previous_diarrhoea_episodes', external=True).apply(
-                        lambda x: x ** (p['rr_stunting_per_diarrhoeal_episode'])),
+                    # Predictor('previous_diarrhoea_episodes', external=True).apply(
+                    #     lambda x: x ** (p['rr_stunting_per_diarrhoeal_episode'])),
                 )
 
             unscaled_lm = make_lm_stunting_incidence()
             target_mean = p[f'base_inc_rate_stunting_by_agegp'][2]
             actual_mean = unscaled_lm.predict(
-                df.loc[df.is_alive & (df.age_years == 1) & (df.un_HAZ_category == 'HAZ>=-2')],
-                previous_diarrhoea_episodes=self.count_all_previous_diarrhoea_episodes(
-                    today=sim.date, index=df.loc[df.is_alive & (df.age_years == 1) &
-                                                 (df.un_HAZ_category == 'HAZ>=-2')].index)).mean()
+                df.loc[df.is_alive & (df.age_years == 1) & (df.un_HAZ_category == 'HAZ>=-2')]).mean()
+            # actual_mean = unscaled_lm.predict(
+            #     df.loc[df.is_alive & (df.age_years == 1) & (df.un_HAZ_category == 'HAZ>=-2')],
+            #     previous_diarrhoea_episodes=self.count_all_previous_diarrhoea_episodes(
+            #         today=sim.date, index=df.loc[df.is_alive & (df.age_years == 1) &
+            #                                      (df.un_HAZ_category == 'HAZ>=-2')].index)).mean()
             scaled_intercept = 1.0 * (target_mean / actual_mean) \
                 if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
             scaled_lm = make_lm_stunting_incidence(intercept=scaled_intercept)
@@ -474,17 +476,19 @@ class Stunting(Module):
                                                 .otherwise(0.0),
                     Predictor('un_ever_wasted').when(True, p['rr_progress_severe_stunting_previous_wasting']),
                     Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_stunting_untreated_HIV']),
-                    Predictor('previous_diarrhoea_episodes', external=True).apply(
-                        lambda x: x ** (p['rr_stunting_per_diarrhoeal_episode'])),
+                    # Predictor('previous_diarrhoea_episodes', external=True).apply(
+                    #     lambda x: x ** (p['rr_stunting_per_diarrhoeal_episode'])),
                 )
 
             unscaled_lm = make_lm_severe_stunting()
             target_mean = p[f'base_inc_rate_stunting_by_agegp'][2]
             actual_mean = unscaled_lm.predict(
-                df.loc[df.is_alive & (df.age_years == 1) & (df.un_HAZ_category == '-3<=HAZ<-2')],
-                previous_diarrhoea_episodes=self.count_all_previous_diarrhoea_episodes(
-                    today=sim.date, index=df.loc[df.is_alive & (df.age_years == 1) &
-                                                 (df.un_HAZ_category == '-3<=HAZ<-2')].index)).mean()
+                df.loc[df.is_alive & (df.age_years == 1) & (df.un_HAZ_category == '-3<=HAZ<-2')]).mean()
+            # actual_mean = unscaled_lm.predict(
+            #     df.loc[df.is_alive & (df.age_years == 1) & (df.un_HAZ_category == '-3<=HAZ<-2')],
+            #     previous_diarrhoea_episodes=self.count_all_previous_diarrhoea_episodes(
+            #         today=sim.date, index=df.loc[df.is_alive & (df.age_years == 1) &
+            #                                      (df.un_HAZ_category == '-3<=HAZ<-2')].index)).mean()
             scaled_intercept = 1.0 * (target_mean / actual_mean) \
                 if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
             scaled_lm = make_lm_severe_stunting(intercept=scaled_intercept)
@@ -591,14 +595,17 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Determine who will be onset with stunting among those who are not currently stunted
         incidence_of_stunting = self.module.stunting_incidence_equation.predict(
-            df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_HAZ_category == 'HAZ>=-2')],
-            previous_diarrhoea_episodes=self.module.count_all_previous_diarrhoea_episodes(
-                today=self.sim.date, index=df.loc[df.is_alive & (df.age_exact_years < 5) &
-                                                  (df.un_HAZ_category == 'HAZ>=-2')].index))
+            df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_HAZ_category == 'HAZ>=-2')])
+        # incidence_of_stunting = self.module.stunting_incidence_equation.predict(
+        #     df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_HAZ_category == 'HAZ>=-2')],
+        #     previous_diarrhoea_episodes=self.module.count_all_previous_diarrhoea_episodes(
+        #         today=self.sim.date, index=df.loc[df.is_alive & (df.age_exact_years < 5) &
+        #                                           (df.un_HAZ_category == 'HAZ>=-2')].index))
         stunted = rng.random_sample(len(incidence_of_stunting)) < incidence_of_stunting
+        stunted_idx = stunted[stunted].index
 
         # determine the time of onset and other disease characteristics for each individual
-        for person_id in stunted[stunted].index:
+        for person_id in stunted_idx:
             # Allocate a date of onset for stunting episode
             date_onset = self.sim.date + DateOffset(days=rng.randint(0, days_until_next_polling_event))
 
@@ -672,9 +679,12 @@ class StuntingOnsetEvent(Event, IndividualScopeEventMixin):
 
         # determine if this person will progress to severe stunting # # # # # # # # # # #
         progression_to_severe_stunting = self.module.severe_stunting_progression_equation.predict(
-            df.loc[[person_id]],
-            previous_diarrhoea_episodes=self.module.count_all_previous_diarrhoea_episodes(
-                today=self.sim.date, index=df.loc[[person_id]].index))
+            df.loc[[person_id]]).values[0]
+
+        # progression_to_severe_stunting = self.module.severe_stunting_progression_equation.predict(
+        #     df.loc[[person_id]],
+        #     previous_diarrhoea_episodes=self.module.count_all_previous_diarrhoea_episodes(
+        #         today=self.sim.date, index=df.loc[[person_id]].index))
 
         if rng.rand() < progression_to_severe_stunting:
             # Allocate a date of onset for stunting episode
@@ -686,16 +696,17 @@ class StuntingOnsetEvent(Event, IndividualScopeEventMixin):
                                                      person_id=person_id), date=date_onset_severe_stunting
             )
 
-        # determine if this person will improve stunting state without interventions # # # # # # # # # # #
-        improved_stunting_state = 1 - p['prob_remained_stunted_in_the_next_3months']
-        if rng.rand() < improved_stunting_state:
-            # Allocate a date of onset for improvement of stunting episode
-            date_recovery_stunting = self.sim.date + DateOffset(months=3)
+        else:
+            # determine if this person will improve stunting state without interventions # # # # # # # # # # #
+            improved_stunting_state = 1 - p['prob_remained_stunted_in_the_next_3months']
+            if rng.rand() < improved_stunting_state:
+                # Allocate a date of onset for improvement of stunting episode
+                date_recovery_stunting = self.sim.date + DateOffset(months=3)
 
-            # Create the event for the onset of stunting recovery by 1sd in HAZ
-            self.sim.schedule_event(
-                event=StuntingRecoveryEvent(module=self.module,
-                                            person_id=person_id), date=date_recovery_stunting)
+                # Create the event for the onset of stunting recovery by 1sd in HAZ
+                self.sim.schedule_event(
+                    event=StuntingRecoveryEvent(module=self.module,
+                                                person_id=person_id), date=date_recovery_stunting)
 
 
 class ProgressionSevereStuntingEvent(Event, IndividualScopeEventMixin):
