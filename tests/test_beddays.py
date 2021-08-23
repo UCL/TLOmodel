@@ -573,30 +573,64 @@ def test_the_use_of_beds_from_multiple_facilities():
     # call HealthSystem Module to initialise BedDays class
     hs = sim.modules['HealthSystem']
 
+    # Update BedCapacity data with a simple table:
+    level2_facility_ids = [64, 65]
+    cap_bedtype1 = 50
+    cap_bedtype2 = 100
+
+    # create a simple bed capacity dataframe
+    hs.parameters['BedCapacity'] = pd.DataFrame(
+        index=[0, 1],
+        data={
+            'Facility_ID': level2_facility_ids,
+            'bedtype1': cap_bedtype1,
+            'bedtype2': cap_bedtype2
+        }
+    )
+
     # Create a 21 day simulation
     days_sim = hs.bed_days.days_until_last_day_of_bed_tracker
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=days_sim))
+
+    # set sample districts for 2 individuals
+    person1_district = "Chitipa"
+    person2_district = "Kasungu"
+
+    # assign the districts to 2 individuals
+    df = sim.population.props
+    df.loc[df.index[0], "district_of_residence"] = person1_district
+    df.loc[df.index[1], "district_of_residence"] = person2_district
 
     # reset bed days tracker to the start_date of the simulation
     hs.bed_days.initialise_beddays_tracker()
 
     # 1) create a footprint
     general_bed_dur = 4
-    footprint = {'high_dependency_bed': 0, 'general_bed': general_bed_dur, 'non_bed_space': 0}
+    footprint = {'bedtype1': general_bed_dur, 'bedtype2': 0}
 
     sim.date = start_date
-
-    general_bed_capacity = hs.parameters['BedCapacity']['general_bed']
+    general_bed_capacity = hs.parameters['BedCapacity']['bedtype1']
 
     # impose bed days footprint on both facilities
     for general_id in range(0, 2):
-        hs.bed_days.the_facility_id = general_id
         hs.bed_days.impose_beddays_footprint(person_id=general_id, footprint=footprint)
 
         # check if impose footprint works as expected
-        tracker = hs.bed_days.bed_tracker['general_bed'][general_id]
+        tracker = hs.bed_days.bed_tracker['bedtype1'][level2_facility_ids[general_id]]
 
         assert ([general_bed_capacity.loc[general_bed_capacity.index[general_id]] - 1] * general_bed_dur + [
             general_bed_capacity.loc[general_bed_capacity.index[general_id]]] * (
                     days_sim + 1 - general_bed_dur) == tracker.values).all()
+
+    """for the comment ((check that things fail if we have person 3 in district 3 (but not bed capacity defined for
+     the level 2 facility for that district)), just uncomment the below part """
+    # impose bed days on an individual whose level 2 bed capacity hasn't been defined
+    # person3_district = "Machinga"
+    #
+    # # assign the district to individual no. 3
+    # personal_id = 2
+    # df.loc[df.index[personal_id], "district_of_residence"] = person3_district
+    #
+    # # impose footprint
+    # hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)

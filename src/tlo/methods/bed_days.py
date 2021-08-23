@@ -25,9 +25,6 @@ class BedDays:
     def __init__(self, hs_module):
         self.hs_module = hs_module
 
-        # determine the facility_id
-        self.the_facility_id = 0  # todo - make this specific to the district/region using person_id
-
         # Number of days to the last day of bed_tracker
         self.days_until_last_day_of_bed_tracker = 150
 
@@ -244,6 +241,7 @@ class BedDays:
         if not hasattr(self, 'bed_tracker'):
             return
 
+        the_facility_id = self.get_persons_level2_facility_id(person_id)
         operation = -1 if add_footprint else 1
 
         for bed_type in self.bed_types:
@@ -253,7 +251,7 @@ class BedDays:
             if pd.isna(date_start_this_bed or date_end_this_bed):  # filter empty bed days
                 pass
             else:
-                self.bed_tracker[bed_type].loc[date_start_this_bed: date_end_this_bed, self.the_facility_id] += \
+                self.bed_tracker[bed_type].loc[date_start_this_bed: date_end_this_bed, the_facility_id] += \
                     operation
 
     def compute_dates_of_bed_use(self, footprint):
@@ -304,14 +302,15 @@ class BedDays:
                 # NB. The '+1' accounts for the fact that 'today' is included
         return remaining_footprint
 
-    def get_persons_level2_facility_id(self, persons_id, facility_level):
+    def get_persons_level2_facility_id(self, persons_id):
         """Helper function to find the facility at which an HSI event will take place"""
         # Gather information about the HSI event
         the_district = self.hs_module.sim.population.props.at[persons_id, 'district_of_residence']
-        the_level = facility_level
+        facility_level = 2
 
+        print(f'facility info is {self.hs_module.parameters["Facilities_For_Each_District"][facility_level][the_district]}')
         # Return an id of the (one) health_facility available to this person (based on their district)
-        return self.hs_module.parameters["Facilities_For_Each_District"][the_level][the_district][0]
+        return self.hs_module.parameters["Facilities_For_Each_District"][facility_level][the_district][0]
 
     def remove_beddays_footprint(self, person_id):
         """Helper function that will remove from the bed-days tracker the days of bed-days remaining for a person.
