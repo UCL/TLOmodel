@@ -662,20 +662,20 @@ class CardioMetabolicDisorders(Module):
                                     tclose=None
                                 )
 
-            # If the symptoms include those for an CMD condition, then begin investigation for condition
-            elif ~df.at[person_id, f'nc_{condition}_ever_diagnosed'] and f'{condition}_symptoms' in \
-                symptoms:
-                hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
-                    module=self,
-                    person_id=person_id,
-                    condition=f'{condition}'
-                )
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event,
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+                # If the symptoms include those for an CMD condition, then begin investigation for condition
+                elif ~df.at[person_id, f'nc_{condition}_ever_diagnosed'] and f'{condition}_symptoms' in \
+                    symptoms:
+                    hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
+                        module=self,
+                        person_id=person_id,
+                        condition=f'{condition}'
+                    )
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        hsi_event,
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
 
 
 # ---------------------------------------------------------------------------------------------------------
