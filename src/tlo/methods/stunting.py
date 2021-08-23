@@ -274,7 +274,7 @@ class Stunting(Module):
             target_mean = get_odds_stunting(agegp='12_23mo')
             actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1)]).mean()
             scaled_intercept = get_odds_stunting(agegp) * (target_mean / actual_mean) if \
-                (target_mean != 0 and actual_mean != 0) else get_odds_stunting(agegp)
+                (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else get_odds_stunting(agegp)
             scaled_lm = make_linear_model_stunting(agegp, intercept=scaled_intercept)
             return scaled_lm
 
@@ -440,7 +440,8 @@ class Stunting(Module):
                 previous_diarrhoea_episodes=self.count_all_previous_diarrhoea_episodes(
                     today=sim.date, index=df.loc[df.is_alive & (df.age_years == 1) &
                                                  (df.un_HAZ_category == 'HAZ>=-2')].index)).mean()
-            scaled_intercept = 1.0 * (target_mean / actual_mean) if (target_mean != 0 and actual_mean != 0) else 1.0
+            scaled_intercept = 1.0 * (target_mean / actual_mean) \
+                if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
             scaled_lm = make_lm_stunting_incidence(intercept=scaled_intercept)
             return scaled_lm
 
@@ -484,7 +485,8 @@ class Stunting(Module):
                 previous_diarrhoea_episodes=self.count_all_previous_diarrhoea_episodes(
                     today=sim.date, index=df.loc[df.is_alive & (df.age_years == 1) &
                                                  (df.un_HAZ_category == '-3<=HAZ<-2')].index)).mean()
-            scaled_intercept = 1.0 * (target_mean / actual_mean) if (target_mean != 0 and actual_mean != 0) else 1.0
+            scaled_intercept = 1.0 * (target_mean / actual_mean) \
+                if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
             scaled_lm = make_lm_severe_stunting(intercept=scaled_intercept)
             return scaled_lm
 
@@ -912,3 +914,54 @@ class StuntingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Reset the counters and the date_last_run
         self.module.stunting_incident_case_tracker = copy.deepcopy(self.module.stunting_incident_case_tracker_blank)
         self.date_last_run = self.sim.date
+
+
+class PropertiesOfOtherModules(Module):
+    """For the purpose of the testing, this module generates the properties upon which the Wasting module relies"""
+
+    PROPERTIES = {
+        'hv_inf': Property(Types.BOOL, 'temporary property'),
+        'hv_art': Property(Types.CATEGORICAL, 'temporary property',
+                           categories=['not', 'on_VL_suppressed', 'on_not_VL_suppressed']),
+        'nb_low_birth_weight_status': Property(Types.CATEGORICAL, 'temporary property',
+                                               categories=['extremely_low_birth_weight', 'very_low_birth_weight',
+                                                           'low_birth_weight', 'normal_birth_weight']),
+        'nb_size_for_gestational_age': Property(Types.CATEGORICAL, 'temporary property',
+                                                categories=['small_for_gestational_age',
+                                                            'average_for_gestational_age']),
+        'nb_late_preterm': Property(Types.BOOL, 'temporary property'),
+        'nb_early_preterm': Property(Types.BOOL, 'temporary property'),
+
+        'nb_breastfeeding_status': Property(Types.CATEGORICAL, 'temporary property',
+                                            categories=['none', 'non_exclusive', 'exclusive']),
+
+    }
+
+    def __init__(self, name=None):
+        super().__init__(name)
+
+    def read_parameters(self, data_folder):
+        pass
+
+    def initialise_population(self, population):
+        df = population.props
+        df.loc[df.is_alive, 'hv_inf'] = False
+        df.loc[df.is_alive, 'hv_art'] = 'not'
+        df.loc[df.is_alive, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
+        df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'exclusive'
+        df.loc[df.is_alive, 'nb_size_for_gestational_age'] = 'average_for_gestational_age'
+        df.loc[df.is_alive, 'nb_late_preterm'] = False
+        df.loc[df.is_alive, 'nb_early_preterm'] = False
+
+    def initialise_simulation(self, sim):
+        pass
+
+    def on_birth(self, mother, child):
+        df = self.sim.population.props
+        df.at[child, 'hv_inf'] = False
+        df.at[child, 'hv_art'] = 'not'
+        df.at[child, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
+        df.at[child, 'nb_breastfeeding_status'] = 'exclusive'
+        df.at[child, 'nb_size_for_gestational_age'] = 'average_for_gestational_age'
+        df.at[child, 'nb_late_preterm'] = False
+        df.at[child, 'nb_early_preterm'] = False

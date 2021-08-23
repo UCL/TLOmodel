@@ -533,7 +533,7 @@ class Wasting(Module):
             target_mean = get_odds_wasting(agegp='12_23mo')
             actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1)]).mean()
             scaled_intercept = get_odds_wasting(agegp) * (target_mean / actual_mean) if \
-                (target_mean != 0 and actual_mean != 0) else get_odds_wasting(agegp)
+                (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else get_odds_wasting(agegp)
             scaled_lm = make_linear_model_wasting(agegp, intercept=scaled_intercept)
             return scaled_lm
 
