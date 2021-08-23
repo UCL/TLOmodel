@@ -624,28 +624,8 @@ class CardioMetabolicDisorders(Module):
             if condition != 'chronic_ischemic_hd':
                 # if the person hasn't been diagnosed and they don't have symptoms of the condition...
                 if (~df.at[person_id, f'nc_{condition}_ever_diagnosed']) and (f'{condition}_symptoms' not in symptoms):
-                    # if they haven't been tested within the last 6 months...
-                    if ~pd.isnull(df.at[person_id, f'nc_{condition}_date_last_test']):
-                        if get_time_since_last_test(
-                            current_date=self.sim.date, date_of_last_test=df.at[
-                                person_id, f'nc_{condition}_date_last_test']):
-                            # and if they're over 50 or are chosen to be tested with some probability...
-                            if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
-                                    f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
-                                # initiate HSI event
-                                hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
-                                    module=self,
-                                    person_id=person_id,
-                                    condition=f'{condition}'
-                                )
-                                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                                    hsi_event,
-                                    priority=0,
-                                    topen=self.sim.date,
-                                    tclose=None
-                                )
-                        # else if never tested, test if over 50 or chosen to be tested with some probability
-                    else:
+                    # if the person hasn't ever been tested for the condition, test if over 50 or with some probability
+                    if pd.isnull(df.at[person_id, f'nc_{condition}_date_last_test']):
                         if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
                                 f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
                             # initiate HSI event
@@ -660,8 +640,29 @@ class CardioMetabolicDisorders(Module):
                                 topen=self.sim.date,
                                 tclose=None
                             )
+                        # else if tested in the past, determine date of last test
+                    else:
+                        if get_time_since_last_test(
+                            current_date=self.sim.date, date_of_last_test=df.at[
+                                person_id, f'nc_{condition}_date_last_test']):
+                            # and if they're over 50 or are chosen to be tested with some probability...
+                            # TODO: @britta make these not arbitrary
+                            if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
+                                    f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
+                                # initiate HSI event
+                                hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
+                                    module=self,
+                                    person_id=person_id,
+                                    condition=f'{condition}'
+                                )
+                                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                                    hsi_event,
+                                    priority=0,
+                                    topen=self.sim.date,
+                                    tclose=None
+                                )
 
-                # If the symptoms include those for an CMD condition, then begin investigation for condition
+            # If the symptoms include those for an CMD condition, then begin investigation for condition
             elif ~df.at[person_id, f'nc_{condition}_ever_diagnosed'] and f'{condition}_symptoms' in \
                 symptoms:
                 hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
@@ -904,12 +905,12 @@ class CardioMetabolicDisordersWeightLossEvent(Event, IndividualScopeEventMixin):
 
         if not df.at[person_id, "is_alive"]:
             return
-
-        p_bmi_reduction = 0.2  #  TODO: @britta change to actual data
-        if df.at[person_id, 'li_bmi'] > 2:
-            if self.module.rng.rand() < p_bmi_reduction:
-                df.at[person_id, 'li_bmi'] = df.at[person_id, 'li_bmi'] - 1
-                self.sim.population.props.at[person_id, 'nc_weight_loss_worked'] = True
+        else:
+            p_bmi_reduction = 0.2  #  TODO: @britta change to actual data
+            if df.at[person_id, 'li_bmi'] > 2:
+                if self.module.rng.rand() < p_bmi_reduction:
+                    df.at[person_id, 'li_bmi'] = df.at[person_id, 'li_bmi'] - 1
+                    self.sim.population.props.at[person_id, 'nc_weight_loss_worked'] = True
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1079,6 +1080,7 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        m = self.module
         # Ignore this event if the person is no longer alive:
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -1105,19 +1107,14 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
                 tclose=None
             )
         elif df.at[person_id, 'nc_risk_score'] >= 2:
-            if df.at[person_id, 'is_alive']:
+            if df.at[person_id, 'is_alive'] & ~df.at[person_id, 'nc_ever_weight_loss_treatment']:
                 self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
                 # Schedule a post-weight loss event for 6-9 months for individual to potentially lose weight:
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event=HSI_CardioMetabolicDisorders_WeightLossCheck(
-                        module=self.module,
-                        person_id=person_id,
-                        condition=self.condition
-                    ),
-                    topen=self.sim.date + DateOffset(months=6),
-                    tclose=self.sim.date + DateOffset(months=9),
-                    priority=0
-                )
+                start = self.sim.date
+                end = self.sim.date + DateOffset(months=m.parameters['interval_between_polls'], days=-1)
+                ndays = (end - start).days
+                self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(self.module, person_id),
+                                        self.sim.date + DateOffset(days=self.module.rng.randint(ndays)))
 
     def did_not_run(self):
         pass
