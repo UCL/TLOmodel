@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from pandas.tseries.offsets import DateOffset
 
 from tlo import Date, Simulation
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -1085,11 +1086,17 @@ def test_pregnancy_supervisor_chorio_and_prom():
         (df.loc[pregnant_women.index, 'ps_gestational_age_in_weeks'] - 1)
     df.loc[pregnant_women.index, 'ps_chorioamnionitis'] = 'histological'
 
+    # If any pregnancies due on current simulation date push back one day so individuals
+    # will still seek care
+    df.loc[
+        df.la_due_date_current_pregnancy == sim.date, 'la_due_date_current_pregnancy'
+    ] += DateOffset(days=1)
+
     pregnancy_sup.apply(sim.population)
 
     # Check women from the series has correctly died
     assert (df.loc[pregnant_women.index, 'ps_chorioamnionitis'] == 'clinical').all().all()
-    assert not (df.loc[pregnant_women.index, 'is_alive']).all().all()
+    assert not (df.loc[pregnant_women.index, 'is_alive']).any().any()
     for person in pregnant_women.index:
         assert person not in list(sim.modules['PregnancySupervisor'].mother_and_newborn_info)
 
