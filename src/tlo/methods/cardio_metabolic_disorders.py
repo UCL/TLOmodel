@@ -891,6 +891,27 @@ class CardioMetabolicDisordersDeathEvent(Event, IndividualScopeEventMixin):
                                                         originating_module=self.module)
 
 
+class CardioMetabolicDisordersWeightLossEvent(Event, IndividualScopeEventMixin):
+    """
+    Gives an individual a probability of losing weight and logs it.
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        df = self.sim.population.props
+
+        if not df.at[person_id, "is_alive"]:
+            return
+
+        p_bmi_reduction = 0.2  #  TODO: @britta change to actual data
+        if df.at[person_id, 'li_bmi'] > 2:
+            if self.module.rng.rand() < p_bmi_reduction:
+                df.at[person_id, 'li_bmi'] = df.at[person_id, 'li_bmi'] - 1
+                self.sim.population.props.at[person_id, 'nc_weight_loss_worked'] = True
+
+
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
 #
