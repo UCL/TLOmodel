@@ -76,7 +76,7 @@ def _topological_sort(
                             message += f' as are any alternatives to {dependency}.'
                         else:
                             message += (
-                                'and there are multiple alternatives '
+                                ' and there are multiple alternatives '
                                 f'({alternatives_with_instances}) so which '
                                 'to use to resolve dependency is ambiguous.'
                             )
