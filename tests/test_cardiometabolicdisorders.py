@@ -191,25 +191,15 @@ def hsi_checks(sim):
     assert df.nc_ever_stroke_on_medication.any()
     assert df.nc_ever_heart_attack_on_medication.any()
 
-    # check that everyone ever diagnosed for a condition has been tested
+    # check that those who have ever been diagnosed have a date of last test
 
-    assert df.loc[df.is_alive & df.nc_diabetes_ever_diagnosed].nc_diabetes_ever_tested.all()
-    assert df.loc[df.is_alive & df.nc_hypertension_ever_diagnosed].nc_hypertension_ever_tested.all()
-    assert df.loc[
-        df.is_alive & df.nc_chronic_lower_back_pain_ever_diagnosed].nc_chronic_lower_back_pain_ever_tested.all()
-    assert df.loc[
-        df.is_alive & df.nc_chronic_kidney_disease_ever_diagnosed].nc_chronic_kidney_disease_ever_tested.all()
-    assert df.loc[
-        df.is_alive & df.nc_chronic_ischemic_hd_ever_diagnosed].nc_chronic_ischemic_hd_ever_tested.all()
-
-    # check that those who have ever tested have a date of last test
-
-    assert ~pd.isnull(df.loc[df.nc_diabetes_ever_tested, 'nc_diabetes_date_last_test']).all()
-    assert ~pd.isnull(df.loc[df.nc_hypertension_ever_tested, 'nc_hypertension_date_last_test']).all()
+    assert ~pd.isnull(df.loc[df.nc_diabetes_ever_diagnosed, 'nc_diabetes_date_last_test']).all()
+    assert ~pd.isnull(df.loc[df.nc_hypertension_ever_diagnosed, 'nc_hypertension_date_last_test']).all()
     assert ~pd.isnull(
-        df.loc[df.nc_chronic_lower_back_pain_ever_tested, 'nc_chronic_lower_back_pain_date_last_test']).all()
-    assert ~pd.isnull(df.loc[df.nc_chronic_kidney_disease, 'nc_chronic_kidney_disease_date_last_test']).all()
-    assert ~pd.isnull(df.loc[df.nc_chronic_ischemic_hd, 'nc_chronic_ischemic_hd_date_last_test']).all()
+        df.loc[df.nc_chronic_lower_back_pain_ever_diagnosed, 'nc_chronic_lower_back_pain_date_last_test']).all()
+    assert ~pd.isnull(df.loc[df.nc_chronic_kidney_disease_ever_diagnosed,
+                             'nc_chronic_kidney_disease_date_last_test']).all()
+    assert ~pd.isnull(df.loc[df.nc_chronic_ischemic_hd_ever_diagnosed, 'nc_chronic_ischemic_hd_date_last_test']).all()
 
     # check that everyone receiving medication for a condition has been diagnosed
 

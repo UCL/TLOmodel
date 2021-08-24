@@ -621,11 +621,31 @@ class CardioMetabolicDisorders(Module):
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
         for condition in self.conditions:
-            if condition != 'chronic_ischemic_hd':
-                # if the person hasn't been diagnosed and they don't have symptoms of the condition...
-                if (~df.at[person_id, f'nc_{condition}_ever_diagnosed']) and (f'{condition}_symptoms' not in symptoms):
-                    # if the person hasn't ever been tested for the condition, test if over 50 or with some probability
-                    if pd.isnull(df.at[person_id, f'nc_{condition}_date_last_test']):
+            # if the person hasn't been diagnosed and they don't have symptoms of the condition...
+            if (~df.at[person_id, f'nc_{condition}_ever_diagnosed']) and (f'{condition}_symptoms' not in symptoms):
+                # if the person hasn't ever been tested for the condition, test if over 50 or with some probability
+                if pd.isnull(df.at[person_id, f'nc_{condition}_date_last_test']):
+                    if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
+                            f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
+                        # initiate HSI event
+                        hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
+                            module=self,
+                            person_id=person_id,
+                            condition=f'{condition}'
+                        )
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(
+                            hsi_event,
+                            priority=0,
+                            topen=self.sim.date,
+                            tclose=None
+                        )
+                    # else if tested in the past, determine date of last test
+                else:
+                    if get_time_since_last_test(
+                        current_date=self.sim.date, date_of_last_test=df.at[
+                            person_id, f'nc_{condition}_date_last_test']):
+                        # and if they're over 50 or are chosen to be tested with some probability...
+                        # TODO: @britta make these not arbitrary
                         if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
                                 f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
                             # initiate HSI event
@@ -640,42 +660,21 @@ class CardioMetabolicDisorders(Module):
                                 topen=self.sim.date,
                                 tclose=None
                             )
-                        # else if tested in the past, determine date of last test
-                    else:
-                        if get_time_since_last_test(
-                            current_date=self.sim.date, date_of_last_test=df.at[
-                                person_id, f'nc_{condition}_date_last_test']):
-                            # and if they're over 50 or are chosen to be tested with some probability...
-                            # TODO: @britta make these not arbitrary
-                            if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
-                                    f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
-                                # initiate HSI event
-                                hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
-                                    module=self,
-                                    person_id=person_id,
-                                    condition=f'{condition}'
-                                )
-                                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                                    hsi_event,
-                                    priority=0,
-                                    topen=self.sim.date,
-                                    tclose=None
-                                )
 
-                # If the symptoms include those for an CMD condition, then begin investigation for condition
-                elif ~df.at[person_id, f'nc_{condition}_ever_diagnosed'] and f'{condition}_symptoms' in \
-                    symptoms:
-                    hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
-                        module=self,
-                        person_id=person_id,
-                        condition=f'{condition}'
-                    )
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        hsi_event,
-                        priority=0,
-                        topen=self.sim.date,
-                        tclose=None
-                    )
+            # If the symptoms include those for an CMD condition, then begin investigation for condition
+            elif ~df.at[person_id, f'nc_{condition}_ever_diagnosed'] and f'{condition}_symptoms' in \
+                symptoms:
+                hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
+                    module=self,
+                    person_id=person_id,
+                    condition=f'{condition}'
+                )
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event,
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+                )
 
 
 # ---------------------------------------------------------------------------------------------------------
