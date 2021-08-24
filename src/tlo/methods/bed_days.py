@@ -308,7 +308,6 @@ class BedDays:
         the_district = self.hs_module.sim.population.props.at[persons_id, 'district_of_residence']
         facility_level = 2
 
-        print(f'facility info is {self.hs_module.parameters["Facilities_For_Each_District"][facility_level][the_district]}')
         # Return an id of the (one) health_facility available to this person (based on their district)
         return self.hs_module.parameters["Facilities_For_Each_District"][facility_level][the_district][0]
 

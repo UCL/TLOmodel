@@ -32,15 +32,15 @@ def test_beddays_in_isolation(tmpdir):
     hs = sim.modules['HealthSystem']
 
     # Update BedCapacity data with a simple table:
-    default_facility_id = 0
+    level2_facility_ids = [64, 65, 66]
     cap_bedtype1 = 5
     cap_bedtype2 = 100
 
     # create a simple bed capacity dataframe
     hs.parameters['BedCapacity'] = pd.DataFrame(
-        index=[0],
+        index=[0, 1, 2],
         data={
-            'Facility_ID': default_facility_id,
+            'Facility_ID': level2_facility_ids,
             'bedtype1': cap_bedtype1,
             'bedtype2': cap_bedtype2
         }
@@ -61,7 +61,7 @@ def test_beddays_in_isolation(tmpdir):
 
     sim.date = start_date
     hs.bed_days.impose_beddays_footprint(person_id=person_id, footprint=footprint)
-    tracker = hs.bed_days.bed_tracker['bedtype1'][default_facility_id]
+    tracker = hs.bed_days.bed_tracker['bedtype1'][hs.bed_days.get_persons_level2_facility_id(person_id)]
 
     # check if impose footprint works as expected
     assert ([cap_bedtype1 - 1] * dur_bedtype1 + [cap_bedtype1] * (days_sim + 1 - dur_bedtype1) == tracker.values).all()
@@ -206,12 +206,12 @@ def test_bed_days_basics(tmpdir):
 
     # check imposition works:
     footprint = hsi_bd.bed_days_allocated_to_this_event
-    the_facility_id = 0  # <-- default id for the facility_id
 
     diff = pd.DataFrame()
     for bed_type in hsi_bd.BEDDAYS_FOOTPRINT:
         diff[bed_type] = - (
-            hs.bed_days.bed_tracker[bed_type].loc[:, the_facility_id] - orig[bed_type].loc[:, the_facility_id]
+            hs.bed_days.bed_tracker[bed_type].loc[:, hs.bed_days.get_persons_level2_facility_id(person_id)] -
+            orig[bed_type].loc[:, hs.bed_days.get_persons_level2_facility_id(person_id)]
         )
 
     first_day = diff[diff.sum(axis=1) > 0].index.min()
@@ -534,15 +534,15 @@ def test_bed_days_basics_with_healthsystem_disabled():
     hs = sim.modules['HealthSystem']
 
     # Update BedCapacity data with a simple table:
-    default_facility_id = 0
+    level2_facility_ids = [64, 65]
     cap_bedtype1 = 0
     cap_bedtype2 = 0
 
     # create a simple bed capacity dataframe
     hs.parameters['BedCapacity'] = pd.DataFrame(
-        index=[0],
+        index=[1, 2],
         data={
-            'Facility_ID': default_facility_id,
+            'Facility_ID': level2_facility_ids,
             'high_dependency_bed': cap_bedtype1,
             'general_bed': cap_bedtype2
         }
@@ -559,8 +559,6 @@ def test_bed_days_basics_with_healthsystem_disabled():
     assert hsi_bd.this_ran
 
     assert not sim.population.props.at[0, 'is_alive']  # person 0 has died
-
-    print(f'the details are{hs.bed_days.get_persons_level2_facility_id(person_id, hsi_bd.ACCEPTED_FACILITY_LEVEL)}')
 
 
 def test_the_use_of_beds_from_multiple_facilities():
@@ -593,11 +591,10 @@ def test_the_use_of_beds_from_multiple_facilities():
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=days_sim))
 
-    # set sample districts for 2 individuals
+    # assign district of origin to 2 individuals
     person1_district = "Chitipa"
     person2_district = "Kasungu"
 
-    # assign the districts to 2 individuals
     df = sim.population.props
     df.loc[df.index[0], "district_of_residence"] = person1_district
     df.loc[df.index[1], "district_of_residence"] = person2_district
