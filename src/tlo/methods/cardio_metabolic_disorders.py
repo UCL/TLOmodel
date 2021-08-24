@@ -897,8 +897,9 @@ class CardioMetabolicDisordersWeightLossEvent(Event, IndividualScopeEventMixin):
     Gives an individual a probability of losing weight and logs it.
     """
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
+        self.condition = condition
 
     def apply(self, person_id):
         df = self.sim.population.props
@@ -911,6 +912,18 @@ class CardioMetabolicDisordersWeightLossEvent(Event, IndividualScopeEventMixin):
                 if self.module.rng.rand() < p_bmi_reduction:
                     df.at[person_id, 'li_bmi'] = df.at[person_id, 'li_bmi'] - 1
                     self.sim.population.props.at[person_id, 'nc_weight_loss_worked'] = True
+
+            # schedule HSI event to check if weight loss occurred
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_CardioMetabolicDisorders_WeightLossCheck(
+                    module=self.module,
+                    person_id=person_id,
+                    condition=self.condition
+                ),
+                topen=self.sim.date + DateOffset(months=6),
+                tclose=self.sim.date + DateOffset(months=9),
+                priority=0
+            )
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1113,7 +1126,7 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
                 start = self.sim.date
                 end = self.sim.date + DateOffset(months=m.parameters['interval_between_polls'], days=-1)
                 ndays = (end - start).days
-                self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(self.module, person_id),
+                self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(self.module, person_id, self.condition),
                                         self.sim.date + DateOffset(days=self.module.rng.randint(ndays)))
 
     def did_not_run(self):
@@ -1209,16 +1222,11 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         if self.condition != 'chronic_kidney_disease':
             self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
             # Schedule a post-weight loss event for 6-9 months for individual to potentially lose weight:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_WeightLossCheck(
-                    module=self.module,
-                    person_id=person_id,
-                    condition=self.condition
-                ),
-                topen=self.sim.date + DateOffset(months=6),
-                tclose=self.sim.date + DateOffset(months=9),
-                priority=0
-            )
+            start = self.sim.date
+            end = self.sim.date + DateOffset(months=self.module.parameters['interval_between_polls'], days=-1)
+            ndays = (end - start).days
+            self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(self.module, person_id, self.condition),
+                                    self.sim.date + DateOffset(days=self.module.rng.randint(ndays)))
 
         # start medication
         df = self.sim.population.props
@@ -1257,7 +1265,7 @@ class HSI_CardioMetabolicDisorders_WeightLossCheck(HSI_Event, IndividualScopeEve
     def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_WeightLoss'
+        self.TREATMENT_ID = 'CardioMetabolicDisorders_WeightLossCheck'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
