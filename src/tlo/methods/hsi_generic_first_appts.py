@@ -321,7 +321,6 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                 cmd = self.sim.modules['CardioMetabolicDisorders']
                 cmd.schedule_hsi_events_for_cmd(person_id=person_id)
 
-
     def did_not_run(self):
         logger.debug(key='message',
                      data='HSI_GenericFirstApptAtFacilityLevel1: did not run')
