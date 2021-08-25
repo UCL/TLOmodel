@@ -915,19 +915,7 @@ class CardioMetabolicDisordersWeightLossEvent(Event, IndividualScopeEventMixin):
             if df.at[person_id, 'li_bmi'] > 2:
                 if self.module.rng.rand() < p_bmi_reduction:
                     df.at[person_id, 'li_bmi'] = df.at[person_id, 'li_bmi'] - 1
-                    self.sim.population.props.at[person_id, 'nc_weight_loss_worked'] = True
-
-            # schedule HSI event to check if weight loss occurred
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_WeightLossCheck(
-                    module=self.module,
-                    person_id=person_id,
-                    condition=self.condition
-                ),
-                topen=self.sim.date + DateOffset(months=6),
-                tclose=self.sim.date + DateOffset(months=9),
-                priority=0
-            )
+                    df.at[person_id, 'nc_weight_loss_worked'] = True
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1259,39 +1247,6 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             )
 
         #  TODO: @britta put in functionality for individuals to seek medication again if consumables not available?
-
-
-class HSI_CardioMetabolicDisorders_WeightLossCheck(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event in which a person receives a check-up following a recommendation of weight
-    loss.
-    This results in an individual having a probability of reducing their BMI by one category by the 6-month check.
-    """
-
-    def __init__(self, module, person_id, condition):
-        super().__init__(module, person_id=person_id)
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_WeightLossCheck'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-        self.condition = condition
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        hs = self.sim.modules["HealthSystem"]
-        if not df.at[person_id, 'nc_weight_loss_worked']:
-            # start medication for all conditions
-            hs.schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
-                    module=self.module,
-                    person_id=person_id,
-                    condition=self.condition
-                ),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None
-            )
 
 
 class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeEventMixin):
