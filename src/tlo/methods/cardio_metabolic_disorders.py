@@ -349,6 +349,7 @@ class CardioMetabolicDisorders(Module):
             df.loc[df.is_alive, f'nc_{event}_ever_diagnosed'] = False
             df.loc[df.is_alive, f'nc_{event}_date_diagnosis'] = pd.NaT
             df.loc[df.is_alive, f'nc_{event}_on_medication'] = False
+            df.loc[df.is_alive, f'nc_{event}_scheduled_date_death'] = pd.NaT
 
         # ----- Generate the initial "risk score" for the population based on exercise, diet, tobacco, alcohol, BMI:
         self.generate_risk_score()
@@ -575,6 +576,7 @@ class CardioMetabolicDisorders(Module):
             df.at[child_id, f'nc_{event}_ever_diagnosed'] = False
             df.at[child_id, f'nc_{event}_on_medication'] = False
             df.at[child_id, f'nc_{event}_date_diagnosis'] = pd.NaT
+            df.loc[child_id, f'nc_{event}_scheduled_date_death'] = pd.NaT
         # df.at[child_id, 'nc_cancers'] = False
         df.at[child_id, 'nc_risk_score'] = 0
         df.at[child_id, 'nc_n_conditions'] = 0
