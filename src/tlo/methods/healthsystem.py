@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 
 import tlo
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.dxmanager import DxManager
@@ -45,6 +45,22 @@ class HSIEventDetails(NamedTuple):
     treatment_id: str
     facility_level: Optional[int]
     appt_footprint: Tuple
+
+
+class HSIEventQueueItem(NamedTuple):
+    """Properties of event added to health system queue.
+
+    The order of the attributes in the tuple is important as the queue sorting is done
+    by the order of the items in the tuple, i.e. first by `priority`, then `topen` and
+    so on.
+    """
+    priority: int
+    topen: Date
+    queue_counter: int
+    tclose: Date
+    # Define HSI_Event type as string to avoid NameError exception as HSI_Event defined
+    # later in module (see https://stackoverflow.com/a/36286947/4798943)
+    hsi_event: 'HSI_Event'
 
 
 def _accepts_argument(function: callable, argument: str) -> bool:
@@ -580,7 +596,9 @@ class HealthSystem(Module):
             # Pos 3: tclose,
             # Pos 4: the hsi_event itself
 
-            new_request = (priority, topen, self.hsi_event_queue_counter, tclose, hsi_event)
+            new_request = HSIEventQueueItem(
+                priority, topen, self.hsi_event_queue_counter, tclose, hsi_event
+            )
             self.hsi_event_queue_counter += 1
 
             hp.heappush(self.HSI_EVENT_QUEUE, new_request)
@@ -1403,16 +1421,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
             # Read the tuple and assemble into a dict 'next_event'
 
-            # Structure of tuple is:
-            # Pos 0: priority,
-            # Pos 1: topen,
-            # Pos 2: hsi_event_queue_counter,
-            # Pos 3: tclose,
-            # Pos 4: the hsi_event itself
+            event = next_event_tuple.hsi_event
 
-            event = next_event_tuple[4]
-
-            if self.sim.date > next_event_tuple[3]:
+            if self.sim.date > next_event_tuple.tclose:
                 # The event has expired (after tclose) having never been run. Call the 'never_ran' function
                 event.never_ran()
 
@@ -1421,11 +1432,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # if individual level event and the person who is the target is no longer alive, do nothing more
                 pass
 
-            elif self.sim.date < next_event_tuple[1]:
+            elif self.sim.date < next_event_tuple.topen:
                 # The event is not yet due (before topen), add to the hold-over list
                 hp.heappush(hold_over, next_event_tuple)
 
-                if next_event_tuple[0] == 2:
+                if next_event_tuple.priority == 2:
                     # Check the priority
                     # If the next event is not due and has low priority, then stop looking through the heapq
                     # as all other events will also not be due.
@@ -1446,7 +1457,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         while len(list_of_population_hsi_event_tuples_due_today) > 0:
             pop_level_hsi_event_tuple = list_of_population_hsi_event_tuples_due_today.pop()
 
-            pop_level_hsi_event = pop_level_hsi_event_tuple[4]
+            pop_level_hsi_event = pop_level_hsi_event_tuple.hsi_event
             pop_level_hsi_event.run(squeeze_factor=0)
             self.module.log_hsi_event(hsi_event=pop_level_hsi_event)
 
@@ -1464,7 +1475,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # each officer-type in each facility_id.
 
             footprints_of_all_individual_level_hsi_event = [
-                self.module.get_appt_footprint_as_time_request(hsi_event=(event_tuple[4]))
+                self.module.get_appt_footprint_as_time_request(hsi_event=(event_tuple.hsi_event))
                 for event_tuple in list_of_individual_hsi_event_tuples_due_today
             ]
 
@@ -1490,7 +1501,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
             # 6) For each event, determine if run or not, and run if so.
             for ev_num in range(len(list_of_individual_hsi_event_tuples_due_today)):
-                event = list_of_individual_hsi_event_tuples_due_today[ev_num][4]
+                event = list_of_individual_hsi_event_tuples_due_today[ev_num].hsi_event
                 squeeze_factor = squeeze_factor_per_hsi_event[ev_num]
 
                 ok_to_run = (
