@@ -206,6 +206,7 @@ prev_and_inc_over_time = output['tlo.methods.hiv'][
 prev_and_inc_over_time = prev_and_inc_over_time.set_index('date')
 
 # HIV - prevalence among in adults aged 15+
+# todo note other data is age 15-49
 make_plot(
     title_str="HIV Prevalence in Adults Aged 15+ (%)",
     model=prev_and_inc_over_time['hiv_prev_adult_15plus'] * 100,

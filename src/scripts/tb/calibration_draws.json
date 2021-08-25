@@ -1,0 +1,14 @@
+{
+  "scenario_script_path": "src/scripts/tb/calibration.py",
+  "scenario_seed": 32,
+  "runs_per_draw": 3,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 1541417687,
+      "parameters": null
+    }
+  ],
+  "commit": "a401dd50fd81c477898e85b732077313ef4fc100",
+  "github": "https://github.com/UCL/TLOmodel/blob/a401dd50fd81c477898e85b732077313ef4fc100/src/scripts/tb/calibration.py"
+}
