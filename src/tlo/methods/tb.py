@@ -321,20 +321,9 @@ class Tb(Module):
         'prop_ltfu_retx': Parameter(
             Types.REAL, 'Proportion lost to follow-up during retreatment'
         ),
-        # 'rate_testing_tb': Parameter(
-        #     Types.REAL,
-        #     'rate of presenting for TB screening and testing for people with active TB',
-        # ),
         'rate_testing_general_pop': Parameter(
             Types.REAL,
             'rate ratio for TB testing without active TB compared with ative TB cases',
-        ),
-        # 'rate_testing_hiv': Parameter(
-        #     Types.REAL,
-        #     'rate of presenting for TB screening and testing for HIV-positive people with active TB',
-        # ),
-        'presump_testing': Parameter(
-            Types.REAL, 'probability of an individual without tb requesting tb test'
         ),
         'ds_treatment_length': Parameter(
             Types.REAL, 'length of treatment for drug-susceptible tb (first case) in months'
@@ -373,7 +362,10 @@ class Tb(Module):
 
         p['pulm_tb'] = workbook['pulm_tb']
         p['followup_times'] = workbook['followup']
-        p['tb_high_risk_distr'] = workbook['IPTdistricts']
+
+        # if using national-level model, include all districts in IPT coverage
+        # p['tb_high_risk_distr'] = workbook['IPTdistricts']
+        p['tb_high_risk_distr'] = workbook['all_districts']
         p['ipt_coverage'] = workbook['ipt_coverage']
 
         self.district_list = self.sim.modules['Demography'].parameters['pop_2010']['District'].unique().tolist()
