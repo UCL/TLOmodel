@@ -613,7 +613,7 @@ class CardioMetabolicDisorders(Module):
         """
         pass
 
-    def schedule_hsi_events_for_cmd(self, person_id, hsi_event):
+    def schedule_hsi_events_for_cmd(self, person_id):
         """
         This is called by the HSI generic first appts module whenever a person attends an appointment.
         """
