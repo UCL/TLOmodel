@@ -13,9 +13,6 @@ from tlo.methods.bladder_cancer import (
 from tlo.methods.breast_cancer import (
     HSI_BreastCancer_Investigation_Following_breast_lump_discernible,
 )
-from tlo.methods.cardio_metabolic_disorders import (
-    HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment,
-)
 from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
@@ -322,7 +319,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                 # take a blood pressure measurement for proportion of individuals who have not been diagnosed and
                 # are either over 50 or younger than 50 but are selected to get tested
                 cmd = self.sim.modules['CardioMetabolicDisorders']
-                cmd.schedule_hsi_events_for_cmd(person_id=person_id, hsi_event=self)
+                cmd.schedule_hsi_events_for_cmd(person_id=person_id)
 
 
     def did_not_run(self):
@@ -515,14 +512,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         # ------ CARDIO-METABOLIC DISORDERS ------
         if 'CardioMetabolicDisorders' in self.sim.modules:
             cmd = self.sim.modules['CardioMetabolicDisorders']
-            for ev in self.sim.modules['CardioMetabolicDisorders'].events:
-                if f'{ev}_damage' in symptoms:
-                    event = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
-                        module=cmd,
-                        person_id=person_id,
-                        ev=ev,
-                    )
-                    health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
+            cmd.schedule_hsi_events_for_cmd_events(person_id=person_id)
 
         # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
         if 'craving_sandwiches' in symptoms:

@@ -667,21 +667,22 @@ class CardioMetabolicDisorders(Module):
                                 tclose=None
                             )
 
-            # If the symptoms include those for an CMD condition, then begin investigation for condition
-            elif ~df.at[person_id, f'nc_{condition}_ever_diagnosed'] and f'{condition}_symptoms' in \
-                symptoms:
-                hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
+    def schedule_hsi_events_for_cmd_events(self, person_id):
+        """
+        This is called by the HSI generic first appts module whenever a person attends an emergency appointment.
+        """
+
+        health_system = self.sim.modules["HealthSystem"]
+        symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
+
+        for ev in self.events:
+            if f'{ev}_damage' in symptoms:
+                event = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
                     module=self,
                     person_id=person_id,
-                    condition=f'{condition}'
+                    ev=ev,
                 )
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event,
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
-
+                health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
