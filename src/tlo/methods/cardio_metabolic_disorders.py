@@ -1258,6 +1258,8 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
             )
 
+        #  TODO: @britta put in functionality for individuals to seek medication again if consumables not available?
+
 
 class HSI_CardioMetabolicDisorders_WeightLossCheck(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1277,11 +1279,19 @@ class HSI_CardioMetabolicDisorders_WeightLossCheck(HSI_Event, IndividualScopeEve
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        p_bmi_reduction = 0.2  # arbitrarily assign 20% probability of losing weight but should import param
-        if df.at[person_id, 'li_bmi'] > 2:
-            if self.module.rng.rand() < p_bmi_reduction:
-                df.at[person_id, 'li_bmi'] = df.at[person_id, 'li_bmi'] - 1
-                self.sim.population.props.at[person_id, 'nc_weight_loss_worked'] = True
+        hs = self.sim.modules["HealthSystem"]
+        if not df.at[person_id, 'nc_weight_loss_worked']:
+            # start medication for all conditions
+            hs.schedule_hsi_event(
+                hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                    module=self.module,
+                    person_id=person_id,
+                    condition=self.condition
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+            )
 
 
 class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeEventMixin):
