@@ -810,24 +810,6 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                     self.sim.schedule_event(CardioMetabolicDisordersEvent(self.module, person_id, event),
                                             self.sim.date + DateOffset(days=self.module.rng.randint(ndays)))
 
-            # -------------------- DEATH FROM CARDIO-METABOLIC EVENT ---------------------------------------
-            # There is a risk of death for those who have had an CardioMetabolicDisorders event.
-            # Death is assumed to happen before the next polling event.
-
-            eligible_population = df.is_alive & df[f'nc_{event}']
-            selected_to_die = self.module.lms_event_death[event].predict(df.loc[eligible_population], rng)
-            if selected_to_die.any():  # catch in case no one dies
-                if len(eligible_population) > 1:
-                    idx_selected_to_die = selected_to_die[selected_to_die].index
-                else:
-                    # if there is only one eligible person, the predict method of linear model will return just a bool
-                    #  instead of a pd.Series. Handle this special case:
-                    idx_selected_to_die = eligible_population.index
-
-                for person_id in idx_selected_to_die:
-                    schedule_death_to_occur_before_next_poll(person_id, event,
-                                                             m.parameters['interval_between_polls'])
-
 
 class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
     """
@@ -857,7 +839,7 @@ class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
         )
 
         # --------- DETERMINE OUTCOME OF THIS EVENT ---------------
-        prob_death = 0.9  # TODO: @britta replace with data
+        prob_death = self.module.parameters[f'{self.event}_death'].get('baseline_annual_probability')
         # Schedule a future death event for 2 days' time
         date_of_outcome = self.sim.date + DateOffset(days=2)
         if self.module.rng.random_sample() < prob_death:
