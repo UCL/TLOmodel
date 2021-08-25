@@ -153,10 +153,14 @@ class CardioMetabolicDisorders(Module):
         f"nc_{p}_on_medication": Property(Types.BOOL, f"Whether or not someone has ever been diagnosed with {p}") for p
         in events
     }
+    event_scheduled_date_death_list = {
+        f"nc_{p}_scheduled_date_death": Property(Types.DATE, f"Scheduled date of death from {p}") for p
+        in events
+    }
 
     PROPERTIES = {**condition_list, **event_list, **condition_diagnosis_list, **condition_date_diagnosis_list,
                   **condition_date_of_last_test_list, **condition_medication_list, **event_diagnosis_list,
-                  **event_date_diagnosis_list, **event_medication_list,
+                  **event_date_diagnosis_list, **event_medication_list, **event_scheduled_date_death_list,
                   'nc_ever_weight_loss_treatment': Property(Types.BOOL,
                                                             'whether or not the person has ever had weight loss '
                                                             'treatment'),
@@ -833,11 +837,12 @@ class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
         self.event = event
 
     def apply(self, person_id):
-        if not self.sim.population.props.at[person_id, 'is_alive']:
+        df = self.sim.population.props
+        if not df.at[person_id, 'is_alive']:
             return
 
         self.module.events_tracker[f'{self.event}_events'] += 1
-        self.sim.population.props.at[person_id, f'nc_{self.event}'] = True
+        df.at[person_id, f'nc_{self.event}'] = True
 
         # Add the outward symptom to the SymptomManager. This will result in emergency care being sought for any
         # event that takes place
@@ -847,6 +852,15 @@ class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
             add_or_remove='+',
             symptom_string=f'{self.event}_damage'
         )
+
+        # --------- DETERMINE OUTCOME OF THIS EVENT ---------------
+        prob_death = 0.9  # TODO: @britta replace with data
+        # Schedule a future death event for 2 days' time
+        date_of_outcome = self.sim.date + DateOffset(days=2)
+        if self.module.rng.random_sample() < prob_death:
+            df.at[person_id, f'nc_{self.event}_scheduled_date_death'] = date_of_outcome
+            self.sim.schedule_event(CardioMetabolicDisordersDeathEvent(self.module, person_id, condition=self.event),
+                                    date_of_outcome)
 
 
 class CardioMetabolicDisordersDeathEvent(Event, IndividualScopeEventMixin):
@@ -1378,8 +1392,10 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                 )['Item_Code'][item_code]
                 if result_of_cons_request:
                     logger.debug(key='debug', data='Treatment will be provided.')
-                    treatmentworks = self.module.rng.rand() < 0.5  # made up number for now
+                    treatmentworks = self.module.rng.rand() < 0.5  # TODO: @britta change to data
                     if treatmentworks:
+                        # cancel the scheduled death data
+                        df.at[person_id, f'nc_{self.event}_scheduled_date_death'] = pd.NaT
                         # remove all symptoms of event instantly
                         self.sim.modules['SymptomManager'].change_symptom(
                             person_id=person_id,
@@ -1400,51 +1416,10 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                     else:
                         # Consumables not available
                         logger.debug(key='debug', data='Treatment will not be provided due to no available consumables')
-                        # probability of death
-                        if self.module.rng.rand() < 0.9:  # probability of death, just a made up number for now
-                            logger.debug(key="CardioMetabolicDisordersDeathEvent",
-                                         data=f"CardioMetabolicDisordersDeathEvent: scheduling death for untreated "
-                                              f"{person_id} on {self.sim.date}")
-
-                            self.sim.modules['Demography'].do_death(individual_id=person_id,
-                                                                    cause=f'{self.event}',
-                                                                    originating_module=self.module)
-                        else:
-                            # start the person on regular medication
-                            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                                hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
-                                    module=self.module,
-                                    person_id=person_id,
-                                    condition=self.event
-                                ),
-                                priority=0,
-                                topen=self.sim.date,
-                                tclose=None
-                            )
 
             else:
                 # Squeeze factor is too large
                 logger.debug(key='debug', data='Treatment will not be provided due to squeeze factor.')
-                if self.module.rng.rand() < 0.5:  # probability of death, just a made up number for now
-                    logger.debug(key="CardioMetabolicDisordersDeathEvent",
-                                 data=f"CardioMetabolicDisordersDeathEvent: scheduling death for untreated "
-                                      f"{person_id} on {self.sim.date}")
-
-                    self.sim.modules['Demography'].do_death(individual_id=person_id,
-                                                            cause=f'{self.event}',
-                                                            originating_module=self.module)
-                else:
-                    # start the person on regular medication
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
-                            module=self.module,
-                            person_id=person_id,
-                            condition=self.event
-                        ),
-                        priority=0,
-                        topen=self.sim.date,
-                        tclose=None
-                    )
 
     def did_not_run(self):
         logger.debug(key='debug', data='HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: did not run')
