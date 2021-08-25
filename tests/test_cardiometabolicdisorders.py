@@ -17,6 +17,11 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.cardio_metabolic_disorders import (
+    HSI_CardioMetabolicDisorders_StartWeightLossAndMedication,
+    HSI_CardioMetabolicDisorders_Refill_Medication
+)
+from tlo.methods.healthsystem import HealthSystemScheduler
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -213,3 +218,78 @@ def hsi_checks(sim):
         df.is_alive & df.nc_chronic_ischemic_hd_on_medication].nc_chronic_ischemic_hd_ever_diagnosed.all()
     assert df.loc[df.is_alive & df.nc_ever_stroke_on_medication].nc_ever_stroke_ever_diagnosed.all()
     assert df.loc[df.is_alive & df.nc_ever_heart_attack_on_medication].nc_ever_heart_attack_ever_diagnosed.all()
+
+def start_sim_and_clear_event_queues(sim):
+    """Simulate for 0 days so as to complete all the initialisation steps, but then clear the event queues"""
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+    sim.event_queue.queue.clear()
+    return sim
+
+def test_if_healthsystem_cannot_run():
+    # Make the health-system unavailable to run any HSI event and check events to make sure no one initiates or
+    # continues treatment
+
+    start_date = Date(2010, 1, 1)
+    popsize = 1000
+    sim = Simulation(start_date=start_date, seed=0)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           capabilities_coefficient=0.0,
+                                           mode_appt_constraints=2),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
+                 )
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+
+    # Get the simulation running and clear the event queues:
+    sim = start_sim_and_clear_event_queues(sim)
+
+    # person_id=0:  Adult woman with diabetes, diagnosed and ready to start medication
+    df = sim.population.props
+    df.at[0, "sex"] = "F"
+    df.at[0, "age_years"] = 60
+    df.at[0, "nc_diabetes"] = True
+    df.at[0, "nc_diabetes_on_medication"] = False
+    df.at[0, "nc_diabetes_ever_diagnosed"] = True
+
+    # person_id=1:  Adult woman with diabetes, diagnosed and already on medication
+    df.at[1, "sex"] = "F"
+    df.at[1, "age_years"] = 60
+    df.at[1, "nc_diabetes"] = True
+    df.at[1, "nc_diabetes_on_medication"] = True
+    df.at[1, "nc_diabetes_ever_diagnosed"] = True
+
+    # schedule each person  a treatment
+    sim.modules['HealthSystem'].schedule_hsi_event(
+        HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(person_id=0, module=sim.modules[
+            'CardioMetabolicDisorders'], condition='diabetes'),
+        topen=sim.date,
+        tclose=sim.date + pd.DateOffset(days=1),
+        priority=0
+    )
+    sim.modules['HealthSystem'].schedule_hsi_event(
+        HSI_CardioMetabolicDisorders_Refill_Medication(person_id=1, module=sim.modules['CardioMetabolicDisorders'],
+                                                       condition='diabetes'),
+        topen=sim.date,
+        tclose=sim.date + pd.DateOffset(days=1),
+        priority=0
+    )
+
+    # Run the HealthSystemScheduler for the days (the HSI should not be run and the never_run function should be called)
+    hss = HealthSystemScheduler(module=sim.modules['HealthSystem'])
+    for i in range(3):
+        sim.date = sim.date + pd.DateOffset(days=i)
+        hss.apply(sim.population)
+
+    # check that neither person is on medication
+    assert not df.at[0, "nc_diabetes_on_medication"]
+    assert not df.at[1, "nc_diabetes_on_medication"]
