@@ -358,113 +358,8 @@ def test_recovery_severe_stunting(tmpdir):
     assert 0 == len(sim.modules['SymptomManager'].has_what(person_id, sim.modules['Stunting']))
 
 
-def test_nat_hist_cure_if_death_scheduled(tmpdir):
-    """Show that if a cure event is run before when a person was going to die, it cause the episode to end without
-    the person dying."""
-
-    dur = pd.DateOffset(days=0)
-    popsize = 1000
-    sim = get_sim(tmpdir)
-
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date + dur)
-    sim.event_queue.queue = []  # clear the queue
-
-    # Make 100% death rate by replacing with empty linear model 1.0
-    sim.modules['Stunting'].sam_death_equation = LinearModel(
-        LinearModelType.MULTIPLICATIVE, 1.0)
-
-    # increase incidence of stunting and progression to severe
-    sim.modules['Stunting'].stunting_incidence_equation = LinearModel(
-        LinearModelType.MULTIPLICATIVE, 1.0)
-    sim.modules['Stunting'].severe_stunting_progression_equation = LinearModel(
-        LinearModelType.MULTIPLICATIVE, 1.0)
-    # increase parameters in moderate stunting for clinical SAM (MUAC and oedema) to be polled for death
-    params = sim.modules['Stunting'].parameters
-    params['proportion_-3<=HAZ<-2_with_MUAC<115mm'] = [5 * params['proportion_-3<=HAZ<-2_with_MUAC<115mm']]
-    params['proportion_-3<=HAZ<-2_with_MUAC_115-<125mm'] = [params['proportion_-3<=HAZ<-2_with_MUAC_115-<125mm'] / 5]
-    params['proportion_oedema_with_HAZ<-2'] = 0.9
-
-    # Get person to use:
-    df = sim.population.props
-    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-    person_id = under5s.index[0]
-    assert df.loc[person_id, 'un_HAZ_category'] == 'HAZ>=-2'
-
-    # Run Stunting Polling event to get new incident cases:
-    polling = StuntingPollingEvent(module=sim.modules['Stunting'])
-    polling.apply(sim.population)
-
-    # Check properties of this individual: (should now be moderately stunted with a scheduled progression to severe date)
-    person = df.loc[person_id]
-    assert person['un_ever_stunted']
-    assert person['un_HAZ_category'] == '-3<=HAZ<-2'
-    assert person['un_last_stunting_date_of_onset'] == sim.date
-    assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
-    assert pd.isnull(person['un_am_recovery_date'])
-    assert pd.isnull(person['un_sam_death_date'])
-
-    # Check that there is a ProgressionSevereStuntingEvent scheduled for this person:
-    progression_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-                               isinstance(event_tuple[1], ProgressionSevereStuntingEvent)
-                               ][0]
-    date_of_scheduled_progression = progression_event_tuple[0]
-    progression_event = progression_event_tuple[1]
-    assert date_of_scheduled_progression > sim.date
-
-    # Run the progression to severe stunting event:
-    sim.date = date_of_scheduled_progression
-    progression_event.apply(person_id=person_id)
-
-    # Check properties of this individual: (should now be severely stunted and without a scheduled death date)
-    person = df.loc[person_id]
-    assert person['un_ever_stunted']
-    assert person['un_HAZ_category'] == 'HAZ<-3'
-    assert person['un_clinical_acute_malnutrition'] == 'SAM'
-    assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
-    assert pd.isnull(person['un_am_recovery_date'])
-    assert pd.isnull(person['un_sam_death_date'])
-
-    # Run Death Polling Polling event to apply death:
-    death_polling = AcuteMalnutritionDeathPollingEvent(module=sim.modules['Stunting'])
-    death_polling.apply(sim.population)
-
-    # Check that there is a SevereAcuteMalnutritionDeathEvent scheduled for this person:
-    death_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-                         isinstance(event_tuple[1], SevereAcuteMalnutritionDeathEvent)
-                         ][0]
-    date_of_scheduled_death = death_event_tuple[0]
-    death_event = death_event_tuple[1]
-    assert date_of_scheduled_death > sim.date
-
-    # Run a Cure Event now
-    cure_event = ClinicalAcuteMalnutritionRecoveryEvent(person_id=person_id, module=sim.modules['Stunting'])
-    cure_event.apply(person_id=person_id)
-
-    # Check that the person is not stunted and is alive still:
-    person = df.loc[person_id]
-    assert person['is_alive']
-    assert person['un_HAZ_category'] == 'HAZ>=-2'
-    assert not pd.isnull(person['un_am_recovery_date'])
-    assert pd.isnull(person['un_sam_death_date'])
-
-    # Run the death event that was originally scheduled - this should have no effect and the person should not die
-    sim.date = date_of_scheduled_death
-    death_event.apply(person_id=person_id)
-    person = df.loc[person_id]
-    assert person['is_alive']
-
-
 def test_treatment(tmpdir):
-    """ Test that providing a treatment prevent death and causes there to be a
-    CureEvent (ClinicalAcuteMalnutritionRecoveryEvent) Scheduled """
-    """
-    This test sets the linear model of acute_malnutrition_recovery_based_on_interventions to be 1.0 (100% cure rate),
-    when this lm is called in the do_when_am_treatment function (usually called in HSIs), 100% cure rate schedules the
-    ClinicalAcuteMalnutritionRecoveryEvent (CureEvent).
-    Death is prevented.  ---> check
-    """
-    # TODO: CHECK THIS - MAYBE NOT NEEDED
+    """ Test that providing a treatment prevent further stunting """
 
     dur = pd.DateOffset(days=0)
     popsize = 1000
@@ -474,21 +369,17 @@ def test_treatment(tmpdir):
     sim.simulate(end_date=start_date + dur)
     sim.event_queue.queue = []  # clear the queue
 
-    # Make 100% death rate by replacing with empty linear model 1.0
-    sim.modules['Stunting'].sam_death_equation = LinearModel(
-        LinearModelType.MULTIPLICATIVE, 1.0)
-
-    # increase incidence of stunting and progression to severe
+    # increase incidence of stunting
     sim.modules['Stunting'].stunting_incidence_equation = LinearModel(
         LinearModelType.MULTIPLICATIVE, 1.0)
-    sim.modules['Stunting'].severe_stunting_progression_equation = LinearModel(
-        LinearModelType.MULTIPLICATIVE, 1.0)
 
-    # increase parameters in moderate stunting for clinical SAM (MUAC and oedema) to be polled for death
-    params = sim.modules['Stunting'].parameters
-    params['proportion_-3<=HAZ<-2_with_MUAC<115mm'] = [5 * params['proportion_-3<=HAZ<-2_with_MUAC<115mm']]
-    params['proportion_-3<=HAZ<-2_with_MUAC_115-<125mm'] = [params['proportion_-3<=HAZ<-2_with_MUAC_115-<125mm'] / 5]
-    params['proportion_oedema_with_HAZ<-2'] = 0.9
+    # remove progression to severe
+    sim.modules['Stunting'].severe_stunting_progression_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 0.0)
+
+    # increase intervention effectiveness
+    sim.modules['Stunting'].stunting_improvement_based_on_interventions = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 1.0)
 
     # Get person to use:
     df = sim.population.props
@@ -500,91 +391,49 @@ def test_treatment(tmpdir):
     polling = StuntingPollingEvent(module=sim.modules['Stunting'])
     polling.apply(sim.population)
 
-    # Check properties of this individual: (should now be moderately stunted with a scheduled progression to severe date)
+    # Check that there is a StuntingOnsetEvent scheduled for this person:
+    onset_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
+                         isinstance(event_tuple[1], StuntingOnsetEvent)
+                         ][0]
+    date_of_scheduled_onset = onset_event_tuple[0]
+    onset_event = onset_event_tuple[1]
+    assert date_of_scheduled_onset > sim.date
+
+    # Run the onset event:
+    sim.date = date_of_scheduled_onset
+    onset_event.apply(person_id=person_id)
+
+    # Check properties of this individual: should now be moderately stunted
     person = df.loc[person_id]
     assert person['un_ever_stunted']
     assert person['un_HAZ_category'] == '-3<=HAZ<-2'
     assert person['un_last_stunting_date_of_onset'] == sim.date
-    assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
-    assert pd.isnull(person['un_am_recovery_date'])
-    assert pd.isnull(person['un_sam_death_date'])
+    assert pd.isnull(person['un_stunting_tx_start_date'])
+    assert pd.isnull(person['un_stunting_recovery_date'])
 
-    # Check that there is a ProgressionSevereStuntingEvent scheduled for this person:
-    progression_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-                               isinstance(event_tuple[1], ProgressionSevereStuntingEvent)
-                               ][0]
-    date_of_scheduled_progression = progression_event_tuple[0]
-    progression_event = progression_event_tuple[1]
-    assert date_of_scheduled_progression > sim.date
+    # Run Recovery Polling event to apply intervention effectiveness:
+    recovery_polling = StuntingRecoveryPollingEvent(module=sim.modules['Stunting'])
+    recovery_polling.apply(sim.population)
 
-    # Run the progression to severe stunting event:
-    sim.date = date_of_scheduled_progression
-    progression_event.apply(person_id=person_id)
+    # Check that there is a StuntingRecoveryEvent scheduled for this person:
+    recovery_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
+                            isinstance(event_tuple[1], StuntingRecoveryEvent)
+                            ][0]
+    date_of_scheduled_recovery = recovery_event_tuple[0]
+    recovery_event = recovery_event_tuple[1]
+    assert date_of_scheduled_recovery > sim.date
 
-    # Check properties of this individual: (should now be severely stunted and without a scheduled death date)
+    # Run the recovery event
+    sim.date = date_of_scheduled_recovery
+    recovery_event.apply(person_id=person_id)
+
+    # Check properties of this individual
     person = df.loc[person_id]
-    assert person['un_ever_stunted']
-    assert person['un_HAZ_category'] == 'HAZ<-3'
-    assert person['un_clinical_acute_malnutrition'] == 'SAM'
-    assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
-    assert pd.isnull(person['un_am_recovery_date'])
-    assert pd.isnull(person['un_sam_death_date'])
-
-    # Run Death Polling event to apply death:
-    death_polling = AcuteMalnutritionDeathPollingEvent(module=sim.modules['Stunting'])
-    death_polling.apply(sim.population)
-
-    # Check that there is a SevereAcuteMalnutritionDeathEvent scheduled for this person:
-    death_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-                         isinstance(event_tuple[1], SevereAcuteMalnutritionDeathEvent)
-                         ][0]
-    date_of_scheduled_death = death_event_tuple[0]
-    death_event = death_event_tuple[1]
-    assert date_of_scheduled_death > sim.date
-
-    # # change coverage and treatment effectiveness set to be 100%
-    # params['coverage_supplementary_feeding_program'] = 1.0
-    # params['coverage_outpatient_therapeutic_care'] = 1.0
-    # params['coverage_inpatient_care'] = 1.0
-    # params['recovery_rate_with_soy_RUSF'] = 1.0
-    # params['recovery_rate_with_CSB++'] = 1.0
-    # params['recovery_rate_with_standard_RUTF'] = 1.0
-    # params['recovery_rate_with_inpatient_care'] = 1.0
-
-    # Make 100% death rate by replacing with empty linear model 1.0
-    for am in ['MAM', 'SAM']:
-        sim.modules['Stunting'].acute_malnutrition_recovery_based_on_interventions[am] = LinearModel(
-            LinearModelType.MULTIPLICATIVE, 1.0)
-
-    # Run the 'do_when_am_treatment' function
-    interventions = ['SFP', 'OTC', 'ITC']
-    for int in interventions:
-        sim.modules['Stunting'].do_when_am_treatment(person_id=person_id, intervention=int)
-
-    # Run the death event that was originally scheduled - this should have no effect and the person should not die
-    sim.date = date_of_scheduled_death
-    death_event.apply(person_id=person_id)
-    person = df.loc[person_id]
-    assert person['is_alive']
-
-    # print(sim.find_events_for_person(person_id))
-
-    # Check that a CureEvent has been scheduled
-    cure_event = [event_tuple[1] for event_tuple in sim.find_events_for_person(person_id) if
-                  isinstance(event_tuple[1], ClinicalAcuteMalnutritionRecoveryEvent)][0]
-
-    # Run the CureEvent
-    cure_event.apply(person_id=person_id)
-
-    # Check that the person is not infected and is alive still:
-    person = df.loc[person_id]
-    assert person['is_alive']
     assert person['un_HAZ_category'] == 'HAZ>=-2'
-    assert not pd.isnull(person['un_am_recovery_date'])
-    assert pd.isnull(person['un_sam_death_date'])
+    assert person['un_stunting_recovery_date'] == sim.date
 
 
-def test_use_of_HSI_for_MAM(tmpdir):
+def test_use_of_HSI_complementary_feeding_education_only(tmpdir):
     """ Check that the HSIs works"""
     dur = pd.DateOffset(days=0)
     popsize = 1000
@@ -594,23 +443,13 @@ def test_use_of_HSI_for_MAM(tmpdir):
     sim.simulate(end_date=start_date + dur)
     sim.event_queue.queue = []  # clear the queue
 
-    # Make 100% death rate by replacing with empty linear model 1.0
-    sim.modules['Stunting'].sam_death_equation = LinearModel(
-        LinearModelType.MULTIPLICATIVE, 1.0)
-
     # increase incidence of stunting
     sim.modules['Stunting'].stunting_incidence_equation = LinearModel(
         LinearModelType.MULTIPLICATIVE, 1.0)
 
     # reduce progression to severe stunting
     sim.modules['Stunting'].severe_stunting_progression_equation = LinearModel(
-        LinearModelType.MULTIPLICATIVE, 0.0)
-
-    # decrease MUAC and oedema parameters in moderate stunting for clinical SAM
-    params = sim.modules['Stunting'].parameters
-    params['proportion_-3<=HAZ<-2_with_MUAC<115mm'] = 0.0  # no SAM with moderate stunting
-    params['proportion_oedema_with_HAZ<-2'] = 0.0  # no SAM based on oedema
-    params['prevalence_nutritional_oedema'] = 0.0  # no SAM based on oedema
+        LinearModelType.MULTIPLICATIVE, 1.0)
 
     # Get person to use:
     df = sim.population.props
@@ -626,7 +465,6 @@ def test_use_of_HSI_for_MAM(tmpdir):
     person = df.loc[person_id]
     assert person['un_ever_stunted']
     assert person['un_HAZ_category'] == '-3<=HAZ<-2'
-    assert person['un_clinical_acute_malnutrition'] == 'MAM'
     assert person['un_last_stunting_date_of_onset'] == sim.date
     assert pd.isnull(person['un_am_recovery_date'])
     assert pd.isnull(person['un_sam_death_date'])
@@ -634,18 +472,18 @@ def test_use_of_HSI_for_MAM(tmpdir):
     assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
 
     # Run the HSI event
-    hsi = HSI_supplementary_feeding_programme_for_MAM(person_id=person_id, module=sim.modules['Stunting'])
+    hsi = HSI_complementary_feeding_education_only(person_id=person_id, module=sim.modules['Stunting'])
     hsi.run(squeeze_factor=0.0)
 
     # Check that person is now on treatment:
     assert sim.date == df.at[person_id, 'un_acute_malnutrition_tx_start_date']
 
     # Check that a CureEvent has been scheduled
-    cure_event = [event_tuple[1] for event_tuple in sim.find_events_for_person(person_id) if
-                  isinstance(event_tuple[1], ClinicalAcuteMalnutritionRecoveryEvent)][0]
+    recovery_event = [event_tuple[1] for event_tuple in sim.find_events_for_person(person_id) if
+                      isinstance(event_tuple[1], StuntingRecoveryEvent)][0]
 
     # Run the CureEvent
-    cure_event.apply(person_id=person_id)
+    recovery_event.apply(person_id=person_id)
 
     # Check that the person is cured and is alive still:
     person = df.loc[person_id]

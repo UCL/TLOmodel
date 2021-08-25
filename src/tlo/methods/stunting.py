@@ -124,6 +124,7 @@ class Stunting(Module):
         'un_HAZ_category': Property(Types.CATEGORICAL, 'height-for-age z-score group',
                                     categories=['HAZ<-3', '-3<=HAZ<-2', 'HAZ>=-2']),
         'un_last_stunting_date_of_onset': Property(Types.DATE, 'date of onset of lastest stunting episode'),
+        'un_last_severe_stunting_onset': Property(Types.DATE, 'date of onset of severe stunting episode'),
         'un_stunting_recovery_date': Property(Types.DATE, 'recovery date, when HAZ>=-2'),
         'un_cm_treatment_type': Property(Types.CATEGORICAL, 'treatment types for of chronic malnutrition',
                                          categories=['education_on_complementary_feeding',
@@ -639,7 +640,12 @@ class StuntingRecoveryPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # determine the onset date of severe stunting and schedule event
         for person_id in improved_stunting_state[improved_stunting_state].index:
             # Allocate a date of onset for stunting episode
-            date_recovery_stunting = self.sim.date + DateOffset(days=rng.randint(0, days_until_next_polling_event))
+            if df.at[person_id,  'un_stunting_tx_start_date'] > self.sim.date - DateOffset(months=3):
+                date_recovery_stunting = df.at[person_id,  'un_stunting_tx_start_date'] + \
+                                         DateOffset(days=rng.randint(0, days_until_next_polling_event))
+            else:
+                date_recovery_stunting = self.sim.date + \
+                                         DateOffset(days=rng.randint(0, days_until_next_polling_event))
             # Create the event for the onset of stunting recovery by 1sd in HAZ
             self.sim.schedule_event(
                 event=StuntingRecoveryEvent(module=self.module,
@@ -737,6 +743,7 @@ class ProgressionSevereStuntingEvent(Event, IndividualScopeEventMixin):
 
         # update properties
         df.at[person_id, 'un_HAZ_category'] = 'HAZ<-3'
+        df.at[person_id, 'un_last_severe_stunting_onset'] = self.sim.date
 
         # -------------------------------------------------------------------------------------------
         # Add this incident case to the tracker
