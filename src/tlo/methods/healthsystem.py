@@ -9,10 +9,9 @@ Todo:   - speed up
 """
 
 import heapq as hp
-import inspect
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import NamedTuple, Optional, Tuple
+from typing import NamedTuple, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -46,6 +45,25 @@ class HSIEventDetails(NamedTuple):
     treatment_id: str
     facility_level: Optional[int]
     appt_footprint: Tuple
+
+
+def _accepts_argument(function: callable, argument: str) -> bool:
+    """Helper to test if callable object accepts an argument with a given name.
+
+    Compared to using `inspect.signature` or `inspect.getfullargspec` the approach here
+    has significantly less overhead (as a full `Signature` or `FullArgSpec` object
+    does not need to constructed) but is also less readable hence why it has been
+    wrapped as a helper function despite being only one-line to make its functionality
+    more obvious.
+
+    :param function: Callable object to check if argument is present in.
+    :param argument: Name of argument to check.
+    :returns: ``True`` is ``argument`` is an argument of ``function`` else ``False``.
+    """
+    # co_varnames include both arguments to function and any internally defined variable
+    # names hence we check only in the first `co_argcount` items which correspond to
+    # just the arguments
+    return argument in function.__code__.co_varnames[:function.__code__.co_argcount]
 
 
 class HealthSystem(Module):
@@ -450,7 +468,7 @@ class HealthSystem(Module):
         if isinstance(hsi_event.target, tlo.population.Population):  # check if hsi_event is population-scoped
             # This is a population-scoped HSI event...
             # ... So it only needs TREATMENT_ID (the other items are ignored)
-            assert ('TREATMENT_ID' in dir(hsi_event)) and (hsi_event.TREATMENT_ID != '')
+            assert hsi_event.TREATMENT_ID != ''
 
         else:
             # This is an individual-scoped HSI event.
@@ -458,24 +476,20 @@ class HealthSystem(Module):
             # ALERT_OTHER_DISEASES defined
 
             # Correctly formatted footprint
-            assert ('TREATMENT_ID' in dir(hsi_event)) and (hsi_event.TREATMENT_ID != '')
+            assert hsi_event.TREATMENT_ID != ''
 
             # Correct formated EXPECTED_APPT_FOOTPRINT
-            assert 'EXPECTED_APPT_FOOTPRINT' in dir(hsi_event)
             assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT)
 
             # That it has an 'ACCEPTED_FACILITY_LEVEL' attribute
             # (Integer specificying the facility level at which HSI_Event must occur)
-            assert 'ACCEPTED_FACILITY_LEVEL' in dir(hsi_event)
-            assert type(hsi_event.ACCEPTED_FACILITY_LEVEL) is int
+            assert isinstance(hsi_event.ACCEPTED_FACILITY_LEVEL, int)
             assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels
 
-            assert 'BEDDAYS_FOOTPRINT' in dir(hsi_event)
             self.check_beddays_footrpint_format(hsi_event.BEDDAYS_FOOTPRINT)
 
             # That it has a list for the other disease that will be alerted when it is run and that this make sense
-            assert 'ALERT_OTHER_DISEASES' in dir(hsi_event)
-            assert type(hsi_event.ALERT_OTHER_DISEASES) is list
+            assert isinstance(hsi_event.ALERT_OTHER_DISEASES, Sequence)
 
             if len(hsi_event.ALERT_OTHER_DISEASES) > 0:
                 if not (hsi_event.ALERT_OTHER_DISEASES[0] == '*'):
@@ -483,7 +497,7 @@ class HealthSystem(Module):
                         assert d in self.recognised_modules_names
 
             # Check that this can accept the squeeze argument
-            assert 'squeeze_factor' in inspect.getfullargspec(hsi_event.run).args
+            assert _accepts_argument(hsi_event.run, 'squeeze_factor')
 
         # 2) Check that topen, tclose and priority are valid
 
@@ -522,7 +536,7 @@ class HealthSystem(Module):
                         break
 
         # Further checks for HSI which are not population level events:
-        if type(hsi_event.target) is not tlo.population.Population:
+        if not isinstance(hsi_event.target, tlo.population.Population):
 
             # 4) Check that at least one type of appointment is required
             assert len(hsi_event.EXPECTED_APPT_FOOTPRINT) > 0, (
