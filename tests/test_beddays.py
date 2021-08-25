@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Module, Simulation, logging
 # 1) Core functionality of the BedDays module
@@ -620,14 +621,13 @@ def test_the_use_of_beds_from_multiple_facilities():
             general_bed_capacity.loc[general_bed_capacity.index[general_id]]] * (
                     days_sim + 1 - general_bed_dur) == tracker.values).all()
 
-    """for the comment ((check that things fail if we have person 3 in district 3 (but not bed capacity defined for
-     the level 2 facility for that district)), just uncomment the below part """
     # impose bed days on an individual whose level 2 bed capacity hasn't been defined
-    # person3_district = "Machinga"
-    #
-    # # assign the district to individual no. 3
-    # personal_id = 2
-    # df.loc[df.index[personal_id], "district_of_residence"] = person3_district
-    #
-    # # impose footprint
-    # hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+    person3_district = "Machinga"
+
+    # assign the district to individual no. 3
+    personal_id = 2
+    df.loc[df.index[personal_id], "district_of_residence"] = person3_district
+
+    # impose footprint
+    with pytest.raises(KeyError):
+        hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
