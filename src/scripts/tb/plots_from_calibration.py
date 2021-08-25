@@ -230,7 +230,7 @@ model_hiv_fsw_prev.index = model_hiv_fsw_prev.index.year
 
 
 
-
+# todo
 # person-years all ages (irrespective of HIV status)
 py_ = output['tlo.methods.demography']['person_years']
 years = pd.to_datetime(py_['date']).dt.year
@@ -291,7 +291,22 @@ model_tb_latent.index = model_tb_latent.index.year
 
 
 
+model_tb_mdr = summarize(extract_results(results_folder,
+                                      module="tlo.methods.tb",
+                                      key="tb_mdr",
+                                      column="tbPropActiveCasesMdr",
+                                      index="date",
+                                      do_scaling=False
+                                      ),
+                      collapse_columns=True
+                      )
 
+model_tb_mdr.index = model_tb_mdr.index.year
+
+
+
+
+# todo
 results_deaths = extract_results(
     results_folder,
     module="tlo.methods.demography",
@@ -477,10 +492,27 @@ make_plot(
     model=model_tb_latent['mean'],
     model_low=model_tb_latent['lower'],
     model_high=model_tb_latent['upper'],
+    ylim=[0, 0.22]
 )
-plt.ylim((0, 0.22))
 # add latent TB estimate from Houben & Dodd 2016 (value for year=2014)
 plt.errorbar(model_tb_latent.index[4], data_tb_latent_estimate,
              yerr=[[data_tb_latent_yerr[0]], [data_tb_latent_yerr[1]]], fmt='o')
 plt.legend(['Model', 'Houben & Dodd'])
+plt.show()
+
+# ---------------------------------------------------------------------- #
+
+# proportion TB cases that are MDR
+mdr = output['tlo.methods.tb']['tb_mdr']
+mdr = mdr.set_index('date')
+
+make_plot(
+    title_str="Proportion of active cases that are MDR",
+    model=mdr['tbPropActiveCasesMdr'],
+)
+# data from ResourceFile_TB sheet WHO_mdrTB2017
+plt.errorbar(mdr.index[7], 0.0075,
+             yerr=[[0.0059], [0.0105]], fmt='o')
+plt.legend(['TLO', 'WHO'])
+
 plt.show()
