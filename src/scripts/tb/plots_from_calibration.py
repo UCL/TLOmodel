@@ -205,10 +205,116 @@ model_hiv_child_prev = summarize(extract_results(results_folder,
                       )
 model_hiv_child_prev.index = model_hiv_child_prev.index.year
 
+model_hiv_child_inc = summarize(extract_results(results_folder,
+                                      module="tlo.methods.hiv",
+                                      key="summary_inc_and_prev_for_adults_and_children_and_fsw",
+                                      column="hiv_child_inc",
+                                      index="date",
+                                      do_scaling=False
+                                      ),
+                      collapse_columns=True
+                      )
+model_hiv_child_inc.index = model_hiv_child_inc.index.year
+
+model_hiv_fsw_prev = summarize(extract_results(results_folder,
+                                      module="tlo.methods.hiv",
+                                      key="summary_inc_and_prev_for_adults_and_children_and_fsw",
+                                      column="hiv_prev_fsw",
+                                      index="date",
+                                      do_scaling=False
+                                      ),
+                      collapse_columns=True
+                      )
+model_hiv_fsw_prev.index = model_hiv_fsw_prev.index.year
+
+
+
+
+
+# person-years all ages (irrespective of HIV status)
+py_ = output['tlo.methods.demography']['person_years']
+years = pd.to_datetime(py_['date']).dt.year
+py = pd.Series(dtype='int64', index=years)
+for year in years:
+    tot_py = (
+        (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) +
+        (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['F']).apply(pd.Series)
+    ).transpose()
+    py[year] = tot_py.sum().values[0]
+
+py.index = pd.to_datetime(years, format='%Y')
+
+results_py = extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=(
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'sex'])['person_id'].count()
+    ),
+    do_scaling=False
+)
+# then summarise to get mean py for each year
+model_py = summarize(results_py, only_mean=True)
+
+
+
+
+
+
+
+model_tb_inc = summarize(extract_results(results_folder,
+                                      module="tlo.methods.tb",
+                                      key="tb_incidence",
+                                      column="num_new_active_tb",
+                                      index="date",
+                                      do_scaling=False
+                                      ),
+                      collapse_columns=True
+                      )
+model_tb_inc.index = model_tb_inc.index.year
+activeTB_inc_rate = (model_tb_inc['mean'] / model_py) * 100000
+activeTB_inc_rate_low = (model_tb_inc['lower'] / model_py) * 100000
+activeTB_inc_rate_high = (model_tb_inc['higher'] / model_py) * 100000
+
+
+model_tb_latent = summarize(extract_results(results_folder,
+                                      module="tlo.methods.tb",
+                                      key="tb_prevalence",
+                                      column="tbPrevLatent",
+                                      index="date",
+                                      do_scaling=False
+                                      ),
+                      collapse_columns=True
+                      )
+
+model_tb_latent.index = model_tb_latent.index.year
+
+
+
+
+results_deaths = extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="death",
+    custom_generate_series=(
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'cause'])['person_id'].count()
+    ),
+    do_scaling=False
+)
+
+results_deaths = results_deaths.reset_index()
+
+# Summarize model results (for all ages) and process into desired format:
+deaths_model_by_period = summarize(results_deaths.sum(level=0), collapse_columns=True).reset_index()
+deaths_model_by_period = deaths_model_by_period.melt(
+    id_vars=['Period'], value_vars=['mean', 'lower', 'upper'], var_name='Variant', value_name='Count')
+deaths_model_by_period['Variant'] = 'Model_' + deaths_model_by_period['Variant']
+
 
 
 
 # %% make plots
+
 # HIV - prevalence among in adults aged 15-49
 
 make_plot(
@@ -257,37 +363,25 @@ plt.show()
 
 # ---------------------------------------------------------------------- #
 
-# HIV Incidence 15-49 per 100 population
-fig, ax = plt.subplots()
-# model
-ax.plot(model_hiv_adult_inc.index, model_hiv_adult_inc['mean'] * 100,
-        label='TLO (mean)', color='C3')
-ax.fill_between(model_hiv_adult_inc.index,
-                model_hiv_adult_inc['lower'] * 100,
-                model_hiv_adult_inc['upper'] * 100,
-                color='C3',
-                alpha=0.2,
-                zorder=5
-                )
-# data: UNAIDS
-ax.plot(model_hiv_adult_prev.index, data_hiv_unaids['incidence_per_1000'] / 10,
-        label='UNAIDS', color='g')
-ax.fill_between(data_hiv_unaids.index,
-                data_hiv_unaids['incidence_per_1000_lower'] / 10,
-                data_hiv_unaids['incidence_per_1000_upper'] / 10,
-                color='g',
-                alpha=0.2,
-                zorder=5
-                )
+# HIV Incidence in adults aged 15-49 per 100 population
+make_plot(
+    title_str="HIV Incidence in Adults Aged 15-49 per 100 population",
+    model=model_hiv_adult_inc['mean'] * 100,
+    model_low=model_hiv_adult_inc['lower'] * 100,
+    model_high=model_hiv_adult_inc['upper'] * 100,
+    data_name='UNAIDS',
+    data_mid=data_hiv_unaids['incidence_per_1000'] / 10,
+    data_low=data_hiv_unaids['incidence_per_1000_lower'] / 10,
+    data_high=data_hiv_unaids['incidence_per_1000_upper'] / 10,
+    xlim=[2010, 2020],
+    ylim=[0, 6],
+    xlab="Year",
+    ylab="HIV incidence per 100 population"
+)
+
 # MPHIA
 plt.errorbar(model_hiv_adult_inc.index[6], data_hiv_mphia_inc_estimate,
              yerr=[[data_hiv_mphia_inc_yerr[0]], [data_hiv_mphia_inc_yerr[1]]], fmt='o')
-
-ax.set_title("HIV Incidence in Adults Aged 15-49 per 100 population")
-ax.set_xlabel("Year")
-ax.set_ylabel("HIV incidence per 100 population")
-ax.set_xlim(2010, 2020)
-ax.set_ylim(0, 6)
 
 # handles for legend
 red_line = mlines.Line2D([], [], color='C3',
@@ -298,45 +392,30 @@ orange_ci = mlines.Line2D([], [], color='C1', marker='.',
                           markersize=15, label='MPHIA')
 plt.legend(handles=[red_line, blue_line, orange_ci])
 
-fig.tight_layout()
-plt.savefig(make_graph_file_name("HIV_inc_adults"))
 plt.show()
 
 
 # ---------------------------------------------------------------------- #
 
 # HIV Prevalence Children
-# HIV Incidence 15-49
-fig, ax = plt.subplots()
-# model
-ax.plot(model_hiv_child_prev.index, model_hiv_child_prev['mean'] * 100,
-        label='TLO (mean)', color='C3')
-ax.fill_between(model_hiv_child_prev.index,
-                model_hiv_child_prev['lower'] * 100,
-                model_hiv_child_prev['upper'] * 100,
-                color='C3',
-                alpha=0.2,
-                zorder=5
-                )
-# data: UNAIDS
-ax.plot(data_hiv_aidsinfo.index, data_hiv_aidsinfo['prevalence_0_14'] * 100,
-        label='UNAIDS', color='g')
-ax.fill_between(data_hiv_aidsinfo.index,
-                data_hiv_aidsinfo['prevalence_0_14_lower'] * 100,
-                data_hiv_aidsinfo['prevalence_0_14_upper'] * 100,
-                color='g',
-                alpha=0.2,
-                zorder=5
-                )
+make_plot(
+    title_str="HIV Prevalence in Children 0-14 (%)",
+    model=model_hiv_child_prev['mean'] * 100,
+    model_low=model_hiv_child_prev['lower'] * 100,
+    model_high=model_hiv_child_prev['upper'] * 100,
+    data_name='UNAIDS',
+    data_mid=data_hiv_aidsinfo['prevalence_0_14'] * 100,
+    data_low=data_hiv_aidsinfo['prevalence_0_14_lower'] * 100,
+    data_high=data_hiv_aidsinfo['prevalence_0_14_upper'] * 100,
+    xlim=[2010, 2020],
+    ylim=[0, 5],
+    xlab="Year",
+    ylab="HIV prevalence (%)"
+)
+
 # MPHIA
 plt.plot(model_hiv_child_prev.index[6], data_hiv_mphia_prev.loc[
     data_hiv_mphia_prev.age == "Total 0-14", "total percent hiv positive"].values[0], 'gx')
-
-ax.set_title("HIV Prevalence in Children 0-14 (%)")
-ax.set_xlabel("Year")
-ax.set_ylabel("HIV prevalence (%)")
-ax.set_xlim(2010, 2020)
-ax.set_ylim(0, 5)
 
 # handles for legend
 red_line = mlines.Line2D([], [], color='C3',
@@ -347,7 +426,61 @@ green_cross = mlines.Line2D([], [], linewidth=0, color='g', marker='x',
                           markersize=7, label='MPHIA')
 plt.legend(handles=[red_line, blue_line, green_cross])
 
-fig.tight_layout()
-plt.savefig(make_graph_file_name("HIV_prev_children"))
 plt.show()
 
+# ---------------------------------------------------------------------- #
+
+# HIV Incidence Children
+make_plot(
+    title_str="HIV Incidence in Children (0-14) (per 100 pyar)",
+    model=model_hiv_child_inc['mean'] * 100,
+    model_low=model_hiv_child_inc['lower'] * 100,
+    model_high=model_hiv_child_inc['upper'] * 100,
+)
+plt.show()
+
+
+# ---------------------------------------------------------------------- #
+
+# HIV prevalence among female sex workers:
+make_plot(
+    title_str="HIV Prevalence among Female Sex Workers (%)",
+    model=model_hiv_fsw_prev['mean'] * 100,
+    model_low=model_hiv_fsw_prev['lower'] * 100,
+    model_high=model_hiv_fsw_prev['upper'] * 100,
+)
+plt.show()
+
+
+# ----------------------------- TB -------------------------------------- #
+
+# Active TB incidence per 100,000 person-years - annual outputs
+
+make_plot(
+    title_str="Active TB Incidence (per 100k person-years)",
+    model=activeTB_inc_rate,
+    model_low=activeTB_inc_rate_low,
+    model_high=activeTB_inc_rate_high,
+    data_name='WHO_TB',
+    data_mid=data_tb_who['incidence_per_100k'],
+    data_low=data_tb_who['incidence_per_100k_low'],
+    data_high=data_tb_who['incidence_per_100k_high']
+)
+plt.show()
+
+
+# ---------------------------------------------------------------------- #
+
+# latent TB prevalence
+make_plot(
+    title_str="Latent TB prevalence",
+    model=model_tb_latent['mean'],
+    model_low=model_tb_latent['lower'],
+    model_high=model_tb_latent['upper'],
+)
+plt.ylim((0, 0.22))
+# add latent TB estimate from Houben & Dodd 2016 (value for year=2014)
+plt.errorbar(model_tb_latent.index[4], data_tb_latent_estimate,
+             yerr=[[data_tb_latent_yerr[0]], [data_tb_latent_yerr[1]]], fmt='o')
+plt.legend(['Model', 'Houben & Dodd'])
+plt.show()
