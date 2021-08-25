@@ -878,31 +878,37 @@ class CardioMetabolicDisordersDeathEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"]:
             return
 
-        # reduction in risk of death if being treated for condition
+        # reduction in risk of death if being treated with regular medication for condition
         # check still have condition (has not resolved)
         if df.at[person_id, f'nc_{self.condition}']:
 
             if df.at[person_id, f'nc_{self.condition}_on_medication']:
-                # TODO: @britta replace with data
+                # TODO: @britta replace with data specific for each condition/event
                 reduction_in_death_risk = self.module.rng.uniform(low=0.2, high=0.6, size=1)
-
                 if self.module.rng.rand() > reduction_in_death_risk:
-                    logger.debug(key="CardioMetabolicDisordersDeathEvent",
-                                 data=f"CardioMetabolicDisordersDeathEvent: scheduling death for treated "
-                                      f"{person_id} on {self.sim.date}")
-
-                    self.sim.modules['Demography'].do_death(individual_id=person_id,
-                                                            cause=f'{self.condition}',
-                                                            originating_module=self.module)
+                    self.check_if_event_and_do_death(person_id)
 
             else:
-                logger.debug(key="CardioMetabolicDisordersDeathEvent",
-                             data=f"CardioMetabolicDisordersDeathEvent: scheduling death for untreated "
-                                  f"{person_id} on {self.sim.date}")
+                self.check_if_event_and_do_death(person_id)
 
+    def check_if_event_and_do_death(self, person_id):
+        """
+        Helper function to perform do_death if condition is a condition and for an event only if the scheduled
+        date of death matches the current date.
+        """
+        df = self.sim.population.props
+        # check if it's a death event for an event (e.g. stroke) in order to execute death only if the date equals
+        # scheduled date of death
+        if f'{self.condition}' in self.module.events:
+            if self.sim.date == df.at[person_id, f'nc_{self.condition}_scheduled_date_death']:
                 self.sim.modules['Demography'].do_death(individual_id=person_id,
                                                         cause=f'{self.condition}',
                                                         originating_module=self.module)
+        else:
+            # condition is a condition (not an event) with no scheduled date of death, so proceed with death
+            self.sim.modules['Demography'].do_death(individual_id=person_id,
+                                                    cause=f'{self.condition}',
+                                                    originating_module=self.module)
 
 
 class CardioMetabolicDisordersWeightLossEvent(Event, IndividualScopeEventMixin):
