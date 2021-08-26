@@ -42,7 +42,6 @@ class Skeleton(Module):
     # in INIT_DEPENDENCIES to allow running simulation
     ADDITIONAL_DEPENDENCIES = {'HealthSystem'}
 
-
     # Declare Metadata (this is for a typical 'Disease Module')
     METADATA = {
         Metadata.DISEASE_MODULE,

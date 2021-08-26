@@ -38,6 +38,8 @@ class Malaria(Module):
         'Contraception', 'Demography', 'HealthSystem', 'SymptomManager'
     }
 
+    ADDITIONAL_DEPENDENCIES = {'DxAlgorithmAdult', 'DxAlgorithmChild'}
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,

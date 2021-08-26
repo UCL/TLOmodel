@@ -1,4 +1,4 @@
-"""Functions for getting and sorting dependencies of ``tlo.Module`` subclasses."""
+"""Functions for getting, checking and sorting dependencies of ``Module`` subclasses."""
 
 import importlib
 import inspect
@@ -29,6 +29,16 @@ def get_init_dependencies(module: Type[Module]) -> Set[str]:
         dependencies of ``module``.
     """
     return module.INIT_DEPENDENCIES
+
+
+def get_all_dependencies(module: Type[Module]) -> Set[str]:
+    """Get all dependencies for a ``Module`` subclass.
+
+    :param module: ``Module`` subclass to get dependencies for.
+    :return: Set of ``Module`` subclass names corresponding to dependencies of
+        ``module``.
+    """
+    return module.INIT_DEPENDENCIES | module.ADDITIONAL_DEPENDENCIES
 
 
 def topologically_sort_modules(
@@ -63,7 +73,7 @@ def topologically_sort_modules(
             'Multiple instances of one or more `Module` subclasses were passed to the '
             'Simulation.register method. If you are sure this is correct, you can '
             'disable this check (and the automatic dependency sorting) by setting '
-            'check_and_sort_modules=False in Simulation.register.'
+            'sort_modules=False in Simulation.register.'
         )
     visited, currently_processing = set(), set()
 
@@ -156,7 +166,7 @@ def get_module_class_map(excluded_modules: Set[str]) -> Mapping[str, Type[Module
 def get_dependencies_and_initialise(
     *module_classes: Type[Module],
     module_class_map: Mapping[str, Type[Module]],
-    excluded_module_classes: Optional[Set[str]] = None,
+    excluded_module_classes: Optional[Set[Module]] = None,
     get_dependencies: DependencyGetter = get_init_dependencies,
     **module_class_kwargs
 ) -> Generator[Module, None, None]:
@@ -168,8 +178,8 @@ def get_dependencies_and_initialise(
 
     :param module_classes: ``Module`` subclass(es) to seed dependency search with.
     :param module_class_map: Mapping from ``Module`` subclass names to classes.
-    :param excluded_module_classes: The names of any ``Module`` subclasses to not
-        included in returned generator.
+    :param excluded_module_classes: Any ``Module`` subclasses to not yield instances
+        of in the returned generator.
     :param get_dependencies: Function which given a module gets the set of module
         dependencies. Defaults to returing the ``Module.INIT_DEPENDENCIES`` class
         attribute.
@@ -180,22 +190,51 @@ def get_dependencies_and_initialise(
         of the ``Module`` subclasses and their the (recursive) dependencies in the seed
         ``module_classes``.
     """
-    visited = set()
     if excluded_module_classes is None:
         excluded_module_classes = set()
 
+    visited = set()
+
+    def initialise_module(module_class):
+        signature = inspect.signature(module_class)
+        relevant_kwargs = {
+            key: value for key, value in module_class_kwargs.items()
+            if key in signature.parameters
+        }
+        bound_args = signature.bind(**relevant_kwargs)
+        return module_class(*bound_args.args, **bound_args.kwargs)
+
     def depth_first_search(module_class):
         if module_class not in (visited | excluded_module_classes):
+            visited.add(module_class)
+            yield initialise_module(module_class)
             for dependency_name in get_dependencies(module_class):
                 yield from depth_first_search(module_class_map[dependency_name])
-            visited.add(module_class)
-            signature = inspect.signature(module_class)
-            relevant_kwargs = {
-                key: value for key, value in module_class_kwargs.items()
-                if key in signature.parameters
-            }
-            bound_args = signature.bind(**relevant_kwargs)
-            yield module_class(*bound_args.args, **bound_args.kwargs)
 
     for module_class in module_classes:
         yield from depth_first_search(module_class)
+
+
+def check_dependencies_present(
+    module_instances: Iterable[Module],
+    get_dependencies: DependencyGetter = get_all_dependencies,
+):
+    """Check whether an iterable of modules contains the required dependencies.
+
+    :param module_instances: Iterable of ``Module`` subclass instances to check.
+    :param get_dependencies: Callable which extracts the set of dependencies to check
+        for from a module instance. Defaults to extracting all dependencies.
+
+    :raises ModuleDependencyError: Raised if any dependencies are missing.
+    """
+    module_instances = list(module_instances)
+    modules_present = {type(module).__name__ for module in module_instances}
+    modules_required = set.union(
+        # Force conversion to set to avoid errors when using set.union with frozenset
+        *(set(get_dependencies(module)) for module in module_instances)
+    )
+    if not modules_required.issubset(modules_present):
+        missing_dependencies = modules_required - modules_present
+        raise ModuleDependencyError(
+            f'Dependencies are missing from the module list: {missing_dependencies}.'
+        )
