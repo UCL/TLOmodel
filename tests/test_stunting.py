@@ -78,87 +78,22 @@ def check_dtypes(sim):
     assert (df.dtypes == orig.dtypes).all()
 
 
-# def check_configuration_of_properties(sim):
-    # # check that the properties are ok:
-    #
-    # df = sim.population.props
-    #
-    # # Those that were never stunted, should have normal HAZ score:
-    # assert (df.loc[~df.un_ever_stunted & ~df.date_of_birth.isna(), 'un_HAZ_category'] == 'HAZ>=-2').all().all()
-    #
-    # # Those that were never stunted and not clinically malnourished,
-    # # should have not_applicable/null values for all the other properties:
-    # # assert pd.isnull(df.loc[(~df.un_ever_stunted & ~df.date_of_birth.isna() &
-    # #                         (df.un_clinical_acute_malnutrition == 'well')),
-    # #                         ['un_last_stunting_date_of_onset',
-    # #                          'un_sam_death_date'
-    # #                          ]
-    # #                         ]).all().all()
-    #
-    # # # Those that were ever stunted, should have a HAZ score below <-2
-    # # assert (df.loc[df.un_ever_stunted, 'un_HAZ_category'] != 'HAZ>=-2').all().all()
-    # #
-    # # # Those that had stunting and no treatment, should have either a recovery date or a death_date
-    # # # (but not both)
-    # # has_recovery_date = ~pd.isnull(df.loc[df.un_ever_stunted & pd.isnull(df.un_acute_malnutrition_tx_start_date),
-    # #                                       'un_am_recovery_date'])
-    # # has_death_date = ~pd.isnull(df.loc[df.un_ever_stunted & pd.isnull(df.un_acute_malnutrition_tx_start_date),
-    # #                                    'un_sam_death_date'])
-    #
-    # # has_recovery_date_or_death_date = has_recovery_date | has_death_date
-    # # has_both_recovery_date_and_death_date = has_recovery_date & has_death_date
-    # # # assert has_recovery_date_or_death_date.all()
-    # # assert not has_both_recovery_date_and_death_date.any()
-    #
-    # # Those for whom the death date has past should be dead
-    # assert not df.loc[df.un_ever_stunted & (df['un_sam_death_date'] < sim.date), 'is_alive'].any()
-    # assert not df.loc[(df.un_clinical_acute_malnutrition == 'SAM') & (
-    #     df['un_sam_death_date'] < sim.date), 'is_alive'].any()
-    #
-    # # Check that those in a current episode have symptoms of diarrhoea [caused by the diarrhoea module]
-    # #  but not others (among those who are alive)
-    # has_symptoms_of_stunting = set(sim.modules['SymptomManager'].who_has('weight_loss'))
-    # has_symptoms = set([p for p in has_symptoms_of_stunting if
-    #                     'Stunting' in sim.modules['SymptomManager'].causes_of(p, 'weight_loss')
-    #                     ])
-    #
-    # in_current_episode_before_recovery = \
-    #     df.is_alive & \
-    #     df.un_ever_stunted & \
-    #     (df.un_last_stunting_date_of_onset <= sim.date) & \
-    #     (sim.date <= df.un_am_recovery_date)
-    # set_of_person_id_in_current_episode_before_recovery = set(
-    #     in_current_episode_before_recovery[in_current_episode_before_recovery].index
-    # )
-    #
-    # in_current_episode_before_death = \
-    #     df.is_alive & \
-    #     df.un_ever_stunted & \
-    #     (df.un_last_stunting_date_of_onset <= sim.date) & \
-    #     (sim.date <= df.un_sam_death_date)
-    # set_of_person_id_in_current_episode_before_death = set(
-    #     in_current_episode_before_death[in_current_episode_before_death].index
-    # )
-    #
-    # in_current_episode_before_cure = \
-    #     df.is_alive & \
-    #     df.un_ever_stunted & \
-    #     (df.un_last_stunting_date_of_onset <= sim.date) & \
-    #     (df.un_acute_malnutrition_tx_start_date <= sim.date) & \
-    #     pd.isnull(df.un_am_recovery_date) & \
-    #     pd.isnull(df.un_sam_death_date)
-    # set_of_person_id_in_current_episode_before_cure = set(
-    #     in_current_episode_before_cure[in_current_episode_before_cure].index
-    # )
-    #
-    # assert set() == set_of_person_id_in_current_episode_before_recovery.intersection(
-    #     set_of_person_id_in_current_episode_before_death
-    # )
-    #
-    # set_of_person_id_in_current_episode = set_of_person_id_in_current_episode_before_recovery.union(
-    #     set_of_person_id_in_current_episode_before_death, set_of_person_id_in_current_episode_before_cure
-    # )
-    # assert set_of_person_id_in_current_episode == has_symptoms
+def check_configuration_of_properties(sim):
+    # check that the properties are ok:
+
+    df = sim.population.props
+
+    # Those that were never stunted, should have normal HAZ score:
+    assert (df.loc[~df.un_ever_stunted & ~df.date_of_birth.isna(), 'un_HAZ_category'] == 'HAZ>=-2').all().all()
+
+    # Those that were never stunted and should have no dates for stunting events
+    assert pd.isnull(df.loc[~df.date_of_birth.isna() & ~df['un_ever_stunted'], [
+        'un_last_stunting_date_of_onset',
+        'un_stunting_recovery_date',
+        'un_stunting_tx_start_date']]).all().all()
+
+    # Those that were ever stunted, should have a HAZ score below <-2
+    assert (df.loc[df.un_ever_stunted, 'un_HAZ_category'] != 'HAZ>=-2').all().all()
 
 
 def test_basic_run(tmpdir):
@@ -449,7 +384,7 @@ def test_use_of_HSI_complementary_feeding_education_only(tmpdir):
 
     # reduce progression to severe stunting
     sim.modules['Stunting'].severe_stunting_progression_equation = LinearModel(
-        LinearModelType.MULTIPLICATIVE, 1.0)
+        LinearModelType.MULTIPLICATIVE, 0.0)
 
     # increase intervention effectiveness
     sim.modules['Stunting'].stunting_improvement_based_on_interventions = LinearModel(
@@ -483,6 +418,7 @@ def test_use_of_HSI_complementary_feeding_education_only(tmpdir):
     assert person['un_HAZ_category'] == '-3<=HAZ<-2'
     assert person['un_last_stunting_date_of_onset'] == sim.date
     assert pd.isnull(person['un_stunting_recovery_date'])
+    assert pd.isnull(person['un_stunting_tx_start_date'])
 
     # Run the HSI event
     hsi = HSI_complementary_feeding_education_only(person_id=person_id, module=sim.modules['Stunting'])
@@ -556,9 +492,7 @@ def test_use_of_HSI(tmpdir):
         assert person['un_ever_stunted']
         assert person['un_HAZ_category'] == '-3<=HAZ<-2'
         assert person['un_last_stunting_date_of_onset'] == sim.date
-        assert pd.isnull(person['un_am_recovery_date'])
-        assert pd.isnull(person['un_sam_death_date'])
-        # Check not on treatment:
+        assert pd.isnull(person['un_stunting_recovery_date'])
         assert pd.isnull(person['un_stunting_tx_start_date'])
 
         # Run the HSI event
@@ -573,11 +507,19 @@ def test_use_of_HSI(tmpdir):
         # Check that person is now on treatment:
         assert sim.date == df.at[person_id, 'un_stunting_tx_start_date']
 
-        # Check that a CureEvent has been scheduled
-        recovery_event = [event_tuple[1] for event_tuple in sim.find_events_for_person(person_id) if
-                          isinstance(event_tuple[1], StuntingRecoveryEvent)][0]
+        # Check that there is a StuntingRecoveryEvent scheduled for this person:
+        recovery_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
+                                isinstance(event_tuple[1], StuntingRecoveryEvent)
+                                ][0]
+        date_of_scheduled_recovery = recovery_event_tuple[0]
+        recovery_event = recovery_event_tuple[1]
+        assert date_of_scheduled_recovery > sim.date
 
-        # Run the CureEvent
+        # Run the recovery event
+        sim.date = date_of_scheduled_recovery
+        recovery_event.apply(person_id=person_id)
+
+        # Run the Recovery/ CureEvent
         recovery_event.apply(person_id=person_id)
 
         # Check that the person is cured and is alive still:
