@@ -29,7 +29,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2031, 1, 1)
+end_date = Date(2017, 1, 1)
 popsize = 1000
 
 # set up the logging file

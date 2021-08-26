@@ -263,8 +263,10 @@ class Hiv(Module):
         "vls_child": Parameter(Types.REAL, "Rates of viral load suppression in children 0-14 years"),
         "prep_start_year": Parameter(Types.INT, "Year from which PrEP is available"),
         "prep_start_year_preg": Parameter(Types.INT, "Year from which PrEP is available for pregnant women"),
-        "prob_prep_adherence_level": Parameter(Types.LIST, "Probability that a pregnant woman on PrEP will"
-                                            " have high, medium or low adherence to treatment schedule"),
+        "prob_prep_high_adherence": Parameter(Types.REAL, "Probability that a pregnant woman on PrEP will"
+                                            " have high adherence to treatment schedule"),
+        "prob_prep_mid_adherence": Parameter(Types.REAL, "Probability that a pregnant woman on PrEP will"
+                                                                " have medium adherence to treatment schedule"),
         "prob_for_prep_selection": Parameter(Types.REAL, "Probability that a pregnant woman will be selected for PrEP"),
         "ART_age_cutoff_young_child": Parameter(Types.INT, "Age cutoff for ART regimen for young children"),
         "ART_age_cutoff_older_child": Parameter(Types.INT, "Age cutoff for ART regimen for older children"),
@@ -341,7 +343,6 @@ class Hiv(Module):
             Predictor('hv_prep_adherence').when('High', p["rr_prep_high_adherence"]),
             Predictor('hv_prep_adherence').when('Mid', p["rr_prep_mid_adherence"]),
             Predictor('hv_prep_adherence').when('Low', p["rr_prep_low_adherence"]),
-            #Predictor('hv_prep_adherence).when('NA', p["rr_prep_NA_adherence]),
             Predictor('li_urban').when(False, p["rr_rural"]),
             Predictor('li_wealth')  .when(2, p["rr_windex_poorer"])
                                     .when(3, p["rr_windex_middle"])
@@ -1377,7 +1378,7 @@ class Hiv_DecisionToStartOrContinuePregnantWomenOnPrEP(Event, IndividualScopeEve
             # random draw from categorical variable with set probs
             adherence = m.rng.choice(a=["High", "Mid", "Low"],
                                          size=1,
-                                         p=p["prob_prep_adherence_level"])
+                                         p=[p['prob_prep_high_adherence'], p['prob_prep_mid_adherence'], (1 - (p['prob_prep_high_adherence'] + p['prob_prep_mid_adherence']))])
             df.at[person_id, "hv_prep_adherence"] = adherence
 
         # if currently on PrEP, random draw to continue or default
@@ -2045,7 +2046,8 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                  )])
 
         denom_preg = len(df[df.is_alive & ~df.hv_inf & df.is_pregnant])
-        preg_inc = (n_new_infections_preg / denom_preg)
+        preg_inc = 0 if denom_preg == 0 else \
+            (n_new_infections_preg / denom_preg)
 
         n_new_infections_bf = len(
             df.loc[
@@ -2058,7 +2060,8 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_new_infections_preg_and_bf = n_new_infections_preg + n_new_infections_bf
         denom_preg_and_bf = denom_preg + denom_bf
-        preg_and_bf_inc = (n_new_infections_preg_and_bf / denom_preg_and_bf)
+        preg_and_bf_inc = 0 if denom_preg_and_bf == 0 else \
+            (n_new_infections_preg_and_bf / denom_preg_and_bf)
 
         # MTCT Rate
         infected_mother = df.mother_id & df.hv_inf

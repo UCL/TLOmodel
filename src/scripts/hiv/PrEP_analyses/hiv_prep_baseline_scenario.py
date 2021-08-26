@@ -3,18 +3,12 @@ This file defines a batch run through which the hiv modules are run across a gri
 Run on the batch system using:
 ```tlo batch-submit  src/scripts/hiv/PrEP_analyses/hiv_prep_baseline_scenario.py```
 """
-import datetime
-import pickle
-from pathlib import Path
 
-import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
 
 from tlo import Date
 from tlo import logging
-from tlo.analysis.utils import parse_log_file
-from tlo.scenario import BaseScenario
+
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
@@ -27,6 +21,7 @@ from tlo.methods import (
     hiv
 )
 
+from tlo.scenario import BaseScenario
 
 
 class TestScenario(BaseScenario):
@@ -36,23 +31,23 @@ class TestScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2030, 12, 31)
         self.pop_size = 100000
-        self.number_of_draws = 12
+        self.number_of_draws = 36
         self.runs_per_draw = 5
+
 
     def log_configuration(self):
         return {
-            'filename': 'hiv_prep_baseline_scenario', 'directory': './outputs',
+            'filename': 'hiv_prep_baseline_scenario',
+            'directory': './outputs',
             'custom_levels': {
-                '*': logging.WANRING,
+                '*': logging.WARNING,
                 'tlo.methods.hiv': logging.INFO,
-                'tlo.methods.demography': logging.INFO}
+                'tlo.scr.scripts.hiv.PrEP_analyses.default_run_with_plots': logging.INFO,
+                'tlo.methods.demography': logging.INFO,
+                'tlo.scenario': logging.INFO
+            }
         }
 
-    def modules(self):
-        return [
-            demography.Demography(resourcefilepath=self.resources),
-            enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-        ]
 
     def modules(self):
         return [
@@ -69,20 +64,35 @@ class TestScenario(BaseScenario):
             dx_algorithm_child.DxAlgorithmChild(resourcefilepath=self.resources),
             hiv.Hiv(resourcefilepath=self.resources),
         ]
-    `
+
+
+
     def draw_parameters(self, draw_number, rng):
+
         grid = self.make_grid(
             {
                 'prob_for_prep_selection': np.linspace(start=0, stop=0.6, num=4),
-                'prob_prep_adherence_level': [([0.3, 0.1, 0.6], [0.4, 0.2, 0.4], [0.5, 0.3, 0.2])],
+                'prob_prep_high_adherence': np.linspace(start=0.3, stop=0.5, num=3),
+                'prob_prep_mid_adherence': np.linspace(start=0.1, stop=0.3, num=3),
             }
         )
 
+        print(grid)
+
         return {
-            'hiv': {
+            'Hiv': {
                 'prob_for_prep_selection': grid['prob_for_prep_selection'][draw_number],
             },
-            'hiv': {
-                'prob_prep_adherence_level': grid['prob_prep_adherence_level'][draw_number],
+            'Hiv': {
+                'prob_prep_high_adherence': grid['prob_prep_high_adherence'][draw_number],
             },
+            'Hiv':{
+                'prob_prep_mid_adherence': grid['prob_prep_mid_adherence'][draw_number],
+            }
         }
+
+
+
+if __name__ == '__main__':
+    from tlo.cli import scenario_run
+    scenario_run([__file__])
