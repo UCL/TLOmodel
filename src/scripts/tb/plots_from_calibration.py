@@ -1,6 +1,9 @@
 """This file uses the results of the batch file to make some summary statistics.
-The results of the batchrun were put into the 'outputs' results_folder
+The results of the batchrun were put into the 'outputspath' results_folder
+function weighted_mean_for_data_comparison can be used to select which parameter sets to use
+make plots for top 5 parameter sets just to make sure they are looking ok
 """
+
 
 from pathlib import Path
 
@@ -232,31 +235,38 @@ model_hiv_fsw_prev.index = model_hiv_fsw_prev.index.year
 
 # todo
 # person-years all ages (irrespective of HIV status)
-py_ = output['tlo.methods.demography']['person_years']
-years = pd.to_datetime(py_['date']).dt.year
-py = pd.Series(dtype='int64', index=years)
-for year in years:
-    tot_py = (
-        (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) +
-        (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['F']).apply(pd.Series)
-    ).transpose()
-    py[year] = tot_py.sum().values[0]
 
-py.index = pd.to_datetime(years, format='%Y')
+def get_person_years(draw, run):
 
-results_py = extract_results(
-    results_folder,
-    module="tlo.methods.demography",
-    key="person_years",
-    custom_generate_series=(
-        lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'sex'])['person_id'].count()
-    ),
-    do_scaling=False
-)
-# then summarise to get mean py for each year
-model_py = summarize(results_py, only_mean=True)
+    log = load_pickled_dataframes(results_folder, draw, run)
+
+    py_ = log['tlo.methods.demography']['person_years']
+    years = pd.to_datetime(py_['date']).dt.year
+    py = pd.Series(dtype='int64', index=years)
+    for year in years:
+        tot_py = (
+            (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) +
+            (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['F']).apply(pd.Series)
+        ).transpose()
+        py[year] = tot_py.sum().values[0]
+
+    py.index = pd.to_datetime(years, format='%Y')
+
+    return py
+
+# for draw 0, get py for all runs
+number_runs = info["runs_per_draw"]
+py_summary = pd.DataFrame(data=None, columns=range(0, number_runs))
+
+for run in range(0, number_runs):
+    py_summary.iloc[:,run] = get_person_years(0, run)
+
+py_summary["mean"] = py_summary.mean(axis=1)
 
 
+
+# function to extract person-years by year
+# call this for each run and then take the mean to use as denominator for mortality / incidence etc.
 
 
 
