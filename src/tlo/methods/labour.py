@@ -48,6 +48,13 @@ class Labour(Module):
         'Demography', 'Lifestyle', 'HealthSystem', 'PregnancySupervisor'
     }
 
+    ADDITIONAL_DEPENDENCIES = {
+        'CareOfWomenDuringPregnancy',
+        'Contraception',
+        'NewbornOutcomes',
+        'PostnatalSupervisor'
+    }
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,

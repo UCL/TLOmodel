@@ -79,6 +79,7 @@ class Alri(Module):
     """This is the disease module for Acute Lower Respiratory Infections."""
 
     INIT_DEPENDENCIES = {'Demography', 'Hiv', 'Lifestyle', 'NewbornOutcomes', 'SymptomManager'}
+    ADDITIONAL_DEPENDENCIES = {'HealthSystem'}
 
     # Declare Metadata
     METADATA = {

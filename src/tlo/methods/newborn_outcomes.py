@@ -46,6 +46,13 @@ class NewbornOutcomes(Module):
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
+    ADDITIONAL_DEPENDENCIES = {
+        'CareOfWomenDuringPregnancy',
+        'Labour',
+        'PostnatalSupervisor',
+        'PregnancySupervisor'
+    }
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,

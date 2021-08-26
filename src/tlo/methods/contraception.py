@@ -29,6 +29,7 @@ class Contraception(Module):
         self.resourcefilepath = resourcefilepath
 
     INIT_DEPENDENCIES = {'Demography'}
+    ADDITIONAL_DEPENDENCIES = {'Labour', 'PregnancySupervisor'}
 
     # Declare Metadata
     METADATA = {}

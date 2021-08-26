@@ -61,7 +61,8 @@ class Hiv(Module):
         self.lm = dict()
         self.footprints_for_consumables_required = dict()
 
-    INIT_DEPENDENCIES = {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'Lifestyle', 'SymptomManager'}
+    ADDITIONAL_DEPENDENCIES = {'NewbornOutcomes'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,

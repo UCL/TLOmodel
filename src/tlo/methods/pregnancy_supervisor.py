@@ -41,6 +41,9 @@ class PregnancySupervisor(Module):
         self.abortion_complication = None
 
     INIT_DEPENDENCIES = {'Demography'}
+    ADDITIONAL_DEPENDENCIES = {
+        'CareOfWomenDuringPreganancy', 'Contraception', 'HealthSystem', 'Lifestyle'
+    }
 
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHBURDEN}

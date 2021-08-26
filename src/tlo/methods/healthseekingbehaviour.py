@@ -35,6 +35,7 @@ class HealthSeekingBehaviour(Module):
     """
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+    ADDITIONAL_DEPENDENCIES = {'Lifestyle'}
 
     # Declare Metadata
     METADATA = {Metadata.USES_HEALTHSYSTEM}

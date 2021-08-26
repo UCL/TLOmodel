@@ -27,6 +27,7 @@ class Mockitis(Module):
     """
 
     INIT_DEPENDENCIES = {'Demography', 'SymptomManager'}
+    ADDITIONAL_DEPENDENCIES = {'HealthSystem'}
 
     # Declare Metadata
     METADATA = {

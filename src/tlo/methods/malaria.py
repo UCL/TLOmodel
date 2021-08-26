@@ -35,7 +35,7 @@ class Malaria(Module):
         self.all_inc = None
 
     INIT_DEPENDENCIES = {
-        'Demography', 'Contraception', 'HealthSystem', 'SymptomManager'
+        'Contraception', 'Demography', 'HealthSystem', 'SymptomManager'
     }
 
     METADATA = {

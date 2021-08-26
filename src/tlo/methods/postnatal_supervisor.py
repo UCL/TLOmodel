@@ -49,6 +49,8 @@ class PostnatalSupervisor(Module):
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem'}
 
+    ADDITIONAL_DEPENDENCIES = {'Labour', 'Lifestyle', 'NewbornOutcomes', 'PregnancySupervisor'}
+
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHSYSTEM,
                 Metadata.USES_HEALTHBURDEN}  # declare that this is a disease module (leave as empty set otherwise)

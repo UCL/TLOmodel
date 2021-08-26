@@ -50,6 +50,7 @@ class CareOfWomenDuringPregnancy(Module):
         self.anc_tracker = dict()
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'PregnancySupervisor'}
+    ADDITIONAL_DEPENDENCIES = {'Contraception', 'Labour', 'Lifestyle'}
 
     METADATA = {
         Metadata.USES_HEALTHSYSTEM,
