@@ -362,7 +362,7 @@ tot_aids_deaths = deaths_AIDS.groupby(by=['year']).size()
 tot_aids_deaths.index = pd.to_datetime(tot_aids_deaths.index, format='%Y')
 
 # aids mortality rates per 1000 person-years
-total_aids_deaths_rate_100kpy = (tot_aids_deaths / py) * 100000
+total_aids_deaths_rate_100kpy = (tot_aids_deaths / py) * 1000
 
 # ---------------------------------------------------------------------- #
 

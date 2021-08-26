@@ -178,6 +178,8 @@ def make_plot(
 
 # %% extract results
 # Load and format model results (with year as integer):
+
+# ---------------------------------- HIV ---------------------------------- #
 model_hiv_adult_prev = summarize(extract_results(results_folder,
                                       module="tlo.methods.hiv",
                                       key="summary_inc_and_prev_for_adults_and_children_and_fsw",
@@ -233,6 +235,8 @@ model_hiv_fsw_prev = summarize(extract_results(results_folder,
                       )
 model_hiv_fsw_prev.index = model_hiv_fsw_prev.index.year
 
+# ---------------------------------- PERSON-YEARS ---------------------------------- #
+
 # function to extract person-years by year
 # call this for each run and then take the mean to use as denominator for mortality / incidence etc.
 def get_person_years(draw, run):
@@ -263,6 +267,7 @@ for run in range(0, number_runs):
 
 py_summary["mean"] = py_summary.mean(axis=1)
 
+# ---------------------------------- TB ---------------------------------- #
 
 model_tb_inc = summarize(extract_results(results_folder,
                                       module="tlo.methods.tb",
@@ -304,10 +309,8 @@ model_tb_mdr = summarize(extract_results(results_folder,
 
 model_tb_mdr.index = model_tb_mdr.index.year
 
+# ---------------------------------- DEATHS ---------------------------------- #
 
-
-
-# todo get summary of deaths across each draw
 results_deaths = extract_results(
     results_folder,
     module="tlo.methods.demography",
@@ -320,23 +323,47 @@ results_deaths = extract_results(
 
 results_deaths = results_deaths.reset_index()
 
+# results_deaths.columns.get_level_values(1)
+# Index(['', '', 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2], dtype='object', name='run')
+#
+# results_deaths.columns.get_level_values(0)  # this is higher level
+# Index(['year', 'cause', 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3], dtype='object', name='draw')
+
+# AIDS deaths
 # select cause of death
-tmp = results_deaths.loc[(results_deaths.cause == "AIDS_TB")]  # this works
+tmp = results_deaths.loc[(results_deaths.cause == "AIDS_TB") | (results_deaths.cause == "AIDS_non_TB")]
+tmp = tmp.set_index('year')
 # select draw
-tmp2 = tmp.loc[:, ("draw" == 0)] # this works, selects only columns for draw=0 (removes year/cause)
+model_deaths_AIDS = tmp.loc[:, ("draw" == 0)].copy()  # selects only columns for draw=0 (removes year/cause)
 
+# double check all columns are float64 or quantile argument will fail
+cols = [col for col in model_deaths_AIDS.columns if model_deaths_AIDS[col].dtype == 'float64']
+model_deaths_AIDS['median'] = model_deaths_AIDS[cols].astype(float).quantile(0.5, axis = 1)
+model_deaths_AIDS['lower'] = model_deaths_AIDS[cols].astype(float).quantile(0.25, axis = 1)
+model_deaths_AIDS['upper'] = model_deaths_AIDS[cols].astype(float).quantile(0.75, axis = 1)
 
-results_deaths.columns.get_level_values(1)
-Index(['', '', 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2], dtype='object', name='run')
+# AIDS mortality rates per 1000 person-years
+total_aids_deaths_rate_1000py = (model_deaths_AIDS['median'] / py_summary["mean"] ) * 1000
+total_aids_deaths_rate_1000py_lower = (model_deaths_AIDS['lower'] / py_summary["mean"] ) * 1000
+total_aids_deaths_rate_1000py_upper = (model_deaths_AIDS['upper'] / py_summary["mean"] ) * 1000
 
-results_deaths.columns.get_level_values(0)  # this is higher level
-Index(['year', 'cause', 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3], dtype='object', name='draw')
+# TB deaths
+# select cause of death
+tmp = results_deaths.loc[(results_deaths.cause == "TB")]
+tmp = tmp.set_index('year')
+# select draw
+model_deaths_TB = tmp.loc[:, ("draw" == 0)].copy()  # selects only columns for draw=0 (removes year/cause)
 
+# double check all columns are float64 or quantile argument will fail
+cols = [col for col in model_deaths_TB.columns if model_deaths_TB[col].dtype == 'float64']
+model_deaths_TB['median'] = model_deaths_TB[cols].astype(float).quantile(0.5, axis = 1)
+model_deaths_TB['lower'] = model_deaths_TB[cols].astype(float).quantile(0.25, axis = 1)
+model_deaths_TB['upper'] = model_deaths_TB[cols].astype(float).quantile(0.75, axis = 1)
 
-
-
-
-
+# TB mortality rates per 100k person-years
+tot_tb_non_hiv_deaths_rate_100kpy = (model_deaths_TB['median'] / py_summary["mean"]) * 100000
+tot_tb_non_hiv_deaths_rate_100kpy_lower = (model_deaths_TB['lower'] / py_summary["mean"]) * 100000
+tot_tb_non_hiv_deaths_rate_100kpy_upper = (model_deaths_TB['upper'] / py_summary["mean"]) * 100000
 
 
 # %% make plots
