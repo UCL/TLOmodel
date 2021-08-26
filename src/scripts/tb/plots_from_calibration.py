@@ -541,16 +541,51 @@ plt.show()
 # ---------------------------------------------------------------------- #
 
 # proportion TB cases that are MDR
-mdr = output['tlo.methods.tb']['tb_mdr']
-mdr = mdr.set_index('date')
 
 make_plot(
-    title_str="Proportion of active cases that are MDR",
-    model=mdr['tbPropActiveCasesMdr'],
+    title_str="Proportion of active TB cases that are MDR",
+    model=model_tb_mdr['mean'],
+    model_low=model_tb_mdr['lower'],
+    model_high=model_tb_mdr['upper'],
 )
 # data from ResourceFile_TB sheet WHO_mdrTB2017
-plt.errorbar(mdr.index[7], 0.0075,
+plt.errorbar(model_tb_mdr.index[7], 0.0075,
              yerr=[[0.0059], [0.0105]], fmt='o')
 plt.legend(['TLO', 'WHO'])
 
 plt.show()
+
+
+# ---------------------------------------------------------------------- #
+
+# AIDS deaths (including HIV/TB deaths)
+make_plot(
+    title_str='Mortality to HIV-AIDS per 1000 capita',
+    model=total_aids_deaths_rate_1000py,
+    model_low=total_aids_deaths_rate_1000py_lower,
+    model_high=total_aids_deaths_rate_1000py_upper,
+    data_name='UNAIDS',
+    data_mid=data_hiv_unaids_deaths['AIDS_mortality_per_1000'],
+    data_low=data_hiv_unaids_deaths['AIDS_mortality_per_1000_lower'],
+    data_high=data_hiv_unaids_deaths['AIDS_mortality_per_1000_upper']
+)
+
+plt.show()
+
+
+# ---------------------------------------------------------------------- #
+
+# TB deaths (excluding HIV/TB deaths)
+make_plot(
+    title_str='TB mortality rate per 100,000 population',
+    model=tot_tb_non_hiv_deaths_rate_100kpy,
+    model_low=tot_tb_non_hiv_deaths_rate_100kpy_lower,
+    model_high=tot_tb_non_hiv_deaths_rate_100kpy_upper,
+    data_name='WHO',
+    data_mid=data_tb_who['mortality_tb_excl_hiv_per_100k'],
+    data_low=data_tb_who['mortality_tb_excl_hiv_per_100k_low'],
+    data_high=data_tb_who['mortality_tb_excl_hiv_per_100k_high']
+)
+
+plt.show()
+
