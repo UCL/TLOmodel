@@ -451,6 +451,10 @@ def test_use_of_HSI_complementary_feeding_education_only(tmpdir):
     sim.modules['Stunting'].severe_stunting_progression_equation = LinearModel(
         LinearModelType.MULTIPLICATIVE, 1.0)
 
+    # increase intervention effectiveness
+    sim.modules['Stunting'].stunting_improvement_based_on_interventions = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 1.0)
+
     # Get person to use:
     df = sim.population.props
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
@@ -461,22 +465,31 @@ def test_use_of_HSI_complementary_feeding_education_only(tmpdir):
     polling = StuntingPollingEvent(module=sim.modules['Stunting'])
     polling.apply(sim.population)
 
-    # Check properties of this individual: (should now be moderately stunted with a scheduled progression to severe date)
+    # Check that there is a StuntingOnsetEvent scheduled for this person:
+    onset_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
+                         isinstance(event_tuple[1], StuntingOnsetEvent)
+                         ][0]
+    date_of_scheduled_onset = onset_event_tuple[0]
+    onset_event = onset_event_tuple[1]
+    assert date_of_scheduled_onset > sim.date
+
+    # Run the onset event:
+    sim.date = date_of_scheduled_onset
+    onset_event.apply(person_id=person_id)
+
+    # Check properties of this individual: should now be moderately stunted
     person = df.loc[person_id]
     assert person['un_ever_stunted']
     assert person['un_HAZ_category'] == '-3<=HAZ<-2'
     assert person['un_last_stunting_date_of_onset'] == sim.date
-    assert pd.isnull(person['un_am_recovery_date'])
-    assert pd.isnull(person['un_sam_death_date'])
-    # Check not on treatment:
-    assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
+    assert pd.isnull(person['un_stunting_recovery_date'])
 
     # Run the HSI event
     hsi = HSI_complementary_feeding_education_only(person_id=person_id, module=sim.modules['Stunting'])
     hsi.run(squeeze_factor=0.0)
 
     # Check that person is now on treatment:
-    assert sim.date == df.at[person_id, 'un_acute_malnutrition_tx_start_date']
+    assert sim.date == df.at[person_id, 'un_stunting_tx_start_date']
 
     # Check that a CureEvent has been scheduled
     recovery_event = [event_tuple[1] for event_tuple in sim.find_events_for_person(person_id) if
@@ -489,15 +502,13 @@ def test_use_of_HSI_complementary_feeding_education_only(tmpdir):
     person = df.loc[person_id]
     assert person['is_alive']
     assert person['un_HAZ_category'] == 'HAZ>=-2'
-    assert person['un_clinical_acute_malnutrition'] == 'well'
-    assert not pd.isnull(person['un_am_recovery_date'])
-    assert pd.isnull(person['un_sam_death_date'])
+    assert not pd.isnull(person['un_stunting_recovery_date'])
 
 
-def test_use_of_HSI_for_SAM(tmpdir):
-    """ Check that the HSI_outpatient_therapeutic_programme_for_SAM and HSI_inpatient_care_for_complicated_SAM work"""
+def test_use_of_HSI(tmpdir):
+    """ Check that the HSIs works"""
 
-    def test_use_of_HSI_by_complication(complications):
+    def test_use_HSI_by_intervention(intervention):
         dur = pd.DateOffset(days=0)
         popsize = 1000
         sim = get_sim(tmpdir)
@@ -506,39 +517,16 @@ def test_use_of_HSI_for_SAM(tmpdir):
         sim.simulate(end_date=start_date + dur)
         sim.event_queue.queue = []  # clear the queue
 
-        # Make 100% death rate by replacing with empty linear model 1.0
-        sim.modules['Stunting'].sam_death_equation = LinearModel(
-            LinearModelType.MULTIPLICATIVE, 1.0)
-
-        # Make 100% treatment effectiveness by replacing with empty linear model 1.0
-        for am in ['MAM', 'SAM']:
-            sim.modules['Stunting'].acute_malnutrition_recovery_based_on_interventions[am] = LinearModel(
-                LinearModelType.MULTIPLICATIVE, 1.0)
-
-        # increase incidence of stunting and progression to severe
+        # increase incidence of stunting
         sim.modules['Stunting'].stunting_incidence_equation = LinearModel(
             LinearModelType.MULTIPLICATIVE, 1.0)
+
+        # reduce progression to severe stunting
         sim.modules['Stunting'].severe_stunting_progression_equation = LinearModel(
             LinearModelType.MULTIPLICATIVE, 1.0)
 
-        # remove the probability of complications in SAM
-        params = sim.modules['Stunting'].parameters
-        if complications:
-            params['prob_complications_in_SAM'] = 1.0  # only SAM with complications
-        else:
-            params['prob_complications_in_SAM'] = 0.0  # no SAM with complications
-
-        # # change coverage and treatment effectiveness set to be 100%
-        # params['coverage_supplementary_feeding_program'] = 1.0
-        # params['coverage_outpatient_therapeutic_care'] = 1.0
-        # params['coverage_inpatient_care'] = 1.0
-        # params['recovery_rate_with_soy_RUSF'] = 1.0
-        # params['recovery_rate_with_CSB++'] = 1.0
-        # params['recovery_rate_with_standard_RUTF'] = 1.0
-        # params['recovery_rate_with_inpatient_care'] = 1.0
-
-        # Make 100% death rate by replacing with empty linear model 1.0
-        sim.modules['Stunting'].acute_malnutrition_recovery_based_on_interventions['SAM'] = LinearModel(
+        # increase intervention effectiveness
+        sim.modules['Stunting'].stunting_improvement_based_on_interventions = LinearModel(
             LinearModelType.MULTIPLICATIVE, 1.0)
 
         # Get person to use:
@@ -551,7 +539,19 @@ def test_use_of_HSI_for_SAM(tmpdir):
         polling = StuntingPollingEvent(module=sim.modules['Stunting'])
         polling.apply(sim.population)
 
-        # Check properties of this individual:
+        # Check that there is a StuntingOnsetEvent scheduled for this person:
+        onset_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
+                             isinstance(event_tuple[1], StuntingOnsetEvent)
+                             ][0]
+        date_of_scheduled_onset = onset_event_tuple[0]
+        onset_event = onset_event_tuple[1]
+        assert date_of_scheduled_onset > sim.date
+
+        # Run the onset event:
+        sim.date = date_of_scheduled_onset
+        onset_event.apply(person_id=person_id)
+
+        # Check properties of this individual: should now be moderately stunted
         person = df.loc[person_id]
         assert person['un_ever_stunted']
         assert person['un_HAZ_category'] == '-3<=HAZ<-2'
@@ -559,57 +559,31 @@ def test_use_of_HSI_for_SAM(tmpdir):
         assert pd.isnull(person['un_am_recovery_date'])
         assert pd.isnull(person['un_sam_death_date'])
         # Check not on treatment:
-        assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
-
-        # Check that there is a ProgressionSevereStuntingEvent scheduled for this person:
-        progression_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-                                   isinstance(event_tuple[1], ProgressionSevereStuntingEvent)
-                                   ][0]
-        date_of_scheduled_progression = progression_event_tuple[0]
-        progression_event = progression_event_tuple[1]
-        assert date_of_scheduled_progression > sim.date
-
-        # Run the progression to severe stunting event:
-        sim.date = date_of_scheduled_progression
-        progression_event.apply(person_id=person_id)
-
-        # Check properties of this individual: (should now be severely stunted and without a scheduled death date)
-        person = df.loc[person_id]
-        assert person['un_ever_stunted']
-        assert person['un_HAZ_category'] == 'HAZ<-3'
-        assert person['un_clinical_acute_malnutrition'] == 'SAM'
-        assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
-        assert pd.isnull(person['un_am_recovery_date'])
-        assert pd.isnull(person['un_sam_death_date'])
+        assert pd.isnull(person['un_stunting_tx_start_date'])
 
         # Run the HSI event
-        if complications:
-            hsi = HSI_inpatient_care_for_complicated_SAM(person_id=person_id, module=sim.modules['Stunting'])
+        if intervention == 'education_only':
+            hsi = HSI_complementary_feeding_education_only(person_id=person_id, module=sim.modules['Stunting'])
             hsi.run(squeeze_factor=0.0)
-        else:
-            hsi = HSI_outpatient_therapeutic_programme_for_SAM(person_id=person_id, module=sim.modules['Stunting'])
+        if intervention == 'supplementary_foods':
+            hsi = HSI_complementary_feeding_with_supplementary_foods(
+                person_id=person_id, module=sim.modules['Stunting'])
             hsi.run(squeeze_factor=0.0)
 
         # Check that person is now on treatment:
-        assert sim.date == df.at[person_id, 'un_acute_malnutrition_tx_start_date']
-
-        print(sim.find_events_for_person(person_id))
+        assert sim.date == df.at[person_id, 'un_stunting_tx_start_date']
 
         # Check that a CureEvent has been scheduled
-        cure_event = [event_tuple[1] for event_tuple in sim.find_events_for_person(person_id) if
-                      isinstance(event_tuple[1], ClinicalAcuteMalnutritionRecoveryEvent)][0]
+        recovery_event = [event_tuple[1] for event_tuple in sim.find_events_for_person(person_id) if
+                          isinstance(event_tuple[1], StuntingRecoveryEvent)][0]
 
         # Run the CureEvent
-        cure_event.apply(person_id=person_id)
+        recovery_event.apply(person_id=person_id)
 
         # Check that the person is cured and is alive still:
         person = df.loc[person_id]
         assert person['is_alive']
         assert person['un_HAZ_category'] == 'HAZ>=-2'
-        assert person['un_clinical_acute_malnutrition'] == 'well'
-        assert not pd.isnull(person['un_am_recovery_date'])
-        assert pd.isnull(person['un_sam_death_date'])
 
-    test_use_of_HSI_by_complication(complications=True)
-    test_use_of_HSI_by_complication(complications=False)
-
+    test_use_HSI_by_intervention(intervention='education_only')
+    test_use_HSI_by_intervention(intervention='supplementary_foods')
