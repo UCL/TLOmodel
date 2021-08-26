@@ -118,6 +118,9 @@ info = get_scenario_info(results_folder)
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
 
+# choose which draw to summarise / visualise
+draw = 0
+
 # %% Function to make standard plot to compare model and data
 def make_plot(
     model=None,
@@ -230,12 +233,8 @@ model_hiv_fsw_prev = summarize(extract_results(results_folder,
                       )
 model_hiv_fsw_prev.index = model_hiv_fsw_prev.index.year
 
-
-
-
-# todo
-# person-years all ages (irrespective of HIV status)
-
+# function to extract person-years by year
+# call this for each run and then take the mean to use as denominator for mortality / incidence etc.
 def get_person_years(draw, run):
 
     log = load_pickled_dataframes(results_folder, draw, run)
@@ -258,18 +257,11 @@ def get_person_years(draw, run):
 number_runs = info["runs_per_draw"]
 py_summary = pd.DataFrame(data=None, columns=range(0, number_runs))
 
+# draw number (default = 0) is specified above
 for run in range(0, number_runs):
-    py_summary.iloc[:,run] = get_person_years(0, run)
+    py_summary.iloc[:,run] = get_person_years(draw, run)
 
 py_summary["mean"] = py_summary.mean(axis=1)
-
-
-
-# function to extract person-years by year
-# call this for each run and then take the mean to use as denominator for mortality / incidence etc.
-
-
-
 
 
 model_tb_inc = summarize(extract_results(results_folder,
@@ -282,9 +274,9 @@ model_tb_inc = summarize(extract_results(results_folder,
                       collapse_columns=True
                       )
 model_tb_inc.index = model_tb_inc.index.year
-activeTB_inc_rate = (model_tb_inc['mean'] / model_py) * 100000
-activeTB_inc_rate_low = (model_tb_inc['lower'] / model_py) * 100000
-activeTB_inc_rate_high = (model_tb_inc['higher'] / model_py) * 100000
+activeTB_inc_rate = (model_tb_inc['mean'] / py_summary["mean"]) * 100000
+activeTB_inc_rate_low = (model_tb_inc['lower'] / py_summary["mean"]) * 100000
+activeTB_inc_rate_high = (model_tb_inc['higher'] / py_summary["mean"]) * 100000
 
 
 model_tb_latent = summarize(extract_results(results_folder,
@@ -298,7 +290,6 @@ model_tb_latent = summarize(extract_results(results_folder,
                       )
 
 model_tb_latent.index = model_tb_latent.index.year
-
 
 
 model_tb_mdr = summarize(extract_results(results_folder,
@@ -316,7 +307,7 @@ model_tb_mdr.index = model_tb_mdr.index.year
 
 
 
-# todo
+# todo get summary of deaths across each draw
 results_deaths = extract_results(
     results_folder,
     module="tlo.methods.demography",
@@ -328,6 +319,32 @@ results_deaths = extract_results(
 )
 
 results_deaths = results_deaths.reset_index()
+
+# select cause of death
+tmp = results_deaths.loc[(results_deaths.cause == "AIDS_TB")]  # this works
+# select draw
+tmp2 = tmp.loc[:, ("draw" == 0)] # this works, selects only columns for draw=0 (removes year/cause)
+
+
+results_deaths.columns.get_level_values(1)
+Index(['', '', 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2], dtype='object', name='run')
+
+results_deaths.columns.get_level_values(0)  # this is higher level
+Index(['year', 'cause', 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3], dtype='object', name='draw')
+
+# select draw
+tmp = results_deaths.loc[:, ("draw" == 0)] # this works, selects only columns for draw=0 (removes year/cause)
+
+
+results_deaths.loc[:, ("draw" == 0) & ("cause" == "AIDS_TB")] # this still leaves other causes
+
+
+
+
+
+results_deaths_selected_draw = results_deaths
+deaths_AIDS_non_TB = results_deaths.loc[results_deaths.cause == "AIDS_non_TB"]
+
 
 # Summarize model results (for all ages) and process into desired format:
 deaths_model_by_period = summarize(results_deaths.sum(level=0), collapse_columns=True).reset_index()
