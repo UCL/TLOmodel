@@ -332,25 +332,9 @@ Index(['', '', 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2], dtype='object', name='run')
 results_deaths.columns.get_level_values(0)  # this is higher level
 Index(['year', 'cause', 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3], dtype='object', name='draw')
 
-# select draw
-tmp = results_deaths.loc[:, ("draw" == 0)] # this works, selects only columns for draw=0 (removes year/cause)
-
-
-results_deaths.loc[:, ("draw" == 0) & ("cause" == "AIDS_TB")] # this still leaves other causes
 
 
 
-
-
-results_deaths_selected_draw = results_deaths
-deaths_AIDS_non_TB = results_deaths.loc[results_deaths.cause == "AIDS_non_TB"]
-
-
-# Summarize model results (for all ages) and process into desired format:
-deaths_model_by_period = summarize(results_deaths.sum(level=0), collapse_columns=True).reset_index()
-deaths_model_by_period = deaths_model_by_period.melt(
-    id_vars=['Period'], value_vars=['mean', 'lower', 'upper'], var_name='Variant', value_name='Count')
-deaths_model_by_period['Variant'] = 'Model_' + deaths_model_by_period['Variant']
 
 
 
