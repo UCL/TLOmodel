@@ -229,12 +229,21 @@ def check_dependencies_present(
     """
     module_instances = list(module_instances)
     modules_present = {type(module).__name__ for module in module_instances}
-    modules_required = set.union(
+    modules_present_are_alternatives_to = set.union(
         # Force conversion to set to avoid errors when using set.union with frozenset
+        *(set(module.ALTERNATIVE_TO) for module in module_instances)
+    )
+    modules_required = set.union(
         *(set(get_dependencies(module)) for module in module_instances)
     )
-    if not modules_required.issubset(modules_present):
-        missing_dependencies = modules_required - modules_present
+    missing_dependencies = modules_required - modules_present
+    missing_dependencies_without_alternatives_present = (
+        missing_dependencies - modules_present_are_alternatives_to
+    )
+    if not missing_dependencies_without_alternatives_present == set():
+
         raise ModuleDependencyError(
-            f'Dependencies are missing from the module list: {missing_dependencies}.'
+            'One or more required dependency is missing from the module list and no '
+            'alternative to this / these modules are available either: '
+            f'{missing_dependencies_without_alternatives_present}'
         )
