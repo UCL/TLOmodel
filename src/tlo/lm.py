@@ -17,7 +17,13 @@ logger.setLevel(logging.INFO)
 
 class Predictor(object):
 
-    def __init__(self, property_name: str = None, external: bool = False):
+    def __init__(
+        self,
+        property_name: str = None,
+        external: bool = False,
+        conditions_are_mutually_exclusive: Optional[bool] = None,
+        conditions_are_exhaustive: Optional[bool] = False,
+    ):
         """A Predictor variable for the regression model. The property_name is a property of the
          population dataframe e.g. age, sex, etc."""
         self.property_name = property_name
@@ -30,6 +36,8 @@ class Predictor(object):
         self.conditions = list()
         self.callback = None
         self.has_otherwise = False
+        self.conditions_are_mutually_exclusive = conditions_are_mutually_exclusive
+        self.conditions_are_exhaustive = conditions_are_exhaustive
 
     def when(self, condition: Union[str, float, bool], value: float) -> 'Predictor':
         assert self.callback is None, "Can't use `when` on Predictor with function"
@@ -260,9 +268,6 @@ class LinearModel(object):
                             predictor_str = f"({condition}) * {value}"
                             any_prev_conds = f"{condition}"
                     else:
-                        # conditions are potentially non-mutually exclusive and
-                        # are applied sequentially in order specified on subset
-                        # not matching any previous conditions
                         if condition is None:
                             # 'otherwise' fallback condition - matches all not
                             # so far matched therefore can ignore any remaining
@@ -270,13 +275,26 @@ class LinearModel(object):
                             predictor_str += f" + (~({any_prev_conds})) * {value}"
                             has_catch_all_condition = True
                             break
+                        elif predictor.conditions_are_mutually_exclusive:
+                            # conditions have been declared to be mutually exclusive
+                            # therefore we can just multiply conditions by coefficient
+                            # values as condition == ~any_prev_conds & condition
+                            predictor_str += f" + ({condition}) * {value}"
+                            any_prev_conds += f" | {condition}"
+
                         else:
+                            # conditions are potentially non-mutually exclusive and
+                            # are applied sequentially in order specified on subset
+                            # not matching any previous conditions
                             predictor_str += (
                                 f" + (~({any_prev_conds}) & {condition}) * {value}")
                             any_prev_conds += f" | {condition}"
-                # If no 'otherwise' catch-all condition then add term corresponding to
-                # no effect when no previous conditions matched
-                if not has_catch_all_condition:
+                # If the predictor neither declares that the conditions are exhaustive
+                # (i.e. all cases are covered an any_prev_conds is guaranteed to be
+                # True) nor an 'otherwise' catch-all condition has been used (in which
+                # case any_prev_conds is also guaranteed to be True) then add term
+                # corresponding to no effect when no previous conditions matched
+                if not (predictor.conditions_are_exhaustive or has_catch_all_condition):
                     predictor_str += f" + ~({any_prev_conds}) * {null_coeff_value}"
                 predictor_strings.append(f"({predictor_str})")
             else:
