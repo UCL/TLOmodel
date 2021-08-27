@@ -173,7 +173,7 @@ def make_plot(
     plt.title(title_str)
     plt.legend(['Model', data_name])
     plt.gca().set_ylim(bottom=0)
-    plt.savefig(outputspath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
+    # plt.savefig(outputspath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
 
 
 # %% extract results
@@ -279,9 +279,9 @@ model_tb_inc = summarize(extract_results(results_folder,
                       collapse_columns=True
                       )
 model_tb_inc.index = model_tb_inc.index.year
-activeTB_inc_rate = (model_tb_inc['mean'] / py_summary["mean"]) * 100000
-activeTB_inc_rate_low = (model_tb_inc['lower'] / py_summary["mean"]) * 100000
-activeTB_inc_rate_high = (model_tb_inc['higher'] / py_summary["mean"]) * 100000
+activeTB_inc_rate = (model_tb_inc['mean'].values / py_summary["mean"].values) * 100000
+activeTB_inc_rate_low = (model_tb_inc['lower'].values / py_summary["mean"].values) * 100000
+activeTB_inc_rate_high = (model_tb_inc['upper'].values / py_summary["mean"].values) * 100000
 
 
 model_tb_latent = summarize(extract_results(results_folder,
@@ -332,9 +332,22 @@ results_deaths = results_deaths.reset_index()
 # AIDS deaths
 # select cause of death
 tmp = results_deaths.loc[(results_deaths.cause == "AIDS_TB") | (results_deaths.cause == "AIDS_non_TB")]
-tmp = tmp.set_index('year')
-# select draw
-model_deaths_AIDS = tmp.loc[:, ("draw" == 0)].copy()  # selects only columns for draw=0 (removes year/cause)
+# select draw - drop columns where draw != 0, but keep year and cause
+tmp2 = tmp.loc[:, ("draw" == draw)].copy()  # selects only columns for draw=0 (removes year/cause)
+# join year and cause back to df - needed for groupby
+frames = [tmp["year"], tmp["cause"], tmp2]
+tmp3 = pd.concat(frames, axis=1)
+
+# create new column names, dependent on number of runs in draw
+base_columns = ['year', 'cause']
+run_columns = ['run'+str(x) for x in range(0,info["runs_per_draw"])]
+base_columns.extend(run_columns)
+tmp3.columns = base_columns
+tmp3 = tmp3.set_index('year')
+
+# sum rows for each year (2 entries)
+# for each run need to combine deaths in each year, may have different numbers of runs
+model_deaths_AIDS = pd.DataFrame(tmp3.groupby(["year"]).sum())
 
 # double check all columns are float64 or quantile argument will fail
 cols = [col for col in model_deaths_AIDS.columns if model_deaths_AIDS[col].dtype == 'float64']
@@ -343,9 +356,14 @@ model_deaths_AIDS['lower'] = model_deaths_AIDS[cols].astype(float).quantile(0.25
 model_deaths_AIDS['upper'] = model_deaths_AIDS[cols].astype(float).quantile(0.75, axis = 1)
 
 # AIDS mortality rates per 1000 person-years
-total_aids_deaths_rate_1000py = (model_deaths_AIDS['median'] / py_summary["mean"] ) * 1000
-total_aids_deaths_rate_1000py_lower = (model_deaths_AIDS['lower'] / py_summary["mean"] ) * 1000
-total_aids_deaths_rate_1000py_upper = (model_deaths_AIDS['upper'] / py_summary["mean"] ) * 1000
+total_aids_deaths_rate_1000py = (model_deaths_AIDS['median'].values / py_summary["mean"].values ) * 1000
+total_aids_deaths_rate_1000py_lower = (model_deaths_AIDS['lower'].values / py_summary["mean"].values ) * 1000
+total_aids_deaths_rate_1000py_upper = (model_deaths_AIDS['upper'].values / py_summary["mean"].values ) * 1000
+
+
+
+
+
 
 # TB deaths
 # select cause of death
@@ -410,6 +428,7 @@ green_cross = mlines.Line2D([], [], linewidth=0, color='g', marker='x',
 orange_ci = mlines.Line2D([], [], color='C1', marker='.',
                           markersize=15, label='DHS')
 plt.legend(handles=[red_line, blue_line, green_cross, orange_ci])
+plt.savefig(make_graph_file_name("HIV_Prevalence_in_Adults"))
 
 plt.show()
 
@@ -429,7 +448,7 @@ make_plot(
     xlim=[2010, 2020],
     ylim=[0, 6],
     xlab="Year",
-    ylab="HIV incidence per 100 population"
+    ylab="HIV incidence per 1000 population"
 )
 
 # MPHIA
@@ -444,6 +463,7 @@ blue_line = mlines.Line2D([], [], color='C0',
 orange_ci = mlines.Line2D([], [], color='C1', marker='.',
                           markersize=15, label='MPHIA')
 plt.legend(handles=[red_line, blue_line, orange_ci])
+plt.savefig(make_graph_file_name("HIV_Incidence_in_Adults"))
 
 plt.show()
 
@@ -478,6 +498,7 @@ blue_line = mlines.Line2D([], [], color='C0',
 green_cross = mlines.Line2D([], [], linewidth=0, color='g', marker='x',
                           markersize=7, label='MPHIA')
 plt.legend(handles=[red_line, blue_line, green_cross])
+plt.savefig(make_graph_file_name("HIV_Prevalence_in_Children"))
 
 plt.show()
 
@@ -490,6 +511,8 @@ make_plot(
     model_low=model_hiv_child_inc['lower'] * 100,
     model_high=model_hiv_child_inc['upper'] * 100,
 )
+plt.savefig(make_graph_file_name("HIV_Incidence_in_Children"))
+
 plt.show()
 
 
@@ -502,6 +525,8 @@ make_plot(
     model_low=model_hiv_fsw_prev['lower'] * 100,
     model_high=model_hiv_fsw_prev['upper'] * 100,
 )
+plt.savefig(make_graph_file_name("HIV_Prevalence_FSW"))
+
 plt.show()
 
 
@@ -519,6 +544,8 @@ make_plot(
     data_low=data_tb_who['incidence_per_100k_low'],
     data_high=data_tb_who['incidence_per_100k_high']
 )
+plt.savefig(make_graph_file_name("TB_Incidence"))
+
 plt.show()
 
 
@@ -536,6 +563,8 @@ make_plot(
 plt.errorbar(model_tb_latent.index[4], data_tb_latent_estimate,
              yerr=[[data_tb_latent_yerr[0]], [data_tb_latent_yerr[1]]], fmt='o')
 plt.legend(['Model', 'Houben & Dodd'])
+plt.savefig(make_graph_file_name("Latent_TB_Prevalence"))
+
 plt.show()
 
 # ---------------------------------------------------------------------- #
@@ -552,6 +581,7 @@ make_plot(
 plt.errorbar(model_tb_mdr.index[7], 0.0075,
              yerr=[[0.0059], [0.0105]], fmt='o')
 plt.legend(['TLO', 'WHO'])
+plt.savefig(make_graph_file_name("Proportion_TB_Cases_MDR"))
 
 plt.show()
 
@@ -569,6 +599,7 @@ make_plot(
     data_low=data_hiv_unaids_deaths['AIDS_mortality_per_1000_lower'],
     data_high=data_hiv_unaids_deaths['AIDS_mortality_per_1000_upper']
 )
+plt.savefig(make_graph_file_name("AIDS_mortality"))
 
 plt.show()
 
@@ -586,6 +617,7 @@ make_plot(
     data_low=data_tb_who['mortality_tb_excl_hiv_per_100k_low'],
     data_high=data_tb_who['mortality_tb_excl_hiv_per_100k_high']
 )
+plt.savefig(make_graph_file_name("TB_mortality"))
 
 plt.show()
 
