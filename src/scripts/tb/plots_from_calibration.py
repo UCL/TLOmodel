@@ -361,16 +361,31 @@ total_aids_deaths_rate_1000py_lower = (model_deaths_AIDS['lower'].values / py_su
 total_aids_deaths_rate_1000py_upper = (model_deaths_AIDS['upper'].values / py_summary["mean"].values ) * 1000
 
 
-
-
-
-
 # TB deaths
 # select cause of death
 tmp = results_deaths.loc[(results_deaths.cause == "TB")]
-tmp = tmp.set_index('year')
+# rename columns
+run_columns = ['draw'+str(y) + 'run'+str(x) for y in range(0, info["number_of_draws"]) for x in range(0,info["runs_per_draw"]) ]
+base_columns = ['year', 'cause']
+base_columns.extend(run_columns)
+tmp.columns = base_columns
+
+# add in any missing years
+year_series = pd.DataFrame(model_hiv_adult_prev.index)  # some years missing from TB deaths outputs
+
+# fill with zeros
+tmp2 = pd.merge(left=year_series, right=tmp, left_on="date", right_on="year", how="left")
+tmp2 = tmp2.fillna(0)
+
 # select draw
-model_deaths_TB = tmp.loc[:, ("draw" == 0)].copy()  # selects only columns for draw=0 (removes year/cause)
+draw_name = str('draw'+str(draw))
+model_deaths_TB = tmp2.loc[:, tmp2.columns.str.contains(draw_name)]
+
+# join year and cause back to df - needed for groupby
+frames = [tmp2["date"], model_deaths_TB]
+model_deaths_TB = pd.concat(frames, axis=1)
+
+model_deaths_TB = model_deaths_TB.set_index('date')
 
 # double check all columns are float64 or quantile argument will fail
 cols = [col for col in model_deaths_TB.columns if model_deaths_TB[col].dtype == 'float64']
@@ -379,9 +394,9 @@ model_deaths_TB['lower'] = model_deaths_TB[cols].astype(float).quantile(0.25, ax
 model_deaths_TB['upper'] = model_deaths_TB[cols].astype(float).quantile(0.75, axis = 1)
 
 # TB mortality rates per 100k person-years
-tot_tb_non_hiv_deaths_rate_100kpy = (model_deaths_TB['median'] / py_summary["mean"]) * 100000
-tot_tb_non_hiv_deaths_rate_100kpy_lower = (model_deaths_TB['lower'] / py_summary["mean"]) * 100000
-tot_tb_non_hiv_deaths_rate_100kpy_upper = (model_deaths_TB['upper'] / py_summary["mean"]) * 100000
+tot_tb_non_hiv_deaths_rate_100kpy = (model_deaths_TB['median'].values / py_summary["mean"].values) * 100000
+tot_tb_non_hiv_deaths_rate_100kpy_lower = (model_deaths_TB['lower'].values / py_summary["mean"].values) * 100000
+tot_tb_non_hiv_deaths_rate_100kpy_upper = (model_deaths_TB['upper'].values / py_summary["mean"].values) * 100000
 
 
 # %% make plots
