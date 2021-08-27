@@ -29,7 +29,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2017, 1, 1)
 popsize = 1000
 
 # set up the logging file
@@ -128,6 +128,16 @@ data_hiv_unaids_deaths = pd.read_excel(xls, sheet_name='unaids_mortality_dalys20
 data_hiv_unaids_deaths.index = pd.to_datetime(data_hiv_unaids_deaths['year'], format='%Y')
 data_hiv_unaids_deaths = data_hiv_unaids_deaths.drop(columns=['year'])
 
+# HIV UNAIDS data
+data_hiv_unaids_inc = pd.read_excel(xls, sheet_name='calibration_from_aids_info')
+data_hiv_unaids_inc.index = pd.to_datetime(data_hiv_unaids_inc['year'], format='%Y')
+data_hiv_unaids_inc = data_hiv_unaids_inc.drop(columns=['year'])
+
+# HIV UNAIDS data
+data_hiv_unaids_pmtct = pd.read_excel(xls, sheet_name='unaids_pmtct2021')
+data_hiv_unaids_pmtct.index = pd.to_datetime(data_hiv_unaids_pmtct['year'], format='%Y')
+data_hiv_unaids_pmtct = data_hiv_unaids_pmtct.drop(columns=['year'])
+
 # AIDSinfo (UNAIDS)
 data_hiv_aidsinfo = pd.read_excel(xls, sheet_name='children0_14_prev_AIDSinfo')
 data_hiv_aidsinfo.index = pd.to_datetime(data_hiv_aidsinfo['year'], format='%Y')
@@ -137,6 +147,12 @@ data_hiv_aidsinfo = data_hiv_aidsinfo.drop(columns=['year'])
 data_hiv_program = pd.read_excel(xls, sheet_name='unaids_program_perf')
 data_hiv_program.index = pd.to_datetime(data_hiv_program['year'], format='%Y')
 data_hiv_program = data_hiv_program.drop(columns=['year'])
+
+# unaids mortality
+data_hiv_mortality = pd.read_excel(xls, sheet_name='unaids_mortality')
+data_hiv_mortality.index = pd.to_datetime(data_hiv_mortality['year'], format='%Y')
+data_hiv_mortality = data_hiv_mortality.drop(columns=['year'])
+
 
 # MPHIA HIV data - age-structured
 data_hiv_mphia_inc = pd.read_excel(xls, sheet_name='MPHIA_incidence2015')
@@ -148,6 +164,15 @@ data_hiv_mphia_inc_upper = data_hiv_mphia_inc.loc[
              (data_hiv_mphia_inc.age == "15-49"), "total_percent_annual_incidence_upper"].values[0]
 data_hiv_mphia_inc_yerr = [abs(data_hiv_mphia_inc_lower - data_hiv_mphia_inc_estimate),
                            abs(data_hiv_mphia_inc_upper - data_hiv_mphia_inc_estimate)]
+
+data_hiv_mphia_inc_estimate_women = data_hiv_mphia_inc.loc[
+             (data_hiv_mphia_inc.age == "15-49"), "females percent annual incidence"].values[0]
+data_hiv_mphia_inc_lower_women = data_hiv_mphia_inc.loc[
+             (data_hiv_mphia_inc.age == "15-49"), "females percent annual incidence lower"].values[0]
+data_hiv_mphia_inc_upper_women = data_hiv_mphia_inc.loc[
+             (data_hiv_mphia_inc.age == "15-49"), "females percent annual incidence upper"].values[0]
+data_hiv_mphia_inc_yerr_women = [abs(data_hiv_mphia_inc_lower_women - data_hiv_mphia_inc_estimate_women),
+                           abs(data_hiv_mphia_inc_upper_women - data_hiv_mphia_inc_estimate_women)]
 
 data_hiv_mphia_prev = pd.read_excel(xls, sheet_name='MPHIA_prevalence_art2015')
 
@@ -162,7 +187,6 @@ data_hiv_moh_tests = data_hiv_moh_tests.drop(columns=['year'])
 # MoH HIV ART data
 # todo this is quarterly
 data_hiv_moh_art = pd.read_excel(xls, sheet_name='MoH_number_art')
-
 
 
 # ---------------------------------------------------------------------- #
@@ -192,7 +216,7 @@ py.index = pd.to_datetime(years, format='%Y')
 # %%: DISEASE BURDEN
 # ---------------------------------------------------------------------- #
 
-# ----------------------------- HIV -------------------------------------- #
+# ----------------------------- HIV PREVALENCE ------------------------- #
 
 prev_and_inc_over_time = output['tlo.methods.hiv'][
     'summary_inc_and_prev_for_adults_and_children_and_fsw']
@@ -200,7 +224,7 @@ prev_and_inc_over_time = prev_and_inc_over_time.set_index('date')
 
 # HIV - prevalence among in adults aged 15+
 make_plot(
-    title_str="HIV Prevalence in Adults Aged 15+ (%)",
+    title_str="HIV Prevalence in Adults (15+ years)",
     model=prev_and_inc_over_time['hiv_prev_adult_15plus'] * 100,
     data_mid=data_hiv_unaids['prevalence_age15plus'],
     data_low=data_hiv_unaids['prevalence_age15plus_lower'],
@@ -240,12 +264,82 @@ plt.legend(handles=[red_line, blue_line, green_cross, orange_ci])
 plt.show()
 plt.savefig(outputpath / ("HIV_Prevalence_Adults" + datestamp + ".pdf"), format='pdf')
 
+# ---------------------------------------------------------------------- #
+
+# HIV Prevalence Children
+make_plot(
+    title_str="HIV Prevalence in Children (0-14 years)",
+    model=prev_and_inc_over_time['hiv_prev_child'] * 100,
+    data_mid=data_hiv_aidsinfo['prevalence_0_14'] * 100,
+    data_low=data_hiv_aidsinfo['prevalence_0_14_lower'] * 100,
+    data_high=data_hiv_aidsinfo['prevalence_0_14_upper'] * 100
+)
+# MPHIA
+plt.plot(prev_and_inc_over_time.index[6], data_hiv_mphia_prev.loc[
+    data_hiv_mphia_prev.age == "Total 0-14", "total percent hiv positive"].values[0], 'gx')
+
+# handles for legend
+red_line = mlines.Line2D([], [], color='C3',
+                         markersize=15, label='TLO')
+blue_line = mlines.Line2D([], [], color='C0',
+                          markersize=15, label='UNAIDS')
+green_cross = mlines.Line2D([], [], linewidth=0, color='g', marker='x',
+                          markersize=7, label='MPHIA')
+plt.legend(handles=[red_line, blue_line, green_cross])
+
+plt.xlabel("Year")
+plt.ylabel("Prevalence (%)")
+
+plt.show()
+plt.savefig(outputpath / ("HIV_Prevalence_Children" + datestamp + ".pdf"), format='pdf')
+
 
 # ---------------------------------------------------------------------- #
 
+# HIV Prevalence Among Women of a Reproductive Age
+make_plot(
+    title_str="HIV Prevalence in Women of a Reproductive Age (15-49 years)",
+    model=prev_and_inc_over_time['hiv_prev_women_reproductive_age'] * 100,
+)
+
+# MPHIA
+plt.plot(prev_and_inc_over_time.index[6], data_hiv_mphia_prev.loc[
+    data_hiv_mphia_prev.age == "Total 15-49", "females percent hiv positive"].values[0], 'gx')
+
+# handles for legend
+red_line = mlines.Line2D([], [], color='C3',
+                         markersize=15, label='TLO')
+green_cross = mlines.Line2D([], [], linewidth=0, color='g', marker='x',
+                          markersize=7, label='MPHIA')
+plt.legend(handles=[red_line, green_cross])
+
+plt.xlabel("Year")
+plt.ylabel("Prevalence (%)")
+
+plt.show()
+plt.savefig(outputpath / ("HIV_Prevalence_Women_of_a_Reproductive_Age" + datestamp + ".pdf"), format='pdf')
+
+# ---------------------------------------------------------------------- #
+
+# HIV prevalence Among Pregnant and Breastfeeding Women:
+make_plot(
+    title_str="HIV Prevalence in Pregnant and Breastfeeding Women",
+    model=prev_and_inc_over_time['hiv_prev_preg_and_bf'] *100,
+)
+
+plt.xlabel("Year")
+plt.ylabel("Prevalence (%)")
+
+plt.legend(['TLO'])
+plt.show()
+plt.savefig(outputpath / ("HIV_Prevalence_Pregnant_and_Breastfeeding_Women" + datestamp + ".pdf"), format='pdf')
+
+
+# ----------------------------- HIV INCIDENCE ------------------------- #
+
 # HIV Incidence 15-49
 make_plot(
-    title_str="HIV Incidence in Adults (15-49) (per 100 pyar)",
+    title_str="HIV Incidence in Adults (15+ years)",
     model=prev_and_inc_over_time['hiv_adult_inc_1549'] * 100,
     data_mid=data_hiv_unaids['incidence_per_1000'] / 10,
     data_low=data_hiv_unaids['incidence_per_1000_lower'] / 10,
@@ -265,83 +359,81 @@ orange_ci = mlines.Line2D([], [], color='C1', marker='.',
                           markersize=15, label='MPHIA')
 plt.legend(handles=[red_line, blue_line, orange_ci])
 
+plt.xlabel("Year")
+plt.ylabel("Incidence (per 100 pyar)")
+
 plt.show()
 plt.savefig(outputpath / ("HIV_Incidence_Adults" + datestamp + ".pdf"), format='pdf')
 
+
 # ---------------------------------------------------------------------- #
 
-# HIV Prevalence Children
+# Incidence Children:
 make_plot(
-    title_str="HIV Prevalence in Children (0-14) (%)",
-    model=prev_and_inc_over_time['hiv_prev_child'] * 100,
-    data_mid=data_hiv_aidsinfo['prevalence_0_14'] * 100,
-    data_low=data_hiv_aidsinfo['prevalence_0_14_lower'] * 100,
-    data_high=data_hiv_aidsinfo['prevalence_0_14_upper'] * 100
+    title_str="HIV Incidence in Children (0-14 years)",
+    model=prev_and_inc_over_time['hiv_child_inc']*100,
+    data_mid=data_hiv_unaids_inc['inc_0_14_per1000']
 )
-# MPHIA
-plt.plot(prev_and_inc_over_time.index[6], data_hiv_mphia_prev.loc[
-    data_hiv_mphia_prev.age == "Total 0-14", "total percent hiv positive"].values[0], 'gx')
+
+plt.xlabel("Year")
+plt.ylabel("Incidence (per 100 pyar)")
+
+plt.legend(['TLO', 'UNAIDS'])
+plt.show()
+plt.savefig(outputpath / ("HIV_Incidence_Children" + datestamp + ".pdf"), format='pdf')
+
+# ---------------------------------------------------------------------- #
+
+# Incidence Women of a Reproductive Age:
+make_plot(
+    title_str="HIV Incidence in Women of a Reproductive Age (15-49 years)",
+    model=prev_and_inc_over_time['hiv_women_reproductive_age_inc']*100,
+)
+
+plt.errorbar(prev_and_inc_over_time.index[6], data_hiv_mphia_inc_estimate_women,
+             yerr=[[data_hiv_mphia_inc_yerr_women[0]], [data_hiv_mphia_inc_yerr_women[1]]], fmt='o')
 
 # handles for legend
 red_line = mlines.Line2D([], [], color='C3',
                          markersize=15, label='TLO')
-blue_line = mlines.Line2D([], [], color='C0',
-                          markersize=15, label='UNAIDS')
-green_cross = mlines.Line2D([], [], linewidth=0, color='g', marker='x',
-                          markersize=7, label='MPHIA')
-plt.legend(handles=[red_line, blue_line, green_cross])
+orange_ci = mlines.Line2D([], [], color='C0', marker='.',
+                          markersize=15, label='MPHIA')
+plt.legend(handles=[red_line, orange_ci])
+
+plt.xlabel("Year")
+plt.ylabel("Incidence (per 100 pyar)")
 
 plt.show()
-plt.savefig(outputpath / ("HIV_Prevalence_Children" + datestamp + ".pdf"), format='pdf')
-
+plt.savefig(outputpath / ("HIV_Incidence_Women_of_a_Reproductive_Age" + datestamp + ".pdf"), format='pdf')
 
 # ---------------------------------------------------------------------- #
-
-# HIV Incidence Children
-#make_plot(
-#    title_str="HIV Incidence in Children (0-14) (per 100 pyar)",
-#    model=prev_and_inc_over_time['hiv_child_inc'] * 100,
-#    data_mid=data['inc_0_14_per1000'] / 10,
-#)
-#plt.show()
-
-
-# ---------------------------------------------------------------------- #
-
-# HIV prevalence among pregnant women:
-make_plot(
-    title_str="HIV Prevalence among Pregnant Women (%)",
-    model=prev_and_inc_over_time['hiv_prev_preg'] * 100,
-)
-plt.show()
-plt.savefig(outputpath / ("HIV_Prevalence_Pregnant_Women" + datestamp + ".pdf"), format='pdf')
-
-# HIV prevalence among pregnant and breastfeeding women:
-make_plot(
-    title_str="HIV Prevalence among Pregnant and Breastfeeding Women (%)",
-    model=prev_and_inc_over_time['hiv_prev_preg_and_bf'] *100,
-)
-plt.show()
-plt.savefig(outputpath / ("HIV_Prevalence_Pregnant_and_Breastfeeding_Women" + datestamp + ".pdf"), format='pdf')
-
-
-# ---------------------------------------------------------------------- #
-
-# Incidence Pregnant Women:
-make_plot(
-    title_str="HIV Incidence in Pregnant Women (per 100 pyar)",
-    model=prev_and_inc_over_time['hiv_preg_inc']*100,
-)
-plt.show()
-plt.savefig(outputpath / ("HIV_Incidence_Pregnant_Women" + datestamp + ".pdf"), format='pdf')
 
 # Incidence Pregnant and Breastfeeding Women:
 make_plot(
-    title_str="HIV Incidence in Pregnant and Breastfeeding Women (per 100 pyar)",
+    title_str="HIV Incidence in Pregnant and Breastfeeding Women",
     model=prev_and_inc_over_time['hiv_preg_and_bf_inc'] * 100,
 )
+
+plt.xlabel("Year")
+plt.ylabel("Incidence (per 100 pyar)")
+plt.legend(['TLO'])
 plt.show()
 plt.savefig(outputpath / ("HIV_Incidence_Pregnant_and_Breastfeeding_Women" + datestamp + ".pdf"), format='pdf')
+
+# ---------------------------------------------------------------------- #
+
+# Mother to Child Transmission Rate:
+make_plot(
+    title_str="HIV Mother-to-child Transmission Rate",
+    model=prev_and_inc_over_time['mtct'] * 100,
+    data_mid=data_hiv_unaids_pmtct['Final transmission rate including breastfeeding period'],
+)
+
+plt.xlabel("Year")
+plt.ylabel("MTCT Rate")
+plt.legend(['TLO', 'UNAIDS'])
+plt.show()
+plt.savefig(outputpath / ("HIV_MTCT_Rate" + datestamp + ".pdf"), format='pdf')
 # ---------------------------------------------------------------------- #
 # %%: DEATHS
 # ---------------------------------------------------------------------- #
@@ -350,7 +442,7 @@ plt.savefig(outputpath / ("HIV_Incidence_Pregnant_and_Breastfeeding_Women" + dat
 deaths = output['tlo.methods.demography']['death'].copy()  # outputs individual deaths
 deaths = deaths.set_index('date')
 
-# AIDS DEATHS
+# -------------------------Total AIDS Deaths---------------------------- #
 # limit to deaths among aged 15+, include HIV/TB deaths
 keep = ((deaths.age >= 15) & ((deaths.cause == 'AIDS')))
 deaths_AIDS = deaths.loc[keep].copy()
@@ -360,22 +452,89 @@ tot_aids_deaths.index = pd.to_datetime(tot_aids_deaths.index, format='%Y')
 
 
 # aids mortality rates per 1000 person-years
-total_aids_deaths_rate_1000py = (tot_aids_deaths / py) * 100000
+total_aids_deaths_rate_100000py = (tot_aids_deaths / py) * 100000
 
-# ---------------------------------------------------------------------- #
 
-# AIDS deaths (including HIV/TB deaths)
+# TotalAIDS deaths (including HIV/TB deaths)
 make_plot(
-    title_str='Mortality to HIV-AIDS per 1000 capita',
-    model=total_aids_deaths_rate_1000py,
+    title_str='Mortality due to HIV/AIDS in Adults (15+ years)',
+    model=total_aids_deaths_rate_100000py,
     data_mid=data_hiv_unaids_deaths['AIDS_mortality_per_1000'],
     data_low=data_hiv_unaids_deaths['AIDS_mortality_per_1000_lower'],
     data_high=data_hiv_unaids_deaths['AIDS_mortality_per_1000_upper']
 )
 
+plt.xlabel("Year")
+plt.ylabel("Number of deaths due to HIV/AIDS (per 100000)")
+
 plt.legend(['TLO', 'UNAIDS'])
 plt.show()
 
+# -------------------------AIDS Deaths Women (15-49 years) ---------------------------- #
+# limit to deaths among women aged 15-49
+keep_women_15_49 = ((deaths.age.between(15,49)) & (deaths.sex == "F") & ((deaths.cause == 'AIDS')))
+deaths_AIDS_women_15_49 = deaths.loc[keep_women_15_49].copy()
+deaths_AIDS_women_15_49['year'] = deaths_AIDS_women_15_49.index.year
+aids_deaths_women_15_49 = deaths_AIDS_women_15_49.groupby(by=['year']).size()
+aids_deaths_women_15_49.index = pd.to_datetime(aids_deaths_women_15_49.index, format='%Y')
+
+
+# aids mortality rates per 1000 person-years
+aids_deaths_rate_women_15_49_100000py = (aids_deaths_women_15_49 / py) * 100000
+
+
+# TotalAIDS deaths (including HIV/TB deaths)
+make_plot(
+    title_str='Mortality due to HIV/AIDS Women of a Reproductive Age (15-49 years)',
+    model=aids_deaths_rate_women_15_49_100000py,
+)
+
+x_values = data_hiv_mortality.index
+y_values = data_hiv_mortality["aids_related_deaths_women"]
+y_lower = abs(y_values - data_hiv_mortality["aids_related_deaths_women_lower"])
+y_upper = abs(y_values - data_hiv_mortality["aids_related_deaths_women_upper"])
+plt.errorbar(x_values, y_values, yerr=[y_lower, y_upper], ls='none',
+             marker='o', markeredgecolor='C0', markerfacecolor='C0', ecolor="C0")
+
+plt.xlabel("Year")
+plt.ylabel("Number of deaths due to HIV/AIDS (per 100000)")
+
+plt.legend(['TLO', 'UNAIDS'])
+plt.show()
+
+
+# -------------------------AIDS Deaths Children ---------------------------- #
+# limit to deaths among aged less than 15
+keep_children = ((deaths.age < 15) & ((deaths.cause == 'AIDS')))
+deaths_AIDS_children = deaths.loc[keep_children].copy()
+deaths_AIDS_children['year'] = deaths_AIDS_children.index.year
+aids_deaths_children = deaths_AIDS_children.groupby(by=['year']).size()
+aids_deaths_children.index = pd.to_datetime(aids_deaths_children.index, format='%Y')
+
+
+# aids mortality rates per 1000 person-years
+aids_deaths_rate_children_100000py = (aids_deaths_children / py) * 100000
+
+
+# TotalAIDS deaths (including HIV/TB deaths)
+make_plot(
+    title_str='Mortality due to HIV/AIDS in Children (0-14 years)',
+    model=aids_deaths_rate_children_100000py,
+)
+
+x_values = data_hiv_mortality.index
+y_values = data_hiv_mortality["aids_related_deaths_children"]
+y_lower = abs(y_values - data_hiv_mortality["aids_related_deaths_children_lower"])
+y_upper = abs(y_values - data_hiv_mortality["aids_related_deaths_children_upper"])
+plt.errorbar(x_values, y_values, yerr=[y_lower, y_upper], ls='none',
+             marker='o', markeredgecolor='C0', markerfacecolor='C0', ecolor="C0")
+
+plt.xlabel("Year")
+plt.ylabel("Number of deaths due to HIV/AIDS (per 100000)")
+
+plt.legend(['TLO', 'UNAIDS'])
+
+plt.show()
 
 # ---------------------------------------------------------------------- #
 # %%: PROGRAM OUTPUTS
@@ -468,9 +627,13 @@ plt.savefig(outputpath / ("HIV_Percent_on_ART" + datestamp + ".pdf"), format='pd
 
 # PrEP among Pregnant and Breastfeeding Women
 make_plot(
-    title_str="Proportion of Pregnant and Breastfeeding Women That Are On PrEP",
+    title_str="Proportion of Pregnant and Breastfeeding Women On PrEP",
     model=cov_over_time["prop_preg_and_bf_on_prep"]
 )
+
+plt.xlabel("Year")
+plt.ylabel("Proportion of Pregnant and Breastfeeding Women on PrEP (%)")
+plt.legend(['TLO'])
 plt.show()
 plt.savefig(outputpath / ("HIV_PrEP_Among_Pregnant_Women" + datestamp + ".pdf"), format='pdf')
 
