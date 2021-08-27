@@ -135,5 +135,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "65b3dcd31da6c97dd4dfd29d3b842d554d173db6",
+  "github": "https://github.com/UCL/TLOmodel/blob/65b3dcd31da6c97dd4dfd29d3b842d554d173db6/src/scripts/hiv/PrEP_analyses/hiv_prep_baseline_scenario.py"
 }
