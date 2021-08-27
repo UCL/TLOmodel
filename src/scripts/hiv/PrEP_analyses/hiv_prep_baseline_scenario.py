@@ -31,9 +31,8 @@ class TestScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2030, 12, 31)
         self.pop_size = 100000
-        self.number_of_draws = 36
+        self.number_of_draws = 12
         self.runs_per_draw = 5
-
 
     def log_configuration(self):
         return {
@@ -47,7 +46,6 @@ class TestScenario(BaseScenario):
                 'tlo.scenario': logging.INFO
             }
         }
-
 
     def modules(self):
         return [
@@ -65,32 +63,30 @@ class TestScenario(BaseScenario):
             hiv.Hiv(resourcefilepath=self.resources),
         ]
 
-
-
     def draw_parameters(self, draw_number, rng):
-
-        grid = self.make_grid(
-            {
-                'prob_for_prep_selection': np.linspace(start=0, stop=0.6, num=4),
-                'prob_prep_high_adherence': np.linspace(start=0.3, stop=0.5, num=3),
-                'prob_prep_mid_adherence': np.linspace(start=0.1, stop=0.3, num=3),
-            }
-        )
-
-        print(grid)
+        #
+        # grid = self.make_grid(
+        #     {
+        #         'prob_for_prep_selection': np.linspace(start=0, stop=0.6, num=4),
+        #         'prob_prep_high_adherence': np.linspace(start=0.3, stop=0.5, num=3),
+        #         'prob_prep_mid_adherence': np.linspace(start=0.1, stop=0.3, num=3),
+        #     }
+        # )
+        prob_for_prep_selection_list = [0, 0.2, 0.4, 0.6] * 3
+        prob_prep_high_adherence_list = [0.3, 0.4, 0.5] * 4
+        prob_prep_mid_adherence_list = [0.1, 0.2, 0.3] * 4
 
         return {
             'Hiv': {
-                'prob_for_prep_selection': grid['prob_for_prep_selection'][draw_number],
+                'prob_for_prep_selection': prob_for_prep_selection_list[draw_number],
             },
             'Hiv': {
-                'prob_prep_high_adherence': grid['prob_prep_high_adherence'][draw_number],
+                'prob_prep_high_adherence': prob_prep_high_adherence_list[draw_number],
             },
             'Hiv':{
-                'prob_prep_mid_adherence': grid['prob_prep_mid_adherence'][draw_number],
+                'prob_prep_mid_adherence': prob_prep_mid_adherence_list[draw_number],
             }
         }
-
 
 
 if __name__ == '__main__':
