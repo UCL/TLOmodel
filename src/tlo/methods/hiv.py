@@ -589,7 +589,7 @@ class Hiv(Module):
         sim.schedule_event(HivRegularPollingEvent(self), sim.date)
 
         # 2) Schedule the Logging Event
-        sim.schedule_event(HivLoggingEvent(self), sim.date)
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=365.25))
 
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
@@ -641,6 +641,17 @@ class Hiv(Module):
 
         # Schedule the AIDS death events for those who have got AIDS already
         for person_id in has_aids_idx:
+
+            # schedule a HSI_Test_and_Refer otherwise initial AIDS rates and deaths are far too high
+            date_test = self.sim.date + \
+                        pd.DateOffset(days=self.rng.randint(0, 365))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self.module),
+                priority=1,
+                topen=date_test,
+                tclose=self.sim.date + pd.DateOffset(days=365)
+            )
+
             date_aids_death = self.sim.date + self.get_time_from_aids_to_death()  # (assumes AIDS onset on this day)
             sim.schedule_event(
                 HivAidsDeathEvent(person_id=person_id, module=self, cause=self),

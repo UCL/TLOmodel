@@ -340,6 +340,9 @@ class Tb(Module):
         'ipt_start_date': Parameter(
             Types.INT, 'year from which IPT is available for paediatric contacts of diagnosed active TB cases'
         ),
+        'prop_presumptive_mdr_has_xpert': Parameter(
+            Types.REAL, 'probability that a presumptive mdr case will have access to xpert test'
+        )
     }
 
     def read_parameters(self, data_folder):
@@ -524,30 +527,30 @@ class Tb(Module):
 
         df.loc[idx_new_latent_mdr, 'tb_strain'] = 'mdr'
 
-    # def baseline_active(self, population):
-    #     """
-    #     sample from the baseline population to assign active tb infections
-    #     using 2010 incidence estimates
-    #     no differences in baseline active tb by age/sex
-    #     """
-    #
-    #     df = population.props
-    #     now = self.sim.date
-    #     p = self.parameters
-    #
-    #     eligible_for_active_tb = df.loc[df.is_alive &
-    #                                     (df.tb_inf == 'uninfected')].index
-    #
-    #     sample_active_tb = self.rng.random_sample(len(eligible_for_active_tb)) < (p['incidence_active_tb_2010_per100k'] / 100000)
-    #     active_tb_idx = eligible_for_active_tb[sample_active_tb]
-    #
-    #     # schedule for time now up to 1 year
-    #     for person_id in active_tb_idx:
-    #         date_progression = now + \
-    #                            pd.DateOffset(days=self.rng.randint(0, 365))
-    #         self.sim.schedule_event(
-    #             TbActiveEvent(self, person_id), date_progression
-    #         )
+    def baseline_active(self, population):
+        """
+        sample from the baseline population to assign active tb infections
+        using 2010 incidence estimates
+        no differences in baseline active tb by age/sex
+        """
+
+        df = population.props
+        now = self.sim.date
+        p = self.parameters
+
+        eligible_for_active_tb = df.loc[df.is_alive &
+                                        (df.tb_inf == 'uninfected')].index
+
+        sample_active_tb = self.rng.random_sample(len(eligible_for_active_tb)) < (p['incidence_active_tb_2010_per100k'] / 100000)
+        active_tb_idx = eligible_for_active_tb[sample_active_tb]
+
+        # schedule for time now up to 1 year
+        for person_id in active_tb_idx:
+            date_progression = now + \
+                               pd.DateOffset(days=self.rng.randint(0, 365))
+            self.sim.schedule_event(
+                TbActiveEvent(self, person_id), date_progression
+            )
 
     def progression_to_active(self, population):
         # from the new latent infections, select and schedule progression to active disease
@@ -720,13 +723,13 @@ class Tb(Module):
         """
 
         # 1) Regular events
-        sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(days=365.25))
         sim.schedule_event(TbEndTreatmentEvent(self), sim.date + DateOffset(days=30.5))
         sim.schedule_event(TbRelapseEvent(self), sim.date + DateOffset(months=1))
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
 
         # 2) Logging
-        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=365.25))
 
         # 3) -------- Define the DxTests and get the consumables required --------
 
@@ -1530,12 +1533,19 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 )
 
             # previously diagnosed/treated or hiv+ -> xpert
+            # assume ~60% have access to Xpert, some data in 2019 NTP report but not exact proportions
+            # todo need expert input on this
             elif person['tb_ever_treated'] or person['hv_inf']:
-                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'LabMolec': 1})
-                test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                    dx_tests_to_run='tb_xpert_test',
-                    hsi_event=self
-                )
+
+                if self.module.rng.random_sample() < p['prop_presumptive_mdr_has_xpert']:
+
+                    ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'LabMolec': 1})
+                    test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+                        dx_tests_to_run='tb_xpert_test',
+                        hsi_event=self
+                    )
+                else:
+                    test_result = None
 
                 if test_result and (person['tb_strain'] == 'mdr'):
                     df.at[person_id, 'tb_diagnosed_mdr'] = True
