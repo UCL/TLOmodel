@@ -36,7 +36,7 @@ xls_tb = pd.ExcelFile(resourcefilepath / 'ResourceFile_TB.xlsx')
 
 data_tb_who = pd.read_excel(xls_tb, sheet_name='WHO_activeTB2020')
 data_tb_who = data_tb_who.loc[(data_tb_who.year >= 2010)]  # include only years post-2010
-data_tb_who.index = pd.to_datetime(data_tb_who['year'], format='%Y')
+data_tb_who.index = data_tb_who['year']
 data_tb_who = data_tb_who.drop(columns=['year'])
 
 # TB latent data (Houben & Dodd 2016)
@@ -49,7 +49,7 @@ data_tb_latent_yerr = [data_tb_latent_lower, data_tb_latent_upper]
 
 # TB treatment coverage
 data_tb_ntp = pd.read_excel(xls_tb, sheet_name='NTP2019')
-data_tb_ntp.index = pd.to_datetime(data_tb_ntp['year'], format='%Y')
+data_tb_ntp.index = data_tb_ntp['year']
 data_tb_ntp = data_tb_ntp.drop(columns=['year'])
 
 # HIV resourcefile
@@ -58,22 +58,21 @@ xls = pd.ExcelFile(resourcefilepath / 'ResourceFile_HIV.xlsx')
 # HIV UNAIDS data
 data_hiv_unaids = pd.read_excel(xls, sheet_name='unaids_infections_art2021')
 data_hiv_unaids.index = data_hiv_unaids['year']
-# data_hiv_unaids.index = pd.to_datetime(data_hiv_unaids['year'], format='%Y')
 data_hiv_unaids = data_hiv_unaids.drop(columns=['year'])
 
 # HIV UNAIDS data
 data_hiv_unaids_deaths = pd.read_excel(xls, sheet_name='unaids_mortality_dalys2021')
-data_hiv_unaids_deaths.index = pd.to_datetime(data_hiv_unaids_deaths['year'], format='%Y')
+data_hiv_unaids_deaths.index = data_hiv_unaids_deaths['year']
 data_hiv_unaids_deaths = data_hiv_unaids_deaths.drop(columns=['year'])
 
 # AIDSinfo (UNAIDS)
 data_hiv_aidsinfo = pd.read_excel(xls, sheet_name='children0_14_prev_AIDSinfo')
-data_hiv_aidsinfo.index = pd.to_datetime(data_hiv_aidsinfo['year'], format='%Y')
+data_hiv_aidsinfo.index = data_hiv_aidsinfo['year']
 data_hiv_aidsinfo = data_hiv_aidsinfo.drop(columns=['year'])
 
 # unaids program performance
 data_hiv_program = pd.read_excel(xls, sheet_name='unaids_program_perf')
-data_hiv_program.index = pd.to_datetime(data_hiv_program['year'], format='%Y')
+data_hiv_program.index = data_hiv_program['year']
 data_hiv_program = data_hiv_program.drop(columns=['year'])
 
 # MPHIA HIV data - age-structured
@@ -94,7 +93,7 @@ data_hiv_dhs_prev = pd.read_excel(xls, sheet_name='DHS_prevalence')
 
 # MoH HIV testing data
 data_hiv_moh_tests = pd.read_excel(xls, sheet_name='MoH_numbers_tests')
-data_hiv_moh_tests.index = pd.to_datetime(data_hiv_moh_tests['year'], format='%Y')
+data_hiv_moh_tests.index = data_hiv_moh_tests['year']
 data_hiv_moh_tests = data_hiv_moh_tests.drop(columns=['year'])
 
 # MoH HIV ART data
@@ -355,8 +354,6 @@ def make_plot(
     data_mid=None,
     data_low=None,
     data_high=None,
-    xlim=None,
-    ylim=None,
     xlab=None,
     ylab=None,
     title_str=None
@@ -383,12 +380,6 @@ def make_plot(
                         color='C0',
                         alpha=0.2)
 
-    # if xlim is not None:
-    #     ax.set_xlim(xlim)
-
-    if ylim is not None:
-        ax.set_xlim(ylim)
-
     if xlab is not None:
         ax.set_xlabel(xlab)
 
@@ -397,7 +388,7 @@ def make_plot(
 
     plt.title(title_str)
     plt.legend(['Model', data_name])
-    plt.gca().set_ylim(bottom=0)
+    # plt.gca().set_ylim(bottom=0)
     # plt.savefig(outputspath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
 
 
@@ -414,10 +405,6 @@ make_plot(
     data_mid=data_hiv_unaids['prevalence_age15_49'] * 100,
     data_low=data_hiv_unaids['prevalence_age15_49_lower'] * 100,
     data_high=data_hiv_unaids['prevalence_age15_49_upper'] * 100,
-    # xlim=[2010, 2020],
-    # ylim=[0, 15],
-    xlab="Year",
-    ylab="HIV prevalence (%)"
 )
 
 # data: MPHIA
@@ -436,7 +423,8 @@ plt.errorbar(x_values, y_values,
              yerr=[y_lower, y_upper], fmt='ko')
 
 plt.ylim((0, 15))
-
+plt.xlabel = "Year",
+plt.ylabel = "HIV prevalence (%)"
 
 # handles for legend
 red_line = mlines.Line2D([], [], color='C3',
@@ -448,7 +436,7 @@ green_cross = mlines.Line2D([], [], linewidth=0, color='g', marker='x',
 orange_ci = mlines.Line2D([], [], color='black', marker='.',
                           markersize=15, label='DHS')
 plt.legend(handles=[red_line, blue_line, green_cross, orange_ci])
-# plt.savefig(make_graph_file_name("HIV_Prevalence_in_Adults"))
+plt.savefig(make_graph_file_name("HIV_Prevalence_in_Adults"))
 
 plt.show()
 
@@ -465,24 +453,29 @@ make_plot(
     data_mid=data_hiv_unaids['incidence_per_1000'] / 10,
     data_low=data_hiv_unaids['incidence_per_1000_lower'] / 10,
     data_high=data_hiv_unaids['incidence_per_1000_upper'] / 10,
-    xlim=[2010, 2020],
-    ylim=[0, 6],
-    xlab="Year",
-    ylab="HIV incidence per 1000 population"
 )
+
+plt.xlabel = "Year",
+plt.ylabel = "HIV incidence per 1000 population"
+
 
 # MPHIA
 plt.errorbar(model_hiv_adult_inc.index[6], data_hiv_mphia_inc_estimate,
-             yerr=[[data_hiv_mphia_inc_yerr[0]], [data_hiv_mphia_inc_yerr[1]]], fmt='o')
+             yerr=[[data_hiv_mphia_inc_yerr[0]], [data_hiv_mphia_inc_yerr[1]]], fmt='gx')
 
+
+plt.ylim(0, 3)
+plt.xlim(2010, 2020)
+#
 # handles for legend
 red_line = mlines.Line2D([], [], color='C3',
                          markersize=15, label='TLO')
 blue_line = mlines.Line2D([], [], color='C0',
                           markersize=15, label='UNAIDS')
-orange_ci = mlines.Line2D([], [], color='C1', marker='.',
-                          markersize=15, label='MPHIA')
+orange_ci = mlines.Line2D([], [], color='green', marker='x',
+                          markersize=8, label='MPHIA')
 plt.legend(handles=[red_line, blue_line, orange_ci])
+
 plt.savefig(make_graph_file_name("HIV_Incidence_in_Adults"))
 
 plt.show()
