@@ -600,3 +600,50 @@ def test_non_mutually_exclusive_conditions():
         .when('< 100', 10.)
     )
     assert not np.allclose(lm.predict(EXAMPLE_DF), lm_mutex.predict(EXAMPLE_DF))
+
+
+def test_exhaustive_conditions():
+    """Check that declaring conditions exhaustive gives consistent output"""
+    lm = LinearModel(
+        LinearModelType.MULTIPLICATIVE,
+        1.0,
+        Predictor('age_years', conditions_are_exhaustive=False)
+        .when('< 10', 1.)
+        .when('.between(10, 19)', 2.)
+        .when('.between(20, 29)', 3.)
+        .when('.between(30, 39)', 4.)
+        .when('>= 40', 5.)
+    )
+    lm_exhaustive = LinearModel(
+        LinearModelType.MULTIPLICATIVE,
+        1.0,
+        Predictor('age_years', conditions_are_exhaustive=True)
+        .when('< 10', 1.)
+        .when('.between(10, 19)', 2.)
+        .when('.between(20, 29)', 3.)
+        .when('.between(30, 39)', 4.)
+        .when('>= 40', 5.)
+    )
+    assert np.allclose(lm.predict(EXAMPLE_DF), lm_exhaustive.predict(EXAMPLE_DF))
+
+
+def test_non_exhaustive_conditions():
+    """Check that declaring conditions exhaustive when not gives wrong output"""
+    lm = LinearModel(
+        LinearModelType.MULTIPLICATIVE,
+        1.0,
+        Predictor('age_years', conditions_are_exhaustive=False)
+        .when('.between(10, 19)', 2.)
+        .when('.between(20, 29)', 3.)
+        .when('.between(30, 39)', 4.)
+    )
+    # Declare conditions to be exhaustive even though in reality they are not
+    lm_exhaustive = LinearModel(
+        LinearModelType.MULTIPLICATIVE,
+        1.0,
+        Predictor('age_years', conditions_are_exhaustive=True)
+        .when('.between(10, 19)', 2.)
+        .when('.between(20, 29)', 3.)
+        .when('.between(30, 39)', 4.)
+    )
+    assert not np.allclose(lm.predict(EXAMPLE_DF), lm_exhaustive.predict(EXAMPLE_DF))
