@@ -283,9 +283,6 @@ class CardioMetabolicDisorders(Module):
         :return: a linear model
         """
 
-        # use temporary empty dict to save results
-        lms_dict = dict()
-
         # load parameters for correct condition/event
         p = self.parameters[f'{condition}_{lm_type}']
 
@@ -293,7 +290,7 @@ class CardioMetabolicDisorders(Module):
         # LinearModel expects native python types - if it's numpy type, convert it
         baseline_annual_probability = float(baseline_annual_probability)
 
-        lms_dict[condition] = LinearModel(
+        linear_model = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             baseline_annual_probability,
             Predictor('sex').when('M', p['rr_male']),
@@ -379,7 +376,7 @@ class CardioMetabolicDisorders(Module):
             # Predictor('nc_cancers').when(True, p['rr_cancers'])
         )
 
-        return lms_dict[condition]
+        return linear_model
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -462,15 +459,6 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                 self.sim.date + DateOffset(days=self.module.rng.randint(ndays))
             )
 
-        def lmpredict_rtn_a_series(lm, df):
-            """wrapper to call predict on a linear model, guranteeing that a pd.Series is returned even if the length
-            of the df is 1."""
-            res = lm.predict(df, rng)
-            if type(res) == pd.Series:
-                return res
-            else:
-                return pd.Series(index=df.index, data=[res])
-
         current_incidence_df = pd.DataFrame(index=self.module.age_index, columns=self.module.conditions)
 
         # Determine onset/removal of conditions
@@ -478,7 +466,9 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
 
             # onset:
             eligible_population = df.is_alive & ~df[f'nc_{condition}']
-            acquires_condition = lmpredict_rtn_a_series(self.module.lms_onset[condition], df.loc[eligible_population])
+            acquires_condition = self.module.lms_onset[condition].predict(
+                df.loc[eligible_population], rng, squeeze_single_row_output=False
+            )
             idx_acquires_condition = acquires_condition[acquires_condition].index
             df.loc[idx_acquires_condition, f'nc_{condition}'] = True
 
@@ -489,7 +479,9 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
 
             # removal:
             eligible_population = df.is_alive & df[f'nc_{condition}']
-            loses_condition = lmpredict_rtn_a_series(self.module.lms_removal[condition], df.loc[eligible_population])
+            loses_condition = self.module.lms_removal[condition].predict(
+                df.loc[eligible_population], rng, squeeze_single_row_output=False
+            )
             idx_loses_condition = loses_condition[loses_condition].index
             df.loc[idx_loses_condition, f'nc_{condition}'] = False
 
