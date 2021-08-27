@@ -8,6 +8,8 @@
       "draw_seed": 662124363,
       "parameters": {
         "Hiv": {
+          "prob_for_prep_selection": 0,
+          "prob_prep_high_adherence": 0.3,
           "prob_prep_mid_adherence": 0.1
         }
       }
@@ -17,6 +19,8 @@
       "draw_seed": 1916507803,
       "parameters": {
         "Hiv": {
+          "prob_for_prep_selection": 0.2,
+          "prob_prep_high_adherence": 0.4,
           "prob_prep_mid_adherence": 0.2
         }
       }
@@ -26,6 +30,8 @@
       "draw_seed": 1031005574,
       "parameters": {
         "Hiv": {
+          "prob_for_prep_selection": 0.4,
+          "prob_prep_high_adherence": 0.5,
           "prob_prep_mid_adherence": 0.3
         }
       }
@@ -35,6 +41,8 @@
       "draw_seed": 1603685629,
       "parameters": {
         "Hiv": {
+          "prob_for_prep_selection": 0.6,
+          "prob_prep_high_adherence": 0.3,
           "prob_prep_mid_adherence": 0.1
         }
       }
@@ -44,6 +52,8 @@
       "draw_seed": 1130929393,
       "parameters": {
         "Hiv": {
+          "prob_for_prep_selection": 0,
+          "prob_prep_high_adherence": 0.4,
           "prob_prep_mid_adherence": 0.2
         }
       }
@@ -53,6 +63,8 @@
       "draw_seed": 371232386,
       "parameters": {
         "Hiv": {
+          "prob_for_prep_selection": 0.2,
+          "prob_prep_high_adherence": 0.5,
           "prob_prep_mid_adherence": 0.3
         }
       }
@@ -62,6 +74,8 @@
       "draw_seed": 144909571,
       "parameters": {
         "Hiv": {
+          "prob_for_prep_selection": 0.4,
+          "prob_prep_high_adherence": 0.3,
           "prob_prep_mid_adherence": 0.1
         }
       }
@@ -71,6 +85,8 @@
       "draw_seed": 960362435,
       "parameters": {
         "Hiv": {
+          "prob_for_prep_selection": 0.6,
+          "prob_prep_high_adherence": 0.4,
           "prob_prep_mid_adherence": 0.2
         }
       }
@@ -80,6 +96,8 @@
       "draw_seed": 62598988,
       "parameters": {
         "Hiv": {
+          "prob_for_prep_selection": 0,
+          "prob_prep_high_adherence": 0.5,
           "prob_prep_mid_adherence": 0.3
         }
       }
@@ -89,6 +107,8 @@
       "draw_seed": 1505292720,
       "parameters": {
         "Hiv": {
+          "prob_for_prep_selection": 0.2,
+          "prob_prep_high_adherence": 0.3,
           "prob_prep_mid_adherence": 0.1
         }
       }
@@ -98,6 +118,8 @@
       "draw_seed": 1798504726,
       "parameters": {
         "Hiv": {
+          "prob_for_prep_selection": 0.4,
+          "prob_prep_high_adherence": 0.4,
           "prob_prep_mid_adherence": 0.2
         }
       }
@@ -107,222 +129,8 @@
       "draw_seed": 145874993,
       "parameters": {
         "Hiv": {
-          "prob_prep_mid_adherence": 0.3
-        }
-      }
-    },
-    {
-      "draw_number": 12,
-      "draw_seed": 1721057204,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.1
-        }
-      }
-    },
-    {
-      "draw_number": 13,
-      "draw_seed": 1268891525,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.2
-        }
-      }
-    },
-    {
-      "draw_number": 14,
-      "draw_seed": 143543949,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.3
-        }
-      }
-    },
-    {
-      "draw_number": 15,
-      "draw_seed": 354439641,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.1
-        }
-      }
-    },
-    {
-      "draw_number": 16,
-      "draw_seed": 1962582434,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.2
-        }
-      }
-    },
-    {
-      "draw_number": 17,
-      "draw_seed": 970465739,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.3
-        }
-      }
-    },
-    {
-      "draw_number": 18,
-      "draw_seed": 589309558,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.1
-        }
-      }
-    },
-    {
-      "draw_number": 19,
-      "draw_seed": 1601311818,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.2
-        }
-      }
-    },
-    {
-      "draw_number": 20,
-      "draw_seed": 1219033472,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.3
-        }
-      }
-    },
-    {
-      "draw_number": 21,
-      "draw_seed": 755903861,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.1
-        }
-      }
-    },
-    {
-      "draw_number": 22,
-      "draw_seed": 455623784,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.2
-        }
-      }
-    },
-    {
-      "draw_number": 23,
-      "draw_seed": 2077248716,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.3
-        }
-      }
-    },
-    {
-      "draw_number": 24,
-      "draw_seed": 1907932429,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.1
-        }
-      }
-    },
-    {
-      "draw_number": 25,
-      "draw_seed": 2068156498,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.2
-        }
-      }
-    },
-    {
-      "draw_number": 26,
-      "draw_seed": 1514987609,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.3
-        }
-      }
-    },
-    {
-      "draw_number": 27,
-      "draw_seed": 1771840803,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.1
-        }
-      }
-    },
-    {
-      "draw_number": 28,
-      "draw_seed": 9703358,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.2
-        }
-      }
-    },
-    {
-      "draw_number": 29,
-      "draw_seed": 815512676,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.3
-        }
-      }
-    },
-    {
-      "draw_number": 30,
-      "draw_seed": 91165091,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.1
-        }
-      }
-    },
-    {
-      "draw_number": 31,
-      "draw_seed": 635542945,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.2
-        }
-      }
-    },
-    {
-      "draw_number": 32,
-      "draw_seed": 223499934,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.3
-        }
-      }
-    },
-    {
-      "draw_number": 33,
-      "draw_seed": 1749199991,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.1
-        }
-      }
-    },
-    {
-      "draw_number": 34,
-      "draw_seed": 2084680127,
-      "parameters": {
-        "Hiv": {
-          "prob_prep_mid_adherence": 0.2
-        }
-      }
-    },
-    {
-      "draw_number": 35,
-      "draw_seed": 791670112,
-      "parameters": {
-        "Hiv": {
+          "prob_for_prep_selection": 0.6,
+          "prob_prep_high_adherence": 0.5,
           "prob_prep_mid_adherence": 0.3
         }
       }

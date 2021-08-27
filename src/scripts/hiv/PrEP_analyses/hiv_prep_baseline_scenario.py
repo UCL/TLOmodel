@@ -41,7 +41,7 @@ class TestScenario(BaseScenario):
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.hiv': logging.INFO,
-                'tlo.scr.scripts.hiv.PrEP_analyses.default_run_with_plots': logging.INFO,
+                # 'tlo.scr.scripts.hiv.PrEP_analyses.default_run_with_plots': logging.INFO,
                 'tlo.methods.demography': logging.INFO,
                 'tlo.scenario': logging.INFO
             }
@@ -72,18 +72,15 @@ class TestScenario(BaseScenario):
         #         'prob_prep_mid_adherence': np.linspace(start=0.1, stop=0.3, num=3),
         #     }
         # )
-        prob_for_prep_selection_list = [0, 0.2, 0.4, 0.6] * 3
+        tmp = [0, 0.2, 0.4, 0.6]
+        prob_for_prep_selection_list = np.repeat(tmp, 3)
         prob_prep_high_adherence_list = [0.3, 0.4, 0.5] * 4
         prob_prep_mid_adherence_list = [0.1, 0.2, 0.3] * 4
 
         return {
             'Hiv': {
                 'prob_for_prep_selection': prob_for_prep_selection_list[draw_number],
-            },
-            'Hiv': {
                 'prob_prep_high_adherence': prob_prep_high_adherence_list[draw_number],
-            },
-            'Hiv':{
                 'prob_prep_mid_adherence': prob_prep_mid_adherence_list[draw_number],
             }
         }
