@@ -24,8 +24,32 @@ class Predictor(object):
         conditions_are_mutually_exclusive: Optional[bool] = None,
         conditions_are_exhaustive: Optional[bool] = False,
     ):
-        """A Predictor variable for the regression model. The property_name is a property of the
-         population dataframe e.g. age, sex, etc."""
+        """A Predictor variable for the regression model.
+
+        :param property_name: A property of the population dataframe e.g. age, sex, etc.
+            or if ``external=True`` the name of the external property that will be
+            passed as a keyword argument to the ``LinearModel.predict`` method.
+        :param external: Whether the named property is external (``True``) and so will
+            be passed as a keyword argument to the ``LinearModel.predict`` method) or is
+            a property of the population dataframe (``False``).
+        :param conditions_are_mutually_exclusive: Whether the set of conditions that
+            are declared for this predictor are all mutually exclusive, that is, for any
+            pair of conditions, one condition evaluating to ``True`` implies the other
+            must evaluate to ``False``. If this is declared to be the case a more
+            efficient method of evaluation will be used in ``LinearModel.predict``. Note
+            however that the validity of this declaration will not be checked so if this
+            is set to ``True`` for predictors with non-mutually exclusive conditions,
+            the model output will be erroneous.
+        :param conditions_are_exhaustive: Whether the set of conditions that are
+            declared for this predictor are all exhaustive, that is at least one
+            condition will always be ``True`` irrespective of the value of the property.
+            If this is declared to be the case, a more efficient method of evaluation
+            maye be used in ``LinearModel.predict`, though if a catch-all ``otherwise``
+            condition is included this flag will provide no benefit. Note that the
+            validity of this declaration will not be checked so if this is set to
+            ``True`` for predictors with non-exhaustive conditions, the model output
+            will be erroneous.
+        """
         self.property_name = property_name
 
         # If this is a property that is not part of the population dataframe
