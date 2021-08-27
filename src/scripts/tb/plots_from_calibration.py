@@ -224,10 +224,12 @@ model_tb_inc = summarize(extract_results(results_folder,
                       collapse_columns=True
                       )
 model_tb_inc.index = model_tb_inc.index.year
-activeTB_inc_rate = (model_tb_inc['mean'].values / py_summary["mean"].values) * 100000
-activeTB_inc_rate_low = (model_tb_inc['lower'].values / py_summary["mean"].values) * 100000
-activeTB_inc_rate_high = (model_tb_inc['upper'].values / py_summary["mean"].values) * 100000
-
+activeTB_inc_rate = pd.Series((model_tb_inc['mean'].values / py_summary["mean"].values) * 100000)
+activeTB_inc_rate.index = model_tb_inc.index
+activeTB_inc_rate_low = pd.Series((model_tb_inc['lower'].values / py_summary["mean"].values) * 100000)
+activeTB_inc_rate_low.index = model_tb_inc.index
+activeTB_inc_rate_high = pd.Series((model_tb_inc['upper'].values / py_summary["mean"].values) * 100000)
+activeTB_inc_rate_high.index = model_tb_inc.index
 
 model_tb_latent = summarize(extract_results(results_folder,
                                       module="tlo.methods.tb",
@@ -300,10 +302,13 @@ model_deaths_AIDS['median'] = model_deaths_AIDS[cols].astype(float).quantile(0.5
 model_deaths_AIDS['lower'] = model_deaths_AIDS[cols].astype(float).quantile(0.25, axis = 1)
 model_deaths_AIDS['upper'] = model_deaths_AIDS[cols].astype(float).quantile(0.75, axis = 1)
 
-# AIDS mortality rates per 1000 person-years
-total_aids_deaths_rate_1000py = (model_deaths_AIDS['median'].values / py_summary["mean"].values ) * 1000
-total_aids_deaths_rate_1000py_lower = (model_deaths_AIDS['lower'].values / py_summary["mean"].values ) * 1000
-total_aids_deaths_rate_1000py_upper = (model_deaths_AIDS['upper'].values / py_summary["mean"].values ) * 1000
+# AIDS mortality rates per 100k person-years
+total_aids_deaths_rate_100kpy = pd.Series((model_deaths_AIDS['median'].values / py_summary["mean"].values ) * 100000)
+total_aids_deaths_rate_100kpy_lower = pd.Series((model_deaths_AIDS['lower'].values / py_summary["mean"].values ) * 100000)
+total_aids_deaths_rate_100kpy_upper = pd.Series((model_deaths_AIDS['upper'].values / py_summary["mean"].values ) * 100000)
+total_aids_deaths_rate_100kpy.index = model_deaths_AIDS.index
+total_aids_deaths_rate_100kpy_lower.index = model_deaths_AIDS.index
+total_aids_deaths_rate_100kpy_upper.index = model_deaths_AIDS.index
 
 
 # TB deaths
@@ -339,10 +344,12 @@ model_deaths_TB['lower'] = model_deaths_TB[cols].astype(float).quantile(0.25, ax
 model_deaths_TB['upper'] = model_deaths_TB[cols].astype(float).quantile(0.75, axis = 1)
 
 # TB mortality rates per 100k person-years
-tot_tb_non_hiv_deaths_rate_100kpy = (model_deaths_TB['median'].values / py_summary["mean"].values) * 100000
-tot_tb_non_hiv_deaths_rate_100kpy_lower = (model_deaths_TB['lower'].values / py_summary["mean"].values) * 100000
-tot_tb_non_hiv_deaths_rate_100kpy_upper = (model_deaths_TB['upper'].values / py_summary["mean"].values) * 100000
-
+tot_tb_non_hiv_deaths_rate_100kpy = pd.Series((model_deaths_TB['median'].values / py_summary["mean"].values) * 100000)
+tot_tb_non_hiv_deaths_rate_100kpy_lower = pd.Series((model_deaths_TB['lower'].values / py_summary["mean"].values) * 100000)
+tot_tb_non_hiv_deaths_rate_100kpy_upper = pd.Series((model_deaths_TB['upper'].values / py_summary["mean"].values) * 100000)
+tot_tb_non_hiv_deaths_rate_100kpy.index = model_deaths_AIDS.index
+tot_tb_non_hiv_deaths_rate_100kpy_lower.index = model_deaths_AIDS.index
+tot_tb_non_hiv_deaths_rate_100kpy_upper.index = model_deaths_AIDS.index
 
 
 # %% Function to make standard plot to compare model and data
@@ -387,7 +394,7 @@ def make_plot(
         ax.set_xlabel(ylab)
 
     plt.title(title_str)
-    plt.legend(['Model', data_name])
+    plt.legend(['TLO', data_name])
     # plt.gca().set_ylim(bottom=0)
     # plt.savefig(outputspath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
 
@@ -493,8 +500,6 @@ make_plot(
     data_mid=data_hiv_aidsinfo['prevalence_0_14'] * 100,
     data_low=data_hiv_aidsinfo['prevalence_0_14_lower'] * 100,
     data_high=data_hiv_aidsinfo['prevalence_0_14_upper'] * 100,
-    xlim=[2010, 2020],
-    ylim=[0, 5],
     xlab="Year",
     ylab="HIV prevalence (%)"
 )
@@ -502,6 +507,9 @@ make_plot(
 # MPHIA
 plt.plot(model_hiv_child_prev.index[6], data_hiv_mphia_prev.loc[
     data_hiv_mphia_prev.age == "Total 0-14", "total percent hiv positive"].values[0], 'gx')
+
+plt.xlim = (2010, 2020)
+plt.ylim = (0, 5)
 
 # handles for legend
 red_line = mlines.Line2D([], [], color='C3',
@@ -570,8 +578,9 @@ make_plot(
     model=model_tb_latent['mean'],
     model_low=model_tb_latent['lower'],
     model_high=model_tb_latent['upper'],
-    ylim=[0, 0.22]
 )
+plt.ylim = (0, 0.22)
+
 # add latent TB estimate from Houben & Dodd 2016 (value for year=2014)
 plt.errorbar(model_tb_latent.index[4], data_tb_latent_estimate,
              yerr=[[data_tb_latent_yerr[0]], [data_tb_latent_yerr[1]]], fmt='o')
@@ -603,14 +612,14 @@ plt.show()
 
 # AIDS deaths (including HIV/TB deaths)
 make_plot(
-    title_str='Mortality to HIV-AIDS per 1000 capita',
-    model=total_aids_deaths_rate_1000py,
-    model_low=total_aids_deaths_rate_1000py_lower,
-    model_high=total_aids_deaths_rate_1000py_upper,
+    title_str='Mortality to HIV-AIDS per 100,000 capita',
+    model=total_aids_deaths_rate_100kpy,
+    model_low=total_aids_deaths_rate_100kpy_lower,
+    model_high=total_aids_deaths_rate_100kpy_upper,
     data_name='UNAIDS',
-    data_mid=data_hiv_unaids_deaths['AIDS_mortality_per_1000'],
-    data_low=data_hiv_unaids_deaths['AIDS_mortality_per_1000_lower'],
-    data_high=data_hiv_unaids_deaths['AIDS_mortality_per_1000_upper']
+    data_mid=data_hiv_unaids_deaths['AIDS_mortality_per_100k'],
+    data_low=data_hiv_unaids_deaths['AIDS_mortality_per_100k_lower'],
+    data_high=data_hiv_unaids_deaths['AIDS_mortality_per_100k_upper']
 )
 plt.savefig(make_graph_file_name("AIDS_mortality"))
 

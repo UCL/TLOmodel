@@ -361,8 +361,8 @@ deaths_AIDS['year'] = deaths_AIDS.index.year
 tot_aids_deaths = deaths_AIDS.groupby(by=['year']).size()
 tot_aids_deaths.index = pd.to_datetime(tot_aids_deaths.index, format='%Y')
 
-# aids mortality rates per 1000 person-years
-total_aids_deaths_rate_100kpy = (tot_aids_deaths / py) * 1000
+# aids mortality rates per 100k person-years
+total_aids_deaths_rate_100kpy = (tot_aids_deaths / py) * 100000
 
 # ---------------------------------------------------------------------- #
 
@@ -370,9 +370,9 @@ total_aids_deaths_rate_100kpy = (tot_aids_deaths / py) * 1000
 make_plot(
     title_str='Mortality to HIV-AIDS per 1000 capita',
     model=total_aids_deaths_rate_100kpy,
-    data_mid=data_hiv_unaids_deaths['AIDS_mortality_per_1000'],
-    data_low=data_hiv_unaids_deaths['AIDS_mortality_per_1000_lower'],
-    data_high=data_hiv_unaids_deaths['AIDS_mortality_per_1000_upper']
+    data_mid=data_hiv_unaids_deaths['AIDS_mortality_per_100k'],
+    data_low=data_hiv_unaids_deaths['AIDS_mortality_per_100k_lower'],
+    data_high=data_hiv_unaids_deaths['AIDS_mortality_per_100k_upper']
 )
 
 plt.show()
