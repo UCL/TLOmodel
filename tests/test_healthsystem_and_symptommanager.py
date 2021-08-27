@@ -585,7 +585,7 @@ def test_use_of_helper_function_get_all_consumables():
         DummyModule(),
         # Disable sorting + checks to avoid error due to missing dependencies
         sort_modules=False,
-        check_modules=False
+        check_all_dependencies=False
     )
 
     # Define availability of items
