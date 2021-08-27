@@ -461,8 +461,9 @@ class PregnancySupervisor(Module):
             'gest_diab': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_gest_diab_per_month'],
-                Predictor('li_bmi').when('4', params['rr_gest_diab_obesity'])
-                                   .when('5', params['rr_gest_diab_obesity'])),
+                Predictor('li_bmi', conditions_are_mutually_exclusive=True)
+                .when('4', params['rr_gest_diab_obesity'])
+                .when('5', params['rr_gest_diab_obesity'])),
 
             # This equation calculates a womans monthly risk of developing placental abruption
             # during her pregnancy.
@@ -498,10 +499,11 @@ class PregnancySupervisor(Module):
                 Predictor('ps_gest_diab').when('uncontrolled', params['rr_still_birth_gest_diab']),
                 Predictor().when('(ps_gest_diab == "controlled ") & (ac_gest_diab_on_treatment != "none")',
                                  (params['rr_still_birth_gest_diab'] * params['treatment_effect_gdm_case_management'])),
-                Predictor('ps_htn_disorders').when('mild_pre_eclamp', params['rr_still_birth_mild_pre_eclamp'])
-                                             .when('gest_htn', params['rr_still_birth_gest_htn'])
-                                             .when('severe_gest_htn', params['rr_still_birth_severe_gest_htn'])
-                                             .when('severe_pre_eclamp', params['rr_still_birth_severe_pre_eclamp'])),
+                Predictor('ps_htn_disorders', conditions_are_mutually_exclusive=True)
+                .when('mild_pre_eclamp', params['rr_still_birth_mild_pre_eclamp'])
+                .when('gest_htn', params['rr_still_birth_gest_htn'])
+                .when('severe_gest_htn', params['rr_still_birth_severe_gest_htn'])
+                .when('severe_pre_eclamp', params['rr_still_birth_severe_pre_eclamp'])),
             #    Predictor('ma_is_infected').when(True, params['rr_still_birth_maternal_malaria'])),
 
             # This equation calculates a risk of dying after ectopic pregnancy and is mitigated by treatment
