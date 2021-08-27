@@ -1,7 +1,23 @@
 """
 This file defines a batch run through which the hiv modules are run across a grid of parameter values
+
+Check the batch configuration gets generated without error:
+tlo scenario-run --draw-only src/hiv/PrEP_analyses/hiv_prep_baseline_scenario.py
+
+Test the scenario starts running without problems:
+tlo scenario-run src/scripts/hiv/PrEP_analyses/hiv_prep_baseline_scenario.py
+
+or execute a single run:
+tlo scenario-run src/scripts/hiv/PrEP_analyses/hiv_prep_baseline_scenario.py --draw 1 0
+
 Run on the batch system using:
-```tlo batch-submit  src/scripts/hiv/PrEP_analyses/hiv_prep_baseline_scenario.py```
+tlo batch-submit  src/scripts/hiv/PrEP_analyses/hiv_prep_baseline_scenario.py
+
+Display information about a job:
+tlo batch-job tlo_q1_demo-123 --tasks
+
+Download result files for a completed job:
+tlo batch-download tlo_q1_demo-123
 """
 
 import numpy as np
@@ -30,7 +46,7 @@ class TestScenario(BaseScenario):
         self.seed = 12
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2030, 12, 31)
-        self.pop_size = 100000
+        self.pop_size = 5000
         self.number_of_draws = 12
         self.runs_per_draw = 5
 

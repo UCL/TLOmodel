@@ -8,7 +8,7 @@
       "draw_seed": 662124363,
       "parameters": {
         "Hiv": {
-          "prob_for_prep_selection": 0,
+          "prob_for_prep_selection": 0.0,
           "prob_prep_high_adherence": 0.3,
           "prob_prep_mid_adherence": 0.1
         }
@@ -19,7 +19,7 @@
       "draw_seed": 1916507803,
       "parameters": {
         "Hiv": {
-          "prob_for_prep_selection": 0.2,
+          "prob_for_prep_selection": 0.0,
           "prob_prep_high_adherence": 0.4,
           "prob_prep_mid_adherence": 0.2
         }
@@ -30,7 +30,7 @@
       "draw_seed": 1031005574,
       "parameters": {
         "Hiv": {
-          "prob_for_prep_selection": 0.4,
+          "prob_for_prep_selection": 0.0,
           "prob_prep_high_adherence": 0.5,
           "prob_prep_mid_adherence": 0.3
         }
@@ -41,7 +41,7 @@
       "draw_seed": 1603685629,
       "parameters": {
         "Hiv": {
-          "prob_for_prep_selection": 0.6,
+          "prob_for_prep_selection": 0.2,
           "prob_prep_high_adherence": 0.3,
           "prob_prep_mid_adherence": 0.1
         }
@@ -52,7 +52,7 @@
       "draw_seed": 1130929393,
       "parameters": {
         "Hiv": {
-          "prob_for_prep_selection": 0,
+          "prob_for_prep_selection": 0.2,
           "prob_prep_high_adherence": 0.4,
           "prob_prep_mid_adherence": 0.2
         }
@@ -85,7 +85,7 @@
       "draw_seed": 960362435,
       "parameters": {
         "Hiv": {
-          "prob_for_prep_selection": 0.6,
+          "prob_for_prep_selection": 0.4,
           "prob_prep_high_adherence": 0.4,
           "prob_prep_mid_adherence": 0.2
         }
@@ -96,7 +96,7 @@
       "draw_seed": 62598988,
       "parameters": {
         "Hiv": {
-          "prob_for_prep_selection": 0,
+          "prob_for_prep_selection": 0.4,
           "prob_prep_high_adherence": 0.5,
           "prob_prep_mid_adherence": 0.3
         }
@@ -107,7 +107,7 @@
       "draw_seed": 1505292720,
       "parameters": {
         "Hiv": {
-          "prob_for_prep_selection": 0.2,
+          "prob_for_prep_selection": 0.6,
           "prob_prep_high_adherence": 0.3,
           "prob_prep_mid_adherence": 0.1
         }
@@ -118,7 +118,7 @@
       "draw_seed": 1798504726,
       "parameters": {
         "Hiv": {
-          "prob_for_prep_selection": 0.4,
+          "prob_for_prep_selection": 0.6,
           "prob_prep_high_adherence": 0.4,
           "prob_prep_mid_adherence": 0.2
         }
