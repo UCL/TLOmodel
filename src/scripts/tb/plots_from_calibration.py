@@ -57,7 +57,8 @@ xls = pd.ExcelFile(resourcefilepath / 'ResourceFile_HIV.xlsx')
 
 # HIV UNAIDS data
 data_hiv_unaids = pd.read_excel(xls, sheet_name='unaids_infections_art2021')
-data_hiv_unaids.index = pd.to_datetime(data_hiv_unaids['year'], format='%Y')
+data_hiv_unaids.index = data_hiv_unaids['year']
+# data_hiv_unaids.index = pd.to_datetime(data_hiv_unaids['year'], format='%Y')
 data_hiv_unaids = data_hiv_unaids.drop(columns=['year'])
 
 # HIV UNAIDS data
@@ -120,61 +121,6 @@ params = extract_params(results_folder)
 
 # choose which draw to summarise / visualise
 draw = 0
-
-# %% Function to make standard plot to compare model and data
-def make_plot(
-    model=None,
-    model_low=None,
-    model_high=None,
-    data_name=None,
-    data_mid=None,
-    data_low=None,
-    data_high=None,
-    xlim=None,
-    ylim=None,
-    xlab=None,
-    ylab=None,
-    title_str=None
-):
-    assert model is not None
-    assert title_str is not None
-
-    # Make plot
-    fig, ax = plt.subplots()
-    ax.plot(model.index, model.values, '-', color='C3')
-    if (model_low is not None) and (model_high is not None):
-        ax.fill_between(model_low.index,
-                        model_low,
-                        model_high,
-                        color='C3',
-                        alpha=0.2)
-
-    if data_mid is not None:
-        ax.plot(data_mid.index, data_mid.values, '-', color='g')
-    if (data_low is not None) and (data_high is not None):
-        ax.fill_between(data_low.index,
-                        data_low,
-                        data_high,
-                        color='g',
-                        alpha=0.2)
-
-    if xlim is not None:
-        ax.set_xlim(xlim)
-
-    if ylim is not None:
-        ax.set_xlim(ylim)
-
-    if xlab is not None:
-        ax.set_xlabel(xlab)
-
-    if ylab is not None:
-        ax.set_xlabel(ylab)
-
-    plt.title(title_str)
-    plt.legend(['Model', data_name])
-    plt.gca().set_ylim(bottom=0)
-    # plt.savefig(outputspath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
-
 
 # %% extract results
 # Load and format model results (with year as integer):
@@ -399,6 +345,62 @@ tot_tb_non_hiv_deaths_rate_100kpy_lower = (model_deaths_TB['lower'].values / py_
 tot_tb_non_hiv_deaths_rate_100kpy_upper = (model_deaths_TB['upper'].values / py_summary["mean"].values) * 100000
 
 
+
+# %% Function to make standard plot to compare model and data
+def make_plot(
+    model=None,
+    model_low=None,
+    model_high=None,
+    data_name=None,
+    data_mid=None,
+    data_low=None,
+    data_high=None,
+    xlim=None,
+    ylim=None,
+    xlab=None,
+    ylab=None,
+    title_str=None
+):
+    assert model is not None
+    assert title_str is not None
+
+    # Make plot
+    fig, ax = plt.subplots()
+    ax.plot(model.index, model.values, '-', color='C3')
+    if (model_low is not None) and (model_high is not None):
+        ax.fill_between(model_low.index,
+                        model_low,
+                        model_high,
+                        color='C3',
+                        alpha=0.2)
+
+    if data_mid is not None:
+        ax.plot(data_mid.index, data_mid.values, '-', color='C0')
+    if (data_low is not None) and (data_high is not None):
+        ax.fill_between(data_low.index,
+                        data_low,
+                        data_high,
+                        color='C0',
+                        alpha=0.2)
+
+    # if xlim is not None:
+    #     ax.set_xlim(xlim)
+
+    if ylim is not None:
+        ax.set_xlim(ylim)
+
+    if xlab is not None:
+        ax.set_xlabel(xlab)
+
+    if ylab is not None:
+        ax.set_xlabel(ylab)
+
+    plt.title(title_str)
+    plt.legend(['Model', data_name])
+    plt.gca().set_ylim(bottom=0)
+    # plt.savefig(outputspath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
+
+
 # %% make plots
 
 # HIV - prevalence among in adults aged 15-49
@@ -409,11 +411,11 @@ make_plot(
     model_low=model_hiv_adult_prev['lower'] * 100,
     model_high=model_hiv_adult_prev['upper'] * 100,
     data_name='UNAIDS',
-    data_mid=data_hiv_unaids['prevalence_age15_49'],
-    data_low=data_hiv_unaids['prevalence_age15_49_lower'],
-    data_high=data_hiv_unaids['prevalence_age15_49_upper'],
-    xlim=[2010, 2020],
-    ylim=[0, 15],
+    data_mid=data_hiv_unaids['prevalence_age15_49'] * 100,
+    data_low=data_hiv_unaids['prevalence_age15_49_lower'] * 100,
+    data_high=data_hiv_unaids['prevalence_age15_49_upper'] * 100,
+    # xlim=[2010, 2020],
+    # ylim=[0, 15],
     xlab="Year",
     ylab="HIV prevalence (%)"
 )
@@ -431,7 +433,10 @@ y_lower = abs(y_values - (data_hiv_dhs_prev.loc[
 y_upper = abs(y_values - (data_hiv_dhs_prev.loc[
                 (data_hiv_dhs_prev.Year >= 2010), "HIV prevalence among general population 15-49 upper"]))
 plt.errorbar(x_values, y_values,
-             yerr=[y_lower, y_upper], fmt='o')
+             yerr=[y_lower, y_upper], fmt='ko')
+
+plt.ylim((0, 15))
+
 
 # handles for legend
 red_line = mlines.Line2D([], [], color='C3',
@@ -440,10 +445,10 @@ blue_line = mlines.Line2D([], [], color='C0',
                           markersize=15, label='UNAIDS')
 green_cross = mlines.Line2D([], [], linewidth=0, color='g', marker='x',
                           markersize=7, label='MPHIA')
-orange_ci = mlines.Line2D([], [], color='C1', marker='.',
+orange_ci = mlines.Line2D([], [], color='black', marker='.',
                           markersize=15, label='DHS')
 plt.legend(handles=[red_line, blue_line, green_cross, orange_ci])
-plt.savefig(make_graph_file_name("HIV_Prevalence_in_Adults"))
+# plt.savefig(make_graph_file_name("HIV_Prevalence_in_Adults"))
 
 plt.show()
 
