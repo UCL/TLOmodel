@@ -267,11 +267,12 @@ def test_other_modules_running_with_simplified_births_module():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
                  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
                  malaria.Malaria(resourcefilepath=resourcefilepath),
-                 tb.Tb(resourcefilepath=resourcefilepath)
+                 tb.Tb(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+                 diarrhoea.PropertiesOfOtherModules()
                  )
 
     sim.make_initial_population(n=1_000)
