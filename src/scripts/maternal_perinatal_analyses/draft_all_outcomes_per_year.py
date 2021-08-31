@@ -336,7 +336,7 @@ for year in sim_years:
         target_rate_anc4.append(51)
 
 line_graph_with_ci_and_target_rate(yearly_anc1_rates, anc1_lqs, anc1_uqs, target_rate_an,'Year', '% of total births',
-                                   'Proportion of women attending > 1 ANC contact per year', 'anc_prop_anc1')
+                                   'Proportion of women attending >= 1 ANC contact per year', 'anc_prop_anc1')
 line_graph_with_ci_and_target_rate(yearly_anc4_rates, anc4_lqs, anc4_uqs, target_rate_anc4, 'Year', '% total births',
                                    'Proportion of women attending >= 4 ANC contact per year', 'anc_prop_anc4')
 
