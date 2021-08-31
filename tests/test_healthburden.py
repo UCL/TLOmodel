@@ -124,7 +124,10 @@ def test_cause_of_disability_being_registered():
         care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=rfp),
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=rfp),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
-        healthburden.HealthBurden(resourcefilepath=rfp)
+        healthburden.HealthBurden(resourcefilepath=rfp),
+
+        # Supporting modules:
+        diarrhoea.PropertiesOfOtherModules()
     )
     sim.make_initial_population(n=20)
     sim.simulate(end_date=Date(2010, 1, 2))

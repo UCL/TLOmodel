@@ -47,7 +47,7 @@ def register_sim():
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
             resourcefilepath=resourcefilepath,
-            disable=True,  # disables the health system constraints so all HSI events run
+            disable=True,
         ),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -323,6 +323,9 @@ def test_dx_algorithm_for_non_malaria_outcomes():
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                      dx_algorithm_adult.DxAlgorithmAdult(),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+
+                     # Supporting modules:
+                     diarrhoea.PropertiesOfOtherModules()
                      )
 
         sim.make_initial_population(n=popsize)

@@ -272,6 +272,8 @@ def test_other_modules_running_with_simplified_births_module():
                  malaria.Malaria(resourcefilepath=resourcefilepath),
                  tb.Tb(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+
+                 # Supporting modules:
                  diarrhoea.PropertiesOfOtherModules()
                  )
 

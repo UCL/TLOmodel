@@ -1642,7 +1642,8 @@ class PropertiesOfOtherModules(Module):
     """For the purpose of the testing, this module generates the properties upon which the Alri module relies"""
 
     PROPERTIES = {
-        'hv_art': Property(Types.CATEGORICAL, 'temporary property',
+        'hv_inf': Property(Types.BOOL, 'temporary property for HIV infection status'),
+        'hv_art': Property(Types.CATEGORICAL, 'temporary property for ART status',
                            categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
         'ri_current_ALRI_status': Property(Types.BOOL, 'temporary property'),
         'nb_low_birth_weight_status': Property(Types.CATEGORICAL, 'temporary property',

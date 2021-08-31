@@ -145,6 +145,9 @@ def test_cause_of_death_being_registered(tmpdir):
         care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=rfp),
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=rfp),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
+
+        # Supporting modules:
+        diarrhoea.PropertiesOfOtherModules()
     )
     sim.make_initial_population(n=100)
     sim.simulate(end_date=Date(2010, 5, 31))
