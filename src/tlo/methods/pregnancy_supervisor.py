@@ -411,7 +411,7 @@ class PregnancySupervisor(Module):
                 params['prob_spontaneous_abortion_per_month'],
                 Predictor('ps_prev_spont_abortion').when(True, params['rr_spont_abortion_prev_sa']),
                 Predictor('age_years').when('>34', params['rr_spont_abortion_age_35'])
-                                      .when('.between(30,35)', params['rr_spont_abortion_age_31_34'])),
+                                      .when('.between(31, 34)', params['rr_spont_abortion_age_31_34'])),
 
             # This equation calculates a womans monthly risk of induced abortion and is applied monthly until 28 weeks
             # gestation
