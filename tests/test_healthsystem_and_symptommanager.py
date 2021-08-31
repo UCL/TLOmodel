@@ -585,23 +585,15 @@ def test_use_of_helper_function_get_all_consumables():
         DummyModule()
     )
 
-    # Set availability of consumables
     # Define availability of items
     item_code_is_available = [0, 1, 2, 3]
     item_code_not_available = [4, 5, 6, 7]
     pkg_code_is_available = [1, 2]
     pkg_code_not_available = [3, 4, 5]
 
-    sim.modules['HealthSystem'].cons_item_code_availability_today = \
-        sim.modules['HealthSystem'].prob_item_codes_available > 0.0
-    cons = sim.modules['HealthSystem'].cons_item_code_availability_today
-    cons.loc[item_code_is_available, cons.columns] = True
-    cons.loc[item_code_not_available, cons.columns] = False
-
     # Edit the item-package lookup-table to create packages that will be available or not
     lookup = sim.modules['HealthSystem'].parameters['Consumables']
     lookup['Intervention_Pkg_Code'] = -99
-
     lookup.loc[item_code_is_available[0], 'Intervention_Pkg_Code'] = pkg_code_is_available[0]
     lookup.loc[item_code_is_available[1:3], 'Intervention_Pkg_Code'] = pkg_code_is_available[1]
     lookup.loc[item_code_not_available[0], 'Intervention_Pkg_Code'] = pkg_code_not_available[0]
@@ -609,9 +601,15 @@ def test_use_of_helper_function_get_all_consumables():
     lookup.loc[[item_code_is_available[3], item_code_not_available[3]], 'Intervention_Pkg_Code'] = \
         pkg_code_not_available[2]
 
-    # Process consumables file (after the edits made above) and update availability ready for calling:
+    # Process consumables file
     hs = sim.modules['HealthSystem']
     hs.process_consumables_file()
+
+    # Manually edit availability probabilities to force some items to be (not) available
+    hs.prob_item_codes_available.loc[item_code_is_available] = 1
+    hs.prob_item_codes_available.loc[item_code_not_available] = 0
+
+    # Update availability ready for calling
     hs.determine_availability_of_consumables_today()
 
     # Create a dummy HSI event:

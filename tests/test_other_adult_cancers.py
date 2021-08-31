@@ -25,7 +25,7 @@ except NameError:
 
 # parameters for whole suite of tests:
 start_date = Date(2010, 1, 1)
-popsize = 1000
+popsize = 2000
 
 
 # %% Construction of simulation objects:
@@ -244,7 +244,7 @@ def test_check_progression_through_stages_is_happening():
     sim = incr_rates_of_progression(sim)
 
     # make initial population
-    sim.make_initial_population(n=popsize)
+    sim.make_initial_population(n=3000)
 
     # force that all persons aged over 15 are in the site_confined stage to begin with:
     sim.population.props.loc[
