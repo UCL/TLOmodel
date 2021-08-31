@@ -14,12 +14,13 @@ scenario_filename = 'calibration_run_all_modules.py'  # <-- update this to look 
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output graphs 10_08_21 50k_10yr10r_(calibration_run_all_modules-2021-08-09T162406Z)'
+graph_location = 'output graphs 11_08_21 50k_10yr10r_(calibration_run_all_modules-2021-08-10T163833Z)'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
 results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 #create_pickles_locally(results_folder)  # if not created via batch
+
 
 # Enter the years the simulation has ran for here?
 sim_years = [2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
@@ -145,7 +146,7 @@ def simple_line_chart(model_rate, target_rate, x_title, y_title, title, file_nam
     plt.ylabel(y_title)
     plt.title(title)
     plt.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    ##plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -157,7 +158,7 @@ def simple_bar_chart(model_rates, x_title, y_title, title, file_name):
     plt.xlabel(x_title)
     plt.ylabel(y_title)
     plt.title(title)
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    ##plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -169,7 +170,7 @@ def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_rate,
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(title)
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    ##plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -209,7 +210,7 @@ ax.fill_between(sim_years, total_lq, total_uq, color='b', alpha=.1)
 plt.xlabel('Year')
 plt.ylabel('Pregnancies (mean)')
 plt.title('Mean number of pregnancies')
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
+##plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
 plt.show()
 
 # -----------------------------------------------------Total births...------------------------------------------------
@@ -232,7 +233,7 @@ ax.fill_between(sim_years, lq_bi, uq_bi, color='b', alpha=.1)
 plt.xlabel('Year')
 plt.ylabel('Births (mean)')
 plt.title('Mean number of Births per Year')
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/births.png')
+##plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/births.png')
 plt.show()
 
 # todo: some testing looking at live births vs total births...
@@ -260,7 +261,7 @@ total_completed_pregnancies_per_year = [a + b + c + d + e for a, b, c, d, e in z
                                                                                    an_still_birth_data[0])]
 
 # ========================================== INTERVENTION COVERAGE... =================================================
-# 1.) Antenatal Care...
+# 1.) Antenatal Care... # TODO: THIS COULD CERTAINLY BE SIMPLIFIED
 # Mean proportion of women (across draws) who have given birth that have attended ANC1, ANC4+ and ANC8+ per year...
 results = extract_results(
     results_folder,
@@ -335,14 +336,14 @@ for year in sim_years:
         target_rate_anc4.append(51)
 
 line_graph_with_ci_and_target_rate(yearly_anc1_rates, anc1_lqs, anc1_uqs, target_rate_an,'Year', '% of total births',
-                                  'Proportion of women attending > 1 ANC contact per year', 'anc_prop_anc1')
+                                   'Proportion of women attending > 1 ANC contact per year', 'anc_prop_anc1')
 line_graph_with_ci_and_target_rate(yearly_anc4_rates, anc4_lqs, anc4_uqs, target_rate_anc4, 'Year', '% total births',
-                                  'Proportion of women attending >= 4 ANC contact per year', 'anc_prop_anc4')
+                                   'Proportion of women attending >= 4 ANC contact per year', 'anc_prop_anc4')
 
-"""simple_line_chart(yearly_anc1_rates, target_rate_an, 'Year', '% of total births',
-                  'Proportion of women attending > 1 ANC contact per year', 'anc_prop_anc1')
-simple_line_chart(yearly_anc4_rates, target_rate_anc4, 'Year', '% total births',
-                  'Proportion of women attending >= 4 ANC contact per year', 'anc_prop_anc4')"""
+#simple_line_chart(yearly_anc1_rates, target_rate_an, 'Year', '% of total births',
+#                  'Proportion of women attending > 1 ANC contact per year', 'anc_prop_anc1')
+#simple_line_chart(yearly_anc4_rates, target_rate_anc4, 'Year', '% total births',
+#                  'Proportion of women attending >= 4 ANC contact per year', 'anc_prop_anc4')
 
 plt.plot(sim_years, yearly_anc1_rates, 'o-g', label="anc1", color='palevioletred')
 plt.plot(sim_years, yearly_anc4_rates, 'o-g',  label="anc4+", color='crimson')
@@ -351,41 +352,40 @@ plt.xlabel('Year')
 plt.ylabel('% total births')
 plt.title('Proportion of women attending ANC1, AN4, ANC8 ')
 plt.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_coverage.png')
+##plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_coverage.png')
 plt.show()
 
-
+anc_count_df = anc_count_df.drop([0])
 for year in sim_years:
-    total = sum(anc_count_df[year])
-    for index in anc_count_df.index:
-        anc_count_df.at[index, year] = (anc_count_df.at[index, year]/total) * 100
+    total_per_year = 0
+    for row in anc_count_df[year]:
+        total_per_year += row[0]
 
-# todo: simplify with function
+    for index in anc_count_df.index:
+        anc_count_df.at[index, year] = (anc_count_df.at[index, year][0]/total_per_year) * 100
+
 labels = sim_years
 width = 0.35       # the width of the bars: can also be len(x) sequence
 fig, ax = plt.subplots()
-ax.bar(labels, anc_count_df.loc[8], width, label=8, bottom=anc_count_df.loc[0] + anc_count_df.loc[1] +
-                                                           anc_count_df.loc[2] + anc_count_df.loc[3] +
-                                                           anc_count_df.loc[4] + anc_count_df.loc[5] +
-                                                           anc_count_df.loc[6] + anc_count_df.loc[7])
-ax.bar(labels, anc_count_df.loc[7], width, label=7, bottom=anc_count_df.loc[0] + anc_count_df.loc[1] +
-                                                           anc_count_df.loc[2] + anc_count_df.loc[3] +
-                                                           anc_count_df.loc[4] + anc_count_df.loc[5] +
-                                                           anc_count_df.loc[6])
-ax.bar(labels, anc_count_df.loc[6], width, label=6, bottom=anc_count_df.loc[0] + anc_count_df.loc[1] +
-                                                           anc_count_df.loc[2] + anc_count_df.loc[3] +
-                                                           anc_count_df.loc[4] + anc_count_df.loc[5])
-ax.bar(labels, anc_count_df.loc[5], width, label=5, bottom=anc_count_df.loc[0] + anc_count_df.loc[1] +
-                                                           anc_count_df.loc[2] + anc_count_df.loc[3] +
-                                                           anc_count_df.loc[4] )
-ax.bar(labels, anc_count_df.loc[4], width, label=4, bottom=anc_count_df.loc[0] + anc_count_df.loc[1] +
-                                                           anc_count_df.loc[2] + anc_count_df.loc[3])
-ax.bar(labels, anc_count_df.loc[3], width, label=3, bottom=anc_count_df.loc[0] + anc_count_df.loc[1] +
-                                                           anc_count_df.loc[2])
-ax.bar(labels, anc_count_df.loc[2], width, label=2, bottom=anc_count_df.loc[0] + anc_count_df.loc[1])
-ax.bar(labels, anc_count_df.loc[1], width, label=1, bottom=anc_count_df.loc[0])
+ax.bar(labels, anc_count_df.loc[8], width, label=8, bottom=anc_count_df.loc[1] + anc_count_df.loc[2] +
+                                                           anc_count_df.loc[3] + anc_count_df.loc[4] +
+                                                           anc_count_df.loc[5] + anc_count_df.loc[6] +
+                                                           anc_count_df.loc[7])
+ax.bar(labels, anc_count_df.loc[7], width, label=7, bottom=anc_count_df.loc[1] + anc_count_df.loc[2] +
+                                                           anc_count_df.loc[3] + anc_count_df.loc[4] +
+                                                           anc_count_df.loc[5] + anc_count_df.loc[6])
+ax.bar(labels, anc_count_df.loc[6], width, label=6, bottom=anc_count_df.loc[1] + anc_count_df.loc[2] +
+                                                           anc_count_df.loc[3] + anc_count_df.loc[4] +
+                                                           anc_count_df.loc[5])
+ax.bar(labels, anc_count_df.loc[5], width, label=5, bottom=anc_count_df.loc[1] + anc_count_df.loc[2] +
+                                                           anc_count_df.loc[3] + anc_count_df.loc[4] )
+ax.bar(labels, anc_count_df.loc[4], width, label=4, bottom=anc_count_df.loc[1] + anc_count_df.loc[2] +
+                                                           anc_count_df.loc[3])
+ax.bar(labels, anc_count_df.loc[3], width, label=3, bottom=anc_count_df.loc[1] + anc_count_df.loc[2])
+ax.bar(labels, anc_count_df.loc[2], width, label=2, bottom=anc_count_df.loc[1])
+ax.bar(labels, anc_count_df.loc[1], width, label=1,)
+#ax.bar(labels, anc_count_df.loc[0], width, label=0)
 
-ax.bar(labels, anc_count_df.loc[0], width, label=0)
 ax.set_ylabel('% of total yearly visits')
 ax.set_title('Number of ANC visits at birth per year')
 ax.legend()
@@ -460,7 +460,7 @@ ax.bar(labels, anc_before_four_months, width, label='<4m')
 ax.set_ylabel('% of ANC1 visits by gestational age')
 ax.set_title('Gestational age at first ANC visit by Year')
 ax.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_ga_first_visit_update.png')
+##plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_ga_first_visit_update.png')
 plt.show()
 
 target_rate_eanc4 = list()
@@ -528,7 +528,7 @@ ax.bar(labels, home_birth_rate, width, label='Home Birth')
 ax.set_ylabel('% of Births by Location')
 ax.set_title('Proportion of Total Births by Location of Delivery')
 ax.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sba_delivery_location.png')
+##plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sba_delivery_location.png')
 plt.show()
 
 
@@ -601,7 +601,7 @@ plt.xlabel('Year')
 plt.ylabel('Proportion of total births')
 plt.title('Yearly trends for PNC1 attendance')
 plt.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pnc_pnc1.png')
+##plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pnc_pnc1.png')
 plt.show()
 
 
@@ -633,7 +633,7 @@ def get_early_late_pnc_split(module, target, file_name):
     ax.set_ylabel('% of PNC 1 visits')
     ax.set_title(f'Proportion of {target} PNC1 Visits Occuring pre/post 48hrs Postnatal')
     ax.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    ##plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -829,7 +829,7 @@ def get_anaemia_graphs(df, timing):
     plt.ylabel(f'Prevalence at {timing}')
     plt.title(f'Yearly trends for prevalence of anaemia by severity at {timing}')
     plt.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anaemia_by_severity_{timing}.png')
+    ##plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anaemia_by_severity_{timing}.png')
     plt.show()
 
 
@@ -984,15 +984,17 @@ macro_data = get_comp_mean_and_rate('macrosomia', total_births_per_year, nb_outc
 sga_data = get_comp_mean_and_rate('small_for_gestational_age', total_births_per_year, nb_outcomes_df, 100)
 
 lbw_tr=list()
+macro_tr = list()
 dummy_tr = list()
 for year in sim_years:
     dummy_tr.append(0)
+    macro_tr.append(5.13)
     lbw_tr.append(12)
 
 line_graph_with_ci_and_target_rate(lbw_data[0], lbw_data[1], lbw_data[2], lbw_tr, 'Year',
                                    'Proportion of total births', 'Yearly Prevalence of Low Birth Weight',
                                    'neo_lbw_prev')
-line_graph_with_ci_and_target_rate(macro_data[0], macro_data[1], macro_data[2], dummy_tr,'Year',
+line_graph_with_ci_and_target_rate(macro_data[0], macro_data[1], macro_data[2], macro_tr,'Year',
                                    'Proportion of total births', 'Yearly Prevalence of Macrosomia',
                                    'neo_macrosomia_prev')
 
@@ -1155,7 +1157,8 @@ direct_causes = ['ectopic_pregnancy', 'spontaneous_abortion', 'induced_abortion'
                  'secondary_postpartum_haemorrhage', 'antepartum_haemorrhage']
 
 
-list_of_proportions_dicts = list()
+#list_of_proportions_dicts = list()
+proportions_dicts = dict()
 total_deaths_per_year = list()
 sum_lqs = list()
 sum_uqs = list()
@@ -1168,13 +1171,18 @@ for year in sim_years:
 
     for complication in direct_causes:
         if complication in death_results.loc[year].index:
-            mean = death_results.loc[year, complication].mean()
-            yearly_mean_number.append(mean)
-            yearly_lq.append(death_results.loc[year, complication].quantile(0.025))
-            yearly_uq.append(death_results.loc[year, complication].quantile(0.925))
-            print(complication, mean, death_results.loc[year, complication].quantile(0.025),
-                  death_results.loc[year, complication].quantile(0.925))
-            causes.update({f'{complication}_{year}': mean})
+            if complication == 'severe_gestational_hypertension': # todo:remove
+                yearly_mean_number.append(0)
+                yearly_lq.append(0)
+                yearly_uq.append(0)
+            else:
+                mean = death_results.loc[year, complication].mean()
+                yearly_mean_number.append(mean)
+                yearly_lq.append(death_results.loc[year, complication].quantile(0.025))
+                yearly_uq.append(death_results.loc[year, complication].quantile(0.925))
+                causes.update({f'{complication}': mean})
+
+            # causes.update({f'{complication}_{year}': mean})
         else:
             yearly_mean_number.append(0)
             yearly_lq.append(0)
@@ -1189,8 +1197,8 @@ for year in sim_years:
 
     for complication in causes:
         causes[complication] = (causes[complication] / total_deaths_this_year) * 100
-
-    list_of_proportions_dicts.append(causes)
+    new_dict = {year: causes}
+    proportions_dicts.update(new_dict)
 
 
 direct_mmr_per_year = [(x/y) * 100000 for x, y in zip(total_deaths_per_year, total_births_per_year)]
@@ -1204,22 +1212,24 @@ for year in sim_years:
     else:
         target_rate_mmr.append(439)
 
-#line_graph_with_ci_and_target_rate(direct_mmr_per_year, lq_mmr, uq_mmr, target_rate_mmr, 'Year',
-#                                   'Rate per 100,000 births',
-#                  'Maternal Mortality Rate per Year', 'mmr')
+line_graph_with_ci_and_target_rate(direct_mmr_per_year, lq_mmr, uq_mmr, target_rate_mmr, 'Year',
+                                   'Rate per 100,000 births',
+                  'Maternal Mortality Rate per Year', 'mmr')
 
-
-# todo: force colours for each complication in each year to be the same
-for year, dictionary in zip(sim_years, list_of_proportions_dicts):
-    labels = list(dictionary.keys())
-    sizes = list(dictionary.values())
-    fig1, ax1 = plt.subplots()
-    ax1.pie(sizes, labels=labels, autopct='%1.1f%%',
+props_df = pd.DataFrame(data=proportions_dicts)
+labels = list(props_df.index)
+values = list()
+for index in props_df.index:
+    values.append(props_df.loc[index].mean())
+sizes = values
+fig1, ax1 = plt.subplots()
+ax1.pie(sizes, labels=labels, autopct='%1.1f%%',
             shadow=True, startangle=90)
-    ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-    plt.title(f'Proportion of total maternal deaths by cause in {year}')
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mat_death_by_cause_{year}.png')
-    plt.show()
+ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+plt.title(f'Proportion of total maternal deaths by cause (mean) 2011-2020')
+##plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mat_death_by_cause_total.png')
+plt.show()
+
 
 death_results_labels = extract_results(
     results_folder,
@@ -1312,7 +1322,7 @@ plt.xlabel('Year')
 plt.ylabel('Rate per 1000 births')
 plt.title('Yearly trends for Congenital Birth Anomalies')
 plt.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_rate_of_cong_anom.png')
+##plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_rate_of_cong_anom.png')
 plt.show()
 
 
@@ -1372,8 +1382,9 @@ for year, dictionary in zip(sim_years, list_of_proportions_dicts_nb):
             shadow=True, startangle=90)
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     plt.title(f'Proportion of total neonatal deaths by cause in {year} ')
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_death_by_cause_{year}.png')
+    ##plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_death_by_cause_{year}.png')
     plt.show()
+
 
 
 

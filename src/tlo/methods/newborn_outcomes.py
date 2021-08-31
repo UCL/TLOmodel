@@ -1232,7 +1232,6 @@ class NewbornOutcomes(Module):
                 logger.info(key='newborn_complication', data={'newborn': child_id, 'type': 'low_birth_weight'})
 
         df.at[child_id, 'nb_size_for_gestational_age'] = mni[mother_id]['birth_size']
-
         if df.at[child_id, 'nb_size_for_gestational_age'] == 'small_for_gestational_age':
             logger.info(key='newborn_complication', data={'newborn': child_id, 'type': 'small_for_gestational_age'})
 

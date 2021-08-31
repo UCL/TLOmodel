@@ -272,7 +272,7 @@ class PregnancySupervisor(Module):
                         ' 4 of pregnancy'),
         'prob_anc1_months_5_to_9': Parameter(
             Types.LIST, 'list of probabilities that a woman will attend her first ANC visit on months 5-10'),
-        'odds_four_or_more_anc_visits': Parameter(
+        'odds_early_init_anc4': Parameter(
             Types.LIST, 'probability of a woman undergoing 4 or more basic ANC visits with the first visit occurring '
                         'prior or during month 4 of pregnancy (EANC4+)'),
         'aor_early_anc4_20_24': Parameter(
@@ -313,6 +313,11 @@ class PregnancySupervisor(Module):
             Types.LIST, 'adjusted odds ratio of EANC4+ in women who are married'),
         'aor_early_anc4_previously_married': Parameter(
             Types.LIST, 'adjusted odds ratio of EANC4+ in women who were previously married (divorced/widowed)'),
+        'prob_late_initiation_anc4': Parameter(
+            Types.LIST, 'probability a woman will undertake 4 or more ANC visits with the first being after 4 months'),
+        'prob_early_initiation_anc_below4': Parameter(
+            Types.LIST, 'probabilities a woman will attend fewer than 4 ANC visits but the first visit will occur '
+                        'before month 4'),
         'prob_early_anc_at_facility_level_1_2': Parameter(
             Types.LIST, 'probabilities a woman will attend ANC 1 at facility levels 1 or 2'),
 
@@ -368,8 +373,8 @@ class PregnancySupervisor(Module):
                                             categories=['none', 'mild', 'moderate', 'severe']),
         'ps_will_initiate_anc4_early': Property(Types.BOOL, 'Whether this womans is predicted to attend 4 or more '
                                                             'antenatal care visits during her pregnancy'),
-        'ps_anc4': Property(Types.BOOL, 'Whether this womans is predicted to attend 4 or more '
-                                                            'antenatal care visits during her pregnancy'),
+        'ps_anc4': Property(Types.BOOL, 'Whether this womans is predicted to attend 4 or more antenatal care visits '
+                                        'during her pregnancy'),
         'ps_abortion_complications': Property(Types.INT, 'Bitset column holding types of abortion complication'),
         'ps_prev_spont_abortion': Property(Types.BOOL, 'Whether this woman has had any previous pregnancies end in '
                                                        'spontaneous abortion'),
@@ -512,7 +517,7 @@ class PregnancySupervisor(Module):
                                    'pre_eclampsia': params['prob_pre_eclampsia_per_month'],
                                    'placental_abruption': params['prob_placental_abruption_per_month'],
                                    'antenatal_stillbirth': params['prob_still_birth_per_month'],
-                                   'early_initiation_anc4': params['odds_four_or_more_anc_visits']}
+                                   'early_initiation_anc4': params['odds_early_init_anc4']}
 
         target_intercepts_sa = {'ga_4': params['prob_spontaneous_abortion_per_month'][0],
                                 'ga_8': params['prob_spontaneous_abortion_per_month'][1],
@@ -2027,15 +2032,18 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Finally for these women we determine care seeking for the first antenatal care contact of their
         # pregnancy. We use a linear model to predict if these women will attend early ANC and at least 4 visits
 
-        # First we identify all the women predicted to attend ANC, with the first visit occuring before 4 months
+        # First we identify all the women predicted to attend ANC, with the first visit occurring before 4 months
         early_initiation_anc4 = self.module.apply_linear_model(
             self.module.ps_linear_models['early_initiation_anc4'],
             df.loc[new_pregnancy & (df['ps_ectopic_pregnancy'] == 'none')])
 
-        # Of the women who will not attend ANC4 early, we determe who will attend ANC4
+        # Of the women who will not attend ANC4 early, we determine who will attend ANC4
         late_initation_anc4 = pd.Series(self.module.rng.random_sample(
-            len(early_initiation_anc4.loc[~early_initiation_anc4])) < 0.21,
+            len(early_initiation_anc4.loc[~early_initiation_anc4])) < params['prob_late_initiation_anc4'],
                                         index=early_initiation_anc4.loc[~early_initiation_anc4].index)
+
+        for v in late_initation_anc4.loc[late_initation_anc4].index:
+            assert v not in early_initiation_anc4.loc[early_initiation_anc4].index
 
         df.loc[early_initiation_anc4.loc[early_initiation_anc4].index, 'ps_anc4'] = True
         df.loc[late_initation_anc4.loc[late_initation_anc4].index, 'ps_anc4'] = True
@@ -2044,7 +2052,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                       (df.ps_ectopic_pregnancy == 'none') & ~df.ps_anc4
 
         early_initiation_anc_below_4 = pd.Series(self.module.rng.random_sample(len(anc_below_4.loc[anc_below_4]))
-                                                 < 0.13, index=anc_below_4.loc[anc_below_4].index)
+                                                 < params['prob_early_initiation_anc_below4'],
+                                                 index=anc_below_4.loc[anc_below_4].index)
 
         def schedulde_early_visit(df_slice):
             for person in df_slice.index:
@@ -2053,7 +2062,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                 self.module.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
 
         for slice in [early_initiation_anc4.loc[early_initiation_anc4],
-                          early_initiation_anc_below_4.loc[early_initiation_anc_below_4]]:
+                      early_initiation_anc_below_4.loc[early_initiation_anc_below_4]]:
             schedulde_early_visit(slice)
 
         def schedulde_late_visit(df_slice):
@@ -2068,30 +2077,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         for slice in [late_initation_anc4.loc[late_initation_anc4],
                       early_initiation_anc_below_4.loc[~early_initiation_anc_below_4]]:
             schedulde_late_visit(slice)
-
-        """
-        anc_attendance = self.module.apply_linear_model(
-            self.module.ps_linear_models['early_initiation_anc4'],
-            df.loc[new_pregnancy & (df['ps_ectopic_pregnancy'] == 'none')])
-
-        # This property is used  during antenatal care to ensure the right % of women attend four or more visits
-        df.loc[anc_attendance.loc[anc_attendance].index, 'ps_will_initiate_anc4_early'] = True
-
-        for person in anc_attendance.loc[anc_attendance].index:
-            random_draw_gest_at_anc = self.module.rng.choice([1, 2, 3, 4],
-                                                             p=params['prob_anc1_months_1_to_4'])
-
-            self.module.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
-
-        # Gestation of first ANC visit (month) is selected via a random weighted draw to represent the distribution
-        # of first ANC attendance by gestational age
-        for person in anc_attendance.loc[~anc_attendance].index:
-            random_draw_gest_at_anc = self.module.rng.choice([5, 6, 7, 8, 9, 10],
-                                                             p=params['prob_anc1_months_5_to_9'])
-
-            # We use month ten to capture women who will never attend ANC during their pregnancy
-            if random_draw_gest_at_anc != 10:
-                self.module.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc) """
 
         # ------------------------ APPLY RISK OF ADDITIONAL PREGNANCY COMPLICATIONS -----------------------------------
         # The following functions apply risk of key complications/outcomes of pregnancy as specific time points of a
@@ -2121,8 +2106,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             self.module.apply_risk_of_gestational_diabetes(gestation_of_interest=gestation_of_interest)
             self.module.apply_risk_of_placental_abruption(gestation_of_interest=gestation_of_interest)
             self.module.apply_risk_of_antepartum_haemorrhage(gestation_of_interest=gestation_of_interest)
-            # todo: delete if decide
-            # self.module.apply_risk_of_sepsis_post_prom(gestation_of_interest=gestation_of_interest)
+            self.module.apply_risk_of_sepsis_post_prom(gestation_of_interest=gestation_of_interest)
             self.module.apply_risk_of_premature_rupture_of_membranes(gestation_of_interest=gestation_of_interest)
 
         for gestation_of_interest in [27, 31, 35, 40]:
