@@ -1136,6 +1136,7 @@ def test_pregnancy_supervisor_chorio_and_prom():
     for person in pregnant_women.index:
         assert sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]['delete_mni']
 
+
 def test_induction_of_labour_logic():
     """Tests the that woman who are post-term are seeking care for induction of labour"""
 
