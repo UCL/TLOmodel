@@ -472,6 +472,11 @@ def test_run_all_births_end_antenatal_still_birth():
     params['baseline_prob_early_labour_onset'] = 0
     params['prob_still_birth_per_month'] = 1
 
+    # Prevent care seeking for ANC to ensure no women are admitted and all women are at risk of stillbirth
+    # (currently inpatients dont have risk applied)
+    params['prob_four_or_more_anc_visits'] = 0
+    params['prob_first_anc_visit_gestational_age'] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+
     sim.simulate(end_date=Date(2011, 1, 1))
     df = sim.population.props
 
@@ -1130,7 +1135,6 @@ def test_pregnancy_supervisor_chorio_and_prom():
     assert (df.loc[pregnant_women.index, 'ps_prev_stillbirth']).all().all()
     for person in pregnant_women.index:
         assert sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]['delete_mni']
-
 
 def test_induction_of_labour_logic():
     """Tests the that woman who are post-term are seeking care for induction of labour"""
