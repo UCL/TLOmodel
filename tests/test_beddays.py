@@ -33,13 +33,12 @@ def test_beddays_in_isolation(tmpdir):
     hs = sim.modules['HealthSystem']
 
     # Update BedCapacity data with a simple table:
-    level2_facility_ids = [64, 65, 66]
+    level2_facility_ids = [64, 65, 66]  # <-- the level 2 facilities for each region
     cap_bedtype1 = 5
     cap_bedtype2 = 100
 
     # create a simple bed capacity dataframe
     hs.parameters['BedCapacity'] = pd.DataFrame(
-        index=[0, 1, 2],
         data={
             'Facility_ID': level2_facility_ids,
             'bedtype1': cap_bedtype1,
@@ -535,17 +534,11 @@ def test_bed_days_basics_with_healthsystem_disabled():
     hs = sim.modules['HealthSystem']
 
     # Update BedCapacity data with a simple table:
-    level2_facility_ids = [64, 65]
-    cap_bedtype1 = 0
-    cap_bedtype2 = 0
-
-    # create a simple bed capacity dataframe
     hs.parameters['BedCapacity'] = pd.DataFrame(
-        index=[1, 2],
         data={
-            'Facility_ID': level2_facility_ids,
-            'high_dependency_bed': cap_bedtype1,
-            'general_bed': cap_bedtype2
+            'Facility_ID': [64, 65, 66],  # <-- the level 2 facilities for each region,
+            'high_dependency_bed': 0,
+            'general_bed': 0
         }
     )
 
@@ -572,62 +565,58 @@ def test_the_use_of_beds_from_multiple_facilities():
     # call HealthSystem Module to initialise BedDays class
     hs = sim.modules['HealthSystem']
 
-    # Update BedCapacity data with a simple table:
-    level2_facility_ids = [64, 65]
-    cap_bedtype1 = 50
-    cap_bedtype2 = 100
-
-    # create a simple bed capacity dataframe
+    # Create a simple bed capacity dataframe with capacity designated for two regions
     hs.parameters['BedCapacity'] = pd.DataFrame(
-        index=[0, 1],
         data={
-            'Facility_ID': level2_facility_ids,
-            'bedtype1': cap_bedtype1,
-            'bedtype2': cap_bedtype2
+            'Facility_ID': [64, 65],  # <-- facility id for level 2 facilities in Northern (64) and Central (65)
+            'bedtype1': 50,
+            'bedtype2': 100
         }
     )
 
-    # Create a 21 day simulation
+    # Create a simulation that has the same duration as the window of the tracker
     days_sim = hs.bed_days.days_until_last_day_of_bed_tracker
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=days_sim))
 
-    # assign district of origin to 2 individuals
-    person1_district = "Chitipa"
-    person2_district = "Kasungu"
+    # Define the district and the facility_id to which the person will have beddays.
+    person_info = [
+        ("Chitipa", 64),    # <-- in the Northern region, so use facility_id 64
+        ("Kasungu", 65),    # <-- in the Central region, so use facility_id 65
+        ("Machinga", 66)    # <-- in the Southern region, so use facility_id 66 (for which no capacity defined)
+    ]
 
     df = sim.population.props
-    df.loc[df.index[0], "district_of_residence"] = person1_district
-    df.loc[df.index[1], "district_of_residence"] = person2_district
+    for _person_id, _info in enumerate(person_info):
+        df.loc[_person_id, "district_of_residence"] = _info[0]
 
     # reset bed days tracker to the start_date of the simulation
     hs.bed_days.initialise_beddays_tracker()
 
     # 1) create a footprint
-    general_bed_dur = 4
-    footprint = {'bedtype1': general_bed_dur, 'bedtype2': 0}
+    bedtype1_dur = 4
+    footprint = {'bedtype1': bedtype1_dur, 'bedtype2': 0}
 
     sim.date = start_date
-    general_bed_capacity = hs.parameters['BedCapacity']['bedtype1']
+    bedtype1_capacity = hs.parameters['BedCapacity']['bedtype1']
 
     # impose bed days footprint on both facilities
-    for general_id in range(0, 2):
-        hs.bed_days.impose_beddays_footprint(person_id=general_id, footprint=footprint)
+    for _person_id in [0, 1]:
+        hs.bed_days.impose_beddays_footprint(person_id=_person_id, footprint=footprint)
+
+        # get facility_id that should be receive this footprint
+        _fac_id = person_info[_person_id][1]
 
         # check if impose footprint works as expected
-        tracker = hs.bed_days.bed_tracker['bedtype1'][level2_facility_ids[general_id]]
+        tracker = hs.bed_days.bed_tracker['bedtype1'][_fac_id]
 
-        assert ([general_bed_capacity.loc[general_bed_capacity.index[general_id]] - 1] * general_bed_dur + [
-            general_bed_capacity.loc[general_bed_capacity.index[general_id]]] * (
-                    days_sim + 1 - general_bed_dur) == tracker.values).all()
+        assert ([bedtype1_capacity.loc[bedtype1_capacity.index[_person_id]] - 1] * bedtype1_dur + [
+            bedtype1_capacity.loc[bedtype1_capacity.index[_person_id]]] * (
+                    days_sim + 1 - bedtype1_dur) == tracker.values).all()
 
+    # -- Check that there is an error if there is demand for beddays in a region for which no capacity is defined
     # impose bed days on an individual whose level 2 bed capacity hasn't been defined
-    person3_district = "Machinga"
-
-    # assign the district to individual no. 3
-    personal_id = 2
-    df.loc[df.index[personal_id], "district_of_residence"] = person3_district
 
     # impose footprint
     with pytest.raises(KeyError):
-        hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+        hs.bed_days.impose_beddays_footprint(person_id=2, footprint=footprint)
