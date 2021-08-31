@@ -562,13 +562,13 @@ def test_the_use_of_beds_from_multiple_facilities():
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
     )
 
-    # call HealthSystem Module to initialise BedDays class
+    # get shortcut to HealthSystem Module
     hs = sim.modules['HealthSystem']
 
     # Create a simple bed capacity dataframe with capacity designated for two regions
     hs.parameters['BedCapacity'] = pd.DataFrame(
         data={
-            'Facility_ID': [64, 65],  # <-- facility id for level 2 facilities in Northern (64) and Central (65)
+            'Facility_ID': [64, 65],  # <-- facility_id for level 2 facilities in Northern (64) and Central (65)
             'bedtype1': 50,
             'bedtype2': 100
         }
@@ -583,7 +583,7 @@ def test_the_use_of_beds_from_multiple_facilities():
     person_info = [
         ("Chitipa", 64),    # <-- in the Northern region, so use facility_id 64
         ("Kasungu", 65),    # <-- in the Central region, so use facility_id 65
-        ("Machinga", 66)    # <-- in the Southern region, so use facility_id 66 (for which no capacity defined)
+        ("Machinga", 66)    # <-- in the Southern region, so use facility_id 66 (for which no capacity is defined)
     ]
 
     df = sim.population.props
@@ -600,7 +600,7 @@ def test_the_use_of_beds_from_multiple_facilities():
     sim.date = start_date
     bedtype1_capacity = hs.parameters['BedCapacity']['bedtype1']
 
-    # impose bed days footprint on both facilities
+    # impose bed days footprint for each of the persons in Northern and Central districts
     for _person_id in [0, 1]:
         hs.bed_days.impose_beddays_footprint(person_id=_person_id, footprint=footprint)
 
@@ -615,8 +615,6 @@ def test_the_use_of_beds_from_multiple_facilities():
                     days_sim + 1 - bedtype1_dur) == tracker.values).all()
 
     # -- Check that there is an error if there is demand for beddays in a region for which no capacity is defined
-    # impose bed days on an individual whose level 2 bed capacity hasn't been defined
-
-    # impose footprint
+    # person 2 is in the Southern region for which no beddays capacity is defimed
     with pytest.raises(KeyError):
         hs.bed_days.impose_beddays_footprint(person_id=2, footprint=footprint)

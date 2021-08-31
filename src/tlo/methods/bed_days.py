@@ -303,8 +303,9 @@ class BedDays:
         return remaining_footprint
 
     def get_persons_level2_facility_id(self, persons_id):
-        """Helper function to find the facility at which an HSI event will take place"""
-        # Gather information about the HSI event
+        """Helper function to find the facility at which an HSI event will take place; i.e. the facility 2 facility to
+         which the person has acccess"""
+
         the_district = self.hs_module.sim.population.props.at[persons_id, 'district_of_residence']
         facility_level = 2
 
