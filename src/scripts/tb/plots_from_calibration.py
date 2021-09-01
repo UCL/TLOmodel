@@ -279,7 +279,7 @@ results_deaths = results_deaths.reset_index()
 
 # AIDS deaths
 # select cause of death
-tmp = results_deaths.loc[(results_deaths.cause == "AIDS_TB") | (results_deaths.cause == "AIDS_non_TB")]
+tmp = results_deaths.loc[(results_deaths.cause == "AIDS")]
 # select draw - drop columns where draw != 0, but keep year and cause
 tmp2 = tmp.loc[:, ("draw" == draw)].copy()  # selects only columns for draw=0 (removes year/cause)
 # join year and cause back to df - needed for groupby
