@@ -3,16 +3,19 @@
 This file defines a batch run through which the hiv and tb modules are run across a grid of parameter values
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/hiv/PrEP_analyses/hiv_prep_baseline_scenario.py
+tlo scenario-run --draw-only src/scripts/tb/calibration.py
 
 Test the scenario starts running without problems:
-tlo scenario-run src/scripts/hiv/PrEP_analyses/hiv_prep_baseline_scenario.py
+tlo scenario-run src/scripts/tb/calibration.py
 
 or execute a single run:
-tlo scenario-run src/scripts/hiv/PrEP_analyses/hiv_prep_baseline_scenario.py --draw 1 0
+tlo scenario-run src/scripts/tb/calibration.py --draw 1 0
 
 Run on the batch system using:
-tlo batch-submit  src/scripts/hiv/PrEP_analyses/hiv_prep_baseline_scenario.py
+tlo batch-submit  src/scripts/tb/calibration.py
+
+save job ID:
+
 
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
@@ -20,8 +23,7 @@ tlo batch-job tlo_q1_demo-123 --tasks
 Download result files for a completed job:
 tlo batch-download tlo_q1_demo-123
 
-test run, pop 5000
-Job ID: hiv_prep_baseline_scenario-2021-08-27T095045Z
+
 
 """
 

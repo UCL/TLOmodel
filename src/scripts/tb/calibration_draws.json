@@ -8,7 +8,5 @@
       "draw_seed": 1541417687,
       "parameters": null
     }
-  ],
-  "commit": "a401dd50fd81c477898e85b732077313ef4fc100",
-  "github": "https://github.com/UCL/TLOmodel/blob/a401dd50fd81c477898e85b732077313ef4fc100/src/scripts/tb/calibration.py"
+  ]
 }
