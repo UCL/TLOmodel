@@ -14,7 +14,7 @@ tlo scenario-run src/scripts/tb/calibration.py --draw 1 0
 Run on the batch system using:
 tlo batch-submit  src/scripts/tb/calibration.py
 
-save job ID:
+save job ID:calibration-2021-09-01T115556Z
 
 
 Display information about a job:
