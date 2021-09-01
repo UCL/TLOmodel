@@ -503,7 +503,7 @@ class HealthSystem(Module):
                 assert isinstance(hsi_event.ACCEPTED_FACILITY_LEVEL, int)
                 assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels
 
-                self.check_beddays_footrpint_format(hsi_event.BEDDAYS_FOOTPRINT)
+                self.bed_days.check_beddays_footprint_format(hsi_event.BEDDAYS_FOOTPRINT)
 
                 # That it has a list for the other disease that will be alerted when it
                 # is run and that this make sense
