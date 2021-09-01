@@ -53,7 +53,7 @@ log_config = {
 
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
-sim = Simulation(start_date=start_date, seed=100, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=200, log_config=log_config)
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
              enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),

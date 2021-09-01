@@ -393,6 +393,19 @@ plt.show()
 
 
 # ---------------------------------------------------------------------- #
+
+# HIV/TB deaths only
+make_plot(
+    title_str='TB mortality rate per 100,000 population',
+    model=tot_tb_hiv_deaths,
+    data_mid=data_tb_who['mortality_tb_hiv_per_100k'],
+    data_low=data_tb_who['mortality_tb_hiv_per_100k_low'],
+    data_high=data_tb_who['mortality_tb_hiv_per_100k_high']
+)
+
+plt.show()
+
+# ---------------------------------------------------------------------- #
 # %%: PROGRAM OUTPUTS
 # ---------------------------------------------------------------------- #
 

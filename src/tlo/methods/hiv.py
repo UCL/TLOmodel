@@ -291,8 +291,8 @@ class Hiv(Module):
         # 2)  Declare the Symptoms.
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name="aids_symptoms",
-                    odds_ratio_health_seeking_in_adults=3.0,  # High chance of seeking care when aids_symptoms onset
-                    odds_ratio_health_seeking_in_children=3.0)  # High chance of seeking care when aids_symptoms onset
+                    odds_ratio_health_seeking_in_adults=10.0,  # High chance of seeking care when aids_symptoms onset
+                    odds_ratio_health_seeking_in_children=10.0)  # High chance of seeking care when aids_symptoms onset
         )
 
     def pre_initialise_population(self):
@@ -356,11 +356,11 @@ class Hiv(Module):
         # Linear model that give the probability of seeking a 'Spontaneous' Test for HIV
         # (= sum of probabilities for accessing any HIV service when not ill)
 
-        self.lm['lm_spontaneous_test_12m'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p["prob_spontaneous_test_12m"],
-            Predictor('hv_diagnosed').when(True, 0.0).otherwise(1.0)
-        )
+        # self.lm['lm_spontaneous_test_12m'] = LinearModel(
+        #     LinearModelType.MULTIPLICATIVE,
+        #     p["prob_spontaneous_test_12m"],
+        #     Predictor('hv_diagnosed').when(True, 0.0).otherwise(1.0)
+        # )
 
         # Linear model if the person will start ART, following when the person has been diagnosed:
         self.lm['lm_art'] = LinearModel(
@@ -478,6 +478,7 @@ class Hiv(Module):
     def initialise_baseline_art(self, population):
         """ assign initial art coverage levels
         also assign hiv test properties if allocated ART
+        probability of being on ART scaled by length of time infected (>10 years)
         """
         df = population.props
         params = self.parameters
@@ -496,36 +497,29 @@ class Hiv(Module):
             how="left",
         )['prop_coverage']
 
-        # # probability based on time infected, if more than 10 years - increased prob of ART
-        # now = self.sim.date
-        # rel_prob_art_by_time_infected = LinearModel.multiplicative(
-        #     Predictor("hv_date_inf").when("< (now - pd.DateOffset(years=10))",
-        #                                   params["rel_probability_art_baseline_aids"])
-        # ).predict(df.loc[df.is_alive])
-        #
-        # # Rescale relative probability of infection so that its average is 1.0 within each age/sex group
-        # p = pd.DataFrame({
-        #     'age_years': df['age_years'],
-        #     'sex': df['sex'],
-        #     'prob_art': prob_art,
-        #     'rel_prob_art_by_time_infected': rel_prob_art_by_time_infected
-        # })
+        # make a series with relative risks of art which depends on >10 years infected
+        rr_art = pd.Series(1, index=df.index)
+        rr_art.loc[df.is_alive &
+                   (df.hv_date_inf < (self.sim.date - pd.DateOffset(years=10)))] = params["rel_probability_art_baseline_aids"]
 
-        # p['mean_of_rel_prob_within_age_sex_group'] = p.groupby(['age_years', 'sex'])[
-        #     'rel_prob_art_by_time_infected'].transform('mean')
-        # p['scaled_rel_prob_by_time_infected'] = p['rel_prob_art_by_time_infected'] / p['mean_of_rel_prob_within_age_sex_group']
-        # p['overall_prob_of_art'] = p['scaled_rel_prob_by_time_infected'] * p['prob_art']
-        # art_idx = self.rng.random_sample(len(p['overall_prob_of_art'])) < p['overall_prob_of_art']
-        #
+        # Rescale relative probability of infection so that its average is 1.0 within each age/sex group
+        p = pd.DataFrame({
+            'age_years': df['age_years'],
+            'sex': df['sex'],
+            'prob_art': prob_art,
+            'rel_prob_art_by_time_infected': rr_art
+        })
 
+        p['mean_of_rel_prob_within_age_sex_group'] = p.groupby(['age_years', 'sex'])[
+            'rel_prob_art_by_time_infected'].transform('mean')
+        p['scaled_rel_prob_by_time_infected'] = p['rel_prob_art_by_time_infected'] / p['mean_of_rel_prob_within_age_sex_group']
+        p['overall_prob_of_art'] = p['scaled_rel_prob_by_time_infected'] * p['prob_art']
+        random_draw = self.rng.random_sample(size=len(df))
 
-        prob_art = prob_art.fillna(0)
-
-        art_idx = prob_art.index[
-            (self.rng.random_sample(len(prob_art)) < prob_art)
+        art_idx = df.index[
+            (random_draw < p['overall_prob_of_art'])
             & df.is_alive
-            & df.hv_inf
-            ]
+            & df.hv_inf]
 
         # 2) Determine adherence levels for those currently on ART, for each of adult men, adult women and children
         adult_f_art_idx = df.loc[(df.index.isin(art_idx) & (df.sex == 'F') & (df.age_years >= 15))].index
@@ -883,6 +877,27 @@ class Hiv(Module):
         #  prior to this function being called
         if (not child_infected) and (df.at[child_id, "nb_breastfeeding_status"] != 'none') and mother.hv_inf:
             self.mtct_during_breastfeeding(mother_id, child_id)
+
+        # ----------------------------------- HIV testing --------------------------
+        if not 'care_of_women_during_pregnancy' in self.sim.modules:
+            # if mother's HIV status not known, schedule test at delivery
+            # usually performed by care_of_women_during_pregnancy module
+            if not mother.hv_diagnosed and mother.is_alive:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_TestAndRefer(person_id=mother_id, module=self),
+                    priority=1,
+                    topen=self.sim.date,
+                    tclose=None
+                )
+
+            # if mother known HIV+, schedule test for infant now and in 6 weeks (EI
+            if mother.hv_diagnosed and df.at[child_id, "is_alive"]:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_TestAndRefer(person_id=child_id, module=self),
+                    priority=1,
+                    topen=self.sim.date + pd.DateOffset(weeks=6),
+                    tclose=None
+                )
 
     def on_hsi_alert(self, person_id, treatment_id):
         raise NotImplementedError
