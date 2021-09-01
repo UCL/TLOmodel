@@ -104,6 +104,7 @@ data_hiv_moh_art = pd.read_excel(xls, sheet_name='MoH_number_art')
 # %% Analyse results of runs
 
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
+# replace "calibration" with hiv_prep_baseline_scenario.py"
 results_folder = get_scenario_outputs('calibration.py', outputspath)[-1]
 
 # Declare path for output graphs from this script
