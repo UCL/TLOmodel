@@ -7,6 +7,7 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   tlo.methods.alri
    tlo.methods.bladder_cancer
    tlo.methods.breast_cancer
    tlo.methods.cardio_metabolic_disorders

@@ -39,8 +39,8 @@ tlo.methods.epi module
           - Type
           - Description
         * - va_bcg
-          - BOOL
-          - received bcg vaccination
+          - INT
+          - number of doses of BCG vaccination
         * - va_opv
           - INT
           - number of doses of OPV vaccine received
@@ -52,7 +52,7 @@ tlo.methods.epi module
           - number of doses of Hib vaccine received
         * - va_hep
           - INT
-          - number of doses of HepB vaccine received
+          - number of doses of HepB vaccine received (infant series)
         * - va_pneumo
           - INT
           - number of doses of pneumococcal vaccine received
@@ -71,6 +71,39 @@ tlo.methods.epi module
         * - va_td
           - INT
           - number of doses of tetanus/diphtheria vaccine received by pregnant women
+        * - va_bcg_all_doses
+          - BOOL
+          - whether all doses have been received of the vaccine bcg
+        * - va_opv_all_doses
+          - BOOL
+          - whether all doses have been received of the OPV vaccine
+        * - va_dtp_all_doses
+          - BOOL
+          - whether all doses have been received of the DTP vaccine
+        * - va_hib_all_doses
+          - BOOL
+          - whether all doses have been received of the Hib vaccine
+        * - va_hep_all_doses
+          - BOOL
+          - whether all doses have been received of the HepB vaccine (infant series)
+        * - va_pneumo_all_doses
+          - BOOL
+          - whether all doses have been received of the pneumococcal vaccine
+        * - va_rota_all_doses
+          - BOOL
+          - whether all doses have been received of the rotavirus vaccine
+        * - va_measles_all_doses
+          - BOOL
+          - whether all doses have been received of the measles vaccine
+        * - va_rubella_all_doses
+          - BOOL
+          - whether all doses have been received of the rubella vaccine
+        * - va_hpv_all_doses
+          - BOOL
+          - whether all doses have been received of the HPV vaccine
+        * - va_td_all_doses
+          - BOOL
+          - whether all doses have been received of the tetanus/diphtheria vaccine
 
 
 
@@ -93,6 +126,8 @@ tlo.methods.epi module
      .. automethod:: on_hsi_alert
 
      .. automethod:: report_daly_values
+
+     .. automethod:: increment_dose
 
 
 

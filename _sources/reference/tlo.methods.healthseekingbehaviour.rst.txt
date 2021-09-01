@@ -103,6 +103,8 @@ tlo.methods.healthseekingbehaviour module
 
      .. automethod:: __init__
 
+     .. automethod:: _select_persons_with_any_symptoms
+
      .. automethod:: apply
 
 

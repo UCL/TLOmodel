@@ -237,21 +237,6 @@ Multiple modules may be given as separate arguments to one call.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.simulation.Simulation.seed_rngs">
-<span class="sig-name descname"><span class="pre">seed_rngs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.seed_rngs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.seed_rngs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Seed the random number generator (RNG) for the Simulation instance and registered modules</p>
-<p>The Simulation instance has its RNG seeded with the supplied value. Each module has its own
-RNG with its own state, which is seeded using a random integer drawn from the (newly seeded)
-Simulation RNG</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>seed</strong> – the seed for the Simulation RNG. If seed is not provided, a random seed will be
-used.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="tlo.simulation.Simulation.make_initial_population">
 <span class="sig-name descname"><span class="pre">make_initial_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.make_initial_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.make_initial_population" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create the initial population to simulate.</p>
@@ -383,7 +368,7 @@ so we can tell which is least, i.e. earliest.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jul 08, 2021.
+        Last updated on Sep 01, 2021.
       </span>
 
     </p>

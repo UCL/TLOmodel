@@ -1,0 +1,1415 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.methods.alri module &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="tlo.methods.bladder_cancer module" href="tlo.methods.bladder_cancer.html" />
+    <link rel="prev" title="tlo.methods package" href="tlo.methods.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../authors.html">Authors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Reference</a> &raquo;</li>
+        
+          <li><a href="tlo.html">tlo package</a> &raquo;</li>
+        
+          <li><a href="tlo.methods.html">tlo.methods package</a> &raquo;</li>
+        
+      <li>tlo.methods.alri module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/reference/tlo.methods.alri.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-tlo.methods.alri">
+<span id="tlo-methods-alri-module"></span><h1>tlo.methods.alri module<a class="headerlink" href="#module-tlo.methods.alri" title="Permalink to this headline">¶</a></h1>
+<p>Childhood Acute Lower Respiratory Infection Module</p>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>Individuals are exposed to the risk of infection by a pathogen (and potentially also with a secondary bacterial
+infection) that can cause one of several type of acute lower respiratory infection (Alri).
+The disease is manifested as either viral pneumonia, bacterial pneumonia or bronchiolitis.</p>
+<p>During an episode (prior to recovery - either naturally or cured with treatment), symptom are manifest and there may be
+complications (e.g. local pulmonary complication: pleural effusuion, empyema, lung abscess, pneumothorax; and/or
+systemic complications: sepsis, meningitis, and respiratory failure). There is a risk that some of these complications
+are onset after a delay.</p>
+<p>The individual may recover naturally or die. The risk of death depends on the type of disease and the presence of some
+of the complications.</p>
+<p>Health care seeking is prompted by the onset of the symptom. The individual can be treated; if successful the risk of
+death is lowered and they are cured (symptom resolved) some days later.</p>
+</div>
+<div class="section" id="outstanding-issues">
+<h2>Outstanding issues<a class="headerlink" href="#outstanding-issues" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>All HSI events</p></li>
+<li><p>Follow-up appointments for initial HSI events.</p></li>
+<li><p>Double check parameters and consumables codes for the HSI events.</p></li>
+<li><p>Duration of Alri Event is not informed by data</p></li>
+</ul>
+</div>
+<div class="section" id="questions">
+<h2>Questions<a class="headerlink" href="#questions" title="Permalink to this headline">¶</a></h2>
+<p>#1:
+‘daly_very_severe_ALRI’ is never used: is that right?</p>
+<p>#2:
+There are no probabilities describing the risk of onset of the complication “empyema”. There is the risk of empyema
+being delayed onset (i.e. prob_pleural_effusion_to_empyema) and also the risk that “empyema” leads to sepsis
+(prob_empyema_to_sepsis). However, for simplicity  we only have two phases of complication (initial and delayed), so
+this is not represented at the moment. I am not sure if it should be or not.</p>
+<p>#3:
+The risk of death is not affected by delayed-onset complications: should it be?</p>
+<p>#4:
+Check that every parameter is used and remove those not used (from definition and from excel). I think that are several
+not being used (e.g prob_respiratory_failure_to_multiorgan_dysfunction and r_progress_to_severe_ALRI) – perhaps left</p>
+<blockquote>
+<div><dl class="simple">
+<dt>over from an earlier version? Also, please could you tidy-up ResourceFile_Alri.xlsx? If there are sheets that need to</dt><dd><dl class="simple">
+<dt>remain in there, it would be good if you can explain what each is for on the sheet (and delete anything that is not</dt><dd><p>needed).</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<p>#5:
+Is it right that ‘danger_signs’ is an indepednet symptom? It seems like this is something that is determined in the</p>
+<blockquote>
+<div><p>course of a diagnosis (like in diarrhoea module).</p>
+</div></blockquote>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Alri</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_indivdual</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_checks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the disease module for Acute Lower Respiratory Infections.</p>
+<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<p><strong>PARAMETERS:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>base_inc_rate_ALRI_by_RSV</p></td>
+<td><p>LIST</p></td>
+<td><p>baseline incidence rate of Alri caused by RSV in age groups 0-11, 12-23, 24-59 months, per child per year</p></td>
+</tr>
+<tr class="row-odd"><td><p>base_inc_rate_ALRI_by_Rhinovirus</p></td>
+<td><p>LIST</p></td>
+<td><p>baseline incidence of Alri caused by Rhinovirus in age groups 0-11, 12-23, 24-59 months, per child per year</p></td>
+</tr>
+<tr class="row-even"><td><p>base_inc_rate_ALRI_by_HMPV</p></td>
+<td><p>LIST</p></td>
+<td><p>baseline incidence of Alri caused by HMPV in age groups 0-11, 12-23, 24-59 months, per child per year</p></td>
+</tr>
+<tr class="row-odd"><td><p>base_inc_rate_ALRI_by_Parainfluenza</p></td>
+<td><p>LIST</p></td>
+<td><p>baseline incidence of Alri caused by Parainfluenza 1-4 in age groups 0-11, 12-23, 24-59 months, per child per year</p></td>
+</tr>
+<tr class="row-even"><td><p>base_inc_rate_ALRI_by_Strep_pneumoniae_PCV13</p></td>
+<td><p>LIST</p></td>
+<td><p>baseline incidence of Alri caused by Streptoccocus pneumoniae PCV13 serotype in age groups 0-11, 12-23, 24-59 months, per child per year</p></td>
+</tr>
+<tr class="row-odd"><td><p>base_inc_rate_ALRI_by_Strep_pneumoniae_non_PCV13</p></td>
+<td><p>LIST</p></td>
+<td><p>baseline incidence of Alri caused by Streptoccocus pneumoniae non PCV13 serotype in age groups 0-11, 12-23, 24-59 months, per child per year</p></td>
+</tr>
+<tr class="row-even"><td><p>base_inc_rate_ALRI_by_Hib</p></td>
+<td><p>LIST</p></td>
+<td><p>baseline incidence of Alri caused by Haemophilus influenzae type b in age groups 0-11, 12-23, 24-59 months, per child per year</p></td>
+</tr>
+<tr class="row-odd"><td><p>base_inc_rate_ALRI_by_H.influenzae_non_type_b</p></td>
+<td><p>LIST</p></td>
+<td><p>baseline incidence of Alri caused by Haemophilus influenzae non-type b in age groups 0-11, 12-23, 24-59 months, per child per year</p></td>
+</tr>
+<tr class="row-even"><td><p>base_inc_rate_ALRI_by_Enterobacteriaceae</p></td>
+<td><p>LIST</p></td>
+<td><p>baseline incidence of Alri caused by Enterobacteriaceae in age groups 0-11, 12-23, 24-59 months, per child per year</p></td>
+</tr>
+<tr class="row-odd"><td><p>base_inc_rate_ALRI_by_other_Strepto_Enterococci</p></td>
+<td><p>LIST</p></td>
+<td><p>baseline incidence of Alri caused by other streptococci and Enterococci including Streptococcus pyogenes and Enterococcus faecium in age groups 0-11, 12-23, 24-59 months, per child per year</p></td>
+</tr>
+<tr class="row-even"><td><p>base_inc_rate_ALRI_by_Staph_aureus</p></td>
+<td><p>LIST</p></td>
+<td><p>baseline incidence of Alri caused by Staphylococcus aureus in age groups 0-11, 12-23, 24-59 months, per child per year</p></td>
+</tr>
+<tr class="row-odd"><td><p>base_inc_rate_ALRI_by_Influenza</p></td>
+<td><p>LIST</p></td>
+<td><p>baseline incidence of Alri caused by Influenza type A, B, and C in age groups 0-11, 12-23, 24-59 months, per child per year</p></td>
+</tr>
+<tr class="row-even"><td><p>base_inc_rate_ALRI_by_P.jirovecii</p></td>
+<td><p>LIST</p></td>
+<td><p>baseline incidence of Alri caused by P. jirovecii in age groups 0-11, 12-59 months, per child per year</p></td>
+</tr>
+<tr class="row-odd"><td><p>base_inc_rate_ALRI_by_Adenovirus</p></td>
+<td><p>LIST</p></td>
+<td><p>baseline incidence of Alri caused by adenovirus in age groups 0-11, 12-59 months, per child per year</p></td>
+</tr>
+<tr class="row-even"><td><p>base_inc_rate_ALRI_by_Bocavirus</p></td>
+<td><p>LIST</p></td>
+<td><p>baseline incidence of Alri caused by bocavirus in age groups 0-11, 12-59 months, per child per year</p></td>
+</tr>
+<tr class="row-odd"><td><p>base_inc_rate_ALRI_by_other_viral_pathogens</p></td>
+<td><p>LIST</p></td>
+<td><p>baseline incidence of Alri caused by other viral pathogens in age groups 0-11, 12-59 months, per child per year</p></td>
+</tr>
+<tr class="row-even"><td><p>base_inc_rate_ALRI_by_other_bacterial_pathogens</p></td>
+<td><p>LIST</p></td>
+<td><p>baseline incidence of Alri caused by other viral pathogens in age groups 0-11, 12-59 months, per child per year</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_ALRI_HHhandwashing</p></td>
+<td><p>REAL</p></td>
+<td><p>relative rate of acquiring Alri for children with household handwashing with soap</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_ALRI_HIV_untreated</p></td>
+<td><p>REAL</p></td>
+<td><p>relative rate of acquiring Alri for children with untreated HIV positive status</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_ALRI_underweight</p></td>
+<td><p>REAL</p></td>
+<td><p>relative rate of acquiring Alri for underweight children</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_ALRI_low_birth_weight</p></td>
+<td><p>REAL</p></td>
+<td><p>relative rate of acquiring Alri for infants with low birth weight</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_ALRI_not_excl_breastfeeding</p></td>
+<td><p>REAL</p></td>
+<td><p>relative rate of acquiring Alri for not exclusive breastfeeding upto 6 months</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_ALRI_indoor_air_pollution</p></td>
+<td><p>REAL</p></td>
+<td><p>relative rate of acquiring Alri for indoor air pollution</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_viral_pneumonia_bacterial_coinfection</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of primary viral pneumonia having a bacterial co-infection</p></td>
+</tr>
+<tr class="row-even"><td><p>proportion_bacterial_coinfection_pathogen</p></td>
+<td><p>LIST</p></td>
+<td><p>list of proportions of each bacterial pathogens in a co-infection pneumonia</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_secondary_bacterial_infection_in_bronchiolitis</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of viral bronchiolitis having a bacterial infection</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_hypoxia_by_viral_pneumonia</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of hypoxia caused by primary viral pneumonia</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_hypoxia_by_bacterial_pneumonia</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of hypoxia caused by primary or secondary bacterial pneumonia</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_hypoxia_by_bronchiolitis</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of hypoxia caused by viral bronchiolitis</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_respiratory_failure_when_SpO2&lt;93%</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of respiratory failure when peripheral oxygen level is lower than 93%</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_respiratory_failure_to_multiorgan_dysfunction</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of respiratory failure causing multi-organ dysfunction</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_sepsis_by_viral_pneumonia</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of sepsis caused by primary viral pneumonia</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_sepsis_by_bacterial_pneumonia</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of sepsis caused by primary or secondary bacterial pneumonia</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_sepsis_by_bronchiolitis</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of sepsis caused by viral bronchiolitis</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_sepsis_to_multiorgan_dysfunction</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of sepsis causing multi-organ dysfunction</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_meningitis_by_bacterial_pneumonia</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of meningitis caused by primary or secondary bacterial pneumonia</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_pleural_effusion_by_bacterial_pneumonia</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of pleural effusion caused by primary or secondary bacterial pneumonia</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_pleural_effusion_by_viral_pneumonia</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of pleural effusion caused by primary viral pneumonia</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_pleural_effusion_by_bronchiolitis</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of pleural effusion caused by bronchiolitis</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_pleural_effusion_to_empyema</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of pleural effusion developing into empyema</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_empyema_to_sepsis</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of (bacterial) empyema causing sepsis</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_lung_abscess_by_bacterial_pneumonia</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of a lung abscess caused by primary or secondary bacterial pneumonia</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_pneumothorax_by_bacterial_pneumonia</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of pneumothorax caused by primary or secondary bacterial pneumonia</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_pneumothorax_by_viral_pneumonia</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of pneumothorax caused by primary viral pneumonia</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_pneumothorax_by_bronchiolitis</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of atelectasis/ lung collapse caused by bronchiolitis</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_pneumothorax_to_respiratory_failure</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of pneumothorax causing respiratory failure</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_lung_abscess_to_sepsis</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of lung abscess causing sepsis</p></td>
+</tr>
+<tr class="row-odd"><td><p>base_death_rate_ALRI_by_bacterial_pneumonia</p></td>
+<td><p>REAL</p></td>
+<td><p>baseline death rate from bacterial pneumonia, base age 0-11 months</p></td>
+</tr>
+<tr class="row-even"><td><p>base_death_rate_ALRI_by_bronchiolitis</p></td>
+<td><p>REAL</p></td>
+<td><p>baseline death rate from bronchiolitis, base age 0-11 months</p></td>
+</tr>
+<tr class="row-odd"><td><p>base_death_rate_ALRI_by_viral_pneumonia</p></td>
+<td><p>REAL</p></td>
+<td><p>baseline death rate from viral pneumonia, base age 0-11 months</p></td>
+</tr>
+<tr class="row-even"><td><p>base_death_rate_ALRI_by_fungal_pneumonia</p></td>
+<td><p>REAL</p></td>
+<td><p>baseline death rate from fungal pneumonia, base age 0-11 months</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_death_ALRI_sepsis</p></td>
+<td><p>REAL</p></td>
+<td><p>relative death rate from Alri for sepsis, base age 0-11 months</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_death_ALRI_respiratory_failure</p></td>
+<td><p>REAL</p></td>
+<td><p>relative death rate from Alri for respiratory failure, base age 0-11 months</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_death_ALRI_meningitis</p></td>
+<td><p>REAL</p></td>
+<td><p>relative death rate from Alri for meningitis, base age 0-11 months</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_death_ALRI_age12to23mo</p></td>
+<td><p>REAL</p></td>
+<td><p>death rate of Alri for children aged 12 to 23 months</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_death_ALRI_age24to59mo</p></td>
+<td><p>REAL</p></td>
+<td><p>death rate of Alri for children aged 24 to 59 months</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_death_ALRI_HIV</p></td>
+<td><p>REAL</p></td>
+<td><p>death rate of Alri for children with HIV not on ART</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_death_ALRI_SAM</p></td>
+<td><p>REAL</p></td>
+<td><p>death rate of Alri for children with severe acute malnutrition</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_death_ALRI_low_birth_weight</p></td>
+<td><p>REAL</p></td>
+<td><p>death rate of Alri for children with low birth weight (applicable to infants)</p></td>
+</tr>
+<tr class="row-odd"><td><p>proportion_viral_pneumonia_by_RSV</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of RSV infection causing viral pneumonia</p></td>
+</tr>
+<tr class="row-even"><td><p>proportion_viral_pneumonia_by_Rhinovirus</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of Rhinovirus infection causing viral pneumonia</p></td>
+</tr>
+<tr class="row-odd"><td><p>proportion_viral_pneumonia_by_HMPV</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of HMPV infection causing viral pneumonia</p></td>
+</tr>
+<tr class="row-even"><td><p>proportion_viral_pneumonia_by_Parainfluenza</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of Parainfluenza infection causing viral pneumonia</p></td>
+</tr>
+<tr class="row-odd"><td><p>proportion_viral_pneumonia_by_Influenza</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of Influenza infection causing viral pneumonia</p></td>
+</tr>
+<tr class="row-even"><td><p>proportion_viral_pneumonia_by_Adenovirus</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of Adenovirus infection causing viral pneumonia</p></td>
+</tr>
+<tr class="row-odd"><td><p>proportion_viral_pneumonia_by_Bocavirus</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of Bocavirus infection causing viral pneumonia</p></td>
+</tr>
+<tr class="row-even"><td><p>proportion_viral_pneumonia_by_other_viral_pathogens</p></td>
+<td><p>REAL</p></td>
+<td><p>proportion of other pathogens infection causing viral pneumonia</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_fever_uncomplicated_ALRI_by_disease_type</p></td>
+<td><p>LIST</p></td>
+<td><p>list of probabilities of having fever by bacterial pneumonia, viral pneumonia and bronchiolitis</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_cough_uncomplicated_ALRI_by_disease_type</p></td>
+<td><p>LIST</p></td>
+<td><p>list of probabilities of having cough by bacterial pneumonia, viral pneumonia and bronchiolitis</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_difficult_breathing_uncomplicated_ALRI_by_disease_type</p></td>
+<td><p>LIST</p></td>
+<td><p>list of probabilities of difficult breathing by bacterial pneumonia, viral pneumonia and bronchiolitis</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_fast_breathing_uncomplicated_ALRI_by_disease_type</p></td>
+<td><p>LIST</p></td>
+<td><p>list of probabilities of fast breathing by bacterial pneumonia, viral pneumonia and bronchiolitis</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_chest_indrawing_uncomplicated_ALRI_by_disease_type</p></td>
+<td><p>LIST</p></td>
+<td><p>list of probabilities of chest indrawing by bacterial pneumonia, viral pneumonia and bronchiolitis</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_danger_signs_uncomplicated_ALRI_by_disease_type</p></td>
+<td><p>LIST</p></td>
+<td><p>list of probabilities of danger signs by bacterial pneumonia, viral pneumonia and bronchiolitis</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_loss_of_appetite_adding_from_pleural_effusion</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of loss of appetite from pleural effusion</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_loss_of_appetite_adding_from_empyema</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of loss of appetite from empyema</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_severe_respiratory_distress_adding_from_respiratory_failure</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of severe respiratory distress from respiratory failure</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_severe_respiratory_distress_adding_from_sepsis</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of severe respiratory distress from sepsis</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_chest_pain_adding_from_pneumothorax</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of chest pain / pleurisy from pneumothorax</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_cyanosis_adding_from_pneumothorax</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of cyanosis from pneumothorax</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_difficult_breathing_adding_from_pneumothorax</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of difficult breathing from pneumothorax</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_chest_pain_adding_from_pleural_effusion</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of chest pain / pleurisy from pleural effusion</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_fever_adding_from_pleural_effusion</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of fever from pleural effusion</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_difficult_breathing_adding_from_pleural_effusion</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of dyspnoea/ difficult breathing from pleural effusion</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_chest_pain_adding_from_empyema</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of chest pain / pleurisy from empyema</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_fever_adding_from_empyema</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of fever from empyema</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_respiratory_distress_adding_from_empyema</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of cough with sputum from respiratory distress</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_chest_pain_adding_from_lung_abscess</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of chest pain / pleurisy from lung abscess</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_fast_breathing_adding_from_lung_abscess</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of fast_breathing/ fast breathing from lung abscess</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_fever_adding_from_lung_abscess</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of fever from lung abscess</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_difficult_breathing_adding_from_respiratory_failure</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of difficult breathing from respiratory failure</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_cyanosis_adding_from_respiratory_failure</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of cyanosis from respiratory failure</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_fast_breathing_adding_from_respiratory_failure</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of fast_breathing from respiratory failure</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_danger_signs_adding_from_respiratory_failure</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of danger signs from respiratory failure</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_headache_adding_from_meningitis</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of headache from meningitis</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_fever_adding_from_meningitis</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of fever from meningitis</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_danger_signs_adding_from_meningitis</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of danger_signs from meningitis</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_fast_breathing_adding_from_sepsis</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of fast_breathing from sepsis</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_danger_signs_adding_from_sepsis</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of danger signs from sepsis</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_fever_adding_from_sepsis</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of additional signs/symptoms of fever from sepsis</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_infection_strep_with_pneumococcal_vaccine</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of acquiring the pathogen==”Strep_pneumoniae_PCV13” if has had all doses of pneumonococcal vaccine (i.e., <a href="#id1"><span class="problematic" id="id2">`</span></a>va_pneumo_all_doses`==True), either as a primary pathogen oras a secondary bacterial coinfection.</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_infection_hib_haemophilus_vaccine</p></td>
+<td><p>REAL</p></td>
+<td><p>relaitve risk of acquiring the pathogen==”Hib” if has had all doses of Haemophilus vaccine (i.e., <a href="#id3"><span class="problematic" id="id4">`</span></a>va_hib_all_doses`==Tue)</p></td>
+</tr>
+<tr class="row-odd"><td><p>days_between_treatment_and_cure</p></td>
+<td><p>INT</p></td>
+<td><p>number of days between any treatment being given in an HSI and the cure occurring.</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_of_cure_for_uncomplicated_pneumonia_given_IMCI_pneumonia_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of cure for uncomplicated pneumonia given IMCI pneumonia treatment</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_of_cure_for_pneumonia_with_severe_complication_given_IMCI_severe_pneumonia_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of cure for pneumonia with severe complications given IMCI pneumonia treatment</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_seek_follow_up_care_after_treatment_failure</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of seeking follow-up care after treatment failure</p></td>
+</tr>
+<tr class="row-odd"><td><p>oxygen_therapy_effectiveness_ALRI</p></td>
+<td><p>REAL</p></td>
+<td><p>effectiveness of oxygen therapy on death from Alri with respiratory failure</p></td>
+</tr>
+<tr class="row-even"><td><p>antibiotic_therapy_effectiveness_ALRI</p></td>
+<td><p>REAL</p></td>
+<td><p>effectiveness of antibiotic therapy on death from Alri with bacterial cause</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>PROPERTIES:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ri_current_infection_status</p></td>
+<td><p>BOOL</p></td>
+<td><p>Does the person currently have an infection with a pathogen that can cause Alri.</p></td>
+</tr>
+<tr class="row-odd"><td><p>ri_primary_pathogen</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>If infected, what is the pathogen with which the person is currently infected. (np.nan if not infected).  Possible values are: [Strep_pneumoniae_non_PCV13, Rhinovirus, P.jirovecii, H.influenzae_non_type_b, Bocavirus, other_bacterial_pathogens, Staph_aureus, Enterobacteriaceae, Parainfluenza, other_Strepto_Enterococci, Influenza, Hib, other_viral_pathogens, HMPV, Strep_pneumoniae_PCV13, RSV, Adenovirus, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>ri_secondary_bacterial_pathogen</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>If infected, is there a secondary bacterial pathogen (np.nan if none or not applicable).  Possible values are: [Strep_pneumoniae_PCV13, Strep_pneumoniae_non_PCV13, Hib, H.influenzae_non_type_b, Staph_aureus, Enterobacteriaceae, other_Strepto_Enterococci, other_bacterial_pathogens, ]</p></td>
+</tr>
+<tr class="row-odd"><td><p>ri_disease_type</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>If infected, what disease type is the person currently suffering from..  Possible values are: [bronchiolitis, fungal_pneumonia, bacterial_pneumonia, viral_pneumonia, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>ri_on_treatment</p></td>
+<td><p>BOOL</p></td>
+<td><p>Is this person currently receiving treatment.</p></td>
+</tr>
+<tr class="row-odd"><td><p>ri_start_of_current_episode</p></td>
+<td><p>DATE</p></td>
+<td><p>date of onset of current Alri event (pd.NaT is not infected)</p></td>
+</tr>
+<tr class="row-even"><td><p>ri_scheduled_recovery_date</p></td>
+<td><p>DATE</p></td>
+<td><p>(scheduled) date of recovery from current Alri event (pd.NaT is not infected or episode is scheduled to end in death)</p></td>
+</tr>
+<tr class="row-odd"><td><p>ri_scheduled_death_date</p></td>
+<td><p>DATE</p></td>
+<td><p>(scheduled) date of death caused by current Alri event (pd.NaT is not infected or episode will not cause death)</p></td>
+</tr>
+<tr class="row-even"><td><p>ri_end_of_current_episode</p></td>
+<td><p>DATE</p></td>
+<td><p>date on which the last episode of Alri is resolved, (including allowing for the possibility that a cure is scheduled following onset). This is used to determine when a new episode can begin. This stops successive episodes interfering with one another.</p></td>
+</tr>
+<tr class="row-odd"><td><p>ri_ALRI_tx_start_date</p></td>
+<td><p>DATE</p></td>
+<td><p>start date of Alri treatment for current episode (pd.NaT is not infected or treatment has not begun)</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Class attributes:</strong></p>
+<p>CAUSES_OF_DEATH : {‘ALRI_Strep_pneumoniae_non_PCV13’: &lt;tlo.methods.causes.Cause object at 0x7fa0786c93d0&gt;, ‘ALRI_Rhinovirus’: &lt;tlo.methods.causes.Cause object at 0x7fa0786d79d0&gt;, ‘ALRI_P.jirovecii’: &lt;tlo.methods.causes.Cause object at 0x7fa0786d7b20&gt;, ‘ALRI_H.influenzae_non_type_b’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4910&gt;, ‘ALRI_Bocavirus’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4970&gt;, ‘ALRI_other_bacterial_pathogens’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e49d0&gt;, ‘ALRI_Staph_aureus’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4a30&gt;, ‘ALRI_Enterobacteriaceae’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4a90&gt;, ‘ALRI_Parainfluenza’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4af0&gt;, ‘ALRI_other_Strepto_Enterococci’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4b50&gt;, ‘ALRI_Influenza’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4bb0&gt;, ‘ALRI_Hib’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4c10&gt;, ‘ALRI_other_viral_pathogens’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4c70&gt;, ‘ALRI_HMPV’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4cd0&gt;, ‘ALRI_Strep_pneumoniae_PCV13’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4d30&gt;, ‘ALRI_RSV’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4d90&gt;, ‘ALRI_Adenovirus’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4df0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘ALRI_Strep_pneumoniae_non_PCV13’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4e50&gt;, ‘ALRI_Rhinovirus’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4eb0&gt;, ‘ALRI_P.jirovecii’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4f10&gt;, ‘ALRI_H.influenzae_non_type_b’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4f70&gt;, ‘ALRI_Bocavirus’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4fd0&gt;, ‘ALRI_other_bacterial_pathogens’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f1070&gt;, ‘ALRI_Staph_aureus’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f10d0&gt;, ‘ALRI_Enterobacteriaceae’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f1130&gt;, ‘ALRI_Parainfluenza’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f1190&gt;, ‘ALRI_other_Strepto_Enterococci’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f11f0&gt;, ‘ALRI_Influenza’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f1250&gt;, ‘ALRI_Hib’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f12b0&gt;, ‘ALRI_other_viral_pathogens’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f1310&gt;, ‘ALRI_HMPV’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f1370&gt;, ‘ALRI_Strep_pneumoniae_PCV13’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f13d0&gt;, ‘ALRI_RSV’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f1430&gt;, ‘ALRI_Adenovirus’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f1490&gt;}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p>all_pathogens : {‘Strep_pneumoniae_non_PCV13’, ‘Rhinovirus’, ‘P.jirovecii’, ‘H.influenzae_non_type_b’, ‘Bocavirus’, ‘other_bacterial_pathogens’, ‘Staph_aureus’, ‘Enterobacteriaceae’, ‘Parainfluenza’, ‘other_Strepto_Enterococci’, ‘Influenza’, ‘Hib’, ‘other_viral_pathogens’, ‘HMPV’, ‘Strep_pneumoniae_PCV13’, ‘RSV’, ‘Adenovirus’}</p>
+<p>complications : {‘respiratory_failure’, ‘meningitis’, ‘pleural_effusion’, ‘hypoxia’, ‘lung_abscess’, ‘empyema’, ‘sepsis’, ‘pneumothorax’}</p>
+<p>disease_types : {‘bronchiolitis’, ‘fungal_pneumonia’, ‘bacterial_pneumonia’, ‘viral_pneumonia’}</p>
+<p>pathogens : {‘viral’: [‘RSV’, ‘Rhinovirus’, ‘HMPV’, ‘Parainfluenza’, ‘Influenza’, ‘Adenovirus’, ‘Bocavirus’, ‘other_viral_pathogens’], ‘bacterial’: [‘Strep_pneumoniae_PCV13’, ‘Strep_pneumoniae_non_PCV13’, ‘Hib’, ‘H.influenzae_non_type_b’, ‘Staph_aureus’, ‘Enterobacteriaceae’, ‘other_Strepto_Enterococci’, ‘other_bacterial_pathogens’], ‘fungal’: [‘P.jirovecii’]}</p>
+<p><strong>Functions (defined or overridden in class Alri):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_indivdual</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_checks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri.read_parameters">
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.read_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><p>Setup parameters values used by the module</p></li>
+<li><p>Define symptoms</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri.check_params_read_in_ok">
+<span class="sig-name descname"><span class="pre">check_params_read_in_ok</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.check_params_read_in_ok"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.check_params_read_in_ok" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that every value has been read-in successfully</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri.define_symptoms">
+<span class="sig-name descname"><span class="pre">define_symptoms</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.define_symptoms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.define_symptoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define the symptoms that this module will use</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri.pre_initialise_population">
+<span class="sig-name descname"><span class="pre">pre_initialise_population</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.pre_initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.pre_initialise_population" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define columns for complications at run-time</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri.initialise_population">
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.initialise_population" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets that there is no one with Alri at initiation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri.initialise_simulation">
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.initialise_simulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepares for simulation:
+* Schedules the main polling event
+* Schedules the main logging event
+* Establishes the linear models and other data structures using the parameters that have been read-in</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri.on_birth">
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.on_birth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise properties for a newborn individual.
+This is called by the simulation whenever a new person is born.
+:param mother_id: the mother for this child
+:param child_id: the new child</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri.report_daly_values">
+<span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.report_daly_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.report_daly_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Report DALY incurred in the population in the last month due to ALRI</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri.end_episode">
+<span class="sig-name descname"><span class="pre">end_episode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.end_episode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.end_episode" title="Permalink to this definition">¶</a></dt>
+<dd><p>End the episode infection for a person (i.e. reset all properties to show no current infection or
+complications).
+This is called by AlriNaturalRecoveryEvent and AlriCureEvent.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri.do_treatment">
+<span class="sig-name descname"><span class="pre">do_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prob_of_cure</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.do_treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.do_treatment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function that enacts the effects of a treatment to Alri caused by a pathogen.
+It will only do something if the Alri is caused by a pathogen (this module).
+* Log the treatment
+* Prevent any death event that may be scheduled from occuring (prior to the cure event)
+* Schedules the cure event, at which the episode is ended</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri.cancel_death_date">
+<span class="sig-name descname"><span class="pre">cancel_death_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.cancel_death_date"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.cancel_death_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancels a scheduled date of death due to Alri for a person. This is called within do_treatment_alri function,
+and prior to the scheduling the CureEvent to prevent deaths happening in the time between
+a treatment being given and the cure event occurring.
+:param person_id:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri.check_properties">
+<span class="sig-name descname"><span class="pre">check_properties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.check_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.check_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is used in debugging to make sure that the configuration of properties is correct</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri.random_date">
+<span class="sig-name descname"><span class="pre">random_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.random_date"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.random_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a random date between <cite>start</cite> and <cite>end</cite> - sampling with precision of the day.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.Alri.impose_symptoms_for_complication">
+<span class="sig-name descname"><span class="pre">impose_symptoms_for_complication</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">complication</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.impose_symptoms_for_complication"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.impose_symptoms_for_complication" title="Permalink to this definition">¶</a></dt>
+<dd><p>Impose symptoms for a complication.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriPollingEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">AlriPollingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriPollingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriPollingEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the main event that runs the acquisition of pathogens that cause Alri.
+It determines who is infected and when and schedules individual IncidentCase events to represent onset.</p>
+<p>A known issue is that Alri events are scheduled based on the risk of current age but occur a short time
+later when the children will be slightly older. This means that when comparing the model output with data, the
+model slightly under-represents incidence among younger age-groups and over-represents incidence among older
+age-groups. This is a small effect when the frequency of the polling event is high.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class AlriPollingEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriPollingEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriPollingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriPollingEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriPollingEvent.compute_fraction_of_year_between_polling_event">
+<span class="sig-name descname"><span class="pre">compute_fraction_of_year_between_polling_event</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriPollingEvent.compute_fraction_of_year_between_polling_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriPollingEvent.compute_fraction_of_year_between_polling_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute fraction of a year that elapses between polling event. This is used to adjust the risk of
+infection</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriPollingEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriPollingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriPollingEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine who will become infected and schedule for them an AlriComplicationOnsetEvent</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriPollingEvent.sample_outcome">
+<span class="sig-name descname"><span class="pre">sample_outcome</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriPollingEvent.sample_outcome"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriPollingEvent.sample_outcome" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to randomly sample an outcome from a set of probabilities.
+Each row in the df is a person and each column gives the probability that a particular event may happen to the
+person. The probabilities of each event are assumed to be independent but mutually exlusive.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriIncidentCase">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">AlriIncidentCase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pathogen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriIncidentCase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriIncidentCase" title="Permalink to this definition">¶</a></dt>
+<dd><p>This Event is for the onset of the infection that causes Alri. It is scheduled by the AlriPollingEvent.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class AlriIncidentCase):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriIncidentCase.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pathogen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriIncidentCase.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriIncidentCase.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriIncidentCase.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriIncidentCase.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriIncidentCase.apply" title="Permalink to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li><p>Determines the disease and complications associated with this case</p></li>
+<li><p>Updates all the properties so that they pertain to this current episode of Alri</p></li>
+<li><p>Imposes the symptoms</p></li>
+<li><p>Schedules relevant natural history event {(AlriWithPulmonaryComplicationsEvent) and</p></li>
+</ul>
+<p>(AlriWithSevereComplicationsEvent) (either AlriNaturalRecoveryEvent or AlriDeathEvent)}
+* Updates the counters in the log accordingly.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriIncidentCase.impose_symptoms_for_uncomplicated_disease">
+<span class="sig-name descname"><span class="pre">impose_symptoms_for_uncomplicated_disease</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disease_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriIncidentCase.impose_symptoms_for_uncomplicated_disease"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriIncidentCase.impose_symptoms_for_uncomplicated_disease" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imposes the clinical symptoms to uncomplicated Alri. These symptoms are not set to auto-resolve</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriIncidentCase.impose_complications">
+<span class="sig-name descname"><span class="pre">impose_complications</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_of_outcome</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriIncidentCase.impose_complications"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriIncidentCase.impose_complications" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose a set of complications for this person and onset these all instantanesouly.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriDelayedOnsetComplication">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">AlriDelayedOnsetComplication</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">complication</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriDelayedOnsetComplication"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriDelayedOnsetComplication" title="Permalink to this definition">¶</a></dt>
+<dd><p>This Event is for the delayed onset of complications from Alri. It is applicable only to a subset of
+complications.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class AlriDelayedOnsetComplication):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriDelayedOnsetComplication.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">complication</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriDelayedOnsetComplication.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriDelayedOnsetComplication.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriDelayedOnsetComplication.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriDelayedOnsetComplication.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriDelayedOnsetComplication.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply the complication, if the person is still infected and not on treatment</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriNaturalRecoveryEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">AlriNaturalRecoveryEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriNaturalRecoveryEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriNaturalRecoveryEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the Natural Recovery event. It is scheduled by the AlriIncidentCase Event for someone who will recover
+from the infection even if no care received.
+It calls the ‘end_infection’ function.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class AlriNaturalRecoveryEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriNaturalRecoveryEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriNaturalRecoveryEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriNaturalRecoveryEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriNaturalRecoveryEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriNaturalRecoveryEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriNaturalRecoveryEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriCureEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">AlriCureEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriCureEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriCureEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the cure event. It is scheduled by an HSI treatment event. It enacts the actual “cure” of the person
+that is caused (after some delay) by the treatment administered.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class AlriCureEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriCureEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriCureEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriCureEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriCureEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriCureEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriCureEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriDeathEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">AlriDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriDeathEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriDeathEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This Event is for the death of someone that is caused by the infection with a pathogen that causes Alri.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class AlriDeathEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriDeathEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriDeathEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriDeathEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriDeathEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriDeathEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriDeathEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.alri.HSI_Alri_GenericTreatment">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_Alri_GenericTreatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#HSI_Alri_GenericTreatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.HSI_Alri_GenericTreatment" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a template for the HSI interaction events. It just shows the checks to use each time.</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_Alri_GenericTreatment):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.HSI_Alri_GenericTreatment.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#HSI_Alri_GenericTreatment.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.HSI_Alri_GenericTreatment.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.HSI_Alri_GenericTreatment.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#HSI_Alri_GenericTreatment.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.HSI_Alri_GenericTreatment.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do the treatment</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriLoggingEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">AlriLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriLoggingEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This Event logs the number of incident cases that have occurred since the previous logging event.
+Analysis scripts expect that the frequency of this logging event is once per year.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class AlriLoggingEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriLoggingEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriLoggingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriLoggingEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriLoggingEvent.new_case">
+<span class="sig-name descname"><span class="pre">new_case</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">age</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pathogen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriLoggingEvent.new_case"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriLoggingEvent.new_case" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriLoggingEvent.new_recovered_case">
+<span class="sig-name descname"><span class="pre">new_recovered_case</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">age</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pathogen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriLoggingEvent.new_recovered_case"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriLoggingEvent.new_recovered_case" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriLoggingEvent.new_cured_case">
+<span class="sig-name descname"><span class="pre">new_cured_case</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">age</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pathogen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriLoggingEvent.new_cured_case"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriLoggingEvent.new_cured_case" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriLoggingEvent.new_death">
+<span class="sig-name descname"><span class="pre">new_death</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">age</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pathogen</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriLoggingEvent.new_death"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriLoggingEvent.new_death" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriLoggingEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriLoggingEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log:
+1) Number of new cases, by age-group and by pathogen since the last logging event
+2) Total number of cases, recovery, treatments and deaths since the last logging event</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriCheckPropertiesEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">AlriCheckPropertiesEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriCheckPropertiesEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriCheckPropertiesEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This event runs daily and checks properties are in the right configuration. Only use whilst debugging!</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class AlriCheckPropertiesEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriCheckPropertiesEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriCheckPropertiesEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriCheckPropertiesEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriCheckPropertiesEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriCheckPropertiesEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriCheckPropertiesEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriIndividualLoggingEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">AlriIndividualLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriIndividualLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriIndividualLoggingEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This Event logs the daily occurrence to a single individual child.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class AlriIndividualLoggingEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriIndividualLoggingEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriIndividualLoggingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriIndividualLoggingEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriIndividualLoggingEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriIndividualLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriIndividualLoggingEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log all properties for this module</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.alri.PropertiesOfOtherModules">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">PropertiesOfOtherModules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#PropertiesOfOtherModules"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.PropertiesOfOtherModules" title="Permalink to this definition">¶</a></dt>
+<dd><p>For the purpose of the testing, this module generates the properties upon which the Alri module relies</p>
+<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<p><strong>PROPERTIES:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>hv_inf</p></td>
+<td><p>BOOL</p></td>
+<td><p>temporary property</p></td>
+</tr>
+<tr class="row-odd"><td><p>nb_low_birth_weight_status</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>temporary property.  Possible values are: [extremely_low_birth_weight, very_low_birth_weight, low_birth_weight, normal_birth_weight, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>nb_breastfeeding_status</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>temporary property.  Possible values are: [none, non_exclusive, exclusive, ]</p></td>
+</tr>
+<tr class="row-odd"><td><p>va_pneumo_all_doses</p></td>
+<td><p>BOOL</p></td>
+<td><p>temporary property</p></td>
+</tr>
+<tr class="row-even"><td><p>va_hib_all_doses</p></td>
+<td><p>BOOL</p></td>
+<td><p>temporary property</p></td>
+</tr>
+<tr class="row-odd"><td><p>un_clinical_acute_malnutrition</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>temporary property.  Possible values are: [MAM, SAM, well, ]</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Functions (defined or overridden in class PropertiesOfOtherModules):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.PropertiesOfOtherModules.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#PropertiesOfOtherModules.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.PropertiesOfOtherModules.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.PropertiesOfOtherModules.read_parameters">
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#PropertiesOfOtherModules.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.PropertiesOfOtherModules.read_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read parameter values from file, if required.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data_folder</strong> – path of a folder supplied to the Simulation containing data files.
+Typically modules would read a particular file within here.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.PropertiesOfOtherModules.initialise_population">
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#PropertiesOfOtherModules.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.PropertiesOfOtherModules.initialise_population" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set our property values for the initial population.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This method is called by the simulation when creating the initial population, and is
+responsible for assigning initial values, for every individual, of those properties
+‘owned’ by this module, i.e. those declared in its PROPERTIES dictionary.</p>
+<p>TODO: We probably need to declare somehow which properties we ‘read’ here, so the
+simulation knows what order to initialise modules in!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the population of individuals</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.PropertiesOfOtherModules.initialise_simulation">
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#PropertiesOfOtherModules.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.PropertiesOfOtherModules.initialise_simulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get ready for simulation start.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This method is called just before the main simulation loop begins, and after all
+modules have read their parameters and the initial population has been created.
+It is a good place to add initial events to the event queue.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.alri.PropertiesOfOtherModules.on_birth">
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#PropertiesOfOtherModules.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.PropertiesOfOtherModules.on_birth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise our properties for a newborn individual.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This is called by the simulation whenever a new person is born.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mother</strong> – the mother for this child</p></li>
+<li><p><strong>child</strong> – the new child</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="tlo.methods.bladder_cancer.html" class="btn btn-neutral float-right" title="tlo.methods.bladder_cancer module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tlo.methods.html" class="btn btn-neutral float-left" title="tlo.methods package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+      <span class="lastupdated">
+        Last updated on Sep 01, 2021.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

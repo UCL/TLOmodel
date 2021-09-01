@@ -1,0 +1,686 @@
+tlo.methods.alri module
+=======================
+
+.. automodule:: tlo.methods.alri
+
+
+.. autoclass:: Alri
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - base_inc_rate_ALRI_by_RSV
+          - LIST
+          - baseline incidence rate of Alri caused by RSV in age groups 0-11, 12-23, 24-59 months, per child per year
+        * - base_inc_rate_ALRI_by_Rhinovirus
+          - LIST
+          - baseline incidence of Alri caused by Rhinovirus in age groups 0-11, 12-23, 24-59 months, per child per year
+        * - base_inc_rate_ALRI_by_HMPV
+          - LIST
+          - baseline incidence of Alri caused by HMPV in age groups 0-11, 12-23, 24-59 months, per child per year
+        * - base_inc_rate_ALRI_by_Parainfluenza
+          - LIST
+          - baseline incidence of Alri caused by Parainfluenza 1-4 in age groups 0-11, 12-23, 24-59 months, per child per year
+        * - base_inc_rate_ALRI_by_Strep_pneumoniae_PCV13
+          - LIST
+          - baseline incidence of Alri caused by Streptoccocus pneumoniae PCV13 serotype in age groups 0-11, 12-23, 24-59 months, per child per year
+        * - base_inc_rate_ALRI_by_Strep_pneumoniae_non_PCV13
+          - LIST
+          - baseline incidence of Alri caused by Streptoccocus pneumoniae non PCV13 serotype in age groups 0-11, 12-23, 24-59 months, per child per year
+        * - base_inc_rate_ALRI_by_Hib
+          - LIST
+          - baseline incidence of Alri caused by Haemophilus influenzae type b in age groups 0-11, 12-23, 24-59 months, per child per year
+        * - base_inc_rate_ALRI_by_H.influenzae_non_type_b
+          - LIST
+          - baseline incidence of Alri caused by Haemophilus influenzae non-type b in age groups 0-11, 12-23, 24-59 months, per child per year
+        * - base_inc_rate_ALRI_by_Enterobacteriaceae
+          - LIST
+          - baseline incidence of Alri caused by Enterobacteriaceae in age groups 0-11, 12-23, 24-59 months, per child per year
+        * - base_inc_rate_ALRI_by_other_Strepto_Enterococci
+          - LIST
+          - baseline incidence of Alri caused by other streptococci and Enterococci including Streptococcus pyogenes and Enterococcus faecium in age groups 0-11, 12-23, 24-59 months, per child per year
+        * - base_inc_rate_ALRI_by_Staph_aureus
+          - LIST
+          - baseline incidence of Alri caused by Staphylococcus aureus in age groups 0-11, 12-23, 24-59 months, per child per year
+        * - base_inc_rate_ALRI_by_Influenza
+          - LIST
+          - baseline incidence of Alri caused by Influenza type A, B, and C in age groups 0-11, 12-23, 24-59 months, per child per year
+        * - base_inc_rate_ALRI_by_P.jirovecii
+          - LIST
+          - baseline incidence of Alri caused by P. jirovecii in age groups 0-11, 12-59 months, per child per year
+        * - base_inc_rate_ALRI_by_Adenovirus
+          - LIST
+          - baseline incidence of Alri caused by adenovirus in age groups 0-11, 12-59 months, per child per year
+        * - base_inc_rate_ALRI_by_Bocavirus
+          - LIST
+          - baseline incidence of Alri caused by bocavirus in age groups 0-11, 12-59 months, per child per year
+        * - base_inc_rate_ALRI_by_other_viral_pathogens
+          - LIST
+          - baseline incidence of Alri caused by other viral pathogens in age groups 0-11, 12-59 months, per child per year
+        * - base_inc_rate_ALRI_by_other_bacterial_pathogens
+          - LIST
+          - baseline incidence of Alri caused by other viral pathogens in age groups 0-11, 12-59 months, per child per year
+        * - rr_ALRI_HHhandwashing
+          - REAL
+          - relative rate of acquiring Alri for children with household handwashing with soap 
+        * - rr_ALRI_HIV_untreated
+          - REAL
+          - relative rate of acquiring Alri for children with untreated HIV positive status
+        * - rr_ALRI_underweight
+          - REAL
+          - relative rate of acquiring Alri for underweight children
+        * - rr_ALRI_low_birth_weight
+          - REAL
+          - relative rate of acquiring Alri for infants with low birth weight
+        * - rr_ALRI_not_excl_breastfeeding
+          - REAL
+          - relative rate of acquiring Alri for not exclusive breastfeeding upto 6 months
+        * - rr_ALRI_indoor_air_pollution
+          - REAL
+          - relative rate of acquiring Alri for indoor air pollution
+        * - prob_viral_pneumonia_bacterial_coinfection
+          - REAL
+          - probability of primary viral pneumonia having a bacterial co-infection
+        * - proportion_bacterial_coinfection_pathogen
+          - LIST
+          - list of proportions of each bacterial pathogens in a co-infection pneumonia
+        * - prob_secondary_bacterial_infection_in_bronchiolitis
+          - REAL
+          - probability of viral bronchiolitis having a bacterial infection
+        * - prob_hypoxia_by_viral_pneumonia
+          - REAL
+          - probability of hypoxia caused by primary viral pneumonia
+        * - prob_hypoxia_by_bacterial_pneumonia
+          - REAL
+          - probability of hypoxia caused by primary or secondary bacterial pneumonia
+        * - prob_hypoxia_by_bronchiolitis
+          - REAL
+          - probability of hypoxia caused by viral bronchiolitis
+        * - prob_respiratory_failure_when_SpO2<93%
+          - REAL
+          - probability of respiratory failure when peripheral oxygen level is lower than 93%
+        * - prob_respiratory_failure_to_multiorgan_dysfunction
+          - REAL
+          - probability of respiratory failure causing multi-organ dysfunction
+        * - prob_sepsis_by_viral_pneumonia
+          - REAL
+          - probability of sepsis caused by primary viral pneumonia
+        * - prob_sepsis_by_bacterial_pneumonia
+          - REAL
+          - probability of sepsis caused by primary or secondary bacterial pneumonia
+        * - prob_sepsis_by_bronchiolitis
+          - REAL
+          - probability of sepsis caused by viral bronchiolitis
+        * - prob_sepsis_to_multiorgan_dysfunction
+          - REAL
+          - probability of sepsis causing multi-organ dysfunction
+        * - prob_meningitis_by_bacterial_pneumonia
+          - REAL
+          - probability of meningitis caused by primary or secondary bacterial pneumonia
+        * - prob_pleural_effusion_by_bacterial_pneumonia
+          - REAL
+          - probability of pleural effusion caused by primary or secondary bacterial pneumonia
+        * - prob_pleural_effusion_by_viral_pneumonia
+          - REAL
+          - probability of pleural effusion caused by primary viral pneumonia
+        * - prob_pleural_effusion_by_bronchiolitis
+          - REAL
+          - probability of pleural effusion caused by bronchiolitis
+        * - prob_pleural_effusion_to_empyema
+          - REAL
+          - probability of pleural effusion developing into empyema
+        * - prob_empyema_to_sepsis
+          - REAL
+          - probability of (bacterial) empyema causing sepsis
+        * - prob_lung_abscess_by_bacterial_pneumonia
+          - REAL
+          - probability of a lung abscess caused by primary or secondary bacterial pneumonia
+        * - prob_pneumothorax_by_bacterial_pneumonia
+          - REAL
+          - probability of pneumothorax caused by primary or secondary bacterial pneumonia
+        * - prob_pneumothorax_by_viral_pneumonia
+          - REAL
+          - probability of pneumothorax caused by primary viral pneumonia
+        * - prob_pneumothorax_by_bronchiolitis
+          - REAL
+          - probability of atelectasis/ lung collapse caused by bronchiolitis
+        * - prob_pneumothorax_to_respiratory_failure
+          - REAL
+          - probability of pneumothorax causing respiratory failure
+        * - prob_lung_abscess_to_sepsis
+          - REAL
+          - probability of lung abscess causing sepsis
+        * - base_death_rate_ALRI_by_bacterial_pneumonia
+          - REAL
+          - baseline death rate from bacterial pneumonia, base age 0-11 months
+        * - base_death_rate_ALRI_by_bronchiolitis
+          - REAL
+          - baseline death rate from bronchiolitis, base age 0-11 months
+        * - base_death_rate_ALRI_by_viral_pneumonia
+          - REAL
+          - baseline death rate from viral pneumonia, base age 0-11 months
+        * - base_death_rate_ALRI_by_fungal_pneumonia
+          - REAL
+          - baseline death rate from fungal pneumonia, base age 0-11 months
+        * - rr_death_ALRI_sepsis
+          - REAL
+          - relative death rate from Alri for sepsis, base age 0-11 months
+        * - rr_death_ALRI_respiratory_failure
+          - REAL
+          - relative death rate from Alri for respiratory failure, base age 0-11 months
+        * - rr_death_ALRI_meningitis
+          - REAL
+          - relative death rate from Alri for meningitis, base age 0-11 months
+        * - rr_death_ALRI_age12to23mo
+          - REAL
+          - death rate of Alri for children aged 12 to 23 months
+        * - rr_death_ALRI_age24to59mo
+          - REAL
+          - death rate of Alri for children aged 24 to 59 months
+        * - rr_death_ALRI_HIV
+          - REAL
+          - death rate of Alri for children with HIV not on ART
+        * - rr_death_ALRI_SAM
+          - REAL
+          - death rate of Alri for children with severe acute malnutrition
+        * - rr_death_ALRI_low_birth_weight
+          - REAL
+          - death rate of Alri for children with low birth weight (applicable to infants)
+        * - proportion_viral_pneumonia_by_RSV
+          - REAL
+          - proportion of RSV infection causing viral pneumonia
+        * - proportion_viral_pneumonia_by_Rhinovirus
+          - REAL
+          - proportion of Rhinovirus infection causing viral pneumonia
+        * - proportion_viral_pneumonia_by_HMPV
+          - REAL
+          - proportion of HMPV infection causing viral pneumonia
+        * - proportion_viral_pneumonia_by_Parainfluenza
+          - REAL
+          - proportion of Parainfluenza infection causing viral pneumonia
+        * - proportion_viral_pneumonia_by_Influenza
+          - REAL
+          - proportion of Influenza infection causing viral pneumonia
+        * - proportion_viral_pneumonia_by_Adenovirus
+          - REAL
+          - proportion of Adenovirus infection causing viral pneumonia
+        * - proportion_viral_pneumonia_by_Bocavirus
+          - REAL
+          - proportion of Bocavirus infection causing viral pneumonia
+        * - proportion_viral_pneumonia_by_other_viral_pathogens
+          - REAL
+          - proportion of other pathogens infection causing viral pneumonia
+        * - prob_fever_uncomplicated_ALRI_by_disease_type
+          - LIST
+          - list of probabilities of having fever by bacterial pneumonia, viral pneumonia and bronchiolitis
+        * - prob_cough_uncomplicated_ALRI_by_disease_type
+          - LIST
+          - list of probabilities of having cough by bacterial pneumonia, viral pneumonia and bronchiolitis
+        * - prob_difficult_breathing_uncomplicated_ALRI_by_disease_type
+          - LIST
+          - list of probabilities of difficult breathing by bacterial pneumonia, viral pneumonia and bronchiolitis
+        * - prob_fast_breathing_uncomplicated_ALRI_by_disease_type
+          - LIST
+          - list of probabilities of fast breathing by bacterial pneumonia, viral pneumonia and bronchiolitis
+        * - prob_chest_indrawing_uncomplicated_ALRI_by_disease_type
+          - LIST
+          - list of probabilities of chest indrawing by bacterial pneumonia, viral pneumonia and bronchiolitis
+        * - prob_danger_signs_uncomplicated_ALRI_by_disease_type
+          - LIST
+          - list of probabilities of danger signs by bacterial pneumonia, viral pneumonia and bronchiolitis
+        * - prob_loss_of_appetite_adding_from_pleural_effusion
+          - REAL
+          - probability of additional signs/symptoms of loss of appetite from pleural effusion
+        * - prob_loss_of_appetite_adding_from_empyema
+          - REAL
+          - probability of additional signs/symptoms of loss of appetite from empyema
+        * - prob_severe_respiratory_distress_adding_from_respiratory_failure
+          - REAL
+          - probability of additional signs/symptoms of severe respiratory distress from respiratory failure
+        * - prob_severe_respiratory_distress_adding_from_sepsis
+          - REAL
+          - probability of additional signs/symptoms of severe respiratory distress from sepsis
+        * - prob_chest_pain_adding_from_pneumothorax
+          - REAL
+          - probability of additional signs/symptoms of chest pain / pleurisy from pneumothorax
+        * - prob_cyanosis_adding_from_pneumothorax
+          - REAL
+          - probability of additional signs/symptoms of cyanosis from pneumothorax
+        * - prob_difficult_breathing_adding_from_pneumothorax
+          - REAL
+          - probability of additional signs/symptoms of difficult breathing from pneumothorax
+        * - prob_chest_pain_adding_from_pleural_effusion
+          - REAL
+          - probability of additional signs/symptoms of chest pain / pleurisy from pleural effusion
+        * - prob_fever_adding_from_pleural_effusion
+          - REAL
+          - probability of additional signs/symptoms of fever from pleural effusion
+        * - prob_difficult_breathing_adding_from_pleural_effusion
+          - REAL
+          - probability of additional signs/symptoms of dyspnoea/ difficult breathing from pleural effusion
+        * - prob_chest_pain_adding_from_empyema
+          - REAL
+          - probability of additional signs/symptoms of chest pain / pleurisy from empyema
+        * - prob_fever_adding_from_empyema
+          - REAL
+          - probability of additional signs/symptoms of fever from empyema
+        * - prob_respiratory_distress_adding_from_empyema
+          - REAL
+          - probability of additional signs/symptoms of cough with sputum from respiratory distress
+        * - prob_chest_pain_adding_from_lung_abscess
+          - REAL
+          - probability of additional signs/symptoms of chest pain / pleurisy from lung abscess
+        * - prob_fast_breathing_adding_from_lung_abscess
+          - REAL
+          - probability of additional signs/symptoms of fast_breathing/ fast breathing from lung abscess
+        * - prob_fever_adding_from_lung_abscess
+          - REAL
+          - probability of additional signs/symptoms of fever from lung abscess
+        * - prob_difficult_breathing_adding_from_respiratory_failure
+          - REAL
+          - probability of additional signs/symptoms of difficult breathing from respiratory failure
+        * - prob_cyanosis_adding_from_respiratory_failure
+          - REAL
+          - probability of additional signs/symptoms of cyanosis from respiratory failure
+        * - prob_fast_breathing_adding_from_respiratory_failure
+          - REAL
+          - probability of additional signs/symptoms of fast_breathing from respiratory failure
+        * - prob_danger_signs_adding_from_respiratory_failure
+          - REAL
+          - probability of additional signs/symptoms of danger signs from respiratory failure
+        * - prob_headache_adding_from_meningitis
+          - REAL
+          - probability of additional signs/symptoms of headache from meningitis
+        * - prob_fever_adding_from_meningitis
+          - REAL
+          - probability of additional signs/symptoms of fever from meningitis
+        * - prob_danger_signs_adding_from_meningitis
+          - REAL
+          - probability of additional signs/symptoms of danger_signs from meningitis
+        * - prob_fast_breathing_adding_from_sepsis
+          - REAL
+          - probability of additional signs/symptoms of fast_breathing from sepsis
+        * - prob_danger_signs_adding_from_sepsis
+          - REAL
+          - probability of additional signs/symptoms of danger signs from sepsis
+        * - prob_fever_adding_from_sepsis
+          - REAL
+          - probability of additional signs/symptoms of fever from sepsis
+        * - rr_infection_strep_with_pneumococcal_vaccine
+          - REAL
+          - relative risk of acquiring the pathogen=="Strep_pneumoniae_PCV13" if has had all doses of pneumonococcal vaccine (i.e., `va_pneumo_all_doses`==True), either as a primary pathogen oras a secondary bacterial coinfection.
+        * - rr_infection_hib_haemophilus_vaccine
+          - REAL
+          - relaitve risk of acquiring the pathogen=="Hib" if has had all doses of Haemophilus vaccine (i.e., `va_hib_all_doses`==Tue)
+        * - days_between_treatment_and_cure
+          - INT
+          - number of days between any treatment being given in an HSI and the cure occurring.
+        * - prob_of_cure_for_uncomplicated_pneumonia_given_IMCI_pneumonia_treatment
+          - REAL
+          - probability of cure for uncomplicated pneumonia given IMCI pneumonia treatment
+        * - prob_of_cure_for_pneumonia_with_severe_complication_given_IMCI_severe_pneumonia_treatment
+          - REAL
+          - probability of cure for pneumonia with severe complications given IMCI pneumonia treatment
+        * - prob_seek_follow_up_care_after_treatment_failure
+          - REAL
+          - probability of seeking follow-up care after treatment failure
+        * - oxygen_therapy_effectiveness_ALRI
+          - REAL
+          - effectiveness of oxygen therapy on death from Alri with respiratory failure
+        * - antibiotic_therapy_effectiveness_ALRI
+          - REAL
+          - effectiveness of antibiotic therapy on death from Alri with bacterial cause
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - ri_current_infection_status
+          - BOOL
+          - Does the person currently have an infection with a pathogen that can cause Alri.
+        * - ri_primary_pathogen
+          - CATEGORICAL
+          - If infected, what is the pathogen with which the person is currently infected. (np.nan if not infected).  Possible values are: [Strep_pneumoniae_non_PCV13, Rhinovirus, P.jirovecii, H.influenzae_non_type_b, Bocavirus, other_bacterial_pathogens, Staph_aureus, Enterobacteriaceae, Parainfluenza, other_Strepto_Enterococci, Influenza, Hib, other_viral_pathogens, HMPV, Strep_pneumoniae_PCV13, RSV, Adenovirus, ]
+        * - ri_secondary_bacterial_pathogen
+          - CATEGORICAL
+          - If infected, is there a secondary bacterial pathogen (np.nan if none or not applicable).  Possible values are: [Strep_pneumoniae_PCV13, Strep_pneumoniae_non_PCV13, Hib, H.influenzae_non_type_b, Staph_aureus, Enterobacteriaceae, other_Strepto_Enterococci, other_bacterial_pathogens, ]
+        * - ri_disease_type
+          - CATEGORICAL
+          - If infected, what disease type is the person currently suffering from..  Possible values are: [bronchiolitis, fungal_pneumonia, bacterial_pneumonia, viral_pneumonia, ]
+        * - ri_on_treatment
+          - BOOL
+          - Is this person currently receiving treatment.
+        * - ri_start_of_current_episode
+          - DATE
+          - date of onset of current Alri event (pd.NaT is not infected)
+        * - ri_scheduled_recovery_date
+          - DATE
+          - (scheduled) date of recovery from current Alri event (pd.NaT is not infected or episode is scheduled to end in death)
+        * - ri_scheduled_death_date
+          - DATE
+          - (scheduled) date of death caused by current Alri event (pd.NaT is not infected or episode will not cause death)
+        * - ri_end_of_current_episode
+          - DATE
+          - date on which the last episode of Alri is resolved, (including allowing for the possibility that a cure is scheduled following onset). This is used to determine when a new episode can begin. This stops successive episodes interfering with one another.
+        * - ri_ALRI_tx_start_date
+          - DATE
+          - start date of Alri treatment for current episode (pd.NaT is not infected or treatment has not begun)
+
+
+
+     **Class attributes:**
+
+     CAUSES_OF_DEATH : {'ALRI_Strep_pneumoniae_non_PCV13': <tlo.methods.causes.Cause object at 0x7fa0786c93d0>, 'ALRI_Rhinovirus': <tlo.methods.causes.Cause object at 0x7fa0786d79d0>, 'ALRI_P.jirovecii': <tlo.methods.causes.Cause object at 0x7fa0786d7b20>, 'ALRI_H.influenzae_non_type_b': <tlo.methods.causes.Cause object at 0x7fa0786e4910>, 'ALRI_Bocavirus': <tlo.methods.causes.Cause object at 0x7fa0786e4970>, 'ALRI_other_bacterial_pathogens': <tlo.methods.causes.Cause object at 0x7fa0786e49d0>, 'ALRI_Staph_aureus': <tlo.methods.causes.Cause object at 0x7fa0786e4a30>, 'ALRI_Enterobacteriaceae': <tlo.methods.causes.Cause object at 0x7fa0786e4a90>, 'ALRI_Parainfluenza': <tlo.methods.causes.Cause object at 0x7fa0786e4af0>, 'ALRI_other_Strepto_Enterococci': <tlo.methods.causes.Cause object at 0x7fa0786e4b50>, 'ALRI_Influenza': <tlo.methods.causes.Cause object at 0x7fa0786e4bb0>, 'ALRI_Hib': <tlo.methods.causes.Cause object at 0x7fa0786e4c10>, 'ALRI_other_viral_pathogens': <tlo.methods.causes.Cause object at 0x7fa0786e4c70>, 'ALRI_HMPV': <tlo.methods.causes.Cause object at 0x7fa0786e4cd0>, 'ALRI_Strep_pneumoniae_PCV13': <tlo.methods.causes.Cause object at 0x7fa0786e4d30>, 'ALRI_RSV': <tlo.methods.causes.Cause object at 0x7fa0786e4d90>, 'ALRI_Adenovirus': <tlo.methods.causes.Cause object at 0x7fa0786e4df0>}
+
+     CAUSES_OF_DISABILITY : {'ALRI_Strep_pneumoniae_non_PCV13': <tlo.methods.causes.Cause object at 0x7fa0786e4e50>, 'ALRI_Rhinovirus': <tlo.methods.causes.Cause object at 0x7fa0786e4eb0>, 'ALRI_P.jirovecii': <tlo.methods.causes.Cause object at 0x7fa0786e4f10>, 'ALRI_H.influenzae_non_type_b': <tlo.methods.causes.Cause object at 0x7fa0786e4f70>, 'ALRI_Bocavirus': <tlo.methods.causes.Cause object at 0x7fa0786e4fd0>, 'ALRI_other_bacterial_pathogens': <tlo.methods.causes.Cause object at 0x7fa0786f1070>, 'ALRI_Staph_aureus': <tlo.methods.causes.Cause object at 0x7fa0786f10d0>, 'ALRI_Enterobacteriaceae': <tlo.methods.causes.Cause object at 0x7fa0786f1130>, 'ALRI_Parainfluenza': <tlo.methods.causes.Cause object at 0x7fa0786f1190>, 'ALRI_other_Strepto_Enterococci': <tlo.methods.causes.Cause object at 0x7fa0786f11f0>, 'ALRI_Influenza': <tlo.methods.causes.Cause object at 0x7fa0786f1250>, 'ALRI_Hib': <tlo.methods.causes.Cause object at 0x7fa0786f12b0>, 'ALRI_other_viral_pathogens': <tlo.methods.causes.Cause object at 0x7fa0786f1310>, 'ALRI_HMPV': <tlo.methods.causes.Cause object at 0x7fa0786f1370>, 'ALRI_Strep_pneumoniae_PCV13': <tlo.methods.causes.Cause object at 0x7fa0786f13d0>, 'ALRI_RSV': <tlo.methods.causes.Cause object at 0x7fa0786f1430>, 'ALRI_Adenovirus': <tlo.methods.causes.Cause object at 0x7fa0786f1490>}
+
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>}
+
+     all_pathogens : {'Strep_pneumoniae_non_PCV13', 'Rhinovirus', 'P.jirovecii', 'H.influenzae_non_type_b', 'Bocavirus', 'other_bacterial_pathogens', 'Staph_aureus', 'Enterobacteriaceae', 'Parainfluenza', 'other_Strepto_Enterococci', 'Influenza', 'Hib', 'other_viral_pathogens', 'HMPV', 'Strep_pneumoniae_PCV13', 'RSV', 'Adenovirus'}
+
+     complications : {'respiratory_failure', 'meningitis', 'pleural_effusion', 'hypoxia', 'lung_abscess', 'empyema', 'sepsis', 'pneumothorax'}
+
+     disease_types : {'bronchiolitis', 'fungal_pneumonia', 'bacterial_pneumonia', 'viral_pneumonia'}
+
+     pathogens : {'viral': ['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens'], 'bacterial': ['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', 'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', 'other_Strepto_Enterococci', 'other_bacterial_pathogens'], 'fungal': ['P.jirovecii']}
+
+     **Functions (defined or overridden in class Alri):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: check_params_read_in_ok
+
+     .. automethod:: define_symptoms
+
+     .. automethod:: pre_initialise_population
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: report_daly_values
+
+     .. automethod:: end_episode
+
+     .. automethod:: do_treatment
+
+     .. automethod:: cancel_death_date
+
+     .. automethod:: check_properties
+
+     .. automethod:: random_date
+
+     .. automethod:: impose_symptoms_for_complication
+
+
+
+
+
+
+
+
+.. autoclass:: AlriPollingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class AlriPollingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: compute_fraction_of_year_between_polling_event
+
+     .. automethod:: apply
+
+     .. automethod:: sample_outcome
+
+
+
+
+
+
+
+
+.. autoclass:: AlriIncidentCase
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class AlriIncidentCase):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: impose_symptoms_for_uncomplicated_disease
+
+     .. automethod:: impose_complications
+
+
+
+
+
+
+
+
+.. autoclass:: AlriDelayedOnsetComplication
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class AlriDelayedOnsetComplication):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: AlriNaturalRecoveryEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class AlriNaturalRecoveryEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: AlriCureEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class AlriCureEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: AlriDeathEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class AlriDeathEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Alri_GenericTreatment
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Alri_GenericTreatment):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: AlriLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class AlriLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: new_case
+
+     .. automethod:: new_recovered_case
+
+     .. automethod:: new_cured_case
+
+     .. automethod:: new_death
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: AlriCheckPropertiesEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class AlriCheckPropertiesEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: AlriIndividualLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class AlriIndividualLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: PropertiesOfOtherModules
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - hv_inf
+          - BOOL
+          - temporary property
+        * - nb_low_birth_weight_status
+          - CATEGORICAL
+          - temporary property.  Possible values are: [extremely_low_birth_weight, very_low_birth_weight, low_birth_weight, normal_birth_weight, ]
+        * - nb_breastfeeding_status
+          - CATEGORICAL
+          - temporary property.  Possible values are: [none, non_exclusive, exclusive, ]
+        * - va_pneumo_all_doses
+          - BOOL
+          - temporary property
+        * - va_hib_all_doses
+          - BOOL
+          - temporary property
+        * - un_clinical_acute_malnutrition
+          - CATEGORICAL
+          - temporary property.  Possible values are: [MAM, SAM, well, ]
+
+
+     **Functions (defined or overridden in class PropertiesOfOtherModules):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+
+
+
+

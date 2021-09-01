@@ -227,8 +227,8 @@ it sets up the vaccination schedule for all children from birth</p>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>va_bcg</p></td>
-<td><p>BOOL</p></td>
-<td><p>received bcg vaccination</p></td>
+<td><p>INT</p></td>
+<td><p>number of doses of BCG vaccination</p></td>
 </tr>
 <tr class="row-odd"><td><p>va_opv</p></td>
 <td><p>INT</p></td>
@@ -244,7 +244,7 @@ it sets up the vaccination schedule for all children from birth</p>
 </tr>
 <tr class="row-even"><td><p>va_hep</p></td>
 <td><p>INT</p></td>
-<td><p>number of doses of HepB vaccine received</p></td>
+<td><p>number of doses of HepB vaccine received (infant series)</p></td>
 </tr>
 <tr class="row-odd"><td><p>va_pneumo</p></td>
 <td><p>INT</p></td>
@@ -269,6 +269,50 @@ it sets up the vaccination schedule for all children from birth</p>
 <tr class="row-even"><td><p>va_td</p></td>
 <td><p>INT</p></td>
 <td><p>number of doses of tetanus/diphtheria vaccine received by pregnant women</p></td>
+</tr>
+<tr class="row-odd"><td><p>va_bcg_all_doses</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether all doses have been received of the vaccine bcg</p></td>
+</tr>
+<tr class="row-even"><td><p>va_opv_all_doses</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether all doses have been received of the OPV vaccine</p></td>
+</tr>
+<tr class="row-odd"><td><p>va_dtp_all_doses</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether all doses have been received of the DTP vaccine</p></td>
+</tr>
+<tr class="row-even"><td><p>va_hib_all_doses</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether all doses have been received of the Hib vaccine</p></td>
+</tr>
+<tr class="row-odd"><td><p>va_hep_all_doses</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether all doses have been received of the HepB vaccine (infant series)</p></td>
+</tr>
+<tr class="row-even"><td><p>va_pneumo_all_doses</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether all doses have been received of the pneumococcal vaccine</p></td>
+</tr>
+<tr class="row-odd"><td><p>va_rota_all_doses</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether all doses have been received of the rotavirus vaccine</p></td>
+</tr>
+<tr class="row-even"><td><p>va_measles_all_doses</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether all doses have been received of the measles vaccine</p></td>
+</tr>
+<tr class="row-odd"><td><p>va_rubella_all_doses</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether all doses have been received of the rubella vaccine</p></td>
+</tr>
+<tr class="row-even"><td><p>va_hpv_all_doses</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether all doses have been received of the HPV vaccine</p></td>
+</tr>
+<tr class="row-odd"><td><p>va_td_all_doses</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether all doses have been received of the tetanus/diphtheria vaccine</p></td>
 </tr>
 </tbody>
 </table>
@@ -363,6 +407,11 @@ then from 2019 use the HSI events - only need the current vaccines in use that w
 <span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#Epi.report_daly_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.Epi.report_daly_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>epi module returns dalys=0 for all persons alive</p>
 </dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.epi.Epi.increment_dose">
+<span class="sig-name descname"><span class="pre">increment_dose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vaccine</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#Epi.increment_dose"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.Epi.increment_dose" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -846,7 +895,7 @@ recommended 2+ doses (WHO)</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jul 08, 2021.
+        Last updated on Sep 01, 2021.
       </span>
 
     </p>

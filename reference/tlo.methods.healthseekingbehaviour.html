@@ -303,7 +303,7 @@ generator.</p>
 <dd><ul class="simple">
 <li><p>define the linear models that govern healthcare seeking</p></li>
 <li><p>set the first occurrence of the repeating HealthSeekingBehaviourPoll</p></li>
-<li><p>assemble the health-care seeking information from the symptoms that have been registered</p></li>
+<li><p>assemble the health-care seeking information from the registered symptoms</p></li>
 </ul>
 </dd></dl>
 
@@ -316,8 +316,7 @@ generator.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.define_linear_models">
 <span class="sig-name descname"><span class="pre">define_linear_models</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviour.define_linear_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.define_linear_models" title="Permalink to this definition">¶</a></dt>
-<dd><p>Construct the LinearModel for healthcare seeking of the ‘average symptom’.
-This is from the Ng’ambia et al. papers</p>
+<dd><p>Define linear models for health seeking behaviour for children and adults</p>
 </dd></dl>
 
 </dd></dl>
@@ -333,6 +332,12 @@ This is from the Ng’ambia et al. papers</p>
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviourPoll.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialise the HealthSeekingBehaviourPoll
 :param module: the module that created this event</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll._select_persons_with_any_symptoms">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">_select_persons_with_any_symptoms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">persons</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthseekingbehaviour.html#HealthSeekingBehaviourPoll._select_persons_with_any_symptoms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll._select_persons_with_any_symptoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Select rows of <cite>persons</cite> dataframe with any symptoms columns non-zero.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -365,7 +370,7 @@ This is from the Ng’ambia et al. papers</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jul 08, 2021.
+        Last updated on Sep 01, 2021.
       </span>
 
     </p>

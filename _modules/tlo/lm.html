@@ -509,6 +509,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
         <span class="n">rng</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">squeeze_single_row_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Evaluate linear model output for a given set of input data.</span>
@@ -519,6 +520,9 @@
 <span class="sd">          be boolean ``Series`` corresponding to Bernoulli random variables sampled</span>
 <span class="sd">          according to probabilities specified by model output. Otherwise model</span>
 <span class="sd">          output directly returned.</span>
+<span class="sd">        :param squeeze_single_row_output: If ``rng`` argument is not ``None`` and this</span>
+<span class="sd">          argument is set to ``True``, the output for a ``df`` input with a single-row</span>
+<span class="sd">          will be a scalar boolean value rather than a boolean ``Series``.</span>
 <span class="sd">        :param **kwargs: Values for any external variables included in model</span>
 <span class="sd">          predictors.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -575,7 +579,7 @@
             <span class="n">outcome</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">result</span>
             <span class="c1"># pop the boolean out of the series if we have a single row,</span>
             <span class="c1"># otherwise return the series</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">outcome</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">outcome</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">squeeze_single_row_output</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">outcome</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">outcome</span>
@@ -602,7 +606,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jul 08, 2021.
+        Last updated on Sep 01, 2021.
       </span>
 
     </p>

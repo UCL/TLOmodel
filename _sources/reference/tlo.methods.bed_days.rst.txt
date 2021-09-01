@@ -1,0 +1,4 @@
+tlo.methods.bed_days module
+===========================
+
+.. automodule:: tlo.methods.bed_days

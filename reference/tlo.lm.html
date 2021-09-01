@@ -285,7 +285,7 @@ a dataframe or an individual record as expected by the custom function.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.lm.LinearModel.predict">
-<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.random.mtrand.RandomState</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pandas.core.series.Series</span><a class="reference internal" href="../_modules/tlo/lm.html#LinearModel.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.lm.LinearModel.predict" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.random.mtrand.RandomState</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_single_row_output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">pandas.core.series.Series</span><a class="reference internal" href="../_modules/tlo/lm.html#LinearModel.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.lm.LinearModel.predict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluate linear model output for a given set of input data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -296,6 +296,9 @@ model with.</p></li>
 be boolean <code class="docutils literal notranslate"><span class="pre">Series</span></code> corresponding to Bernoulli random variables sampled
 according to probabilities specified by model output. Otherwise model
 output directly returned.</p></li>
+<li><p><strong>squeeze_single_row_output</strong> – If <code class="docutils literal notranslate"><span class="pre">rng</span></code> argument is not <code class="docutils literal notranslate"><span class="pre">None</span></code> and this
+argument is set to <code class="docutils literal notranslate"><span class="pre">True</span></code>, the output for a <code class="docutils literal notranslate"><span class="pre">df</span></code> input with a single-row
+will be a scalar boolean value rather than a boolean <code class="docutils literal notranslate"><span class="pre">Series</span></code>.</p></li>
 <li><p><strong>**kwargs</strong> – <p>Values for any external variables included in model
 predictors.</p>
 </p></li>
@@ -323,7 +326,7 @@ predictors.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Jul 08, 2021.
+        Last updated on Sep 01, 2021.
       </span>
 
     </p>

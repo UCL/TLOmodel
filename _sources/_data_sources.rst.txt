@@ -374,6 +374,284 @@ Undernutrition
 
 #. Christian, P. et al. Risk of childhood undernutrition related to small-for-gestational age and preterm birth in low- and middle-income countries. Int. J. Epidemiol. 42, 1340–1355 (2013) (for 2013; https://doi.org/10.1093/ije/dyt109)
 
+Infectious Diseases
+###################
+
+Covid-19
+********
+
+#. Chen, Nanshan, Min Zhou, Xuan Dong, Jieming Qu, Fengyun Gong, Yang Han, Yang Qiu, et al. "Epidemiological and Clinical Characteristics of 99 Cases of 2019 Novel Coronavirus Pneumonia in Wuhan, China: A Descriptive Study." The Lancet 395, no. 10223 (2020): 507-13 (for 2020; https://www.sciencedirect.com/science/article/pii/S0140673620302117?casa_token=PTj6RW8wVCkAAAAA:mXBklBWP_EV63dzx029jBHLPsxbfpsgeBewuoy99CDTC9wStktoOnXx3k5ry6uqga5-7WqKThrg)
+
+#. Western Cape: Covid-19 and Hiv / Tuberculosis. 2020, accessed 10th June 2020,  (for 2020; https://storage.googleapis.com/stateless-bhekisisa-website/wordpress-uploads/2020/06/df4fcf94-covid_update_bhekisisa_wc_3.pdf.)
+
+#. Emery, Jon C, Timothy W Russell, Yang Liu, Joel Hellewell, Carl AB Pearson, Gwenan M Knight, Rosalind M Eggo, et al. "The Contribution of Asymptomatic Sars-Cov-2 Infections to Transmission on the Diamond Princess Cruise Ship." Elife 9 (2020): e58699. (for 2020; https://elifesciences.org/articles/58699)
+
+#. Ferretti, Luca, Alice Ledda, Chris Wymant, Lele Zhao, Virginia Ledda, Lucie Abeler- Dorner, Michelle Kendall, et al. "The Timing of Covid-19 Transmission." medRxiv  (2020): 2020.09.04.20188516. (for 2020; https://www.medrxiv.org/content/medrxiv/early/2020/09/16/2020.09.04.20188516.full.pdf.)
+
+#. Google LLC. "Google Covid-19 Community Mobility Reports." 12th June 2020 2020. (for 2020; https://www.google.com/covid19/mobility/.)
+
+#. Guan, Wei-jie, Zheng-yi Ni, Yu Hu, Wen-hua Liang, Chun-quan Ou, Jian-xing He, Lei Liu, et al. "Clinical Characteristics of Coronavirus Disease 2019 in China." New England journal of medicine 382, no. 18 (2020): 1708-20. (for 2020; https://www.nejm.org/doi/full/10.1056/NEJMoa2002032.)
+
+#. Intensive Care National Audit & Research Centre. "Icnarc Report of Covid-19 in Critical Care." (2020) (for 2020; https://www.icnarc.org/.)
+
+#. Joint PHE Porton Down & University of Oxford SARS-CoV-2 test development and validation cell. Rapid Evaluation of Lateral Flow Viral Antigen Detection Devices (Lfds) for Mass Community Testing. (2020).  (for 2020; https://www.ox.ac.uk/sites/files/oxford/media_wysiwyg/UK%20evaluation_PHE%20Porton%20Down%20%20University%20of%20Oxford_final.pdf.)
+
+#. Lauer, Stephen A, Kyra H Grantz, Qifang Bi, Forrest K Jones, Qulu Zheng, Hannah R Meredith, Andrew S Azman, Nicholas G Reich, and Justin Lessler. "The Incubation Period of Coronavirus Disease 2019 (Covid-19) from Publicly Reported Confirmed Cases: Estimation and Application." Annals of internal medicine 172, no. 9 (2020): 577-82.  (for 2020; https://www.acpjournals.org/doi/full/10.7326/M20-0504.)
+
+#. Mangal, Tara Danielle, Charlie Whittaker, Dominic Nkhoma, Wingston Ng'ambi, Watson J Oliver, Patrick Walker, Azra Ghani, et al. "The Potential Impact of Intervention Strategies on Covid-19 Transmission in Malawi: A Mathematical Modelling Study." medRxiv  (2020).  (for 2020; https://www.medrxiv.org/content/10.1101/2020.10.06.20207878v1)
+
+#. Palaiodimos, Leonidas, Damianos G. Kokkinidis, Weijia Li, Dimitrios Karamanis, Jennifer Ognibene, Shitij Arora, William N. Southern, and Christos S. Mantzoros. "Severe Obesity, Increasing Age and Male Sex Are Independently Associated with Worse in-Hospital Outcomes, and Higher in-Hospital Mortality, in a Cohort of Patients with Covid-19 in the Bronx, New York." Metabolism 108 (2020/07/01/ 2020): 154262.  (for 2020; https://doi.org/https://doi.org/10.1016/j.metabol.2020.154262.)
+
+#. Siwiak, Marian P, Pawel Szczesny, and Marlena M Siwiak. "From a Single Host to Global Spread. The Global Mobility Based Modelling of the Covid-19 Pandemic Implies Higher Infection and Lower Detection Rates Than Current Estimates."  (2020).  (for 2020; https://www.medrxiv.org/content/10.1101/2020.03.21.20040444v3.full.pdf.)
+
+#. Ssentongo, Paddy, Anna E Ssentongo, Emily S Heilbrunn, and Vernon M Chinchilli. "The Association of Cardiovascular Disease and Other Pre-Existing Comorbidities with Covid-19 Mortality: A Systematic Review and Meta-Analysis." medRxiv  (2020).  (for 2020; https://www.medrxiv.org/content/10.1101/2020.05.10.20097253v2.full.pdf.)
+
+#. Tindale, Lauren, Michelle Coombe, Jessica E Stockdale, Emma Garlock, Wing Yin Venus Lau, Manu Saraswat, Yen-Hsiang Brian Lee, et al. "Transmission Interval Estimates Suggest Pre-Symptomatic Spread of Covid-19." MedRxiv  (2020). (for 2020; https://www.medrxiv.org/content/10.1101/2020.03.03.20029983v1)
+
+#. Van Elslande, Jan, Pieter Vermeersch, Kris Vandervoort, Tony Wawina-Bokalanga, Bert Vanmechelen, Elke Wollants, Lies Laenen, et al. "Symptomatic Sars-Cov-2 Reinfection by a Phylogenetically Distinct Strain." Clinical Infectious Diseases  (2020). (for 2020; https://doi.org/10.1093/cid/ciaa1330. https://doi.org/10.1093/cid/ciaa1330.)
+
+#. Watson, Jessica, Penny F Whiting, and John E Brush. "Interpreting a Covid-19 Test Result." Bmj 369 (2020). (for 2020; https://www.bmj.com/content/369/bmj.m1808.long)
+
+HIV
+***
+
+#. \ :sup:`†`\ Bengo, J. M., K. Chalulu, J. Chinkhumba, L. Kazembe, K. M. Maleta, F. Masiye and D. Mathanga (2010). Situation analysis of male circumcision in Malawi. Lilongwe, Malawi, College of Medicine. (for 2010; https://dhsprogram.com/pubs/pdf/fr247/fr247.pdf)
+
+#. \ :sup:`†`\ Chizimba, R. M. and G. T. Malera (2011). Counting the Uncatchables! Report of the situation analysis of the magnitude, behavioural patterns, contributing factors, current interventions and impact of sex work in HIV prevention in Malawi. F. Family Planning Association of Malawi. Lilongwe, Malawi. (for 2011; https://www.hivsharespace.net/sites/default/files/resources/6.%202011%20Final%20Malawi%20Sex%20Work%20Report%20FPAM.pdf)
+
+#. Fazito, E., P. Cuchi, M. Mahy and T. Brown (2012). "Analysis of duration of risk behaviour for key populations: a literature review." Sexually Transmitted Infections 88(Suppl 2): i24-i32. (for 2012; https://sti.bmj.com/content/sextrans/88/Suppl_2/i24.full.pdf)
+
+#. Ferrand, R. A., E. L. Corbett, R. Wood, J. Hargrove, C. E. Ndhlovu, F. M. Cowan, E. Gouws and B. G. Williams (2009). "AIDS among older children and adolescents in Southern Africa: projecting the time course and magnitude of the epidemic." AIDS (London, England) 23(15): 2039. (for 2009; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3408596/)
+
+#. Hallett, T. B., K. Singh, J. A. Smith, R. G. White, L. J. Abu-Raddad and G. P. Garnett (2008). "Understanding the impact of male circumcision interventions on the spread of HIV in southern Africa." PloS one 3(5): e2212. (for 2008; https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0002212)
+
+#. Hallett, T. B., B. Zaba, J. Todd, B. Lopman, W. Mwita, S. Biraro, S. Gregson, J. T. Boerma and A. Network (2008). "Estimating incidence from prevalence in generalised HIV epidemics: methods and validation." PLoS Med 5(4): e80. (for 2008; https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0050080)
+
+#. \ :sup:`†`\ Joint United Nations Programme on HIV/AIDS (2017). AIDSinfo. Geneva, UNAIDS. 2020. (for 2020; http://aidsinfo.unaids.org/)
+
+#. \ :sup:`†`\ Ministry of Health Malawi (2016). Malawi Guidelines for Clinical Management of HIV in Children and Adults (Third Edition). Lilongwe, Malawi. (for 2016; Malawi Guidelines for Clinical Management of HIV in Children and Adults (Third Edition))
+
+#. \ :sup:`†`\ Ministry of Health Malawi (2018). "Malawi Population?based HIV Impact Assessment (MPHIA) 2015�16." (for 2018; https://phia.icap.columbia.edu/wp-content/uploads/2019/08/MPHIA-Final-Report_web.pdf)
+
+#. \ :sup:`†`\ National AIDS Commission (2014). National Strategic Plan for HIV and AIDS. Lilongwe, Malawi. (for 2014; https://hivstar.lshtm.ac.uk/files/2017/11/2015-2020-National-Stategic-Plan-for-HIV-MALAWI.pdf)
+
+#. \ :sup:`†`\ National Statistical Office (NSO) [Malawi] ICF Macro (2011). Malawi Demographic and Health Survey 2010. Zomba, Malawi, and Calverton, Maryland, USA. (for 2011; https://dhsprogram.com/pubs/pdf/fr247/fr247.pdf)
+
+#. \ :sup:`†`\ National Statistical Office (NSO) [Malawi] ICF Macro (2014). Malawi Biological and Behavioural Surveillance Survey (BBSS), 2013-2014. Lilongwe, Malawi. (for 2014; http://www.nsomalawi.mw/images/stories/data_on_line/demography/bbss/BBSS%202013-2014%20Report.pdf)
+
+#. \ :sup:`†`\ PEPFAR (2017). "Malawi Country Operational Plan 2017. Strategic Direction Summary.". (for 2017; https://www.pepfar.gov/documents/organization/272017.pdf)
+
+#. Rollins, N., M. Mahy, R. Becquet, L. Kuhn, T. Creek and L. Mofenson (2012). "Estimates of peripartum and postnatal mother-to-child transmission probabilities of HIV for use in Spectrum and other population-based models." Sexually Transmitted Infections 88(Suppl 2): i44-i51. (for 2012; https://sti.bmj.com/content/sextrans/88/Suppl_2/i44.full.pdf)
+
+#. Todd, J., J. R. Glynn, M. Marston, T. Lutalo, S. Biraro, W. Mwita, V. Suriyanon, R. Rangsin, K. E. Nelson and P. Sonnenberg (2007). "Time from HIV seroconversion to death: a collaborative analysis of eight studies in six low and middle-income countries before highly active antiretroviral therapy." AIDS (London, England) 21(Suppl 6): S55. (for 2007; https://pubmed.ncbi.nlm.nih.gov/18032940/)
+
+#. World Health Organization (2019). Update of recommendations on first- and second-line antiretroviral regimens. Geneva, Switzerland. (for 2019; https://www.who.int/publications/i/item/WHO-CDS-HIV-19.15)
+
+#. Wright, R. J. and J. S. Stringer (2004). "Rapid testing strategies for HIV-1 serodiagnosis in high-prevalence African settings." American journal of preventive medicine 27(1): 42-48. (for 2004; https://www.sciencedirect.com/science/article/pii/S0749379704000480)
+
+Malaria
+*******
+
+#. Abba, K., J. J. Deeks, P. L. Olliaro, C. M. Naing, S. M. Jackson, Y. Takwoingi, S. Donegan and P. Garner (2011). "Rapid diagnostic tests for diagnosing uncomplicated P. falciparum malaria in endemic countries." Cochrane Database of Systematic Reviews(7). (for 2011; https://doi.org/10.1002/14651858.CD008122.pub2. )
+
+#. Ayoya, Mohamed Ag, Gerburg Maria Spiekermann-Brouwer, Abdel Kader Traor�, Rebecca Joyce Stoltzfus, and Cutberto Garza. "Determinants of Anemia among Pregnant Women in Mali." Food and nutrition bulletin 27, no. 1 (2006): 3-11.  (for 2006; https://journals.sagepub.com/doi/pdf/10.1177/156482650602700101.)
+
+#. \ :sup:`†`\ Bloland, Peter B., Jack J. Wirima, Richard W. Steketee, Ben Chilima, Allen Hightower, and Joel G. Breman. "Maternal Hiv Infection and Infant Mortality in Malawi: Evidence for Increased Mortality Due to Placental Malaria Infection." AIDS 9, no. 7 (1995): 721-26.  (for 1995; https://journals.lww.com/aidsonline/Fulltext/1995/07000/Maternal_HIV_infection_and_infant_mortality_in.9.aspx)
+
+#. Camponovo, Flavia, Caitlin A. Bever, Katya Galactionova, Thomas Smith, and Melissa A. Penny. "Incidence and Admission Rates for Severe Malaria and Their Impact on Mortality in Africa." [In eng]. Malaria journal 16, no. 1 (2017): 1-1.  (for 2017; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5209951/.)
+
+#. \ :sup:`†`\ Chinkhumba, Jobiba, Jacek Skarbinski, Ben Chilima, Carl Campbell, Victoria Ewing, Miguel San Joaquin, John Sande, Doreen Ali, and Don Mathanga. "Comparative Field Performance and Adherence to Test Results of Four Malaria Rapid Diagnostic Tests among Febrile Patients More Than Five Years of Age in Blantyre, Malawi." Malaria Journal 9, no. 1 (2010/07/20 2010): (for 2010; https://doi.org/10.1186/1475-2875-9-209.)
+
+#. Dow, Anna, Dumbani Kayira, Michael G Hudgens, Annelies Van Rie, Caroline C King, Sascha Ellington, Nelecy Chome, et al. "The Effect of Cotrimoxazole Prophylactic Treatment on Malaria, Birth Outcomes, and Postpartum Cd4 Count in Hiv-Infected Women." Infectious diseases in obstetrics and gynecology 2013 (2013). (for 2013; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3865641/.)
+
+#. \ :sup:`†`\ Feng, Gaoqian, Julie A. Simpson, Ebbie Chaluluka, Malcolm E. Molyneux, and Stephen J. Rogerson. "Decreasing Burden of Malaria in Pregnancy in Malawian Women and Its Relationship to Use of Intermittent Preventive Therapy or Bed Nets." [In eng]. PloS one 5, no. 8 (2010): e12012-e12.  (for 2010; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2917365/.)
+
+#. Filipe, Jo�o A. N., Eleanor M. Riley, Christopher J. Drakeley, Colin J. Sutherland, and Azra C. Ghani. "Determination of the Processes Driving the Acquisition of Immunity to Malaria Using a Mathematical Transmission Model." PLOS Computational Biology 3, no. 12 (2007): e255. (for 2007; https://doi.org/10.1371/journal.pcbi.0030255.)
+
+#. Flateau, Clara, Guillaume Le Loup, and Gilles Pialoux. "Consequences of Hiv Infection on Malaria and Therapeutic Implications: A Systematic Review." The Lancet Infectious Diseases 11, no. 7 (2011/07/01/ 2011): 541-56.  (for 2011; https://doi.org/https://doi.org/10.1016/S1473-3099(11)70031-7.)
+
+#. Griffin, Jamie T, Samir Bhatt, Marianne E Sinka, Peter W Gething, Michael Lynch, Edith Patouillard, Erin Shutes, et al. "Potential for Reduction of Burden and Local Elimination of Malaria by Reducing Plasmodium Falciparum Malaria Transmission: A Mathematical Modelling Study." The Lancet Infectious Diseases 16, no. 4 (2016): 465-72. (for 2016; https://www.sciencedirect.com/science/article/pii/S1473309915004235)
+
+#. Griffin, Jamie T., T. Deirdre Hollingsworth, Lucy C. Okell, Thomas S. Churcher, Michael White, Wes Hinsley, Teun Bousema, et al. "Reducing Plasmodium Falciparum Malaria Transmission in Africa: A Model-Based Evaluation of Intervention Strategies." PLOS Medicine 7, no. 8 (2010): e1000324.  (for 2010; https://doi.org/10.1371/journal.pmed.1000324)
+
+#. Hendriksen, Ilse C. E., Josefo Ferro, Pablo Montoya, Kajal D. Chhaganlal, Amir Seni, Ermelinda Gomes, Kamolrat Silamut, et al. "Diagnosis, Clinical Presentation, and in-Hospital Mortality of Severe Malaria in Hiv-Coinfected Children and Adults in Mozambique." Clinical Infectious Diseases 55, no. 8 (2012): 1144-53.  (for 2012; https://academic.oup.com/cid/article/55/8/1144/339459.)
+
+#. Kapesa, Anthony, Eliningaya J. Kweka, Harrysone Atieli, Yaw A. Afrane, Erasmus Kamugisha, Ming-Chieh Lee, Guofa Zhou, Andrew K. Githeko, and Guiyun Yan. "The Current Malaria Morbidity and Mortality in Different Transmission Settings in Western Kenya." PLOS ONE 13, no. 8 (2018): e0202031.  (for 2018; https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0202031.)
+
+#. \ :sup:`†`\ Kapito-Tembo, Atupele, Steven R Meshnick, Micha�l Boele van Hensbroek, Kamija Phiri, Margaret Fitzgerald, and Victor Mwapasa. "Marked Reduction in Prevalence of Malaria Parasitemia and Anemia in Hiv-Infected Pregnant Women Taking Cotrimoxazole with or without Sulfadoxine-Pyrimethamine Intermittent Preventive Therapy During Pregnancy in Malawi." Journal of Infectious Diseases 203, no. 4 (2011): 464-72. (for 2011; https://pubmed.ncbi.nlm.nih.gov/21216867/)
+
+#. Kattenberg, Johanna H., Eleanor A. Ochodo, Kimberly R. Boer, Henk D. F. H. Schallig, Petra F. Mens, and Mariska M. G. Leeflang. "Systematic Review and Meta-Analysis: Rapid Diagnostic Tests Versus Placental Histology, Microscopy and Pcr for Malaria in Pregnant Women." Malaria Journal 10, no. 1 (2011/10/28 2011): 321.  (for 2011; https://doi.org/10.1186/1475-2875-10-321)
+
+#. Manyando, Christine, Eric M. Njunju, Umberto D�Alessandro, and Jean-Pierre Van geertruyden. "Safety and Efficacy of Co-Trimoxazole for Treatment and Prevention of Plasmodium Falciparum Malaria: A Systematic Review." PLOS ONE 8, no. 2 (2013): e56916 (for 2013; https://doi.org/10.1371/journal.pone.0056916)
+
+#. \ :sup:`†`\ Mathanga, Don P., Edward D. Walker, Mark L. Wilson, Doreen Ali, Terrie E. Taylor, and Miriam K. Laufer. "Malaria Control in Malawi: Current Status and Directions for the Future." [In eng]. Acta tropica 121, no. 3 (2012): 212-17. (for 2012; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3681411/)
+
+#. Mermin, Jonathan, John Paul Ekwaru, Cheryl A Liechty, Willy Were, Robert Downing, Ray Ransom, Paul Weidle, et al. "Effect of Co-Trimoxazole Prophylaxis, Antiretroviral Therapy, and Insecticide-Treated Bednets on the Frequency of Malaria in Hiv-1-Infected Adults in Uganda: A Prospective Cohort Study." The Lancet 367, no. 9518 (2006): 1256-61.  (for 2006; https://www.sciencedirect.com/science/article/abs/pii/S0140673606685413)
+
+#. Mermin, Jonathan, John Lule, John Paul Ekwaru, Samuel Malamba, Robert Downing, Ray Ransom, Frank Kaharuza, et al. "Effect of Co-Trimoxazole Prophylaxis on Morbidity, Mortality, Cd4-Cell Count, and Viral Load in Hiv Infection in Rural Uganda." The Lancet 364, no. 9443 (2004): 1428-34. (for 2004; https://www.sciencedirect.com/science/article/abs/pii/S0140673604172255.)
+
+#. Moore, Kerryn A, Julie A Simpson, Michelle JL Scoullar, Rose McGready, and Freya JI Fowkes. "Quantification of the Association between Malaria in Pregnancy and Stillbirth: A Systematic Review and Meta-Analysis." The Lancet Global Health 5, no. 11 (2017): e1101-e12. (for 2017; https://www.sciencedirect.com/science/article/pii/S2214109X17303406.)
+
+#. Okell, Lucy C, Matthew Cairns, Jamie T Griffin, Neil M Ferguson, Joel Tarning, George Jagoe, Pierre Hugo, et al. "Contrasting Benefits of Different Artemisinin Combination Therapies as First-Line Malaria Treatments Using Model-Based Cost-Effectiveness Analysis." Nature communications 5 (2014): 5606. (for 2014; https://pubmed.ncbi.nlm.nih.gov/25425081/)
+
+#. Ouma, Peter, Anna M Van Eijk, Mary J Hamel, Monica Parise, John G Ayisi, Kephas Otieno, Piet A Kager, and Laurence Slutsker. "Malaria and Anaemia among Pregnant Women at First Antenatal Clinic Visit in Kisumu, Western Kenya." Tropical Medicine & International Health 12, no. 12 (2007): 1515-23. (for 2007; https://onlinelibrary.wiley.com/doi/pdf/10.1111/j.1365-3156.2007.01960.x.)
+
+#. Sandison, Taylor G, Jaco Homsy, Emmanuel Arinaitwe, Humphrey Wanzira, Abel Kakuru, Victor Bigira, Julius Kalamya, et al. "Protective Efficacy of Co-Trimoxazole Prophylaxis against Malaria in Hiv Exposed Children in Rural Uganda: A Randomised Clinical Trial." Bmj 342 (2011): d1617. (for 2011; https://pubmed.ncbi.nlm.nih.gov/21454456/)
+
+#. Schantz-Dunn, Julianna, and Nawal M. Nour. "Malaria and Pregnancy: A Global Health Perspective." [In eng]. Reviews in obstetrics & gynecology 2, no. 3 (Summer 2009): 186-92.  (for 2009; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2760896/.)
+
+#. Ter Kuile, Feiko O., Monica E. Parise, Francine H. Verhoeff, Venkatachalam Udhayakumar, Robert D. Newman, Anne M. Van Eijk, Stephen J. Rogerson, and Richard W. Steketee. "The Burden of Co-Infection with Human Immunodeficiency Virus Type 1 and Malaria in Pregnant Women in Sub-Saharan Africa." The American Journal of Tropical Medicine and Hygiene 71, no. 2_suppl (2004): 41-54.  (for 2004; https://www.ajtmh.org/content/journals/10.4269/ajtmh.2004.71.41.)
+
+#. Walker, Patrick G. T., Jamie T. Griffin, Matt Cairns, Stephen J. Rogerson, Anna M. van Eijk, Feiko ter Kuile, and Azra C. Ghani. "A Model of Parity-Dependent Immunity to Placental Malaria." Article. Nature Communications 4 (03/19/online 2013): 1609. (for 2013; https://www.nature.com/articles/ncomms2605#supplementary-information. https://doi.org/10.1038/ncomms2605)
+
+#. Walker, Patrick G. T., Jamie T. Griffin, Neil M. Ferguson, and Azra C. Ghani. "Estimating the Most Efficient Allocation of Interventions to Achieve Reductions in Plasmodium Falciparum Malaria Burden and Transmission in Africa: A Modelling Study." The Lancet Global Health 4, no. 7 (2016/07/01/ 2016): e474-e84.  (for 2016; http://www.sciencedirect.com/science/article/pii/S2214109X16300730.)
+
+#. Walker, Patrick G. T., Feiko O. ter Kuile, Tini Garske, Clara Menendez, and Azra C. Ghani. "Estimated Risk of Placental Infection and Low Birthweight Attributable to Plasmodium Falciparum Malaria in Africa in 2010: A Modelling Study." The Lancet Global Health 2, no. 8 (2014/08/01/ 2014): e460-e67. (for 2014; http://www.sciencedirect.com/science/article/pii/S2214109X14702566)
+
+#. Watera, Christine, Jim Todd, Richard Muwonge, James Whitworth, Jessica Nakiyingi-Miiro, Anne Brink, George Miiro, et al. "Feasibility and Effectiveness of Cotrimoxazole Prophylaxis for Hiv-1-Infected Adults Attending an Hiv/Aids Clinic in Uganda." JAIDS Journal of Acquired Immune Deficiency Syndromes 42, no. 3 (2006): 373-78. (for 2006; https://pubmed.ncbi.nlm.nih.gov/16810124/)
+
+#. White, Nicholas J. "Intermittent Presumptive Treatment for Malaria." PLOS Medicine 2, no. 1 (2005): e3. (for 2005; https://doi.org/10.1371/journal.pmed.0020003.)
+
+#. Winskill, Peter, Hannah C. Slater, Jamie T. Griffin, Azra C. Ghani, and Patrick G. T. Walker. "The Us President's Malaria Initiative, Plasmodium Falciparum Transmission and Mortality: A Modelling Study." PLOS Medicine 14, no. 11 (2017): e1002448.  (for 2017; https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.1002448#sec016.)
+
+#. World Health Organization. "Severe Malaria." Tropical Medicine & International Health 19, no. s1 (2014): 7-131.  (for 2014; https://onlinelibrary.wiley.com/doi/abs/10.1111/tmi.12313_2)
+
+Measles
+*******
+
+#. Centers for Disease Control and Prevention (CDC). Epidemiology and Prevention of Vaccine-Preventable Diseases. 13th Edition ed. Washington D.C. Public Health Foundation, 2015 (for 2015; https://www.cdc.gov/vaccines/pubs/pinkbook/meas.html.)
+
+#. Ferrari, Matthew J., Rebecca F. Grais, Nita Bharti, Andrew J. K. Conlan, Ottar N. Bj�rnstad, Lara J. Wolfson, Philippe J. Guerin, Ali Djibo, and Bryan T. Grenfell. "The Dynamics of Measles in Sub-Saharan Africa." Nature 451, no. 7179 (2008/02/01 2008): 679-84. (for 2008; https://doi.org/10.1038/nature06509)
+
+#. Kabra, S. K., and R. Lodha. "Antibiotics for Preventing Complications in Children with Measles." Cochrane Database of Systematic Reviews, no. 8 (2013). (for 2013; https://doi.org/10.1002/14651858.CD001477.pub4)
+
+#. Moss, William J., and Diane E. Griffin. "Global Measles Elimination." Nature Reviews Microbiology 4, no. 12 (2006/12/01 2006): 900-08.  (for 2006; https://doi.org/10.1038/nrmicro1550.)
+
+#. Palumbo, Paul, Laura Hoyt, Kafui Demasio, James Oleske, and Edward Connor. "Population-Based Study of Measles and Measles Immunization in Human Immunodeficiency Virus-Infected Children." The Pediatric infectious disease journal 11, no. 12 (1992): 1008-14. (for 1992; https://europepmc.org/article/med/1461690)
+
+#. Perry, Robert T., and Neal A. Halsey. "The Clinical Significance of Measles: A Review." The Journal of Infectious Diseases 189, no. Supplement_1 (2004): S4-S16 (for 2004; https://doi.org/10.1086/377712.)
+
+#. Strebel, Peter M., Mark J. Papania, Paul A. Gasta�aduy, and James L. Goodson. "37 - Measles Vaccines." In Plotkin's Vaccines (Seventh Edition), edited by Stanley A. Plotkin, Walter A. Orenstein, Paul A. Offit and Kathryn M. Edwards, 579-618.e21: Elsevier, 2018. (for 2018)
+
+#. Sudfeld, C. R., A. M. Navar, and N. A. Halsey. "Effectiveness of Measles Vaccination and Vitamin a Treatment." [In eng]. Int J Epidemiol 39 Suppl 1, no. Suppl 1 (Apr 2010): i48-55. (for 2010; https://pubmed.ncbi.nlm.nih.gov/20348126/.)
+
+#. Wolfson, Lara J, Rebecca F Grais, Francisco J Luquero, Maureen E Birmingham, and Peter M Strebel. "Estimates of Measles Case Fatality Ratios: A Comprehensive Review of Community-Based Studies�." International Journal of Epidemiology 38, no. 1 (2009): 192-205. (for 2009; https://doi.org/10.1093/ije/dyn224.)
+
+#. World Health, Organization. "Measles Vaccines: Who Position Paper, April 2017 - Recommendations." [In eng]. Vaccine 37, no. 2 (Jan 7 2019): 219-22.  (for 2019; https://doi.org/10.1016/j.vaccine.2017.07.066)
+
+#. Wu, T., J. Ni, and J. Wei. "Vitamin a for Non?Measles Pneumonia in Children." Cochrane Database of Systematic Reviews, no. 3 (2005).  (for 2005; https://doi.org/10.1002/14651858.CD003700.pub2.)
+
+Tuberculosis
+************
+
+#. Aaron, L., D. Saadoun, I. Calatroni, O. Launay, N. M�main, V. Vincent, G. Marchal, et al. "Tuberculosis in Hiv-Infected Patients: A Comprehensive Review." Clinical Microbiology and Infection 10, no. 5 (2004/05/01/ 2004): 388-98.  (for 2004; https://doi.org/https://doi.org/10.1111/j.1469-0691.2004.00758.x. )
+
+#. \ :sup:`†`\ Abouyannis, Michael, Russell Dacombe, Isaias Dambe, James Mpunga, Brian Faragher, Francis Gausi, Henry Ndhlovu, et al. "Drug Resistance of Mycobacterium Tuberculosis in Malawi: A Cross-Sectional Survey." [In eng]. Bulletin of the World Health Organization 92, no. 11 (2014): 798-806 (for 2014; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4221759/.)
+
+#. Akolo, Christopher, Ifedayo Adetifa, Sasha Shepperd, and Jimmy Volmink. "Treatment of Latent Tuberculosis Infection in Hiv Infected Persons." Cochrane database of systematic reviews, no. 1 (2010).  (for 2010; https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD000171.pub3/full.)
+
+#. Ayieko, James, Lisa Abuogi, Brett Simchowitz, Elizabeth A Bukusi, Allan H Smith, and Arthur Reingold. "Efficacy of Isoniazid Prophylactic Therapy in Prevention of Tuberculosis in Children: A Meta�Analysis." BMC infectious diseases 14, no. 1 (2014): 91. (for 2014; https://pubmed.ncbi.nlm.nih.gov/24555539/)
+
+#. Behr, MA, SA Warren, H Salamon, PC Hopewell, A Ponce De Leon, CL Daley, and PM Small. "Transmission of Mycobacterium Tuberculosis from Patients Smear-Negative for Acid-Fast Bacilli." The Lancet 353, no. 9151 (1999): 444-49. (for 1999; https://pubmed.ncbi.nlm.nih.gov/9989714/)
+
+#. Behr, Marcel A, Paul H Edelstein, and Lalita Ramakrishnan. "Revisiting the Timetable of Tuberculosis." BMJ 362 (2018): k2738. (for 2018; https://doi.org/10.1136/bmj.k2738. https://www.bmj.com/content/bmj/362/bmj.k2738.full.pdf.)
+
+#. Churchyard, Gavin J, Katherine L Fielding, James J Lewis, Leonie Coetzee, Elizabeth L Corbett, Peter Godfrey-Faussett, Richard J Hayes, Richard E Chaisson, and Alison D Grant. "A Trial of Mass Isoniazid Preventive Therapy for Tuberculosis Control." New England Journal of Medicine 370, no. 4 (2014): 301-10.  (for 2014; https://www.nejm.org/doi/full/10.1056/NEJMoa1214289.)
+
+#. Comstock, GW, GM Cauthen, LB Reichman, and ES Hershfield. "Tuberculosis: A Comprehensive International Approach." Epidemiology of tuberculosis. New York: Marcel Dekker  (1993): 23-48. (for 1993)
+
+#. Corbett, Elizabeth L., Catherine J. Watt, Neff Walker, Dermot Maher, Brian G. Williams, Mario C. Raviglione, and Christopher Dye. "The Growing Burden of Tuberculosis: Global Trends and Interactions with the Hiv Epidemic." JAMA Internal Medicine 163, no. 9 (2003): 1009-21. (for 2003; https://doi.org/10.1001/archinte.163.9.1009.)
+
+#. Dodd, PJ, AJ Prendergast, C Beecroft, B Kampmann, and JA Seddon. "The Impact of Hiv and Antiretroviral Therapy on Tb Risk in Children: A Systematic Review and Meta-Analysis." Thorax 72, no. 6 (2017): 559-75. (for 2017; https://thorax.bmj.com/content/72/6/559)
+
+#. Dowdy, David W, and Richard E Chaisson. "The Persistence of Tuberculosis in the Age of Dots: Reassessing the Effect of Case Detection." Bulletin of the World Health Organization 87 (2009): 296-304.  (for 2009; https://www.scielosp.org/article/bwho/2009.v87n4/296-304/en/.)
+
+#. Driver, Cynthia R, Sonal S Munsiff, Jiehui Li, Nicole Kundamal, and Sukhminder S Osahan. "Relapse in Persons Treated for Drug-Susceptible Tuberculosis in a Population with High Coinfection with Human Immunodeficiency Virus in New York City." Clinical infectious diseases 33, no. 10 (2001): 1762-69.  (for 2001; https://academic.oup.com/cid/article/33/10/1762/393933.)
+
+#. Dye, Christopher, Geoffrey P Garnett, Karen Sleeman, and Brian G Williams. "Prospects for Worldwide Tuberculosis Control under the Who Dots Strategy." The Lancet 352, no. 9144 (1998): 1886-91.  (for 1998; https://www.sciencedirect.com/science/article/pii/S0140673698031997)
+
+#. Hanrahan, Colleen F, Jonathan E Golub, Lerato Mohapi, Nkeko Tshabangu, Tebogo Modisenyane, Richard E Chaisson, Glenda E Gray, James A McIntyre, and Neil A Martinson. "Body Mass Index and Risk of Tuberculosis and Death." AIDS (London, England) 24, no. 10 (2010): 1501. (for 2010; https://pubmed.ncbi.nlm.nih.gov/20505496/)
+
+#. Harries, AD, R Zachariah, and SD Lawn. "Providing Hiv Care for Co-Infected Tuberculosis Patients: A Perspective from Sub-Saharan Africa [State of the Art Series. Tuberculosis. Edited by Id Rusen. Number 3 in the Series]." The international journal of tuberculosis and lung disease 13, no. 1 (2009): 6-16. (for 2009; https://www.ingentaconnect.com/contentone/iuatld/ijtld/2009/00000013/00000001/art00004)
+
+#. Horne, D. J., M. Kohli, J. S. Zifodya, I. Schiller, N. Dendukuri, D. Tollefson, S. G. Schumacher, et al. "Xpert Mtb/Rif and Xpert Mtb/Rif Ultra for Pulmonary Tuberculosis and Rifampicin Resistance in Adults." Cochrane Database of Systematic Reviews, no. 6 (2019).  (for 2019; https://doi.org/10.1002/14651858.CD009593.pub4)
+
+#. Houben, Rein MGJ, Tom Sumner, Alison D Grant, and Richard G White. "Ability of Preventive Therapy to Cure Latent Mycobacterium Tuberculosis Infection in Hiv-Infected Individuals in High-Burden Settings." Proceedings of the National Academy of Sciences 111, no. 14 (2014): 5325-30. (for 2014; https://www.pnas.org/content/111/14/5325)
+
+#. Houben, Rein M. G. J., and Peter J. Dodd. "The Global Burden of Latent Tuberculosis Infection: A Re-Estimation Using Mathematical Modelling." [In eng]. PLoS medicine 13, no. 10 (2016): e1002152-e52. (for 2016; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5079585/.)
+
+#. Huang, Chuan-Chin, Eric Tchetgen Tchetgen, Mercedes C Becerra, Ted Cohen, Katherine C Hughes, Zibiao Zhang, Roger Calderon, et al. "The Effect of Hiv-Related Immunosuppression on the Risk of Tuberculosis Transmission to Household Contacts." Clinical infectious diseases 58, no. 6 (2013): 765-74. (for 2013; https://pubmed.ncbi.nlm.nih.gov/24368620/)
+
+#. Jeon, Christie Y, and Megan B Murray. "Diabetes Mellitus Increases the Risk of Active Tuberculosis: A Systematic Review of 13 Observational Studies." PLoS medicine 5, no. 7 (2008): e152. (for 2008; https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0050152)
+
+#. Johnson, John L, Alphonse Okwera, David L Hom, Harriet Mayanja, Cissy Mutuluuza Kityo, Peter Nsubuga, Joseph G Nakibali, et al. "Duration of Efficacy of Treatment of Latent Tuberculosis Infection in Hiv-Infected Adults." Aids 15, no. 16 (2001): 2137-47.  (for 2001; https://ovidsp.dc2.ovid.com/sp-4.01.0a/ovidweb.cgi?QS2=434f4e1a73d37e8c9c8be07760ee3a7abf756b217e0514d52d66ca3710558b6741df4a394dc36a36ff0c2c0fbebc09eeffdad200a1facaf7f1c2296afa33d691738c241eb5e5d556645cede020aca5a058db72534f0859ceb9c0772030dba566536c68df47a04b08cb2ce3d11555460a010bf6dedbb2df04ceeed6e9a105369f34e31af1f0cebedf5f612d6046f2beba8df94c3149da258de93c7266a9334ef28a18f2e4e7ed6b9ecfb2b0f7b10c3d506c76bfbd24a32f61d9247248c9a8078a5c88286e9ecc15f9529f5088de65dcfcb453ae750af46a717fc3e76be51dd4ac60c2faef0c33404bca8d302e37003d786395fbac44e0a0e4b10eb1ec00f69bbe0f0e3abf12c839e6d8a83112b32743dd.)
+
+#. Kendall, Emily A, Mariam O Fofana, and David W Dowdy. "Burden of Transmitted Multidrug Resistance in Epidemics of Tuberculosis: A Transmission Modelling Analysis." The Lancet Respiratory Medicine 3, no. 12 (2015): 963-72. (for 2015; http://europepmc.org/article/med/26597127)
+
+#. Lin, Hsien-Ho, Majid Ezzati, and Megan Murray. "Tobacco Smoke, Indoor Air Pollution and Tuberculosis: A Systematic Review and Meta-Analysis." PLoS medicine 4, no. 1 (2007): e20. (for 2007; https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0040020.)
+
+#. Lin, Hsien-Ho, Chieh-Yin Wu, Chih-Hui Wang, Han Fu, Knut L�nnroth, Yi-Cheng Chang, and Yen-Tsung Huang. "Association of Obesity, Diabetes, and Risk of Tuberculosis: Two Population-Based Cohorts." [In eng]. Clinical Infectious Diseases 66, no. 5 (2018): 699-705 (for 2018; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5850624/.)
+
+#. L�nnroth, Knut, Brian G Williams, Stephanie Stadlin, Ernesto Jaramillo, and Christopher Dye. "Alcohol Use as a Risk Factor for Tuberculosis�a Systematic Review." BMC public health 8, no. 1 (2008): 289.  (for 2008; https://bmcpublichealth.biomedcentral.com/articles/10.1186/1471-2458-8-289.)
+
+#. Luciani, Fabio, Scott A Sisson, Honglin Jiang, Andrew R Francis, and Mark M Tanaka. "The Epidemiological Fitness Cost of Drug Resistance in Mycobacterium Tuberculosis." Proceedings of the National Academy of Sciences 106, no. 34 (2009): 14711-15. (for 2009; https://www.pnas.org/content/106/34/14711.short.)
+
+#. Marais, BJ, RP Gie, HS Schaaf, AC Hesseling, CC Obihara, JJ Starke, DA Enarson, PR Donald, and N Beyers. "The Natural History of Childhood Intra-Thoracic Tuberculosis: A Critical Review of Literature from the Pre-Chemotherapy Era [State of the Art]." The International Journal of Tuberculosis and Lung Disease 8, no. 4 (2004): 392-402.  (for 2004; https://www.ingentaconnect.com/content/iuatld/ijtld/2004/00000008/00000004/art00002)
+
+#. Marais, Ben J, and H Simon Schaaf. "Tuberculosis in Children." Cold Spring Harbor perspectives in medicine 4, no. 9 (2014): a017855. (for 2014; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4143109/)
+
+#. Menzies, Dick, Andrea Benedetti, Anita Paydar, Ian Martin, Sarah Royce, Madhukar Pai, Andrew Vernon, Christian Lienhardt, and William Burman. "Effect of Duration and Intermittency of Rifampin on Tuberculosis Treatment Outcomes: A Systematic Review and Meta-Analysis." PLoS medicine 6, no. 9 (2009): e1000146.  (for 2009; https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.1000146)
+
+#. Menzies, Nicolas A, Ted Cohen, Hsien-Ho Lin, Megan Murray, and Joshua A Salomon. "Population Health Impact and Cost-Effectiveness of Tuberculosis Diagnosis with Xpert Mtb/Rif: A Dynamic Simulation and Economic Evaluation." PLoS medicine 9, no. 11 (2012): e1001347 (for 2012; https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.1001347)
+
+#. Miller, Thaddeus L., Fernando A. Wilson, Jenny W. Pang, Suzanne Beavers, Sally Hoger, Sharon Sharnprapai, Melissa Pagaoa, Dolly J. Katz, and Stephen E. Weis. "Mortality Hazard and Survival after Tuberculosis Treatment." [In eng]. American journal of public health 105, no. 5 (2015): 930-37. (for 2015; https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4386531/.)
+
+#. \ :sup:`†`\ Ministry of Health, Malawi. National Tuberculosis Control Programme Manual. (Lilongwe, Malawi: 2012). (for 2012; https://pdf.usaid.gov/pdf_docs/PA00KGDD.pdf)
+
+#. \ :sup:`†`\ Ministry of Health, Malawi. Malawi Guidelines for Clinical Management of Hiv in Children and Adults (Third Edition). (Lilongwe, Malawi: 2016). (for 2016; https://hivstar.lshtm.ac.uk/files/2017/11/2016-Clinical-management-of-HIV-in-children-and-adults-MALAWI.pdf)
+
+#. \ :sup:`†`\ Ministry of Health, Malawi. National Tuberculosis Control Programma Annual Report 2017. (Lilongwe, Malawi: 2019). (for 2019)
+
+#. \ :sup:`†`\ National AIDS Commission. National Strategic Plan for Hiv and Aids. (Lilongwe, Malawi: 2014).  (for 2014; https://hivstar.lshtm.ac.uk/files/2017/11/2015-2020-National-Stategic-Plan-for-HIV-MALAWI.pdf.)
+
+#. Nguyen, Minh-Vu H., Natalie S. Levy, Shama D. Ahuja, Lisa Trieu, Douglas C. Proops, and Jacqueline M. Achkar. "Factors Associated with Sputum Culture-Negative Vs Culture-Positive Diagnosis of Pulmonary Tuberculosisfactors Associated with Culture-Negative Vs Culture-Positive Pulmonary Tuberculosisfactors Associated with Culture-Negative Vs Culture-Positive Pulmonary Tuberculosis." JAMA Network Open 2, no. 2 (2019): e187617-e17.  (for 2019; https://doi.org/10.1001/jamanetworkopen.2018.7617)
+
+#. Rangaka, M. X., R. J. Wilkinson, A. Boulle, J. R. Glynn, K. Fielding, G. van Cutsem, K. A. Wilkinson, et al. "Isoniazid Plus Antiretroviral Therapy to Prevent Tuberculosis: A Randomised Double-Blind, Placebo-Controlled Trial." [In eng]. Lancet 384, no. 9944 (Aug 2014): 682-90.  (for 2014; https://www.ncbi.nlm.nih.gov/pubmed/24835842.)
+
+#. Roy, A, M Eisenhut, RJ Harris, LC Rodrigues, S Sridhar, S Habermann, L Snell, et al. "Effect of Bcg Vaccination against Mycobacterium Tuberculosis Infection in Children: Systematic Review and Meta-Analysis." Bmj 349 (2014): g4643. (for 2014; https://www.bmj.com/content/349/bmj.g4643.long.)
+
+#. Samandari, Taraz, Tefera B Agizew, Samba Nyirenda, Zegabriel Tedla, Thabisa Sibanda, Nong Shang, Barudi Mosimaneotsile, et al. "6-Month Versus 36-Month Isoniazid Preventive Treatment for Tuberculosis in Adults with Hiv Infection in Botswana: A Randomised, Double-Blind, Placebo-Controlled Trial." The Lancet 377, no. 9777 (2011): 1588-98.  (for 2011; https://www.sciencedirect.com/science/article/pii/S0140673611602043.)
+
+#. Shah, N Sarita, Sara C Auld, James CM Brust, Barun Mathema, Nazir Ismail, Pravi Moodley, Koleka Mlisana, et al. "Transmission of Extensively Drug-Resistant Tuberculosis in South Africa." New England Journal of Medicine 376, no. 3 (2017): 243-53.  (for 2017; https://www.nejm.org/doi/full/10.1056/NEJMoa1604544)
+
+#. Smieja, Marek, Catherine Marchetti, Deborah Cook, and Fiona M Smaill. "Isoniazid for Preventing Tuberculosis in Non?Hiv Infected Persons." Cochrane database of systematic reviews, no. 1 (1999). (for 1999; https://pubmed.ncbi.nlm.nih.gov/10796642/)
+
+#. Sterne, J. A. C., L. C. Rodrigues, and I. N. Guedes. "Does the Efficacy of Bcg Decline with Time since Vaccination?". The International Journal of Tuberculosis and Lung Disease 2, no. 3 (// 1998): 200-07. (for 1998; https://www.ingentaconnect.com/content/iuatld/ijtld/1998/00000002/00000003/art00005)
+
+#. Suthar, Amitabh B, Stephen D Lawn, Julia Del Amo, Haileyesus Getahun, Christopher Dye, Delphine Sculier, Timothy R Sterling, et al. "Antiretroviral Therapy for Prevention of Tuberculosis in Adults with Hiv: A Systematic Review and Meta-Analysis." PLoS medicine 9, no. 7 (2012): e1001270.  (for 2012; https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.1001270.)
+
+#. Thomas, Aleyamma, PG Gopi, T Santha, V Chandrasekaran, R Subramani, N Selvakumar, SI Eusuff, K Sadacharam, and PR Narayanan. "Predictors of Relapse among Pulmonary Tuberculosis Patients Treated in a Dots Programme in South India." The International Journal of Tuberculosis and Lung Disease 9, no. 5 (2005): 556-61.  (for 2005; https://www.ingentaconnect.com/content/iuatld/ijtld/2005/00000009/00000005/art00016.)
+
+#. Trunz, B. Bourdin, P. E. M. Fine, and C. Dye. "Effect of Bcg Vaccination on Childhood Tuberculous Meningitis and Miliary Tuberculosis Worldwide: A Meta-Analysis and Assessment of Cost-Effectiveness." The Lancet 367, no. 9517 (2006/04/08/ 2006): 1173-80. (for 2006; http://www.sciencedirect.com/science/article/pii/S0140673606685073.)
+
+#. Vassall, Anna, Sanne van Kampen, Hojoon Sohn, Joy S Michael, KR John, Saskia den Boon, J Lucian Davis, et al. "Rapid Diagnosis of Tuberculosis with the Xpert Mtb/Rif Assay in High Burden Countries: A Cost-Effectiveness Analysis." PLoS medicine 8, no. 11 (2011): e1001120. (for 2011; https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.1001120.)
+
+#. Vesga, Juan F., Timothy B. Hallett, Michael J. A. Reid, Kuldeep Singh Sachdeva, Raghuram Rao, Sunil Khaparde, Paresh Dave, et al. "Assessing Tuberculosis Control Priorities in High-Burden Settings: A Modelling Approach." The Lancet Global Health 7, no. 5 (2019/05/01/ 2019): e585-e95.  (for 2019; https://doi.org/https://doi.org/10.1016/S2214-109X(19)30037-3. )
+
+#. Vynnycky, E, and PEM Fine. "The Natural History of Tuberculosis: The Implications of Age-Dependent Risks of Disease and the Role of Reinfection." Epidemiology & Infection 119, no. 2 (1997): 183-201 (for 1997; https://www.cambridge.org/core/journals/epidemiology-and-infection/article/natural-history-of-tuberculosis-the-implications-of-agedependent-risks-of-disease-and-the-role-of-reinfection/863E591A302D67F305D126278C916E27)
+
+#. Williams, Brian G, Reuben Granich, Kevin M De Cock, Philippe Glaziou, Abhishek Sharma, and Christopher Dye. "Antiretroviral Therapy for Tuberculosis Control in Nine African Countries." Proceedings of the National Academy of Sciences 107, no. 45 (2010): 19485-89. (for 2010; https://www.pnas.org/content/107/45/19485)
+
+#. \ :sup:`†`\ World Health Organization. "Global Tuberculosis Database." Geneva, Switzerland, 5th August 2019 2019.  (for 2019; https://www.who.int/tb/country/data/download/en/.)
+
+#. \ :sup:`†`\ Tuberculosis Country Profiles: Malawi. 2019, accessed 17th May 2019,  (for 2019; https://www.who.int/tb/country/data/profiles/en/.)
+
+#. \ :sup:`†`\ Bcg Immunization Coverage Estimates by Country. Global Health Observatory data repository, 2019, accessed 10th Otober 2019, 2019,  (for 2019; https://apps.who.int/gho/data/node.main.A830?lang=en.)
+
+#. \ :sup:`†`\ World Health Organization. Who Consolidated Guidelines on Drug-Resistant Tuberculosis Treatment. (Geneva, Switzerland: 2019).  (for 2019; https://apps.who.int/iris/bitstream/handle/10665/311389/9789241550529-eng.pdf.)
+
+#. Zunza, Moleen, Diane M Gray, Taryn Young, Mark Cotton, and Heather J Zar. "Isoniazid for Preventing Tuberculosis in Hiv?Infected Children." Cochrane Database of Systematic Reviews, no. 8 (2017). (for 2017; https://pubmed.ncbi.nlm.nih.gov/28850172/)
+
 Cardiometabolic Disorders
 #########################
 

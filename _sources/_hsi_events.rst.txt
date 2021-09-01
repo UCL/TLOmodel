@@ -1,0 +1,154 @@
+Alri
+****
+
+* ``GenericTreatment`` at facility level 1 with appointment footprint: ``Over5OPD``.
+
+BladderCancer
+*************
+
+* ``Investigation_Following_blood_urine`` at facility level 1 with appointment footprint: ``Over5OPD``.
+* ``Investigation_Following_pelvic_pain`` at facility level 1 with appointment footprint: ``Over5OPD``.
+* ``MonitorTreatment`` at facility level 3 with appointment footprint: ``Over5OPD``.
+* ``PalliativeCare`` at facility level 3 with appointment footprint: ``Over5OPD``.
+* ``StartTreatment`` at facility level 3 with appointment footprint: ``Over5OPD``, ``MajorSurg``.
+
+BreastCancer
+************
+
+* ``Investigation_Following_breast_lump_discernible`` at facility level 1 with appointment footprint: ``Over5OPD``.
+* ``MonitorTreatment`` at facility level 3 with appointment footprint: ``Over5OPD``.
+* ``PalliativeCare`` at facility level 3 with appointment footprint: ``Over5OPD``.
+* ``StartTreatment`` at facility level 3 with appointment footprint: ``MajorSurg``.
+
+CareOfWomenDuringPregnancy
+**************************
+
+* ``AntenatalOutpatientFollowUp`` at facility level 1 with appointment footprint: ``ANCSubsequent``.
+* ``AntenatalOutpatientManagementOfAnaemia`` at facility level 1 with appointment footprint: ``ANCSubsequent``.
+* ``AntenatalWardInpatientCare`` at facility level ? with appointment footprint: ``InpatientDays``.
+* ``EighthAntenatalCareContact`` at facility level ? with appointment footprint: ``ANCSubsequent``.
+* ``FifthAntenatalCareContact`` at facility level ? with appointment footprint: ``ANCSubsequent``.
+* ``FirstAntenatalCareContact`` at facility level ? with appointment footprint: ``AntenatalFirst``.
+* ``FourthAntenatalCareContact`` at facility level ? with appointment footprint: ``ANCSubsequent``.
+* ``MaternalEmergencyAssessment`` at facility level 1 with appointment footprint: ``Over5OPD``.
+* ``PostAbortionCaseManagement`` at facility level 1 with appointment footprint: ``InpatientDays``.
+* ``SecondAntenatalCareContact`` at facility level ? with appointment footprint: ``ANCSubsequent``.
+* ``SeventhAntenatalCareContact`` at facility level ? with appointment footprint: ``ANCSubsequent``.
+* ``SixthAntenatalCareContact`` at facility level ? with appointment footprint: ``ANCSubsequent``.
+* ``ThirdAntenatalCareContact`` at facility level ? with appointment footprint: ``ANCSubsequent``.
+* ``TreatmentForEctopicPregnancy`` at facility level 1 with appointment footprint: ``MajorSurg``.
+* ``PresentsForInductionOfLabour`` at facility level 1 with appointment footprint: ``Over5OPD``.
+
+Depression
+**********
+
+* ``Antidepressant_Refill`` at facility level 1 with appointment footprint: ``Over5OPD``.
+* ``Antidepressant_Start`` at facility level ? with appointment footprint: ``Over5OPD``.
+* ``TalkingTherapy`` at facility level ? with appointment footprint: ``Over5OPD``.
+
+Diarrhoea
+*********
+
+* ``Dysentery`` at facility level 1 with appointment footprint: ``Under5OPD``.
+* ``Non_Severe_Persistent_Diarrhoea`` at facility level 1 with appointment footprint: ``Under5OPD``.
+* ``Severe_Persistent_Diarrhoea`` at facility level 1 with appointment footprint: ``Under5OPD``.
+* ``Treatment_PlanA`` at facility level 1 with appointment footprint: ``Under5OPD``.
+* ``Treatment_PlanB`` at facility level 1 with appointment footprint: ``Under5OPD``.
+* ``Treatment_PlanC`` at facility level 1 with appointment footprint: ``Under5OPD``.
+
+Epi
+***
+
+* ``DtpHibHep`` at facility level 0 with appointment footprint: ``ConWithDCSA``.
+* ``MeaslesRubella`` at facility level 0 with appointment footprint: ``ConWithDCSA``.
+* ``Pneumo`` at facility level 0 with appointment footprint: ``ConWithDCSA``.
+* ``Rota`` at facility level 0 with appointment footprint: ``ConWithDCSA``.
+* ``Td`` at facility level 0 with appointment footprint: ``ConWithDCSA``.
+* ``bcg`` at facility level 0 with appointment footprint: ``ConWithDCSA``.
+* ``hpv`` at facility level 0 with appointment footprint: ``ConWithDCSA``.
+* ``opv`` at facility level 0 with appointment footprint: ``ConWithDCSA``.
+
+Epilepsy
+********
+
+* ``Start_Anti-Epilpetics`` at facility level 1 with appointment footprint: ``Over5OPD``.
+
+HealthSeekingBehaviour
+**********************
+
+* ``GenericEmergencyFirstApptAtFacilityLevel1`` at facility level 1 with appointment footprint: ``Over5OPD``.
+* ``GenericFirstApptAtFacilityLevel0`` at facility level 0 with appointment footprint: ``ConWithDCSA``.
+* ``GenericFirstApptAtFacilityLevel1`` at facility level 1 with appointment footprint: ``Over5OPD``.
+
+Hiv
+***
+
+* ``Circumcision`` at facility level 1 with appointment footprint: ``MinorSurg``.
+* ``StartOrContinueOnPrep`` at facility level 1 with appointment footprint: ``Over5OPD``.
+* ``TestAndRefer`` at facility level 1 with appointment footprint: ``VCTNegative``.
+* ``Treatment_InitiationOrContinuation`` at facility level 1 with appointment footprint: ``Over5OPD``, ``NewAdult``.
+
+Labour
+******
+
+* ``ReceivesCareFollowingCaesareanSection`` at facility level ? with appointment footprint: ``InpatientDays``.
+* ``ReceivesComprehensiveEmergencyObstetricCare`` at facility level ? with appointment footprint: ``MajorSurg``.
+* ``ReceivesSkilledBirthAttendanceDuringLabour`` at facility level ? with appointment footprint: ``NormalDelivery``.
+* ``ReceivesSkilledBirthAttendanceFollowingLabour`` at facility level ? with appointment footprint: ``InpatientDays``.
+
+Malaria
+*******
+
+* ``IPTp`` at facility level 1 with appointment footprint: ``AntenatalFirst``.
+* ``RDT`` at facility level 1 with appointment footprint: ``LabPOC``.
+* ``treatment_adult`` at facility level 1 with appointment footprint: ``Over5OPD``.
+* ``treatment_child0_5`` at facility level 1 with appointment footprint: ``Under5OPD``.
+* ``treatment_child5_15`` at facility level 1 with appointment footprint: ``Under5OPD``.
+* ``treatment_complicated_adult`` at facility level 1 with appointment footprint: ``InpatientDays``.
+* ``treatment_complicated_child`` at facility level 1 with appointment footprint: ``InpatientDays``.
+
+Measles
+*******
+
+* ``Treatment`` at facility level 1 with appointment footprint: ``Over5OPD``.
+
+NewbornOutcomes
+***************
+
+* ``CareOfTheNewbornBySkilledAttendant`` at facility level ? with appointment footprint: ``InpatientDays``.
+
+OesophagealCancer
+*****************
+
+* ``Investigation_Following_Dysphagia`` at facility level 1 with appointment footprint: ``Over5OPD``.
+* ``MonitorTreatment`` at facility level 2 with appointment footprint: ``Over5OPD``.
+* ``PalliativeCare`` at facility level 2 with appointment footprint: ``Over5OPD``.
+* ``StartTreatment`` at facility level 3 with appointment footprint: ``Over5OPD``, ``MajorSurg``.
+
+OtherAdultCancer
+****************
+
+* ``Investigation_Following_other_adult_ca_symptom`` at facility level 1 with appointment footprint: ``Over5OPD``.
+* ``MonitorTreatment`` at facility level 3 with appointment footprint: ``Over5OPD``.
+* ``PalliativeCare`` at facility level 3 with appointment footprint: ``Over5OPD``.
+* ``StartTreatment`` at facility level 3 with appointment footprint: ``MajorSurg``.
+
+PostnatalSupervisor
+*******************
+
+* ``NeonatalWardInpatientCare`` at facility level 1 with appointment footprint: ``IPAdmission``.
+* ``PostnatalCareContactOne`` at facility level 1 with appointment footprint: ``ANCSubsequent``.
+* ``PostnatalCareContactTwoMaternal`` at facility level 1 with appointment footprint: ``ANCSubsequent``.
+* ``PostnatalWardInpatientCare`` at facility level 1 with appointment footprint: ``IPAdmission``.
+* ``TreatmentForObstetricFistula`` at facility level 1 with appointment footprint: ``InpatientDays``.
+
+ProstateCancer
+**************
+
+* ``Investigation_Following_blood_urine`` at facility level 1 with appointment footprint: ``Over5OPD``.
+* ``Investigation_Following_pelvic_pain`` at facility level 1 with appointment footprint: ``Over5OPD``.
+* ``Investigation_Following_psa_positive`` at facility level 1 with appointment footprint: ``Over5OPD``.
+* ``MonitorTreatment`` at facility level 3 with appointment footprint: ``Over5OPD``.
+* ``PalliativeCare`` at facility level 3 with appointment footprint: ``Over5OPD``.
+* ``StartTreatment`` at facility level 3 with appointment footprint: ``MajorSurg``.
+
