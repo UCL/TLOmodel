@@ -694,9 +694,9 @@ class Diarrhoea(Module):
             .when('bloody', p['case_fatality_rate_dysentery']),
             Predictor('gi_last_diarrhoea_duration').when('>13', p['rr_diarr_death_if_duration_longer_than_13_days']),
             Predictor('gi_last_diarrhoea_dehydration').when('some', p['rr_diarr_death_dehydration']),
-            Predictor('age_exact_years', conditions_are_mutually_exclusive=True)
-            .when('.between(1,1.9999)', p['rr_diarr_death_age12to23mo'])
-            .when('.between(2,3.9999)', p['rr_diarr_death_age24to59mo'])
+            Predictor('age_years', conditions_are_mutually_exclusive=True)
+            .when('.between(1, 2, inclusive="left")', p['rr_diarr_death_age12to23mo'])
+            .when('.between(2, 4, inclusive="left")', p['rr_diarr_death_age24to59mo'])
             .otherwise(0.0),
             Predictor('tmp_hv_inf').when(True, p['rr_diarrhoea_HIV']),
             Predictor('tmp_malnutrition').when(True, p['rr_diarrhoea_SAM'])
