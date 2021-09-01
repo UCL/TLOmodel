@@ -22,6 +22,10 @@ tlo batch-download tlo_q1_demo-123
 test run, pop 5000
 Job ID: hiv_prep_baseline_scenario-2021-08-27T095045Z
 
+full run
+hiv_prep_baseline_scenario-2021-08-27T173028Z
+
+
 """
 
 import numpy as np
