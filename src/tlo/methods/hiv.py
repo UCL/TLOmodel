@@ -589,7 +589,7 @@ class Hiv(Module):
         sim.schedule_event(HivRegularPollingEvent(self), sim.date)
 
         # 2) Schedule the Logging Event
-        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=365.25))
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=364))
 
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
@@ -646,7 +646,7 @@ class Hiv(Module):
             date_test = self.sim.date + \
                         pd.DateOffset(days=self.rng.randint(0, 365))
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self.module),
+                hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
                 priority=1,
                 topen=date_test,
                 tclose=self.sim.date + pd.DateOffset(days=365)

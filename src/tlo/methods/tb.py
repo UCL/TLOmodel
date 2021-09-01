@@ -729,7 +729,7 @@ class Tb(Module):
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
 
         # 2) Logging
-        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=365.25))
+        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=364))
 
         # 3) -------- Define the DxTests and get the consumables required --------
 
