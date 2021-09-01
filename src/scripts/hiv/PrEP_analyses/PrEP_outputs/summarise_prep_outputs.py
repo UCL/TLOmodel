@@ -26,7 +26,7 @@ from tlo.analysis.utils import (
 resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-outputspath = Path('./outputs/')
+outputspath = Path('./src/scripts/hiv/PrEP_analyses/PrEP_outputs')
 
 # %% read in data files for plots
 # load all the data for calibration
