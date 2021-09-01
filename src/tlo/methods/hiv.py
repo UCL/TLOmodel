@@ -245,6 +245,8 @@ class Hiv(Module):
         "prep_start_year": Parameter(Types.REAL, "Year from which PrEP is available"),
         "ART_age_cutoff_young_child": Parameter(Types.INT, "Age cutoff for ART regimen for young children"),
         "ART_age_cutoff_older_child": Parameter(Types.INT, "Age cutoff for ART regimen for older children"),
+        "rel_probability_art_baseline_aids": Parameter(Types.REAL,
+                                                       "relative probability of person with HIV infection over 10 years being on ART at baseline"),
     }
 
     def read_parameters(self, data_folder):
@@ -478,6 +480,7 @@ class Hiv(Module):
         also assign hiv test properties if allocated ART
         """
         df = population.props
+        params = self.parameters
 
         # 1) Determine who is currently on ART
         worksheet = self.parameters["art_coverage"]
@@ -492,6 +495,29 @@ class Hiv(Module):
             right_on=["single_age", "sex"],
             how="left",
         )['prop_coverage']
+
+        # # probability based on time infected, if more than 10 years - increased prob of ART
+        # now = self.sim.date
+        # rel_prob_art_by_time_infected = LinearModel.multiplicative(
+        #     Predictor("hv_date_inf").when("< (now - pd.DateOffset(years=10))",
+        #                                   params["rel_probability_art_baseline_aids"])
+        # ).predict(df.loc[df.is_alive])
+        #
+        # # Rescale relative probability of infection so that its average is 1.0 within each age/sex group
+        # p = pd.DataFrame({
+        #     'age_years': df['age_years'],
+        #     'sex': df['sex'],
+        #     'prob_art': prob_art,
+        #     'rel_prob_art_by_time_infected': rel_prob_art_by_time_infected
+        # })
+
+        # p['mean_of_rel_prob_within_age_sex_group'] = p.groupby(['age_years', 'sex'])[
+        #     'rel_prob_art_by_time_infected'].transform('mean')
+        # p['scaled_rel_prob_by_time_infected'] = p['rel_prob_art_by_time_infected'] / p['mean_of_rel_prob_within_age_sex_group']
+        # p['overall_prob_of_art'] = p['scaled_rel_prob_by_time_infected'] * p['prob_art']
+        # art_idx = self.rng.random_sample(len(p['overall_prob_of_art'])) < p['overall_prob_of_art']
+        #
+
 
         prob_art = prob_art.fillna(0)
 
