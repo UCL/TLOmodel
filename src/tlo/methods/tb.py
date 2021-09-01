@@ -521,7 +521,7 @@ class Tb(Module):
         # allocate some latent infections as mdr-tb
         idx_new_latent_mdr = (
             df[df.is_alive & (df.tb_inf == 'latent')]
-                .sample(frac=p['prop_mdr2010'])
+                .sample(frac=p['prop_mdr2010'], random_state=self.rng)
                 .index
         )
 
@@ -712,7 +712,7 @@ class Tb(Module):
         # ------------------ infection status ------------------ #
 
         self.baseline_latent(population)  # allocate baseline prevalence of latent infections
-        # self.baseline_active(population)  # allocate active infections from baseline population
+        self.baseline_active(population)  # allocate active infections from baseline population
 
     def initialise_simulation(self, sim):
         """
@@ -729,7 +729,7 @@ class Tb(Module):
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
 
         # 2) Logging
-        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=364))
+        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=0))
 
         # 3) -------- Define the DxTests and get the consumables required --------
 
