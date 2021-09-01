@@ -18,6 +18,7 @@ from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.methods import hiv, demography
 from tlo.methods.causes import Cause
+# from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1515,6 +1516,17 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             # ------------------------- testing ------------------------- #
 
             # if screening indicates presumptive tb
+
+            # refer for HIV testing: all ages
+            if 'Hiv' in self.sim.modules:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    self.sim.modules['Hiv'].HSI_Hiv_TestAndRefer(
+                        person_id=person_id, module=self.sim.modules['Hiv']),
+                    topen=self.sim.date,
+                    tclose=None,
+                    priority=0
+                )
+
             # child under 5 -> chest x-ray, has to be health system level 2 or above
             if person['age_years'] < 5:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(

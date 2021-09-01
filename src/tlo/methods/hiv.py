@@ -291,8 +291,8 @@ class Hiv(Module):
         # 2)  Declare the Symptoms.
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name="aids_symptoms",
-                    odds_ratio_health_seeking_in_adults=10.0,  # High chance of seeking care when aids_symptoms onset
-                    odds_ratio_health_seeking_in_children=10.0)  # High chance of seeking care when aids_symptoms onset
+                    odds_ratio_health_seeking_in_adults=30.0,  # High chance of seeking care when aids_symptoms onset
+                    odds_ratio_health_seeking_in_children=30.0)  # High chance of seeking care when aids_symptoms onset
         )
 
     def pre_initialise_population(self):
@@ -304,16 +304,10 @@ class Hiv(Module):
 
         # ---- LINEAR MODELS -----
         # LinearModel for the relative risk of becoming infected during the simulation
+        # remove effect of age (based on DHS prevalence study), use MPHIA inc values if needed
         self.lm['rr_of_infection'] = LinearModel.multiplicative(
             Predictor('age_years').when('<15', 0.0)
-                .when('<20', 1.0)
-                .when('<25', p["rr_age_gp20"])
-                .when('<30', p["rr_age_gp25"])
-                .when('<35', p["rr_age_gp30"])
-                .when('<40', p["rr_age_gp35"])
-                .when('<45', p["rr_age_gp40"])
-                .when('<50', p["rr_age_gp45"])
-                .when('<80', p["rr_age_gp50"])
+                .when('<49', 1.0)
                 .otherwise(0.0),
             Predictor('sex').when('F', p["rr_sex_f"]),
             Predictor('li_is_sexworker').when(True, p["rr_fsw"]),
@@ -1206,7 +1200,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         adult_tests_idx = df.loc[df.is_alive &
                                  ~df.hv_diagnosed &
-                                 (df.age_years >= 15) &
+                                 (df.age_years.between(15, 49)) &
                                  (random_draw < testing_rate_adults)].index
 
         idx_will_test = child_tests_idx.union(adult_tests_idx)

@@ -352,6 +352,37 @@ tot_tb_non_hiv_deaths_rate_100kpy_lower.index = model_deaths_AIDS.index
 tot_tb_non_hiv_deaths_rate_100kpy_upper.index = model_deaths_AIDS.index
 
 
+# ---------------------------------- PROGRAM COVERAGE ---------------------------------- #
+
+
+# TB treatment coverage
+model_tb_tx = summarize(extract_results(results_folder,
+                                      module="tlo.methods.tb",
+                                      key="tb_treatment",
+                                      column="tbTreatmentCoverage",
+                                      index="date",
+                                      do_scaling=False
+                                      ),
+                      collapse_columns=True
+                      )
+
+model_tb_tx.index = model_tb_tx.index.year
+
+
+# HIV treatment coverage
+model_hiv_tx = summarize(extract_results(results_folder,
+                                      module="tlo.methods.hiv",
+                                      key="hiv_program_coverage",
+                                      column="art_coverage_adult",
+                                      index="date",
+                                      do_scaling=False
+                                      ),
+                      collapse_columns=True
+                      )
+
+model_hiv_tx.index = model_hiv_tx.index.year
+
+
 # %% Function to make standard plot to compare model and data
 def make_plot(
     model=None,
@@ -643,3 +674,35 @@ plt.savefig(make_graph_file_name("TB_mortality"))
 
 plt.show()
 
+# ---------------------------------------------------------------------- #
+
+# TB treatment coverage
+make_plot(
+    title_str="TB treatment coverage",
+    model=model_tb_tx['mean'] * 100,
+    model_low=model_tb_tx['lower'] * 100,
+    model_high=model_tb_tx['upper'] * 100,
+    data_name='NTP',
+    data_mid=data_tb_ntp["treatment_coverage"],
+)
+plt.savefig(make_graph_file_name("TB_treatment_coverage"))
+
+plt.show()
+
+# ---------------------------------------------------------------------- #
+
+# HIV treatment coverage
+make_plot(
+    title_str="HIV treatment coverage",
+    model=model_hiv_tx['mean'] * 100,
+    model_low=model_hiv_tx['lower'] * 100,
+    model_high=model_hiv_tx['upper'] * 100,
+    data_name='UNAIDS',
+    data_mid=data_hiv_unaids["ART_coverage_all_HIV_adults"],
+    data_low=data_hiv_unaids["ART_coverage_all_HIV_adults_lower"],
+    data_high=data_hiv_unaids["ART_coverage_all_HIV_adults_upper"]
+)
+
+plt.savefig(make_graph_file_name("TB_treatment_coverage"))
+
+plt.show()
