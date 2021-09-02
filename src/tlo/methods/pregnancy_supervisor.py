@@ -634,10 +634,10 @@ class PregnancySupervisor(Module):
                     Predictor('ps_gestational_age_in_weeks').when('42', params['rr_still_birth_ga_42']),
                     Predictor('ps_gestational_age_in_weeks').when('>42', params['rr_still_birth_ga_>42']),
                     Predictor('ps_htn_disorders', conditions_are_mutually_exclusive=True)
-                        .when('mild_pre_eclamp', params['rr_still_birth_mild_pre_eclamp'])
+                        .when('mild_pre_eclamp', params['rr_still_birth_pre_eclampsia'])
                         .when('gest_htn', params['rr_still_birth_gest_htn'])
-                        .when('severe_gest_htn', params['rr_still_birth_severe_gest_htn'])
-                        .when('severe_pre_eclamp', params['rr_still_birth_severe_pre_eclamp']),
+                        .when('severe_gest_htn', params['rr_still_birth_gest_htn'])
+                        .when('severe_pre_eclamp', params['rr_still_birth_pre_eclampsia']),
                     Predictor('ps_antepartum_haemorrhage').when('!= "none"', params['rr_still_birth_aph']),
                     Predictor('ps_chorioamnionitis').when(True, params['rr_still_birth_chorio']),
                     Predictor('nc_hypertension').when(True, params['rr_still_birth_chronic_htn']),
