@@ -445,18 +445,15 @@ class Diarrhoea(Module):
     }
 
     PROPERTIES = {
+        # ---- Core Properties of Actual Status and Intrinsic Properties of A Current Episode  ----
         'gi_ever_had_diarrhoea': Property(Types.BOOL,
                                           'Whether or not the person has ever had an episode of diarrhoea.'
                                           ),
-
-        # ---- The pathogen which is caused the diarrhoea  ----
         'gi_last_diarrhoea_pathogen': Property(Types.CATEGORICAL,
                                                'Attributable pathogen for the last episode of diarrhoea.'
                                                'not_applicable is used if the person has never had an episode of '
                                                'diarrhoea',
                                                categories=list(pathogens) + ['not_applicable']),
-
-        # ---- Classification of the type of diarrhoea that is caused  ----
         'gi_last_diarrhoea_type': Property(Types.CATEGORICAL,
                                            'Type of the last episode of diarrhoea: either watery or bloody.'
                                            'not_applicable is used if the person has never had an episode of '
@@ -464,14 +461,6 @@ class Diarrhoea(Module):
                                            categories=['not_applicable',  # (never has had diarrhoea)
                                                        'watery',
                                                        'bloody']),
-
-        # ---- Classification of the duration type of diarrhoea  ----
-        'gi_last_diarrhoea_duration_type': Property(Types.CATEGORICAL, 'Duration of diarrhoea in category ',
-                                                    categories=['acute',  # (acute if <7 days)
-                                                                'prolonged',  # (prolonged if 7-13 days days)
-                                                                'persistent']),  # (persistent if >14 days)
-
-        # ---- Classification of severity of the dehydration caused ----
         'gi_last_diarrhoea_dehydration': Property(Types.CATEGORICAL,
                                                   'Severity of dehydration of last episode of diarrhoea.'
                                                   'not_applicable is used if the person has never had an episode of '
@@ -481,12 +470,13 @@ class Diarrhoea(Module):
                                                               'some',       # <-- this can be assigned at onset
                                                               'severe'      # <-- this may develop during the episode
                                                               ]),
+        'gi_last_diarrhoea_duration_longer_than_13days': Property(Types.BOOL,
+                                                                  'Whether the duration of the _untreated_ episode'
+                                                                  'would last longer than 13 days.'),
 
-        # ---- Internal variables to schedule onset and deaths due to diarrhoea  ----
+        # ---- Internal variables storing dates of scheduled events  ----
         'gi_last_diarrhoea_date_of_onset': Property(Types.DATE, 'date of onset of last episode of diarrhoea. '
                                                                 'pd.NaT if never had diarrhoea'),
-        'gi_last_diarrhoea_duration': Property(Types.REAL, 'number of days of last episode of diarrhoea. '
-                                                           'pd.nan if never had diarrhoea'),
         'gi_last_diarrhoea_recovered_date': Property(Types.DATE,
                                                      'date of recovery from last episode of diarrhoea. '
                                                      'pd.NaT if never had an episode or if the last episode caused'
@@ -548,7 +538,7 @@ class Diarrhoea(Module):
         self.risk_of_death_diarrhoea = None
         self.mean_duration_in_days_of_diarrhoea_lookup = None
         self.prob_diarrhoea_is_prolonged = None
-        self.prob_diarrhoea_is_persistent = None
+        self.prob_diarrhoea_is_persistent_if_prolonged = None
 
         # Store the symptoms that this module will use:
         self.symptoms = {
@@ -596,10 +586,10 @@ class Diarrhoea(Module):
         df.loc[df.is_alive, 'gi_last_diarrhoea_pathogen'] = 'not_applicable'
         df.loc[df.is_alive, 'gi_last_diarrhoea_type'] = 'not_applicable'
         df.loc[df.is_alive, 'gi_last_diarrhoea_dehydration'] = 'not_applicable'
+        df.loc[df.is_alive, 'gi_last_diarrhoea_duration_longer_than_13days'] = False
 
         # ---- Internal values ----
         df.loc[df.is_alive, 'gi_last_diarrhoea_date_of_onset'] = pd.NaT
-        df.loc[df.is_alive, 'gi_last_diarrhoea_duration'] = np.nan
         df.loc[df.is_alive, 'gi_last_diarrhoea_recovered_date'] = pd.NaT
         df.loc[df.is_alive, 'gi_last_diarrhoea_death_date'] = pd.NaT
         df.loc[df.is_alive, 'gi_last_diarrhoea_treatment_date'] = pd.NaT
@@ -701,57 +691,38 @@ class Diarrhoea(Module):
         )
 
         # --------------------------------------------------------------------------------------------
-        # Create the linear model for the risk of dying due to diarrhoea
-        # self.risk_of_death_diarrhoea = LinearModel(
-        #     LinearModelType.MULTIPLICATIVE,
-        #     1.0,
-        #     # Predictor().when('(gi_last_diarrhoea_dehydration == "none") & '
-        #     #                  '(gi_last_diarrhoea_type != "bloody") & '
-        #     #                  '(gi_last_diarrhoea_duration_type != "persistent")', 0.0),
-        #     Predictor('gi_last_diarrhoea_type').when('watery', p['case_fatality_rate_AWD'])
-        #                                        .when('bloody', p['case_fatality_rate_dysentery']),
-        #     Predictor('gi_last_diarrhoea_duration').when('>13', p['rr_diarr_death_if_duration_longer_than_13_days']),
-        #     Predictor('age_exact_years').when('.between(1,1.9999)', p['rr_diarr_death_age12to23mo'])
-        #                                 .when('.between(2,4.9999)', p['rr_diarr_death_age24to59mo'])
-        #                                 .when('.between(0,0.9999)', 1.0).otherwise(0.0),
-        #     Predictor('gi_last_diarrhoea_pathogen').when('cryptosporidium', p['rr_diarr_death_cryptosporidium'])
-        #                                            .when('shigella', p['rr_diarr_death_shigella']),
-        #     Predictor('ri_current_ALRI_status').when(True, p['rr_diarr_death_alri']),
-        #     Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarr_death_untreated_HIV']),
-        #     Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_diarrhoea_SAM'])
-        # )
-        # death risk to be applied for those with dehydration, blood, or persistent cases,
-        # uncomplicated diarrhoea with no dehydration are not applied death risk
-
-        # --------------------------------------------------------------------------------------------
         # Make a dict to hold the equations that govern the probability that a person dies from diarrhoea
 
         def make_scaled_lm_death():
-            """Makes the unscaled linear model with default intercept of 1. Calculates the mean incidents rate for
+            """Makes the unscaled linear model with default intercept of 1. Calculates the mean CFR for
             0-year-olds and then creates a new linear model with adjusted intercept so incidents in 0-year-olds
             matches the specified value in the model when averaged across the population
             """
+
+            # todo - effect of dehydration is not included here!
             def make_lm_death(intercept=1.0):
                 return LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     intercept,
+                    Predictor('gi_last_diarrhoea_pathogen').when('cryptosporidium', p['rr_diarr_death_cryptosporidium'])
+                        .when('shigella', p['rr_diarr_death_shigella']),
                     Predictor('gi_last_diarrhoea_type').when('watery', p['case_fatality_rate_AWD'])
                                                        .when('bloody', p['case_fatality_rate_dysentery']),
-                    Predictor('gi_last_diarrhoea_duration').when('>13',
+                    Predictor('gi_last_diarrhoea_duration_longer_than_13days').when(True,
                                                                  p['rr_diarr_death_if_duration_longer_than_13_days']),
+
                     Predictor('age_exact_years').when('.between(1,1.9999)', p['rr_diarr_death_age12to23mo'])
                                                 .when('.between(2,4.9999)', p['rr_diarr_death_age24to59mo'])
                                                 .when('.between(0,0.9999)', 1.0).otherwise(0.0),
-                    Predictor('gi_last_diarrhoea_pathogen').when('cryptosporidium', p['rr_diarr_death_cryptosporidium'])
-                        .when('shigella', p['rr_diarr_death_shigella']),
                     Predictor('ri_current_ALRI_status').when(True, p['rr_diarr_death_alri']),
                     Predictor().when('(hv_inf == True) & (hv_art == "not")', p['rr_diarr_death_untreated_HIV']),
                     Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_diarrhoea_SAM'])
                 )
 
+            # todo - does this logic actually work???? what kinds of cases are being developed?
             df = self.sim.population.props
             unscaled_lm = make_lm_death()
-            target_mean = 5.306/10000  # calculated with no. death / no. episodes GBD 2016 diarrhoea paper
+            target_mean = 5.306/10000  # target CFR: calculated with no. death / no. episodes GBD 2016 diarrhoea paper
             actual_mean = unscaled_lm.predict(df.loc[df.is_alive &
                                                      (df.gi_last_diarrhoea_pathogen == any(list(self.pathogens))) &
                                                      (df.age_years < 5)]).mean()
@@ -765,16 +736,7 @@ class Diarrhoea(Module):
         # --------------------------------------------------------------------------------------------
         # Dict storing the duration of the episode of diarrhoea (mean, sd, min, max)
         self.mean_duration_in_days_of_diarrhoea_lookup = {
-            'rotavirus': p['mean_days_duration_with_rotavirus'],
-            'shigella': p['mean_days_duration_with_shigella'],
-            'adenovirus': p['mean_days_duration_with_adenovirus'],
-            'cryptosporidium': p['mean_days_duration_with_cryptosporidium'],
-            'campylobacter': p['mean_days_duration_with_campylobacter'],
-            'ETEC': p['mean_days_duration_with_ETEC'],
-            'sapovirus': p['mean_days_duration_with_sapovirus'],
-            'norovirus': p['mean_days_duration_with_norovirus'],
-            'astrovirus': p['mean_days_duration_with_astrovirus'],
-            'tEPEC': p['mean_days_duration_with_tEPEC'],
+            patho: p[f"mean_days_duration_with_{patho}"] for patho in self.pathogens
         }
 
         # --------------------------------------------------------------------------------------------
@@ -794,12 +756,10 @@ class Diarrhoea(Module):
                                                    .when('tEPEC', p['prob_prolonged_diarr_tEPEC'])
         )
 
-        # Create the linear model for the probability that the diarrhoea is 'persistent'
-        self.prob_diarrhoea_is_persistent = LinearModel(
+        # Create the linear model for the probability that the diarrhoea is 'persistent', given that it is prolonged
+        self.prob_diarrhoea_is_persistent_if_prolonged = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            1.0,
-            Predictor('gi_last_diarrhoea_duration_type').when('prolonged', p['prob_prolonged_to_persistent_diarr'])
-                                                        .otherwise(0.0),  # or use odds = 0.4017
+            p['prob_prolonged_to_persistent_diarr'],
             Predictor('age_exact_years').when('.between(1,1.9999)', p['rr_bec_persistent_age12to23'])
                                         .when('.between(2,4.9999)', p['rr_diarr_death_age24to59mo']),
             Predictor('un_HAZ_category').when('HAZ<-3', p['rr_bec_persistent_stunted']),
@@ -823,6 +783,7 @@ class Diarrhoea(Module):
         df.at[child_id, 'gi_last_diarrhoea_pathogen'] = 'not_applicable'
         df.at[child_id, 'gi_last_diarrhoea_type'] = 'not_applicable'
         df.at[child_id, 'gi_last_diarrhoea_dehydration'] = 'not_applicable'
+        df.at[child_id, 'gi_last_diarrhoea_duration_longer_than_13days'] = False
 
         # ---- Internal values ----
         df.at[child_id, 'gi_last_diarrhoea_date_of_onset'] = pd.NaT
@@ -931,8 +892,6 @@ class Diarrhoea(Module):
 
         # 1) Get the duration
         duration_in_days = (self.sim.date - df.at[person_id, 'gi_last_diarrhoea_date_of_onset']).days
-        # 1.1.) Get the total duration set for the episode
-        total_duration_in_days = df.at[person_id, 'gi_last_diarrhoea_duration']
 
         # 2) Get type of diarrhoea - watery or bloody
         blood_in_stool = df.at[person_id, 'gi_last_diarrhoea_type'] == 'bloody'
@@ -942,9 +901,10 @@ class Diarrhoea(Module):
         # dehydration = 'dehydration' in self.sim.modules['SymptomManager'].has_what(person_id)
 
         # If zinc is given to persistent diarrhoea, apply effectiveness in shortening duration
-        if duration_in_days > 14 and ('Zinc' in interventions_given):
-            df.at[person_id, 'gi_last_diarrhoea_duration'] = \
-                total_duration_in_days - self.parameters['number_of_days_reduced_duration_with_zinc']
+        # if duration_in_days > 14 and ('Zinc' in interventions_given):
+        #     # todo - this is being remove by TimH -- has no effect!
+        #     # df.at[person_id, 'gi_last_diarrhoea_duration'] = \
+        #     #     total_duration_in_days - self.parameters['number_of_days_reduced_duration_with_zinc']
 
         # Plan A or B for no dehydration
         if (dehydration_level != 'severe') and (
@@ -993,6 +953,31 @@ class Diarrhoea(Module):
         """
         df = self.sim.population.props
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
+
+    def get_duration_of_new_episode(self, pathogen, person_id):
+        """Determine the duration of an episode of diarrhoea, based on pathogen and characteristics of person"""
+        # todo bring the linear models into this and do in one go!
+
+        df_slice = self.sim.population.props.loc[[person_id]]
+
+        # todo - put these as parameters
+        min_dur_acute = 1
+        min_dur_prolonged = 5
+        min_dur_persistent = 13
+        max_dur_persistent = 30
+
+        if self.prob_diarrhoea_is_prolonged.predict(df_slice, self.rng):
+            if self.prob_diarrhoea_is_persistent_if_prolonged.predict(df_slice, self.rng):
+                # Persistent dirarrhoa
+                duration = self.rng.randint(min_dur_persistent, max_dur_persistent)
+            else:
+                # "Prolonged" but not "persistnet"
+                duration = self.rng.randint(min_dur_prolonged, min_dur_persistent)
+        else:
+            # If not prolonged, the episode is acute: duration of 4 days
+            duration = self.rng.randint(min_dur_acute , min_dur_prolonged)
+
+        return duration
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
@@ -1115,27 +1100,10 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         # Update the entry in the population dataframe
         df.loc[person_id, props_new.keys()] = props_new.values()
 
-        # Determine if the episode will be Acute (<7 days) or ProD (7-13 days) ----------------------------
-        duration = int()
-
-        prolonged_episode = m.prob_diarrhoea_is_prolonged.predict(df.loc[[person_id]]).values[0]
-        if rng.random_sample() < prolonged_episode:
-            props_new['gi_last_diarrhoea_duration_type'] = 'prolonged'
-            duration = 10
-        else:
-            props_new['gi_last_diarrhoea_duration_type'] = 'acute'
-            duration = 4
-
-        # Determine if the episode will be PD (>=14 days days) ----------------------------
-        persistent_episode = m.prob_diarrhoea_is_persistent.predict(df.loc[[person_id]]).values[0]
-        if rng.random_sample() < persistent_episode:
-            props_new['gi_last_diarrhoea_duration_type'] = 'persistent'
-            duration = 21
-
-        props_new['gi_last_diarrhoea_duration'] = duration
-
-        # Date of outcome (end of diarrhoeal episode)
-        date_of_outcome = self.sim.date + DateOffset(days=duration)
+        # Determine the duration of the dirarrhoea and date of outcome
+        duration_in_days = m.get_duration_of_new_episode(pathogen=self.pathogen, person_id=person_id)
+        props_new['gi_last_diarrhoea_duration_longer_than_13days'] = duration_in_days >= 13  # todo rename property
+        date_of_outcome = self.sim.date + DateOffset(days=duration_in_days)
 
         # ----------------------- Determine symptoms for this episode ----------------------
         possible_symptoms_for_this_pathogen = m.prob_symptoms[self.pathogen]
@@ -1159,22 +1127,17 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
                 df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'severe'
 
         # ----------------------- Determine outcome (recovery or death) of this episode ----------------------
-        # Determine if episode will result in death
-        # only cases with dehydration, blood or persistent are applied a death risk
-        # if ((df.at[person_id, 'gi_last_diarrhoea_dehydration'] != 'none') | (df.at[
-        #     person_id, 'gi_last_diarrhoea_type'] == 'bloody') | (df.at[
-        #     person_id, 'gi_last_diarrhoea_duration_type'] == 'persistent')):
-
-        will_die = m.risk_of_death_diarrhoea.predict(df.loc[[person_id]]).values[0]
-
-        if rng.random_sample() < will_die:
+        if m.risk_of_death_diarrhoea.predict(df.loc[[person_id]], rng):
+            # todo --- this equation is not looking at props_news but the properties in the df
+            # person will die (unless treated)
             props_new['gi_last_diarrhoea_death_date'] = date_of_outcome
             self.sim.schedule_event(DiarrhoeaDeathEvent(m, person_id), date_of_outcome)
         else:
+            # person will recover
             props_new['gi_last_diarrhoea_recovered_date'] = date_of_outcome
             self.sim.schedule_event(DiarrhoeaNaturalRecoveryEvent(m, person_id), date_of_outcome)
 
-        # Record 'episode end' data. This the date when this episode ends. It is the last possible data that any HSI
+        # Record 'episode_end' data. This the date when this episode ends. It is the last possible data that any HSI
         # could affect this episode.
         props_new['gi_end_of_last_episode'] = date_of_outcome + DateOffset(days=p['days_between_treatment_and_cure'])
 
@@ -1669,6 +1632,7 @@ class PropertiesOfOtherModules(Module):
 
     def initialise_population(self, population):
         df = population.props
+        df.loc[df.is_alive, 'hv_inf'] = False
         df.loc[df.is_alive, 'hv_art'] = 'not'
         df.loc[df.is_alive, 'ri_current_ALRI_status'] = False
         df.loc[df.is_alive, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
@@ -1681,6 +1645,7 @@ class PropertiesOfOtherModules(Module):
 
     def on_birth(self, mother, child):
         df = self.sim.population.props
+        df.at[child, 'hv_inf'] = False
         df.at[child, 'hv_art'] = 'not'
         df.at[child, 'ri_current_ALRI_status'] = False
         df.at[child, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
