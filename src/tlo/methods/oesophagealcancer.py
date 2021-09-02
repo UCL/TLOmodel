@@ -35,6 +35,8 @@ class OesophagealCancer(Module):
         self.lm_onset_dysphagia = None
         self.daly_wts = dict()
 
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'Lifestyle', 'SymptomManager'}
+
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,

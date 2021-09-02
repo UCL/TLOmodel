@@ -33,6 +33,8 @@ class OtherAdultCancer(Module):
         self.lm_onset_early_other_adult_ca_symptom = None
         self.daly_wts = dict()
 
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,

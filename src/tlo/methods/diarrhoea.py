@@ -56,6 +56,8 @@ class Diarrhoea(Module):
         'tEPEC'
     ]
 
+    INIT_DEPENDENCIES = {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
+
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,

@@ -35,6 +35,8 @@ class HealthBurden(Module):
         self.recognised_modules_names = None
         self.causes_of_disability = None
 
+    INIT_DEPENDENCIES = {'Demography'}
+
     # Declare Metadata
     METADATA = {}
 
