@@ -91,6 +91,8 @@ class HealthSystem(Module):
     The execution of all health systems interactions are controlled through this module.
     """
 
+    INIT_DEPENDENCIES = {'Demography'}
+
     PARAMETERS = {
         'BedCapacity': Parameter(Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
         'Officer_Types': Parameter(Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),
