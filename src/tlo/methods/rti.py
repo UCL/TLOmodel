@@ -33,8 +33,8 @@ class RTI(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-    INIT_DEPENDENCIES = {}
-
+    INIT_DEPENDENCIES = {"SymptomManager",
+                         "HealthBurden"}
     ADDITIONAL_DEPENDENCIES = {
         'Demography',
         'Lifestyle',
@@ -1251,7 +1251,6 @@ class RTI(Module):
         df.loc[df.is_alive, 'rt_MAIS_military_score'] = 0
         df.loc[df.is_alive, 'rt_date_death_no_med'] = pd.NaT
         df.loc[df.is_alive, 'rt_debugging_DALY_wt'] = 0
-        # TODO: Check if treating the treatment plan lists as a series is behind the removal problem
         alive_count = sum(df.is_alive)
         df.loc[df.is_alive, 'rt_date_to_remove_daly'] = pd.Series([[pd.NaT] * 8 for _ in range(alive_count)])
         df.loc[df.is_alive, 'rt_injuries_to_cast'] = pd.Series([[] for _ in range(alive_count)])
@@ -1966,9 +1965,8 @@ class RTI(Module):
             '813eo': self.daly_wt_patella_tibia_fibula_fracture_without_treatment + self.daly_wt_facial_soft_tissue_injury
 
         }
-        for code in codes:
-            # update the total values of the daly weights
-            df.loc[person_id, 'rt_debugging_DALY_wt'] -= daly_weight_removal_lookup[code]
+        # update the total values of the daly weights
+        df.loc[person_id, 'rt_debugging_DALY_wt'] -= sum([daly_weight_removal_lookup[code] for code in codes])
         # if the person's true total for daly weights is greater than one, report rt_disability as one, if not
         # report the true disability burden.
         if df.loc[person_id, 'rt_debugging_DALY_wt'] > 1:
@@ -2044,13 +2042,11 @@ class RTI(Module):
             'P884': -self.daly_wt_bilateral_lower_limb_amputation_without_treatment + self.daly_wt_bilateral_lower_limb_amputation_with_treatment
         }
 
-        # Iterate over the relevant codes
-        for code in relevant_codes:
-            # swap the relevant code's daly weight, from the daly weight associated with the injury without treatment
-            # and the daly weight for the disability with treatment.
-            # keep track of the changes to the daly weights
-            # update the disability burdens
-            df.loc[person_id, 'rt_debugging_DALY_wt'] += daly_weight_change_lookup[code]
+        # swap the relevant code's daly weight, from the daly weight associated with the injury without treatment
+        # and the daly weight for the disability with treatment.
+        # keep track of the changes to the daly weights
+        # update the disability burdens
+        df.loc[person_id, 'rt_debugging_DALY_wt'] += sum([daly_weight_change_lookup[code] for code in relevant_codes])
 
         # Check that the person's true disability burden is positive
         assert np.round(df.loc[person_id, 'rt_debugging_DALY_wt'], 4) >= 0, (person_injuries.values,
@@ -3855,16 +3851,8 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
         # # Isolate the relevant population
         # treated_persons = df.loc[(df.is_alive & df.rt_med_int) | (df.is_alive & df.rt_recovery_no_med)]
         # recovery_dates = treated_persons['rt_date_to_remove_daly']
-
-        relevant_population = []
-        for idx, value in df.loc[df.is_alive, 'rt_date_to_remove_daly'].items():
-            if not pd.isnull(value).all():
-                relevant_population.append(idx)
-
-        # TODO: above could be
-        #  any_not_null = df.loc[df.is_alive, 'rt_date_to_remove_daly'].apply(lambda x: pd.notnull(x).any())
-        #  relevant_population = any_not_null.index[any_not_null]
-
+        any_not_null = df.loc[df.is_alive, 'rt_date_to_remove_daly'].apply(lambda x: pd.notnull(x).any())
+        relevant_population = any_not_null.index[any_not_null]
 
         # Isolate the relevant information
         recovery_dates = df.loc[relevant_population]['rt_date_to_remove_daly']
@@ -5195,6 +5183,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                 columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, [code])[0])
                 assert not pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]), \
                     'no recovery date given for this injury'
+                df.loc[person_id, 'rt_injuries_to_cast']
             # remove codes from fracture cast list
             df.at[person_id, 'rt_injuries_to_cast'] = []
         else:
