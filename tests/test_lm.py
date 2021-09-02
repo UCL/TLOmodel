@@ -443,8 +443,6 @@ def test_multiplicative_helper():
 
 
 def test_outcomes():
-    import numpy as np
-
     prob = 0.5
     OR_X = 2
     OR_Y = 5
@@ -477,8 +475,6 @@ def test_outcomes():
 
 
 def test_custom():
-    import numpy as np
-
     # example population dataframe
     dataframe = pd.DataFrame(data={
         'FactorX': [False, True, False, True],
@@ -533,3 +529,121 @@ def test_custom():
     assert lm2.predict(dataframe.loc['row2'], other=4000.0) == 21.0
     assert lm2.predict(dataframe.loc['row3'], other=4000.0) == 301.0
     assert lm2.predict(dataframe.loc['row4'], other=4000.0) == 4321.0
+
+
+def test_mutually_exclusive_conditions():
+    """Check that declaring conditions mutually exclusive gives consistent output"""
+    lm = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('age_years', conditions_are_mutually_exclusive=False)
+        .when('.between(0, 9)', 1.)
+        .when('.between(10, 19)', 2.)
+        .when('.between(20, 29)', 3.)
+        .when('.between(30, 39)', 4.)
+        .when('.between(40, 49)', 5.)
+        .when('.between(50, 59)', 6.)
+        .when('.between(60, 69)', 7.)
+        .when('.between(70, 79)', 8.)
+        .when('.between(80, 89)', 9.)
+        .when('.between(90, 99)', 10.)
+    )
+    lm_mutex = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('age_years', conditions_are_mutually_exclusive=True)
+        .when('.between(0, 9)', 1.)
+        .when('.between(10, 19)', 2.)
+        .when('.between(20, 29)', 3.)
+        .when('.between(30, 39)', 4.)
+        .when('.between(40, 49)', 5.)
+        .when('.between(50, 59)', 6.)
+        .when('.between(60, 69)', 7.)
+        .when('.between(70, 79)', 8.)
+        .when('.between(80, 89)', 9.)
+        .when('.between(90, 99)', 10.)
+    )
+    assert np.allclose(lm.predict(EXAMPLE_DF), lm_mutex.predict(EXAMPLE_DF))
+
+
+def test_non_mutually_exclusive_conditions():
+    """Check that declaring conditions mutually exclusive when not gives wrong output"""
+    lm = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('age_years', conditions_are_mutually_exclusive=False)
+        .when('< 10', 1.)
+        .when('< 20', 2.)
+        .when('< 30', 3.)
+        .when('< 40', 4.)
+        .when('< 50', 5.)
+        .when('< 60', 6.)
+        .when('< 70', 7.)
+        .when('< 80', 8.)
+        .when('< 90', 9.)
+        .when('< 100', 10.)
+    )
+    # Declare conditions to be mutually exclusive even though in reality they are not
+    lm_mutex = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('age_years', conditions_are_mutually_exclusive=True)
+        .when('< 10', 1.)
+        .when('< 20', 2.)
+        .when('< 30', 3.)
+        .when('< 40', 4.)
+        .when('< 50', 5.)
+        .when('< 60', 6.)
+        .when('< 70', 7.)
+        .when('< 80', 8.)
+        .when('< 90', 9.)
+        .when('< 100', 10.)
+    )
+    assert not np.allclose(lm.predict(EXAMPLE_DF), lm_mutex.predict(EXAMPLE_DF))
+
+
+def test_exhaustive_conditions():
+    """Check that declaring conditions exhaustive gives consistent output"""
+    lm = LinearModel(
+        LinearModelType.MULTIPLICATIVE,
+        1.0,
+        Predictor('age_years', conditions_are_exhaustive=False)
+        .when('< 10', 1.)
+        .when('.between(10, 19)', 2.)
+        .when('.between(20, 29)', 3.)
+        .when('.between(30, 39)', 4.)
+        .when('>= 40', 5.)
+    )
+    lm_exhaustive = LinearModel(
+        LinearModelType.MULTIPLICATIVE,
+        1.0,
+        Predictor('age_years', conditions_are_exhaustive=True)
+        .when('< 10', 1.)
+        .when('.between(10, 19)', 2.)
+        .when('.between(20, 29)', 3.)
+        .when('.between(30, 39)', 4.)
+        .when('>= 40', 5.)
+    )
+    assert np.allclose(lm.predict(EXAMPLE_DF), lm_exhaustive.predict(EXAMPLE_DF))
+
+
+def test_non_exhaustive_conditions():
+    """Check that declaring conditions exhaustive when not gives wrong output"""
+    lm = LinearModel(
+        LinearModelType.MULTIPLICATIVE,
+        1.0,
+        Predictor('age_years', conditions_are_exhaustive=False)
+        .when('.between(10, 19)', 2.)
+        .when('.between(20, 29)', 3.)
+        .when('.between(30, 39)', 4.)
+    )
+    # Declare conditions to be exhaustive even though in reality they are not
+    lm_exhaustive = LinearModel(
+        LinearModelType.MULTIPLICATIVE,
+        1.0,
+        Predictor('age_years', conditions_are_exhaustive=True)
+        .when('.between(10, 19)', 2.)
+        .when('.between(20, 29)', 3.)
+        .when('.between(30, 39)', 4.)
+    )
+    assert not np.allclose(lm.predict(EXAMPLE_DF), lm_exhaustive.predict(EXAMPLE_DF))

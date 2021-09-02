@@ -98,6 +98,8 @@ class HealthSystem(Module):
         "non_bed_space",
     ]
 
+    INIT_DEPENDENCIES = {'Demography'}
+
     PARAMETERS = {
         'Officer_Types': Parameter(Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),
         'Daily_Capabilities': Parameter(

@@ -30,6 +30,11 @@ class ChronicSyndrome(Module):
         - Receiving a 'squeeze factor'
         - Use of the SymptomManager
     """
+
+    # Declare modules that need to be registered in simulation and initialised before
+    # this module
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,

@@ -34,6 +34,9 @@ class HealthSeekingBehaviour(Module):
 
     """
 
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+    ADDITIONAL_DEPENDENCIES = {'Lifestyle'}
+
     # Declare Metadata
     METADATA = {Metadata.USES_HEALTHSYSTEM}
 
@@ -164,9 +167,9 @@ class HealthSeekingBehaviour(Module):
             ('children', 'adults'),
             (
                 Predictor('age_years').when('>=5', p['odds_ratio_children_age_5to14']),
-                Predictor('age_years').when(
-                    '.between(35,59)', p['odds_ratio_adults_age_35to59']
-                ).when('>=60', p['odds_ratio_adults_age_60plus']),
+                Predictor('age_years', conditions_are_mutually_exclusive=True)
+                .when('.between(35,59)', p['odds_ratio_adults_age_35to59'])
+                .when('>=60', p['odds_ratio_adults_age_60plus']),
             ),
             (
                 self.odds_ratio_health_seeking_in_children,
@@ -187,16 +190,12 @@ class HealthSeekingBehaviour(Module):
                 ),
                 Predictor('sex').when('F', p[f'odds_ratio_{subgroup}_sex_Female']),
                 age_predictor,
-                Predictor('region_of_residence').when(
-                    'Central', p[f'odds_ratio_{subgroup}_region_Central']
-                ).when(
-                    'Southern', p[f'odds_ratio_{subgroup}_region_Southern']
-                ),
-                Predictor('li_wealth').when(
-                    4, p[f'odds_ratio_{subgroup}_wealth_higher']
-                ).when(
-                    5, p[f'odds_ratio_{subgroup}_wealth_higher']
-                ),
+                Predictor('region_of_residence', conditions_are_mutually_exclusive=True)
+                .when('Central', p[f'odds_ratio_{subgroup}_region_Central'])
+                .when('Southern', p[f'odds_ratio_{subgroup}_region_Southern']),
+                Predictor('li_wealth', conditions_are_mutually_exclusive=True)
+                .when(4, p[f'odds_ratio_{subgroup}_wealth_higher'])
+                .when(5, p[f'odds_ratio_{subgroup}_wealth_higher']),
                 # Second set of predictors are the symptom specific odd ratios
                 *(
                     Predictor(f'sy_{symptom}').when('>0', odds_ratios[symptom])

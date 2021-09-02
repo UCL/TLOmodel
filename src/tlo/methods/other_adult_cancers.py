@@ -33,6 +33,8 @@ class OtherAdultCancer(Module):
         self.lm_onset_early_other_adult_ca_symptom = None
         self.daly_wts = dict()
 
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
@@ -233,10 +235,11 @@ class OtherAdultCancer(Module):
         lm_init_oac_status_any_stage = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             sum(p['in_prop_other_adult_cancer_stage']),
-            Predictor('age_years').when('.between(30,49)', p['rp_other_adult_cancer_age3049'])
-                                  .when('.between(50,69)', p['rp_other_adult_cancer_age5069'])
-                                  .when('.between(70,120)', p['rp_other_adult_cancer_agege70'])
-                                  .when('.between(0,14)', 0.0)
+            Predictor('age_years', conditions_are_mutually_exclusive=True)
+            .when('.between(30,49)', p['rp_other_adult_cancer_age3049'])
+            .when('.between(50,69)', p['rp_other_adult_cancer_age5069'])
+            .when('.between(70,120)', p['rp_other_adult_cancer_agege70'])
+            .when('.between(0,14)', 0.0)
         )
 
         oac_status_ = lm_init_oac_status_any_stage.predict(df.loc[df.is_alive], self.rng)
@@ -257,13 +260,24 @@ class OtherAdultCancer(Module):
         # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of
         # other_adult_ca_symptom:
         lm_init_early_other_adult_ca_symptom = LinearModel.multiplicative(
-              Predictor('oac_status').when("none", 0.0)
-                                     .when("site_confined",
-                                           p['init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage'][0])
-                                     .when("local_ln",
-                                           p['init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage'][1])
-                                     .when("metastatic",
-                                           p['init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage'][2])
+            Predictor(
+                'oac_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when("none", 0.0)
+            .when(
+                "site_confined",
+                p['init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage'][0]
+            )
+            .when(
+                "local_ln",
+                p['init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage'][1]
+            )
+            .when(
+                "metastatic",
+                p['init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage'][2]
+            )
         )
         has_early_other_adult_ca_symptom_at_init = lm_init_early_other_adult_ca_symptom.predict(
             df.loc[df.is_alive], self.rng
@@ -277,13 +291,24 @@ class OtherAdultCancer(Module):
 
         # -------------------- oac_date_diagnosis -----------
         lm_init_diagnosed = LinearModel.multiplicative(
-            Predictor('oac_status').when("none", 0.0)
-                                   .when("site_confined",
-                                         p['init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage'][0])
-                                   .when("local_ln",
-                                         p['init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage'][1])
-                                   .when("metastatic",
-                                         p['init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage'][2])
+            Predictor(
+                'oac_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when("none", 0.0)
+            .when(
+                "site_confined",
+                p['init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage'][0]
+            )
+            .when(
+                "local_ln",
+                p['init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage'][1]
+            )
+            .when(
+                "metastatic",
+                p['init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage'][2]
+            )
         )
         ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -295,13 +320,15 @@ class OtherAdultCancer(Module):
 
         # -------------------- oac_date_treatment -----------
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
-            Predictor('oac_status').when("none", 0.0)
-                                   .when("site_confined",
-                                         p['init_prop_treatment_status_other_adult_cancer'][0])
-                                   .when("local_ln",
-                                         p['init_prop_treatment_status_other_adult_cancer'][1])
-                                   .when("metastatic",
-                                         p['init_prop_treatment_status_other_adult_cancer'][2])
+            Predictor(
+                'oac_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when("none", 0.0)
+            .when("site_confined", p['init_prop_treatment_status_other_adult_cancer'][0])
+            .when("local_ln", p['init_prop_treatment_status_other_adult_cancer'][1])
+            .when("metastatic", p['init_prop_treatment_status_other_adult_cancer'][2])
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -355,10 +382,11 @@ class OtherAdultCancer(Module):
         lm['site_confined'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['r_site_confined_none'],
-            Predictor('age_years').when('.between(30,49)', p['rr_site_confined_age3049'])
-                                  .when('.between(50,69)', p['rr_site_confined_age5069'])
-                                  .when('.between(0,14)', 0.0)
-                                  .when('.between(70,120)', p['rr_site_confined_agege70']),
+            Predictor('age_years', conditions_are_mutually_exclusive=True)
+            .when('.between(30,49)', p['rr_site_confined_age3049'])
+            .when('.between(50,69)', p['rr_site_confined_age5069'])
+            .when('.between(0,14)', 0.0)
+            .when('.between(70,120)', p['rr_site_confined_agege70']),
             Predictor('oac_status').when('none', 1.0).otherwise(0.0)
         )
 
@@ -385,15 +413,26 @@ class OtherAdultCancer(Module):
 
         # Linear Model for the onset of other_adult_ca_symptom, in each 3 month period
         self.lm_onset_early_other_adult_ca_symptom = LinearModel.multiplicative(
-            Predictor('oac_status').when('site_confined',
-                                         p['r_early_other_adult_ca_symptom_site_confined_other_adult_ca'])
-                                   .when('local_ln',
-                                         p['rr_early_other_adult_ca_symptom_local_ln_other_adult_ca'] *
-                                         p['r_early_other_adult_ca_symptom_site_confined_other_adult_ca'])
-                                   .when('metastatic',
-                                         p['rr_early_other_adult_ca_symptom_metastatic_other_adult_ca'] *
-                                         p['r_early_other_adult_ca_symptom_site_confined_other_adult_ca'])
-                                   .otherwise(0.0)
+            Predictor(
+                'oac_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when(
+                'site_confined',
+                p['r_early_other_adult_ca_symptom_site_confined_other_adult_ca']
+            )
+            .when(
+                'local_ln',
+                p['rr_early_other_adult_ca_symptom_local_ln_other_adult_ca'] *
+                p['r_early_other_adult_ca_symptom_site_confined_other_adult_ca']
+            )
+            .when(
+                'metastatic',
+                p['rr_early_other_adult_ca_symptom_metastatic_other_adult_ca'] *
+                p['r_early_other_adult_ca_symptom_site_confined_other_adult_ca']
+            )
+            .when('none', 0.0)
         )
 
         # ----- DX TESTS -----
