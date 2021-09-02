@@ -11,6 +11,7 @@ from typing import Dict, Union
 import numpy as np
 
 from tlo import Date, Population, logging
+from tlo.dependencies import check_dependencies_present, topologically_sort_modules
 from tlo.events import IndividualScopeEventMixin
 from tlo.progressbar import ProgressBar
 
@@ -120,12 +121,29 @@ class Simulation:
     def _set_module_log_level(self, module_path, level):
         logging.set_logging_levels({module_path: level}, [module_path])
 
-    def register(self, *modules):
+    def register(self, *modules, sort_modules=True, check_all_dependencies=True):
         """Register one or more disease modules with the simulation.
 
         :param modules: the disease module(s) to use as part of this simulation.
             Multiple modules may be given as separate arguments to one call.
+        :param sort_modules: Whether to topologically sort the modules so that any
+            initialisation dependencies (specified by the ``INIT_DEPENDENCIES``
+            attribute) of a module are initialised before the module itself is. A
+            ``ModuleDependencyError`` exception will be raised if there are missing
+            initialisation dependencies or circular initialisation dependencies between
+            modules that cannot be resolved. If this flag is set to ``True`` there is
+            also a requirement that at most one instance of each module is registered
+            and ``MultipleModuleInstanceError`` will be raised if this is not the case.
+        :param check_all_dependencies: Whether to check if all of each modules declared
+            dependencies (that is, the union of the ``INIT_DEPENDENCIES`` and
+            ``ADDITIONAL_DEPENDENCIES`` attributes) have been included in the set of
+            modules to be registered. A ``ModuleDependencyError`` exception will
+            be raised if there are missing dependencies.
         """
+        if sort_modules:
+            modules = list(topologically_sort_modules(modules))
+        if check_all_dependencies:
+            check_dependencies_present(modules)
         # Iterate over modules and per-module seed sequences spawned from simulation
         # level seed sequence
         for module, seed_seq in zip(modules, self._seed_seq.spawn(len(modules))):

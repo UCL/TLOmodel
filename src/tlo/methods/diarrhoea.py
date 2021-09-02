@@ -56,6 +56,8 @@ class Diarrhoea(Module):
         'tEPEC'
     ]
 
+    INIT_DEPENDENCIES = {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
+
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -626,10 +628,15 @@ class Diarrhoea(Module):
                 return LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     intercept,
-                    Predictor('age_years').when('.between(0,0)', p[base_inc_rate][0])
-                                          .when('.between(1,1)', p[base_inc_rate][1])
-                                          .when('.between(2,4)', p[base_inc_rate][2])
-                                          .otherwise(0.0),
+                    Predictor(
+                        'age_years',
+                        conditions_are_mutually_exclusive=True,
+                        conditions_are_exhaustive=True,
+                    )
+                    .when(0, p[base_inc_rate][0])
+                    .when(1, p[base_inc_rate][1])
+                    .when('.between(2,4)', p[base_inc_rate][2])
+                    .when('> 4', 0.0),
                     Predictor('li_no_access_handwashing').when(False, p['rr_diarrhoea_HHhandwashing']),
                     Predictor('li_no_clean_drinking_water').when(False, p['rr_diarrhoea_clean_water']),
                     Predictor('li_unimproved_sanitation').when(False, p['rr_diarrhoea_improved_sanitation']),
@@ -684,13 +691,15 @@ class Diarrhoea(Module):
         self.risk_of_death_diarrhoea = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
-            Predictor('gi_last_diarrhoea_type').when('watery', p['case_fatality_rate_AWD'])
-                                               .when('bloody', p['case_fatality_rate_dysentery']),
+            Predictor('gi_last_diarrhoea_type', conditions_are_mutually_exclusive=True)
+            .when('watery', p['case_fatality_rate_AWD'])
+            .when('bloody', p['case_fatality_rate_dysentery']),
             Predictor('gi_last_diarrhoea_duration').when('>13', p['rr_diarr_death_if_duration_longer_than_13_days']),
             Predictor('gi_last_diarrhoea_dehydration').when('some', p['rr_diarr_death_dehydration']),
-            Predictor('age_exact_years').when('.between(1,1.9999)', p['rr_diarr_death_age12to23mo'])
-                                        .when('.between(2,3.9999)', p['rr_diarr_death_age24to59mo'])
-                                        .otherwise(0.0),
+            Predictor('age_years', conditions_are_mutually_exclusive=True)
+            .when('.between(1, 2, inclusive="left")', p['rr_diarr_death_age12to23mo'])
+            .when('.between(2, 4, inclusive="left")', p['rr_diarr_death_age24to59mo'])
+            .otherwise(0.0),
             Predictor('tmp_hv_inf').when(True, p['rr_diarrhoea_HIV']),
             Predictor('tmp_malnutrition').when(True, p['rr_diarrhoea_SAM'])
         )
@@ -700,17 +709,22 @@ class Diarrhoea(Module):
         self.mean_duration_in_days_of_diarrhoea = LinearModel(
             LinearModelType.ADDITIVE,
             0.0,
-            Predictor('gi_last_diarrhoea_pathogen').when('rotavirus', p['mean_days_duration_with_rotavirus'])
-                                                   .when('shigella', p['mean_days_duration_with_shigella'])
-                                                   .when('adenovirus', p['mean_days_duration_with_adenovirus'])
-                                                   .when('cryptosporidium',
-                                                         p['mean_days_duration_with_cryptosporidium'])
-                                                   .when('campylobacter', p['mean_days_duration_with_campylobacter'])
-                                                   .when('ST-ETEC', p['mean_days_duration_with_ST-ETEC'])
-                                                   .when('sapovirus', p['mean_days_duration_with_sapovirus'])
-                                                   .when('norovirus', p['mean_days_duration_with_norovirus'])
-                                                   .when('astrovirus', p['mean_days_duration_with_astrovirus'])
-                                                   .when('tEPEC', p['mean_days_duration_with_tEPEC'])
+            Predictor(
+                'gi_last_diarrhoea_pathogen',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when('rotavirus', p['mean_days_duration_with_rotavirus'])
+            .when('shigella', p['mean_days_duration_with_shigella'])
+            .when('adenovirus', p['mean_days_duration_with_adenovirus'])
+            .when('cryptosporidium', p['mean_days_duration_with_cryptosporidium'])
+            .when('campylobacter', p['mean_days_duration_with_campylobacter'])
+            .when('ST-ETEC', p['mean_days_duration_with_ST-ETEC'])
+            .when('sapovirus', p['mean_days_duration_with_sapovirus'])
+            .when('norovirus', p['mean_days_duration_with_norovirus'])
+            .when('astrovirus', p['mean_days_duration_with_astrovirus'])
+            .when('tEPEC', p['mean_days_duration_with_tEPEC'])
+            .when('not_applicable', 0)
         )
 
         self.mean_duration_in_days_of_diarrhoea_lookup = {
@@ -731,16 +745,22 @@ class Diarrhoea(Module):
         self.prob_diarrhoea_is_watery = LinearModel(
             LinearModelType.ADDITIVE,
             0.0,
-            Predictor('gi_last_diarrhoea_pathogen').when('rotavirus', p['proportion_AWD_by_rotavirus'])
-                                                   .when('shigella', p['proportion_AWD_by_shigella'])
-                                                   .when('adenovirus', p['proportion_AWD_by_adenovirus'])
-                                                   .when('cryptosporidium', p['proportion_AWD_by_cryptosporidium'])
-                                                   .when('campylobacter', p['proportion_AWD_by_campylobacter'])
-                                                   .when('ST-ETEC', p['proportion_AWD_by_ST-ETEC'])
-                                                   .when('sapovirus', p['proportion_AWD_by_sapovirus'])
-                                                   .when('norovirus', p['proportion_AWD_by_norovirus'])
-                                                   .when('astrovirus', p['proportion_AWD_by_astrovirus'])
-                                                   .when('tEPEC', p['proportion_AWD_by_tEPEC'])
+            Predictor(
+                'gi_last_diarrhoea_pathogen',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when('rotavirus', p['proportion_AWD_by_rotavirus'])
+            .when('shigella', p['proportion_AWD_by_shigella'])
+            .when('adenovirus', p['proportion_AWD_by_adenovirus'])
+            .when('cryptosporidium', p['proportion_AWD_by_cryptosporidium'])
+            .when('campylobacter', p['proportion_AWD_by_campylobacter'])
+            .when('ST-ETEC', p['proportion_AWD_by_ST-ETEC'])
+            .when('sapovirus', p['proportion_AWD_by_sapovirus'])
+            .when('norovirus', p['proportion_AWD_by_norovirus'])
+            .when('astrovirus', p['proportion_AWD_by_astrovirus'])
+            .when('tEPEC', p['proportion_AWD_by_tEPEC'])
+            .when('not_applicable', 0)
         )
 
         # --------------------------------------------------------------------------------------------
