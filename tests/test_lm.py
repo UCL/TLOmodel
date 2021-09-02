@@ -421,9 +421,9 @@ def test_using_int_as_intercept():
         0
     )
     assert isinstance(eq, LinearModel)
-    pred = eq.predict(EXAMPLE_DF).astype(int)
+    pred = eq.predict(EXAMPLE_DF)
     assert isinstance(pred, pd.Series)
-    assert pred.dtype == int
+    assert np.issubdtype(pred.dtype, np.integer)
     assert (pred.index == EXAMPLE_DF.index).all()
     assert (pred == 0).all()
 
