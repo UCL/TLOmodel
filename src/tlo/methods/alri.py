@@ -1052,10 +1052,15 @@ class Models:
                 return LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     intercept,
-                    Predictor('age_years').when('.between(0,0)', p[base_inc_rate][0])
-                                          .when('.between(1,1)', p[base_inc_rate][1])
-                                          .when('.between(2,4)', p[base_inc_rate][2])
-                                          .otherwise(0.0),
+                    Predictor(
+                        'age_years',
+                        conditions_are_mutually_exclusive=True,
+                        conditions_are_exhaustive=True,
+                    )
+                    .when(0, p[base_inc_rate][0])
+                    .when(1, p[base_inc_rate][1])
+                    .when('.between(2,4)', p[base_inc_rate][2])
+                    .when('> 4', 0.0),
                     Predictor('li_no_access_handwashing').when(False, p['rr_ALRI_HHhandwashing']),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
                     Predictor('hv_inf').when(True, p['rr_ALRI_HIV_untreated']),

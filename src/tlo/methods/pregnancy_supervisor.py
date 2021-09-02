@@ -580,13 +580,14 @@ class PregnancySupervisor(Module):
                     Predictor('ac_receiving_iron_folic_acid').when(True, params['treatment_effect_iron_folic_acid_'
                                                                                 'anaemia'])),
 
-                # This equation calculates a womans monthly risk of developing gestational diabetes
-                # during her pregnancy.This is currently influenced by obesity
-                'gest_diab': LinearModel(
-                    LinearModelType.MULTIPLICATIVE,
-                    intercept_dict['gest_diab'],
-                    Predictor('li_bmi').when('4', params['rr_gest_diab_obesity'])
-                                       .when('5', params['rr_gest_diab_obesity'])),
+            # This equation calculates a womans monthly risk of developing gestational diabetes
+            # during her pregnancy.This is currently influenced by obesity
+            'gest_diab': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                intercept_dict['gest_diab'],
+                Predictor('li_bmi', conditions_are_mutually_exclusive=True)
+                .when('4', params['rr_gest_diab_obesity'])
+                .when('5', params['rr_gest_diab_obesity'])),
 
                 # This equation calculates a womans monthly risk of developing gestational hypertension
                 # during her pregnancy. This is currently influenced receipt of calcium supplementation
@@ -632,11 +633,11 @@ class PregnancySupervisor(Module):
                     Predictor('ps_gestational_age_in_weeks').when('41', params['rr_still_birth_ga_41']),
                     Predictor('ps_gestational_age_in_weeks').when('42', params['rr_still_birth_ga_42']),
                     Predictor('ps_gestational_age_in_weeks').when('>42', params['rr_still_birth_ga_>42']),
-                    Predictor('ps_htn_disorders').when('mild_pre_eclamp', params['rr_still_birth_pre_eclampsia'])
-                                                 .when('severe_pre_eclamp', params['rr_still_birth_eclampsia'])
-                                                 .when('eclampsia', params['rr_still_birth_pre_eclampsia'])
-                                                 .when('gest_htn', params['rr_still_birth_gest_htn'])
-                                                 .when('severe_gest_htn', params['rr_still_birth_gest_htn']),
+                    Predictor('ps_htn_disorders', conditions_are_mutually_exclusive=True)
+                        .when('mild_pre_eclamp', params['rr_still_birth_mild_pre_eclamp'])
+                        .when('gest_htn', params['rr_still_birth_gest_htn'])
+                        .when('severe_gest_htn', params['rr_still_birth_severe_gest_htn'])
+                        .when('severe_pre_eclamp', params['rr_still_birth_severe_pre_eclamp']),
                     Predictor('ps_antepartum_haemorrhage').when('!= "none"', params['rr_still_birth_aph']),
                     Predictor('ps_chorioamnionitis').when(True, params['rr_still_birth_chorio']),
                     Predictor('nc_hypertension').when(True, params['rr_still_birth_chronic_htn']),
