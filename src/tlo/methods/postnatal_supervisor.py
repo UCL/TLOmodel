@@ -47,6 +47,10 @@ class PostnatalSupervisor(Module):
         # in the LoggingEvent to calculate key outcomes (i.e. incidence rates, neonatal mortality rate etc)
         self.postnatal_tracker = dict()
 
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem'}
+
+    ADDITIONAL_DEPENDENCIES = {'Labour', 'Lifestyle', 'NewbornOutcomes', 'PregnancySupervisor'}
+
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHSYSTEM,
                 Metadata.USES_HEALTHBURDEN}  # declare that this is a disease module (leave as empty set otherwise)

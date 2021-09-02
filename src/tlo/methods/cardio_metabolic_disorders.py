@@ -46,6 +46,9 @@ class CardioMetabolicDisorders(Module):
     events = ['ever_stroke',
               'ever_heart_attack']
 
+    INIT_DEPENDENCIES = {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
+    ADDITIONAL_DEPENDENCIES = {'Depression'}
+
     # Declare Metadata (this is for a typical 'Disease Module')
     METADATA = {
         Metadata.DISEASE_MODULE,

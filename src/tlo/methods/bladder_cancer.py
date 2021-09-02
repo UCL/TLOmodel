@@ -35,6 +35,8 @@ class BladderCancer(Module):
         self.lm_onset_pelvic_pain = None
         self.daly_wts = dict()
 
+    INIT_DEPENDENCIES = {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,

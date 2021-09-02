@@ -32,6 +32,8 @@ class DxAlgorithmChild(Module):
     These functions are called by an HSI (usually a Generic HSI)
     """
 
+    ADDITIONAL_DEPENDENCIES = {'HealthSystem', 'SymptomManager'}
+
     # Declare Metadata
     METADATA = {Metadata.USES_HEALTHSYSTEM}
 

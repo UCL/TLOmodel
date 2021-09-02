@@ -34,6 +34,10 @@ class Malaria(Module):
         self.itn_irs = None
         self.all_inc = None
 
+    INIT_DEPENDENCIES = {
+        'Contraception', 'Demography', 'HealthSystem', 'SymptomManager'
+    }
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,

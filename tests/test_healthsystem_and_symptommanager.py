@@ -582,7 +582,10 @@ def test_use_of_helper_function_get_all_consumables():
     sim = Simulation(start_date=start_date, seed=0)
     sim.register(
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-        DummyModule()
+        DummyModule(),
+        # Disable sorting + checks to avoid error due to missing dependencies
+        sort_modules=False,
+        check_all_dependencies=False
     )
 
     # Define availability of items

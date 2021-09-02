@@ -33,6 +33,15 @@ class Skeleton(Module):
         - `on_hsi_alert(person_id, treatment_id)` [If this is disease module]
         -  `report_daly_values()` [If this is disease module]
     """
+
+    # Declares modules that need to be registered in simulation and initialised before
+    # this module
+    INIT_DEPENDENCIES = {'Demography'}
+
+    # Declares any modules that need to be registered in simulation in addition to those
+    # in INIT_DEPENDENCIES to allow running simulation
+    ADDITIONAL_DEPENDENCIES = {'HealthSystem'}
+
     # Declare Metadata (this is for a typical 'Disease Module')
     METADATA = {
         Metadata.DISEASE_MODULE,
