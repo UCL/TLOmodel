@@ -70,11 +70,32 @@ for i in range(0, len(average_injuries_per_dist)):
     plt.ylabel('Probability')
     plt.title(f'Exponential decay curve\n fit to {sources[i]}')
     plt.subplot(1, 2, 2)
-    plt.bar(np.arange(2), [average_injuries_per_dist[i], 7057 / 4776])
-    plt.xticks(np.arange(2), ['Est. av. \n n. of injuries \n per person', 'Av. \n n. of injuries\n per person'])
+    plt.bar(np.arange(2), [average_injuries_per_dist[i], 7057 / 4776], color=['lightsalmon', 'lightsteelblue'])
+    plt.xticks(np.arange(2), ['Est. av. \n n. of injuries \n per person',
+                              'Av. \n n. of injuries\n per person\n from \nSundet et al.'])
     plt.ylabel('Number of injuries')
     plt.title('Average number of injuries \nper person from curve \nfitting and Malawi data')
     plt.savefig(f'C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/'
                 f'curvefitting_{sources[i]}.png', bbox_inches='tight')
     plt.clf()
     print(average_injuries_per_dist[i], 7057 / 4776, probability_distributions[i])
+
+injury_vibes_distribution = [10829, 5241, 2886, 1936, 1194, 736, 368, 253]
+injury_vibes_distribution = np.divide(injury_vibes_distribution, sum(injury_vibes_distribution))
+predicted_number_of_injuries = []
+for i in range(0, nsample):
+    predicted_number_of_injuries.append(np.random.choice(number_of_potential_injuries, p=injury_vibes_distribution))
+    average_n_injuries = sum(predicted_number_of_injuries) / nsample
+plt.subplot(1, 2, 1)
+plt.plot(number_of_potential_injuries, injury_vibes_distribution)
+plt.xlabel('Number of Injuries')
+plt.ylabel('Probability')
+plt.title('Distribution of \ninjuries from \nthe Injury Vibes study')
+plt.subplot(1, 2, 2)
+plt.bar(np.arange(2), [average_n_injuries, 7057 / 4776])
+plt.xticks(np.arange(2), ['Est. av. \n n. of injuries \n per person', 'Av. \n n. of injuries\n per person'])
+plt.ylabel('Number of injuries')
+plt.title('Average number of injuries \nper person from the injury VIBES study \n and Malawi data')
+plt.savefig('C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/SingleVsMultipleInjury/'
+            'curvefitting_vibes.png', bbox_inches='tight')
+plt.clf()

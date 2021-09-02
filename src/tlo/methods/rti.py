@@ -33,6 +33,14 @@ class RTI(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
+    INIT_DEPENDENCIES = {}
+
+    ADDITIONAL_DEPENDENCIES = {
+        'Demography',
+        'Lifestyle',
+        'HealthSystem',
+    }
+
     INJURY_COLUMNS = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                       'rt_injury_7', 'rt_injury_8']
 
@@ -1193,53 +1201,15 @@ class RTI(Module):
         # Filter the dataframe by the columns the injuries are stored in
         persons_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
 
-        # TODO: these codes can be setup once and stored
-        codes_requiring_xrays = list()
-        codes_requiring_ct_scan = list()
-
-        # ================================ Fractures require x-rays ============================================
-        # Do they have a fracture which needs an x ray
-        codes = ['112', '113', '211', '212', '412', '414', '612', '712a', '712b', '712c', '811', '812',
-                 '813a', '813b', '813c', '822a', '822b', '813bo', '813co', '813do', '813eo']
-        codes_requiring_xrays.extend(codes)
-
-        # ========================= Traumatic brain injuries require ct scan ===================================
-        # Do they have a TBI which needs a ct-scan
-        codes = ['133', '134', '135']
-        codes_requiring_ct_scan.extend(codes)
-
-        # ============================= Abdominal trauma requires ct scan ======================================
-        # Do they have abdominal trauma
-        codes = ['552', '553', '554']
-        codes_requiring_ct_scan.extend(codes)
-
-        # ============================== Spinal cord injury require x ray ======================================
-        # Do they have a spinal cord injury
-        codes = ['673', '674', '675', '676']
-        codes_requiring_xrays.extend(codes)
-
-        # ============================== Dislocations require x ray ============================================
-        # Do they have a dislocation
-        codes = ['322', '323', '722', '822']
-        codes_requiring_xrays.extend(codes)
-
-        # --------------------------------- Soft tissue injury in neck -----------------------------------------
-        # Do they have soft tissue injury in the neck which requires a ct scan and an x ray
-        codes = ['342', '343']
-        codes_requiring_ct_scan.extend(codes)
-        codes_requiring_xrays.extend(codes)
-
-        # --------------------------------- Soft tissue injury in thorax/ lung injury --------------------------
-        # Do they have soft tissue injury in the thorax which requires a ct scan and x ray
-        codes = ['441', '443', '453']
-        codes_requiring_ct_scan.extend(codes)
-        codes_requiring_xrays.extend(codes)
-
-        # ----------------------------- Internal bleeding ------------------------------------------------------
-        # Do they have internal bleeding which requires a ct scan
-        codes = ['361', '363', '461', '463']
-        codes_requiring_ct_scan.extend(codes)
-
+        # Injuries that require x rays are: fractures, spinal cord injuries, dislocations, soft tissue injuries in neck
+        # and soft tissue injury in thorax/ lung injury
+        codes_requiring_xrays = ['112', '113', '211', '212', '412', '414', '612', '712a', '712b', '712c', '811', '812',
+                                 '813a', '813b', '813c', '822a', '822b', '813bo', '813co', '813do', '813eo', '673',
+                                 '674', '675', '676', '322', '323', '722', '342', '343', '441', '443', '453']
+        # Injuries that require a ct scan are TBIs, abdominal trauma, soft tissue injury in neck, soft tissue injury in
+        # thorax/ lung injury and abdominal trauma
+        codes_requiring_ct_scan = ['133', '134', '135', '552', '553', '554', '342', '343', '441', '443', '453', '361',
+                                   '363', '461', '463']
         def adjust_appt_footprint(_codes, _requirement):
             _, counts = self.rti_find_and_count_injuries(persons_injuries, _codes)
             if counts > 0:
@@ -1281,7 +1251,7 @@ class RTI(Module):
         df.loc[df.is_alive, 'rt_MAIS_military_score'] = 0
         df.loc[df.is_alive, 'rt_date_death_no_med'] = pd.NaT
         df.loc[df.is_alive, 'rt_debugging_DALY_wt'] = 0
-
+        # TODO: Check if treating the treatment plan lists as a series is behind the removal problem
         alive_count = sum(df.is_alive)
         df.loc[df.is_alive, 'rt_date_to_remove_daly'] = pd.Series([[pd.NaT] * 8 for _ in range(alive_count)])
         df.loc[df.is_alive, 'rt_injuries_to_cast'] = pd.Series([[] for _ in range(alive_count)])
@@ -1811,7 +1781,7 @@ class RTI(Module):
             # ---------------------------------- Pneumothoraxs ---------------------------------------------------------
             '441': self.daly_wt_closed_pneumothorax,
             '443': self.daly_wt_open_pneumothorax,
-            '4104': self.daly_wt_facial_soft_tissue_injury,
+            '4101': self.daly_wt_facial_soft_tissue_injury,
             '4113': self.daly_wt_burns_less_than_20_percent_body_area_without_treatment,
             # ================================== AIS region 5: Abdomen =================================================
             '552': self.daly_wt_abd_internal_organ_injury,
@@ -1826,8 +1796,8 @@ class RTI(Module):
             '673a': self.daly_wt_spinal_cord_lesion_neck_without_treatment,
             '673b': self.daly_wt_spinal_cord_lesion_below_neck_without_treatment,
             '674a': self.daly_wt_spinal_cord_lesion_neck_without_treatment,
-            '675a': self.daly_wt_spinal_cord_lesion_neck_without_treatment,
             '674b': self.daly_wt_spinal_cord_lesion_below_neck_without_treatment,
+            '675a': self.daly_wt_spinal_cord_lesion_neck_without_treatment,
             '675b': self.daly_wt_spinal_cord_lesion_below_neck_without_treatment,
             '676': self.daly_wt_spinal_cord_lesion_neck_without_treatment,
             # ============================== AIS body region 7: upper extremities ======================================
@@ -1893,8 +1863,8 @@ class RTI(Module):
         # Find who's disability burden is less than one
         DALYweightunderlimit = df.index[df.rt_road_traffic_inc & ~ df.rt_imm_death & (df['rt_disability'] <= 0)]
         # Check that no one has a disability burden less than or equal to zero
-        assert len(DALYweightunderlimit) == 0, 'Someone has not been given an injury burden' + \
-                                               selected_for_rti_inj.loc[DALYweightunderlimit]
+        assert len(DALYweightunderlimit) == 0, ('Someone has not been given an injury burden',
+                                                selected_for_rti_inj.loc[DALYweightunderlimit])
         df.loc[DALYweightunderlimit, 'rt_disability'] = 0
         assert (df.loc[injured_index, 'rt_disability'] > 0).all()
 
@@ -1925,130 +1895,80 @@ class RTI(Module):
 
         # ------------------------------- Remove the daly weights for treated injuries ---------------------------------
         # ==================================== heal with time injuries =================================================
-        for code in codes:
-            # keep track of the change in daly weights
-            change_in_daly_weights = 0
-            if code == '322' or code == '323':
-                change_in_daly_weights -= self.daly_wt_neck_dislocation
-            if code == '822a':
-                change_in_daly_weights -= self.daly_wt_dislocated_hip
-            if code == '822b':
-                change_in_daly_weights -= self.daly_wt_dislocated_knee
-            if code == '112':
-                change_in_daly_weights -= self.daly_wt_unspecified_skull_fracture
-            if code == '113':
-                change_in_daly_weights -= self.daly_wt_basilar_skull_fracture
-            if code == '552' or code == '553' or code == '554':
-                change_in_daly_weights -= self.daly_wt_abd_internal_organ_injury
-            if code == '412':
-                change_in_daly_weights -= self.daly_wt_rib_fracture
-            if code == '442':
-                change_in_daly_weights -= self.daly_wt_surgical_emphysema
-            if code == '461':
-                change_in_daly_weights -= self.daly_wt_chest_wall_bruises_hematoma
-            if code == '612':
-                change_in_daly_weights -= self.daly_wt_vertebrae_fracture
-            # ========================== Codes 'treated' with stitches  ==============================================
-            if code == '1101':
-                change_in_daly_weights -= self.daly_wt_facial_soft_tissue_injury
-            if code == '2101':
-                change_in_daly_weights -= self.daly_wt_facial_soft_tissue_injury
-            if code == '3101':
-                change_in_daly_weights -= self.daly_wt_facial_soft_tissue_injury
-            if code == '4101':
-                change_in_daly_weights -= self.daly_wt_facial_soft_tissue_injury
-            if code == '5101':
-                change_in_daly_weights -= self.daly_wt_facial_soft_tissue_injury
-            if code == '7101':
-                change_in_daly_weights -= self.daly_wt_facial_soft_tissue_injury
-            if code == '8101':
-                change_in_daly_weights -= self.daly_wt_facial_soft_tissue_injury
-            # ============================== Codes 'treated' with fracture casts ======================================
-            if code == '712a':
-                change_in_daly_weights -= self.daly_wt_clavicle_scapula_humerus_fracture
-            if code == '712b':
-                change_in_daly_weights -= self.daly_wt_hand_wrist_fracture_with_treatment
-            if code == '712c':
-                change_in_daly_weights -= self.daly_wt_radius_ulna_fracture_short_term_with_without_treatment
-            if code == '811':
-                change_in_daly_weights -= self.daly_wt_foot_fracture_short_term_with_without_treatment
-            if code == '812':
-                change_in_daly_weights -= self.daly_wt_patella_tibia_fibula_fracture_with_treatment
-            # ============================== Codes 'treated' with minor surgery =======================================
-            if code == '722':
-                change_in_daly_weights -= self.daly_wt_dislocated_shoulder
-            if code == '291':
-                change_in_daly_weights -= self.daly_wt_eye_injury
-            if code == '241':
-                change_in_daly_weights -= self.daly_wt_facial_soft_tissue_injury
-            if code == '211' or code == '212':
-                change_in_daly_weights -= self.daly_wt_facial_fracture
-            # ============================== Codes 'treated' with burn management ======================================
-            if code == '1114':
-                change_in_daly_weights -= self.daly_wt_burns_greater_than_20_percent_body_area
-            if code == '2114':
-                change_in_daly_weights -= self.daly_wt_burns_greater_than_20_percent_body_area
-            if code == '3113':
-                change_in_daly_weights -= self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
-            if code == '4113':
-                change_in_daly_weights -= self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
-            if code == '5113':
-                change_in_daly_weights -= self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
-            if code == '7113':
-                change_in_daly_weights -= self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
-            if code == '8113':
-                change_in_daly_weights -= self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
-            # ============================== Codes 'treated' with major surgery ========================================
-            if code == '813a':
-                change_in_daly_weights -= self.daly_wt_hip_fracture_long_term_with_treatment
-            if code == '813b':
-                change_in_daly_weights -= self.daly_wt_pelvis_fracture_long_term
-            if code == '813c':
-                change_in_daly_weights -= self.daly_wt_femur_fracture_short_term
-            if code == '133a':
-                change_in_daly_weights -= self.daly_wt_subarachnoid_hematoma
-            if code == '133b':
-                change_in_daly_weights -= self.daly_wt_brain_contusion
-            if code == '133c':
-                change_in_daly_weights -= self.daly_wt_intraventricular_haemorrhage
-            if code == '133d':
-                change_in_daly_weights -= self.daly_wt_subgaleal_hematoma
-            if code == '134a':
-                change_in_daly_weights -= self.daly_wt_epidural_hematoma
-            if code == '134b':
-                change_in_daly_weights -= self.daly_wt_subdural_hematoma
-            if code == '135':
-                change_in_daly_weights -= self.daly_wt_diffuse_axonal_injury
-            if code == '342' or code == '343' or code == '361' or code == '363':
-                change_in_daly_weights -= self.daly_wt_neck_internal_bleeding
-            if code == '414':
-                change_in_daly_weights -= self.daly_wt_flail_chest
-            if code == '441':
-                change_in_daly_weights -= self.daly_wt_closed_pneumothorax
-            if code == '443':
-                change_in_daly_weights -= self.daly_wt_open_pneumothorax
-            if code == '453a':
-                change_in_daly_weights -= self.daly_wt_diaphragm_rupture
-            if code == '453b':
-                change_in_daly_weights -= self.daly_wt_lung_contusion
-            if code == '463':
-                change_in_daly_weights -= self.daly_wt_hemothorax
-            # ----------------------------- Codes treated with open fracture treatment --------------------------------
-            if code == '813bo':
-                change_in_daly_weights -= self.daly_wt_pelvis_fracture_long_term + \
-                                          self.daly_wt_facial_soft_tissue_injury
-            if code == '813co':
-                change_in_daly_weights -= self.daly_wt_femur_fracture_short_term + \
-                                          self.daly_wt_facial_soft_tissue_injury
-            if code == '813do':
-                change_in_daly_weights -= self.daly_wt_foot_fracture_short_term_with_without_treatment + \
-                                          self.daly_wt_facial_soft_tissue_injury
-            if code == '813eo':
-                change_in_daly_weights -= self.daly_wt_patella_tibia_fibula_fracture_without_treatment + \
-                                          self.daly_wt_facial_soft_tissue_injury
+        daly_weight_removal_lookup = {
+            # heal with time injuries
+            '322': self.daly_wt_neck_dislocation,
+            '323': self.daly_wt_neck_dislocation,
+            '822a': self.daly_wt_dislocated_hip,
+            '822b': self.daly_wt_dislocated_knee,
+            '112': self.daly_wt_unspecified_skull_fracture,
+            '113': self.daly_wt_basilar_skull_fracture,
+            '552': self.daly_wt_abd_internal_organ_injury,
+            '553': self.daly_wt_abd_internal_organ_injury,
+            '554': self.daly_wt_abd_internal_organ_injury,
+            '412': self.daly_wt_rib_fracture,
+            '442': self.daly_wt_surgical_emphysema,
+            '461': self.daly_wt_chest_wall_bruises_hematoma,
+            '612': self.daly_wt_vertebrae_fracture,
+            # injuries treated with suture
+            '1101': self.daly_wt_facial_soft_tissue_injury,
+            '2101': self.daly_wt_facial_soft_tissue_injury,
+            '3101': self.daly_wt_facial_soft_tissue_injury,
+            '4101': self.daly_wt_facial_soft_tissue_injury,
+            '5101': self.daly_wt_facial_soft_tissue_injury,
+            '7101': self.daly_wt_facial_soft_tissue_injury,
+            '8101': self.daly_wt_facial_soft_tissue_injury,
+            # injuries treated with a cast
+            '712a': self.daly_wt_clavicle_scapula_humerus_fracture,
+            '712b': self.daly_wt_hand_wrist_fracture_with_treatment,
+            '712c': self.daly_wt_radius_ulna_fracture_short_term_with_without_treatment,
+            '811': self.daly_wt_foot_fracture_short_term_with_without_treatment,
+            '812': self.daly_wt_patella_tibia_fibula_fracture_with_treatment,
+            # injuries treated with minor surgery
+            '722': self.daly_wt_dislocated_shoulder,
+            '291': self.daly_wt_eye_injury,
+            '241': self.daly_wt_facial_soft_tissue_injury,
+            '211': self.daly_wt_facial_fracture,
+            '212': self.daly_wt_facial_fracture,
+            # injuries treated with burn management
+            '1114': self.daly_wt_burns_greater_than_20_percent_body_area,
+            '2114': self.daly_wt_burns_greater_than_20_percent_body_area,
+            '3113': self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
+            '4113': self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
+            '5113': self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
+            '7113': self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
+            '8113': self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
+            # injuries treated with major surgery
+            '813a': self.daly_wt_hip_fracture_long_term_with_treatment,
+            '813b': self.daly_wt_pelvis_fracture_long_term,
+            '813c': self.daly_wt_femur_fracture_short_term,
+            '133a': self.daly_wt_subarachnoid_hematoma,
+            '133b': self.daly_wt_brain_contusion,
+            '133c': self.daly_wt_intraventricular_haemorrhage,
+            '133d': self.daly_wt_subgaleal_hematoma,
+            '134a': self.daly_wt_epidural_hematoma,
+            '134b': self.daly_wt_subdural_hematoma,
+            '135': self.daly_wt_diffuse_axonal_injury,
+            '342': self.daly_wt_neck_internal_bleeding,
+            '343': self.daly_wt_neck_internal_bleeding,
+            '361': self.daly_wt_neck_internal_bleeding,
+            '363': self.daly_wt_neck_internal_bleeding,
+            '414': self.daly_wt_flail_chest,
+            '441': self.daly_wt_closed_pneumothorax,
+            '443': self.daly_wt_open_pneumothorax,
+            '453a': self.daly_wt_diaphragm_rupture,
+            '453b': self.daly_wt_lung_contusion,
+            '463': self.daly_wt_hemothorax,
+            # injuries treated with open fracture treatment
+            '813bo': self.daly_wt_pelvis_fracture_long_term + self.daly_wt_facial_soft_tissue_injury,
+            '813co': self.daly_wt_femur_fracture_short_term + self.daly_wt_facial_soft_tissue_injury,
+            '813do': self.daly_wt_foot_fracture_short_term_with_without_treatment + self.daly_wt_facial_soft_tissue_injury,
+            '813eo': self.daly_wt_patella_tibia_fibula_fracture_without_treatment + self.daly_wt_facial_soft_tissue_injury
 
+        }
+        for code in codes:
             # update the total values of the daly weights
-            df.loc[person_id, 'rt_debugging_DALY_wt'] += change_in_daly_weights
+            df.loc[person_id, 'rt_debugging_DALY_wt'] -= daly_weight_removal_lookup[code]
         # if the person's true total for daly weights is greater than one, report rt_disability as one, if not
         # report the true disability burden.
         if df.loc[person_id, 'rt_debugging_DALY_wt'] > 1:
@@ -4082,6 +4002,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         p = module.parameters
+        person = df.loc[person_id]
         # Load the parameters used in this event
         self.prob_depressed_skull_fracture = p['prob_depressed_skull_fracture']  # proportion of depressed skull
         # fractures in https://doi.org/10.1016/j.wneu.2017.09.084
@@ -4719,6 +4640,11 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
             logger.info(key='ICU_patients',
                         data=person_injuries,
                         description='The injuries of ICU patients')
+        # Check that each injury has only one treatment plan assigned to it
+        treatment_plan = person['rt_injuries_for_minor_surgery'] + person['rt_injuries_for_major_surgery'] + \
+                         person['rt_injuries_to_heal_with_time'] + person['rt_injuries_for_open_fracture_treatment'] + \
+                         person['rt_injuries_to_cast']
+        assert len(treatment_plan) == len(set(treatment_plan))
 
         # Other test admission protocol. Basing ICU admission of whether they have a TBI
         # 17.3% of head injury patients in KCH were admitted to ICU/HDU (7.9 and 9.4% respectively)
@@ -4993,6 +4919,11 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # ------------------------------------ Open fractures ---------------------------------------------------------
         if self.open_fractures > 0 & df.loc[person_id, 'is_alive']:
             road_traffic_injuries.rti_ask_for_open_fracture_treatment(person_id=person_id, counts=self.open_fractures)
+        treatment_plan = p['rt_injuries_for_minor_surgery'] + p['rt_injuries_for_major_surgery'] + \
+                         p['rt_injuries_to_heal_with_time'] + p['rt_injuries_for_open_fracture_treatment'] + \
+                         p['rt_injuries_to_cast']
+        # make sure injuries are treated in one place only
+        assert len(treatment_plan) == len(set(treatment_plan))
         # ============================== Generic injury management =====================================================
 
         # ================================= Pain management ============================================================
@@ -5163,22 +5094,21 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
+        # Get the population and health system
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-
+        # if the person isn't alive return a blank footprint
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
+        # get a shorthand reference to RTI and consumables modules
         road_traffic_injuries = self.sim.modules['RTI']
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         # isolate the relevant injury information
         # Find the untreated injuries
-        idx_for_untreated_injuries = []
-        untreated_injury_cols = []
-        for index, time in enumerate(df.loc[person_id, 'rt_date_to_remove_daly']):
-            if pd.isnull(time):
-                idx_for_untreated_injuries.append(index)
-        for idx in idx_for_untreated_injuries:
-            untreated_injury_cols.append(RTI.INJURY_COLUMNS[idx])
+        p = df.loc[person_id]
+        assigned_injury_recovery_time = list(pd.isnull(p['rt_date_to_remove_daly']))
+        idx_for_untreated_injuries = np.where(assigned_injury_recovery_time)[0]
+        untreated_injury_cols = [RTI.INJURY_COLUMNS[idx] for idx in idx_for_untreated_injuries]
         person_injuries = df.loc[[person_id], untreated_injury_cols]
 
         # check if they have a fracture that requires a cast
@@ -5190,11 +5120,14 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         consumables_fractures = {'Intervention_Package_Code': dict(), 'Item_Code': dict()}
         # Check the person sent here is alive, been through the generic first appointment,
         # been through the RTI med intervention
-        assert df.loc[person_id, 'rt_diagnosed'], 'person sent here has not been diagnosed'
-        assert df.loc[person_id, 'rt_med_int'], 'person sent here has not been treated'
+        assert p['rt_diagnosed'], 'person sent here has not been diagnosed'
+        assert p['rt_med_int'], 'person sent here has not been treated'
         # Check that the person sent here has an injury treated by this module
         assert fracturecastcounts + slingcounts > 0
-        assert len(df.loc[person_id, 'rt_injuries_to_cast']) > 0
+        # Check this person has an injury intended to be treated here
+        assert len(p['rt_injuries_to_cast']) > 0
+        # Check this injury assigned to be treated here is actually had by the person
+        assert all(injuries in person_injuries.values for injuries in p['rt_injuries_to_cast'])
         # If they have a fracture that needs a cast, ask for plaster of paris
         if fracturecastcounts > 0:
             plaster_of_paris_code = pd.unique(
@@ -5229,18 +5162,13 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                               '813bo', '813co', '813do', '813eo']
             swapping_codes = [code for code in swapping_codes if code in codes]
             # remove codes that will be treated elsewhere
-            for code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
-                if code in swapping_codes:
-                    swapping_codes.remove(code)
-            for code in df.loc[person_id, 'rt_injuries_for_major_surgery']:
-                if code in swapping_codes:
-                    swapping_codes.remove(code)
-            for code in df.loc[person_id, 'rt_injuries_to_heal_with_time']:
-                if code in swapping_codes:
-                    swapping_codes.remove(code)
-            for code in df.loc[person_id, 'rt_injuries_for_open_fracture_treatment']:
-                if code in swapping_codes:
-                    swapping_codes.remove(code)
+            injuries_treated_elsewhere = p['rt_injuries_for_minor_surgery'] + p['rt_injuries_for_major_surgery'] + \
+                                         p['rt_injuries_to_heal_with_time']+ \
+                                         p['rt_injuries_for_open_fracture_treatment']
+            for injury in injuries_treated_elsewhere:
+                if injury in swapping_codes:
+                    swapping_codes.remove(injury)
+
             relevant_codes = np.intersect1d(non_empty_injuries.values, swapping_codes)
             if len(relevant_codes) > 0:
                 road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, relevant_codes)
@@ -5249,24 +5177,26 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             columns, codes = \
                 road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, df.loc[person_id,
                                                                                                  'rt_injuries_to_cast'])
+            # check that for each injury to be treated by this event we have a corresponding column
             assert len(columns) == len(df.loc[person_id, 'rt_injuries_to_cast'])
+            # iterate over the columns of injuries treated here and assign a recovery date
             for col in columns:
                 # todo: update this with recovery times for casted broken hips/pelvis/femurs
                 # todo: update this with recovery times for casted dislocated hip
                 df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.date + \
                                                                                 DateOffset(weeks=7)
+                # make sure the assigned injury recovery date is in the future
                 assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
-            person_injuries = df.loc[person_id, RTI.INJURY_COLUMNS]
+            person_injuries = df.loc[person_id, untreated_injury_cols]
             non_empty_injuries = person_injuries[person_injuries != "none"]
             injury_columns = non_empty_injuries.keys()
-
+            orig_list = df.loc[person_id, 'rt_injuries_to_cast']
             for code in df.loc[person_id, 'rt_injuries_to_cast']:
                 columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, [code])[0])
                 assert not pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]), \
                     'no recovery date given for this injury'
-                # remove code from fracture cast list
-                if code in df.loc[person_id, 'rt_injuries_to_cast']:
-                    df.loc[person_id, 'rt_injuries_to_cast'].remove(code)
+            # remove codes from fracture cast list
+            df.at[person_id, 'rt_injuries_to_cast'] = []
         else:
             logger.debug(f"Person %d's has {fracturecastcounts + slingcounts} fractures without treatment",
                          person_id)

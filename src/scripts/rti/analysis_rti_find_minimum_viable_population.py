@@ -81,7 +81,7 @@ def tidy(x, n):
 
 # create a sample run which samples the dataframe for various size n, see when changes to result stop
 # create sample sizes
-sample_size_list = np.linspace(50000, 1000000, 100).tolist()
+sample_size_list = np.linspace(10000, 1000000, 100).tolist()
 sample_size_list = [int(sample) for sample in sample_size_list]
 save_path = "C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/MinimumViablePopulation/SingleSamplePerN/"
 summary_df = pd.DataFrame()
@@ -132,7 +132,7 @@ plt.title("The minimum viable population size for each estimate, based on \n"
 plt.savefig(save_path + 'Min_viab_pop_size_each_estimate.png')
 plt.clf()
 # create sample sizes
-sample_size_list = np.linspace(50000, 1000000, 10).tolist()
+sample_size_list = np.linspace(10000, 1000000, 20).tolist()
 sample_size_list = [int(sample) for sample in sample_size_list]
 # Create a dataframe to store the summary information from the samples
 summary_df = pd.DataFrame()

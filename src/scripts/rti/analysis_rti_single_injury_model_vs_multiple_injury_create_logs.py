@@ -45,7 +45,7 @@ yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 10000
+pop_size = 20000
 nsim = 2
 # Iterate over the number of simulations nsim
 log_file_location = './outputs/single_injury_model_vs_multiple_injury/'
@@ -355,6 +355,153 @@ for i in range(0, nsim):
     for col in rti_columns:
         yll_df['scaled_yll'] += yll_df[col] * scaling_df['scale_for_each_year']
     mult_list_extrapolated_yll.append(yll_df['scaled_yll'].sum())
+
+no_hs_inj_incidences_of_rti = []
+no_hs_inj_incidences_of_death = []
+no_hs_inj_incidences_of_injuries = []
+no_hs_inj_cause_of_death_in_sim = []
+no_hs_number_of_injuries = []
+no_hs_dalys = []
+no_hs_number_of_deaths = []
+no_hs_inpatient_days = []
+no_hs_percent_sought_care = []
+no_hs_number_of_surg = []
+no_hs_number_of_consumables = []
+no_hs_percent_perm_disability = []
+no_hs_fraction_of_healthsystem_usage = []
+no_hs_inj_icu_usage = []
+no_hs_list_extrapolated_deaths = []
+no_hs_list_extrapolated_dalys = []
+no_hs_list_extrapolated_yld = []
+no_hs_list_extrapolated_yll = []
+for i in range(0, nsim):
+    # Create the simulation object
+    sim = Simulation(start_date=start_date)
+    # Register the modules
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        rti.RTI(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    )
+    # Get the log file
+    logfile = sim.configure_logging(filename="LogFile_multiple_injury",
+                                    directory=log_file_location + "multiple_injury")
+    # create and run the simulation
+    sim.make_initial_population(n=pop_size)
+    # sim.modules['RTI'].parameters['rt_emergency_care_ISS_score_cut_off'] = 1
+    # Run the simulation
+    sim.simulate(end_date=end_date)
+    # Parse the logfile of this simulation
+    log_df = parse_log_file(logfile)
+    # Store the incidence of RTI per 100,000 person years in this sim
+    no_hs_inj_incidences_of_rti.append(log_df['tlo.methods.rti']['summary_1m']['incidence of rti per 100,000'].tolist())
+    # Store the incidence of death due to RTI per 100,000 person years and the sub categories in this sim
+    no_hs_inj_incidences_of_death.append(
+        log_df['tlo.methods.rti']['summary_1m']['incidence of rti death per 100,000'].tolist())
+    no_hs_inj_incidences_of_injuries.append(
+        log_df['tlo.methods.rti']['Inj_category_incidence']['number_of_injuries'].tolist())
+    deaths_in_sim = log_df['tlo.methods.demography']['death']
+    rti_deaths = deaths_in_sim.loc[deaths_in_sim['cause'] != 'Other']
+    no_hs_inj_cause_of_death_in_sim.append(rti_deaths['cause'].to_list())
+    no_hs_number_of_injuries.append(
+        log_df['tlo.methods.rti']['Inj_category_incidence']['number_of_injuries'].tolist())
+    dalys_df = log_df['tlo.methods.healthburden']['dalys']['Transport Injuries']
+    DALYs = dalys_df.sum()
+    no_hs_dalys.append(DALYs)
+    no_hs_number_of_deaths.append(log_df['tlo.methods.rti']['summary_1m']['number rti deaths'].sum())
+    inpatient_day_df = log_df['tlo.methods.healthsystem']['HSI_Event'].loc[
+        log_df['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'] == 'RTI_MedicalIntervention']
+    # iterate over the people in inpatient_day_df
+    for person in inpatient_day_df.index:
+        # Get the number of inpatient days per person, if there is a key error when trying to access inpatient days it
+        # means that this patient didn't require any so append (0)
+        try:
+            no_hs_inpatient_days.append(inpatient_day_df.loc[person, 'Number_By_Appt_Type_Code']['InpatientDays'])
+        except KeyError:
+            no_hs_inpatient_days.append(0)
+    hsb_log = log_df['tlo.methods.rti']['summary_1m']['percent sought healthcare'].tolist()
+    percent_sought_healthcare = [i for i in hsb_log if i != 'none_injured']
+    ave_percent_sought_care = np.mean(percent_sought_healthcare)
+    no_hs_percent_sought_care.append(ave_percent_sought_care)
+    health_system_events = log_df['tlo.methods.healthsystem']['HSI_Event']
+    rti_events = ['RTI_MedicalIntervention', 'RTI_Shock_Treatment', 'RTI_Fracture_Cast', 'RTI_Open_Fracture_Treatment',
+                  'RTI_Suture', 'RTI_Burn_Management', 'RTI_Tetanus_Vaccine', 'RTI_Acute_Pain_Management',
+                  'RTI_Major_Surgeries', 'RTI_Minor_Surgeries']
+    rti_treatments = health_system_events.loc[health_system_events['TREATMENT_ID'].isin(rti_events)]
+    list_of_appt_footprints = rti_treatments['Number_By_Appt_Type_Code'].to_list()
+    num_surg = 0
+    for dictionary in list_of_appt_footprints:
+        if 'MajorSurg' in dictionary.keys():
+            num_surg += 1
+        if 'MinorSurg' in dictionary.keys():
+            num_surg += 1
+    no_hs_number_of_surg.append(num_surg)
+    # get the consumables used in each simulation
+    consumables_list = log_df['tlo.methods.healthsystem']['Consumables']['Item_Available'].tolist()
+    # Create empty list to store the consumables used in the simulation
+    consumables_list_to_dict = []
+    for string in consumables_list:
+        consumables_list_to_dict.append(ast.literal_eval(string))
+    # Begin counting the number of consumables used in the simulation starting at 0
+    number_of_consumables_in_sim = 0
+    for dictionary in consumables_list_to_dict:
+        number_of_consumables_in_sim += sum(dictionary.values())
+    no_hs_number_of_consumables.append(number_of_consumables_in_sim)
+    rti_demog = log_df['tlo.methods.rti']['rti_demography']
+    number_in_crashes = rti_demog['males_in_rti'] + rti_demog['females_in_rti']
+    number_perm_disabled = log_df['tlo.methods.rti']['summary_1m']['number permanently disabled'].iloc[-1]
+    percent_perm_disabled = number_perm_disabled / number_in_crashes
+    no_hs_percent_perm_disability.append(number_perm_disabled)
+    no_hs_fraction_of_healthsystem_usage.append(log_df['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'])
+    no_hs_inj_icu_usage.append(np.mean(
+        [i for i in log_df['tlo.methods.rti']['summary_1m']['percent admitted to ICU or HDU'].tolist() if i !=
+         'none_injured']
+    ))
+    data = pd.read_csv("resources/demography/ResourceFile_Pop_Annual_WPP.csv")
+    sim_start_year = sim.start_date.year
+    sim_end_year = sim.date.year
+    sim_year_range = pd.Index(np.arange(sim_start_year, sim_end_year))
+    Data_Pop = data.groupby(by="Year")["Count"].sum()
+    Data_Pop = Data_Pop.loc[sim_year_range]
+    model_pop_size = log_df['tlo.methods.demography']['population']['total']
+    scaling_df = pd.DataFrame(model_pop_size)
+    scaling_df['pred_pop_size'] = Data_Pop.to_list()
+    scaling_df['scale_for_each_year'] = scaling_df['pred_pop_size'] / scaling_df['total']
+    scaling_df.index = sim_year_range
+    rti_deaths = log_df['tlo.methods.demography']['death']
+    # calculate the total number of rti related deaths
+    # find deaths caused by RTI
+    rti_deaths = rti_deaths.loc[rti_deaths['label'] == 'Transport Injuries']
+    # create a column to show the year deaths occurred in
+    rti_deaths['year'] = rti_deaths['date'].dt.year.to_list()
+    # group by the year and count how many deaths ocurred
+    rti_deaths = rti_deaths.groupby('year').count()
+    # calculate extrapolated number of deaths
+    rti_deaths['estimated_n_deaths'] = rti_deaths['cause'] * scaling_df.loc[rti_deaths.index, 'scale_for_each_year']
+    # store the extrapolated number of deaths over the course of the sim
+    no_hs_list_extrapolated_deaths.append(rti_deaths['estimated_n_deaths'].sum())
+    dalys_df = log_df['tlo.methods.healthburden']['dalys']
+    dalys_df = dalys_df.groupby('year').sum()
+    dalys_df['extrapolated_dalys'] = dalys_df['Transport Injuries'] * scaling_df['scale_for_each_year']
+    dalys_df = dalys_df.loc[~pd.isnull(dalys_df['extrapolated_dalys'])]
+    no_hs_list_extrapolated_dalys.append(dalys_df['extrapolated_dalys'].sum())
+    yld_df = log_df['tlo.methods.healthburden']['yld_by_causes_of_disability'].groupby('year').sum()
+    yld_df['scaled_yld'] = yld_df['RTI'] * scaling_df['scale_for_each_year']
+    yld_df = yld_df.dropna()
+    no_hs_list_extrapolated_yld.append(yld_df['scaled_yld'].sum())
+    yll_df = log_df['tlo.methods.healthburden']['yll_by_causes_of_death'].groupby('year').sum()
+    rti_columns = [col for col in yll_df.columns if 'RTI' in col]
+    yll_df['scaled_yll'] = [0.0] * len(yll_df)
+    for col in rti_columns:
+        yll_df['scaled_yll'] += yll_df[col] * scaling_df['scale_for_each_year']
+    no_hs_list_extrapolated_yll.append(yll_df['scaled_yll'].sum())
 # Create a results dictionary to save results in
 single_injury_results = {}
 multiple_injury_results = {}
@@ -871,26 +1018,27 @@ yerr = [
     [sing_std_consumables, mult_std_consumables],
     [sing_std_surgeries, mult_std_surgeries]
 ]
-titles = ['HSB', 'Inpatient day\nusage', 'ICU usage', 'Time usage', 'Consumables used', 'Surgeries\nperformed']
+titles = ['HSB', 'Inpatient day\nusage', 'ICU usage', 'Time usage', 'Consumables used', 'Surgeries performed']
 
 for i in range(0, len(data)):
     percent_increase = np.round((data[i][1] / data[i][0]) * 100 - 100, 2)
-    plt.subplot(3, 2, i + 1, aspect='equal')
+    plt.subplot(3, 2, i + 1)
     plt.bar(np.arange(len(data[i])), data[i], yerr=yerr[i], color='lightsteelblue')
     if i + 1 > 4:
         plt.xticks(np.arange(len(data[i])), ['Single\ninjury', 'Multiple\ninjury'])
-    plt.title(titles[i] + ", " + str(percent_increase) + "%", fontdict={'fontsize': 10})
-plt.tight_layout()
+    else:
+        plt.xticks([], [])
+    plt.title(titles[i] + ", " + str(percent_increase) + "%", fontdict={'fontsize': 6})
 plt.savefig(save_file_path + f"Single_vs_multiple_injury_model_comp_all_{imm_death}.png",
             bbox_inches='tight')
-
+plt.clf()
 for i in range(0, len(data)):
     percent_increase = np.round((data[i][1] / data[i][0]) * 100 - 100, 2)
-    plt.subplot(2, 3, i + 1, aspect='equal')
+    plt.subplot(2, 3, i + 1)
     plt.bar(np.arange(len(data[i])), data[i], yerr=yerr[i], color='lightsteelblue')
-    if i + 1 > 4:
+    if i + 1 > 3:
         plt.xticks(np.arange(len(data[i])), ['Single\ninjury', 'Multiple\ninjury'])
     plt.title(titles[i] + ", " + str(percent_increase) + "%", fontdict={'fontsize': 10})
-plt.tight_layout()
 plt.savefig(save_file_path + f"Single_vs_multiple_injury_model_comp_all_alt_{imm_death}.png",
             bbox_inches='tight')
+plt.clf()
