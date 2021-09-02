@@ -6,9 +6,8 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging, util, Date
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata
+from tlo.methods import Metadata, labour
 from tlo.methods.causes import Cause
-from tlo.methods.labour import LabourOnsetEvent
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -42,6 +41,11 @@ class PregnancySupervisor(Module):
 
         # This variable will store a Bitset handler for the property ps_abortion_complications
         self.abortion_complications = None
+
+    INIT_DEPENDENCIES = {'Demography'}
+    ADDITIONAL_DEPENDENCIES = {
+        'CareOfWomenDuringPregnancy', 'Contraception', 'HealthSystem', 'Lifestyle'
+    }
 
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHBURDEN}
@@ -1663,7 +1667,7 @@ class PregnancySupervisor(Module):
                                              f'{new_due_date}')
 
             # And the labour onset event is scheduled for the new due date
-            self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person),
+            self.sim.schedule_event(labour.LabourOnsetEvent(self.sim.modules['Labour'], person),
                                     new_due_date)
 
     def update_variables_post_still_birth_for_data_frame(self, women):

@@ -47,6 +47,17 @@ class Labour(Module):
         self.possible_intrapartum_complications = list()
         self.possible_postpartum_complications = list()
 
+    INIT_DEPENDENCIES = {
+        'Demography', 'Lifestyle', 'HealthSystem', 'PregnancySupervisor'
+    }
+
+    ADDITIONAL_DEPENDENCIES = {
+        'CareOfWomenDuringPregnancy',
+        'Contraception',
+        'NewbornOutcomes',
+        'PostnatalSupervisor'
+    }
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,

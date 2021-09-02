@@ -34,6 +34,9 @@ class HealthSeekingBehaviour(Module):
 
     """
 
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+    ADDITIONAL_DEPENDENCIES = {'Lifestyle'}
+
     # Declare Metadata
     METADATA = {Metadata.USES_HEALTHSYSTEM}
 
@@ -270,11 +273,14 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 emergency_care_seeking_subgroup = self._select_persons_with_any_symptoms(
                     subgroup, emergency_symptoms
                 )
-                for person_id in emergency_care_seeking_subgroup.index:
-                    hsi_event = emergency_hsi_event_class(module, person_id=person_id)
-                    health_system.schedule_hsi_event(
-                        hsi_event, priority=0, topen=self.sim.date, tclose=None
-                    )
+                health_system.schedule_batch_of_individual_hsi_events(
+                    hsi_event_class=emergency_hsi_event_class,
+                    person_ids=emergency_care_seeking_subgroup.index,
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None,
+                    module=module
+                )
             # Check if no symptoms initiating (non-emergency) care seeking specified
             if len(care_seeking_symptoms) == 0:
                 continue
@@ -289,11 +295,14 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             if module.force_any_symptom_to_lead_to_healthcareseeking:
                 # This HSB module flag causes a generic non-emergency appointment to be
                 # scheduled for any symptom immediately
-                for person_id in possibly_care_seeking_subgroup.index:
-                    hsi_event = routine_hsi_event_class(module, person_id=person_id)
-                    health_system.schedule_hsi_event(
-                        hsi_event, priority=0, topen=self.sim.date, tclose=None
-                    )
+                health_system.schedule_batch_of_individual_hsi_events(
+                    hsi_event_class=routine_hsi_event_class,
+                    person_ids=possibly_care_seeking_subgroup.index,
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None,
+                    module=module
+                )
             else:
                 # All in-patients with symptoms always generate a HSI event
                 care_seeking_inpatients = possibly_care_seeking_subgroup[
@@ -321,8 +330,11 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                         np.array(self.sim.date, dtype='datetime64[D]')
                         + module.rng.randint(0, max_delay, size=len(care_seeking_ids))
                     )
-                    for person_id, date in zip(care_seeking_ids, care_seeking_dates):
-                        hsi_event = routine_hsi_event_class(module, person_id=person_id)
-                        health_system.schedule_hsi_event(
-                            hsi_event, priority=0, topen=Date(date), tclose=None
-                        )
+                    health_system.schedule_batch_of_individual_hsi_events(
+                        hsi_event_class=routine_hsi_event_class,
+                        person_ids=care_seeking_ids,
+                        priority=0,
+                        topen=map(Date, care_seeking_dates),
+                        tclose=None,
+                        module=module
+                    )

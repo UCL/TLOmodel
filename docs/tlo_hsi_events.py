@@ -6,226 +6,29 @@ import inspect
 import json
 import os.path
 import pkgutil
+from typing import Any, Iterable, List, Mapping, Set
 import warnings
 from pathlib import Path
 
 import tlo.methods
 from tlo import Date, Module, Simulation
-from tlo.methods import (
-    alri,
-    bladder_cancer,
-    breast_cancer,
-    cardio_metabolic_disorders,
-    care_of_women_during_pregnancy,
-    contraception,
-    demography,
-    depression,
-    diarrhoea,
-    dx_algorithm_adult,
-    dx_algorithm_child,
-    enhanced_lifestyle,
-    epi,
-    epilepsy,
-    healthburden,
-    healthseekingbehaviour,
-    healthsystem,
-    hiv,
-    labour,
-    malaria,
-    measles,
-    newborn_outcomes,
-    oesophagealcancer,
-    other_adult_cancers,
-    postnatal_supervisor,
-    pregnancy_supervisor,
-    prostate_cancer,
-    symptommanager,
+from tlo.dependencies import (
+    get_dependencies_and_initialise, get_module_class_map, is_valid_tlo_module_subclass
 )
+from tlo.methods import alri, healthseekingbehaviour, hiv
 from tlo.methods.healthsystem import HSI_Event, HSIEventDetails
 
-# Dependencies of each Module subclass on other Module subclasses
-module_dependencies = {
-    alri.Alri: (
-        demography.Demography,
-        healthsystem.HealthSystem,
-        symptommanager.SymptomManager,
-    ),
-    bladder_cancer.BladderCancer: (
-        demography.Demography,
-        enhanced_lifestyle.Lifestyle,
-        healthsystem.HealthSystem,
-        symptommanager.SymptomManager,
-    ),
-    breast_cancer.BreastCancer: (
-        demography.Demography,
-        healthsystem.HealthSystem,
-        symptommanager.SymptomManager,
-    ),
-    cardio_metabolic_disorders.CardioMetabolicDisorders: (
-        demography.Demography,
-        enhanced_lifestyle.Lifestyle,
-        healthsystem.HealthSystem,
-        symptommanager.SymptomManager,
-    ),
-    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy: (
-        demography.Demography,
-        healthsystem.HealthSystem,
-        pregnancy_supervisor.PregnancySupervisor,
-    ),
-    contraception.Contraception: (
-        demography.Demography,
-    ),
-    demography.Demography: (),
-    depression.Depression: (
-        demography.Demography,
-        enhanced_lifestyle.Lifestyle,
-        contraception.Contraception,
-        healthsystem.HealthSystem,
-        symptommanager.SymptomManager,
-    ),
-    diarrhoea.Diarrhoea: (
-        demography.Demography,
-        enhanced_lifestyle.Lifestyle,
-        healthsystem.HealthSystem,
-        symptommanager.SymptomManager,
-    ),
-    dx_algorithm_adult.DxAlgorithmAdult: (),
-    dx_algorithm_child.DxAlgorithmChild: (),
-    enhanced_lifestyle.Lifestyle: {
-        demography.Demography,
-    },
-    epi.Epi: (
-        demography.Demography,
-        healthsystem.HealthSystem,
-    ),
-    epilepsy.Epilepsy: (
-        demography.Demography,
-        healthsystem.HealthSystem,
-    ),
-    healthburden.HealthBurden: (
-        demography.Demography,
-    ),
-    healthsystem.HealthSystem: (
-        demography.Demography,
-    ),
-    healthseekingbehaviour.HealthSeekingBehaviour: (
-        demography.Demography,
-        healthsystem.HealthSystem,
-        symptommanager.SymptomManager,
-    ),
-    hiv.Hiv: (
-        demography.Demography,
-        enhanced_lifestyle.Lifestyle,
-        healthsystem.HealthSystem,
-        symptommanager.SymptomManager,
-    ),
-    labour.Labour: (
-        demography.Demography,
-        enhanced_lifestyle.Lifestyle,
-        healthsystem.HealthSystem,
-    ),
-    malaria.Malaria: (
-        demography.Demography,
-        contraception.Contraception,
-        healthsystem.HealthSystem,
-        symptommanager.SymptomManager,
-    ),
-    measles.Measles: (
-        demography.Demography,
-        healthsystem.HealthSystem,
-        symptommanager.SymptomManager,
-    ),
-    newborn_outcomes.NewbornOutcomes: (
-        demography.Demography,
-        healthsystem.HealthSystem,
-        symptommanager.SymptomManager,
-    ),
-    oesophagealcancer.OesophagealCancer: (
-        demography.Demography,
-        enhanced_lifestyle.Lifestyle,
-        healthsystem.HealthSystem,
-        symptommanager.SymptomManager,
-    ),
-    other_adult_cancers.OtherAdultCancer: (
-        demography.Demography,
-        healthsystem.HealthSystem,
-        symptommanager.SymptomManager,
-    ),
-    pregnancy_supervisor.PregnancySupervisor: (
-        demography.Demography,
-    ),
-    postnatal_supervisor.PostnatalSupervisor: (
-        demography.Demography,
-        healthsystem.HealthSystem,
-    ),
-    prostate_cancer.ProstateCancer: (
-        demography.Demography,
-        healthsystem.HealthSystem,
-        symptommanager.SymptomManager,
-    ),
-    symptommanager.SymptomManager: (
-        demography.Demography,
-    ),
-}
 
-
-def topological_sort(initial_nodes, dependencies):
-    """Generator which yields topological sorting of a dependency graph.
-
-    A topological sort is ordered such that any dependencies of a node are guaranteed
-    to be yielded before the node itself. This implementation uses a depth-first search
-    algorithm (https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search).
-
-    :param initial_nodes: The set of nodes to seed topological sort with. The yielded
-        nodes will consist fo all nodes in this set and their (recursive) dependencies.
-    :param dependencies: Dictionary defining dependency graph. Keys are nodes of graph
-        and corresponding values the nodes which are its dependencies. The dependencies
-        of a node are guaranteed to be yielded before the node itself.
-    """
-    visited, currently_processing = set(), set()
-
-    def depth_first_search(node):
-        if node not in visited:
-            if node in currently_processing:
-                raise RuntimeError('Dependency graph has a cycle.')
-            currently_processing.add(node)
-            for dependency in dependencies[node]:
-                yield from depth_first_search(dependency)
-            currently_processing.remove(node)
-            visited.add(node)
-            yield node
-
-    for node in initial_nodes:
-        yield from depth_first_search(node)
-
-
-def init_simulation(module_classes, init_population=10, resourcefilepath='resources'):
-    """Register modules and dependencies in simulation and initialise population."""
-    # Setting show_progress_bar=True hacky way to disable all log output to stdout
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=1, show_progress_bar=True)
-    # Register modules in by order corresponding to topological sort of dependency graph
-    sim.register(
-        *(
-            module_class(resourcefilepath=resourcefilepath)
-            for module_class in topological_sort(module_classes, module_dependencies)
-        ),
-    )
-    # Initialise a small population for events that access population dataframe
-    sim.make_initial_population(n=init_population)
-    return sim
-
-
-def is_valid_tlo_module_class(obj):
-    """Whether an object is a *strict* subclass of Module"""
-    return inspect.isclass(obj) and issubclass(obj, Module) and obj is not Module
-
-
-def is_valid_hsi_event_class(obj):
+def is_valid_hsi_event_subclass(obj: Any) -> bool:
     """Whether an object is a *strict* subclass of HSI_Event"""
     return inspect.isclass(obj) and issubclass(obj, HSI_Event) and obj is not HSI_Event
 
 
-def get_hsi_event_classes_per_module(excluded_modules):
+def get_hsi_event_classes_per_module(
+    excluded_modules: Set[str],
+    zero_module_class_map: Mapping[str, Module],
+    multiple_module_class_map: Mapping[str, Module],
+) -> Mapping[Module, List[HSI_Event]]:
     """Get details of HSI event classes for each (non-excluded) module in tlo.methods"""
     methods_package_path = os.path.dirname(inspect.getfile(tlo.methods))
     hsi_event_classes_per_module = {}
@@ -236,42 +39,66 @@ def get_hsi_event_classes_per_module(excluded_modules):
         module = importlib.import_module(f'tlo.methods.{module_name}')
         tlo_module_classes = [
             obj for _, obj in inspect.getmembers(module)
-            if is_valid_tlo_module_class(obj)
+            if is_valid_tlo_module_subclass(obj, excluded_modules)
         ]
         hsi_event_classes = [
             obj for _, obj in inspect.getmembers(module)
-            if is_valid_hsi_event_class(obj) and inspect.getmodule(obj) is module
+            if is_valid_hsi_event_subclass(obj) and inspect.getmodule(obj) is module
         ]
         if len(hsi_event_classes) == 0:
             # No HSI events defined so skip
             continue
         if len(tlo_module_classes) == 1:
             tlo_module_class = tlo_module_classes[0]
-        elif len(tlo_module_classes) == 0 and module_name == 'hsi_generic_first_appts':
-            # Assume generic first appointments generated by HealthSeekingBehaviour
-            # In reality HSI_GenericEmergencyFirstApptAtFacilityLevel1 may also be
-            # generate by Labour or PregnancySupervisor currently
-            tlo_module_class = healthseekingbehaviour.HealthSeekingBehaviour
-        elif len(tlo_module_classes) == 2 and module_name == 'hiv':
-            # Use full HIV module rather than dummy module
-            tlo_module_class = hiv.Hiv
-        elif len(tlo_module_classes) == 2 and module_name == 'alri':
-            tlo_module_class = alri.Alri
+        elif len(tlo_module_classes) == 0 and module_name in zero_module_class_map:
+            tlo_module_class = zero_module_class_map[module_name]
+        elif len(tlo_module_classes) > 1 and module_name in multiple_module_class_map:
+            tlo_module_class = multiple_module_class_map[module_name]
         else:
             raise RuntimeError(
                 f'Module {module_name} defines HSI events but contains '
                 f'{len(tlo_module_classes)} TLO Module classes and no specific '
-                f'exception rule has been defined.'
+                'exceptions have been defined in `zero_module_class_map` or '
+                '`multiple_module_class_map`.'
             )
         hsi_event_classes_per_module[tlo_module_class] = hsi_event_classes
     return hsi_event_classes_per_module
 
 
-def get_details_of_defined_hsi_events():
-    """Get details of all HSI events defined in `tlo.methods`."""
-    excluded_modules = {'mockitis', 'chronicsyndrome', 'skeleton'}
-    hsi_event_classes_per_module = get_hsi_event_classes_per_module(excluded_modules)
-    sim = init_simulation(hsi_event_classes_per_module.keys())
+def get_details_of_defined_hsi_events(
+    excluded_modules: Set[str],
+    zero_module_class_map: Mapping[str, Module],
+    multiple_module_class_map: Mapping[str, Module],
+    init_population: int,
+    resource_file_path: str,
+) -> Set[HSIEventDetails]:
+    """Get details of all HSI events defined in `tlo.methods`.
+
+    :param excluded_modules: Set of tlo.methods module names to not search for HSI
+        events in.
+    :param zero_module_class_map: Map from ``tlo.methods`` module name to ``Module ``
+        subclass to use for HSI events in module for modules with no ``Module``
+        subclasses defined in module.
+    :param multiple_module_class_map: Map from tlo.methods module name to ``Module``
+        subclass to use for HSI events in module for modules with multiple ``Module``
+        subclasses defined.
+    """
+    hsi_event_classes_per_module = get_hsi_event_classes_per_module(
+        excluded_modules, zero_module_class_map, multiple_module_class_map
+    )
+    # Setting show_progress_bar=True hacky way to disable all log output to stdout
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=1, show_progress_bar=True)
+    # Register modules and their dependencies
+    sim.register(
+        *get_dependencies_and_initialise(
+            *hsi_event_classes_per_module.keys(),
+            module_class_map=get_module_class_map(excluded_modules),
+            excluded_modules=excluded_modules,
+            resourcefilepath=resource_file_path
+        ),
+    )
+    # Initialise a small population for events that access population dataframe
+    sim.make_initial_population(n=init_population)
     details_of_defined_hsi_events = set()
     for tlo_module_class, hsi_event_classes in hsi_event_classes_per_module.items():
         module = sim.modules[tlo_module_class.__name__]
@@ -310,7 +137,9 @@ def get_details_of_defined_hsi_events():
     return details_of_defined_hsi_events
 
 
-def sort_hsi_event_details(set_of_hsi_event_details):
+def sort_hsi_event_details(
+    set_of_hsi_event_details: Iterable[HSIEventDetails]
+) -> List[HSIEventDetails]:
     """Hierarchically sort set of HSI event details."""
     return sorted(
         set_of_hsi_event_details,
@@ -387,7 +216,10 @@ def _format_treatment_id(treatment_id, module_name, inline_code_formatter):
     return inline_code_formatter(treatment_id)
 
 
-def format_hsi_event_details_as_table(hsi_event_details, text_format='rst'):
+def format_hsi_event_details_as_table(
+    hsi_event_details: Iterable[HSIEventDetails],
+    text_format: str = 'rst'
+) -> str:
     """Format HSI event details into a table."""
     formatters = _formatters[text_format]
     table_string = formatters['table_header'](
@@ -413,7 +245,10 @@ def format_hsi_event_details_as_table(hsi_event_details, text_format='rst'):
     return table_string
 
 
-def format_hsi_event_details_as_list(hsi_event_details, text_format='rst'):
+def format_hsi_event_details_as_list(
+    hsi_event_details: Iterable[HSIEventDetails],
+    text_format: str = 'rst'
+) -> str:
     """Format HSI event details into per module lists."""
     formatters = _formatters[text_format]
     event_details_by_module = {}
@@ -442,7 +277,10 @@ def format_hsi_event_details_as_list(hsi_event_details, text_format='rst'):
     return list_string
 
 
-def merge_hsi_event_details(inspect_hsi_event_details, run_hsi_event_details):
+def merge_hsi_event_details(
+    inspect_hsi_event_details: Iterable[HSIEventDetails],
+    run_hsi_event_details: Iterable[HSIEventDetails],
+) -> Set[HSIEventDetails]:
     """Merge HSI event details collected using `inspect` and from simulation run."""
     # Create set of event details from simulation run, excluding facility level from
     # entries to allow matching event details from inspect of `tlo.methods` for which
@@ -528,8 +366,27 @@ if __name__ == '__main__':
         )
         print(f'HSI events loaded from JSON file {args.json_file}.')
     if args.json_file is None or args.merge_json_details:
+        # Set of tlo.methods module names to not search for HSI events in
+        excluded_modules = {'mockitis', 'chronicsyndrome', 'skeleton'}
+        # Map from tlo.methods module name to Module subclass to use for HSI events in
+        # module for modules with no Module subclasses defined in module
+        zero_module_class_map = {
+            # Assume generic first appointments generated by HealthSeekingBehaviour
+            # In reality HSI_GenericEmergencyFirstApptAtFacilityLevel1 may also be
+            # generate by Labour or PregnancySupervisor currently
+            'hsi_generic_first_appts': healthseekingbehaviour.HealthSeekingBehaviour
+        }
+        # Map from tlo.methods module name to Module subclass to use for HSI events in
+        # module for modules with multiple Module subclasses defined
+        multiple_module_class_map = {'hiv': hiv.Hiv, 'alri': alri.Alri}
         print('Getting details of defined HSI events by inspecting tlo.methods...')
-        inspect_hsi_event_details = get_details_of_defined_hsi_events()
+        inspect_hsi_event_details = get_details_of_defined_hsi_events(
+            excluded_modules=excluded_modules,
+            zero_module_class_map=zero_module_class_map,
+            multiple_module_class_map=multiple_module_class_map,
+            init_population=10,
+            resource_file_path='resources'
+        )
         print('...done.\n')
     if args.merge_json_details:
         hsi_event_details = merge_hsi_event_details(

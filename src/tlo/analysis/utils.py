@@ -619,4 +619,4 @@ def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
     gbd = gbd.add_prefix('GBD_')
 
     # 3) Return summary
-    return gbd.merge(model, left_index=True, right_index=True, how='left')
+    return gbd.merge(model, on=['period', 'sex', 'age_grp', 'label'], how='left')

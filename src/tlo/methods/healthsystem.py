@@ -9,16 +9,16 @@ Todo:   - speed up
 """
 
 import heapq as hp
-import inspect
 from collections import Counter, defaultdict
+from itertools import repeat
 from pathlib import Path
-from typing import NamedTuple, Optional, Tuple
+from typing import Iterable, NamedTuple, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
 
 import tlo
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.dxmanager import DxManager
@@ -48,6 +48,41 @@ class HSIEventDetails(NamedTuple):
     appt_footprint: Tuple
 
 
+class HSIEventQueueItem(NamedTuple):
+    """Properties of event added to health system queue.
+
+    The order of the attributes in the tuple is important as the queue sorting is done
+    by the order of the items in the tuple, i.e. first by `priority`, then `topen` and
+    so on.
+    """
+    priority: int
+    topen: Date
+    queue_counter: int
+    tclose: Date
+    # Define HSI_Event type as string to avoid NameError exception as HSI_Event defined
+    # later in module (see https://stackoverflow.com/a/36286947/4798943)
+    hsi_event: 'HSI_Event'
+
+
+def _accepts_argument(function: callable, argument: str) -> bool:
+    """Helper to test if callable object accepts an argument with a given name.
+
+    Compared to using `inspect.signature` or `inspect.getfullargspec` the approach here
+    has significantly less overhead (as a full `Signature` or `FullArgSpec` object
+    does not need to constructed) but is also less readable hence why it has been
+    wrapped as a helper function despite being only one-line to make its functionality
+    more obvious.
+
+    :param function: Callable object to check if argument is present in.
+    :param argument: Name of argument to check.
+    :returns: ``True`` is ``argument`` is an argument of ``function`` else ``False``.
+    """
+    # co_varnames include both arguments to function and any internally defined variable
+    # names hence we check only in the first `co_argcount` items which correspond to
+    # just the arguments
+    return argument in function.__code__.co_varnames[:function.__code__.co_argcount]
+
+
 class HealthSystem(Module):
     """
     This is the Health System Module
@@ -62,6 +97,8 @@ class HealthSystem(Module):
         "general_bed",
         "non_bed_space",
     ]
+
+    INIT_DEPENDENCIES = {'Demography'}
 
     PARAMETERS = {
         'Officer_Types': Parameter(Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),
@@ -416,25 +453,34 @@ class HealthSystem(Module):
         """
         raise NotImplementedError
 
-    def schedule_hsi_event(self, hsi_event, priority, topen, tclose=None):
+    def schedule_hsi_event(
+        self, hsi_event, priority, topen, tclose=None, do_hsi_event_checks=True
+    ):
         """
-        Schedule the health system interaction event
+        Schedule a health system interaction (HSI) event.
 
-        :param hsi_event: the hsi_event to be scheduled
-        :param priority: the priority for the hsi event (0 (highest), 1 or 2 (lowest)
-        :param topen: the earliest date at which the hsi event should run
-        :param tclose: the latest date at which the hsi event should run
+        :param hsi_event: The HSI event to be scheduled.
+        :param priority: The priority for the HSI event (0 (highest), 1 or 2 (lowest)
+        :param topen: The earliest date at which the HSI event should run
+        :param tclose: The latest date at which the HSI event should run. Set to one
+           week after ``topen`` if ``None``.
+        :param do_hsi_event_checks: Whether to perform sanity checks on the passed
+            ``hsi_event`` argument to check that it constitutes a valid HSI event. This
+            is intended for allowing disabling of these checks when scheduling multiple
+            HSI events of the same ``HSI_Event`` subclass together, in which case
+            typically performing these checks for each individual HSI event of the
+            shared type will be redundant.
         """
 
         logger.debug(
             key='message',
-            data=f"HealthSystem.schedule_event >> "
-                 f"Logging a request for an HSI: {hsi_event.TREATMENT_ID} for person: {hsi_event.target}"
+            data=(
+                "HealthSystem.schedule_event >> Logging a request for an HSI: "
+                f"{hsi_event.TREATMENT_ID} for person: {hsi_event.target}"
+            )
         )
 
-        assert isinstance(hsi_event, HSI_Event)
-
-        # 0) Check if healthsystem is disabled
+        # Check if healthsystem is disabled
         if self.disable and (not self.disable_and_reject_all):
             # If healthsystem is disabled (but HSI can still run), ...
             #   ... put this event straight into the normal simulation scheduler.
@@ -445,48 +491,6 @@ class HealthSystem(Module):
             # If healthsystem is disabled and HSI should not run, do nothing.
             return
 
-        # 1) Check that this is a legitimate health system interaction (HSI) event
-
-        if isinstance(hsi_event.target, tlo.population.Population):  # check if hsi_event is population-scoped
-            # This is a population-scoped HSI event...
-            # ... So it only needs TREATMENT_ID (the other items are ignored)
-            assert ('TREATMENT_ID' in dir(hsi_event)) and (hsi_event.TREATMENT_ID != '')
-
-        else:
-            # This is an individual-scoped HSI event.
-            # It must have EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT, ACCEPTED_FACILITY_LEVELS and
-            # ALERT_OTHER_DISEASES defined
-
-            # Correctly formatted footprint
-            assert ('TREATMENT_ID' in dir(hsi_event)) and (hsi_event.TREATMENT_ID != '')
-
-            # Correct formated EXPECTED_APPT_FOOTPRINT
-            assert 'EXPECTED_APPT_FOOTPRINT' in dir(hsi_event)
-            assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT)
-
-            # That it has an 'ACCEPTED_FACILITY_LEVEL' attribute
-            # (Integer specificying the facility level at which HSI_Event must occur)
-            assert 'ACCEPTED_FACILITY_LEVEL' in dir(hsi_event)
-            assert type(hsi_event.ACCEPTED_FACILITY_LEVEL) is int
-            assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels
-
-            assert 'BEDDAYS_FOOTPRINT' in dir(hsi_event)
-            self.check_beddays_footrpint_format(hsi_event.BEDDAYS_FOOTPRINT)
-
-            # That it has a list for the other disease that will be alerted when it is run and that this make sense
-            assert 'ALERT_OTHER_DISEASES' in dir(hsi_event)
-            assert type(hsi_event.ALERT_OTHER_DISEASES) is list
-
-            if len(hsi_event.ALERT_OTHER_DISEASES) > 0:
-                if not (hsi_event.ALERT_OTHER_DISEASES[0] == '*'):
-                    for d in hsi_event.ALERT_OTHER_DISEASES:
-                        assert d in self.recognised_modules_names
-
-            # Check that this can accept the squeeze argument
-            assert 'squeeze_factor' in inspect.getfullargspec(hsi_event.run).args
-
-        # 2) Check that topen, tclose and priority are valid
-
         # If there is no specified tclose time then set this to a week after topen
         if tclose is None:
             tclose = topen + DateOffset(days=7)
@@ -494,13 +498,86 @@ class HealthSystem(Module):
         # Check topen is not in the past
         assert topen >= self.sim.date
 
-        # Check that topen is before tclose are not the same date
-        assert topen < tclose
-
-        # Check that priority is either 0, 1 or 2
+        # Check that priority is in valid range
         assert priority in {0, 1, 2}
 
-        # 3) Check that this request is allowable under current policy (i.e. included in service_availability)
+        # Check that topen is strictly before tclose
+        assert topen < tclose
+
+        # Check that this is a legitimate health system interaction (HSI) event
+        # These checks are only performed when the flag `do_hsi_event_checks` is set
+        # to ``True`` to allow disabling when the checks are redundant for example when
+        # scheduling multiple HSI events of same `HSI_Event` subclass
+        if do_hsi_event_checks:
+
+            assert isinstance(hsi_event, HSI_Event)
+
+            # Check that non-empty treatment ID specified (required for both population
+            # and individual scoped events)
+            assert hsi_event.TREATMENT_ID != ''
+
+            if not isinstance(hsi_event.target, tlo.population.Population):
+                # This is an individual-scoped HSI event.
+                # It must have EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT,
+                # ACCEPTED_FACILITY_LEVELS and ALERT_OTHER_DISEASES defined
+
+                # Correct formated EXPECTED_APPT_FOOTPRINT
+                assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT)
+
+                # That it has an 'ACCEPTED_FACILITY_LEVEL' attribute
+                # (Integer specificying the facility level at which HSI_Event must occur)
+                assert isinstance(hsi_event.ACCEPTED_FACILITY_LEVEL, int)
+                assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels
+
+                self.check_beddays_footrpint_format(hsi_event.BEDDAYS_FOOTPRINT)
+
+                # That it has a list for the other disease that will be alerted when it
+                # is run and that this make sense
+                assert isinstance(hsi_event.ALERT_OTHER_DISEASES, Sequence)
+
+                if len(hsi_event.ALERT_OTHER_DISEASES) > 0:
+                    if not (hsi_event.ALERT_OTHER_DISEASES[0] == '*'):
+                        for d in hsi_event.ALERT_OTHER_DISEASES:
+                            assert d in self.recognised_modules_names
+
+                # Check that this can accept the squeeze argument
+                assert _accepts_argument(hsi_event.run, 'squeeze_factor')
+
+                # Check that at least one type of appointment is required
+                assert len(hsi_event.EXPECTED_APPT_FOOTPRINT) > 0, (
+                    'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
+                )
+                # Check that the event does not request an appointment at a facility
+                # level which is not possible
+                appt_type_to_check_list = hsi_event.EXPECTED_APPT_FOOTPRINT.keys()
+                facility_appt_types = self.parameters['ApptType_By_FacLevel'][
+                    hsi_event.ACCEPTED_FACILITY_LEVEL
+                ]
+                assert facility_appt_types.issuperset(appt_type_to_check_list), (
+                    f"An appointment type has been requested at a facility level for "
+                    f"which it is not possible: {hsi_event.TREATMENT_ID}"
+                )
+
+        # Check that event (if individual level) is able to run with this configuration
+        # of officers (i.e. check that this does not demand officers that are never
+        # available at a particular facility). This is run irrespective of the value of
+        # _do_hsi_event_checks as the appointment footprint time request depends on the
+        # district of residence of the HSI event's target and so the time requests can
+        # differ for each instance of an HSI_Event subclass even when their other
+        # attributes are shared
+        if not isinstance(hsi_event.target, tlo.population.Population):
+            footprint = self.get_appt_footprint_as_time_request(hsi_event=hsi_event)
+            if not self._officers_with_availability.issuperset(footprint.keys()):
+                logger.warning(
+                    key="message",
+                    data=(
+                        "The expected footprint is not possible with the configuration "
+                        f"of officers: {hsi_event.TREATMENT_ID}."
+                    )
+                )
+
+        # Check that this request is allowable under current policy (i.e. included in
+        # service_availability)
         allowed = False
         if not self.service_availability:  # it's an empty list
             allowed = False
@@ -521,33 +598,6 @@ class HealthSystem(Module):
                         allowed = True
                         break
 
-        # Further checks for HSI which are not population level events:
-        if type(hsi_event.target) is not tlo.population.Population:
-
-            # 4) Check that at least one type of appointment is required
-            assert len(hsi_event.EXPECTED_APPT_FOOTPRINT) > 0, (
-                'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
-            )
-            # 5) Check that the event does not request an appointment at a facility level which is not possible
-            appt_type_to_check_list = hsi_event.EXPECTED_APPT_FOOTPRINT.keys()
-            facility_appt_types = self.parameters['ApptType_By_FacLevel'][hsi_event.ACCEPTED_FACILITY_LEVEL]
-            assert facility_appt_types.issuperset(appt_type_to_check_list), (
-                f"An appointment type has been requested at a facility level for which "
-                f"it is not possible: {hsi_event.TREATMENT_ID}"
-            )
-            # 6) Check that event (if individual level) is able to run with this
-            # configuration of officers (i.e. check that this does not demand officers
-            # that are never available at a particular facility)
-            footprint = self.get_appt_footprint_as_time_request(hsi_event=hsi_event)
-            if not self._officers_with_availability.issuperset(footprint.keys()):
-                logger.warning(
-                    key="message",
-                    data=(
-                        "The expected footprint is not possible with the configuration "
-                        f"of officers: {hsi_event.TREATMENT_ID}."
-                    )
-                )
-
         #  Manipulate the priority level if needed
         # If ignoring the priority in scheduling, then over-write the provided priority information
         if self.ignore_priority:
@@ -566,7 +616,9 @@ class HealthSystem(Module):
             # Pos 3: tclose,
             # Pos 4: the hsi_event itself
 
-            new_request = (priority, topen, self.hsi_event_queue_counter, tclose, hsi_event)
+            new_request = HSIEventQueueItem(
+                priority, topen, self.hsi_event_queue_counter, tclose, hsi_event
+            )
             self.hsi_event_queue_counter += 1
 
             hp.heappush(self.HSI_EVENT_QUEUE, new_request)
@@ -591,6 +643,45 @@ class HealthSystem(Module):
                 key="message",
                 data=f"A request was made for a service but it was not included in the service_availability list:"
                      f" {hsi_event.TREATMENT_ID}"
+            )
+
+    def schedule_batch_of_individual_hsi_events(
+        self, hsi_event_class, person_ids, priority, topen, tclose=None, **event_kwargs
+    ):
+        """Schedule a batch of individual-scoped HSI events of the same type.
+
+        Only performs sanity checks on the HSI event for the first scheduled event
+        thus removing the overhead of multiple redundant checks.
+
+        :param hsi_event_class: The ``HSI_Event`` subclass of the events to schedule.
+        :param person_ids: A sequence of person ID index values to use as the targets
+            of the HSI events being scheduled.
+        :param priority: The priority for the HSI events: 0 (highest), 1 or 2 (lowest).
+            Either a single value for all events or an iterable of per-target values.
+        :param topen: The earliest date at which the HSI events should run. Either a
+            single value for all events or an iterable of per-target values.
+        :param tclose: The latest date at which the HSI events should run. Set to one
+           week after ``topen`` if ``None``. Either a single value for all events or an
+           iterable of per-target values.
+        :param event_kwargs: Any additional keyword arguments to pass to the
+            ``hsi_event_class`` initialiser in addition to ``person_id``.
+        """
+        # If any of {priority, topen, tclose} are iterable assume correspond to per-
+        # target values for corresponding arguments of schedule_hsi_event otherwise
+        # use same value for all calls
+        priorities = priority if isinstance(priority, Iterable) else repeat(priority)
+        topens = topen if isinstance(topen, Iterable) else repeat(topen)
+        tcloses = tclose if isinstance(tclose, Iterable) else repeat(tclose)
+        for i, (person_id, priority, topen, tclose) in enumerate(
+            zip(person_ids, priorities, topens, tcloses)
+        ):
+            self.schedule_hsi_event(
+                hsi_event=hsi_event_class(person_id=person_id, **event_kwargs),
+                priority=priority,
+                topen=topen,
+                tclose=tclose,
+                # Only perform checks for first event
+                do_hsi_event_checks=(i == 0)
             )
 
     def appt_footprint_is_valid(self, appt_footprint):
@@ -1389,16 +1480,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
             # Read the tuple and assemble into a dict 'next_event'
 
-            # Structure of tuple is:
-            # Pos 0: priority,
-            # Pos 1: topen,
-            # Pos 2: hsi_event_queue_counter,
-            # Pos 3: tclose,
-            # Pos 4: the hsi_event itself
+            event = next_event_tuple.hsi_event
 
-            event = next_event_tuple[4]
-
-            if self.sim.date > next_event_tuple[3]:
+            if self.sim.date > next_event_tuple.tclose:
                 # The event has expired (after tclose) having never been run. Call the 'never_ran' function
                 event.never_ran()
 
@@ -1407,11 +1491,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # if individual level event and the person who is the target is no longer alive, do nothing more
                 pass
 
-            elif self.sim.date < next_event_tuple[1]:
+            elif self.sim.date < next_event_tuple.topen:
                 # The event is not yet due (before topen), add to the hold-over list
                 hp.heappush(hold_over, next_event_tuple)
 
-                if next_event_tuple[0] == 2:
+                if next_event_tuple.priority == 2:
                     # Check the priority
                     # If the next event is not due and has low priority, then stop looking through the heapq
                     # as all other events will also not be due.
@@ -1432,7 +1516,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         while len(list_of_population_hsi_event_tuples_due_today) > 0:
             pop_level_hsi_event_tuple = list_of_population_hsi_event_tuples_due_today.pop()
 
-            pop_level_hsi_event = pop_level_hsi_event_tuple[4]
+            pop_level_hsi_event = pop_level_hsi_event_tuple.hsi_event
             pop_level_hsi_event.run(squeeze_factor=0)
             self.module.log_hsi_event(hsi_event=pop_level_hsi_event)
 
@@ -1450,7 +1534,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # each officer-type in each facility_id.
 
             footprints_of_all_individual_level_hsi_event = [
-                self.module.get_appt_footprint_as_time_request(hsi_event=(event_tuple[4]))
+                self.module.get_appt_footprint_as_time_request(hsi_event=(event_tuple.hsi_event))
                 for event_tuple in list_of_individual_hsi_event_tuples_due_today
             ]
 
@@ -1476,7 +1560,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
             # 6) For each event, determine if run or not, and run if so.
             for ev_num in range(len(list_of_individual_hsi_event_tuples_due_today)):
-                event = list_of_individual_hsi_event_tuples_due_today[ev_num][4]
+                event = list_of_individual_hsi_event_tuples_due_today[ev_num].hsi_event
                 squeeze_factor = squeeze_factor_per_hsi_event[ev_num]
 
                 ok_to_run = (

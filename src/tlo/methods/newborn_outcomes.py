@@ -46,6 +46,15 @@ class NewbornOutcomes(Module):
         # the main data frame
         self.newborn_care_info = dict()
 
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+
+    ADDITIONAL_DEPENDENCIES = {
+        'CareOfWomenDuringPregnancy',
+        'Labour',
+        'PostnatalSupervisor',
+        'PregnancySupervisor'
+    }
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,

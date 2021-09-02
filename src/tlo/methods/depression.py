@@ -28,6 +28,10 @@ class Depression(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
+    INIT_DEPENDENCIES = {
+        'Demography', 'Contraception', 'HealthSystem', 'Lifestyle', 'SymptomManager'
+    }
+
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,

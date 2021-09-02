@@ -49,6 +49,9 @@ class CareOfWomenDuringPregnancy(Module):
         # change between 2010 and 2020)
         self.current_parameters = dict()
 
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'PregnancySupervisor'}
+    ADDITIONAL_DEPENDENCIES = {'Contraception', 'Labour', 'Lifestyle'}
+
     METADATA = {
         Metadata.USES_HEALTHSYSTEM,
     }
