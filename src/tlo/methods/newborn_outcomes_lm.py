@@ -173,7 +173,7 @@ def predict_respiratory_distress_death(self, df, rng=None, **externals):
     """individual level"""
     person = df.iloc[0]
     params = self.parameters
-    result = params['cfr_rds_preterm']
+    result = params['cfr_respiratory_distress_syndrome']
 
     if person['nb_received_neonatal_resus']:
         result *= params['treatment_effect_resuscitation_preterm']

@@ -466,9 +466,8 @@ class NewbornOutcomes(Module):
             'early_onset_neonatal_sepsis_death': LinearModel.custom(
                 newborn_outcomes_lm.predict_neonatal_sepsis_death, parameters=params),
 
-
             # This equation is used to determine a preterm newborns risk of death due to respiratory distress syndrome
-            'respiratory_distress_death': LinearModel.custom(
+            'respiratory_distress_syndrome_death': LinearModel.custom(
                 newborn_outcomes_lm.predict_respiratory_distress_death, parameters=params)}
 
         # Finally we add this warning note to document that HIV testing will not occur if the correct module isnt
@@ -709,21 +708,22 @@ class NewbornOutcomes(Module):
                (~child.nb_preterm_respiratory_distress):
                 causes.append('neonatal_respiratory_depression')
 
-                if child.nb_early_preterm or child.nb_late_preterm:
-                    causes.append('preterm_other')
-                if child.nb_preterm_respiratory_distress:
-                    causes.append('respiratory_distress_syndrome')
+            if child.nb_early_preterm or child.nb_late_preterm:
+                causes.append('preterm_other')
 
-                if self.congeintal_anomalies.has_all(individual_id, 'heart'):
-                    causes.append('congenital_heart_anomaly')
-                if self.congeintal_anomalies.has_all(individual_id, 'limb_musc_skeletal'):
-                    causes.append('limb_or_musculoskeletal_anomaly')
-                if self.congeintal_anomalies.has_all(individual_id, 'urogenital'):
-                    causes.append('urogenital_anomaly')
-                if self.congeintal_anomalies.has_all(individual_id, 'digestive'):
-                    causes.append('digestive_anomaly')
-                if self.congeintal_anomalies.has_all(individual_id, 'other'):
-                    causes.append('other_anomaly')
+            if child.nb_preterm_respiratory_distress:
+                causes.append('respiratory_distress_syndrome')
+
+            if self.congeintal_anomalies.has_all(individual_id, 'heart'):
+                causes.append('congenital_heart_anomaly')
+            if self.congeintal_anomalies.has_all(individual_id, 'limb_musc_skeletal'):
+                causes.append('limb_or_musculoskeletal_anomaly')
+            if self.congeintal_anomalies.has_all(individual_id, 'urogenital'):
+                causes.append('urogenital_anomaly')
+            if self.congeintal_anomalies.has_all(individual_id, 'digestive'):
+                causes.append('digestive_anomaly')
+            if self.congeintal_anomalies.has_all(individual_id, 'other'):
+                causes.append('other_anomaly')
 
         # Using this list we predict the probability of death from each complications associated linear model for death
         # and store this in a dictionary
