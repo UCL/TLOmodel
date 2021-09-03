@@ -16,7 +16,6 @@ from tlo import Module, logging, Parameter, Types
 from tlo.methods import Metadata
 from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Treatment_Outpatient,
-    HSI_Diarrhoea_Treatment_PlanB,
     HSI_Diarrhoea_Treatment_Inpatient,
 )
 from tlo.methods.dxmanager import DxTest

@@ -23,7 +23,6 @@ hiv
 )
 from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Treatment_Outpatient,
-    HSI_Diarrhoea_Treatment_PlanB,
     HSI_Diarrhoea_Treatment_Inpatient,
     PropertiesOfOtherModules
 )
@@ -202,9 +201,9 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
         # Check that everyone is cured and no deaths;
         start_date = Date(2010, 1, 1)
         end_date = Date(2010, 12, 31)  # reduce run time because with spurious_symptoms=True, things get slow
-        popsize = 4000
+        popsize = 1000
 
-        sim = Simulation(start_date=start_date, seed=0)
+        sim = Simulation(start_date=start_date, seed=0, show_progress_bar=True)
 
         # Register the appropriate modules
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -221,10 +220,9 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                          force_any_symptom_to_lead_to_healthcareseeking=True
                          # every symptom leads to healthcare seeking
                      ),
-                     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
                      diarrhoea.PropertiesOfOtherModules(),
-                     hiv.DummyHivModule(),
+                     dx_algorithm_child.DxAlgorithmChild()
                      )
 
         for param_name in sim.modules['Diarrhoea'].parameters.keys():
@@ -249,30 +247,22 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
 
         # Apply perfect efficacy for treatments:
         sim.modules['Diarrhoea'].parameters['ors_effectiveness_on_diarrhoea_mortality'] = 1.0
-        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_WHO_PlanC'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_WHO_PlanC'] = 1.0  #<-- not used currently
         sim.modules['Diarrhoea'].parameters['ors_effectiveness_against_severe_dehydration'] = 1.0
         sim.modules['Diarrhoea'].parameters['antibiotic_effectiveness_for_dysentery'] = 1.0
 
         # Apply perfect assessment and classification by the health care worker
-        sim.modules['DxAlgorithmChild'].parameters['prob_at_least_ors_given_by_hw'] = 1.0
-        sim.modules['DxAlgorithmChild'].parameters['prob_recommended_treatment_given_by_hw'] = 1.0
-        sim.modules['DxAlgorithmChild'].parameters['prob_antibiotic_given_for_dysentery_by_hw'] = 1.0
-        sim.modules['DxAlgorithmChild'].parameters['prob_multivitamins_given_for_persistent_diarrhoea_by_hw'] = 1.0
-        sim.modules['DxAlgorithmChild'].parameters['prob_hospitalization_referral_for_severe_diarrhoea'] = 1.0
-        sim.modules['DxAlgorithmChild'].parameters['sensitivity_danger_signs_visual_inspection'] = 1.0
-        sim.modules['DxAlgorithmChild'].parameters['specificity_danger_signs_visual_inspection'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_at_least_ors_given_by_hw'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_recommended_treatment_given_by_hw'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_antibiotic_given_for_dysentery_by_hw'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_multivitamins_given_for_persistent_diarrhoea_by_hw'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_hospitalization_referral_for_severe_diarrhoea'] = 1.0
+        sim.modules['Diarrhoea'].parameters['sensitivity_danger_signs_visual_inspection'] = 1.0
+        sim.modules['Diarrhoea'].parameters['specificity_danger_signs_visual_inspection'] = 1.0
 
         # Make long duration so as to allow time for healthcare seeking
-        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_rotavirus'] = 1.0
-        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_shigella'] = 1.0
-        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_adenovirus'] = 1.0
-        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_cryptosporidium'] = 1.0
-        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_campylobacter'] = 1.0
-        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_ST-ETEC'] = 1.0
-        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_sapovirus'] = 1.0
-        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_norovirus'] = 1.0
-        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_astrovirus'] = 1.0
-        sim.modules['Diarrhoea'].parameters['prob_prolonged_diarr_tEPEC'] = 1.0
+        for pathogen in sim.modules['Diarrhoea'].pathogens:
+            sim.modules['Diarrhoea'].parameters[f"prob_prolonged_diarr_{pathogen}"] = 1.0
 
         sim.make_initial_population(n=popsize)
         sim.simulate(end_date=end_date)
@@ -310,12 +300,55 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
         # check that there have not been any deaths caused by Diarrhoea
         assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
 
-    # run without spurious symptoms
+    # # run without spurious symptoms
     run(spurious_symptoms=False)
 
-    # run with spurious symptoms
+    # run with spurious symptoms todo - this should go faster
     run(spurious_symptoms=True)
 
+
+def test_run_each_of_the_HSI():
+    """Check that HSI specified can be run correctly"""
+    start_date = Date(2010, 1, 1)
+    popsize = 200  # smallest population size that works
+
+    sim = Simulation(start_date=start_date, seed=0)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False
+                 ),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(
+                     resourcefilepath=resourcefilepath,
+                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
+                 ),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 diarrhoea.PropertiesOfOtherModules(),
+                 )
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+
+    # update the availability of consumables, such that all are available:
+    sim.modules['HealthSystem'].cons_item_code_availability_today = \
+        sim.modules['HealthSystem'].prob_item_codes_available > 0.0
+
+    list_of_hsi = [
+        'HSI_Diarrhoea_Treatment_Outpatient',
+        'HSI_Diarrhoea_Treatment_Inpatient',
+    ]
+
+    for name_of_hsi in list_of_hsi:
+        hsi_event = eval(name_of_hsi +
+                         "(person_id=0, "
+                         "module=sim.modules['Diarrhoea'])")
+        hsi_event.run(squeeze_factor=0)
 
 
 #
@@ -572,51 +605,3 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
 #     assert 1 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
 #     assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanB)
 
-#
-# def test_run_each_of_the_HSI():
-#     """Check that HSI specified can be run correctly"""
-#     start_date = Date(2010, 1, 1)
-#     popsize = 200  # smallest population size that works
-#
-#     sim = Simulation(start_date=start_date, seed=0)
-#
-#     # Register the appropriate modules
-#     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-#                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-#                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-#                  healthsystem.HealthSystem(
-#                      resourcefilepath=resourcefilepath,
-#                      disable=False
-#                  ),
-#                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-#                  healthseekingbehaviour.HealthSeekingBehaviour(
-#                      resourcefilepath=resourcefilepath,
-#                      force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
-#                  ),
-#                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-#                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
-#                  diarrhoea.PropertiesOfOtherModules(),
-#                  )
-#
-#     sim.make_initial_population(n=popsize)
-#     sim.simulate(end_date=start_date)
-#
-#     # update the availability of consumables, such that all are available:
-#     sim.modules['HealthSystem'].cons_item_code_availability_today = \
-#         sim.modules['HealthSystem'].prob_item_codes_available > 0.0
-#
-#     list_of_hsi = [
-#         'HSI_Diarrhoea_Treatment_Outpatient',
-#         'HSI_Diarrhoea_Treatment_PlanB',
-#         'HSI_Diarrhoea_Treatment_Inpatient',
-#     ]
-#
-#     for name_of_hsi in list_of_hsi:
-#         hsi_event = eval(name_of_hsi +
-#                          "(person_id=0, "
-#                          "module=sim.modules['Diarrhoea'], "
-#                          "interventions=[], "
-#                          ""
-#                          ")"
-#                          )
-#         hsi_event.run(squeeze_factor=0)

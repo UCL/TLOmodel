@@ -788,8 +788,8 @@ class Diarrhoea(Module):
                 tclose=None)
 
     def do_treatment(self, person_id, hsi_event):
-        """Function that enacts the effects of a treatment to diarrhoea caused by a pathogen. (It will do anything if
-        the diarrhoea is caused by another module.)
+        """Method that enacts decisions about a treatment and its effect for diarrhoea caused by a pathogen.
+        (It will do anything if the diarrhoea is caused by another module.)
         Actions:
         * Log the treatment date
         * Prevents this episode of diarrhoea from causing a death if the treatment is succesful
@@ -802,6 +802,8 @@ class Diarrhoea(Module):
         * The danger signs are classified collectively and are based on the result of a DxTest representing the
           ability of the clinician to correctly determine the true value of the
           property 'gi_last_diarrhoea_dehydration' being equal to 'severe'
+
+          # todo - @ines and @timc - check logic here: multiplication/division of probabilities!?!
         """
 
         df = self.sim.population.props
@@ -819,46 +821,37 @@ class Diarrhoea(Module):
         ):
             return
 
-        # Implement the algorithm
-
-        # # # Check the child's condition according to IMCI guidelines ------------------------------------
+        # *** Implement the treatment algorithm ***
+        # Check the child's condition
         blood_in_stool = df.at[person_id, 'gi_last_diarrhoea_type'] == 'bloody'
         dehydration = df.at[person_id, 'gi_last_diarrhoea_dehydration']
 
-        # If zinc is given to persistent diarrhoea, apply effectiveness in shortening duration
-        # if duration_in_days > 14 and ('Zinc' in interventions_given):
-        #     # todo - this is being remove by TimH -- has no effect!
-        #     # df.at[person_id, 'gi_last_diarrhoea_duration'] = \
-        #     #     total_duration_in_days - self.parameters['number_of_days_reduced_duration_with_zinc']
+        if (dehydration == 'some'):   # todo: <-- should this be 'some' or 'not severe' ....?
+            # If some dehydration...
 
-        # todo - check logic of this (multiplication of probabilities...?)
+            # Provide ORS:
 
-        # Plan A or B for no dehydration
-        if (dehydration != 'severe') and (
-            ('Dehydration_Plan_A' in interventions_given) | ('Dehydration_Plan_B' in interventions_given)
-        ):
+            # Set probaility of succesful treatment:
             prob_cure = self.parameters['ors_effectiveness_on_diarrhoea_mortality']
-            # Antibiotics for dysentery
-            if blood_in_stool and ('Antibiotics_for_Dysentery' in interventions_given):
-                prob_cure = self.parameters['antibiotic_effectiveness_for_dysentery'] * \
-                            self.parameters['ors_effectiveness_on_diarrhoea_mortality']
-
-        # Plan A or B for severe dehydration
-        elif dehydration == 'severe' and (
-            ('Dehydration_Plan_A' in interventions_given) | ('Dehydration_Plan_B' in interventions_given)
-        ):
-            prob_cure = self.parameters['ors_effectiveness_against_severe_dehydration']
-            # Antibiotics for dysentery
-            if blood_in_stool and ('Antibiotics_for_Dysentery' in interventions_given):
-                prob_cure = self.parameters['antibiotic_effectiveness_for_dysentery'] * \
-                            self.parameters['ors_effectiveness_against_severe_dehydration']
-
-        # Plan C for severe dehydration
-        elif dehydration == 'severe' and ('Dehydration_Plan_C' in interventions_given):
-            prob_cure = self.parameters['prob_of_cure_given_WHO_PlanC']
 
         else:
-            prob_cure = 0.0
+            # If Severe dehyrdation...
+
+            # Provide ORS:
+
+            # Set probability of succesful treatment:
+            prob_cure = self.parameters['ors_effectiveness_against_severe_dehydration']
+            # todo not sure when to use 'prob_of_cure_given_WHO_PlanC'
+
+
+        # If blood_in_stool (i.e., dysentery):
+        if blood_in_stool:
+            # Provide antibiotics:
+            # todo - antibiotics
+
+            # Reduce the probability of succesful treatment:
+            prob_cure *= self.parameters['antibiotic_effectiveness_for_dysentery']
+
 
         # -------------------------------------
         # Log that the treatment is provided:
@@ -1509,16 +1502,13 @@ class HSI_Diarrhoea_Treatment_Inpatient(HSI_Event, IndividualScopeEventMixin):
         # if cholera is in your area, give antibiotic for cholera?
     """
 
-    def __init__(self, module, person_id, plan: str):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = 'Diarrhoea_Treatment_Inpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})  # todo - should this be in patient?
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
-
-        assert plan in ['A', 'B']
-        self.plan = plan
 
     def apply(self, person_id, squeeze_factor):
         """Run `do_treatment` for this person from an in-potient setting."""
