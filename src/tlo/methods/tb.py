@@ -723,7 +723,7 @@ class Tb(Module):
         """
 
         # 1) Regular events
-        sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(days=365.25))
+        sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(days=0))
         sim.schedule_event(TbEndTreatmentEvent(self), sim.date + DateOffset(days=30.5))
         sim.schedule_event(TbRelapseEvent(self), sim.date + DateOffset(months=1))
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
