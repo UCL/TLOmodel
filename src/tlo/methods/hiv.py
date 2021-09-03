@@ -213,9 +213,27 @@ class Hiv(Module):
         # Uptake of Interventions
         "hiv_testing_rates": Parameter(
             Types.REAL, "annual rates of testing for children and adults"),
-        "prob_spontaneous_test_12m": Parameter(
-            Types.REAL, "Probability that a person will seek HIV testing per 12 month period."),
-        "prob_start_art_after_hiv_test": Parameter(
+        "rr_hiv_test_female": Parameter(
+            Types.REAL, "relative likelihood of having HIV test for females compared with males"),
+        "rr_hiv_test_sexworker": Parameter(
+            Types.REAL, "relative likelihood of having HIV test for female sex workers"),
+        "rr_hiv_test_age_20_24": Parameter(
+            Types.REAL, "relative likelihood of having HIV test for ages 20-24 compared with ages 15-19"),
+        "rr_hiv_test_age_25_29": Parameter(
+            Types.REAL, "relative likelihood of having HIV test for ages 25-29 compared with ages 15-19"),
+        "rr_hiv_test_age_30_34": Parameter(
+            Types.REAL, "relative likelihood of having HIV test for ages 30-34 compared with ages 15-19"),
+        "rr_hiv_test_age_35_39": Parameter(
+            Types.REAL, "relative likelihood of having HIV test for ages 35-39 compared with ages 15-19"),
+        "rr_hiv_test_age_40_44": Parameter(
+            Types.REAL, "relative likelihood of having HIV test for ages 40-44 compared with ages 15-19"),
+        "rr_hiv_test_age_45_49": Parameter(
+            Types.REAL, "relative likelihood of having HIV test for ages 45-49 compared with ages 15-19"),
+        "rr_hiv_test_primary_education": Parameter(
+            Types.REAL, "relative likelihood of having HIV test for people with primary education compared with no education"),
+        "rr_hiv_test_secondary_education": Parameter(
+            Types.REAL, "relative likelihood of having HIV test for people with secondary or higher education compared with no education"),
+       "prob_start_art_after_hiv_test": Parameter(
             Types.REAL, "Probability that a person will start treatment, if HIV-positive, following testing"),
         "rr_start_art_if_aids_symptoms": Parameter(
             Types.REAL, "Relative probability of a person starting treatment if they have aids_symptoms compared to if"
@@ -347,14 +365,21 @@ class Hiv(Module):
         )
 
         # -- Linear Models for the Uptake of Services
-        # Linear model that give the probability of seeking a 'Spontaneous' Test for HIV
-        # (= sum of probabilities for accessing any HIV service when not ill)
-
-        # self.lm['lm_spontaneous_test_12m'] = LinearModel(
-        #     LinearModelType.MULTIPLICATIVE,
-        #     p["prob_spontaneous_test_12m"],
-        #     Predictor('hv_diagnosed').when(True, 0.0).otherwise(1.0)
-        # )
+        # Linear model that give the increase in likelihood of seeking a 'Spontaneous' Test for HIV
+        self.lm['lm_spontaneous_test_12m'] = LinearModel.multiplicative(
+            Predictor('hv_diagnosed').when(True, 0.0).otherwise(1.0),
+            Predictor('sex').when('F', p['rr_hiv_test_female']),
+            Predictor('age_years').when('<20', 1)
+                .when('<25', p["rr_hiv_test_age_20_24"])
+                .when('<30', p["rr_hiv_test_age_25_29"])
+                .when('<35', p["rr_hiv_test_age_30_34"])
+                .when('<40', p["rr_hiv_test_age_35_39"])
+                .when('<45', p["rr_hiv_test_age_40_44"])
+                .when('<50', p["rr_hiv_test_age_45_49"]),
+            Predictor('li_is_sexworker').when(True, p['rr_hiv_test_sexworker']),
+            Predictor('li_ed_lev').when(2, p["rr_hiv_test_primary_education"])
+                .when(3, p["rr_hiv_test_secondary_education"]),
+        )
 
         # Linear model if the person will start ART, following when the person has been diagnosed:
         self.lm['lm_art'] = LinearModel(
@@ -1198,10 +1223,15 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                                  (df.age_years < 15) &
                                  (random_draw < testing_rate_children)].index
 
+        # adult testing trends also informed by demographic characteristics
+        adults = df.loc[df.is_alive & df.age_years.between(15, 80)].index
+
+        #  - relative probability of testing - this may skew testing rates higher or lower than moh reports
+        rr_of_test = self.module.lm['lm_spontaneous_test_12m'].predict(df.loc[adults])
+
         adult_tests_idx = df.loc[df.is_alive &
-                                 ~df.hv_diagnosed &
-                                 (df.age_years.between(15, 49)) &
-                                 (random_draw < testing_rate_adults)].index
+                                 (df.age_years.between(15, 80)) &
+                                 (random_draw < (testing_rate_adults * rr_of_test))].index
 
         idx_will_test = child_tests_idx.union(adult_tests_idx)
 

@@ -14,7 +14,7 @@ tlo scenario-run src/scripts/tb/tara_tb_hiv_calibration.py --draw 1 0
 Run on the batch system using:
 tlo batch-submit  src/scripts/tb/tara_tb_hiv_calibration.py
 
-save job ID: calibration-2021-09-01T193902Z
+save job ID: tara_tb_hiv_calibration-2021-09-02T131237Z
 
 
 Display information about a job:

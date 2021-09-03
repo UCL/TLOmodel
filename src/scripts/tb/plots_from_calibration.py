@@ -502,7 +502,7 @@ plt.errorbar(model_hiv_adult_inc.index[6], data_hiv_mphia_inc_estimate,
              yerr=[[data_hiv_mphia_inc_yerr[0]], [data_hiv_mphia_inc_yerr[1]]], fmt='gx')
 
 
-plt.ylim(0, 3)
+plt.ylim(0, 1.5)
 plt.xlim(2010, 2020)
 #
 # handles for legend
