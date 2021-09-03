@@ -3416,8 +3416,9 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         internal_bleeding_codes = ['361', '363', '461', '463', '813bo', '813co', '813do', '813eo']
         df = self.sim.population.props
 
-        shock_index, counts = road_traffic_injuries.rti_find_and_count_injuries(df.loc[df.rt_road_traffic_inc, RTI.INJURY_COLUMNS],
-                                                                                internal_bleeding_codes)
+        shock_index, counts = \
+            road_traffic_injuries.rti_find_and_count_injuries(df.loc[df.rt_road_traffic_inc, RTI.INJURY_COLUMNS],
+                                                              internal_bleeding_codes)
         df.loc[shock_index, 'rt_in_shock'] = True
         # ========================== Decide survival time without medical intervention ================================
         # todo: find better time for survival data without med int for ISS scores
@@ -4659,6 +4660,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # Isolate relevant injury information
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         non_empty_injuries = person_injuries[person_injuries != "none"]
+        non_empty_injuries = non_empty_injuries.dropna(axis=1)
         injury_columns = non_empty_injuries.columns
         # Check that those who arrive here are alive and have been through the first generic appointment, and didn't
         # die due to rti
@@ -4887,7 +4889,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # ------------------------------ Cast-able fractures ----------------------------------------------------------
         # Schedule the fracture treatments by calling the functions rti_ask_for_fracture_casts which in turn schedules
         # the treatment
-        codes = ['712', '712a', '712b', '712c', '812', '822a', '822b']
+        codes = ['712', '712a', '712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
         p = df.loc[person_id]
         codes_treated_elsewhere = \
             p['rt_injuries_for_minor_surgery'] + p['rt_injuries_for_major_surgery'] + \
@@ -5150,9 +5152,9 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                               '813bo', '813co', '813do', '813eo']
             swapping_codes = [code for code in swapping_codes if code in codes]
             # remove codes that will be treated elsewhere
-            injuries_treated_elsewhere = p['rt_injuries_for_minor_surgery'] + p['rt_injuries_for_major_surgery'] + \
-                                         p['rt_injuries_to_heal_with_time']+ \
-                                         p['rt_injuries_for_open_fracture_treatment']
+            injuries_treated_elsewhere = \
+                p['rt_injuries_for_minor_surgery'] + p['rt_injuries_for_major_surgery'] + \
+                p['rt_injuries_to_heal_with_time'] + p['rt_injuries_for_open_fracture_treatment']
             for injury in injuries_treated_elsewhere:
                 if injury in swapping_codes:
                     swapping_codes.remove(injury)
@@ -5175,10 +5177,9 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                                                                                 DateOffset(weeks=7)
                 # make sure the assigned injury recovery date is in the future
                 assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
-            person_injuries = df.loc[person_id, untreated_injury_cols]
+            person_injuries = df.loc[person_id, RTI.INJURY_COLUMNS]
             non_empty_injuries = person_injuries[person_injuries != "none"]
             injury_columns = non_empty_injuries.keys()
-            orig_list = df.loc[person_id, 'rt_injuries_to_cast']
             for code in df.loc[person_id, 'rt_injuries_to_cast']:
                 columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, [code])[0])
                 assert not pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]), \
