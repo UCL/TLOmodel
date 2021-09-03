@@ -33,6 +33,8 @@ from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
+from tlo.methods.dxmanager import DxTest
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -449,9 +451,9 @@ class Diarrhoea(Module):
         'prob_at_least_ors_given_by_hw':  Parameter(Types.REAL, "?????????"),
         'prob_recommended_treatment_given_by_hw': Parameter(Types.REAL, "?????????"),
         'prob_antibiotic_given_for_dysentery_by_hw': Parameter(Types.REAL, "?????????"),
-        'prob_multivitamins_given_for_persistent_diarrhoea_by_hw': Parameter(Types.REAl, "?????????"),
-        'sensitivity_danger_signs_visual_inspection': Parameter(Types.REAl, "?????????"),
-        'specificity_danger_signs_visual_inspection': Parameter(Types.REAl, "?????????"),
+        'prob_multivitamins_given_for_persistent_diarrhoea_by_hw': Parameter(Types.REAL, "?????????"),
+        'sensitivity_danger_signs_visual_inspection': Parameter(Types.REAL, "?????????"),
+        'specificity_danger_signs_visual_inspection': Parameter(Types.REAL, "?????????"),
     }
 
     PROPERTIES = {
@@ -511,12 +513,13 @@ class Diarrhoea(Module):
                                            'This stops successive episodes interfering with one another.'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None, resourcefilepath=None, do_checks=False):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.models = None
         self.daly_wts = dict()
         self.consumables_used_in_hsi = dict()
+        self.do_checks = do_checks
 
         # dict to hold counters for the number of episodes of diarrhoea by pathogen-type and age-group
         # (0yrs, 1yrs, 2-4yrs)
@@ -605,6 +608,7 @@ class Diarrhoea(Module):
         """Prepares for simulation:
         * Schedules the main polling event
         * Schedules the main logging event
+        * Schedule the check properties event (if needed)
         * Establishes the linear models and other data structures using the parameters that have been read-in
         * Store the consumables that are required in each of the HSI
         * Register test for the determination of 'danger signs'
@@ -615,6 +619,10 @@ class Diarrhoea(Module):
 
         # Schedule the main logging event (to first occur in one year)
         sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(years=1))
+
+        if self.do_checks:
+            # Schedule the event that does checking every day:
+            sim.schedule_event(DiarrhoeaCheckPropertiesEvent(self), sim.date)
 
         # Create and store the models needed
         self.models = Models(self)
@@ -946,6 +954,85 @@ class Diarrhoea(Module):
         """
         self.sim.population.props.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
 
+    def check_properties(self):
+        """Check that the properties are ok: for use in testing only"""
+
+        df = self.sim.population.props
+
+        # Those that have never had diarrhoea, should have not_applicable/null values for all the other properties:
+        assert (df.loc[~df.gi_ever_had_diarrhoea & ~df.date_of_birth.isna(), [
+            'gi_last_diarrhoea_pathogen',
+            'gi_last_diarrhoea_type',
+            'gi_last_diarrhoea_dehydration']
+        ] == 'not_applicable').all().all()
+
+        assert pd.isnull(df.loc[~df.date_of_birth.isna() & ~df['gi_ever_had_diarrhoea'], [
+            'gi_last_diarrhoea_date_of_onset',
+            'gi_last_diarrhoea_recovered_date',
+            'gi_last_diarrhoea_death_date',
+            'gi_last_diarrhoea_treatment_date']
+        ]).all().all()
+
+        # Those that have had diarrhoea, should have a pathogen and a number of days duration
+        assert (df.loc[df.gi_ever_had_diarrhoea, 'gi_last_diarrhoea_pathogen'] != 'none').all()
+
+        # Those that have had diarrhoea and no treatment, should have either a recovery date or a death_date (but not both)
+        has_recovery_date = ~pd.isnull(df.loc[df.gi_ever_had_diarrhoea & pd.isnull(df.gi_last_diarrhoea_treatment_date),
+                                              'gi_last_diarrhoea_recovered_date'])
+        has_death_date = ~pd.isnull(df.loc[df.gi_ever_had_diarrhoea & pd.isnull(df.gi_last_diarrhoea_treatment_date),
+                                           'gi_last_diarrhoea_death_date'])
+        has_recovery_date_or_death_date = has_recovery_date | has_death_date
+        has_both_recovery_date_and_death_date = has_recovery_date & has_death_date
+        assert has_recovery_date_or_death_date.all()
+        assert not has_both_recovery_date_and_death_date.any()
+
+        # Those for whom the death date has past should be dead
+        assert not df.loc[df.gi_ever_had_diarrhoea & (df['gi_last_diarrhoea_death_date'] < self.sim.date), 'is_alive'].any()
+
+        # Check that those in a current episode have symptoms of diarrhoea [caused by the diarrhoea module]
+        #  but not others (among those who are alive)
+        has_symptoms_of_diar = set(self.sim.modules['SymptomManager'].who_has('diarrhoea'))
+        has_symptoms = set([p for p in has_symptoms_of_diar if
+                            'Diarrhoea' in self.sim.modules['SymptomManager'].causes_of(p, 'diarrhoea')
+                            ])
+
+        in_current_episode_before_recovery = \
+            df.is_alive & \
+            df.gi_ever_had_diarrhoea & \
+            (df.gi_last_diarrhoea_date_of_onset <= self.sim.date) & \
+            (self.sim.date <= df.gi_last_diarrhoea_recovered_date)
+        set_of_person_id_in_current_episode_before_recovery = set(
+            in_current_episode_before_recovery[in_current_episode_before_recovery].index
+        )
+
+        in_current_episode_before_death = \
+            df.is_alive & \
+            df.gi_ever_had_diarrhoea & \
+            (df.gi_last_diarrhoea_date_of_onset <= self.sim.date) & \
+            (self.sim.date <= df.gi_last_diarrhoea_death_date)
+        set_of_person_id_in_current_episode_before_death = set(
+            in_current_episode_before_death[in_current_episode_before_death].index
+        )
+
+        in_current_episode_before_cure = \
+            df.is_alive & \
+            df.gi_ever_had_diarrhoea & \
+            (df.gi_last_diarrhoea_date_of_onset <= self.sim.date) & \
+            (df.gi_last_diarrhoea_treatment_date <= self.sim.date) & \
+            pd.isnull(df.gi_last_diarrhoea_recovered_date) & \
+            pd.isnull(df.gi_last_diarrhoea_death_date)
+        set_of_person_id_in_current_episode_before_cure = set(
+            in_current_episode_before_cure[in_current_episode_before_cure].index
+        )
+
+        assert set() == set_of_person_id_in_current_episode_before_recovery.intersection(
+            set_of_person_id_in_current_episode_before_death
+        )
+
+        set_of_person_id_in_current_episode = set_of_person_id_in_current_episode_before_recovery.union(
+            set_of_person_id_in_current_episode_before_death, set_of_person_id_in_current_episode_before_cure
+        )
+        assert set_of_person_id_in_current_episode == has_symptoms
 
 class Models:
     """Helper-class to store all the models that specify the natural history of the Alri disease"""
@@ -1702,3 +1789,17 @@ class PropertiesOfOtherModules(Module):
         df.at[child, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.at[child, 'un_clinical_acute_malnutrition'] = 'well'
         df.at[child, 'un_HAZ_category'] = 'HAZ>=-2'
+
+# ---------------------------------------------------------------------------------------------------------
+#   DEBUGGING / TESTING EVENTS
+# ---------------------------------------------------------------------------------------------------------
+
+class DiarrhoeaCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
+    """This event runs daily and checks properties are in the right configuration. Only use whilst debugging!
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(days=1))
+
+    def apply(self, population):
+        self.module.check_properties()
