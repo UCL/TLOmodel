@@ -173,7 +173,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                         topen=self.sim.date,
                         tclose=None)
 
-        if (5 <= age < 15):
+        elif age < 15:
             # ----------------------------------- CHILD 5-14 -----------------------------------
             # Run DxAlgorithmChild to get (additional) diagnoses:
             diagnosis = self.sim.modules["DxAlgorithmChild"].diagnose(
@@ -200,7 +200,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                         topen=self.sim.date,
                         tclose=None)
 
-        if age >= 15:
+        else:
             # ----------------------------------- ADULT -----------------------------------
             if 'OesophagealCancer' in self.sim.modules:
                 # If the symptoms include dysphagia, then begin investigation for Oesophageal Cancer:

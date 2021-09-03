@@ -7,7 +7,8 @@ There should be a method here to respond to every symptom that a child could pre
 served by the following disease modules:
 * Diarrhoea
 
-# todo - this is being deprecated:
+# todo - this is being deprecated
+# todo - algorithm re malaria quite confusing - to be reconciled with diarrhoea and alri when in.
 
 """
 
@@ -35,40 +36,7 @@ class DxAlgorithmChild(Module):
     # Declare Metadata
     METADATA = {Metadata.USES_HEALTHSYSTEM}
 
-    PARAMETERS = {
-        'prob_uncomplicated_diarrhoea_diagnosed_by_health_worker':
-            Parameter(Types.REAL,
-                      'probability of uncomplicated diarrhoea being diagnosed by health care worker'
-                      ),
-        'prob_recommended_treatment_given_by_hw':
-            Parameter(Types.REAL,
-                      'probability of recommended treatment given by health care worker'
-                      ),
-        'prob_at_least_ors_given_by_hw':
-            Parameter(Types.REAL,
-                      'probability of ORS given by health care worker, with or without zinc'
-                      ),
-        'prob_antibiotic_given_for_dysentery_by_hw':
-            Parameter(Types.REAL,
-                      'probability of antibiotics given by health care worker, for dysentery'
-                      ),
-        'prob_multivitamins_given_for_persistent_diarrhoea_by_hw':
-            Parameter(Types.REAL,
-                      'probability of multivitamins given by health care worker, for persistent diarrhoea'
-                      ),
-        'prob_hospitalization_referral_for_severe_diarrhoea':
-            Parameter(Types.REAL,
-                      'probability of hospitalisation of severe diarrhoea'
-                      ),
-        'sensitivity_danger_signs_visual_inspection':
-            Parameter(Types.REAL,
-                      'sensitivity of health care workers visual inspection of danger signs'
-                      ),
-        'specificity_danger_signs_visual_inspection':
-            Parameter(Types.REAL,
-                      'specificity of health care workers visual inspection of danger signs'
-                      ),
-    }
+    PARAMETERS = {}
     PROPERTIES = {}
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -151,9 +119,6 @@ class DxAlgorithmChild(Module):
 
             else:
                 diagnosis_str = "non-malarial fever"
-
-        logger.debug(key='message',
-                     data=f'{person_id} diagnosis is {diagnosis_str}')
 
         # return the diagnosis as a string
         return diagnosis_str

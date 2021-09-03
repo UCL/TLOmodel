@@ -61,7 +61,7 @@ def test_basic_run_of_diarrhoea_module_with_default_params():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
                  diarrhoea.PropertiesOfOtherModules(),
-                 hiv.DummyHivModule(),
+                 dx_algorithm_child.DxAlgorithmChild()
                  )
 
     sim.make_initial_population(n=popsize)
@@ -147,7 +147,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
                  diarrhoea.PropertiesOfOtherModules(),
-                 hiv.DummyHivModule(),
                  )
 
     for param_name in sim.modules['Diarrhoea'].parameters.keys():
@@ -347,7 +346,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
 #                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
 #                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
 #                      diarrhoea.PropertiesOfOtherModules(),
-#                      hiv.DummyHivModule(),
 #                      )
 #
 #         sim.make_initial_population(n=popsize)
@@ -599,7 +597,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
 #                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
 #                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
 #                  diarrhoea.PropertiesOfOtherModules(),
-#                  hiv.DummyHivModule(),
 #                  )
 #
 #     sim.make_initial_population(n=popsize)
