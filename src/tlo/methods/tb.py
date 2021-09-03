@@ -544,12 +544,23 @@ class Tb(Module):
         sample_active_tb = self.rng.random_sample(len(eligible_for_active_tb)) < (p['incidence_active_tb_2010_per100k'] / 100000)
         active_tb_idx = eligible_for_active_tb[sample_active_tb]
 
+        df.loc[active_tb_idx, 'tb_strain'] = 'ds'
+
+        # allocate some active infections as mdr-tb
+        idx_new_active_mdr = (
+            df[df.is_alive & (df.tb_strain == 'ds')]
+                .sample(frac=p['prop_mdr2010'], random_state=self.rng)
+                .index
+        )
+
+        df.loc[idx_new_active_mdr, 'tb_strain'] = 'mdr'
+
+        active_tb_idx = active_tb_idx.union(idx_new_active_mdr)  # join indices (checked)
+
         # schedule for time now up to 1 year
         for person_id in active_tb_idx:
-            date_progression = now + \
-                               pd.DateOffset(days=self.rng.randint(0, 365))
             self.sim.schedule_event(
-                TbActiveEvent(self, person_id), date_progression
+                TbActiveEvent(self, person_id), now
             )
 
     def progression_to_active(self, population):
@@ -723,7 +734,7 @@ class Tb(Module):
         """
 
         # 1) Regular events
-        sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(years=1))
         sim.schedule_event(TbEndTreatmentEvent(self), sim.date + DateOffset(days=30.5))
         sim.schedule_event(TbRelapseEvent(self), sim.date + DateOffset(months=1))
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
@@ -1253,11 +1264,10 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
         # -------- 5) schedule TB death --------
         # only for non-HIV cases, PLHIV have deaths scheduled by hiv module
         # schedule for all TB cases, prob of death occurring determined by tbDeathEvent
-        # select a random death date using duration of disease +/- 6 months
+        # select a random death date up to 6 months
         else:
-            d_active_mths = p['duration_active_disease_years'] * 12
             date_of_tb_death = self.sim.date + pd.DateOffset(
-                months=int(rng.uniform(low=(d_active_mths - 6), high=(d_active_mths + 6))))
+                months=int(rng.uniform(low=1, high=6)))
             self.sim.schedule_event(event=TbDeathEvent(person_id=person_id, module=self.module, cause='TB'),
                                     date=date_of_tb_death)
 

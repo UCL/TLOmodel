@@ -36,8 +36,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 3000
+end_date = Date(2020, 1, 1)
+popsize = 5000
 
 # set up the log config
 log_config = {
@@ -84,7 +84,7 @@ sim.modules['Tb'].parameters['tb_high_risk_distr'] = pd.read_excel(resourcefilep
                                                                    sheet_name='all_districts')
 
 # change tb mixing parameter to allow more between-district transmission
-sim.modules['Tb'].parameters['mixing_parameter'] = 0.5
+sim.modules['Tb'].parameters['mixing_parameter'] = 1
 
 
 # Run the simulation and flush the logger

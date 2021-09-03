@@ -369,7 +369,8 @@ class Hiv(Module):
         self.lm['lm_spontaneous_test_12m'] = LinearModel.multiplicative(
             Predictor('hv_diagnosed').when(True, 0.0).otherwise(1.0),
             Predictor('sex').when('F', p['rr_hiv_test_female']),
-            Predictor('age_years').when('<20', 1)
+            Predictor('age_years').when('<15', 0)
+                .when('<20', 1)
                 .when('<25', p["rr_hiv_test_age_20_24"])
                 .when('<30', p["rr_hiv_test_age_25_29"])
                 .when('<35', p["rr_hiv_test_age_30_34"])
@@ -1226,9 +1227,8 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # adult testing trends also informed by demographic characteristics
         # relative probability of testing - this may skew testing rates higher or lower than moh reports
         rr_of_test = self.module.lm['lm_spontaneous_test_12m'].predict(df[df.is_alive])
-
+        random_draw = rng.random_sample(size=len(df[df.is_alive]))
         adult_tests_idx = df.loc[df.is_alive &
-                                 (df.age_years.between(15, 80)) &
                                  (random_draw < (testing_rate_adults * rr_of_test))].index
 
         idx_will_test = child_tests_idx.union(adult_tests_idx)

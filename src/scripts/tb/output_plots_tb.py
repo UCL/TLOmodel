@@ -175,7 +175,7 @@ make_plot(
     title_str="Latent TB prevalence",
     model=latentTB_prev['tbPrevLatent'],
 )
-plt.ylim((0, 0.22))
+plt.ylim((0, 0.4))
 # add latent TB estimate from Houben & Dodd 2016 (value for year=2014)
 plt.errorbar(latentTB_prev.index[4], data_tb_latent_estimate,
              yerr=[[data_tb_latent_yerr[0]], [data_tb_latent_yerr[1]]], fmt='o')
