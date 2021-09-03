@@ -125,7 +125,8 @@ def check_configuration_of_properties(sim):
 
 
 def test_basic_run_of_diarrhoea_module_with_default_params():
-    # Check that the module run and that properties are maintained correctly, using health system and default parameters
+    """Check that the module run and that properties are maintained correctly, using health system and default
+    parameters"""
     start_date = Date(2010, 1, 1)
     end_date = Date(2010, 12, 31)
     popsize = 1000
@@ -143,7 +144,6 @@ def test_basic_run_of_diarrhoea_module_with_default_params():
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.PropertiesOfOtherModules(),
                  hiv.DummyHivModule(),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
 
     sim.make_initial_population(n=popsize)
@@ -156,7 +156,7 @@ def test_basic_run_of_diarrhoea_module_with_default_params():
 
 
 def test_basic_run_of_diarrhoea_module_with_zero_incidence():
-    # Run with zero incidence and check for no cases or deaths
+    """Run with zero incidence and check for no cases or deaths"""
     start_date = Date(2010, 1, 1)
     end_date = Date(2015, 12, 31)
     popsize = 1000
@@ -174,7 +174,6 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.PropertiesOfOtherModules(),
                  hiv.DummyHivModule(),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
 
     for param_name in sim.modules['Diarrhoea'].parameters.keys():
@@ -222,7 +221,7 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
 
 @pytest.mark.group2
 def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no_treatment():
-    # Check that there are incident cases, treatments and deaths occurring correctly
+    """Check that there are incident cases, treatments and deaths occurring correctly"""
     start_date = Date(2010, 1, 1)
     end_date = Date(2015, 12, 31)
     popsize = 2000
@@ -240,7 +239,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.PropertiesOfOtherModules(),
                  hiv.DummyHivModule(),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
 
     for param_name in sim.modules['Diarrhoea'].parameters.keys():
@@ -288,10 +286,9 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
     # Check that those with a gi_last_diarrhoea_death_date in the past, are now dead
     # NB. Cannot guarantee that all will have a cause of death that is Diarrhoea, because OtherDeathPoll can also
     #  cause deaths.
-    gi_death_date_in_past = ~pd.isnull(df.gi_last_diarrhoea_death_date) & (df.gi_last_diarrhoea_death_date <= sim.date)
-    assert (
-        ~(df.loc[gi_death_date_in_past, 'is_alive']) & ~pd.isnull(df.loc[gi_death_date_in_past, 'date_of_birth'])
-    ).all()
+    gi_death_date_in_past = ~pd.isnull(df.gi_last_diarrhoea_death_date) & (df.gi_last_diarrhoea_death_date < sim.date)
+    assert 0 < gi_death_date_in_past.sum()
+    assert not df.loc[gi_death_date_in_past, 'is_alive'].any()
 
 
 @pytest.mark.group2
@@ -326,7 +323,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                      diarrhoea.PropertiesOfOtherModules(),
                      hiv.DummyHivModule(),
-                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                      )
 
         for param_name in sim.modules['Diarrhoea'].parameters.keys():
@@ -451,7 +447,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
 #                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
 #                      diarrhoea.PropertiesOfOtherModules(),
 #                      hiv.DummyHivModule(),
-#                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
 #                      )
 #
 #         sim.make_initial_population(n=popsize)
@@ -679,52 +674,52 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
 #     assert 1 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
 #     assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanB)
 
-
-def test_run_each_of_the_HSI():
-    start_date = Date(2010, 1, 1)
-    popsize = 200  # smallest population size that works
-
-    sim = Simulation(start_date=start_date, seed=0)
-
-    # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=False
-                 ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
-                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
-                 ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-                 diarrhoea.PropertiesOfOtherModules(),
-                 hiv.DummyHivModule(),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
-                 )
-
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date)
-
-    # update the availability of consumables, such that all are available:
-    sim.modules['HealthSystem'].cons_item_code_availability_today = \
-        sim.modules['HealthSystem'].prob_item_codes_available > 0.0
-
-    list_of_hsi = [
-        'HSI_Diarrhoea_Treatment_PlanA',
-        'HSI_Diarrhoea_Treatment_PlanB',
-        'HSI_Diarrhoea_Treatment_PlanC',
-    ]
-
-    for name_of_hsi in list_of_hsi:
-        hsi_event = eval(name_of_hsi +
-                         "(person_id=0, "
-                         "module=sim.modules['Diarrhoea'], "
-                         "interventions=[], "
-                         ""
-                         ")"
-                         )
-        hsi_event.run(squeeze_factor=0)
+#
+# def test_run_each_of_the_HSI():
+#     """Check that HSI specified can be run correctly"""
+#     start_date = Date(2010, 1, 1)
+#     popsize = 200  # smallest population size that works
+#
+#     sim = Simulation(start_date=start_date, seed=0)
+#
+#     # Register the appropriate modules
+#     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+#                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+#                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+#                  healthsystem.HealthSystem(
+#                      resourcefilepath=resourcefilepath,
+#                      disable=False
+#                  ),
+#                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+#                  healthseekingbehaviour.HealthSeekingBehaviour(
+#                      resourcefilepath=resourcefilepath,
+#                      force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
+#                  ),
+#                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+#                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+#                  diarrhoea.PropertiesOfOtherModules(),
+#                  hiv.DummyHivModule(),
+#                  )
+#
+#     sim.make_initial_population(n=popsize)
+#     sim.simulate(end_date=start_date)
+#
+#     # update the availability of consumables, such that all are available:
+#     sim.modules['HealthSystem'].cons_item_code_availability_today = \
+#         sim.modules['HealthSystem'].prob_item_codes_available > 0.0
+#
+#     list_of_hsi = [
+#         'HSI_Diarrhoea_Treatment_PlanA',
+#         'HSI_Diarrhoea_Treatment_PlanB',
+#         'HSI_Diarrhoea_Treatment_PlanC',
+#     ]
+#
+#     for name_of_hsi in list_of_hsi:
+#         hsi_event = eval(name_of_hsi +
+#                          "(person_id=0, "
+#                          "module=sim.modules['Diarrhoea'], "
+#                          "interventions=[], "
+#                          ""
+#                          ")"
+#                          )
+#         hsi_event.run(squeeze_factor=0)
