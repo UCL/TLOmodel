@@ -559,8 +559,9 @@ class Tb(Module):
 
         # schedule for time now up to 1 year
         for person_id in active_tb_idx:
+            date_active = self.sim.date + pd.DateOffset(days=self.module.rng.randint(0, 365))
             self.sim.schedule_event(
-                TbActiveEvent(self, person_id), now
+                TbActiveEvent(self, person_id), date_active
             )
 
     def progression_to_active(self, population):
