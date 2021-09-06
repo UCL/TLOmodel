@@ -749,6 +749,8 @@ class Diarrhoea(Module):
         cipro_code = get_code(item='Ciprofloxacin 250mg_100_CMST')
 
         # -- Assemble the footprints for each diarrhoea-related condition or plan:
+        # -- todo only a few of these are being used.
+        add_consumable('ORS', {ors_code: 1}, {})
         add_consumable('Dehydration_Plan_A', {ors_code: 1}, {})
         add_consumable('Dehydration_Plan_B', {ors_code: 1}, {})
         add_consumable('Dehydration_Plan_C', {severe_diarrhoea_code: 1}, {})
@@ -756,6 +758,7 @@ class Diarrhoea(Module):
         add_consumable('Zinc_Over6mo', {zinc_over_6m_code: 1}, {zinc_tablet_code: 5})
         add_consumable('Antibiotics_for_Dysentery', {antibiotics_code: 1}, {cipro_code: 6})
         add_consumable('Multivitamins_for_Persistent', {zinc_under_6m_code: 1}, {zinc_tablet_code: 5})
+
         # TODO: multivitamins consumables
 
     def do_when_presentation_with_diarrhoea(self, person_id, hsi_event):
@@ -826,31 +829,34 @@ class Diarrhoea(Module):
         blood_in_stool = df.at[person_id, 'gi_last_diarrhoea_type'] == 'bloody'
         dehydration = df.at[person_id, 'gi_last_diarrhoea_dehydration']
 
+        prob_cure = 0.0
         if (dehydration == 'some'):   # todo: <-- should this be 'some' or 'not severe' ....?
             # If some dehydration...
 
-            # Provide ORS:
-
-            # Set probaility of succesful treatment:
-            prob_cure = self.parameters['ors_effectiveness_on_diarrhoea_mortality']
+            # Provide ORS (if available):
+            if hsi_event.get_all_consumables(footprint=self.consumables_used_in_hsi['ORS']):
+                # Set probaility of succesful treatment:
+                prob_cure = 1.0 - self.parameters['ors_effectiveness_on_diarrhoea_mortality']
 
         else:
             # If Severe dehyrdation...
 
-            # Provide ORS:
+            # Provide Package of medicines for Severe Dehyrdation (if available);
+            if hsi_event.get_all_consumables(footprint=self.consumables_used_in_hsi['Dehydration_Plan_C']):
+                # Set probability of succesful treatment:
+                prob_cure = 1.0 - self.parameters['ors_effectiveness_against_severe_dehydration']
 
-            # Set probability of succesful treatment:
-            prob_cure = self.parameters['ors_effectiveness_against_severe_dehydration']
-            # todo not sure when to use 'prob_of_cure_given_WHO_PlanC'
+        # todo: Log the use of multivitamins -- in which case?
+        # _ = hsi_event.get_all_consumables(self.consumables_used_in_hsi['Multivitamins_for_Persistent'])
 
 
         # If blood_in_stool (i.e., dysentery):
         if blood_in_stool:
-            # Provide antibiotics:
-            # todo - antibiotics
-
-            # Reduce the probability of succesful treatment:
-            prob_cure *= self.parameters['antibiotic_effectiveness_for_dysentery']
+            # Provide antibiotics (if available) #todo: how should these effects be combined; currently makes no sense.
+            if hsi_event.get_all_consumables(footprint=self.consumables_used_in_hsi['Antibiotics_for_Dysentery']):
+                pass
+            else:
+                prob_cure *=  (1.0 - self.parameters['antibiotic_effectiveness_for_dysentery'])
 
 
         # -------------------------------------
