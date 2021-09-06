@@ -6,7 +6,13 @@
     {
       "draw_number": 0,
       "draw_seed": 953453411,
-      "parameters": null
+      "parameters": {
+        "Tb": {
+          "mixing_parameter": 1
+        }
+      }
     }
-  ]
+  ],
+  "commit": "466e89a2e1be78c8b3f38102b34324e6bf1c2ce0",
+  "github": "https://github.com/UCL/TLOmodel/blob/466e89a2e1be78c8b3f38102b34324e6bf1c2ce0/src/scripts/tb/tara_tb_hiv_calibration.py"
 }

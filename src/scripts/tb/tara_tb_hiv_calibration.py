@@ -14,7 +14,9 @@ tlo scenario-run src/scripts/tb/tara_tb_hiv_calibration.py --draw 1 0
 Run on the batch system using:
 tlo batch-submit src/scripts/tb/tara_tb_hiv_calibration.py
 
-save job ID: tara_tb_hiv_calibration-2021-09-02T131237Z
+
+save Job ID: tara_tb_hiv_calibration-2021-09-06T161546Z
+
 
 
 Display information about a job:
@@ -105,7 +107,7 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'Tb': {
-                'mixing_parameter': 1,
+                'mixing_parameter': 1.0,
             }
         }
 
