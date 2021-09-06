@@ -131,7 +131,6 @@ def test_with_more_modules():
                  dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
 
-
     # Make the population
     sim.make_initial_population(n=popsize)
     # run the simulation

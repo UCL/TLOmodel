@@ -4243,8 +4243,13 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # todo: put in complications from femur fractures
         self.femur_fracture_skeletal_traction_mean_los = p['femur_fracture_skeletal_traction_mean_los']
         self.other_skeletal_traction_los = p['other_skeletal_traction_los']
-        if (('813c' in self.heal_with_time_injuries) &
-            (self.inpatient_days < self.femur_fracture_skeletal_traction_mean_los)):
+        min_los_for_traction = {
+            '813c': self.femur_fracture_skeletal_traction_mean_los,
+            '813b': self.other_skeletal_traction_los,
+            '813a': self.other_skeletal_traction_los,
+            '812': self.other_skeletal_traction_los,
+        }
+        if (('813c' in self.heal_with_time_injuries) & (self.inpatient_days < self.femur_fracture_skeletal_traction_mean_los)):
             self.inpatient_days = self.femur_fracture_skeletal_traction_mean_los
         if ('813b' in self.heal_with_time_injuries) & (self.inpatient_days < self.other_skeletal_traction_los):
             self.inpatient_days = self.other_skeletal_traction_los
@@ -5637,14 +5642,14 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         assert counts > 0, (persons_injuries.to_dict(), surgically_treated_codes)
         # People can be sent here for multiple surgeries, but only one injury can be treated at a time. Decide which
         # injury is being treated in this surgery
-        idx_for_untreated_injuries = []
-        for index, time in enumerate(df.loc[person_id, 'rt_date_to_remove_daly']):
-            if pd.isnull(time):
-                idx_for_untreated_injuries.append(index)
-
+        # find index for untreated injuries
+        idx_for_untreated_injuries = np.where(pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly']))
+        # find untreated injury codes that are treated with major surgery
         relevant_codes = np.intersect1d(injuries_to_be_treated, surgically_treated_codes)
+        # check that the person sent here has an appropriate code(s)
         assert len(relevant_codes) > 0, (persons_injuries.values[0], idx_for_untreated_injuries, person_id,
                                          persons_injuries.values[0][idx_for_untreated_injuries])
+        # choose a code at random
         self.treated_code = rng.choice(relevant_codes)
         # ------------------------ Track permanent disabilities with treatment ----------------------------------------
         # --------------------------------- Perm disability from TBI --------------------------------------------------
@@ -5672,7 +5677,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 self.treated_code = "P" + self.treated_code
                 df.loc[person_id, column] = self.treated_code
                 injuries_to_be_treated.append(self.treated_code)
-                # df.loc[person_id, 'rt_injuries_for_major_surgery'] = injuries_to_be_treated
+                # todo: check if the below lines are needed
                 for injury in injuries_to_be_treated:
                     if injury not in df.loc[person_id, 'rt_injuries_for_major_surgery']:
                         df.loc[person_id, 'rt_injuries_for_major_surgery'].append(injury)
@@ -5680,11 +5685,12 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
 
             columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id,
                                                                                             [self.treated_code])
-            for col in columns:
-                # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
-                # it permanent)
-                df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.end_date + DateOffset(days=1)
-                assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
+
+            # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
+            # it permanent)
+            df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = \
+                self.sim.end_date + DateOffset(days=1)
+            assert df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] > self.sim.date
         # ------------------------------------- Perm disability from SCI ----------------------------------------------
         if 'include_spine_surgery' in self.allowed_interventions:
             codes = ['673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676']
@@ -5701,19 +5707,18 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 self.treated_code = "P" + self.treated_code
                 df.loc[person_id, column] = self.treated_code
                 injuries_to_be_treated.append(self.treated_code)
-                # df.loc[person_id, 'rt_injuries_for_major_surgery'] = injuries_to_be_treated
                 for injury in injuries_to_be_treated:
                     if injury not in df.loc[person_id, 'rt_injuries_for_major_surgery']:
                         df.loc[person_id, 'rt_injuries_for_major_surgery'].append(injury)
                 assert len(injuries_to_be_treated) == len(df.loc[person_id, 'rt_injuries_for_major_surgery'])
                 code = df.loc[person_id, column]
                 columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, [code])
-                for col in columns:
-                    # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
-                    # it permanent)
-                    df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.end_date + \
-                                                                                    DateOffset(days=1)
-                    assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
+
+                # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
+                # it permanent)
+                df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = self.sim.end_date + \
+                                                                                       DateOffset(days=1)
+                assert df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] > self.sim.date
 
         # ------------------------------------- Perm disability from amputation ----------------------------------------
         codes = ['782', '782a', '782b', '782c', '783', '882', '883', '884']
@@ -5740,122 +5745,53 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id,
                                                                                             [code])
             # Schedule recovery for the end of the simulation, thereby making the injury permanent
-            for col in columns:
-                df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.end_date + \
-                                                                                DateOffset(days=1)
-                assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
+
+            df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = self.sim.end_date + \
+                                                                                   DateOffset(days=1)
+            assert df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] > self.sim.date
 
         # ============================== Schedule the recovery dates for the non-permanent injuries ==================
         non_empty_injuries = persons_injuries[persons_injuries != "none"]
         non_empty_injuries = non_empty_injuries.dropna(axis=1)
         injury_columns = non_empty_injuries.columns
-        if self.treated_code == '112':
+        maj_surg_recovery_time_in_days = {
+            '112': 42,
+            '552': 90,
+            '553': 90,
+            '554': 90,
+            '822a': 270,
+            '811': 63,
+            '812': 63,
+            '813a': 270,
+            '813b': 70,
+            '813c': 120,
+            '133a': 42,
+            '133b': 42,
+            '133c': 42,
+            '133d': 42,
+            '134a': 42,
+            '134b': 42,
+            '135': 42,
+            '342': 42,
+            '343': 42,
+            '414': 365,
+            '441': 14,
+            '443': 14,
+            '453a': 42,
+            '453b': 42,
+            '361': 7,
+            '363': 7,
+            '463': 7,
+        }
+        # find the column of the treated injury
+        if self.treated_code in maj_surg_recovery_time_in_days.keys():
             columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
                                                                                           [self.treated_code])[0])
-            # using estimated 6 weeks to recover from brain/head injury surgery
-
-            # performing check to see whether an injury is deemed to heal over time, if it is, then we change the code
-            # this scheduled surgery treats
             if pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]):
-                df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=6)
+                df.loc[person_id, 'rt_date_to_remove_daly'][columns] = \
+                    self.sim.date + DateOffset(days=maj_surg_recovery_time_in_days[self.treated_code])
                 assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
 
-            else:
-                non_empty_injuries.drop(non_empty_injuries.columns[columns], axis=1, inplace=True)
-                relevant_codes = np.intersect1d(non_empty_injuries.values, surgically_treated_codes)
-                self.treated_code = rng.choice(relevant_codes)
-        if self.treated_code == '552' or self.treated_code == '553' or self.treated_code == '554':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [self.treated_code])[0])
-            # using estimated 3 months to recover from laparotomy
-            if pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]):
-                df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(months=3)
-                assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-
-            else:
-                non_empty_injuries.drop(non_empty_injuries.columns[columns], axis=1, inplace=True)
-                relevant_codes = np.intersect1d(non_empty_injuries.values, surgically_treated_codes)
-                assert len(relevant_codes) > 0
-                self.treated_code = rng.choice(relevant_codes)
-        if self.treated_code == '822a':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [self.treated_code])[0])
-            # using estimated 6 - 12 months to recover from a hip dislocation
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(months=9)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if self.treated_code == '811':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [self.treated_code])[0])
-            # using estimated 9 weeks to recover from a foot fracture treated with surgery
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if self.treated_code == '812':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [self.treated_code])[0])
-            # using estimated 9 weeks to recover from a tibia/fibula fracture treated with surgery
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if self.treated_code == '813a':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [self.treated_code])[0])
-            # using estimated 6 - 12 months to recover from a hip fracture
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(months=9)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if self.treated_code == '813b':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [self.treated_code])[0])
-            # using estimated 8 - 12 weeks to recover from a pelvis fracture
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=10)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if self.treated_code == '813c':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [self.treated_code])[0])
-            # using estimated 3 - 6 months to recover from a femur fracture
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(months=4)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        tbi_codes = ['133a', '133b', '133c', '133d', '134a', '134b', '135']
-        if self.treated_code in tbi_codes:
-            columns = injury_columns.get_loc(
-                road_traffic_injuries.rti_find_injury_column(person_id, [self.treated_code])[0])
-            # using estimated 6 weeks to recover from brain/head injury surgery
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=6)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if self.treated_code == '342':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [self.treated_code])[0])
-            # using estimated 6 weeks PLACEHOLDER FOR VERTEBRAL ARTERY LACERATION
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=6)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if self.treated_code == '343':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [self.treated_code])[0])
-            # using estimated 6 weeks PLACEHOLDER FOR PHARYNX CONTUSION
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=6)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if self.treated_code == '414':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [self.treated_code])[0])
-            # using estimated 1 year recovery for flail chest
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(years=1)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if self.treated_code == '441' or self.treated_code == '443':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [self.treated_code])[0])
-            # using estimated 1 - 2 week recovery time for pneumothorax
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=2)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if self.treated_code == '453a' or self.treated_code == '453b':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [self.treated_code])[0])
-            # using estimated 6 weeks PLACEHOLDER FOR DIAPHRAGM RUPTURE
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=6)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if self.treated_code == '361' or self.treated_code == '363' or self.treated_code == '463':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [self.treated_code])[0])
-            # using estimated 1 weeks PLACEHOLDER FOR INTERNAL BLEEDING
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=1)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
         swapping_codes = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a',
                           'P673b', 'P674a', 'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884',
                           '813bo', '813co', '813do', '813eo']
