@@ -557,9 +557,9 @@ class Tb(Module):
 
         active_tb_idx = active_tb_idx.union(idx_new_active_mdr)  # join indices (checked)
 
-        # schedule for time now up to 1 year
+        # schedule for time now up to 2 years
         for person_id in active_tb_idx:
-            date_active = self.sim.date + pd.DateOffset(days=self.module.rng.randint(0, 365))
+            date_active = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 732))
             self.sim.schedule_event(
                 TbActiveEvent(self, person_id), date_active
             )
