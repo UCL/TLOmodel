@@ -1210,6 +1210,7 @@ class RTI(Module):
         # thorax/ lung injury and abdominal trauma
         codes_requiring_ct_scan = ['133', '134', '135', '552', '553', '554', '342', '343', '441', '443', '453', '361',
                                    '363', '461', '463']
+
         def adjust_appt_footprint(_codes, _requirement):
             _, counts = self.rti_find_and_count_injuries(persons_injuries, _codes)
             if counts > 0:
@@ -1821,11 +1822,13 @@ class RTI(Module):
             # Broken foot
             '811': self.daly_wt_foot_fracture_short_term_with_without_treatment,
             # Broken foot (open), currently combining the daly weight used for open wounds and the fracture
-            '813do': self.daly_wt_foot_fracture_short_term_with_without_treatment + self.daly_wt_facial_soft_tissue_injury,
+            '813do': (self.daly_wt_foot_fracture_short_term_with_without_treatment +
+                      self.daly_wt_facial_soft_tissue_injury),
             # Broken patella, tibia, fibula
             '812': self.daly_wt_patella_tibia_fibula_fracture_without_treatment,
             # Broken foot (open), currently combining the daly weight used for open wounds and the fracture
-            '813eo': self.daly_wt_patella_tibia_fibula_fracture_without_treatment + self.daly_wt_facial_soft_tissue_injury,
+            '813eo': (self.daly_wt_patella_tibia_fibula_fracture_without_treatment +
+                      self.daly_wt_facial_soft_tissue_injury),
             # Broken Hip, Pelvis, Femur other than femoral neck
             '813a': self.daly_wt_hip_fracture_short_term_with_without_treatment,
             '813b': self.daly_wt_pelvis_fracture_short_term,
@@ -1961,10 +1964,10 @@ class RTI(Module):
             # injuries treated with open fracture treatment
             '813bo': self.daly_wt_pelvis_fracture_long_term + self.daly_wt_facial_soft_tissue_injury,
             '813co': self.daly_wt_femur_fracture_short_term + self.daly_wt_facial_soft_tissue_injury,
-            '813do': self.daly_wt_foot_fracture_short_term_with_without_treatment +
-                     self.daly_wt_facial_soft_tissue_injury,
-            '813eo': self.daly_wt_patella_tibia_fibula_fracture_without_treatment +
-                     self.daly_wt_facial_soft_tissue_injury
+            '813do': (self.daly_wt_foot_fracture_short_term_with_without_treatment +
+                     self.daly_wt_facial_soft_tissue_injury),
+            '813eo': (self.daly_wt_patella_tibia_fibula_fracture_without_treatment +
+                     self.daly_wt_facial_soft_tissue_injury),
 
         }
         # update the total values of the daly weights
@@ -2021,27 +2024,46 @@ class RTI(Module):
         assert counts > 0, 'This person has asked to swap an injury code, but it is not swap-able'
 
         daly_weight_change_lookup = {
-            '712b': -self.daly_wt_hand_wrist_fracture_without_treatment + self.daly_wt_hand_wrist_fracture_with_treatment,
-            '812': -self.daly_wt_patella_tibia_fibula_fracture_without_treatment + self.daly_wt_patella_tibia_fibula_fracture_with_treatment,
-            '3113': -self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
-            '4113': -self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
-            '5113': -self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
-            '7113': -self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
-            '8113': -self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
-            '813a': -self.daly_wt_hip_fracture_short_term_with_without_treatment + self.daly_wt_hip_fracture_long_term_with_treatment,
-            '813b': -self.daly_wt_pelvis_fracture_short_term + self.daly_wt_pelvis_fracture_long_term,
-            '813bo': -self.daly_wt_pelvis_fracture_short_term + self.daly_wt_pelvis_fracture_long_term,
-            'P673a': -self.daly_wt_spinal_cord_lesion_neck_without_treatment + self.daly_wt_spinal_cord_lesion_neck_with_treatment,
-            'P673b': -self.daly_wt_spinal_cord_lesion_below_neck_without_treatment + self.daly_wt_spinal_cord_lesion_below_neck_with_treatment,
-            'P674a': -self.daly_wt_spinal_cord_lesion_neck_without_treatment + self.daly_wt_spinal_cord_lesion_neck_with_treatment,
-            'P674b': -self.daly_wt_spinal_cord_lesion_below_neck_without_treatment + self.daly_wt_spinal_cord_lesion_below_neck_with_treatment,
-            'P675a': -self.daly_wt_spinal_cord_lesion_neck_without_treatment + self.daly_wt_spinal_cord_lesion_neck_with_treatment,
-            'P675b': -self.daly_wt_spinal_cord_lesion_below_neck_without_treatment + self.daly_wt_spinal_cord_lesion_below_neck_with_treatment,
-            'P676': -self.daly_wt_spinal_cord_lesion_neck_without_treatment + self.daly_wt_spinal_cord_lesion_neck_with_treatment,
-            'P782b': -self.daly_wt_unilateral_arm_amputation_without_treatment + self.daly_wt_unilateral_arm_amputation_with_treatment,
-            'P783': -self.daly_wt_bilateral_arm_amputation_without_treatment + self.daly_wt_bilateral_arm_amputation_with_treatment,
-            'P883': -self.daly_wt_unilateral_lower_limb_amputation_without_treatment + self.daly_wt_unilateral_lower_limb_amputation_with_treatment,
-            'P884': -self.daly_wt_bilateral_lower_limb_amputation_without_treatment + self.daly_wt_bilateral_lower_limb_amputation_with_treatment
+            '712b': (- self.daly_wt_hand_wrist_fracture_without_treatment +
+                     self.daly_wt_hand_wrist_fracture_with_treatment),
+            '812': (- self.daly_wt_patella_tibia_fibula_fracture_without_treatment +
+                    self.daly_wt_patella_tibia_fibula_fracture_with_treatment),
+            '3113': (- self.daly_wt_burns_less_than_20_percent_body_area_without_treatment +
+                     self.daly_wt_burns_less_than_20_percent_body_area_with_treatment),
+            '4113': (- self.daly_wt_burns_less_than_20_percent_body_area_without_treatment +
+                     self.daly_wt_burns_less_than_20_percent_body_area_with_treatment),
+            '5113': (- self.daly_wt_burns_less_than_20_percent_body_area_without_treatment +
+                     self.daly_wt_burns_less_than_20_percent_body_area_with_treatment),
+            '7113': (- self.daly_wt_burns_less_than_20_percent_body_area_without_treatment +
+                     self.daly_wt_burns_less_than_20_percent_body_area_with_treatment),
+            '8113': (- self.daly_wt_burns_less_than_20_percent_body_area_without_treatment +
+                     self.daly_wt_burns_less_than_20_percent_body_area_with_treatment),
+            '813a': (- self.daly_wt_hip_fracture_short_term_with_without_treatment +
+                     self.daly_wt_hip_fracture_long_term_with_treatment),
+            '813b': - self.daly_wt_pelvis_fracture_short_term + self.daly_wt_pelvis_fracture_long_term,
+            '813bo': - self.daly_wt_pelvis_fracture_short_term + self.daly_wt_pelvis_fracture_long_term,
+            'P673a': (- self.daly_wt_spinal_cord_lesion_neck_without_treatment +
+                      self.daly_wt_spinal_cord_lesion_neck_with_treatment),
+            'P673b': (- self.daly_wt_spinal_cord_lesion_below_neck_without_treatment +
+                      self.daly_wt_spinal_cord_lesion_below_neck_with_treatment),
+            'P674a': (- self.daly_wt_spinal_cord_lesion_neck_without_treatment +
+                      self.daly_wt_spinal_cord_lesion_neck_with_treatment),
+            'P674b': (- self.daly_wt_spinal_cord_lesion_below_neck_without_treatment +
+                      self.daly_wt_spinal_cord_lesion_below_neck_with_treatment),
+            'P675a': (- self.daly_wt_spinal_cord_lesion_neck_without_treatment +
+                      self.daly_wt_spinal_cord_lesion_neck_with_treatment),
+            'P675b': (- self.daly_wt_spinal_cord_lesion_below_neck_without_treatment +
+                      self.daly_wt_spinal_cord_lesion_below_neck_with_treatment),
+            'P676': (- self.daly_wt_spinal_cord_lesion_neck_without_treatment +
+                     self.daly_wt_spinal_cord_lesion_neck_with_treatment),
+            'P782b': (- self.daly_wt_unilateral_arm_amputation_without_treatment +
+                      self.daly_wt_unilateral_arm_amputation_with_treatment),
+            'P783': (- self.daly_wt_bilateral_arm_amputation_without_treatment +
+                     self.daly_wt_bilateral_arm_amputation_with_treatment),
+            'P883': (- self.daly_wt_unilateral_lower_limb_amputation_without_treatment +
+                     self.daly_wt_unilateral_lower_limb_amputation_with_treatment),
+            'P884': (- self.daly_wt_bilateral_lower_limb_amputation_without_treatment +
+                     self.daly_wt_bilateral_lower_limb_amputation_with_treatment)
         }
 
         # swap the relevant code's daly weight, from the daly weight associated with the injury without treatment
@@ -4027,14 +4049,10 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         self.minor_surgery_counts = 0
         # Isolate the relevant injury information
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
-
-
         # consumables required: closed reduction. In some cases surgery
         # --------------------------------- Thorax Fractures -----------------------------------------------------------
         # Check whether the person has a broken rib (and therefor needs no further medical care apart from pain
         # management) or if they have flail chest, a life threatening condition which will require surgery.
-
-
         codes = ['414']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if counts > 0:
@@ -4211,8 +4229,6 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
             self.major_surgery_counts += 1
             # add the injury to the injuries to be treated with major surgery.
             df.loc[person_id, 'rt_injuries_for_major_surgery'].append('463')
-
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'RTI_MedicalIntervention'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
@@ -4227,8 +4243,8 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # todo: put in complications from femur fractures
         self.femur_fracture_skeletal_traction_mean_los = p['femur_fracture_skeletal_traction_mean_los']
         self.other_skeletal_traction_los = p['other_skeletal_traction_los']
-        if ('813c' in self.heal_with_time_injuries) & \
-            (self.inpatient_days < self.femur_fracture_skeletal_traction_mean_los):
+        if (('813c' in self.heal_with_time_injuries) &
+            (self.inpatient_days < self.femur_fracture_skeletal_traction_mean_los)):
             self.inpatient_days = self.femur_fracture_skeletal_traction_mean_los
         if ('813b' in self.heal_with_time_injuries) & (self.inpatient_days < self.other_skeletal_traction_los):
             self.inpatient_days = self.other_skeletal_traction_los
@@ -4279,9 +4295,10 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                         data=person_injuries,
                         description='The injuries of ICU patients')
         # Check that each injury has only one treatment plan assigned to it
-        treatment_plan = person['rt_injuries_for_minor_surgery'] + person['rt_injuries_for_major_surgery'] + \
-                         person['rt_injuries_to_heal_with_time'] + person['rt_injuries_for_open_fracture_treatment'] + \
-                         person['rt_injuries_to_cast']
+        treatment_plan = \
+            person['rt_injuries_for_minor_surgery'] + person['rt_injuries_for_major_surgery'] + \
+            person['rt_injuries_to_heal_with_time'] + person['rt_injuries_for_open_fracture_treatment'] + \
+            person['rt_injuries_to_cast']
         assert len(treatment_plan) == len(set(treatment_plan))
 
         # Other test admission protocol. Basing ICU admission of whether they have a TBI
@@ -4482,9 +4499,10 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # ------------------------------------ Open fractures ---------------------------------------------------------
         if self.open_fractures > 0 & df.loc[person_id, 'is_alive']:
             road_traffic_injuries.rti_ask_for_open_fracture_treatment(person_id=person_id, counts=self.open_fractures)
-        treatment_plan = p['rt_injuries_for_minor_surgery'] + p['rt_injuries_for_major_surgery'] + \
-                         p['rt_injuries_to_heal_with_time'] + p['rt_injuries_for_open_fracture_treatment'] + \
-                         p['rt_injuries_to_cast']
+        treatment_plan = \
+            p['rt_injuries_for_minor_surgery'] + p['rt_injuries_for_major_surgery'] +  \
+            p['rt_injuries_to_heal_with_time'] + p['rt_injuries_for_open_fracture_treatment'] +  \
+            p['rt_injuries_to_cast']
         # make sure injuries are treated in one place only
         assert len(treatment_plan) == len(set(treatment_plan))
         # ============================== Generic injury management =====================================================
