@@ -459,7 +459,8 @@ for i in range(0, nsim):
     number_perm_disabled = log_df['tlo.methods.rti']['summary_1m']['number permanently disabled'].iloc[-1]
     percent_perm_disabled = number_perm_disabled / number_in_crashes
     no_hs_percent_perm_disability.append(number_perm_disabled)
-    no_hs_fraction_of_healthsystem_usage.append(log_df['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'])
+    no_hs_fraction_of_healthsystem_usage.append(
+        log_df['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'])
     no_hs_inj_icu_usage.append(np.mean(
         [i for i in log_df['tlo.methods.rti']['summary_1m']['percent admitted to ICU or HDU'].tolist() if i !=
          'none_injured']

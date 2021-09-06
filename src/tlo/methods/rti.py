@@ -1964,8 +1964,7 @@ class RTI(Module):
             # injuries treated with open fracture treatment
             '813bo': self.daly_wt_pelvis_fracture_long_term + self.daly_wt_facial_soft_tissue_injury,
             '813co': self.daly_wt_femur_fracture_short_term + self.daly_wt_facial_soft_tissue_injury,
-            '813do': (self.daly_wt_foot_fracture_short_term_with_without_treatment +
-                     self.daly_wt_facial_soft_tissue_injury),
+            '813do': (self.daly_wt_foot_fracture_short_term_with_without_treatment + self.daly_wt_facial_soft_tissue_injury),
             '813eo': (self.daly_wt_patella_tibia_fibula_fracture_without_treatment +
                      self.daly_wt_facial_soft_tissue_injury),
 
@@ -4049,17 +4048,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         self.minor_surgery_counts = 0
         # Isolate the relevant injury information
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
-        # consumables required: closed reduction. In some cases surgery
-        # --------------------------------- Thorax Fractures -----------------------------------------------------------
-        # Check whether the person has a broken rib (and therefor needs no further medical care apart from pain
-        # management) or if they have flail chest, a life threatening condition which will require surgery.
-        codes = ['414']
-        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
-        if counts > 0:
-            # update the number of major surgeries required
-            self.major_surgery_counts += 1
-            # add the injury to the injuries to be treated by major surgeries so it isn't treated elsewhere
-            df.loc[person_id, 'rt_injuries_for_major_surgery'].append('414')
+
         # todo: work out if the amputations need to be included as a swap or if they already exist
 
         # create a dictionary to store the probability of each possible treatment for applicable injuries, we are
@@ -4249,14 +4238,12 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
             '813a': self.other_skeletal_traction_los,
             '812': self.other_skeletal_traction_los,
         }
-        if (('813c' in self.heal_with_time_injuries) & (self.inpatient_days < self.femur_fracture_skeletal_traction_mean_los)):
-            self.inpatient_days = self.femur_fracture_skeletal_traction_mean_los
-        if ('813b' in self.heal_with_time_injuries) & (self.inpatient_days < self.other_skeletal_traction_los):
-            self.inpatient_days = self.other_skeletal_traction_los
-        if ('812' in self.heal_with_time_injuries) & (self.inpatient_days < self.other_skeletal_traction_los):
-            self.inpatient_days = self.other_skeletal_traction_los
-        if ('813a' in self.heal_with_time_injuries) & (self.inpatient_days < self.other_skeletal_traction_los):
-            self.inpatient_days = self.other_skeletal_traction_los
+        traction_injuries = [injury for injury in df.loc[person_id, 'rt_injuries_to_heal_with_time'] if injury in
+                             min_los_for_traction.keys()]
+        if len(traction_injuries) > 0:
+            if self.inpatient_days < min_los_for_traction[traction_injuries[0]]:
+                self.inpatient_days = min_los_for_traction[traction_injuries[0]]
+
         # Specify the type of bed days needed? not sure if necessary
         self.BEDDAYS_FOOTPRINT.update({'general_bed': self.inpatient_days})
         # update the expected appointment foortprint
