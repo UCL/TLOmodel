@@ -369,6 +369,7 @@ class Tb(Module):
         # if using national-level model, include all districts in IPT coverage
         # p['tb_high_risk_distr'] = workbook['IPTdistricts']
         p['tb_high_risk_distr'] = workbook['all_districts']
+
         p['ipt_coverage'] = workbook['ipt_coverage']
 
         self.district_list = self.sim.modules['Demography'].parameters['pop_2010']['District'].unique().tolist()

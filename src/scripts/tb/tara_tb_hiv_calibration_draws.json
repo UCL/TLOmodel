@@ -8,7 +8,5 @@
       "draw_seed": 953453411,
       "parameters": null
     }
-  ],
-  "commit": "68460473c096bd14c70a26771d6e36e29a53416b",
-  "github": "https://github.com/UCL/TLOmodel/blob/68460473c096bd14c70a26771d6e36e29a53416b/src/scripts/tb/tara_tb_hiv_calibration.py"
+  ]
 }
