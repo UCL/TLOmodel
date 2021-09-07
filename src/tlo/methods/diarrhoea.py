@@ -854,7 +854,7 @@ class Diarrhoea(Module):
             # Provide ORS (if available):
             if hsi_event.get_all_consumables(footprint=self.consumables_used_in_hsi['ORS']):
                 # Set probaility of succesful treatment:
-                prob_cure = 1.0 - self.parameters['ors_effectiveness_on_diarrhoea_mortality']
+                prob_cure = self.parameters['ors_effectiveness_on_diarrhoea_mortality']
 
         else:
             # If Severe dehyrdation...
@@ -862,7 +862,7 @@ class Diarrhoea(Module):
             # Provide Package of medicines for Severe Dehyrdation (if available);
             if hsi_event.get_all_consumables(footprint=self.consumables_used_in_hsi['Dehydration_Plan_C']):
                 # Set probability of succesful treatment:
-                prob_cure = 1.0 - self.parameters['ors_effectiveness_against_severe_dehydration']
+                prob_cure = self.parameters['ors_effectiveness_against_severe_dehydration']
 
         # todo: Log the use of multivitamins -- in which case?
         # _ = hsi_event.get_all_consumables(self.consumables_used_in_hsi['Multivitamins_for_Persistent'])
@@ -1044,7 +1044,7 @@ class Models:
         df_slice = self.module.sim.population.props.loc[[person_id]]
 
         min_dur_acute = self.p['min_dur_acute']
-        min_dur_prolonged = self.p['min_dur_prolonged ']
+        min_dur_prolonged = self.p['min_dur_prolonged']
         min_dur_persistent = self.p['min_dur_persistent']
         max_dur_persistent = self.p['max_dur_persistent']
 

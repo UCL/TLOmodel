@@ -247,7 +247,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
 
         # Apply perfect efficacy for treatments:
         sim.modules['Diarrhoea'].parameters['ors_effectiveness_on_diarrhoea_mortality'] = 1.0
-        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_WHO_PlanC'] = 1.0  #<-- not used currently
+        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_WHO_PlanC'] = 1.0
         sim.modules['Diarrhoea'].parameters['ors_effectiveness_against_severe_dehydration'] = 1.0
         sim.modules['Diarrhoea'].parameters['antibiotic_effectiveness_for_dysentery'] = 1.0
 
