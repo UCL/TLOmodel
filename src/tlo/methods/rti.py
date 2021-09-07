@@ -1897,6 +1897,13 @@ class RTI(Module):
 
         # ------------------------------- Remove the daly weights for treated injuries ---------------------------------
         # ==================================== heal with time injuries =================================================
+        # store open fracture daly weight codes in one variable
+        daly_wt_813bo =  self.daly_wt_pelvis_fracture_long_term + self.daly_wt_facial_soft_tissue_injury
+        daly_wt_813co =  self.daly_wt_femur_fracture_short_term + self.daly_wt_facial_soft_tissue_injury
+        daly_wt_813do= self.daly_wt_foot_fracture_short_term_with_without_treatment + \
+                       self.daly_wt_facial_soft_tissue_injury
+        daly_wt_813eo = self.daly_wt_patella_tibia_fibula_fracture_without_treatment + \
+                        self.daly_wt_facial_soft_tissue_injury
         daly_weight_removal_lookup = {
             # heal with time injuries
             '322': self.daly_wt_neck_dislocation,
@@ -1962,11 +1969,10 @@ class RTI(Module):
             '453b': self.daly_wt_lung_contusion,
             '463': self.daly_wt_hemothorax,
             # injuries treated with open fracture treatment
-            '813bo': self.daly_wt_pelvis_fracture_long_term + self.daly_wt_facial_soft_tissue_injury,
-            '813co': self.daly_wt_femur_fracture_short_term + self.daly_wt_facial_soft_tissue_injury,
-            '813do': (self.daly_wt_foot_fracture_short_term_with_without_treatment + self.daly_wt_facial_soft_tissue_injury),
-            '813eo': (self.daly_wt_patella_tibia_fibula_fracture_without_treatment +
-                     self.daly_wt_facial_soft_tissue_injury),
+            '813bo': daly_wt_813bo,
+            '813co': daly_wt_813co,
+            '813do': daly_wt_813do,
+            '813eo': daly_wt_813eo,
 
         }
         # update the total values of the daly weights
@@ -5729,8 +5735,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                     df.loc[person_id, 'rt_injuries_for_major_surgery'].append(injury)
             assert len(injuries_to_be_treated) == len(df.loc[person_id, 'rt_injuries_for_major_surgery'])
             code = df.loc[person_id, column]
-            columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id,
-                                                                                            [code])
+            columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, [code])
             # Schedule recovery for the end of the simulation, thereby making the injury permanent
 
             df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = self.sim.end_date + \
