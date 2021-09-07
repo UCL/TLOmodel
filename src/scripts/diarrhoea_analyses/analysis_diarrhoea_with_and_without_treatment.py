@@ -46,9 +46,9 @@ end_date = Date(2015, 1, 2)
 popsize = 10000
 
 for label, service_avail in scenarios.items():
-    log_config = {'filename': 'LogFile'}
+    log_config = {'filename': 'diarrhoea_with_treatment_with_and_without_treatment'}
     # add file handler for the purpose of logging
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
 
     # run the simulation
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),

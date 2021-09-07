@@ -750,6 +750,7 @@ class Diarrhoea(Module):
 
         # -- Assemble the footprints for each diarrhoea-related condition or plan:
         # -- todo only a few of these are being used.
+        # TODO: multivitamins consumables
         add_consumable('ORS', {ors_code: 1}, {})
         add_consumable('Dehydration_Plan_A', {ors_code: 1}, {})
         add_consumable('Dehydration_Plan_B', {ors_code: 1}, {})
@@ -758,8 +759,6 @@ class Diarrhoea(Module):
         add_consumable('Zinc_Over6mo', {zinc_over_6m_code: 1}, {zinc_tablet_code: 5})
         add_consumable('Antibiotics_for_Dysentery', {antibiotics_code: 1}, {cipro_code: 6})
         add_consumable('Multivitamins_for_Persistent', {zinc_under_6m_code: 1}, {zinc_tablet_code: 5})
-
-        # TODO: multivitamins consumables
 
     def do_when_presentation_with_diarrhoea(self, person_id, hsi_event):
         """This routine is called when Diarrhoea is a symptom for a child attending a Generic HSI Appointment. It
@@ -980,7 +979,6 @@ class Models:
         self.write_incidence_equations_by_pathogen()
         self.write_prob_symptoms()
         self.write_lm_prob_diarrhoea_is_persistent_if_prolonged()
-        self.write_lm_risk_of_death_diarrhoea()
 
     def write_lm_prob_diarrhoea_is_persistent_if_prolonged(self):
         """Create the linear model for the probability that the diarrhoea is 'persistent', given that it is prolonged"""
@@ -992,7 +990,7 @@ class Models:
             Predictor('un_HAZ_category').when('HAZ<-3', self.p['rr_bec_persistent_stunted']),
             Predictor('un_clinical_acute_malnutrition').when('SAM', self.p['rr_bec_persistent_SAM']),
             Predictor().when('(hv_inf == True) & (hv_art == "not")', self.p['rr_bec_persistent_HIV']),
-            # todo: add exclusive breastfeeding
+            # todo: ****add exclusive breastfeeding****
         )
 
     def write_prob_symptoms(self):
@@ -1053,42 +1051,54 @@ class Models:
 
         return duration
 
-    def write_lm_risk_of_death_diarrhoea(self):
-        """Makes the unscaled linear model with default intercept of 1. Calculates the mean CFR for
-        0-year-olds and then creates a new linear model with adjusted intercept so incidents in 0-year-olds
-        matches the specified value in the model when averaged across the population
-        """
+    def will_die(self,
+                 gi_last_diarrhoea_pathogen,
+                 gi_last_diarrhoea_type,
+                 gi_last_diarrhoea_duration_longer_than_13days,
+                 age_exact_years,
+                 ri_current_infection_status,
+                 untreated_hiv,
+                 un_clinical_acute_malnutrition
+                 ):
+        """Determine whether an episode of diarrhorea will result in death"""
+        # ** todo - this does not depend on dehydration! **
 
-        # todo - effect of dehydration is not included here!
-        def make_lm_death(intercept=1.0):
-            return LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                intercept,
-                Predictor('gi_last_diarrhoea_pathogen').when('cryptosporidium', self.p['rr_diarr_death_cryptosporidium'])
-                    .when('shigella', self.p['rr_diarr_death_shigella']),
-                Predictor('gi_last_diarrhoea_type').when('watery', self.p['case_fatality_rate_AWD'])
-                                                   .when('bloody', self.p['case_fatality_rate_dysentery']),
-                Predictor('gi_last_diarrhoea_duration_longer_than_13days').when(True,
-                                                             self.p['rr_diarr_death_if_duration_longer_than_13_days']),
+        adjustment_factor = 1.0 # todo put as parameter: target CFR = 5.306/10000 per GBD 2016 paper ( (num death) /num episodes )
 
-                Predictor('age_exact_years').when('.between(1,1.9999)', self.p['rr_diarr_death_age12to23mo'])
-                                            .when('.between(2,4.9999)', self.p['rr_diarr_death_age24to59mo'])
-                                            .when('.between(0,0.9999)', 1.0).otherwise(0.0),
-                Predictor('ri_current_ALRI_status').when(True, self.p['rr_diarr_death_alri']),
-                Predictor().when('(hv_inf == True) & (hv_art == "not")', self.p['rr_diarr_death_untreated_HIV']),
-                Predictor('un_clinical_acute_malnutrition').when('SAM', self.p['rr_diarrhoea_SAM'])
-            )
+        # Baseline risks:
+        if gi_last_diarrhoea_type == 'watery':
+            risk = self.p['case_fatality_rate_AWD'] * adjustment_factor
+        else:
+            risk = self.p['case_fatality_rate_dysentery'] * adjustment_factor
 
-        # todo - does this logic actually work???? what kinds of cases are being developed?
-        df = self.module.sim.population.props
-        unscaled_lm = make_lm_death()
-        target_mean = 5.306/10000  # target CFR: calculated with no. death / no. episodes GBD 2016 diarrhoea paper
-        actual_mean = unscaled_lm.predict(df.loc[df.is_alive &
-                                                 (df.gi_last_diarrhoea_pathogen == any(list(self.module.pathogens))) &
-                                                 (df.age_years < 5)]).mean()
-        scaled_intercept = 1.0 * (target_mean / actual_mean) \
-            if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
-        self.risk_of_death_diarrhoea = make_lm_death(intercept=scaled_intercept)
+        # Factors that adjust risk up or down:
+        if gi_last_diarrhoea_pathogen == 'cryptosporidium':
+            risk *= self.p['rr_diarr_death_cryptosporidium']
+        elif gi_last_diarrhoea_pathogen == 'shigella':
+            self.p['rr_diarr_death_shigella']
+
+        if gi_last_diarrhoea_duration_longer_than_13days:
+            risk *= self.p['rr_diarr_death_if_duration_longer_than_13_days']
+
+        if (1.0 <= age_exact_years < 2.0):
+            risk *= self.p['rr_diarr_death_age12to23mo']
+        elif age_exact_years < 5.0:
+            risk *= self.p['rr_diarr_death_age24to59mo']
+        else:
+            risk *= 0.0
+
+        if ri_current_infection_status:
+            risk *= self.p['rr_diarr_death_alri']
+
+        if untreated_hiv:
+            risk *= self.p['rr_diarr_death_untreated_HIV']
+
+        if un_clinical_acute_malnutrition == 'SAM':
+            risk *= self.p['rr_diarrhoea_SAM']
+
+        # Return bool following coin-flip to determine outcome
+        return self.rng.rand() < risk
+
 
     def write_incidence_equations_by_pathogen(self):
         """Make a dict to hold the equations that govern the probability that a person acquires diarrhoea that is
@@ -1289,8 +1299,15 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
                 df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'severe'
 
         # ----------------------- Determine outcome (recovery or death) of this episode ----------------------
-        if m.models.risk_of_death_diarrhoea.predict(df.loc[[person_id]], rng):
-            # todo --- this equation is not looking at props_news but the properties in the df
+        if m.models.will_die(
+            gi_last_diarrhoea_pathogen=props_new['gi_last_diarrhoea_pathogen'],
+            gi_last_diarrhoea_type=props_new['gi_last_diarrhoea_type'],
+            gi_last_diarrhoea_duration_longer_than_13days=props_new['gi_last_diarrhoea_duration_longer_than_13days'],
+            age_exact_years=person['age_exact_years'],
+            ri_current_infection_status=person['ri_current_infection_status'],
+            untreated_hiv=person['hv_inf'] and person['hv_art']!="on_VL_suppressed",
+            un_clinical_acute_malnutrition=person['un_clinical_acute_malnutrition']
+        ):
             # person will die (unless treated)
             props_new['gi_last_diarrhoea_death_date'] = date_of_outcome
             self.sim.schedule_event(DiarrhoeaDeathEvent(m, person_id), date_of_outcome)
@@ -1537,7 +1554,7 @@ class PropertiesOfOtherModules(Module):
         'hv_inf': Property(Types.BOOL, 'temporary property for HIV infection status'),
         'hv_art': Property(Types.CATEGORICAL, 'temporary property for ART status',
                            categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
-        'ri_current_ALRI_status': Property(Types.BOOL, 'temporary property'),
+        'ri_current_infection_status': Property(Types.BOOL, 'temporary property'),
         'nb_low_birth_weight_status': Property(Types.CATEGORICAL, 'temporary property',
                                                categories=['extremely_low_birth_weight', 'very_low_birth_weight',
                                                            'low_birth_weight', 'normal_birth_weight']),
@@ -1561,7 +1578,7 @@ class PropertiesOfOtherModules(Module):
         df = population.props
         df.loc[df.is_alive, 'hv_inf'] = False
         df.loc[df.is_alive, 'hv_art'] = 'not'
-        df.loc[df.is_alive, 'ri_current_ALRI_status'] = False
+        df.loc[df.is_alive, 'ri_current_infection_status'] = False
         df.loc[df.is_alive, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
         df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
@@ -1574,7 +1591,7 @@ class PropertiesOfOtherModules(Module):
         df = self.sim.population.props
         df.at[child, 'hv_inf'] = False
         df.at[child, 'hv_art'] = 'not'
-        df.at[child, 'ri_current_ALRI_status'] = False
+        df.at[child, 'ri_current_infection_status'] = False
         df.at[child, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
         df.at[child, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.at[child, 'un_clinical_acute_malnutrition'] = 'well'

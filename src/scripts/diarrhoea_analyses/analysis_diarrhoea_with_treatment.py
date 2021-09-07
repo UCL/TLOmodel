@@ -6,7 +6,7 @@ There is treatment.
 # %% Import Statements and initial declarations
 import datetime
 from pathlib import Path
-
+import os
 import pandas as pd
 from matplotlib import pyplot as plt
 
@@ -34,17 +34,17 @@ no_existing_logfile = True
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-# %% Run the Simulation
+log_filename = outputpath / 'LogFile__2021-09-06T180533.log'
 
-if no_existing_logfile:
-
+if not os.path.exists(log_filename):
+    # If logfile does not exists, re-run the simulation:
     # Do not run this cell if you already have a  logfile from a simulation:
     start_date = Date(2010, 1, 1)
     end_date = Date(2020, 1, 1)
     popsize = 20000
 
     log_config = {
-        'filename': 'LogFile',
+        'filename': 'diarrhoea_with_treatment',
         'custom_levels': {
             '*': logging.WARNING,
             'tlo.methods.demography': logging.INFO,
@@ -61,33 +61,21 @@ if no_existing_logfile:
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.PropertiesOfOtherModules(),
-                 hiv.DummyHivModule(),
                  )
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
     # display filename
-    filename = sim.log_filepath
-    print(f"filename: {filename}")
+    log_filename = sim.log_filepath
+    print(f"log_filename: {log_filename}")
 
-    # %% Load the logile:
 
-    # Get the output from the logfile
-    filename = Path(f'{filename}')
-
-else:
-    # <-- insert name of the logfile here if you do not want to run the simulation again,
-    # e.g. filename = Path("outputs/LogFile__2021-06-29T131200.log")
-    filename = Path('outputs\LogFile__2021-07-14T161651.log')
-
-output = parse_log_file(filename)
-
+output = parse_log_file(log_filename)
 # %% ----------------------------  INCIDENCE RATE OF DIARRHOEA BY PATHOGEN  ----------------------------
 
 #  Calculate the "incidence rate" from the output counts of incidence
@@ -176,7 +164,7 @@ calibration_incidence_rate_2_to_4_year_olds = {
 
 # Produce a set of line plot comparing to the calibration data
 fig, axes = plt.subplots(ncols=2, nrows=5, sharey=True)
-for ax_num, pathogen in enumerate(sim.modules['Diarrhoea'].pathogens):
+for ax_num, pathogen in enumerate(calibration_incidence_rate_0_year_olds.keys()):
     ax = fig.axes[ax_num]
     inc_rate['0y'][pathogen].plot(ax=ax, label='Model output')
     ax.hlines(y=calibration_incidence_rate_0_year_olds[pathogen],
@@ -261,7 +249,7 @@ deaths = deaths.drop(deaths.loc[deaths['cause_simplified'] != 'Diarrhoea'].index
 deaths = deaths.groupby(by=['age_grp', 'year']).size().reset_index()
 deaths.rename(columns={0: 'count'}, inplace=True)
 # deaths.drop(deaths.index[deaths['year'] > 2010.0], inplace=True)
-deaths = deaths.pivot(values='count', columns='age_grp', index='year')
+deaths = deaths.pivot(values='count', columns='age_grp', index='year').fillna(0.0)
 
 # Death Rate = death count (by year, by age-group) / person-years
 death_rate = deaths.div(py)
@@ -278,16 +266,6 @@ death_rate_comparison = pd.Series(
 death_rate_comparison.plot.bar()
 plt.title('Death Rate to Diarrhoea in Under 5s')
 plt.savefig(outputpath / ("Diarrhoea_death_rate_0-5_year_olds" + datestamp + ".pdf"), format='pdf')
-plt.show()
-
-# %% Plot total numbers of death against comparable estimate from GBD
-
-# Get comparison
-comparison = compare_number_of_deaths(logfile=filename, resourcefilepath=resourcefilepath)
-
-# Make a simple bar chart
-comparison.loc[('2015-2019', slice(None), '0-4', 'Childhood Diarrhoea')].sum().plot.bar()
-plt.title('Deaths per year due to Childhood Diarrhoea, 2015-2019')
 plt.tight_layout()
 plt.show()
 
@@ -301,4 +279,18 @@ cfr.plot.bar()
 plt.title('Case Fatality Rate for Diarrhoea')
 plt.ylabel('Deaths per 100k Cases')
 plt.xlabel('Age-Group')
+plt.tight_layout()
 plt.show()
+
+
+# %% Plot total numbers of death against comparable estimate from GBD
+
+# Get comparison
+comparison = compare_number_of_deaths(logfile=log_filename, resourcefilepath=resourcefilepath)
+
+# Make a simple bar chart
+comparison.loc[('2015-2019', slice(None), '0-4', 'Childhood Diarrhoea')].sum().plot.bar()
+plt.title('Deaths per year due to Childhood Diarrhoea, 2015-2019')
+plt.tight_layout()
+plt.show()
+
