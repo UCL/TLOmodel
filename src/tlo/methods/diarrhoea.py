@@ -487,6 +487,26 @@ class Diarrhoea(Module):
             Parameter(Types.REAL,
                       'specificity of health care workers visual inspection of danger signs'
                       ),
+        'adjustment_factor_on_cfr':
+            Parameter(Types.REAL,
+                      'Factor by which fatality probabilities are multiplied (to be used in calibration)'
+                      ),
+        'min_dur_acute':
+            Parameter(Types.INT,
+                        'The minimum duration (in days) for an episode that is classified as an acute episode'
+                      ),
+        'min_dur_prolonged':
+            Parameter(Types.INT,
+                      'The minimum duration (in days) for an episode that is classified as a prolonged episode'
+                      ),
+        'min_dur_persistent':
+            Parameter(Types.INT,
+                      'The minimum duration (in days) for an episode that is classified as a persistent episode'
+                      ),
+        'max_dur_persistent':
+            Parameter(Types.INT,
+                      'The maximum duration (in days) for an episode that is classified as a persistent episode'
+                      ),
     }
 
     PROPERTIES = {
@@ -591,15 +611,6 @@ class Diarrhoea(Module):
             pd.read_excel(
                 Path(self.resourcefilepath) / 'ResourceFile_Diarrhoea.xlsx', sheet_name='Parameter_values')
         )
-
-        # Parameters for diagnostics/treatment todo - put as parameters in resourcefile
-        self.parameters['prob_hospitalization_referral_for_severe_diarrhoea'] = 0.059
-        self.parameters['prob_at_least_ors_given_by_hw'] = 0.633  # for all with uncomplicated diarrhoea
-        self.parameters['prob_recommended_treatment_given_by_hw'] = 0.423  # for all with uncomplicated diarrhoea
-        self.parameters['prob_antibiotic_given_for_dysentery_by_hw'] = 0.8  # dummy
-        self.parameters['prob_multivitamins_given_for_persistent_diarrhoea_by_hw'] = 0.7  # dummy
-        self.parameters['sensitivity_danger_signs_visual_inspection'] = 0.9  # dummy
-        self.parameters['specificity_danger_signs_visual_inspection'] = 0.8  # dummy
 
         # Check that every value has been read-in successfully
         for param_name, param_type in self.PARAMETERS.items():
@@ -996,7 +1007,7 @@ class Models:
             Predictor('un_HAZ_category').when('HAZ<-3', self.p['rr_bec_persistent_stunted']),
             Predictor('un_clinical_acute_malnutrition').when('SAM', self.p['rr_bec_persistent_SAM']),
             Predictor().when('(hv_inf == True) & (hv_art == "not")', self.p['rr_bec_persistent_HIV']),
-            Predictior('nb_breastfeeding_status').when('exclusive', 1.0)     # todo: ?!?!
+            Predictor('nb_breastfeeding_status').when('exclusive', 1.0)     # todo: ?!?!
         )
 
     def write_prob_symptoms(self):
@@ -1028,15 +1039,16 @@ class Models:
 
     def get_duration_of_new_episode(self, pathogen, person_id):
         """Determine the duration of an episode of diarrhoea, based on pathogen and characteristics of person"""
-        # todo bring the linear models into this and do in one go!
+        # todo the logic here could be simplified
 
         df_slice = self.module.sim.population.props.loc[[person_id]]
 
-        # todo - put these as parameters
-        min_dur_acute = 1
-        min_dur_prolonged = 5
-        min_dur_persistent = 13
-        max_dur_persistent = 30
+        min_dur_acute = self.p['min_dur_acute']
+        min_dur_prolonged = self.p['min_dur_prolonged ']
+        min_dur_persistent = self.p['min_dur_persistent']
+        max_dur_persistent = self.p['max_dur_persistent']
+
+        assert min_dur_acute < min_dur_prolonged < min_dur_persistent < max_dur_persistent
 
         # --------------------------------------------------------------------------------------------
         # # Get mean duration
@@ -1068,13 +1080,11 @@ class Models:
                  ):
         """Determine whether an episode of diarrhorea will result in death"""
 
-        adjustment_factor = 1.0     # <-- todo put as parameter:
-
         # Baseline risks:
         if gi_last_diarrhoea_type == 'watery':
-            risk = self.p['case_fatality_rate_AWD'] * adjustment_factor
+            risk = self.p['case_fatality_rate_AWD'] * self.p['adjustment_factor_on_cfr']
         else:
-            risk = self.p['case_fatality_rate_dysentery'] * adjustment_factor
+            risk = self.p['case_fatality_rate_dysentery'] * self.p['adjustment_factor_on_cfr']
 
         # Factors that adjust risk up or down:
         if gi_last_diarrhoea_pathogen == 'cryptosporidium':

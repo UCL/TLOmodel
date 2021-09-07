@@ -43,25 +43,34 @@ output_files = dict()
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 2)
-popsize = 10000
+popsize = 20000
 
 for label, service_avail in scenarios.items():
     log_config = {'filename': 'diarrhoea_with_treatment_with_and_without_treatment'}
+
+    if service_avail == []:
+        _disable=False
+        _disable_and_reject_all=True
+    else:
+        _disable=True
+        _disable_and_reject_all=False
+
     # add file handler for the purpose of logging
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
 
     # run the simulation
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_avail),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable=_disable,
+                                           disable_and_reject_all=_disable_and_reject_all),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.PropertiesOfOtherModules(),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 hiv.DummyHivModule(),
                  )
 
     sim.make_initial_population(n=popsize)
@@ -139,6 +148,7 @@ def plot_for_column_of_interest(results, column_of_interest):
 # Plot incidence by pathogen: across the sceanrios
 for column_of_interest in inc_by_pathogen[list(inc_by_pathogen.keys())[0]].columns:
     plot_for_column_of_interest(inc_by_pathogen, column_of_interest)
+
 
 # Plot death rates by year: across the scenarios
 data = {}
