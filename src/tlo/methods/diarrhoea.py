@@ -11,6 +11,25 @@ Individuals are exposed to the risk of onset of diarrhoea. They can have diarrho
 Health care seeking is prompted by the onset of the symptom diarrhoea. The individual can be treated; if successful the
  risk of death is removed and they are cured (symptom resolved) some days later.
 
+
+Outstanding Issues
+===================
+* Logic of death computation (https://docs.google.com/drawings/d/1B5mNlIL9Bry2bk2BQq_djtVFMxk1g_NGxv-Jfg5EnWU/edit)
+* Treatment algorithm (https://docs.google.com/drawings/d/14PsRAXwJU0T_8k0MWky43fJ_ukYPktm8U3mnc2eyW2M/edit)
+* Footprint for in-patient HSI (2 bed days?)
+* Effect of breastfeeding on duration in `write_lm_prob_diarrhoea_is_persistent_if_prolonged`
+* nb_low_birth_weight_status is never used: remove?
+
+* Needs a big tidy-up:
+    * large numbers of unused parameters
+    * unused symptom of 'dehydration'
+    * unused consumables codes
+
+* Calibration
+    * Incidence and deaths OK but does not seem reconciled with CFR in GBD (https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(18)30362-1/fulltext)
+
+
+
 """
 import copy
 from pathlib import Path
@@ -977,7 +996,7 @@ class Models:
             Predictor('un_HAZ_category').when('HAZ<-3', self.p['rr_bec_persistent_stunted']),
             Predictor('un_clinical_acute_malnutrition').when('SAM', self.p['rr_bec_persistent_SAM']),
             Predictor().when('(hv_inf == True) & (hv_art == "not")', self.p['rr_bec_persistent_HIV']),
-            # todo: ****add exclusive breastfeeding****
+            Predictior('nb_breastfeeding_status').when('exclusive', 1.0)     # todo: ?!?!
         )
 
     def write_prob_symptoms(self):
