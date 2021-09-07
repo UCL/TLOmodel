@@ -57,6 +57,10 @@ class RTI(Module):
                     'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b',
                     'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884']
 
+    SWAPPING_CODES = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a', 'P673b', 'P674a',
+                      'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884', '813bo', '813co', '813do',
+                      '813eo']
+
     # Module parameters
     PARAMETERS = {
 
@@ -2019,9 +2023,7 @@ class RTI(Module):
         assert df.loc[person_id, 'rt_med_int']
         # Check they have an appropriate injury code to swap
 
-        swapping_codes = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a',
-                          'P673b', 'P674a', 'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884',
-                          '813bo', '813co', '813do', '813eo']
+        swapping_codes = RTI.SWAPPING_CODES
         relevant_codes = np.intersect1d(codes, swapping_codes)
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # check this person is injured, search they have an injury code that is swappable
@@ -4403,9 +4405,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                     assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
 
             # swap potentially swappable codes
-            swapping_codes = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a',
-                              'P673b', 'P674a', 'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884',
-                              '813bo', '813co', '813do', '813eo']
+            swapping_codes = RTI.SWAPPING_CODES
             # remove codes that will be treated elsewhere
             for code in person['rt_injuries_for_minor_surgery']:
                 if code in swapping_codes:
@@ -4733,9 +4733,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             codes = ['712a', '712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
             # Some TLO codes have daly weights associated with treated and non-treated injuries, swap-able codes are
             # listed below
-            swapping_codes = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a',
-                              'P673b', 'P674a', 'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884',
-                              '813bo', '813co', '813do', '813eo']
+            swapping_codes = RTI.SWAPPING_CODES
             swapping_codes = [code for code in swapping_codes if code in codes]
             # remove codes that will be treated elsewhere
             injuries_treated_elsewhere = \
@@ -4879,9 +4877,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
             non_empty_injuries = df.loc[person_id, 'rt_injuries_for_open_fracture_treatment']
 
             # Find the injury codes treated by fracture casts/slings
-            swapping_codes = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a',
-                              'P673b', 'P674a', 'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884',
-                              '813bo', '813co', '813do', '813eo']
+            swapping_codes = RTI.SWAPPING_CODES
             # remove codes that will be treated elsewhere
             for code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
                 if code in swapping_codes:
@@ -5138,9 +5134,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 persons_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
                 non_empty_injuries = persons_injuries[persons_injuries != "none"]
                 non_empty_injuries = non_empty_injuries.dropna(axis=1)
-                swapping_codes = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a',
-                                  'P673b', 'P674a', 'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884',
-                                  '813bo', '813co', '813do', '813eo']
+                swapping_codes = RTI.SWAPPING_CODES
                 swapping_codes = [code for code in swapping_codes if code in codes]
                 # remove codes that will be treated elsewhere
                 for code in df.loc[person_id, 'rt_injuries_for_major_surgery']:
@@ -5779,9 +5773,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                     self.sim.date + DateOffset(days=maj_surg_recovery_time_in_days[self.treated_code])
                 assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
 
-        swapping_codes = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a',
-                          'P673b', 'P674a', 'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884',
-                          '813bo', '813co', '813do', '813eo']
+        swapping_codes = RTI.SWAPPING_CODES
         swapping_codes = [code for code in swapping_codes if code in surgically_treated_codes]
         # remove codes that will be treated elsewhere
         for code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
@@ -5958,9 +5950,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 logger.debug('An external fixator is available for this minor surgery'
                              'person %d.', person_id)
 
-        swapping_codes = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a',
-                          'P673b', 'P674a', 'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884',
-                          '813bo', '813co', '813do', '813eo']
+        swapping_codes = RTI.SWAPPING_CODES
         for code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
             if code in swapping_codes:
                 swapping_codes.remove(code)
