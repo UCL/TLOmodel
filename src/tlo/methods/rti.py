@@ -2104,9 +2104,6 @@ class RTI(Module):
         p = self.parameters
         df = self.sim.population.props
 
-        # FIXME: this line doesn't do anything
-        if not pd.isnull(df.loc[person_id, 'cause_of_death']):
-            pass
 
         def draw_days(_mean, _sd):
             return int(self.rng.normal(_mean, _sd, 1))
@@ -4905,11 +4902,9 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
                 road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, treated_code)
             # Find the injury that has been treated and then schedule a recovery date
             columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, [treated_code])
-            for col in columns:
-                # estimated 6-9 months recovery times for open fractures
-                df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.date + \
-                                                                                DateOffset(months=7)
-                assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
+            # estimated 6-9 months recovery times for open fractures
+            df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = self.sim.date + DateOffset(months=7)
+            assert df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] > self.sim.date
             non_empty_injuries = person_injuries[person_injuries != "none"]
 
             injury_columns = non_empty_injuries.columns
@@ -5922,84 +5917,30 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
 
         injury_columns = non_empty_injuries.columns
         external_fixation = False
-        # elsewhere
-        if treated_code == '322' or treated_code == '323':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [treated_code])[0])
-
-            # using estimated 6 months to recover from neck surgery
-            if pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]):
-                df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(months=6)
-                assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-            else:
-                non_empty_injuries.drop(non_empty_injuries.columns[columns], axis=1, inplace=True)
-                relevant_codes = np.intersect1d(non_empty_injuries.values, surgically_treated_codes)
-                assert len(relevant_codes) > 0
-                treated_code = rng.choice(relevant_codes)
-
-        if treated_code == '722':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [treated_code])[0])
-            # using estimated 7 weeks to recover from dislocated shoulder surgery
-            if pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]):
-                df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=7)
-                assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-            else:
-                non_empty_injuries.drop(non_empty_injuries.columns[columns], axis=1, inplace=True)
-                relevant_codes = np.intersect1d(non_empty_injuries.values, surgically_treated_codes)
-                treated_code = rng.choice(relevant_codes)
-        if treated_code == '211' or treated_code == '212':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [treated_code])[0])
-            # using estimated 7 weeks to recover from facial fracture surgery
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=7)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if treated_code == '291':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [treated_code])[0])
-            # using estimated 1 week to recover from eye surgery
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=1)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if treated_code == '241':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [treated_code])[0])
-            # using estimated 1 week to soft tissue injury to face
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=1)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if treated_code == '811':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [treated_code])[0])
-            # using estimated 9 weeks for external fixation
+        minor_surg_recov_time_days = {
+            '322': 180,
+            '323': 180,
+            '722': 49,
+            '211': 49,
+            '212': 49,
+            '291': 7,
+            '241': 7,
+            '811': 63,
+            '812': 63,
+            '813a': 63,
+            '813b': 63,
+            '813c': 63,
+        }
+        external_fixation_codes = ['811', '812', '813a', '813b', '813c']
+        if treated_code in external_fixation_codes:
             external_fixation = True
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if treated_code == '812':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [treated_code])[0])
-            # using estimated 9 weeks for external fixation
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if treated_code == '813a':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [treated_code])[0])
-            # using estimated 9 weeks for external fixation
-            external_fixation = True
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if treated_code == '813b':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [treated_code])[0])
-            # using estimated 9 weeks for external fixation
-            external_fixation = True
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        if treated_code == '813c':
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
-                                                                                          [treated_code])[0])
-            # using estimated 9 weeks for external fixation
-            external_fixation = True
-            df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(weeks=9)
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
+        # assign a recovery time for the treated person
+        columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, [treated_code])[0])
+        # using estimated 9 weeks for external fixation
+        external_fixation = True
+        df.loc[person_id, 'rt_date_to_remove_daly'][columns] = \
+            self.sim.date + DateOffset(days=minor_surg_recov_time_days[treated_code])
+        assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
         # If surgery requires external fixation, request the materials as part of the appointment footprint
         if external_fixation:
             consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
