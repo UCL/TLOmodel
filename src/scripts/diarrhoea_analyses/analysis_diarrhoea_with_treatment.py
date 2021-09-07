@@ -270,14 +270,17 @@ plt.tight_layout()
 plt.show()
 
 # %% Look at Case Fatality Rate
+# NB. approx target CFR = 5.306/10000 per GBD 2016 paper ( (num death) / num episodes )
+# ... but see update paper: https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(18)30362-1/fulltext
+
 cfr = dict()
 for age_grp in ['0y', '1y', '2-4y']:
     cfr[age_grp] = deaths[age_grp] / counts[age_grp].apply(pd.Series).sum(axis=1)
-cfr = pd.DataFrame(cfr).drop(index=2015).mean() * 100_000
+cfr = pd.DataFrame(cfr).mean() * 10_000
 
 cfr.plot.bar()
 plt.title('Case Fatality Rate for Diarrhoea')
-plt.ylabel('Deaths per 100k Cases')
+plt.ylabel('Deaths per 10k cases')
 plt.xlabel('Age-Group')
 plt.tight_layout()
 plt.show()

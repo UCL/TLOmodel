@@ -11,13 +11,6 @@ Individuals are exposed to the risk of onset of diarrhoea. They can have diarrho
 Health care seeking is prompted by the onset of the symptom diarrhoea. The individual can be treated; if successful the
  risk of death is removed and they are cured (symptom resolved) some days later.
 
-Outstanding issues:
-==================
-* Onset of severe dehydration has no relationship to the risk of death (only the treatment that is provided)
-* Risk of death is linked to duration of episode - but this is assigned randomly, so stricly  is not necessary.
-* Follow-up appointments for initial HSI events.
-* Double check parameters and consumables codes for the HSI events.
-
 """
 import copy
 from pathlib import Path
@@ -567,7 +560,7 @@ class Diarrhoea(Module):
             'bloody_stool',
             'fever',
             'vomiting',
-            'dehydration'  # NB. This is non-severe dehydration
+            'dehydration'  # <-- NB. This is non-severe dehydration todo; remove??
         }
 
     def read_parameters(self, data_folder):
@@ -749,8 +742,6 @@ class Diarrhoea(Module):
         cipro_code = get_code(item='Ciprofloxacin 250mg_100_CMST')
 
         # -- Assemble the footprints for each diarrhoea-related condition or plan:
-        # -- todo only a few of these are being used.
-        # TODO: multivitamins consumables
         add_consumable('ORS', {ors_code: 1}, {})
         add_consumable('Dehydration_Plan_A', {ors_code: 1}, {})
         add_consumable('Dehydration_Plan_B', {ors_code: 1}, {})
@@ -804,8 +795,6 @@ class Diarrhoea(Module):
         * The danger signs are classified collectively and are based on the result of a DxTest representing the
           ability of the clinician to correctly determine the true value of the
           property 'gi_last_diarrhoea_dehydration' being equal to 'severe'
-
-          # todo - @ines and @timc - check logic here: multiplication/division of probabilities!?!
         """
 
         df = self.sim.population.props
@@ -825,11 +814,11 @@ class Diarrhoea(Module):
 
         # *** Implement the treatment algorithm ***
         # Check the child's condition
-        blood_in_stool = df.at[person_id, 'gi_last_diarrhoea_type'] == 'bloody'
+        type_of_diarrhoea = df.at[person_id, 'gi_last_diarrhoea_type'] == 'bloody'
         dehydration = df.at[person_id, 'gi_last_diarrhoea_dehydration']
 
         prob_cure = 0.0
-        if (dehydration == 'some'):   # todo: <-- should this be 'some' or 'not severe' ....?
+        if (dehydration == 'some'):
             # If some dehydration...
 
             # Provide ORS (if available):
@@ -850,13 +839,12 @@ class Diarrhoea(Module):
 
 
         # If blood_in_stool (i.e., dysentery):
-        if blood_in_stool:
-            # Provide antibiotics (if available) #todo: how should these effects be combined; currently makes no sense.
+        if type_of_diarrhoea:
+            # Provide antibiotics (if available) #todo: how should these effects be combined??
             if hsi_event.get_all_consumables(footprint=self.consumables_used_in_hsi['Antibiotics_for_Dysentery']):
                 pass
             else:
                 prob_cure *=  (1.0 - self.parameters['antibiotic_effectiveness_for_dysentery'])
-
 
         # -------------------------------------
         # Log that the treatment is provided:
@@ -962,7 +950,6 @@ class Diarrhoea(Module):
 
 class Models:
     """Helper-class to store all the models that specify the natural history of the Alri disease"""
-    # todo work to do here on these models
 
     def __init__(self, module):
         self.module = module
@@ -1061,9 +1048,8 @@ class Models:
                  un_clinical_acute_malnutrition
                  ):
         """Determine whether an episode of diarrhorea will result in death"""
-        # ** todo - this does not depend on dehydration! **
 
-        adjustment_factor = 1.0 # todo put as parameter: target CFR = 5.306/10000 per GBD 2016 paper ( (num death) /num episodes )
+        adjustment_factor = 1.0     # <-- todo put as parameter:
 
         # Baseline risks:
         if gi_last_diarrhoea_type == 'watery':
@@ -1274,7 +1260,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         duration_in_days = m.models.get_duration_of_new_episode(pathogen=self.pathogen, person_id=person_id)
         date_of_outcome = self.sim.date + DateOffset(days=duration_in_days)
 
-        props_new['gi_last_diarrhoea_duration_longer_than_13days'] = duration_in_days >= 13  # todo rename property
+        props_new['gi_last_diarrhoea_duration_longer_than_13days'] = duration_in_days >= 13
         props_new['gi_end_of_last_episode'] = date_of_outcome + DateOffset(days=p['days_between_treatment_and_cure'])
 
         # ----------------------- Determine symptoms for this episode ----------------------
@@ -1507,29 +1493,18 @@ class HSI_Diarrhoea_Treatment_Outpatient(HSI_Event, IndividualScopeEventMixin):
 
         self.module.do_treatment(person_id=person_id, hsi_event=self)
 
-        # todo - should this be implemtned now??!?!?
-        #   3) continue feeding
-        #   4) follow up in 5 days if not improving
-
-
 class HSI_Diarrhoea_Treatment_Inpatient(HSI_Event, IndividualScopeEventMixin):
     """
     This is a treatment for acute diarrhoea with severe dehydration administered at inpatient when danger_signs have
     been diagnosed.
-
-    # todo - is this out-patient (descripton seems to suggest it should be in-patient?
-        # commment is written but not implemented...>!!??!
-        # if child has no other severe classification: PLAN C
-        # Or if child has another severe classification:
-        # refer urgently to hospital with mother giving frequent ORS on the way, advise on breastfeeding
-        # if cholera is in your area, give antibiotic for cholera?
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = 'Diarrhoea_Treatment_Inpatient'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})  # todo - should this be in patient?
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
