@@ -1902,10 +1902,10 @@ class RTI(Module):
         # ------------------------------- Remove the daly weights for treated injuries ---------------------------------
         # ==================================== heal with time injuries =================================================
         # store open fracture daly weight codes in one variable
-        daly_wt_813bo =  self.daly_wt_pelvis_fracture_long_term + self.daly_wt_facial_soft_tissue_injury
-        daly_wt_813co =  self.daly_wt_femur_fracture_short_term + self.daly_wt_facial_soft_tissue_injury
-        daly_wt_813do= self.daly_wt_foot_fracture_short_term_with_without_treatment + \
-                       self.daly_wt_facial_soft_tissue_injury
+        daly_wt_813bo = self.daly_wt_pelvis_fracture_long_term + self.daly_wt_facial_soft_tissue_injury
+        daly_wt_813co = self.daly_wt_femur_fracture_short_term + self.daly_wt_facial_soft_tissue_injury
+        daly_wt_813do = self.daly_wt_foot_fracture_short_term_with_without_treatment + \
+                        self.daly_wt_facial_soft_tissue_injury
         daly_wt_813eo = self.daly_wt_patella_tibia_fibula_fracture_without_treatment + \
                         self.daly_wt_facial_soft_tissue_injury
         daly_weight_removal_lookup = {
@@ -2106,7 +2106,6 @@ class RTI(Module):
         p = self.parameters
         df = self.sim.population.props
 
-
         def draw_days(_mean, _sd):
             return int(self.rng.normal(_mean, _sd, 1))
 
@@ -2297,13 +2296,11 @@ class RTI(Module):
         predpolytrauma = []
         # whether this predicted injury requires a greater level of detail that can't be determined by location
         # category and severity alone
-        predinjdetail = []
         # Create empty lists which will be used to combine the injury location, category, severity and detail
         # information
         injlocstring = []
         injcatstring = []
         injaisstring = []
-        injdetailstr = []
         # create empty lists to store the qualitative description of injury severity and the number of injuries
         # each person has
         severity_category = []
@@ -2366,46 +2363,39 @@ class RTI(Module):
                              5, 4]},
             # injuries to the spine
             'spine': {'612': [self.spine_prob_fracture, 6, 1, 2],
-                     '673a': [self.spine_prob_spinal_cord_lesion *
-                              (self.spine_prob_spinal_cord_lesion_neck_level * \
+                     '673a': [(self.spine_prob_spinal_cord_lesion * (self.spine_prob_spinal_cord_lesion_neck_level * \
                               self.spine_prob_spinal_cord_lesion_neck_level_AIS3 + \
                               self.spine_prob_spinal_cord_lesion_below_neck_level * \
-                              self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3) * p['daly_dist_code_673'][0], 6,
-                              7, 3],
-                     '673b': [self.spine_prob_spinal_cord_lesion *
-                              (self.spine_prob_spinal_cord_lesion_neck_level * \
+                              self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3) * p['daly_dist_code_673'][0]),
+                              6, 7, 3],
+                     '673b': [(self.spine_prob_spinal_cord_lesion * (self.spine_prob_spinal_cord_lesion_neck_level * \
                               self.spine_prob_spinal_cord_lesion_neck_level_AIS3 + \
                               self.spine_prob_spinal_cord_lesion_below_neck_level * \
-                              self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3) * p['daly_dist_code_673'][1], 6,
-                              7, 3],
-                     '674a': [self.spine_prob_spinal_cord_lesion *
-                              (self.spine_prob_spinal_cord_lesion_neck_level *
+                              self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3) * p['daly_dist_code_673'][1]),
+                              6, 7, 3],
+                     '674a': [(self.spine_prob_spinal_cord_lesion * (self.spine_prob_spinal_cord_lesion_neck_level *
                               self.spine_prob_spinal_cord_lesion_neck_level_AIS4 +
                               self.spine_prob_spinal_cord_lesion_below_neck_level *
                               self.spine_prob_spinal_cord_lesion_below_neck_level_AIS4) *
-                              p['daly_dist_codes_674_675'][0], 6, 7, 4],
-                     '674b': [self.spine_prob_spinal_cord_lesion *
-                              (self.spine_prob_spinal_cord_lesion_neck_level *
+                              p['daly_dist_codes_674_675'][0]), 6, 7, 4],
+                     '674b': [(self.spine_prob_spinal_cord_lesion * (self.spine_prob_spinal_cord_lesion_neck_level *
                               self.spine_prob_spinal_cord_lesion_neck_level_AIS4 +
                               self.spine_prob_spinal_cord_lesion_below_neck_level *
                               self.spine_prob_spinal_cord_lesion_below_neck_level_AIS4) *
-                              p['daly_dist_codes_674_675'][1], 6, 7, 4],
-                     '675a': [self.spine_prob_spinal_cord_lesion *
-                              (self.spine_prob_spinal_cord_lesion_neck_level *
+                              p['daly_dist_codes_674_675'][1]), 6, 7, 4],
+                     '675a': [(self.spine_prob_spinal_cord_lesion * (self.spine_prob_spinal_cord_lesion_neck_level *
                               self.spine_prob_spinal_cord_lesion_neck_level_AIS5 +
                               self.spine_prob_spinal_cord_lesion_below_neck_level *
                               self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5) *
-                              p['daly_dist_codes_674_675'][0], 6, 7, 5],
-                     '675b': [self.spine_prob_spinal_cord_lesion *
-                              (self.spine_prob_spinal_cord_lesion_neck_level *
+                              p['daly_dist_codes_674_675'][0]), 6, 7, 5],
+                     '675b': [(self.spine_prob_spinal_cord_lesion * (self.spine_prob_spinal_cord_lesion_neck_level *
                               self.spine_prob_spinal_cord_lesion_neck_level_AIS5 +
                               self.spine_prob_spinal_cord_lesion_below_neck_level *
                               self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5) *
-                              p['daly_dist_codes_674_675'][1], 6, 7, 5],
-                     '676': [self.spine_prob_spinal_cord_lesion *
-                             self.spine_prob_spinal_cord_lesion_neck_level *
-                             self.spine_prob_spinal_cord_lesion_neck_level_AIS6, 6, 7, 6]
-                     },
+                              p['daly_dist_codes_674_675'][1]), 6, 7, 5],
+                     '676': [(self.spine_prob_spinal_cord_lesion * self.spine_prob_spinal_cord_lesion_neck_level *
+                             self.spine_prob_spinal_cord_lesion_neck_level_AIS6), 6, 7, 6]
+                      },
             # injuries to the upper extremities
             'upper_ex': {'7101': [self.upper_ex_prob_skin_wound * self.upper_ex_prob_skin_wound_open, 7, 10, 1],
                          '7113': [self.upper_ex_prob_skin_wound * self.upper_ex_prob_skin_wound_burn, 7, 11, 3],
@@ -2413,12 +2403,12 @@ class RTI(Module):
                          '712b': [self.upper_ex_prob_fracture * p['daly_dist_code_712'][1], 7, 1, 2],
                          '712c': [self.upper_ex_prob_fracture * p['daly_dist_code_712'][2], 7, 1, 2],
                          '722': [self.upper_ex_prob_dislocation, 7, 2, 2],
-                         '782a': [self.upper_ex_prob_amputation * self.upper_ex_prob_amputation_AIS2 *
-                                 p['daly_dist_code_782'][0], 7, 8, 2],
-                         '782b': [self.upper_ex_prob_amputation * self.upper_ex_prob_amputation_AIS2 *
-                                 p['daly_dist_code_782'][1], 7, 8, 2],
-                         '782c': [self.upper_ex_prob_amputation * self.upper_ex_prob_amputation_AIS2 *
-                                 p['daly_dist_code_782'][2], 7, 8, 2],
+                         '782a': [(self.upper_ex_prob_amputation * self.upper_ex_prob_amputation_AIS2 *
+                                 p['daly_dist_code_782'][0]), 7, 8, 2],
+                         '782b': [(self.upper_ex_prob_amputation * self.upper_ex_prob_amputation_AIS2 *
+                                 p['daly_dist_code_782'][1]), 7, 8, 2],
+                         '782c': [(self.upper_ex_prob_amputation * self.upper_ex_prob_amputation_AIS2 *
+                                 p['daly_dist_code_782'][2]), 7, 8, 2],
                          '783': [self.upper_ex_prob_amputation * self.upper_ex_prob_amputation_AIS3, 7, 8, 3]
                          },
             # injuries to the lower extremities
@@ -2434,7 +2424,7 @@ class RTI(Module):
                                   (1 - p['prob_patella_tibia_fibula_ankle_fracture_open']), 8, 1, 2],
                          '813eo': [self.lower_ex_prob_fracture * self.lower_ex_prob_fracture_AIS2 *
                                    p['prob_patella_tibia_fibula_ankle_fracture_open'], 8, 1, 3],
-                         '813a': [self.lower_ex_prob_fracture* self.lower_ex_prob_fracture_AIS3 *
+                         '813a': [self.lower_ex_prob_fracture * self.lower_ex_prob_fracture_AIS3 *
                                   p['daly_dist_code_813'][0], 8, 1, 3],
                          # pelvis fracture can be open or closed
                          '813b': [self.lower_ex_prob_fracture * self.lower_ex_prob_fracture_AIS3 *
@@ -2450,8 +2440,8 @@ class RTI(Module):
                          '822b': [self.lower_ex_prob_dislocation * p['daly_dist_code_822'][1], 8, 2, 2],
                          '882': [self.lower_ex_prob_amputation * self.lower_ex_prob_amputation_AIS2, 8, 8, 2],
                          '883': [self.lower_ex_prob_amputation * self.lower_ex_prob_amputation_AIS3, 8, 8, 3],
-                         '884': [self.lower_ex_prob_amputation * self.lower_ex_prob_amputation_AIS4, 8, 8, 4],
-                     }
+                         '884': [self.lower_ex_prob_amputation * self.lower_ex_prob_amputation_AIS4, 8, 8, 4]
+                         }
         }
         # ============================= Begin assigning injuries to people =====================================
         # Iterate over the total number of injured people
@@ -2475,8 +2465,6 @@ class RTI(Module):
             injcat = []
             # Create an empty vector which will store the severity of the injuries
             injais = []
-            # Create an empty vector to store the exact nature of the injury
-            injdetail = []
             # generate the locations of the injuries for this person
             injurylocation = self.rng.choice(injlocdist[0], ninj, p=injlocdist[1], replace=False)
             # iterate over the chosen injury locations to determine the exact injuries that this person will have
@@ -2502,8 +2490,6 @@ class RTI(Module):
             assert len(injcat) == ninj
             assert len(injais) == ninj
             assert len(allinjlocs) == ninj
-
-
             # Create a dataframe that stores the injury location and severity for each person, the point of this
             # dataframe is to use some of the pandas tools to manipulate the generated injury data to calculate
             # the ISS score and from this, the probability of mortality resulting from the injuries.
@@ -3242,15 +3228,15 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                     swapping_codes = ['712c', '811', '813a', '813b', '813c']
                     # create a dictionary to reference changes to daly weights done here
                     swapping_daly_weights_lookup = {
-                        '712c': - self.daly_wt_radius_ulna_fracture_short_term_with_without_treatment +
-                                self.daly_wt_radius_ulna_fracture_long_term_without_treatment,
-                        '811': - self.daly_wt_foot_fracture_short_term_with_without_treatment +
-                               self.daly_wt_foot_fracture_long_term_without_treatment,
-                        '813a': - self.daly_wt_hip_fracture_short_term_with_without_treatment +
-                                self.daly_wt_hip_fracture_long_term_without_treatment,
+                        '712c': (- self.daly_wt_radius_ulna_fracture_short_term_with_without_treatment +
+                                self.daly_wt_radius_ulna_fracture_long_term_without_treatment),
+                        '811': (- self.daly_wt_foot_fracture_short_term_with_without_treatment +
+                               self.daly_wt_foot_fracture_long_term_without_treatment),
+                        '813a': (- self.daly_wt_hip_fracture_short_term_with_without_treatment +
+                                self.daly_wt_hip_fracture_long_term_without_treatment),
                         '813b': - self.daly_wt_pelvis_fracture_short_term + self.daly_wt_pelvis_fracture_long_term,
-                        '813c': - self.daly_wt_femur_fracture_short_term +
-                                self.daly_wt_femur_fracture_long_term_without_treatment,
+                        '813c': (- self.daly_wt_femur_fracture_short_term +
+                                self.daly_wt_femur_fracture_long_term_without_treatment),
                         'none': 0
                     }
                     road_traffic_injuries = self.sim.modules['RTI']
@@ -3334,7 +3320,6 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                         else:
                             df.loc[person, 'rt_date_to_remove_daly'][columns] = self.sim.end_date + DateOffset(days=1)
                         assert df.loc[person, 'rt_date_to_remove_daly'][columns] > self.sim.date
-
 
 
 class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
@@ -5191,8 +5176,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
 
                 # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
                 # it permanent)
-                df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = self.sim.end_date + \
-                                                                                       DateOffset(days=1)
+                df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = \
+                    self.sim.end_date + DateOffset(days=1)
                 assert df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] > self.sim.date
 
         # ------------------------------------- Perm disability from amputation ----------------------------------------
@@ -5220,8 +5205,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, [code])
             # Schedule recovery for the end of the simulation, thereby making the injury permanent
 
-            df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = self.sim.end_date + \
-                                                                                   DateOffset(days=1)
+            df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = \
+                self.sim.end_date + DateOffset(days=1)
             assert df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] > self.sim.date
 
         # ============================== Schedule the recovery dates for the non-permanent injuries ==================
