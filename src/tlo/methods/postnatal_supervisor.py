@@ -42,7 +42,7 @@ class PostnatalSupervisor(Module):
         self.current_parameters = dict()
         self.pn_linear_models = dict()
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem'}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem',}
 
     ADDITIONAL_DEPENDENCIES = {'Labour', 'Lifestyle', 'NewbornOutcomes', 'PregnancySupervisor'}
 
@@ -685,41 +685,23 @@ class PostnatalSupervisor(Module):
             new_status = util.transition_states(current_status, prob_matrix, self.rng)
             df.loc[selected, "pn_htn_disorders"] = new_status
 
-            # Then we determine which women have transitioned to the most severe states, and may choose to seek care
-            assess_status_change_for_severe_pre_eclampsia = (current_status != "severe_pre_eclamp") & \
-                                                            (new_status == "severe_pre_eclamp")
+            def log_new_progressed_cases(disease):
+                assess_status_change = (current_status != disease) & (new_status == disease)
+                new_onset_disease = assess_status_change[assess_status_change]
 
-            new_onset_severe_pre_eclampsia = assess_status_change_for_severe_pre_eclampsia[
-                assess_status_change_for_severe_pre_eclampsia]
+                if not new_onset_disease.empty:
+                    for person in new_onset_disease.index:
+                        logger.info(key='maternal_complication', data={'person': person,
+                                                                       'type': disease,
+                                                                       'timing': 'postnatal'})
+                    if disease == 'severe_pre_eclamp':
+                        df.loc[new_onset_disease.index, 'pn_emergency_event_mother'] = True
+                    elif disease == 'eclampsia':
+                        df.loc[new_onset_disease.index, 'pn_emergency_event_mother'] = True
+                        new_onset_disease.index.to_series().apply(store_dalys_in_mni, mni_variable='eclampsia_onset')
 
-            # We log the women who have transitioned to severe pre-eclampsia and set pn_emergency_event_mother to True
-            # so they may seek care
-            if not new_onset_severe_pre_eclampsia.empty:
-                for person in new_onset_severe_pre_eclampsia.index:
-                    df.at[person, 'pn_emergency_event_mother'] = True
-                    logger.info(key='maternal_complication', data={'person': person,
-                                                                   'type': 'severe_pre_eclamp',
-                                                                   'timing': 'postnatal'})
-
-            # This process is repeated for women who have now developed eclampsia
-            assess_status_change_for_eclampsia = (current_status != "eclampsia") & (new_status == "eclampsia")
-            new_onset_eclampsia = assess_status_change_for_eclampsia[assess_status_change_for_eclampsia]
-
-            if not new_onset_eclampsia.empty:
-                for person in new_onset_eclampsia.index:
-                    df.at[person, 'pn_emergency_event_mother'] = True
-                    logger.info(key='maternal_complication', data={'person': person,
-                                                                   'type': 'eclampsia',
-                                                                   'timing': 'postnatal'})
-
-            # And severe gestational hypertension - which doesnt trigger care seeking
-            assess_status_change_for_sgh = (current_status != "severe_gest_htn") & (new_status == "severe_gest_htn")
-            new_onset_sgh = assess_status_change_for_sgh[assess_status_change_for_sgh]
-
-            for person in new_onset_sgh.index:
-                logger.info(key='maternal_complication', data={'person': person,
-                                                               'type': 'severe_gest_htn',
-                                                               'timing': 'postnatal'})
+            for disease in ['mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia', 'severe_gest_htn']:
+                log_new_progressed_cases(disease)
 
         # The function is then applied to women with hypertensive disorders who are on and not on treatment
         women_with_htn_not_on_anti_htns =\
@@ -755,9 +737,10 @@ class PostnatalSupervisor(Module):
         df.loc[pre_eclampsia.loc[pre_eclampsia].index, 'ps_prev_pre_eclamp'] = True
         df.loc[pre_eclampsia.loc[pre_eclampsia].index, 'pn_htn_disorders'] = 'mild_pre_eclamp'
 
-        if not pre_eclampsia.loc[pre_eclampsia].empty:
-            logger.debug(key='message', data=f'The following women have developed pre_eclampsia in week {week} of the'
-                                             f' postnatal period: {pre_eclampsia.loc[pre_eclampsia].index}')
+        for person in pre_eclampsia.loc[pre_eclampsia].index:
+            logger.info(key='maternal_complication', data={'person': person,
+                                                           'type': 'mild_pre_eclamp',
+                                                           'timing': 'postnatal'})
 
         #  -------------------------------- RISK OF GESTATIONAL HYPERTENSION --------------------------------------
         gest_hypertension = self.apply_linear_model(
@@ -767,10 +750,10 @@ class PostnatalSupervisor(Module):
 
         df.loc[gest_hypertension.loc[gest_hypertension].index, 'pn_htn_disorders'] = 'gest_htn'
 
-        if not gest_hypertension.loc[gest_hypertension].empty:
-            logger.debug(key='message', data=f'The following women have developed gestational hypertension in week '
-                                             f'{week} of the postnatal period '
-                                             f'{gest_hypertension.loc[gest_hypertension].index}')
+        for person in gest_hypertension.loc[gest_hypertension].index:
+            logger.info(key='maternal_complication', data={'person': person,
+                                                           'type': 'mild_gest_htn',
+                                                           'timing': 'postnatal'})
 
         # -------------------------------- RISK OF DEATH SEVERE HYPERTENSION ------------------------------------------
         # Risk of death is applied to women with severe hypertensive disease
@@ -1107,6 +1090,8 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=individual_id)
 
     def apply(self, individual_id):
+        if individual_id == 2964:
+            x='y'
         df = self.sim.population.props
         params = self.module.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -1117,7 +1102,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
         if not mother.is_alive:
             return
 
-        assert mother.la_is_postpartum
+        assert df.at[individual_id, 'la_is_postpartum']
         assert (self.sim.date - mother.la_date_most_recent_delivery) < pd.to_timedelta(7, unit='d')
         assert not mni[individual_id]['passed_through_week_one']
 
@@ -1252,34 +1237,21 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                 new_status = util.transition_states(current_status, prob_matrix, self.module.rng)
                 df.loc[[individual_id], "pn_htn_disorders"] = new_status
 
-                # We capture the women who progress to the most severe forms
-                assess_status_change_for_severe_pre_eclampsia = (current_status != "severe_pre_eclamp") & (
-                    new_status == "severe_pre_eclamp")
-                assess_status_change_for_eclampsia = (current_status != "eclampsia") & (
-                    new_status == "eclampsia")
-                assess_status_change_for_sgh = (current_status != "severe_gest_htn") & (
-                    new_status == "severe_gest_htn")
+                def log_new_progressed_cases(disease):
+                    assess_status_change = (current_status != disease) & (new_status == disease)
+                    new_onset_disease = assess_status_change[assess_status_change]
 
-                new_onset_severe_pre_eclampsia = assess_status_change_for_severe_pre_eclampsia[
-                        assess_status_change_for_severe_pre_eclampsia]
+                    if not new_onset_disease.empty:
+                        for person in new_onset_disease.index:
+                            logger.info(key='maternal_complication', data={'person': person,
+                                                                           'type': disease,
+                                                                           'timing': 'postnatal'})
+                        if disease == 'eclampsia':
+                            new_onset_disease.index.to_series().apply(store_dalys_in_mni,
+                                                                      mni_variable='eclampsia_onset')
 
-                for person in new_onset_severe_pre_eclampsia.index:
-                    logger.info(key='maternal_complication', data={'person': person,
-                                                                   'type': 'severe_pre_eclamp',
-                                                                   'timing': 'postnatal'})
-
-                new_onset_eclampsia = assess_status_change_for_eclampsia[assess_status_change_for_eclampsia]
-                for person in new_onset_eclampsia.index:
-                    logger.info(key='maternal_complication', data={'person': person,
-                                                                   'type': 'eclampsia',
-                                                                   'timing': 'postnatal'})
-
-                new_onset_sgh = assess_status_change_for_sgh[assess_status_change_for_sgh]
-
-                for person in new_onset_sgh.index:
-                    logger.info(key='maternal_complication', data={'person': person,
-                                                                   'type': 'severe_gest_htn',
-                                                                   'timing': 'postnatal'})
+                for disease in ['mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia', 'severe_gest_htn']:
+                    log_new_progressed_cases(disease)
 
         #  ---------------------------- RISK OF POSTPARTUM PRE-ECLAMPSIA/HYPERTENSION ----------------------------
         # Women who are normatensive after delivery may develop new hypertension for the first time after birth

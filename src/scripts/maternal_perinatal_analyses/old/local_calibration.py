@@ -39,15 +39,17 @@ def register_modules(sim):
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*']),
-                 joes_fake_props_module.JoesFakePropsModule(resourcefilepath=resourcefilepath),
+                                           service_availability=['*'],
+                                           ignore_cons_constraints=True),
+                 #joes_fake_props_module.JoesFakePropsModule(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 #depression.Depression(resourcefilepath=resourcefilepath),
-                 #dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 #dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
-                 #malaria.Malaria(resourcefilepath=resourcefilepath),
-                 #hiv.Hiv(resourcefilepath=resourcefilepath),
-                 #cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+                 malaria.Malaria(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath),
+                 #hiv.DummyHivModule(),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
@@ -145,10 +147,10 @@ def do_run_pregnancy_only(config_name, start_date, end_date, seed, population, p
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
     register_modules(sim)
     sim.make_initial_population(n=population)
-    #if not age_correct:
-    #    set_pregnant_pop(sim, start_date)
-    #else:
-    #    set_pregnant_pop_age_correct(sim)
+    if not age_correct:
+        set_pregnant_pop(sim, start_date)
+    else:
+        set_pregnant_pop_age_correct(sim)
 
     if parameters == 2015:
         def switch_parameters(master_params, current_params):
@@ -167,7 +169,6 @@ def do_run_pregnancy_only(config_name, start_date, end_date, seed, population, p
                           sim.modules['PostnatalSupervisor'].current_parameters)
 
     sim.simulate(end_date=end_date)
-    print()
 
 
 def do_labour_run_only(config_name, start_date, end_date, seed, population, parameters):
@@ -199,6 +200,8 @@ def do_labour_run_only(config_name, start_date, end_date, seed, population, para
                           sim.modules['NewbornOutcomes'].current_parameters)
         switch_parameters(sim.modules['PostnatalSupervisor'].parameters,
                           sim.modules['PostnatalSupervisor'].current_parameters)
+
+    sim.modules['Labour'].current_parameters['prob_obstruction_cpd'] = 1
 
     sim.simulate(end_date=end_date)
 
@@ -281,13 +284,15 @@ def age_corrected_run_with_all_women_pregnant_at_baseline(config_name, start_dat
         switch_parameters(sim.modules['PostnatalSupervisor'].parameters,
                           sim.modules['PostnatalSupervisor'].current_parameters)
 
+
     sim.simulate(end_date=end_date)
 
 
 # Get the log
 
-#do_run_pregnancy_only(config_name='scaled_lms_2010_2015_6k_pop', start_date=Date(2010, 1, 1), end_date=Date(2016, 1, 1),
-#                      seed=2003, population=10000, parameters=2010, age_correct=True)
+do_run_pregnancy_only(config_name='check_birth_weight', start_date=Date(2010, 1, 1),
+                      end_date=Date(2011, 1, 1), seed=111, population=5000, parameters=2010, age_correct=True)
 
-do_labour_run_only(config_name='ol_ur_check', start_date=Date(2010, 1, 1),
-                   end_date=Date(2010, 2, 1), seed=993, population=2000, parameters=2010)
+#do_labour_run_only(config_name='cs_checking_again_force_ol', start_date=Date(2010, 1, 1),
+#                   end_date=Date(2010, 2, 1), seed=19, population=500, parameters=2010)
+#

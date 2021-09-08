@@ -14,7 +14,7 @@ scenario_filename = 'calibration_run_all_modules.py'  # <-- update this to look 
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_01_09_21_calibration_run_all_modules-2021-08-31T152227Z'
+graph_location = 'output_graphs_02_09_21_calibration_run_all_modules-2021-09-02T193107Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -728,7 +728,7 @@ for year in sim_years:
 
 line_graph_with_ci_and_target_rate(id_data[0], id_data[1],
                                    id_data[2], target_rate_ia, 'Year',
-                                   'Rate per 1000 completed pregnancies', 'Yearly rate of Abortion',
+                                   'Rate per 1000 completed pregnancies', 'Yearly rate of Induced Abortion',
                                    'abortion_rate')
 
 # Complicated IA / Total IA
@@ -1045,11 +1045,11 @@ for year in sim_years:
     target_rate_cs.append(6.2)
     target_rate_avd.append(1)
 
-line_graph_with_ci_and_target_rate(cs_data[0], cs_data[1], cs_data[2], target_rate_cs, 'Year', 'Proportion of total births',
-                  'Caesarean Section Rate per Year', 'caesarean_section_rate')
+line_graph_with_ci_and_target_rate(cs_data[0], cs_data[1], cs_data[2], target_rate_cs, 'Year',
+                                   'Proportion of total births', 'Caesarean Section Rate per Year',
+                                   'caesarean_section_rate')
 line_graph_with_ci_and_target_rate(avd_data[0], avd_data[1], avd_data[2], target_rate_avd, 'Year',
-                                   'Proportion of total births',
-                  'Assisted Vaginal Delivery Rate per Year', 'avd_rate')
+                                   'Proportion of total births', 'Assisted Vaginal Delivery Rate per Year', 'avd_rate')
 
 # ------------------------------------------ Maternal Sepsis Rate... --------------------------------------------------
 an_sep_data = get_comp_mean_and_rate('clinical_chorioamnionitis', total_births_per_year, an_comps, 1000)
@@ -1247,15 +1247,16 @@ line_graph_with_ci_and_target_rate(mm[0], mm[1], mm[2], target_rate_mmr, 'Year',
 # ==================================================== NEWBORN OUTCOMES ===============================================
 #  ------------------------------------------- Neonatal sepsis (labour & postnatal) -----------------------------------
 early_ns_data = get_comp_mean_and_rate('early_onset_sepsis', total_births_per_year, nb_outcomes_df, 1000)
+early_ns_pn = get_comp_mean_and_rate('early_onset_sepsis', total_births_per_year, nb_outcomes_pn_df, 1000)
 late_ns_data = get_comp_mean_and_rate('late_onset_sepsis', total_births_per_year, nb_outcomes_pn_df, 1000)
 
 target_rate_ns = list()
 for year in sim_years:
     target_rate_ns.append(39.3)
 
-total_ns_rates = [x + y for x, y in zip(early_ns_data[0], late_ns_data[0])]
-ns_lqs = [x + y for x, y in zip(early_ns_data[1], late_ns_data[1])]
-ns_uqs = [x + y for x, y in zip(early_ns_data[2], late_ns_data[2])]
+total_ns_rates = [x + y + z for x, y, z in zip(early_ns_data[0], early_ns_pn[0], late_ns_data[0])]
+ns_lqs = [x + y + z for x, y, z in zip(early_ns_data[1], early_ns_pn[1], late_ns_data[1])]
+ns_uqs = [x + y + z for x, y, z in zip(early_ns_data[2], early_ns_pn[2], late_ns_data[2])]
 
 line_graph_with_ci_and_target_rate(total_ns_rates, ns_lqs, ns_uqs, target_rate_ns,  'Year', 'Rate per 1000 births',
                   'Rate of Neonatal Sepsis per year', 'neo_sepsis_rate')
@@ -1291,7 +1292,7 @@ line_graph_with_ci_and_target_rate(rd_data[0], rd_data[1], rd_data[2], target_ra
                   'Rate of Neonatal Respiratory Depression per year', 'neo_resp_depression_rate')
 
 # ----------------------------------------- Respiratory Distress Syndrome --------------------------------------------
-ept = get_mean_and_quants_from_str_df(la_comps, 'early_preterm_labour')[0]
+ept = get_mean_and_quants_from_str_df(la_comps, 'early_preterm_labour')[0] # todo: should be live births
 lpt = get_mean_and_quants_from_str_df(la_comps, 'late_preterm_labour')[0]
 total_ptbs = [x + y for x, y in zip(ept, lpt)]
 

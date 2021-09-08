@@ -1408,46 +1408,25 @@ class PregnancySupervisor(Module):
             new_status = util.transition_states(current_status, prob_matrix, self.rng)
             df.loc[selected, "ps_htn_disorders"] = new_status
 
-            # We evaluate the series of women in this function and select the women who have transitioned to severe
-            # pre-eclampsia
-            assess_status_change_for_severe_pre_eclampsia = (current_status != "severe_pre_eclamp") & \
-                                                            (new_status == "severe_pre_eclamp")
-            new_onset_severe_pre_eclampsia = assess_status_change_for_severe_pre_eclampsia[
-                assess_status_change_for_severe_pre_eclampsia]
+            def log_new_progressed_cases(disease):
+                assess_status_change = (current_status != disease) & (new_status == disease)
+                new_onset_disease = assess_status_change[assess_status_change]
 
-            # For these women, we set ps_emergency_event to True to signify they may seek care as they have moved to a
-            # more severe form of the disease
-            if not new_onset_severe_pre_eclampsia.empty:
+                if not new_onset_disease.empty:
+                    for person in new_onset_disease.index:
+                        logger.info(key='maternal_complication', data={'person': person,
+                                                                       'type': disease,
+                                                                       'timing': 'antenatal'})
 
-                for person in new_onset_severe_pre_eclampsia.index:
-                    logger.info(key='maternal_complication', data={'person': person,
-                                                                   'type': 'severe_pre_eclamp',
-                                                                   'timing': 'antenatal'})
+                    if disease == 'severe_pre_eclamp':
+                        df.loc[new_onset_disease.index, 'ps_emergency_event'] = True
+                    elif disease == 'eclampsia':
+                        df.loc[new_onset_disease.index, 'ps_emergency_event'] = True
+                        new_onset_disease.index.to_series().apply(self.store_dalys_in_mni,
+                                                                  mni_variable='eclampsia_onset')
 
-                df.loc[new_onset_severe_pre_eclampsia.index, 'ps_emergency_event'] = True
-
-            # This process is then repeated for women who have developed eclampsia
-            assess_status_change_for_eclampsia = (current_status != "eclampsia") & (new_status == "eclampsia")
-            new_onset_eclampsia = assess_status_change_for_eclampsia[assess_status_change_for_eclampsia]
-
-            if not new_onset_eclampsia.empty:
-
-                for person in new_onset_eclampsia.index:
-                    logger.info(key='maternal_complication', data={'person': person,
-                                                                   'type': 'eclampsia',
-                                                                   'timing': 'antenatal'})
-
-                df.loc[new_onset_eclampsia.index, 'ps_emergency_event'] = True
-                new_onset_eclampsia.index.to_series().apply(self.store_dalys_in_mni, mni_variable='eclampsia_onset')
-
-            # And finally for severe gestational hypertension for logging
-            assess_status_change_for_sgh = (current_status != "severe_gest_htn") & (new_status == "severe_gest_htn")
-            new_onset_sgh = assess_status_change_for_sgh[assess_status_change_for_sgh]
-
-            for person in new_onset_sgh.index:
-                logger.info(key='maternal_complication', data={'person': person,
-                                                               'type': 'severe_gest_htn',
-                                                               'timing': 'antenatal'})
+            for disease in ['mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia', 'severe_gest_htn']:
+                log_new_progressed_cases(disease)
 
         # Here we select the women in the data frame who are at risk of progression.
         women_not_on_anti_htns = \
@@ -1920,6 +1899,10 @@ class PregnancySupervisor(Module):
                               'rectovaginal_fistula_onset': pd.NaT,
                               'rectovaginal_fistula_resolution': pd.NaT,
                               'test_run': False,  # used by labour module when running some model tests
+
+                              # todo: delete and delete usage (just for checking)
+                              'cs_indication': 'none'
+
                               }
 
 

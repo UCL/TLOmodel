@@ -2612,6 +2612,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         logger.debug(key='msg', data=f'Bed-days allocated to this event:'
                                      f' {self.bed_days_allocated_to_this_event}')
@@ -2762,6 +2763,9 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                     df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
                     logger.debug(key='msg', data=f'{person_id} will be admitted for caesarean due to APH')
 
+                    # todo:delete
+                    mni[person_id]['cs_indication'] = 'an_aph_pa'
+
                 # ---------------------- APH SECONDARY TO PLACENTA PRAEVIA -----------------------------------------
                 if mother.ps_placenta_praevia:
                     # The treatment plan for a woman with placenta praevia is dependent on both the severity of the
@@ -2772,11 +2776,17 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
                         logger.debug(key='msg', data=f'{person_id} will be admitted for caesarean due to APH')
 
+                        # todo:delete
+                        mni[person_id]['cs_indication'] = 'an_aph_pp'
+
                     elif (mother.ps_antepartum_haemorrhage != 'severe') and (mother.ps_gestational_age_in_weeks >= 37):
                         # Women experiencing mild or moderate bleeding but who are around term gestation are admitted
                         # for caesarean
                         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
                         logger.debug(key='msg', data=f'{person_id} will be admitted for caesarean due to APH')
+
+                        # todo:delete
+                        mni[person_id]['cs_indication'] = 'an_aph_pp'
 
                     elif (mother.ps_antepartum_haemorrhage != 'severe') and (mother.ps_gestational_age_in_weeks < 37):
                         # Women with more mild bleeding remain as inpatients until their gestation has increased and
@@ -2784,6 +2794,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                         df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_future'
                         logger.debug(key='msg', data=f'{person_id} will be admitted for caesarean when her gestation '
                                                      f'has increased due to APH')
+                        # todo:delete
+                        mni[person_id]['cs_indication'] = 'an_aph_pp'
 
                         # self.module.antenatal_blood_transfusion(person_id, self, cause='antepartum_haem')
 
