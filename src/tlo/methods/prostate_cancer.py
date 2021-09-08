@@ -34,6 +34,8 @@ class ProstateCancer(Module):
         self.lm_onset_pelvic_pain = None
         self.daly_wts = dict()
 
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
@@ -230,9 +232,10 @@ class ProstateCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             sum(p['init_prop_prostate_ca_stage']),
             Predictor('sex').when('M', 1.0).otherwise(0.0),
-            Predictor('age_years').when('.between(50,69)', p['rp_prostate_cancer_age5069'])
-                                  .when('.between(70,120)', p['rp_prostate_cancer_agege70'])
-                                  .when('.between(0,34)', 0.0)
+            Predictor('age_years', conditions_are_mutually_exclusive=True)
+            .when('.between(50,69)', p['rp_prostate_cancer_age5069'])
+            .when('.between(70,120)', p['rp_prostate_cancer_agege70'])
+            .when('.between(0,34)', 0.0)
         )
 
         pc_status_ = \
@@ -253,10 +256,15 @@ class ProstateCancer(Module):
         # -------------------- SYMPTOMS -----------
         # ----- Impose the symptom of random sample of those in each cancer stage to have pelvic pain:
         lm_init_pelvic_pain = LinearModel.multiplicative(
-            Predictor('pc_status').when("none", 0.0)
-                                  .when("prostate_confined", p['init_prop_pelvic_pain_symptoms_by_stage'][0])
-                                  .when("local_ln", p['init_prop_pelvic_pain_symptoms_by_stage'][1])
-                                  .when("metastatic", p['init_prop_pelvic_pain_symptoms_by_stage'][2])
+            Predictor(
+                'pc_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when("none", 0.0)
+            .when("prostate_confined", p['init_prop_pelvic_pain_symptoms_by_stage'][0])
+            .when("local_ln", p['init_prop_pelvic_pain_symptoms_by_stage'][1])
+            .when("metastatic", p['init_prop_pelvic_pain_symptoms_by_stage'][2])
         )
 
         has_pelvic_pain_symptoms_at_init = lm_init_pelvic_pain.predict(df.loc[df.is_alive], self.rng)
@@ -278,14 +286,15 @@ class ProstateCancer(Module):
 
         # ----- Impose the symptom of random sample of those in each cancer stage to have urinary symptoms:
         lm_init_urinary = LinearModel.multiplicative(
-            Predictor('pc_status')  .when("none", 0.0)
-                                    .when("prostate_confined",
-                                          p['init_prop_urinary_symptoms_by_stage'][0])
-                                    .when("local_ln",
-                                          p['init_prop_urinary_symptoms_by_stage'][1])
-                                    .when("metastatic",
-                                          p['init_prop_urinary_symptoms_by_stage'][2])
-
+            Predictor(
+                'pc_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when("none", 0.0)
+            .when("prostate_confined", p['init_prop_urinary_symptoms_by_stage'][0])
+            .when("local_ln", p['init_prop_urinary_symptoms_by_stage'][1])
+            .when("metastatic",  p['init_prop_urinary_symptoms_by_stage'][2])
         )
         has_urinary_symptoms_at_init = lm_init_urinary.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
@@ -316,13 +325,15 @@ class ProstateCancer(Module):
 
         # -------------------- pc_date_treatment -----------
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
-            Predictor('pc_status')  .when("none", 0.0)
-                                    .when("prostate_confined",
-                                          p['init_prop_treatment_status_prostate_ca'][0])
-                                    .when("local_ln",
-                                          p['init_prop_treatment_status_prostate_ca'][1])
-                                    .when("metastatic",
-                                          0.0)
+            Predictor(
+                'pc_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when("none", 0.0)
+            .when("prostate_confined", p['init_prop_treatment_status_prostate_ca'][0])
+            .when("local_ln", p['init_prop_treatment_status_prostate_ca'][1])
+            .when("metastatic", 0.0)
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -380,9 +391,10 @@ class ProstateCancer(Module):
             Predictor('pc_status').when('prostate_confined', 0),
             Predictor('pc_status').when('local_ln', 0),
             Predictor('pc_status').when('metastatic', 0),
-            Predictor('age_years').when('.between(50,69)', p['rr_prostate_confined_prostate_ca_age5069'])
-                                  .when('.between(70,120)', p['rr_prostate_confined_prostate_ca_agege70'])
-                                  .when('.between(0,34)', 0.0)
+            Predictor('age_years', conditions_are_mutually_exclusive=True)
+            .when('.between(50,69)', p['rr_prostate_confined_prostate_ca_age5069'])
+            .when('.between(70,120)', p['rr_prostate_confined_prostate_ca_agege70'])
+            .when('.between(0,34)', 0.0)
         )
 
         lm['local_ln'] = LinearModel(
@@ -408,24 +420,35 @@ class ProstateCancer(Module):
 
         # Linear Model for the onset of urinary symptoms in each 3 month period
         self.lm_onset_urinary_symptoms = LinearModel.multiplicative(
-            Predictor('pc_status').when('prostate_confined',
-                                        p['r_urinary_symptoms_prostate_ca'])
-                                  .when('local_ln',
-                                        p['rr_urinary_symptoms_local_ln_or_metastatic_prostate_cancer']
-                                        * p['r_urinary_symptoms_prostate_ca'])
-                                  .when('metastatic',
-                                        p['rr_urinary_symptoms_local_ln_or_metastatic_prostate_cancer'] *
-                                        p['r_urinary_symptoms_prostate_ca'])
-                                  .otherwise(0.0)
+            Predictor(
+                'pc_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when('prostate_confined', p['r_urinary_symptoms_prostate_ca'])
+            .when(
+                'local_ln',
+                p['rr_urinary_symptoms_local_ln_or_metastatic_prostate_cancer']
+                * p['r_urinary_symptoms_prostate_ca']
+            )
+            .when(
+                'metastatic',
+                p['rr_urinary_symptoms_local_ln_or_metastatic_prostate_cancer'] *
+                p['r_urinary_symptoms_prostate_ca']
+            )
+            .when('none', 0.0)
         )
 
         # Linear Model for the onset of pelvic pain symptoms in each 3 month period
         self.lm_onset_pelvic_pain = LinearModel.multiplicative(
-            Predictor('pc_status').when('local_ln', p['r_pelvic_pain_symptoms_local_ln_prostate_ca'])
-                                  .when('metastatic',
-                                        p['rr_pelvic_pain_metastatic_prostate_cancer']
-                                        * p['r_pelvic_pain_symptoms_local_ln_prostate_ca'])
-                                  .otherwise(0.0)
+            Predictor('pc_status', conditions_are_mutually_exclusive=True)
+            .when('local_ln', p['r_pelvic_pain_symptoms_local_ln_prostate_ca'])
+            .when(
+                'metastatic',
+                p['rr_pelvic_pain_metastatic_prostate_cancer']
+                * p['r_pelvic_pain_symptoms_local_ln_prostate_ca']
+            )
+            .otherwise(0.0)
         )
 
         # ----- DX TESTS -----

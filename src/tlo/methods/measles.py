@@ -36,6 +36,8 @@ class Measles(Module):
             'eye_complaint'
         }
 
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+
     # declare metadata
     METADATA = {
         Metadata.DISEASE_MODULE,

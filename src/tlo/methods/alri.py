@@ -78,6 +78,17 @@ logger.setLevel(logging.INFO)
 class Alri(Module):
     """This is the disease module for Acute Lower Respiratory Infections."""
 
+    INIT_DEPENDENCIES = {
+        'Demography',
+        'Lifestyle',
+        'SymptomManager',
+        # Currently need to include PropertiesOfOtherModules as there is no alternative
+        # provider of un_clinical_acute_malnutrition property at the moment. As this
+        # module also provides the required properties from NewbornOutcomes, Hiv and Epi
+        # these are also not included here to avoid duplicated property definitions
+        'PropertiesOfOtherModules'
+    }
+
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -1041,10 +1052,15 @@ class Models:
                 return LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     intercept,
-                    Predictor('age_years').when('.between(0,0)', p[base_inc_rate][0])
-                                          .when('.between(1,1)', p[base_inc_rate][1])
-                                          .when('.between(2,4)', p[base_inc_rate][2])
-                                          .otherwise(0.0),
+                    Predictor(
+                        'age_years',
+                        conditions_are_mutually_exclusive=True,
+                        conditions_are_exhaustive=True,
+                    )
+                    .when(0, p[base_inc_rate][0])
+                    .when(1, p[base_inc_rate][1])
+                    .when('.between(2,4)', p[base_inc_rate][2])
+                    .when('> 4', 0.0),
                     Predictor('li_no_access_handwashing').when(False, p['rr_ALRI_HHhandwashing']),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
                     Predictor('hv_inf').when(True, p['rr_ALRI_HIV_untreated']),
@@ -1849,6 +1865,9 @@ class AlriIndividualLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 class PropertiesOfOtherModules(Module):
     """For the purpose of the testing, this module generates the properties upon which the Alri module relies"""
+
+    INIT_DEPENDENCIES = {'Demography'}
+    ALTERNATIVE_TO = {'Hiv', 'Epi'}
 
     PROPERTIES = {
         'hv_inf': Property(Types.BOOL, 'temporary property'),
