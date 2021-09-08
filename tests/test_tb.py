@@ -289,26 +289,25 @@ def test_treatment_schedule():
                                         module=sim.modules['Tb'])
     tx_start.apply(person_id=person_id, squeeze_factor=0.0)
 
-    # clinical monitoring
-    # default clinical monitoring schedule for first infection ds-tb
-    follow_up_times = sim.modules['Tb'].parameters['followup_times']
-    clinical_fup = follow_up_times['ds_clinical_monitor'].dropna()
-    number_fup_appts = len(clinical_fup)
-
-    # count events scheduled currently
-    t1 = len(sim.event_queue.queue)
-
-    # this will schedule future follow-up appts depdendent on strain/retreatment status
-    sim.modules['Tb'].clinical_monitoring(person_id=person_id)
-    # check should be 6 more events now
-    t2 = len(sim.event_queue.queue)
-    assert t2 - t1 == number_fup_appts
+    # check follow-up event is scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], tb.HSI_Tb_FollowUp)
+    ][0]
+    assert date_event > sim.date
 
     # end treatment, change sim.date so person will be ready to stop treatment
     sim.date = Date(2010, 12, 31)
     tx_end_event = tb.TbEndTreatmentEvent(module=sim.modules['Tb'])
 
     tx_end_event.apply(sim.population)
+
+    # check no follow-up appointments are scheduled after treatment end
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], tb.HSI_Tb_FollowUp)
+    ][0]
+    assert date_event is None
 
     # check individual properties consistent with treatment end
     assert not df.at[person_id, 'tb_on_treatment']
