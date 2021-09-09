@@ -147,4 +147,4 @@ class RandomDeathEvent(RegularEvent, PopulationScopeEventMixin):
         # Kill them
         df.loc[deaths, 'is_alive'] = False
         # We could do this more verbosely:
-        # population.is_alive = population.is_alive & (probs >= self.death_probability)
+        # population.is_alive = population.is_alive & (_probs >= self.death_probability)

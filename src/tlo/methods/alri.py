@@ -66,6 +66,7 @@ from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
+from tlo.util import sample_outcome
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1397,7 +1398,7 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # Sample to find outcomes:
-        outcome = self.sample_outcome(probs_of_acquiring_pathogen)
+        outcome = sample_outcome(probs=probs_of_acquiring_pathogen, rng=self.module.rng)
 
         # For persons that will become infected with a particular pathogen:
         for person_id, pathogen in outcome.items():
@@ -1410,23 +1411,6 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 ),
                 date=m.random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1))
             )
-
-    def sample_outcome(self, df):
-        """Helper function to randomly sample an outcome from a set of probabilities.
-        Each row in the df is a person and each column gives the probability that a particular event may happen to the
-        person. The probabilities of each event are assumed to be independent but mutually exlusive."""
-
-        assert (df.sum(axis=1) <= 1.0).all(), "Probabilities across columns cannot sum to more than 1.0"
-
-        # Compare uniform deviate to cumulative sum across columns, after including a "null" column (for no event).
-        df['_'] = 1.0 - df.sum(axis=1)  # add implied "none of these events" category
-        cumsum = df.cumsum(axis=1)
-        draws = pd.Series(self.module.rng.rand(len(cumsum)), index=cumsum.index)
-        y = cumsum.gt(draws, axis=0)
-        outcome = y.idxmax(axis=1)
-
-        # return as a dict of form {person_id: outcome} only in those cases where the outcome is one of the events.
-        return outcome.loc[~(outcome == '_')].to_dict()
 
 
 class AlriIncidentCase(Event, IndividualScopeEventMixin):

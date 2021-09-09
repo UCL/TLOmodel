@@ -4265,8 +4265,8 @@ class Tb(Module):
 #         ] = params["monthly_prob_tb_mortality"]
 #
 #         # Generate a series of random numbers, one per individual
-#         probs = rng.rand(len(df))
-#         deaths = df.is_alive & (probs < mortality_rate)
+#         _probs = rng.rand(len(df))
+#         deaths = df.is_alive & (_probs < mortality_rate)
 #         # print('deaths: ', deaths)
 #         will_die = (df[deaths]).index
 #         # print('will_die: ', will_die)
@@ -4315,8 +4315,8 @@ class Tb(Module):
 #         ] = (params["monthly_prob_tb_mortality_hiv"] * params["mort_cotrim"])
 #
 #         # Generate a series of random numbers, one per individual
-#         probs = rng.rand(len(df))
-#         deaths = df.is_alive & (probs < mortality_rate)
+#         _probs = rng.rand(len(df))
+#         deaths = df.is_alive & (_probs < mortality_rate)
 #         # print('deaths: ', deaths)
 #         will_die = (df[deaths]).index
 #
@@ -4376,8 +4376,8 @@ class Tb(Module):
 #         ] = (params["monthly_prob_tb_mortality"] * params["mort_tx"])
 #
 #         # Generate a series of random numbers, one per individual
-#         probs = rng.rand(len(df))
-#         deaths = df.is_alive & (probs < mortality_rate)
+#         _probs = rng.rand(len(df))
+#         deaths = df.is_alive & (_probs < mortality_rate)
 #         # print('deaths: ', deaths)
 #         will_die = (df[deaths]).index
 #         # print('will_die: ', will_die)
@@ -4435,8 +4435,8 @@ class Tb(Module):
 #         ] = (params["monthly_prob_tb_mortality"] * params["mort_tx"])
 #
 #         # Generate a series of random numbers, one per individual
-#         probs = rng.rand(len(df))
-#         deaths = df.is_alive & (probs < mortality_rate)
+#         _probs = rng.rand(len(df))
+#         deaths = df.is_alive & (_probs < mortality_rate)
 #         # print('deaths: ', deaths)
 #         will_die = (df[deaths]).index
 #
