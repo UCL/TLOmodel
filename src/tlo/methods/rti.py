@@ -1904,10 +1904,10 @@ class RTI(Module):
         # store open fracture daly weight codes in one variable
         daly_wt_813bo = self.daly_wt_pelvis_fracture_long_term + self.daly_wt_facial_soft_tissue_injury
         daly_wt_813co = self.daly_wt_femur_fracture_short_term + self.daly_wt_facial_soft_tissue_injury
-        daly_wt_813do = self.daly_wt_foot_fracture_short_term_with_without_treatment + \
-                        self.daly_wt_facial_soft_tissue_injury
-        daly_wt_813eo = self.daly_wt_patella_tibia_fibula_fracture_without_treatment + \
-                        self.daly_wt_facial_soft_tissue_injury
+        daly_wt_813do = \
+            self.daly_wt_foot_fracture_short_term_with_without_treatment + self.daly_wt_facial_soft_tissue_injury
+        daly_wt_813eo = \
+            self.daly_wt_patella_tibia_fibula_fracture_without_treatment + self.daly_wt_facial_soft_tissue_injury
         daly_weight_removal_lookup = {
             # heal with time injuries
             '322': self.daly_wt_neck_dislocation,
@@ -2341,60 +2341,60 @@ class RTI(Module):
                      },
             # injuries to the chest
             'chest': {'4101': [self.thorax_prob_skin_wound * self.thorax_prob_skin_wound_open, 4, 10, 1],
-                     '4113': [self.thorax_prob_skin_wound * self.thorax_prob_skin_wound_burn, 4, 11, 3],
-                     '461': [self.thorax_prob_internal_bleeding * self.thorax_prob_internal_bleeding_AIS1, 4, 6, 1],
-                     '463': [self.thorax_prob_internal_bleeding * self.thorax_prob_internal_bleeding_AIS3, 4, 6, 3],
-                     '453a': [self.thorax_prob_internal_organ_injury * p['daly_dist_code_453'][0], 4, 5, 3],
-                     '453b': [self.thorax_prob_internal_organ_injury * p['daly_dist_code_453'][1], 4, 5, 3],
-                     '412': [self.thorax_prob_fracture * self.thorax_prob_fracture_ribs, 4, 1, 2],
-                     '414': [self.thorax_prob_fracture * self.thorax_prob_fracture_flail_chest, 4, 1, 4],
-                     '441': [self.thorax_prob_soft_tissue_injury * self.thorax_prob_soft_tissue_injury_AIS1, 4, 4, 1],
-                     '442': [self.thorax_prob_soft_tissue_injury * self.thorax_prob_soft_tissue_injury_AIS2, 4, 4, 2],
-                     '443': [self.thorax_prob_soft_tissue_injury * self.thorax_prob_soft_tissue_injury_AIS3, 4, 4, 3],
-                     },
+                      '4113': [self.thorax_prob_skin_wound * self.thorax_prob_skin_wound_burn, 4, 11, 3],
+                      '461': [self.thorax_prob_internal_bleeding * self.thorax_prob_internal_bleeding_AIS1, 4, 6, 1],
+                      '463': [self.thorax_prob_internal_bleeding * self.thorax_prob_internal_bleeding_AIS3, 4, 6, 3],
+                      '453a': [self.thorax_prob_internal_organ_injury * p['daly_dist_code_453'][0], 4, 5, 3],
+                      '453b': [self.thorax_prob_internal_organ_injury * p['daly_dist_code_453'][1], 4, 5, 3],
+                      '412': [self.thorax_prob_fracture * self.thorax_prob_fracture_ribs, 4, 1, 2],
+                      '414': [self.thorax_prob_fracture * self.thorax_prob_fracture_flail_chest, 4, 1, 4],
+                      '441': [self.thorax_prob_soft_tissue_injury * self.thorax_prob_soft_tissue_injury_AIS1, 4, 4, 1],
+                      '442': [self.thorax_prob_soft_tissue_injury * self.thorax_prob_soft_tissue_injury_AIS2, 4, 4, 2],
+                      '443': [self.thorax_prob_soft_tissue_injury * self.thorax_prob_soft_tissue_injury_AIS3, 4, 4, 3],
+                      },
             # injuries to the abdomen
             'abdomen': {'5101': [self.abdomen_prob_skin_wound * self.abdomen_prob_skin_wound_open, 5, 10, 1],
-                     '5113': [self.abdomen_prob_skin_wound * self.abdomen_prob_skin_wound_burn, 5, 11, 3],
-                     '552': [self.abdomen_prob_internal_organ_injury * self.abdomen_prob_internal_organ_injury_AIS2, 5,
-                             5, 2],
-                     '553': [self.abdomen_prob_internal_organ_injury * self.abdomen_prob_internal_organ_injury_AIS3, 5,
-                             5, 3],
-                     '554': [self.abdomen_prob_internal_organ_injury * self.abdomen_prob_internal_organ_injury_AIS4, 5,
-                             5, 4]},
+                        '5113': [self.abdomen_prob_skin_wound * self.abdomen_prob_skin_wound_burn, 5, 11, 3],
+                        '552': [self.abdomen_prob_internal_organ_injury * self.abdomen_prob_internal_organ_injury_AIS2,
+                                5, 5, 2],
+                        '553': [self.abdomen_prob_internal_organ_injury * self.abdomen_prob_internal_organ_injury_AIS3,
+                                5, 5, 3],
+                        '554': [self.abdomen_prob_internal_organ_injury * self.abdomen_prob_internal_organ_injury_AIS4,
+                                5, 5, 4]},
             # injuries to the spine
             'spine': {'612': [self.spine_prob_fracture, 6, 1, 2],
-                     '673a': [(self.spine_prob_spinal_cord_lesion * (self.spine_prob_spinal_cord_lesion_neck_level * \
-                              self.spine_prob_spinal_cord_lesion_neck_level_AIS3 + \
-                              self.spine_prob_spinal_cord_lesion_below_neck_level * \
-                              self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3) * p['daly_dist_code_673'][0]),
-                              6, 7, 3],
-                     '673b': [(self.spine_prob_spinal_cord_lesion * (self.spine_prob_spinal_cord_lesion_neck_level * \
-                              self.spine_prob_spinal_cord_lesion_neck_level_AIS3 + \
-                              self.spine_prob_spinal_cord_lesion_below_neck_level * \
-                              self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3) * p['daly_dist_code_673'][1]),
-                              6, 7, 3],
+                      '673a': [(self.spine_prob_spinal_cord_lesion * (self.spine_prob_spinal_cord_lesion_neck_level * \
+                                self.spine_prob_spinal_cord_lesion_neck_level_AIS3 + \
+                                self.spine_prob_spinal_cord_lesion_below_neck_level * \
+                                self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3) * p['daly_dist_code_673'][0]),
+                               6, 7, 3],
+                      '673b': [(self.spine_prob_spinal_cord_lesion * (self.spine_prob_spinal_cord_lesion_neck_level * \
+                                self.spine_prob_spinal_cord_lesion_neck_level_AIS3 + \
+                                self.spine_prob_spinal_cord_lesion_below_neck_level * \
+                                self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3) * p['daly_dist_code_673'][1]),
+                               6, 7, 3],
                      '674a': [(self.spine_prob_spinal_cord_lesion * (self.spine_prob_spinal_cord_lesion_neck_level *
-                              self.spine_prob_spinal_cord_lesion_neck_level_AIS4 +
-                              self.spine_prob_spinal_cord_lesion_below_neck_level *
-                              self.spine_prob_spinal_cord_lesion_below_neck_level_AIS4) *
-                              p['daly_dist_codes_674_675'][0]), 6, 7, 4],
+                               self.spine_prob_spinal_cord_lesion_neck_level_AIS4 +
+                               self.spine_prob_spinal_cord_lesion_below_neck_level *
+                               self.spine_prob_spinal_cord_lesion_below_neck_level_AIS4) *
+                               p['daly_dist_codes_674_675'][0]), 6, 7, 4],
                      '674b': [(self.spine_prob_spinal_cord_lesion * (self.spine_prob_spinal_cord_lesion_neck_level *
-                              self.spine_prob_spinal_cord_lesion_neck_level_AIS4 +
-                              self.spine_prob_spinal_cord_lesion_below_neck_level *
-                              self.spine_prob_spinal_cord_lesion_below_neck_level_AIS4) *
-                              p['daly_dist_codes_674_675'][1]), 6, 7, 4],
+                               self.spine_prob_spinal_cord_lesion_neck_level_AIS4 +
+                               self.spine_prob_spinal_cord_lesion_below_neck_level *
+                               self.spine_prob_spinal_cord_lesion_below_neck_level_AIS4) *
+                               p['daly_dist_codes_674_675'][1]), 6, 7, 4],
                      '675a': [(self.spine_prob_spinal_cord_lesion * (self.spine_prob_spinal_cord_lesion_neck_level *
-                              self.spine_prob_spinal_cord_lesion_neck_level_AIS5 +
-                              self.spine_prob_spinal_cord_lesion_below_neck_level *
-                              self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5) *
-                              p['daly_dist_codes_674_675'][0]), 6, 7, 5],
+                               self.spine_prob_spinal_cord_lesion_neck_level_AIS5 +
+                               self.spine_prob_spinal_cord_lesion_below_neck_level *
+                               self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5) *
+                               p['daly_dist_codes_674_675'][0]), 6, 7, 5],
                      '675b': [(self.spine_prob_spinal_cord_lesion * (self.spine_prob_spinal_cord_lesion_neck_level *
-                              self.spine_prob_spinal_cord_lesion_neck_level_AIS5 +
-                              self.spine_prob_spinal_cord_lesion_below_neck_level *
-                              self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5) *
-                              p['daly_dist_codes_674_675'][1]), 6, 7, 5],
+                               self.spine_prob_spinal_cord_lesion_neck_level_AIS5 +
+                               self.spine_prob_spinal_cord_lesion_below_neck_level *
+                               self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5) *
+                               p['daly_dist_codes_674_675'][1]), 6, 7, 5],
                      '676': [(self.spine_prob_spinal_cord_lesion * self.spine_prob_spinal_cord_lesion_neck_level *
-                             self.spine_prob_spinal_cord_lesion_neck_level_AIS6), 6, 7, 6]
+                              self.spine_prob_spinal_cord_lesion_neck_level_AIS6), 6, 7, 6]
                       },
             # injuries to the upper extremities
             'upper_ex': {'7101': [self.upper_ex_prob_skin_wound * self.upper_ex_prob_skin_wound_open, 7, 10, 1],
@@ -2404,11 +2404,11 @@ class RTI(Module):
                          '712c': [self.upper_ex_prob_fracture * p['daly_dist_code_712'][2], 7, 1, 2],
                          '722': [self.upper_ex_prob_dislocation, 7, 2, 2],
                          '782a': [(self.upper_ex_prob_amputation * self.upper_ex_prob_amputation_AIS2 *
-                                 p['daly_dist_code_782'][0]), 7, 8, 2],
+                                  p['daly_dist_code_782'][0]), 7, 8, 2],
                          '782b': [(self.upper_ex_prob_amputation * self.upper_ex_prob_amputation_AIS2 *
-                                 p['daly_dist_code_782'][1]), 7, 8, 2],
+                                  p['daly_dist_code_782'][1]), 7, 8, 2],
                          '782c': [(self.upper_ex_prob_amputation * self.upper_ex_prob_amputation_AIS2 *
-                                 p['daly_dist_code_782'][2]), 7, 8, 2],
+                                  p['daly_dist_code_782'][2]), 7, 8, 2],
                          '783': [self.upper_ex_prob_amputation * self.upper_ex_prob_amputation_AIS3, 7, 8, 3]
                          },
             # injuries to the lower extremities
@@ -3229,14 +3229,14 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                     # create a dictionary to reference changes to daly weights done here
                     swapping_daly_weights_lookup = {
                         '712c': (- self.daly_wt_radius_ulna_fracture_short_term_with_without_treatment +
-                                self.daly_wt_radius_ulna_fracture_long_term_without_treatment),
+                                 self.daly_wt_radius_ulna_fracture_long_term_without_treatment),
                         '811': (- self.daly_wt_foot_fracture_short_term_with_without_treatment +
-                               self.daly_wt_foot_fracture_long_term_without_treatment),
+                                self.daly_wt_foot_fracture_long_term_without_treatment),
                         '813a': (- self.daly_wt_hip_fracture_short_term_with_without_treatment +
-                                self.daly_wt_hip_fracture_long_term_without_treatment),
+                                 self.daly_wt_hip_fracture_long_term_without_treatment),
                         '813b': - self.daly_wt_pelvis_fracture_short_term + self.daly_wt_pelvis_fracture_long_term,
                         '813c': (- self.daly_wt_femur_fracture_short_term +
-                                self.daly_wt_femur_fracture_long_term_without_treatment),
+                                 self.daly_wt_femur_fracture_long_term_without_treatment),
                         'none': 0
                     }
                     road_traffic_injuries = self.sim.modules['RTI']
