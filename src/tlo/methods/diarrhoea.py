@@ -575,25 +575,6 @@ class Diarrhoea(Module):
         self.consumables_used_in_hsi = dict()
         self.do_checks = do_checks
 
-        # dict to hold counters for the number of episodes of diarrhoea by pathogen-type and age-group
-        # (0yrs, 1yrs, 2-4yrs)
-        blank_counter = dict(zip(self.pathogens, [list() for _ in self.pathogens]))
-        self.incident_case_tracker_blank = {
-            '0y': copy.deepcopy(blank_counter),
-            '1y': copy.deepcopy(blank_counter),
-            '2-4y': copy.deepcopy(blank_counter),
-            '5+y': copy.deepcopy(blank_counter)
-        }
-        self.incident_case_tracker = copy.deepcopy(self.incident_case_tracker_blank)
-
-        zeros_counter = dict(zip(self.pathogens, [0] * len(self.pathogens)))
-        self.incident_case_tracker_zeros = {
-            '0y': copy.deepcopy(zeros_counter),
-            '1y': copy.deepcopy(zeros_counter),
-            '2-4y': copy.deepcopy(zeros_counter),
-            '5+y': copy.deepcopy(zeros_counter)
-        }
-
         # Store the symptoms that this module will use:
         self.symptoms = {
             'diarrhoea',
@@ -661,9 +642,6 @@ class Diarrhoea(Module):
 
         # Schedule the main polling event (to first occur immediately)
         sim.schedule_event(DiarrhoeaPollingEvent(self), sim.date)
-
-        # Schedule the main logging event (to first occur in one year)
-        sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(years=1))
 
         if self.do_checks:
             # Schedule the event that does checking every day (with time-offset to ensure it's the last event done):
@@ -1265,7 +1243,6 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             'gi_last_diarrhoea_dehydration': 'none',
             'gi_last_diarrhoea_recovered_date': pd.NaT,
             'gi_last_diarrhoea_death_date': pd.NaT,
-
         }
         # Update the entry in the population dataframe
         df.loc[person_id, props_new.keys()] = props_new.values()
@@ -1317,19 +1294,28 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             props_new['gi_last_diarrhoea_recovered_date'] = date_of_outcome
             self.sim.schedule_event(DiarrhoeaNaturalRecoveryEvent(m, person_id), date_of_outcome)
 
-        # -------------------------------------------------------------------------------------------
-        # Add this incident case to the tracker
-        age_group = DiarrhoeaIncidentCase.AGE_GROUPS.get(person.age_years, '5+y')
-        m.incident_case_tracker[age_group][self.pathogen].append(self.sim.date)
-        # -------------------------------------------------------------------------------------------
-
         # Update the entry in the population dataframe
         df.loc[person_id, props_new.keys()] = props_new.values()
+
+        # Log this incident case:
+        logger.info(
+            key='incident_case',
+            data={
+                'age_years': person.age_years,
+                'pathogen': props_new['gi_last_diarrhoea_pathogen'],
+                'type': props_new['gi_last_diarrhoea_type'],
+                'dehydration': props_new['gi_last_diarrhoea_dehydration'],
+                'duration_longer_than_13days': props_new['gi_last_diarrhoea_duration_longer_than_13days'],
+                'date_of_outcome': date_of_outcome,
+                'will_die': pd.isnull(props_new['gi_last_diarrhoea_recovered_date'])
+            },
+            description = 'each incicdent case of diarrhoea'
+        )
 
 
 class DiarrhoeaNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
     """
-    #This is the Natural Recovery event. It is part of the natural history and represents the end of an episode of
+    This is the Natural Recovery event. It is part of the natural history and represents the end of an episode of
     Diarrhoea.
     It does the following:
         * resolves all symptoms caused by diarrhoea
@@ -1447,41 +1433,6 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
 
 
 # ---------------------------------------------------------------------------------------------------------
-#   LOGGING EVENTS
-# ---------------------------------------------------------------------------------------------------------
-
-class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    """
-    This Event logs the number of incident cases that have occurred since the previous logging event.
-    Analysis scripts expect that the frequency of this logging event is once per year.
-    """
-
-    def __init__(self, module):
-        # This event to occur every year
-        self.repeat = 12
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
-        self.date_last_run = self.sim.date
-
-    def apply(self, population):
-        # Convert the list of timestamps into a number of timestamps
-        # and check that all the dates have occurred since self.date_last_run
-        counts = copy.deepcopy(self.module.incident_case_tracker_zeros)
-
-        for age_grp in self.module.incident_case_tracker.keys():
-            for pathogen in self.module.pathogens:
-                list_of_times = self.module.incident_case_tracker[age_grp][pathogen]
-                counts[age_grp][pathogen] = len(list_of_times)
-                for t in list_of_times:
-                    assert self.date_last_run <= t <= self.sim.date
-
-        logger.info(key='incidence_count_by_pathogen', data=counts)
-
-        # Reset the counters and the date_last_run
-        self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
-        self.date_last_run = self.sim.date
-
-
-# ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
@@ -1586,10 +1537,6 @@ class PropertiesOfOtherModules(Module):
         df.at[child, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.at[child, 'un_clinical_acute_malnutrition'] = 'well'
         df.at[child, 'un_HAZ_category'] = 'HAZ>=-2'
-
-# ---------------------------------------------------------------------------------------------------------
-#   DEBUGGING / TESTING EVENTS
-# ---------------------------------------------------------------------------------------------------------
 
 class DiarrhoeaCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
     """This event runs daily and checks properties are in the right configuration. Only use whilst debugging!

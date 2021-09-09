@@ -34,14 +34,14 @@ no_existing_logfile = True
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-log_filename = outputpath / 'LogFile__2021-09-06T180533.log'
+log_filename = outputpath / 'XXXXX' # <-- insert name of log file to avoid re-running the simulation
 
 if not os.path.exists(log_filename):
     # If logfile does not exists, re-run the simulation:
     # Do not run this cell if you already have a  logfile from a simulation:
     start_date = Date(2010, 1, 1)
-    end_date = Date(2020, 1, 1)
-    popsize = 20000
+    end_date = Date(2019, 12, 31)
+    popsize = 20_000
 
     log_config = {
         'filename': 'diarrhoea_with_treatment',
@@ -76,17 +76,20 @@ if not os.path.exists(log_filename):
 
 
 output = parse_log_file(log_filename)
+
 # %% ----------------------------  INCIDENCE RATE OF DIARRHOEA BY PATHOGEN  ----------------------------
 
-#  Calculate the "incidence rate" from the output counts of incidence
-counts = output['tlo.methods.diarrhoea']['incidence_count_by_pathogen']
+#  Get counts of cases by year, pathogen and custom age-group (0 year-old, 1 year-olds and 2-4 year-old)
+counts = output['tlo.methods.diarrhoea']['incident_case']
 counts['year'] = pd.to_datetime(counts['date']).dt.year
-counts.drop(columns='date', inplace=True)
-counts.set_index(
-    'year',
-    drop=True,
-    inplace=True
-)
+counts['age_grp'] = counts['age_years'].map({
+    0: "0y",
+    1: "1y",
+    2: "2-4y",
+    3: "2-4y",
+    4: "2-4y"
+}).fillna('5+y')
+counts = counts.groupby(by=['year', 'pathogen', 'age_grp']).size().unstack()
 
 # get person-years of 0 year-old, 1 year-olds and 2-4 year-old
 py_ = output['tlo.methods.demography']['person_years']
@@ -101,26 +104,13 @@ for year in years:
     py.loc[year, '0y'] = tot_py.loc[0].values[0]
     py.loc[year, '1y'] = tot_py.loc[1].values[0]
     py.loc[year, '2-4y'] = tot_py.loc[2:4].sum().values[0]
-    # py.loc[year, '<5y'] = tot_py.loc[0:4].sum().values[0]
 
-# # get population size to make a comparison
-pop = output['tlo.methods.demography']['num_children']
-pop.set_index(
-    'date',
-    drop=True,
-    inplace=True
-)
-pop.columns = pop.columns.astype(int)
-pop['0y'] = pop[0]
-pop['1y'] = pop[1]
-pop['2-4y'] = pop[2] + pop[3] + pop[4]
-# pop['<5y'] = pop[0] + pop[1] + pop[2] + pop[3] + pop[4]
-pop.drop(columns=[x for x in range(5)], inplace=True)
 
 # Incidence rate among 0, 1, 2-4 year-olds
 inc_rate = dict()
 for age_grp in ['0y', '1y', '2-4y']:
-    inc_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
+    inc_rate[age_grp] = counts[age_grp].unstack().div(py[age_grp], axis=0).dropna()
+
 
 # Load the incidence rate data to which we calibrate
 calibration_incidence_rate_0_year_olds = {
@@ -275,7 +265,7 @@ plt.show()
 
 cfr = dict()
 for age_grp in ['0y', '1y', '2-4y']:
-    cfr[age_grp] = deaths[age_grp] / counts[age_grp].apply(pd.Series).sum(axis=1)
+    cfr[age_grp] = deaths[age_grp] / counts[age_grp].groupby(by='year').sum()
 cfr = pd.DataFrame(cfr).mean() * 10_000
 
 cfr.plot.bar()
@@ -296,4 +286,3 @@ comparison.loc[('2015-2019', slice(None), '0-4', 'Childhood Diarrhoea')].sum().p
 plt.title('Deaths per year due to Childhood Diarrhoea, 2015-2019')
 plt.tight_layout()
 plt.show()
-

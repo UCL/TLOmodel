@@ -84,15 +84,17 @@ for label, service_avail in scenarios.items():
 def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     output = parse_log_file(logfile)
 
-    # Calculate the "incidence rate" from the output counts of incidence
-    counts = output['tlo.methods.diarrhoea']['incidence_count_by_pathogen']
+    #  Get counts of cases by year, pathogen and custom age-group (0 year-old, 1 year-olds and 2-4 year-old)
+    counts = output['tlo.methods.diarrhoea']['incident_case']
     counts['year'] = pd.to_datetime(counts['date']).dt.year
-    counts.drop(columns='date', inplace=True)
-    counts.set_index(
-        'year',
-        drop=True,
-        inplace=True
-    )
+    counts['age_grp'] = counts['age_years'].map({
+        0: "0y",
+        1: "1y",
+        2: "2-4y",
+        3: "2-4y",
+        4: "2-4y"
+    }).fillna('5+y')
+    counts = counts.groupby(by=['year', 'pathogen', 'age_grp']).size().unstack()
 
     # get person-years of 0 year-old, 1 year-olds and 2-4 year-old
     py_ = output['tlo.methods.demography']['person_years']
@@ -111,7 +113,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     # Incidence rate among 0, 1, 2-4 year-olds
     inc_rate = dict()
     for age_grp in ['0y', '1y', '2-4y']:
-        inc_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
+        inc_rate[age_grp] = counts[age_grp].unstack().div(py[age_grp], axis=0).dropna()
 
     # Produce mean inicence rates of incidence rate during the simulation:
     inc_mean = pd.DataFrame()

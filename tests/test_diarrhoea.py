@@ -3,7 +3,7 @@ Basic tests for the Diarrhoea Module
 """
 import os
 from pathlib import Path
-
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -40,6 +40,32 @@ def check_dtypes(simulation):
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
+
+def increase_incidence_of_pathogens(sim):
+    """Helper function to increase the incidence of pathogens and symptoms onset with Diarrhoea."""
+
+    # Increase incidence of pathogens (such that almost certain to get at least one pathogen each year)
+    pathogens = sim.modules['Diarrhoea'].pathogens
+    for pathogen in pathogens:
+        sim.modules['Diarrhoea'].parameters[f"base_inc_rate_diarrhoea_by_{pathogen}"] =\
+            [0.95 / len(sim.modules['Diarrhoea'].pathogens)] * 3
+
+    probs = pd.DataFrame(
+        [sim.modules['Diarrhoea'].parameters[f"base_inc_rate_diarrhoea_by_{pathogen}"] for pathogen in pathogens]
+    )
+    assert np.isclose(probs.sum(0), 0.95).all()
+
+    # Increase symptoms so that everyone gets symptoms:
+    for param_name in sim.modules['Diarrhoea'].parameters.keys():
+        if param_name.startswith('proportion_AWD_by_'):
+            sim.modules['Diarrhoea'].parameters[param_name] = 1.0
+        if param_name.startswith('fever_by_'):
+            sim.modules['Diarrhoea'].parameters[param_name] = 1.0
+        if param_name.startswith('vomiting_by_'):
+            sim.modules['Diarrhoea'].parameters[param_name] = 1.0
+        if param_name.startswith('dehydration_by_'):
+            sim.modules['Diarrhoea'].parameters[param_name] = 1.0
+    return sim
 
 def test_basic_run_of_diarrhoea_module_with_default_params():
     """Check that the module run and that properties are maintained correctly, using health system and default
@@ -147,21 +173,8 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
                  diarrhoea.PropertiesOfOtherModules(),
                  )
 
-    for param_name in sim.modules['Diarrhoea'].parameters.keys():
-        # Increase incidence:
-        if param_name.startswith('base_inc_rate_diarrhoea_by_'):
-            sim.modules['Diarrhoea'].parameters[param_name] = \
-                [4.0 * v for v in sim.modules['Diarrhoea'].parameters[param_name]]
-
-        # Increase symptoms:
-        if param_name.startswith('proportion_AWD_by_'):
-            sim.modules['Diarrhoea'].parameters[param_name] = 1.0
-        if param_name.startswith('fever_by_'):
-            sim.modules['Diarrhoea'].parameters[param_name] = 1.0
-        if param_name.startswith('vomiting_by_'):
-            sim.modules['Diarrhoea'].parameters[param_name] = 1.0
-        if param_name.startswith('dehydration_by_'):
-            sim.modules['Diarrhoea'].parameters[param_name] = 1.0
+    # Increase incidence of pathogens:
+    sim = increase_incidence_of_pathogens(sim)
 
     # Increase death:
     sim.modules['Diarrhoea'].parameters['case_fatality_rate_AWD'] = 0.5
@@ -225,21 +238,8 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                      dx_algorithm_child.DxAlgorithmChild()
                      )
 
-        for param_name in sim.modules['Diarrhoea'].parameters.keys():
-            # Increase incidence:
-            if param_name.startswith('base_inc_rate_diarrhoea_by_'):
-                sim.modules['Diarrhoea'].parameters[param_name] = \
-                    [4.0 * v for v in sim.modules['Diarrhoea'].parameters[param_name]]
-
-            # Increase symptoms so that everyone gets symptoms:
-            if param_name.startswith('proportion_AWD_by_'):
-                sim.modules['Diarrhoea'].parameters[param_name] = 1.0
-            if param_name.startswith('fever_by_'):
-                sim.modules['Diarrhoea'].parameters[param_name] = 1.0
-            if param_name.startswith('vomiting_by_'):
-                sim.modules['Diarrhoea'].parameters[param_name] = 1.0
-            if param_name.startswith('dehydration_by_'):
-                sim.modules['Diarrhoea'].parameters[param_name] = 1.0
+        # Increase incidence of pathogens:
+        sim = increase_incidence_of_pathogens(sim)
 
         # Increase death:
         sim.modules['Diarrhoea'].parameters['case_fatality_rate_AWD'] = 0.5
