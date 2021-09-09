@@ -354,7 +354,10 @@ class CareOfWomenDuringPregnancy(Module):
         #  run a check at birth to make sure no women exceed 8 visits
         assert df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] < 9
 
-        # We log the total number of ANC contacts a woman has undergone at the time of birth via this data frame
+        # and that this function is called for the correct women only
+        assert not df.at[mother_id, 'la_intrapartum_still_birth']
+
+        # We log the total number of ANC contacts a woman has undergone at the time of birth via this dictionary
         if 'ga_anc_one' in mni[mother_id].keys():
             ga_anc_one = mni[mother_id]['ga_anc_one']
         else:

@@ -129,8 +129,8 @@ def register_all_modules():
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 #dummy_contraception.DummyContraceptionModule(),
+                 #contraception.Contraception(resourcefilepath=resourcefilepath),
+                 dummy_contraception.DummyContraceptionModule(),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
@@ -160,7 +160,7 @@ def test_run_core_modules_normal_allocation_of_pregnancy():
     dtypes at the end"""
 
     sim = register_all_modules()
-    sim.make_initial_population(n=4000)
+    sim.make_initial_population(n=500)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=Date(2011, 1, 1))
     check_dtypes(sim)
