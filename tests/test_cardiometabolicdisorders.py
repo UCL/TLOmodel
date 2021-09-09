@@ -293,3 +293,50 @@ def test_if_healthsystem_cannot_run():
     # check that neither person is on medication
     assert not df.at[0, "nc_diabetes_on_medication"]
     assert not df.at[1, "nc_diabetes_on_medication"]
+
+# helper function to run the sim with the healthcare system disabled
+def make_simulation_healthsystemdisabled():
+    """Make the simulation with:
+    * the demography module with the OtherDeathsPoll not running
+    """
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
+                 )
+    return sim
+
+def test_if_no_healthsystem_and_zero_death():
+    # Make the health-system unavailable to run any HSI event and set death rate to zero to check that no one dies
+
+    # Disable the healthcare system
+    sim = make_simulation_healthsystemdisabled()
+
+    for condition in sim.modules['CardioMetabolicDisorders'].conditions:
+        # make initial population
+        sim.make_initial_population(n=2000)
+        # force all individuals to have condition
+        sim.population.props.loc[
+            sim.population.props.is_alive & (sim.population.props.age_years >= 20), f"nc_{condition}"] = True
+
+        p = sim.modules['CardioMetabolicDisorders'].parameters
+
+        # set annual probability of death from condition to zero
+        p[f'{condition}_death']["baseline_annual_probability"] = 0
+
+        # simulate for one year
+        sim.simulate(end_date=Date(year=2011, month=1, day=1))
+
+        # check that no one died of condition
+        df = sim.population.props
+
+        assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{condition}').any()
