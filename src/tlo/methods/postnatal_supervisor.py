@@ -1090,7 +1090,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=individual_id)
 
     def apply(self, individual_id):
-        if individual_id == 2964:
+        if individual_id == 3160:
             x='y'
         df = self.sim.population.props
         params = self.module.current_parameters

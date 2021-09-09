@@ -22,7 +22,7 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
-     joes_fake_props_module, cardio_metabolic_disorders
+     joes_fake_props_module, cardio_metabolic_disorders, dummy_contraception
 )
 
 seed = 16
@@ -55,8 +55,8 @@ def set_all_women_as_pregnant_and_reset_baseline_parity(sim):
     for person in women_repro.index:
         sim.modules['Labour'].set_date_of_labour(person)
 
-    all_women = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14)]
-    df.loc[all_women.index, 'la_parity'] = 0
+    #all_women = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14)]
+    #df.loc[all_women.index, 'la_parity'] = 0
 
 
 def set_all_women_to_go_into_labour(sim):
@@ -130,6 +130,7 @@ def register_all_modules():
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
+                 #dummy_contraception.DummyContraceptionModule(),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
@@ -159,7 +160,7 @@ def test_run_core_modules_normal_allocation_of_pregnancy():
     dtypes at the end"""
 
     sim = register_all_modules()
-    sim.make_initial_population(n=15000)
+    sim.make_initial_population(n=4000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=Date(2011, 1, 1))
     check_dtypes(sim)
@@ -176,5 +177,24 @@ def test_run_all_labour():
     sim.simulate(end_date=Date(2010, 2, 1))
     check_dtypes(sim)
 
+def test_run_all_pregnant():
+    """Runs the simulation using only core modules without manipulation of pregnancy rates or parameters and checks
+    dtypes at the end"""
+
+    sim = register_all_modules()
+    sim.make_initial_population(n=20000)
+    df = sim.population.props
+    all = df.loc[df.is_alive]
+    df.loc[all.index, 'sex'] = 'F'
+    df.loc[all.index, 'is_pregnant'] = True
+    df.loc[all.index, 'date_of_last_pregnancy'] = sim.start_date
+    for person in all.index:
+        sim.modules['Labour'].set_date_of_labour(person)
+
+    sim.simulate(end_date=Date(2011, 1, 1))
+    check_dtypes(sim)
+
+
+#test_run_all_pregnant()
 test_run_core_modules_normal_allocation_of_pregnancy()
 #test_run_all_labour()

@@ -15,7 +15,7 @@ from tlo.methods import (
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
-    joes_fake_props_module,
+    joes_fake_props_module, dummy_contraception,
     symptommanager, malaria, hiv, cardio_metabolic_disorders, depression, dx_algorithm_child, dx_algorithm_adult
 )
 
@@ -36,7 +36,8 @@ resourcefilepath = Path("./resources")
 
 def register_modules(sim):
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 #contraception.Contraception(resourcefilepath=resourcefilepath),
+                 dummy_contraception.DummyContraceptionModule(),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
@@ -288,11 +289,36 @@ def age_corrected_run_with_all_women_pregnant_at_baseline(config_name, start_dat
     sim.simulate(end_date=end_date)
 
 
-# Get the log
+def do_run_using_dummy_contraception(config_name, start_date, end_date, seed, population, parameters):
+    log_config = {
+        "filename": f"{config_name}_calibration_{seed}",
+        "directory": "./outputs/calibration_files",
+        "custom_levels": {
+            "*": logging.DEBUG}}
 
-do_run_pregnancy_only(config_name='check_birth_weight', start_date=Date(2010, 1, 1),
-                      end_date=Date(2011, 1, 1), seed=111, population=5000, parameters=2010, age_correct=True)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    register_modules(sim)
+    sim.make_initial_population(n=population)
 
-#do_labour_run_only(config_name='cs_checking_again_force_ol', start_date=Date(2010, 1, 1),
-#                   end_date=Date(2010, 2, 1), seed=19, population=500, parameters=2010)
-#
+    if parameters == 2015:
+        def switch_parameters(master_params, current_params):
+            for key, value in current_params.items():
+                current_params[key] = master_params[key][1]
+
+        switch_parameters(sim.modules['PregnancySupervisor'].parameters,
+                          sim.modules['PregnancySupervisor'].current_parameters)
+        switch_parameters(sim.modules['CareOfWomenDuringPregnancy'].parameters,
+                          sim.modules['CareOfWomenDuringPregnancy'].current_parameters)
+        switch_parameters(sim.modules['Labour'].parameters,
+                          sim.modules['Labour'].current_parameters)
+        switch_parameters(sim.modules['NewbornOutcomes'].parameters,
+                          sim.modules['NewbornOutcomes'].current_parameters)
+        switch_parameters(sim.modules['PostnatalSupervisor'].parameters,
+                          sim.modules['PostnatalSupervisor'].current_parameters)
+
+    sim.simulate(end_date=end_date)
+
+
+do_run_using_dummy_contraception(config_name='test_dummy_contraception_newseed_10k', start_date=Date(2010, 1, 1),
+                                 end_date=Date(2011, 1, 1), seed=333, population=20000, parameters=2010)
+

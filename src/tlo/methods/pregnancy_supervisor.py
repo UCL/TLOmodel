@@ -375,8 +375,7 @@ class PregnancySupervisor(Module):
         'ps_anaemia_in_pregnancy': Property(Types.CATEGORICAL, 'Whether a woman has anaemia in pregnancy and its '
                                                                'severity',
                                             categories=['none', 'mild', 'moderate', 'severe']),
-        'ps_will_initiate_anc4_early': Property(Types.BOOL, 'Whether this womans is predicted to attend 4 or more '
-                                                            'antenatal care visits during her pregnancy'),
+
         'ps_anc4': Property(Types.BOOL, 'Whether this womans is predicted to attend 4 or more antenatal care visits '
                                         'during her pregnancy'),
         'ps_abortion_complications': Property(Types.INT, 'Bitset column holding types of abortion complication'),
@@ -462,7 +461,6 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_syphilis'] = False
         df.loc[df.is_alive, 'ps_deficiencies_in_pregnancy'] = 0
         df.loc[df.is_alive, 'ps_anaemia_in_pregnancy'] = 'none'
-        # df.loc[df.is_alive, 'ps_will_initiate_anc4_early'] = False
         df.loc[df.is_alive, 'ps_anc4'] = False
         df.loc[df.is_alive, 'ps_abortion_complications'] = 0
         df.loc[df.is_alive, 'ps_prev_spont_abortion'] = False
@@ -580,14 +578,14 @@ class PregnancySupervisor(Module):
                     Predictor('ac_receiving_iron_folic_acid').when(True, params['treatment_effect_iron_folic_acid_'
                                                                                 'anaemia'])),
 
-            # This equation calculates a womans monthly risk of developing gestational diabetes
-            # during her pregnancy.This is currently influenced by obesity
-            'gest_diab': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                intercept_dict['gest_diab'],
-                Predictor('li_bmi', conditions_are_mutually_exclusive=True)
-                .when('4', params['rr_gest_diab_obesity'])
-                .when('5', params['rr_gest_diab_obesity'])),
+                # This equation calculates a womans monthly risk of developing gestational diabetes
+                # during her pregnancy.This is currently influenced by obesity
+                'gest_diab': LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    intercept_dict['gest_diab'],
+                    Predictor('li_bmi', conditions_are_mutually_exclusive=True)
+                    .when('4', params['rr_gest_diab_obesity'])
+                    .when('5', params['rr_gest_diab_obesity'])),
 
                 # This equation calculates a womans monthly risk of developing gestational hypertension
                 # during her pregnancy. This is currently influenced receipt of calcium supplementation
@@ -803,7 +801,6 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_syphilis'] = False
         df.at[child_id, 'ps_deficiencies_in_pregnancy'] = 0
         df.at[child_id, 'ps_anaemia_in_pregnancy'] = 'none'
-        #df.at[child_id, 'ps_will_initiate_anc4_early'] = False
         df.at[child_id, 'ps_anc4'] = False
         df.at[child_id, 'ps_abortion_complications'] = 0
         df.at[child_id, 'ps_prev_spont_abortion'] = False
@@ -1017,7 +1014,6 @@ class PregnancySupervisor(Module):
         set[id_or_index, 'ps_placenta_praevia'] = False
         set[id_or_index, 'ps_syphilis'] = False
         set[id_or_index, 'ps_anaemia_in_pregnancy'] = 'none'
-        #set[id_or_index, 'ps_will_initiate_anc4_early'] = False
         set[id_or_index, 'ps_anc4'] = False
         set[id_or_index, 'ps_htn_disorders'] = 'none'
         set[id_or_index, 'ps_gest_diab'] = 'none'
@@ -1439,6 +1435,9 @@ class PregnancySupervisor(Module):
             (df.ps_htn_disorders.str.contains('gest_htn|mild_pre_eclamp|severe_gest_htn|severe_pre_eclamp'))\
             & ~df.la_currently_in_labour & ~df.hs_is_inpatient & df.ac_gest_htn_on_treatment
 
+        for v in women_not_on_anti_htns.loc[women_not_on_anti_htns].index:
+            assert v not in women_on_anti_htns.loc[women_on_anti_htns].index
+
         risk_progression_mild_to_severe_htn = params['probs_for_mgh_matrix'][1]
 
         apply_risk(women_not_on_anti_htns, risk_progression_mild_to_severe_htn)
@@ -1751,7 +1750,7 @@ class PregnancySupervisor(Module):
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(induction, priority=0,
                                                                 topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=7))
+                                                                tclose=self.sim.date + DateOffset(days=1))
 
         # We apply risk of still birth to those who dont seek care
         non_care_seekers = df.loc[care_seekers.loc[~care_seekers].index]
@@ -1899,6 +1898,7 @@ class PregnancySupervisor(Module):
                               'rectovaginal_fistula_onset': pd.NaT,
                               'rectovaginal_fistula_resolution': pd.NaT,
                               'test_run': False,  # used by labour module when running some model tests
+                              'pred_syph_infect': pd.NaT,
 
                               # todo: delete and delete usage (just for checking)
                               'cs_indication': 'none'
@@ -2013,6 +2013,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Schedule point of onset randomly during possible length of pregnancy
         for person in syphilis_risk.loc[syphilis_risk].index:
             onset_day = self.module.rng.randint(0, 280)
+            mni[person]['pred_syph_infect'] = self.sim.date + pd.Timedelta(days=onset_day)
             self.sim.schedule_event(SyphilisInPregnancyEvent(self.module, person),
                                     (self.sim.date + pd.Timedelta(days=onset_day)))
 
@@ -2311,12 +2312,11 @@ class GestationalDiabetesGlycaemicControlEvent(Event, IndividualScopeEventMixin)
         params = self.module.current_parameters
         mother = df.loc[individual_id]
 
-        if not mother.is_alive:
+        if not mother.is_alive or not mother.is_pregnant or (mother.ps_gestational_age_in_weeks < 20):
             return
 
-        if mother.is_pregnant:
+        if mother.ps_gest_diab != 'none':
             # Check only the right women are sent here
-            assert mother.ps_gest_diab != 'none'
             assert mother.ac_gest_diab_on_treatment != 'none'
 
             # We apply a probability that the treatment this woman is receiving for her GDM (diet and exercise/
@@ -2339,8 +2339,10 @@ class SyphilisInPregnancyEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, individual_id):
         df = self.sim.population.props
+        mni = self.module.mother_and_newborn_info
 
-        if not df.at[individual_id, 'is_alive'] or not df.at[individual_id, 'is_pregnant']:
+        if not df.at[individual_id, 'is_alive'] or not df.at[individual_id, 'is_pregnant'] or \
+            (mni[individual_id]['pred_syph_infect'] == self.sim.date):
             return
 
         df.at[individual_id, 'ps_syphilis'] = True
@@ -2406,6 +2408,3 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'prev_sa': yearly_prev_sa,
                           'prev_pe': yearly_prev_pe,
                           'hysterectomy': yearly_prev_hysterectomy})
-
-
-

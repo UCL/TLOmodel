@@ -482,7 +482,6 @@ class CareOfWomenDuringPregnancy(Module):
             # scheduled
             if visit_to_be_scheduled <= 4:
                 if df.at[individual_id, 'ps_anc4']:
-                # if df.at[individual_id, 'ps_will_initiate_anc4_early']:
 
                     # We subtract this womans current gestational age from the recommended gestational age for the next
                     # contact
@@ -1253,6 +1252,7 @@ class CareOfWomenDuringPregnancy(Module):
         if ~df.at[individual_id, 'is_alive'] \
             or ~df.at[individual_id, 'is_pregnant'] \
             or df.at[individual_id, 'la_currently_in_labour']\
+            or df.at[individual_id, 'la_is_postpartum']\
             or (df.at[individual_id, 'ps_gestational_age_in_weeks'] < ga_for_anc_dict[this_visit_number]) \
            or (date_difference > pd.to_timedelta(7, unit='D')):
             return False
@@ -2518,7 +2518,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
 
         # If the woman is no longer alive, pregnant is in labour or is an inpatient already then the event doesnt run
         if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'is_pregnant'] or \
-           not df.at[person_id, 'la_currently_in_labour'] or not df.at[person_id, 'hs_is_inpatient']:
+            df.at[person_id, 'la_currently_in_labour'] or df.at[person_id, 'hs_is_inpatient']:
             return
 
         # We set this admission property to show shes being admitted for induction of labour and hand her over to the

@@ -627,6 +627,7 @@ class Labour(Module):
         # This equation determines the proportion of women at baseline who have previously delivered via caesarean
         # section
         reproductive_age_women = df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)
+
         previous_cs = pd.Series(
             self.rng.random_sample(len(reproductive_age_women.loc[reproductive_age_women])) <
             self.current_parameters['prob_previous_caesarean_at_baseline'],
@@ -915,6 +916,8 @@ class Labour(Module):
         """
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+        assert not df.at[mother_id, 'la_intrapartum_still_birth']
 
         # log delivery setting
         logger.info(key='delivery_setting_and_mode', data={'mother': mother_id,
@@ -1857,13 +1860,13 @@ class Labour(Module):
                 if all_available:
                     # Treatment with magnesium reduces a womans risk of death from eclampsia
                     df.at[person_id, 'la_eclampsia_treatment'] = True
-                    logger.debug(key='message', data=f'mother {person_id} has has their eclampsia identified during '
-                                                     f'delivery. As consumables are available they will receive '
+                    logger.debug(key='message', data=f'mother {person_id} has has their eclampsia identified.'
+                                                     f' As consumables are available they will receive '
                                                      f'treatment')
 
                 elif df.at[person_id, f'{prefix}_htn_disorders'] == 'eclampsia':
                     logger.debug(key='message', data=f'mother {person_id} has not had their eclampsia identified '
-                                                     f'during delivery and will not be treated')
+                                                     f'and will not be treated')
 
     def assessment_and_treatment_of_obstructed_labour_via_avd(self, hsi_event, facility_type):
         """
@@ -2827,6 +2830,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
                                                                                           'birth'])):
                 df.at[individual_id, 'ps_prev_stillbirth'] = True
                 mni[individual_id]['single_twin_still_birth'] = True
+                logger.debug(key='msg', data=f'single twin stillbirth for {individual_id}')
 
         if outcome_death_equations and df.at[individual_id, 'la_intrapartum_still_birth']:
             # We delete the mni dictionary if both mother and baby have died in labour, if the mother has died but
@@ -2880,9 +2884,12 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
             # (via sibling id) in the newborn module
             if person.ps_multiple_pregnancy:
                 child_one = self.sim.do_birth(mother_id)
-                child_two = self.sim.do_birth(mother_id)
-                logger.debug(key='message', data=f'Mother {mother_id} will now deliver twins {child_one} & {child_two}')
-                self.sim.modules['NewbornOutcomes'].link_twins(child_one, child_two, mother_id)
+
+                if not mni[mother_id]['single_twin_still_birth']:
+                    child_two = self.sim.do_birth(mother_id)
+                    logger.debug(key='message', data=f'Mother {mother_id} will now deliver twins {child_one} & '
+                                                     f'{child_two}')
+                    self.sim.modules['NewbornOutcomes'].link_twins(child_one, child_two, mother_id)
             else:
                 self.sim.do_birth(mother_id)
 
@@ -3169,7 +3176,6 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         params = self.module.current_parameters
 
-        print(person_id, df.at[person_id, 'la_date_most_recent_delivery'])
         if pd.isnull(df.at[person_id, 'la_date_most_recent_delivery']):
             return
         if not df.at[person_id, 'is_alive']:
@@ -3177,6 +3183,7 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
 
         if (mni[person_id]['will_receive_pnc'] == 'early') and not mni[person_id]['passed_through_week_one']:
             assert self.sim.date == df.at[person_id, 'la_date_most_recent_delivery']
+            print('pn_failing', person_id)
             assert df.at[person_id, 'la_pn_checks_maternal'] == 0
 
         elif mni[person_id]['will_receive_pnc'] == 'late' and not mni[person_id]['passed_through_week_one']:

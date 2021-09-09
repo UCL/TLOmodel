@@ -89,6 +89,13 @@ def get_pregnancies_in_a_year(logs_dict_file, year):
 
     return total_pregnancies
 
+def get_pregnancies_from_dummy_contraception(logs_dict_file, year):
+    preg_poll = logs_dict_file['tlo.methods.dummy_contraception']['pregnancy']
+    preg_poll['date'] = pd.to_datetime(preg_poll['date'])
+    preg_poll['year'] = preg_poll['date'].dt.year
+
+    return len(preg_poll.loc[preg_poll['year'] == year])
+
 def get_completed_pregnancies_in_a_year(logs_dict_file, master_dict):
     sum_ended_pregs_from_dict = master_dict['spontaneous_abortion'] + master_dict['induced_abortion'] + \
                                 master_dict['ectopic_unruptured']
