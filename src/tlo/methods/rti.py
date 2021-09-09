@@ -3369,18 +3369,15 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
 
         # Isolate the relevant information
         recovery_dates = df.loc[relevant_population]['rt_date_to_remove_daly']
-        for person in recovery_dates.index:
-            for idx in range(0, len(recovery_dates[person])):
-                date = recovery_dates[person][idx]
-                if not pd.isnull(date):
-                    assert date >= self.sim.date, 'recovery date assigned to past'
-                    # TODO: move this check into the loop over person -> dates below, and remove this loop
         default_recovery = [pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT]
         # Iterate over all the injured people who are having medical treatment
         for person in recovery_dates.index:
             # Iterate over all the dates in 'rt_date_to_remove_daly'
             persons_injuries = df.loc[[person], RTI.INJURY_COLUMNS]
             for date in df.loc[person, 'rt_date_to_remove_daly']:
+                # check that a recovery date hasn't been assigned to the past
+                if not pd.isnull(date):
+                    assert date >= self.sim.date, 'recovery date assigned to past'
                 # check if the recovery date is today
                 if date == now:
                     # find the index for the injury which the person has recovered from
@@ -3428,11 +3425,9 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                         # check that all codes in rt_injuries_to_cast are removed
                         for code in df.loc[person, 'rt_injuries_to_cast']:
                             idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
-                            # # FIXME: check - shouldn't the below be `counts > 0`? otherwise code is never removed
-                            # #  from property
-                            # if counts == 0:
-                            #     # if for some reason the code hasn't been removed, remove it
-                            #     df.loc[person, 'rt_injuries_to_cast'].remove(code)
+                            if counts == 0:
+                                # if for some reason the code hasn't been removed, remove it
+                                df.loc[person, 'rt_injuries_to_cast'].remove(code)
                         assert df.loc[person, 'rt_injuries_to_heal_with_time'] == [], \
                             df.loc[person, 'rt_injuries_to_heal_with_time']
                         assert df.loc[person, 'rt_injuries_for_minor_surgery'] == [], \
@@ -5143,10 +5138,6 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 self.treated_code = "P" + self.treated_code
                 df.loc[person_id, column] = self.treated_code
                 injuries_to_be_treated.append(self.treated_code)
-                # todo: check if the below lines are needed
-                for injury in injuries_to_be_treated:
-                    if injury not in df.loc[person_id, 'rt_injuries_for_major_surgery']:
-                        df.loc[person_id, 'rt_injuries_for_major_surgery'].append(injury)
                 assert len(injuries_to_be_treated) == len(df.loc[person_id, 'rt_injuries_for_major_surgery'])
 
             columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id,
