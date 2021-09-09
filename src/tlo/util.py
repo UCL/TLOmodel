@@ -5,6 +5,7 @@ from typing import Dict, List, Union
 import numpy as np
 import pandas
 import pandas as pd
+from pandas import DateOffset
 
 from tlo import Population
 
@@ -256,3 +257,8 @@ class BitsetHandler:
     def clear(self, where) -> None:
         """Clears all the bits for the specified rows"""
         self.df.loc[where, self._column] = 0
+
+
+def random_date(start, end, rng):
+    """Generate a randomly-chosen day between `start` (inclusive) `end` (exclusive)"""
+    return start + DateOffset(days=rng.randint(0, (end - start).days))

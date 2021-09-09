@@ -66,7 +66,7 @@ from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.util import sample_outcome
+from tlo.util import sample_outcome, random_date
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1004,10 +1004,6 @@ class Alri(Module):
         # If person is on treatment, they should have a treatment start date
         assert (df.loc[curr_inf, 'ri_on_treatment'] != df.loc[curr_inf, 'ri_ALRI_tx_start_date'].isna()).all()
 
-    def random_date(self, start, end):
-        """Generate a random date between `start` and `end` - sampling with precision of the day."""
-        return start + DateOffset(days=self.rng.randint(0, (end - start).days))
-
     def impose_symptoms_for_complication(self, complication, person_id):
         """Impose symptoms for a complication."""
         symptoms = self.models.symptoms_for_complication(complication=complication)
@@ -1409,7 +1405,7 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     person_id=person_id,
                     pathogen=pathogen,
                 ),
-                date=m.random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1))
+                date=random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1), m.rng)
             )
 
 
@@ -1528,7 +1524,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             m.impose_symptoms_for_complication(person_id=person_id, complication=complication)
 
         # Consider delayed-onset of complications and schedule events accordingly
-        date_of_onset_delayed_complications = m.random_date(self.sim.date, date_of_outcome)
+        date_of_onset_delayed_complications = random_date(self.sim.date, date_of_outcome, m.rng)
         delayed_complications = models.delayed_complications(person_id=person_id)
         for delayed_complication in delayed_complications:
             self.sim.schedule_event(

@@ -44,6 +44,7 @@ from tlo.methods import Metadata, demography
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
+from tlo.util import sample_outcome, random_date
 
 from tlo.methods.dxmanager import DxTest
 
@@ -1183,12 +1184,19 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=3))
         # NB. The frequency of the occurrences of this event can be edited safely.
+        self.fraction_of_a_year_until_next_polling_event = self.compute_fraction_of_year_between_polling_event()
+
+    def compute_fraction_of_year_between_polling_event(self):
+        """Compute fraction of a year that elapses between polling event. This is used to adjust the risk of
+        infection"""
+        return (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'Y')
 
     def apply(self, population):
         df = population.props
-        rng = self.module.rng
         m = self.module
+        models = m.models
 
+        # Define who is at risk of onset of a episode of Diarrhoea.
         # Those susceptible are children that do not currently have an episode (never had an episode or last episode
         # resolved) and who do not have diarrhoea as a 'spurious symptom' of diarrhoea already.
         mask_could_get_new_diarrhoea_episode = (
@@ -1205,40 +1213,18 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 .predict(df.loc[mask_could_get_new_diarrhoea_episode])
 
         # Convert the incidence rates into risk of an event occurring before the next polling event
-        fraction_of_a_year_until_next_polling_event = \
-            (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'Y')
-        days_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'D')
         probs_of_aquiring_pathogen = 1 - np.exp(
-            -inc_of_acquiring_pathogen * fraction_of_a_year_until_next_polling_event
+            -inc_of_acquiring_pathogen * self.fraction_of_a_year_until_next_polling_event
         )
 
-        # Compute the probability of getting 'any' pathogen:
-        # (Assumes that pathogens are mutually exclusive. Prevents probability being greater than 1.0.
-        prob_of_acquiring_any_pathogen = probs_of_aquiring_pathogen.sum(axis=1).clip(upper=1.0)
-        assert all(prob_of_acquiring_any_pathogen <= 1.0)
+        # Sample to find outcomes (which pathogen, if any, caused Diarrhoea among persons at-risk):
+        outcome = sample_outcome(probs=probs_of_aquiring_pathogen, rng=self.module.rng)
 
-        # Determine which persons will acquire any pathogen:
-        person_id_that_acquire_pathogen = prob_of_acquiring_any_pathogen.index[
-            rng.rand(len(prob_of_acquiring_any_pathogen)) < prob_of_acquiring_any_pathogen
-            ]
-
-        # Determine which pathogen each person will acquire (among those who will get a pathogen)
-        # and create the event for the onset of new infection:
-        for person_id in person_id_that_acquire_pathogen:
-            # Allocate a pathogen to the person
-            p_by_pathogen = probs_of_aquiring_pathogen.loc[person_id].values
-            normalised_p_by_pathogen = p_by_pathogen / sum(p_by_pathogen)  # don't understand this normalised
-            pathogen = rng.choice(probs_of_aquiring_pathogen.columns,
-                                  p=normalised_p_by_pathogen)
-
-            # Allocate a date of onset diarrhoea ----------------------------
-            date_onset = self.sim.date + DateOffset(days=rng.randint(0, days_until_next_polling_event))
-
-            # ----------------------------------------------------------------------------------------------
-            # Create the event for the onset of infection
+        for person_id, pathogen in outcome.items():
+            # Create and schedule the event for the onset of infection
             self.sim.schedule_event(
                 event=DiarrhoeaIncidentCase(module=self.module, person_id=person_id, pathogen=pathogen),
-                date=date_onset
+                date=random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1), m.rng)
             )
 
 
