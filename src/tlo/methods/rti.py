@@ -2553,7 +2553,7 @@ class RTI(Module):
             # if injuries are assigned split the injury codes
             injdf = injdf['Injury codes'].apply(pd.Series)
             # rename each variable in injdf if people have actually been injured
-            injdf = injdf.rename(columns=lambda x: 'Injury ' + str(x + 1))
+            injdf = injdf.rename(columns=lambda x: 'rt_injury_' + str(x + 1))
 
         # store the predicted injury severity scores
         injdf['Injury AIS'] = predinjsev
@@ -3009,39 +3009,38 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         description = description.replace('nan', 'none')
         # set the index of the description dataframe, so that we can join it to the selected_for_rti_inj dataframe
         description = description.set_index(selected_for_rti_inj.index)
-        # join the description dataframe, which stores information on people's injuries to the copy of
-        # self.sim.population.props which contains the index of people involved in RTIs
-        selected_for_rti_inj = selected_for_rti_inj.join(description.set_index(selected_for_rti_inj.index))
-        # begin copying the results from the selected_for_rti_inj dataframe to self.sim.population.props
-        for person_id in selected_for_rti_inj.index:
-            # copy over injury severity
-            df.loc[person_id, 'rt_ISS_score'] = description.loc[person_id, 'ISS']
-            df.loc[person_id, 'rt_MAIS_military_score'] = description.loc[person_id, 'MAIS_M']
+        # copy over values from the assign injury dataframe to self.sim.population.props
+
+        df.loc[selected_for_rti_inj.index, 'rt_ISS_score'] = description.loc[selected_for_rti_inj.index, 'ISS']
+        df.loc[selected_for_rti_inj.index, 'rt_MAIS_military_score'] = description.loc[selected_for_rti_inj.index,
+                                                                                       'MAIS_M']
         # ======================== Apply the injuries to the population dataframe ======================================
-        # Copy entries from selected_for_rti_inj dataframe to self.sim.population.props.
-        injury_columns = pd.Index(['Injury 1', 'Injury 2', 'Injury 3', 'Injury 4', 'Injury 5', 'Injury 6', 'Injury 7',
-                                   'Injury 8'])
+        # Find the corresponding column names
+        injury_columns = pd.Index(RTI.INJURY_COLUMNS)
+        matching_columns = description.columns.intersection(injury_columns)
+        for col in matching_columns:
+            df.loc[selected_for_rti_inj.index, col] = description.loc[selected_for_rti_inj.index, col]
         # iterate over the number of injury columns in description
-        for ninjuries in range(0, len(description.columns.intersection(injury_columns))):
-            # copy over injuries column by column
-            for person_id in selected_for_rti_inj.index:
-                # copy over injuries person by person... may be slower than optimal
-                if ninjuries == 0:
-                    df.loc[person_id, 'rt_injury_1'] = description.loc[person_id, 'Injury 1']
-                if ninjuries == 1:
-                    df.loc[person_id, 'rt_injury_2'] = description.loc[person_id, 'Injury 2']
-                if ninjuries == 2:
-                    df.loc[person_id, 'rt_injury_3'] = description.loc[person_id, 'Injury 3']
-                if ninjuries == 3:
-                    df.loc[person_id, 'rt_injury_4'] = description.loc[person_id, 'Injury 4']
-                if ninjuries == 4:
-                    df.loc[person_id, 'rt_injury_5'] = description.loc[person_id, 'Injury 5']
-                if ninjuries == 5:
-                    df.loc[person_id, 'rt_injury_6'] = description.loc[person_id, 'Injury 6']
-                if ninjuries == 6:
-                    df.loc[person_id, 'rt_injury_7'] = description.loc[person_id, 'Injury 7']
-                if ninjuries == 7:
-                    df.loc[person_id, 'rt_injury_8'] = description.loc[person_id, 'Injury 8']
+        # for ninjuries in range(0, len(description.columns.intersection(injury_columns))):
+        #     # copy over injuries column by column
+        #     for person_id in selected_for_rti_inj.index:
+        #         # copy over injuries person by person... may be slower than optimal
+        #         if ninjuries == 0:
+        #             df.loc[person_id, 'rt_injury_1'] = description.loc[person_id, 'Injury 1']
+        #         if ninjuries == 1:
+        #             df.loc[person_id, 'rt_injury_2'] = description.loc[person_id, 'Injury 2']
+        #         if ninjuries == 2:
+        #             df.loc[person_id, 'rt_injury_3'] = description.loc[person_id, 'Injury 3']
+        #         if ninjuries == 3:
+        #             df.loc[person_id, 'rt_injury_4'] = description.loc[person_id, 'Injury 4']
+        #         if ninjuries == 4:
+        #             df.loc[person_id, 'rt_injury_5'] = description.loc[person_id, 'Injury 5']
+        #         if ninjuries == 5:
+        #             df.loc[person_id, 'rt_injury_6'] = description.loc[person_id, 'Injury 6']
+        #         if ninjuries == 6:
+        #             df.loc[person_id, 'rt_injury_7'] = description.loc[person_id, 'Injury 7']
+        #         if ninjuries == 7:
+        #             df.loc[person_id, 'rt_injury_8'] = description.loc[person_id, 'Injury 8']
         # Run assert statements to make sure the model is behaving as it should
         # All those who are injured in a road traffic accident have this noted in the property 'rt_road_traffic_inc'
         assert sum(df.loc[selected_for_rti, 'rt_road_traffic_inc']) == len(selected_for_rti)
@@ -3065,16 +3064,17 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[selected_for_rti_inj.index, 'rt_date_death_no_med'] = now + DateOffset(days=7)
         # ============================ Injury severity classification =================================================
         # Find those with mild injuries and update the rt_roadtrafficinj property so they have a mild injury
-        mild_rti_idx = selected_for_rti_inj.index[selected_for_rti_inj.is_alive & selected_for_rti_inj['ISS'] < 15]
+        injured_this_month = df.loc[selected_for_rti_inj.index]
+        mild_rti_idx = injured_this_month.index[injured_this_month.is_alive & injured_this_month['rt_ISS_score'] < 15]
         df.loc[mild_rti_idx, 'rt_inj_severity'] = 'mild'
         # Find those with severe injuries and update the rt_roadtrafficinj property so they have a severe injury
-        severe_rti_idx = selected_for_rti_inj.index[selected_for_rti_inj['ISS'] >= 15]
+        severe_rti_idx = injured_this_month.index[injured_this_month['rt_ISS_score'] >= 15]
         df.loc[severe_rti_idx, 'rt_inj_severity'] = 'severe'
         # check that everyone who has been assigned an injury this month has an associated injury severity
         assert sum(df.loc[df.rt_road_traffic_inc & ~df.rt_imm_death & (df.rt_date_inj == now), 'rt_inj_severity']
                    != 'none') == len(selected_for_rti_inj.index)
         # Find those with polytrauma and update the rt_polytrauma property so they have polytrauma
-        polytrauma_idx = selected_for_rti_inj.loc[selected_for_rti_inj.Polytrauma].index
+        polytrauma_idx = description.loc[description.Polytrauma].index
         df.loc[polytrauma_idx, 'rt_polytrauma'] = True
         # Assign daly weights for each person's injuries with the function rti_assign_daly_weights
         road_traffic_injuries.rti_assign_daly_weights(selected_for_rti_inj.index)
