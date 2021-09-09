@@ -75,6 +75,7 @@ def get_combined_log(log_filepath):
     log = parse_log_file(log_filepath)['tlo.methods.diarrhoea']
     m = log['incident_case'][[
         'person_id',
+        'age_years',
         'date',
         'date_of_outcome',
         'will_die'
@@ -264,6 +265,13 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                      diarrhoea.PropertiesOfOtherModules(),
                      dx_algorithm_child.DxAlgorithmChild()
                      )
+        # Edit rate of spurious symptoms to be limited to additional cases of diarrhoea:
+        sp_symps = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
+        for symp in sp_symps['generic_symptom_name']:
+            sp_symps.loc[
+                sp_symps['generic_symptom_name'] == symp,
+                ['prob_spurious_occurrence_in_adults_per_day', 'prob_spurious_occurrence_in_children_per_day']
+            ] = 1.0/30.0 if symp == 'diarrhoea' else 0.0
 
         # Increase incidence of pathogens:
         sim = increase_incidence_of_pathogens(sim)
@@ -303,32 +311,17 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
         # check that there have not been any deaths caused by Diarrhoea
         assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
 
-        # open the log and match-up the incident cases with their outcomes
+        # open the logs to check that no one died and that there are many cures
+        # (there is not a cure in the instance that the natural recovery happens first).
         m = get_combined_log(sim.log_filepath)
-
-        # # Check that all of those who got diarrhoea got treatment or recovered naturally before treatment was provided
-        # # (limited to those who did not did not die before that episode ended) and that no one died of the Diarrhoea.
-        # had_diarrhoea = \
-        #     ~pd.isnull(df.date_of_birth) & \
-        #     ~pd.isnull(df.loc[df.is_alive, 'gi_date_end_of_last_episode']) & \
-        #     (df.gi_date_end_of_last_episode < sim.date) & \
-        #     (
-        #         pd.isnull(df.date_of_death) | (df.date_of_death > df.gi_date_end_of_last_episode)
-        #     )
-        #
-        # got_treatment = ~pd.isnull(
-        #     df.loc[had_diarrhoea, 'gi_treatment_date']
-        # )
-        # recovered_naturally = ~pd.isnull(
-        #     df.loc[had_diarrhoea & pd.isnull(df['gi_treatment_date']),
-        #            'gi_scheduled_date_recovery']
-        # )
-        # assert (got_treatment | recovered_naturally).all()
+        assert m.loc[~m.will_die].outcome.isin(['recovery', 'cure']).all()
+        assert (m.loc[m.will_die].outcome == 'cure').all()
+        assert not (m.outcome == 'death').any()
 
     # # run without spurious symptoms
     run(spurious_symptoms=False)
 
-    # run with spurious symptoms todo - this should go faster
+    # run with spurious symptoms
     run(spurious_symptoms=True)
 
 

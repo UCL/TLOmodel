@@ -11,7 +11,6 @@ Individuals are exposed to the risk of onset of diarrhoea. They can have diarrho
 Health care seeking is prompted by the onset of the symptom diarrhoea. The individual can be treated; if successful the
  risk of death is removed and they are cured (symptom resolved) some days later.
 
-
 Outstanding Issues
 ===================
 * Logic of death computation (https://docs.google.com/drawings/d/1B5mNlIL9Bry2bk2BQq_djtVFMxk1g_NGxv-Jfg5EnWU/edit)
@@ -868,10 +867,9 @@ class Diarrhoea(Module):
         self.sim.population.props.at[person_id, 'gi_scheduled_date_death'] = pd.NaT
 
     def end_episode(self, person_id, outcome):
-        """Helper function that enacts the end of the episode of diarrhoea (either by natural recovery or cure)
-        * Removes symptoms
-        * Resets properties
-        * Logs the outcome
+        """Helper function that enacts the end of the episode of diarrhoea (either by natural recovery, death or  cure)
+        * Logs that the episode has ended
+        * Enacts the death (if the outcome=='death'); Otherwise, removes symptoms and resets properties
         """
         assert outcome in ['recovery', 'cure', 'death']
 
@@ -893,7 +891,7 @@ class Diarrhoea(Module):
             self.sim.modules['Demography'].do_death(
                 individual_id=person_id,
                 cause='Diarrhoea_' + df.at[person_id, 'gi_pathogen'],
-                originating_module=self.module)
+                originating_module=self)
 
         else:
             # If outcome is not death, then remove all symptoms and reset properties:
@@ -1282,8 +1280,12 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
 
         person = df.loc[person_id]
 
-        # The event should not run if the person is not currently alive
+        # The event will not run if the person is not currently alive
         if not person.is_alive:
+            return
+
+        # The event will not run if the child is now older than five year-olds
+        if not person.age_years < 5:
             return
 
         # Determine the duration of the dirarrhoea, the date of outcome and the end of episode (the date when this

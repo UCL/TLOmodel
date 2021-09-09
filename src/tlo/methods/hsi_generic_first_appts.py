@@ -137,10 +137,10 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                  tclose=None,
                  priority=0)
 
-        # diagnostic algorithm for child <5 yrs
-        if age < 5:
-            # ----------------------------------- CHILD <5 -----------------------------------
+        if age <= 5:
+            # ----------------------------------- CHILD <=5 -----------------------------------
             # It's a child: Run the ICMI algorithm for this child:
+            # NB. This includes children who are aged 5
 
             # If one of the symptoms is diarrhoea, then run the algorithm for when a child presents with diarrhoea:
             if 'diarrhoea' in symptoms:
@@ -148,6 +148,8 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     self.sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
                         person_id=person_id, hsi_event=self)
 
+        # diagnostic algorithm for child <5 yrs
+        if age < 5:
             # Next, run DxAlgorithmChild to get additional diagnoses:
             diagnosis = self.sim.modules["DxAlgorithmChild"].diagnose(
                 person_id=person_id, hsi_event=self
