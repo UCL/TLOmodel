@@ -7,18 +7,13 @@ There should be a method here to respond to every symptom that a child could pre
 served by the following disease modules:
 * Diarrhoea
 
-# todo - this is being deprecated
-# todo - algorithm re malaria quite confusing - to be reconciled with diarrhoea and alri when in.
+# todo - ****** this is being deprecated ******
+# todo - algorithm re malaria will need to be reconciled with diarrhoea and alri when these are finalised.
 
 """
 
-from tlo import Module, logging, Parameter, Types
+from tlo import Module, logging
 from tlo.methods import Metadata
-from tlo.methods.diarrhoea import (
-    HSI_Diarrhoea_Treatment_Outpatient,
-    HSI_Diarrhoea_Treatment_Inpatient,
-)
-from tlo.methods.dxmanager import DxTest
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -56,7 +51,6 @@ class DxAlgorithmChild(Module):
 
     def on_birth(self, mother_id, child_id):
         pass
-
 
     def diagnose(self, person_id, hsi_event):
         """

@@ -19,8 +19,8 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    hiv,
-    symptommanager, simplified_births
+    simplified_births,
+    symptommanager,
 )
 
 # %%
@@ -49,11 +49,11 @@ for label, service_avail in scenarios.items():
     log_config = {'filename': 'diarrhoea_with_treatment_with_and_without_treatment'}
 
     if service_avail == []:
-        _disable=False
-        _disable_and_reject_all=True
+        _disable = False
+        _disable_and_reject_all = True
     else:
-        _disable=True
-        _disable_and_reject_all=False
+        _disable = True
+        _disable_and_reject_all = False
 
     # add file handler for the purpose of logging
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)

@@ -5,8 +5,9 @@ There is treatment.
 
 # %% Import Statements and initial declarations
 import datetime
-from pathlib import Path
 import os
+from pathlib import Path
+
 import pandas as pd
 from matplotlib import pyplot as plt
 
@@ -17,12 +18,10 @@ from tlo.methods import (
     diarrhoea,
     dx_algorithm_child,
     enhanced_lifestyle,
-    healthburden,
     healthseekingbehaviour,
     healthsystem,
     simplified_births,
     symptommanager,
-    hiv
 )
 
 # %%
@@ -34,7 +33,7 @@ no_existing_logfile = True
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-log_filename = outputpath / 'XXXXX' # <-- insert name of log file to avoid re-running the simulation
+log_filename = outputpath / 'XXXXX'  # <-- insert name of log file to avoid re-running the simulation
 
 if not os.path.exists(log_filename):
     # If logfile does not exists, re-run the simulation:

@@ -92,9 +92,9 @@ def sample_outcome(probs: pd.DataFrame, rng: np.random.RandomState):
     """ Helper function to randomly sample an outcome for each individual in a population from a set of probabilities
     that are specific to each individual.
 
-    :param _probs: Each row of this dataframe represents the person and the columns are the possible outcomes. The values
-    are the probability of that outcome for that individual. For each individual, the probabilities of each outcome are
-    assumed to be independent and mutually exlusive (but not neccesarily exhaustive).
+    :param _probs: Each row of this dataframe represents the person and the columns are the possible outcomes. The
+    values are the probability of that outcome for that individual. For each individual, the probabilities of each
+    outcome are assumed to be independent and mutually exlusive (but not neccesarily exhaustive).
     :param rng: Random Number state to use for the generation of random numbers.
     :return: A dict of the form {<index>:<outcome>} where an outcome is selected.
     """

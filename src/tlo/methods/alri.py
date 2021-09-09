@@ -66,7 +66,7 @@ from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.util import sample_outcome, random_date
+from tlo.util import random_date, sample_outcome
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

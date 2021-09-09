@@ -4,9 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from tlo.util import sample_outcome
+import tlo.util
 from tlo import Date
-
 
 
 @pytest.fixture
@@ -196,7 +195,7 @@ def test_sample_outcome(tmpdir):
     list_of_results = list()
     n = 5000
     for i in range(n):
-        list_of_results.append(sample_outcome(probs, rng))
+        list_of_results.append(tlo.util.sample_outcome(probs, rng))
     res = pd.DataFrame(list_of_results)
 
     assert (res[0] == 'A').all()
