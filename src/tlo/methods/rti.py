@@ -2308,6 +2308,39 @@ class RTI(Module):
         # define all injuries that can be assigned in a dictionary, information will be stored in the following order:
         # location, the subdict containing the probability of injury occuring, the ais injury location, category and
         # ais score
+        # creat shorthand variable names for spinal chord injuries
+        prob_673b = self.spine_prob_spinal_cord_lesion * p['daly_dist_code_673'][0] * (
+            self.spine_prob_spinal_cord_lesion_neck_level * self.spine_prob_spinal_cord_lesion_neck_level_AIS3 +
+            self.spine_prob_spinal_cord_lesion_below_neck_level *
+            self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3
+        )
+        prob_673b = self.spine_prob_spinal_cord_lesion * p['daly_dist_code_673'][1] * (
+            self.spine_prob_spinal_cord_lesion_neck_level * self.spine_prob_spinal_cord_lesion_neck_level_AIS3 +
+            self.spine_prob_spinal_cord_lesion_below_neck_level *
+            self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3
+        )
+        prob_674a = self.spine_prob_spinal_cord_lesion * p['daly_dist_codes_674_675'][0] * (
+            self.spine_prob_spinal_cord_lesion_neck_level * self.spine_prob_spinal_cord_lesion_neck_level_AIS4 +
+            self.spine_prob_spinal_cord_lesion_below_neck_level *
+            self.spine_prob_spinal_cord_lesion_below_neck_level_AIS4
+        )
+        prob_674b = self.spine_prob_spinal_cord_lesion * p['daly_dist_codes_674_675'][1] * (
+            self.spine_prob_spinal_cord_lesion_neck_level * self.spine_prob_spinal_cord_lesion_neck_level_AIS4 +
+            self.spine_prob_spinal_cord_lesion_below_neck_level *
+            self.spine_prob_spinal_cord_lesion_below_neck_level_AIS4
+        )
+        prob_675a = self.spine_prob_spinal_cord_lesion * p['daly_dist_codes_674_675'][0] * (
+            self.spine_prob_spinal_cord_lesion_neck_level * self.spine_prob_spinal_cord_lesion_neck_level_AIS5 +
+            self.spine_prob_spinal_cord_lesion_below_neck_level *
+            self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5
+        )
+        prob_675b = self.spine_prob_spinal_cord_lesion * p['daly_dist_codes_674_675'][1] * (
+            self.spine_prob_spinal_cord_lesion_neck_level * self.spine_prob_spinal_cord_lesion_neck_level_AIS5 +
+            self.spine_prob_spinal_cord_lesion_below_neck_level *
+            self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5
+        )
+        prob_676 = self.spine_prob_spinal_cord_lesion * self.spine_prob_spinal_cord_lesion_neck_level * \
+                    self.spine_prob_spinal_cord_lesion_neck_level_AIS6
 
         injuries = {
             # injuries to the head
@@ -2363,44 +2396,13 @@ class RTI(Module):
                                 5, 5, 4]},
             # injuries to the spine
             'spine': {'612': [self.spine_prob_fracture, 6, 1, 2],
-                      '673a': [self.spine_prob_spinal_cord_lesion *
-                               (self.spine_prob_spinal_cord_lesion_neck_level * \
-                                self.spine_prob_spinal_cord_lesion_neck_level_AIS3 + \
-                                self.spine_prob_spinal_cord_lesion_below_neck_level * \
-                                self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3) * p['daly_dist_code_673'][0],
-                               6, 7, 3],
-                      '673b': [self.spine_prob_spinal_cord_lesion *
-                               (self.spine_prob_spinal_cord_lesion_neck_level * \
-                                self.spine_prob_spinal_cord_lesion_neck_level_AIS3 + \
-                                self.spine_prob_spinal_cord_lesion_below_neck_level * \
-                                self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3) * p['daly_dist_code_673'][1],
-                               6, 7, 3],
-                     '674a': [self.spine_prob_spinal_cord_lesion *
-                              (self.spine_prob_spinal_cord_lesion_neck_level *
-                               self.spine_prob_spinal_cord_lesion_neck_level_AIS4 +
-                               self.spine_prob_spinal_cord_lesion_below_neck_level *
-                               self.spine_prob_spinal_cord_lesion_below_neck_level_AIS4) *
-                              p['daly_dist_codes_674_675'][0], 6, 7, 4],
-                     '674b': [self.spine_prob_spinal_cord_lesion *
-                              (self.spine_prob_spinal_cord_lesion_neck_level *
-                               self.spine_prob_spinal_cord_lesion_neck_level_AIS4 +
-                               self.spine_prob_spinal_cord_lesion_below_neck_level *
-                               self.spine_prob_spinal_cord_lesion_below_neck_level_AIS4 *
-                              p['daly_dist_codes_674_675'][1]), 6, 7, 4],
-                     '675a': [self.spine_prob_spinal_cord_lesion *
-                              (self.spine_prob_spinal_cord_lesion_neck_level *
-                               self.spine_prob_spinal_cord_lesion_neck_level_AIS5 +
-                               self.spine_prob_spinal_cord_lesion_below_neck_level *
-                               self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5) *
-                              p['daly_dist_codes_674_675'][0], 6, 7, 5],
-                     '675b': [self.spine_prob_spinal_cord_lesion *
-                              (self.spine_prob_spinal_cord_lesion_neck_level *
-                               self.spine_prob_spinal_cord_lesion_neck_level_AIS5 +
-                               self.spine_prob_spinal_cord_lesion_below_neck_level *
-                               self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5) *
-                              p['daly_dist_codes_674_675'][1], 6, 7, 5],
-                     '676': [self.spine_prob_spinal_cord_lesion * self.spine_prob_spinal_cord_lesion_neck_level *
-                             self.spine_prob_spinal_cord_lesion_neck_level_AIS6, 6, 7, 6]
+                      '673a': [prob_673a, 6, 7, 3],
+                      '673b': [prob_673b, 6, 7, 3],
+                     '674a': [prob_675a, 6, 7, 4],
+                     '674b': [prob_674b, 6, 7, 4],
+                     '675a': [prob_675a, 6, 7, 5],
+                     '675b': [prob_675b, 6, 7, 5],
+                     '676': [prob_676, 6, 7, 6]
                       },
             # injuries to the upper extremities
             'upper_ex': {'7101': [self.upper_ex_prob_skin_wound * self.upper_ex_prob_skin_wound_open, 7, 10, 1],
