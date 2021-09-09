@@ -28,8 +28,6 @@ Outstanding Issues
 * Calibration
     * Incidence and deaths OK but does not seem reconciled with CFR in GBD (https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(18)30362-1/fulltext)
 
-
-
 """
 import copy
 from pathlib import Path
@@ -517,22 +515,17 @@ class Diarrhoea(Module):
                                           ),
         'gi_last_diarrhoea_pathogen': Property(Types.CATEGORICAL,
                                                'Attributable pathogen for the last episode of diarrhoea.'
-                                               'not_applicable is used if the person has never had an episode of '
-                                               'diarrhoea',
-                                               categories=list(pathogens) + ['not_applicable']),
+                                               '(np.nan if the person has never had an episode of diarrhoea)',
+                                               categories=list(pathogens)),
         'gi_last_diarrhoea_type': Property(Types.CATEGORICAL,
                                            'Type of the last episode of diarrhoea: either watery or bloody.'
-                                           'not_applicable is used if the person has never had an episode of '
-                                           'diarrhoea.',
-                                           categories=['not_applicable',  # (never has had diarrhoea)
-                                                       'watery',
+                                           '(np.nan if the person has never had an episode of diarrhoea)',
+                                           categories=['watery',
                                                        'bloody']),
         'gi_last_diarrhoea_dehydration': Property(Types.CATEGORICAL,
                                                   'Severity of dehydration of last episode of diarrhoea.'
-                                                  'not_applicable is used if the person has never had an episode of '
-                                                  'diarrhoea',
-                                                  categories=['not_applicable',  # (never has had diarrhoea)
-                                                              'none',       # <-- this can be assigned at onset
+                                                  '(np.nan if the person has never had an episode of diarrhoea)',
+                                                  categories=['none',       # <-- this can be assigned at onset
                                                               'some',       # <-- this can be assigned at onset
                                                               'severe'      # <-- this may develop during the episode
                                                               ]),
@@ -618,9 +611,9 @@ class Diarrhoea(Module):
 
         # ---- Key Current Status Classification Properties ----
         df.loc[df.is_alive, 'gi_ever_had_diarrhoea'] = False
-        df.loc[df.is_alive, 'gi_last_diarrhoea_pathogen'] = 'not_applicable'
-        df.loc[df.is_alive, 'gi_last_diarrhoea_type'] = 'not_applicable'
-        df.loc[df.is_alive, 'gi_last_diarrhoea_dehydration'] = 'not_applicable'
+        df.loc[df.is_alive, 'gi_last_diarrhoea_pathogen'] = np.nan
+        df.loc[df.is_alive, 'gi_last_diarrhoea_type'] = np.nan
+        df.loc[df.is_alive, 'gi_last_diarrhoea_dehydration'] = np.nan
         df.loc[df.is_alive, 'gi_last_diarrhoea_duration_longer_than_13days'] = False
 
         # ---- Internal values ----
@@ -679,9 +672,9 @@ class Diarrhoea(Module):
 
         # ---- Key Current Status Classification Properties ----
         df.at[child_id, 'gi_ever_had_diarrhoea'] = False
-        df.at[child_id, 'gi_last_diarrhoea_pathogen'] = 'not_applicable'
-        df.at[child_id, 'gi_last_diarrhoea_type'] = 'not_applicable'
-        df.at[child_id, 'gi_last_diarrhoea_dehydration'] = 'not_applicable'
+        df.at[child_id, 'gi_last_diarrhoea_pathogen'] = np.nan
+        df.at[child_id, 'gi_last_diarrhoea_type'] = np.nan
+        df.at[child_id, 'gi_last_diarrhoea_dehydration'] = np.nan
         df.at[child_id, 'gi_last_diarrhoea_duration_longer_than_13days'] = False
 
         # ---- Internal values ----
@@ -717,7 +710,7 @@ class Diarrhoea(Module):
         # Split out by pathogen that causes the diarrhoea
         dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index,
                                                      'gi_last_diarrhoea_pathogen'],
-                                              dtype='float').drop(columns='not_applicable')
+                                              dtype='float')
         daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0)
 
         # return with columns labelled to match the declare CAUSES_OF_DISABILITY
@@ -814,7 +807,7 @@ class Diarrhoea(Module):
 
         # Do nothing if the diarrhoea has not been caused by a pathogen or has otherwise resolved already
         if not (
-            (person.gi_last_diarrhoea_pathogen != 'not_applicable') &
+            (not person.gi_last_diarrhoea_pathogene.isna()) &
             (person.gi_last_diarrhoea_date_of_onset <= self.sim.date <= person.gi_end_of_last_episode)
         ) or (
             'Diarrhoea' not in self.sim.modules['SymptomManager'].causes_of(person_id, 'diarrhoea')
@@ -881,11 +874,11 @@ class Diarrhoea(Module):
         df = self.sim.population.props
 
         # Those that have never had diarrhoea, should have not_applicable/null values for all the other properties:
-        assert (df.loc[~df.gi_ever_had_diarrhoea & ~df.date_of_birth.isna(), [
+        assert pd.isnull(df.loc[~df.gi_ever_had_diarrhoea & ~df.date_of_birth.isna(), [
             'gi_last_diarrhoea_pathogen',
             'gi_last_diarrhoea_type',
             'gi_last_diarrhoea_dehydration']
-        ] == 'not_applicable').all().all()
+        ]).all().all()
 
         assert pd.isnull(df.loc[~df.date_of_birth.isna() & ~df['gi_ever_had_diarrhoea'], [
             'gi_last_diarrhoea_date_of_onset',
@@ -1345,7 +1338,7 @@ class DiarrhoeaNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
 
         # Resolve all the symptoms immediately
         df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'none'
-        df.at[person_id, 'gi_last_diarrhoea_type'] = 'not_applicable'
+        df.at[person_id, 'gi_last_diarrhoea_type'] = np.nan
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
                                                           disease_module=self.sim.modules['Diarrhoea'])
 
