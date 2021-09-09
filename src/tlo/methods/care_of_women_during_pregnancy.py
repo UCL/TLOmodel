@@ -291,8 +291,11 @@ class CareOfWomenDuringPregnancy(Module):
 
         if ind_or_df == 'individual':
             set = df.at
+            # todo: seems like this crashes when it shouldnt have even been called
+            # assert not set[id_or_index, 'is_pregnant']
         else:
             set = df.loc
+            assert not set[id_or_index, 'is_pregnant'].any()
 
         set[id_or_index, 'ac_total_anc_visits_current_pregnancy'] = 0
         set[id_or_index, 'ac_to_be_admitted'] = False
@@ -1242,6 +1245,8 @@ class CareOfWomenDuringPregnancy(Module):
 
         df = self.sim.population.props
         params = self.current_parameters
+
+        # todo: seems like this is allowing things to run which is shouldnt
 
         date_difference = self.sim.date - df.at[individual_id, 'ac_date_next_contact']
 

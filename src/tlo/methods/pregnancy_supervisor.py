@@ -44,7 +44,8 @@ class PregnancySupervisor(Module):
 
     INIT_DEPENDENCIES = {'Demography'}
     ADDITIONAL_DEPENDENCIES = {
-        'CareOfWomenDuringPregnancy', 'Contraception', 'HealthSystem', 'Lifestyle'
+        'CareOfWomenDuringPregnancy', 'Contraception', 'Labour', 'HealthSystem', 'Lifestyle', 'Hiv', 'Malaria',
+        'CardioMetabolicDisorders'
     }
 
     METADATA = {Metadata.DISEASE_MODULE,
@@ -592,8 +593,9 @@ class PregnancySupervisor(Module):
                 'gest_htn': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     intercept_dict['gest_htn'],
-                    Predictor('li_bmi').when('4', params['rr_gest_htn_obesity'])
-                                       .when('5', params['rr_gest_htn_obesity']),
+                    Predictor('li_bmi', conditions_are_mutually_exclusive=True)
+                    .when('4', params['rr_gest_htn_obesity'])
+                    .when('5', params['rr_gest_htn_obesity']),
                     Predictor('ac_receiving_calcium_supplements').when(True, params['treatment_effect_gest_htn_'
                                                                                     'calcium'])),
 
@@ -603,8 +605,9 @@ class PregnancySupervisor(Module):
                 'pre_eclampsia': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     intercept_dict['pre_eclampsia'],
-                    Predictor('li_bmi').when('4', params['rr_pre_eclampsia_obesity'])
-                                       .when('5', params['rr_pre_eclampsia_obesity']),
+                    Predictor('li_bmi', conditions_are_mutually_exclusive=True)
+                    .when('4', params['rr_pre_eclampsia_obesity'])
+                    .when('5', params['rr_pre_eclampsia_obesity']),
                     Predictor('ps_multiple_pregnancy').when(True, params['rr_pre_eclampsia_multiple_pregnancy']),
                     Predictor('nc_hypertension').when(True, params['rr_pre_eclampsia_chronic_htn']),
                     Predictor('nc_diabetes').when(True, params['rr_pre_eclampsia_diabetes_mellitus']),
@@ -617,11 +620,11 @@ class PregnancySupervisor(Module):
                     LinearModelType.MULTIPLICATIVE,
                     intercept_dict['placental_abruption'],
                     Predictor('la_previous_cs_delivery').when(True, params['rr_placental_abruption_previous_cs']),
-                    Predictor('ps_htn_disorders').when('mild_pre_eclamp', params['rr_placental_abruption_hypertension'])
-                                                 .when('gest_htn', params['rr_placental_abruption_hypertension'])
-                                                 .when('severe_gest_htn', params['rr_placental_abruption_hypertension'])
-                                                 .when('severe_pre_eclamp', params['rr_placental_abruption_'
-                                                                                   'hypertension'])),
+                    Predictor('ps_htn_disorders', conditions_are_mutually_exclusive=True)
+                    .when('mild_pre_eclamp', params['rr_placental_abruption_hypertension'])
+                    .when('gest_htn', params['rr_placental_abruption_hypertension'])
+                    .when('severe_gest_htn', params['rr_placental_abruption_hypertension'])
+                    .when('severe_pre_eclamp', params['rr_placental_abruption_hypertension'])),
 
 
                 # This equation calculates a womans monthly risk of antenatal still birth
@@ -658,6 +661,7 @@ class PregnancySupervisor(Module):
                                           .when('.between(34,40)', params['aor_early_anc4_35_39'])
                                           .when('.between(39,45)', params['aor_early_anc4_40_44'])
                                           .when('.between(44,50)', params['aor_early_anc4_45_49']),
+                    # TODO: this is effecting the output somehow?
                     Predictor('year', external=True).when('<2015', params['aor_early_anc4_2010'])
                                                     .when('>2014', params['aor_early_anc4_2015']),
                     Predictor('la_parity').when('.between(1,4)', params['aor_early_anc4_parity_2_3'])
@@ -720,7 +724,7 @@ class PregnancySupervisor(Module):
             unscaled_lm = model
             target_mean = target_intercept
             actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
-                                                     (df.age_years < 49)], year=self.sim.date.year).mean()
+                                                     (df.age_years < 50)], year=self.sim.date.year).mean()
             scaled_intercept = 1.0 * (target_mean / actual_mean) \
                 if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
 
@@ -785,10 +789,8 @@ class PregnancySupervisor(Module):
         }
 
         # And store all models within the same dictionary file
-        self.ps_linear_models.update(scaled_sa_model)
-        self.ps_linear_models.update(scaled_ptl_model)
-        self.ps_linear_models.update(scaled_linear_models)
-        self.ps_linear_models.update(models_not_needing_scaling)
+        for model_dict in [scaled_sa_model, scaled_ptl_model, scaled_linear_models, models_not_needing_scaling]:
+            self.ps_linear_models.update(model_dict)
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -827,6 +829,12 @@ class PregnancySupervisor(Module):
         mni = self.mother_and_newborn_info
 
         if df.at[mother_id, 'is_alive']:
+
+            # Check only the correct women arrive at this function
+            assert not df.at[mother_id, 'la_intrapartum_still_birth']
+            assert not df.at[mother_id, 'ps_multiple_pregnancy'] and (mni[mother_id]['twin_count'] == 1) and \
+                   not mni[mother_id]['single_twin_still_birth']
+
             # We reset all womans gestational age when they deliver as they are no longer pregnant
             df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
             df.at[mother_id, 'ps_date_of_anc1'] = pd.NaT
@@ -985,8 +993,9 @@ class PregnancySupervisor(Module):
         :param mni_variable: key of mni dict being assigned
         :return:
         """
-
         mni = self.mother_and_newborn_info
+
+        assert individual_id in mni
 
         logger.debug(key='msg', data=f'{mni_variable} is being stored for mother {individual_id} on {self.sim.date}')
         mni[individual_id][f'{mni_variable}'] = self.sim.date
@@ -1005,8 +1014,12 @@ class PregnancySupervisor(Module):
 
         if ind_or_df == 'individual':
             set = df.at
+            # todo: seems like this crashes when it shouldnt have even been called
+            # assert not set[id_or_index, 'is_pregnant']
+
         else:
             set = df.loc
+            assert not set[id_or_index, 'is_pregnant'].any()
 
         set[id_or_index, 'ps_gestational_age_in_weeks'] = 0
         set[id_or_index, 'ps_date_of_anc1'] = pd.NaT
@@ -1127,7 +1140,8 @@ class PregnancySupervisor(Module):
         # This function follows the same pattern as apply_risk_of_spontaneous_abortion (only women with unintended
         # pregnancy may seek induced abortion)
         at_risk = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == gestation_of_interest) & \
-                 (df.ps_ectopic_pregnancy == 'none') & ~df.hs_is_inpatient
+                  (df.ps_ectopic_pregnancy == 'none') & ~df.hs_is_inpatient
+
         abortion = pd.Series(self.rng.random_sample(len(at_risk.loc[at_risk])) <
                              params['prob_induced_abortion_per_month'], index=at_risk.loc[at_risk].index)
 
@@ -1152,6 +1166,7 @@ class PregnancySupervisor(Module):
 
         # Women who have an abortion have key pregnancy variables reset
         df.at[individual_id, 'is_pregnant'] = False
+        self.mother_and_newborn_info[individual_id]['delete_mni'] = True
 
         self.sim.modules['Labour'].reset_due_date(
             ind_or_df='individual', id_or_index=individual_id, new_due_date=pd.NaT)
@@ -1299,6 +1314,8 @@ class PregnancySupervisor(Module):
         for person in anaemia.loc[anaemia].index:
             # We store onset date of anaemia according to severity, as weights vary
             self.store_dalys_in_mni(person, f'{df.at[person, "ps_anaemia_in_pregnancy"]}_anaemia_onset')
+
+            # todo: remove this logging if we only are bothered with prevalence at birth
             logger.info(key='maternal_complication', data={'person': person,
                                                            'type': f'{df.at[person, "ps_anaemia_in_pregnancy"]}_'
                                                                    f'anaemia',
@@ -1555,7 +1572,7 @@ class PregnancySupervisor(Module):
         params = self.current_parameters
 
         risk_of_chorio = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == gestation_of_interest) & \
-                         (df.ps_ectopic_pregnancy == 'none') & ~df.hs_is_inpatient & ~df.la_currently_in_labour & \
+                          (df.ps_ectopic_pregnancy == 'none') & ~df.hs_is_inpatient & ~df.la_currently_in_labour & \
                          df.ps_premature_rupture_of_membranes
 
         infection = pd.Series(self.rng.random_sample(len(risk_of_chorio.loc[risk_of_chorio])) <
@@ -1588,9 +1605,9 @@ class PregnancySupervisor(Module):
                          index=at_risk.loc[at_risk].index)
 
         df.loc[prom.loc[prom].index, 'ps_premature_rupture_of_membranes'] = True
-
         # We allow women to seek care for PROM
         df.loc[prom.loc[prom].index, 'ps_emergency_event'] = True
+
         for person in prom.loc[prom].index:
             logger.info(key='maternal_complication', data={'person': person,
                                                            'type': 'PROM',
@@ -1608,11 +1625,6 @@ class PregnancySupervisor(Module):
             self.ps_linear_models['early_onset_labour'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest)
                    & (df['ps_ectopic_pregnancy'] == 'none') & ~df['hs_is_inpatient'] & ~df['la_currently_in_labour']])
-
-        if not preterm_labour.loc[preterm_labour].empty:
-            logger.debug(key='message',
-                         data=f'The following women will go into preterm labour at some point before the '
-                              f'next month of their pregnancy: {preterm_labour.loc[preterm_labour].index}')
 
         # To prevent clustering of labour onset we scatter women to go into labour on a random day before their
         # next month gestation
@@ -1642,8 +1654,8 @@ class PregnancySupervisor(Module):
 
             self.sim.modules['Labour'].reset_due_date(ind_or_df='individual', id_or_index=person,
                                                       new_due_date=new_due_date)
-            logger.debug(key='message', data=f'Mother {person} will go into preterm labour on '
-                                             f'{new_due_date}')
+            logger.info(key='message', data=f'Mother {person} will go into preterm labour on '
+                                            f'{new_due_date}')
 
             # And the labour onset event is scheduled for the new due date
             self.sim.schedule_event(labour.LabourOnsetEvent(self.sim.modules['Labour'], person),
@@ -1858,6 +1870,9 @@ class PregnancySupervisor(Module):
         """ This function generates variables within the mni dictionary for women. It is abstracted to a function for
         testing purposes"""
         mni = self.mother_and_newborn_info
+        df = self.sim.population.props
+
+        assert df.at[individual_id, 'is_pregnant']
 
         mni[individual_id] = {'delete_mni': False,
                               'abortion_onset': pd.NaT,
@@ -2341,14 +2356,17 @@ class SyphilisInPregnancyEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         mni = self.module.mother_and_newborn_info
 
-        if not df.at[individual_id, 'is_alive'] or not df.at[individual_id, 'is_pregnant'] or \
-            (mni[individual_id]['pred_syph_infect'] == self.sim.date):
+        if not df.at[individual_id, 'is_alive'] or not df.at[individual_id, 'is_pregnant'] or individual_id not in mni:
             return
 
-        df.at[individual_id, 'ps_syphilis'] = True
-        logger.info(key='maternal_complication', data={'person': individual_id,
-                                                       'type': 'syphilis',
-                                                       'timing': 'antenatal'})
+        elif not (mni[individual_id]['pred_syph_infect'] == self.sim.date):
+            return
+
+        else:
+            df.at[individual_id, 'ps_syphilis'] = True
+            logger.info(key='maternal_complication', data={'person': individual_id,
+                                                           'type': 'syphilis',
+                                                           'timing': 'antenatal'})
 
 
 class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
