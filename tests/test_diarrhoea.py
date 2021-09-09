@@ -225,6 +225,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
     assert not (m.outcome == 'cure').any()
     assert (m['date_of_outcome'] == m['date_o']).all()
 
+
 @pytest.mark.group2
 def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_with_perfect_treatment(tmpdir):
     """Run with high incidence and perfect treatment, with and without spurious symptoms of diarrhoea being generated"""
@@ -271,7 +272,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
             sp_symps.loc[
                 sp_symps['generic_symptom_name'] == symp,
                 ['prob_spurious_occurrence_in_adults_per_day', 'prob_spurious_occurrence_in_children_per_day']
-            ] = 1.0/30.0 if symp == 'diarrhoea' else 0.0
+            ] = 5.0/1000 if symp == 'diarrhoea' else 0.0
 
         # Increase incidence of pathogens:
         sim = increase_incidence_of_pathogens(sim)

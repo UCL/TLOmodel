@@ -43,7 +43,7 @@ output_files = dict()
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2014, 12, 31)
-popsize = 40000
+popsize = 50_000
 
 for label, service_avail in scenarios.items():
     log_config = {'filename': 'diarrhoea_with_treatment_with_and_without_treatment'}
