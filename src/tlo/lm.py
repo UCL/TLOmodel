@@ -17,9 +17,39 @@ logger.setLevel(logging.INFO)
 
 class Predictor(object):
 
-    def __init__(self, property_name: str = None, external: bool = False):
-        """A Predictor variable for the regression model. The property_name is a property of the
-         population dataframe e.g. age, sex, etc."""
+    def __init__(
+        self,
+        property_name: str = None,
+        external: bool = False,
+        conditions_are_mutually_exclusive: Optional[bool] = None,
+        conditions_are_exhaustive: Optional[bool] = False,
+    ):
+        """A Predictor variable for the regression model.
+
+        :param property_name: A property of the population dataframe e.g. age, sex, etc.
+            or if ``external=True`` the name of the external property that will be
+            passed as a keyword argument to the ``LinearModel.predict`` method.
+        :param external: Whether the named property is external (``True``) and so will
+            be passed as a keyword argument to the ``LinearModel.predict`` method) or is
+            a property of the population dataframe (``False``).
+        :param conditions_are_mutually_exclusive: Whether the set of conditions that
+            are declared for this predictor are all mutually exclusive, that is, for any
+            pair of conditions, one condition evaluating to ``True`` implies the other
+            must evaluate to ``False``. If this is declared to be the case a more
+            efficient method of evaluation will be used in ``LinearModel.predict``. Note
+            however that the validity of this declaration will not be checked so if this
+            is set to ``True`` for predictors with non-mutually exclusive conditions,
+            the model output will be erroneous.
+        :param conditions_are_exhaustive: Whether the set of conditions that are
+            declared for this predictor are all exhaustive, that is at least one
+            condition will always be ``True`` irrespective of the value of the property.
+            If this is declared to be the case, a more efficient method of evaluation
+            maye be used in ``LinearModel.predict`, though if a catch-all ``otherwise``
+            condition is included this flag will provide no benefit. Note that the
+            validity of this declaration will not be checked so if this is set to
+            ``True`` for predictors with non-exhaustive conditions, the model output
+            will be erroneous.
+        """
         self.property_name = property_name
 
         # If this is a property that is not part of the population dataframe
@@ -30,6 +60,8 @@ class Predictor(object):
         self.conditions = list()
         self.callback = None
         self.has_otherwise = False
+        self.conditions_are_mutually_exclusive = conditions_are_mutually_exclusive
+        self.conditions_are_exhaustive = conditions_are_exhaustive
 
     def when(self, condition: Union[str, float, bool], value: float) -> 'Predictor':
         assert self.callback is None, "Can't use `when` on Predictor with function"
@@ -260,9 +292,6 @@ class LinearModel(object):
                             predictor_str = f"({condition}) * {value}"
                             any_prev_conds = f"{condition}"
                     else:
-                        # conditions are potentially non-mutually exclusive and
-                        # are applied sequentially in order specified on subset
-                        # not matching any previous conditions
                         if condition is None:
                             # 'otherwise' fallback condition - matches all not
                             # so far matched therefore can ignore any remaining
@@ -270,13 +299,26 @@ class LinearModel(object):
                             predictor_str += f" + (~({any_prev_conds})) * {value}"
                             has_catch_all_condition = True
                             break
+                        elif predictor.conditions_are_mutually_exclusive:
+                            # conditions have been declared to be mutually exclusive
+                            # therefore we can just multiply conditions by coefficient
+                            # values as condition == ~any_prev_conds & condition
+                            predictor_str += f" + ({condition}) * {value}"
+                            any_prev_conds += f" | {condition}"
+
                         else:
+                            # conditions are potentially non-mutually exclusive and
+                            # are applied sequentially in order specified on subset
+                            # not matching any previous conditions
                             predictor_str += (
                                 f" + (~({any_prev_conds}) & {condition}) * {value}")
                             any_prev_conds += f" | {condition}"
-                # If no 'otherwise' catch-all condition then add term corresponding to
-                # no effect when no previous conditions matched
-                if not has_catch_all_condition:
+                # If the predictor neither declares that the conditions are exhaustive
+                # (i.e. all cases are covered an any_prev_conds is guaranteed to be
+                # True) nor an 'otherwise' catch-all condition has been used (in which
+                # case any_prev_conds is also guaranteed to be True) then add term
+                # corresponding to no effect when no previous conditions matched
+                if not (predictor.conditions_are_exhaustive or has_catch_all_condition):
                     predictor_str += f" + ~({any_prev_conds}) * {null_coeff_value}"
                 predictor_strings.append(f"({predictor_str})")
             else:
