@@ -1032,8 +1032,9 @@ class Models:
         self.prob_diarrhoea_is_persistent_if_prolonged = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             self.p['prob_prolonged_to_persistent_diarr'],
-            Predictor('age_exact_years').when('.between(1,1.9999)', self.p['rr_bec_persistent_age12to23'])
-                .when('.between(2,4.9999)', self.p['rr_diarr_death_age24to59mo']),
+            Predictor('age_years')
+                .when(1, self.p['rr_bec_persistent_age12to23'])
+                .when('.between(2, 4)', self.p['rr_diarr_death_age24to59mo']),
             Predictor('un_HAZ_category').when('HAZ<-3', self.p['rr_bec_persistent_stunted']),
             Predictor('un_clinical_acute_malnutrition').when('SAM', self.p['rr_bec_persistent_SAM']),
             Predictor().when('(hv_inf == True) & (hv_art == "not")', self.p['rr_bec_persistent_HIV']),
@@ -1159,10 +1160,14 @@ class Models:
                 return LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     intercept,
-                    Predictor('age_years')  .when('.between(0,0)', self.p[base_inc_rate][0])
-                                            .when('.between(1,1)', self.p[base_inc_rate][1])
-                                            .when('.between(2,4)', self.p[base_inc_rate][2])
-                                            .otherwise(0.0),
+                    Predictor('age_years',
+                              conditions_are_mutually_exclusive=True,
+                              conditions_are_exhaustive=True,
+                    )
+                    .when(0, self.p[base_inc_rate][0])
+                    .when(1, self.p[base_inc_rate][1])
+                    .when('.between(2, 4)', self.p[base_inc_rate][2])
+                    .when('> 4', 0.0),
                     Predictor('li_no_access_handwashing').when(False, self.p['rr_diarrhoea_HHhandwashing']),
                     Predictor('li_no_clean_drinking_water').when(False, self.p['rr_diarrhoea_clean_water']),
                     Predictor('li_unimproved_sanitation').when(False, self.p['rr_diarrhoea_improved_sanitation']),
