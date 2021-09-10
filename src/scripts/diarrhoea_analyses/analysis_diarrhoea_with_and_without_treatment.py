@@ -143,7 +143,8 @@ def plot_for_column_of_interest(results, column_of_interest):
     data = 100 * pd.concat(summary_table, axis=1)
     data.plot.bar()
     plt.title(f'Incidence rate (/100 py): {column_of_interest}')
-    plt.savefig(outputpath / ("Diarrhoea_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
+    plt.tight_layout()
+    plt.savefig(outputpath / ("Diarrhoea_inc_rate_by_scenario" + datestamp + ".png"), format='png')
     plt.show()
 
 
@@ -158,5 +159,6 @@ for label in deaths.keys():
     data.update({label: deaths[label]})
 pd.concat(data, axis=1).plot.bar()
 plt.title('Number of Deaths Due to Diarrhoea')
-plt.savefig(outputpath / ("Diarrhoea_deaths_by_scenario" + datestamp + ".pdf"), format='pdf')
+plt.savefig(outputpath / ("Diarrhoea_deaths_by_scenario" + datestamp + ".png"), format='png')
+plt.tight_layout()
 plt.show()

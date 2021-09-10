@@ -183,8 +183,8 @@ inc_mean.plot.bar(y=['0y_model_output', '0y_calibrating_data'])
 plt.title('Incidence Rate: 0 year-olds')
 plt.xlabel('Pathogen')
 plt.ylabel('Risk of pathogen causing diarrhoea per year')
-plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_0_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.tight_layout()
+plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_0_year_olds" + datestamp + ".png"), format='png')
 plt.show()
 
 # 1 year-olds
@@ -194,8 +194,8 @@ plt.xlabel('Pathogen')
 plt.ylabel('Risk of pathogen causing diarrhoea per year')
 plt.xlabel('Pathogen')
 plt.ylabel('Risk of pathogen causing diarrhoea per year')
-plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_1_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.tight_layout()
+plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_1_year_olds" + datestamp + ".png"), format='png')
 plt.show()
 
 # 2-4 year-olds
@@ -205,8 +205,8 @@ plt.xlabel('Pathogen')
 plt.ylabel('Risk of pathogen causing diarrhoea per year')
 plt.xlabel('Pathogen')
 plt.ylabel('Risk of pathogen causing diarrhoea per year')
-plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_2-4_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.tight_layout()
+plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_2-4_year_olds" + datestamp + ".png"), format='png')
 plt.show()
 
 
@@ -254,8 +254,8 @@ death_rate_comparison = pd.Series(
 
 death_rate_comparison.plot.bar()
 plt.title('Death Rate to Diarrhoea in Under 5s')
-plt.savefig(outputpath / ("Diarrhoea_death_rate_0-5_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.tight_layout()
+plt.savefig(outputpath / ("Diarrhoea_death_rate_0-5_year_olds" + datestamp + ".png"), format='png')
 plt.show()
 
 # %% Look at Case Fatality Rate
@@ -284,4 +284,6 @@ comparison = compare_number_of_deaths(logfile=log_filename, resourcefilepath=res
 comparison.loc[('2015-2019', slice(None), '0-4', 'Childhood Diarrhoea')].sum().plot.bar()
 plt.title('Deaths per year due to Childhood Diarrhoea, 2015-2019')
 plt.tight_layout()
+plt.savefig(outputpath / ("Diarrhoea_death_rate-calibration_0-4_year_olds" + datestamp + ".png"), format='png')
 plt.show()
+
