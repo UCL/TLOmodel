@@ -1155,7 +1155,6 @@ class RTI(Module):
             for key, value in daly_sequlae_codes.items():
                 p[key] = hb.get_daly_weight(sequlae_code=value)
 
-            # self.sim.modules["HealthSystem"].register_disease_module(self)
         # ================== Test the parameter distributions to see whether they sum to roughly one ===============
         # test the distribution of the number of injured body regions
         assert 0.9999 < sum(p['number_of_injured_body_regions_distribution'][1]) < 1.0001, \
@@ -1363,7 +1362,7 @@ class RTI(Module):
         # isolate the relevant injury information
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # Check whether the person sent to surgery has an injury which actually requires surgery
-        idx, counts = RTI.rti_find_and_count_injuries(person_injuries, surgically_treated_codes)
+        _, counts = RTI.rti_find_and_count_injuries(person_injuries, surgically_treated_codes)
         assert counts > 0, 'This person has been sent to major surgery without the right injuries'
         assert len(person.rt_injuries_for_major_surgery) > 0
         for code in person.rt_injuries_for_major_surgery:
@@ -1417,7 +1416,7 @@ class RTI(Module):
         # Isolate the relevant injury information
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # Check whether the person requesting minor surgeries has an injury that requires minor surgery
-        idx, counts = RTI.rti_find_and_count_injuries(person_injuries, surgically_treated_codes)
+        _, counts = RTI.rti_find_and_count_injuries(person_injuries, surgically_treated_codes)
         assert counts > 0
         # if this person is alive schedule the minor surgery
         if person.is_alive:
@@ -1473,7 +1472,7 @@ class RTI(Module):
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         laceration_codes = ['1101', '2101', '3101', '4101', '5101', '6101', '7101', '8101']
         # Check they have a laceration which needs stitches
-        idx, counts = RTI.rti_find_and_count_injuries(person_injuries, laceration_codes)
+        _, counts = RTI.rti_find_and_count_injuries(person_injuries, laceration_codes)
         assert counts > 0, "This person has asked for stiches, but doens't have a laceration"
         # if the person is alive request the hsi event
         self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1524,7 +1523,7 @@ class RTI(Module):
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         burn_codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
         # Check to see whether they have a burn which needs treatment
-        idx, counts = RTI.rti_find_and_count_injuries(person_injuries, burn_codes)
+        _, counts = RTI.rti_find_and_count_injuries(person_injuries, burn_codes)
         assert counts > 0, "This person has asked for burn treatment, but doens't have any burns"
 
         # if this person is alive ask for the hsi event
@@ -1559,7 +1558,7 @@ class RTI(Module):
         assert len(set(df.loc[person_id, 'rt_injuries_to_cast']) & set(fracture_codes)) > 0, \
             'This person has asked for a fracture cast'
         # Check they have an injury treated by HSI_RTI_Fracture_Cast
-        idx, counts = RTI.rti_find_and_count_injuries(person_injuries, fracture_codes)
+        _, counts = RTI.rti_find_and_count_injuries(person_injuries, fracture_codes)
         assert counts > 0, "This person has asked for fracture treatment, but doens't have appropriate fractures"
         # if this person is alive request the hsi
         self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1590,7 +1589,7 @@ class RTI(Module):
         open_fracture_codes = ['813bo', '813co', '813do', '813eo']
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # Check that they have an open fracture
-        idx, counts = RTI.rti_find_and_count_injuries(person_injuries, open_fracture_codes)
+        _, counts = RTI.rti_find_and_count_injuries(person_injuries, open_fracture_codes)
         assert counts > 0, "This person has requested open fracture treatment but doesn't require one"
         # if the person is alive request the hsi
         for i in range(0, counts):
@@ -1622,7 +1621,7 @@ class RTI(Module):
                              '1114', '2114', '3113', '4113', '5113', '7113', '8113']
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # Check that they have a burn/laceration
-        idx, counts = RTI.rti_find_and_count_injuries(person_injuries, codes_for_tetanus)
+        _, counts = RTI.rti_find_and_count_injuries(person_injuries, codes_for_tetanus)
         assert counts > 0, "This person has requested a tetanus jab but doesn't require one"
         # if this person is alive, ask for the hsi
         self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -2309,7 +2308,7 @@ class RTI(Module):
         # location, the subdict containing the probability of injury occuring, the ais injury location, category and
         # ais score
         # creat shorthand variable names for spinal chord injuries
-        prob_673b = self.spine_prob_spinal_cord_lesion * p['daly_dist_code_673'][0] * (
+        prob_673a = self.spine_prob_spinal_cord_lesion * p['daly_dist_code_673'][0] * (
             self.spine_prob_spinal_cord_lesion_neck_level * self.spine_prob_spinal_cord_lesion_neck_level_AIS3 +
             self.spine_prob_spinal_cord_lesion_below_neck_level *
             self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3
@@ -2364,7 +2363,7 @@ class RTI(Module):
                      '291': [self.face_prob_eye_injury, 2, 9, 1]},
             # injuries to the neck
             'neck': {'3101': [self.neck_prob_skin_wound * self.neck_prob_skin_wound_open, 3, 10, 1],
-                     '3114': [self.neck_prob_skin_wound * self.neck_prob_skin_wound_burn, 3, 11, 4],
+                     '3113': [self.neck_prob_skin_wound * self.neck_prob_skin_wound_burn, 3, 11, 3],
                      '342': [self.neck_prob_soft_tissue_injury * self.neck_prob_soft_tissue_injury_AIS2, 3, 4, 2],
                      '343': [self.neck_prob_soft_tissue_injury * self.neck_prob_soft_tissue_injury_AIS3, 3, 4, 3],
                      '361': [self.neck_prob_internal_bleeding * self.neck_prob_internal_bleeding_AIS1, 3, 6, 1],
@@ -3022,27 +3021,6 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         matching_columns = description.columns.intersection(injury_columns)
         for col in matching_columns:
             df.loc[selected_for_rti_inj.index, col] = description.loc[selected_for_rti_inj.index, col]
-        # iterate over the number of injury columns in description
-        # for ninjuries in range(0, len(description.columns.intersection(injury_columns))):
-        #     # copy over injuries column by column
-        #     for person_id in selected_for_rti_inj.index:
-        #         # copy over injuries person by person... may be slower than optimal
-        #         if ninjuries == 0:
-        #             df.loc[person_id, 'rt_injury_1'] = description.loc[person_id, 'Injury 1']
-        #         if ninjuries == 1:
-        #             df.loc[person_id, 'rt_injury_2'] = description.loc[person_id, 'Injury 2']
-        #         if ninjuries == 2:
-        #             df.loc[person_id, 'rt_injury_3'] = description.loc[person_id, 'Injury 3']
-        #         if ninjuries == 3:
-        #             df.loc[person_id, 'rt_injury_4'] = description.loc[person_id, 'Injury 4']
-        #         if ninjuries == 4:
-        #             df.loc[person_id, 'rt_injury_5'] = description.loc[person_id, 'Injury 5']
-        #         if ninjuries == 5:
-        #             df.loc[person_id, 'rt_injury_6'] = description.loc[person_id, 'Injury 6']
-        #         if ninjuries == 6:
-        #             df.loc[person_id, 'rt_injury_7'] = description.loc[person_id, 'Injury 7']
-        #         if ninjuries == 7:
-        #             df.loc[person_id, 'rt_injury_8'] = description.loc[person_id, 'Injury 8']
         # Run assert statements to make sure the model is behaving as it should
         # All those who are injured in a road traffic accident have this noted in the property 'rt_road_traffic_inc'
         assert sum(df.loc[selected_for_rti, 'rt_road_traffic_inc']) == len(selected_for_rti)
@@ -3057,7 +3035,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         internal_bleeding_codes = ['361', '363', '461', '463', '813bo', '813co', '813do', '813eo']
         df = self.sim.population.props
 
-        shock_index, counts = \
+        shock_index, _ = \
             road_traffic_injuries.rti_find_and_count_injuries(df.loc[df.rt_road_traffic_inc, RTI.INJURY_COLUMNS],
                                                               internal_bleeding_codes)
         df.loc[shock_index, 'rt_in_shock'] = True
@@ -3262,7 +3240,7 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                         else:
                             swapable_code = 'none'
                         # check that the person has the injury code
-                        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
+                        _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
                         assert counts > 0
                         df.loc[person, 'rt_debugging_DALY_wt'] += swapping_daly_weights_lookup[swapable_code]
                         if df.loc[person, 'rt_debugging_DALY_wt'] > 1:
@@ -3390,7 +3368,7 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                     df.loc[person, 'rt_date_to_remove_daly'][dateindex] = pd.NaT
                     # Remove the daly weight associated with the healed injury code
                     person_injuries = df.loc[[person], RTI.INJURY_COLUMNS]
-                    idx, counts = RTI.rti_find_and_count_injuries(person_injuries, self.module.INJURY_CODES[1:])
+                    _, counts = RTI.rti_find_and_count_injuries(person_injuries, self.module.INJURY_CODES[1:])
                     if counts == 0:
                         pass
                     else:
@@ -3402,31 +3380,31 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                         df.loc[person, 'rt_inj_severity'] = "none"
                         # check that all codes in rt_injuries_to_heal_with_time are removed
                         for code in df.loc[person, 'rt_injuries_to_heal_with_time']:
-                            idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
+                            _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
                             if counts == 0:
                                 # if for some reason the code hasn't been removed, remove it
                                 df.loc[person, 'rt_injuries_to_heal_with_time'].remove(code)
                             # check that all codes in rt_injuries_for_minor_surgery are removed
                         for code in df.loc[person, 'rt_injuries_for_minor_surgery']:
-                            idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
+                            _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
                             if counts == 0:
                                 # if for some reason the code hasn't been removed, remove it
                                 df.loc[person, 'rt_injuries_for_minor_surgery'].remove(code)
                             # check that all codes in rt_injuries_for_major_surgery are removed
                         for code in df.loc[person, 'rt_injuries_for_major_surgery']:
-                            idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
+                            _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
                             if counts == 0:
                                 # if for some reason the code hasn't been removed, remove it
                                 df.loc[person, 'rt_injuries_for_major_surgery'].remove(code)
                         # check that all codes in rt_injuries_for_open_fracture_treatment are removed
                         for code in df.loc[person, 'rt_injuries_for_open_fracture_treatment']:
-                            idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
+                            _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
                             if counts == 0:
                                 # if for some reason the code hasn't been removed, remove it
                                 df.loc[person, 'rt_injuries_for_open_fracture_treatment'].remove(code)
                         # check that all codes in rt_injuries_to_cast are removed
                         for code in df.loc[person, 'rt_injuries_to_cast']:
-                            idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
+                            _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
                             if counts == 0:
                                 # if for some reason the code hasn't been removed, remove it
                                 df.loc[person, 'rt_injuries_to_cast'].remove(code)
@@ -3634,7 +3612,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # check if they have an injury for which we need to find the treatment plan for
 
         for code in treatment_plans.keys():
-            idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, [code])
+            _, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, [code])
             if counts > 0:
                 treatment_choice = self.module.rng.choice(treatment_plans[code][1], p=treatment_plans[code][0])
                 if treatment_choice == 'cast':
@@ -3656,7 +3634,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # surgery, otherwise make the injury permanent
         codes = ['673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676']
         # Ask if this person has a spinal cord injury
-        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        _, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if (counts > 0) & ('include_spine_surgery' in self.allowed_interventions):
             # if this person has a spinal cord injury and we allow surgeries, determine their exact injury
             actual_injury = np.intersect1d(codes, person_injuries.values)
@@ -3686,7 +3664,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # the injuries heal over time without further medical care
         codes = ['441', '443', '453', '453a', '453b']
         # check if they have chest traume
-        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        _, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if (counts > 0) & ('include_thoroscopy' in self.allowed_interventions):
             # work out the exact injury they have
             actual_injury = np.intersect1d(codes, person_injuries.values)
@@ -3698,7 +3676,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # -------------------------------- Internal bleeding -----------------------------------------------------------
         # check if they have internal bleeding in the thorax, and if the surgery is available, schedule a major surgery
         codes = ['463']
-        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        _, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if (counts > 0) & ('include_thoroscopy' in self.allowed_interventions):
             # update the number of major surgeries needed
             self.major_surgery_counts += 1
@@ -3756,7 +3734,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
             mean_tbi_icu_days = p['mean_tbi_icu_days']
             sd_tbi_icu_days = p['sd_tbi_icu_days']
             codes = ['133', '133a', '133b', '133c', '133d' '134', '134a', '134b', '135']
-            idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+            _, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
             if counts > 0:
                 self.icu_days = int(self.module.rng.normal(mean_tbi_icu_days, sd_tbi_icu_days, 1))
             else:
@@ -3811,7 +3789,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # die due to rti
         assert person['rt_diagnosed'], 'person sent here has not been through A and E'
         # Check that those who arrive here have at least one injury
-        idx, counts = RTI.rti_find_and_count_injuries(person_injuries,
+        _, counts = RTI.rti_find_and_count_injuries(person_injuries,
                                                       self.module.PROPERTIES.get('rt_injury_1').categories[1:-1])
         assert counts > 0, 'This person has asked for medical treatment despite not being injured'
         # update the model's properties to reflect that this person has sought medical care
@@ -3936,7 +3914,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # Schedule the laceration sutures by calling the functions rti_ask_for_stitches which in turn schedules the
         # treatment
         codes = ['1101', '2101', '3101', '4101', '5101', '7101', '8101']
-        idx, lacerationcounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        _, lacerationcounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if lacerationcounts > 0 & df.loc[person_id, 'is_alive']:
             # Schedule laceration treatment
             road_traffic_injuries.rti_ask_for_suture_kit(person_id=person_id)
@@ -3945,7 +3923,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # Schedule the burn treatments  by calling the functions rti_ask_for_burn_treatment which in turn schedules the
         # treatment
         codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
-        idx, burncounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        _, burncounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
 
         if burncounts > 0 & df.loc[person_id, 'is_alive']:
             # schedule burn treatment
@@ -3969,7 +3947,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         for idx in idx_for_untreated_injuries:
             untreated_injury_cols.append(RTI.INJURY_COLUMNS[idx])
         person_untreated_injuries = df.loc[[person_id], untreated_injury_cols]
-        idx, fracturecounts = road_traffic_injuries.rti_find_and_count_injuries(person_untreated_injuries, codes)
+        _, fracturecounts = road_traffic_injuries.rti_find_and_count_injuries(person_untreated_injuries, codes)
         if fracturecounts > 0 & df.loc[person_id, 'is_alive']:
             road_traffic_injuries.rti_ask_for_fracture_casts(person_id=person_id)
         # ------------------------------------ Open fractures ---------------------------------------------------------
@@ -4000,7 +3978,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         codes_for_tetanus = ['1101', '2101', '3101', '4101', '5101', '7101', '8101',
                              '1114', '2114', '3113', '4113', '5113', '7113', '8113']
 
-        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes_for_tetanus)
+        _, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes_for_tetanus)
         if counts > 0 & df.loc[person_id, 'is_alive']:
             road_traffic_injuries.rti_ask_for_tetanus(person_id=person_id)
         # ============================== Ask if they die even with treatment ===========================================
@@ -4170,10 +4148,10 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
 
         # check if they have a fracture that requires a cast
         codes = ['712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
-        idx, fracturecastcounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        _, fracturecastcounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         # check if they have a fracture that requires a sling
         codes = ['712a']
-        idx, slingcounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        _, slingcounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         consumables_fractures = {'Intervention_Package_Code': dict(), 'Item_Code': dict()}
         # Check the person sent here is alive, been through the generic first appointment,
         # been through the RTI med intervention
@@ -4302,7 +4280,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # check if they have a fracture that requires a cast
         codes = ['813bo', '813co', '813do', '813eo']
-        idx, open_fracture_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        _, open_fracture_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
 
         consumables_fractures = {'Intervention_Package_Code': dict(), 'Item_Code': dict()}
         # Check the person sent here is alive, been through the generic first appointment,
@@ -4445,7 +4423,7 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
 
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         codes = ['1101', '2101', '3101', '4101', '5101', '7101', '8101']
-        idx, lacerationcounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        _, lacerationcounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         # Check the person sent here didn't die due to rti, has been through A&E, through Med int
         assert df.loc[person_id, 'rt_diagnosed'], 'person sent here has not been through A and E'
         assert df.loc[person_id, 'rt_med_int'], 'person sent here has not been treated'
@@ -4557,7 +4535,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
 
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
-        idx, burncounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        _, burncounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         # check the person sent here didn't die due to rti, has been through A and E and had RTI_med_int
         assert df.loc[person_id, 'rt_diagnosed'], 'this person has not been through a and e'
         assert df.loc[person_id, 'rt_med_int'], 'this person has not been treated'
@@ -4685,7 +4663,7 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
         codes_for_tetanus = ['1101', '2101', '3101', '4101', '5101', '7101', '8101',
                              '1114', '2114', '3113', '4113', '5113', '7113', '8113']
 
-        idx, counts = RTI.rti_find_and_count_injuries(person_injuries, codes_for_tetanus)
+        _, counts = RTI.rti_find_and_count_injuries(person_injuries, codes_for_tetanus)
         assert counts > 0
         # If they have a laceration/burn ask request the tetanus vaccine
         if counts > 0:
@@ -4759,7 +4737,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                            '291',  # Eye injury
                            '442'
                            ]
-        mild_idx, mild_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, Mild_Pain_Codes)
+        _, mild_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, Mild_Pain_Codes)
         # Injuries causing moderate pain include: Fractures, dislocations, soft tissue and neck trauma
         Moderate_Pain_Codes = ['112', '113', '211', '212', '412', '414', '612', '712', '712a', '712b', '712c',
                                '811', '812', '813', '813a', '813b', '813c',  # fractures
@@ -4768,8 +4746,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                                '461',  # chest wall bruising
                                '813bo', '813co', '813do', '813eo'  # open fractures
                                ]
-        moderate_idx, moderate_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries,
-                                                                                          Moderate_Pain_Codes)
+        _, moderate_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, Moderate_Pain_Codes)
         # Injuries causing severe pain include: All burns, amputations, spinal cord injuries, abdominal trauma see
         # (https://bestbets.org/bets/bet.php?id=1247), severe chest trauma
         Severe_Pain_Codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113',  # burns
@@ -4780,15 +4757,14 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                              '552', '553', '554',  # abdominal trauma
                              '463', '453', '453a', '453b', '441', '443'  # severe chest trauma
                              ]
-        severe_idx, severe_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries,
-                                                                                      Severe_Pain_Codes)
+        _, severe_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, Severe_Pain_Codes)
         # check that the people here have at least one injury
         assert mild_counts + moderate_counts + severe_counts > 0
-        if len(severe_idx) > 0:
+        if severe_counts > 0:
             pain_level = "severe"
-        elif len(moderate_idx) > 0:
+        elif moderate_counts > 0:
             pain_level = "moderate"
-        elif len(mild_idx) > 0:
+        elif mild_counts > 0:
             pain_level = "mild"
 
         if pain_level == "mild":
@@ -5101,7 +5077,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         assert len(set(injuries_to_be_treated) & set(surgically_treated_codes)) > 0, \
             'This person has asked for surgery but does not have an appropriate injury'
         # check the people sent here have at least one injury treated by this HSI event
-        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, surgically_treated_codes)
+        _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, surgically_treated_codes)
         assert counts > 0, (persons_injuries.to_dict(), surgically_treated_codes)
         # People can be sent here for multiple surgeries, but only one injury can be treated at a time. Decide which
         # injury is being treated in this surgery
@@ -5374,7 +5350,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
         assert df.loc[person_id, 'rt_med_int'], 'This person has not been through rti med int'
         # check they have at least one injury treated by minor surgery
-        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, surgically_treated_codes)
+        _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, surgically_treated_codes)
         assert counts > 0
         non_empty_injuries = persons_injuries[persons_injuries != "none"]
         non_empty_injuries = non_empty_injuries.dropna(axis=1)
@@ -5843,21 +5819,21 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         AIS7codes = ['712', '712a', '712b', '712c', '722', '782', '782a', '782b', '782c', '783', '7101', '7114']
         AIS8codes = ['811', '812', '813', '813a', '813b', '813c', '822', '822a', '822b', '882', '883', '884', '8101',
                      '8114', '813bo', '813co', '813do', '813eo']
-        idx, AIS1counts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, AIS1codes)
+        _, AIS1counts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, AIS1codes)
         self.totAIS1 += AIS1counts
-        idx, AIS2counts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, AIS2codes)
+        _, AIS2counts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, AIS2codes)
         self.totAIS2 += AIS2counts
-        idx, AIS3counts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, AIS3codes)
+        _, AIS3counts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, AIS3codes)
         self.totAIS3 += AIS3counts
-        idx, AIS4counts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, AIS4codes)
+        _, AIS4counts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, AIS4codes)
         self.totAIS4 += AIS4counts
-        idx, AIS5counts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, AIS5codes)
+        _, AIS5counts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, AIS5codes)
         self.totAIS5 += AIS5counts
-        idx, AIS6counts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, AIS6codes)
+        _, AIS6counts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, AIS6codes)
         self.totAIS6 += AIS6counts
-        idx, AIS7counts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, AIS7codes)
+        _, AIS7counts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, AIS7codes)
         self.totAIS7 += AIS7counts
-        idx, AIS8counts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, AIS8codes)
+        _, AIS8counts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, AIS8codes)
         self.totAIS8 += AIS8counts
         dict_to_output = {'total_number_of_head_injuries': self.totAIS1,
                           'total_number_of_facial_injuries': self.totAIS2,
@@ -5872,22 +5848,22 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
                     description='Data on distribution of the injury location on the body')
         # Log where the fractures occur in the body
         skullfracs = ['112', '113']
-        idx, skullfraccounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, skullfracs)
+        _, skullfraccounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, skullfracs)
         self.fracdist[0] += skullfraccounts
         facefracs = ['211', '212']
-        idx, facefraccounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, facefracs)
+        _, facefraccounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, facefracs)
         self.fracdist[1] += facefraccounts
         thoraxfracs = ['412', '414']
-        idx, thorfraccounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, thoraxfracs)
+        _, thorfraccounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, thoraxfracs)
         self.fracdist[3] += thorfraccounts
         spinefracs = ['612']
-        idx, spinfraccounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, spinefracs)
+        _, spinfraccounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, spinefracs)
         self.fracdist[5] += spinfraccounts
         upperexfracs = ['712', '712a', '712b', '712c']
-        idx, upperexfraccounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, upperexfracs)
+        _, upperexfraccounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, upperexfracs)
         self.fracdist[6] += upperexfraccounts
         lowerexfracs = ['811', '812', '813', '813a', '813b', '813c', '813bo', '813co', '813do', '813eo']
-        idx, lowerexfraccounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, lowerexfracs)
+        _, lowerexfraccounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, lowerexfracs)
         self.fracdist[7] += lowerexfraccounts
         dict_to_output = {
             'total_head_fractures': self.fracdist[0],
@@ -5902,25 +5878,25 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
                     description='data on where the fractures occurred on the body')
         # Log where the lacerations are located on the body
         skullopen = ['1101']
-        idx, skullopencounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, skullopen)
+        _, skullopencounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, skullopen)
         self.openwounddist[0] += skullopencounts
         faceopen = ['2101']
-        idx, faceopencounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, faceopen)
+        _, faceopencounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, faceopen)
         self.openwounddist[1] += faceopencounts
         neckopen = ['3101']
-        idx, neckopencounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, neckopen)
+        _, neckopencounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, neckopen)
         self.openwounddist[2] += neckopencounts
         thoraxopen = ['4101']
-        idx, thoropencounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, thoraxopen)
+        _, thoropencounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, thoraxopen)
         self.openwounddist[3] += thoropencounts
         abdopen = ['5101']
-        idx, abdopencounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, abdopen)
+        _, abdopencounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, abdopen)
         self.openwounddist[4] += abdopencounts
         upperexopen = ['7101']
-        idx, upperexopencounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, upperexopen)
+        _, upperexopencounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, upperexopen)
         self.openwounddist[6] += upperexopencounts
         lowerexopen = ['8101']
-        idx, lowerexopencounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, lowerexopen)
+        _, lowerexopencounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, lowerexopen)
         self.openwounddist[7] += lowerexopencounts
         dict_to_output = {
             'total_head_laceration': self.openwounddist[0],
@@ -5936,19 +5912,19 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
                     description='data on where the lacerations occurred on the body')
         # Log where the burns are located on the body
         burncodes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
-        idx, skullburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[0]])
+        _, skullburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[0]])
         self.burndist[0] = skullburncounts
-        idx, faceburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[1]])
+        _, faceburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[1]])
         self.burndist[1] = faceburncounts
-        idx, neckburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[2]])
+        _, neckburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[2]])
         self.burndist[2] = neckburncounts
-        idx, thorburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[3]])
+        _, thorburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[3]])
         self.burndist[3] = thorburncounts
-        idx, abdburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[4]])
+        _, abdburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[4]])
         self.burndist[4] = abdburncounts
-        idx, upperexburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[5]])
+        _, upperexburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[5]])
         self.burndist[6] = upperexburncounts
-        idx, lowerexburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[6]])
+        _, lowerexburncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, [burncodes[6]])
         self.burndist[7] = lowerexburncounts
         dict_to_output = {
             'total_head_laceration': self.burndist[0],
@@ -6004,42 +5980,42 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         # ================================== Injury characteristics ===================================================
         allfraccodes = ['112', '113', '211', '212', '412', '414', '612', '712', '712a', '712b', '712c',
                         '811', '812', '813', '813a', '813b', '813c', '813bo', '813co', '813do', '813eo']
-        idx, fraccounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, allfraccodes)
+        _, fraccounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, allfraccodes)
         self.totfracnumber += fraccounts
         n_alive = df.is_alive.sum()
         self.fracdenominator += (n_alive - fraccounts) / 12
         dislocationcodes = ['322', '323', '722', '822', '822a', '822b']
-        idx, dislocationcounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, dislocationcodes)
+        _, dislocationcounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, dislocationcodes)
         self.totdisnumber += dislocationcounts
         allheadinjcodes = ['133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135']
-        idx, tbicounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, allheadinjcodes)
+        _, tbicounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, allheadinjcodes)
         self.tottbi += tbicounts
         softtissueinjcodes = ['241', '342', '343', '441', '442', '443']
-        idx, softtissueinjcounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, softtissueinjcodes)
+        _, softtissueinjcounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, softtissueinjcodes)
         self.totsoft += softtissueinjcounts
         organinjurycodes = ['453', '453a', '453b', '552', '553', '554']
-        idx, organinjurycounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, organinjurycodes)
+        _, organinjurycounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, organinjurycodes)
         self.totintorg += organinjurycounts
         internalbleedingcodes = ['361', '363', '461', '463']
-        idx, internalbleedingcounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries,
+        _, internalbleedingcounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries,
                                                                                         internalbleedingcodes)
         self.totintbled += internalbleedingcounts
         spinalcordinjurycodes = ['673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676']
-        idx, spinalcordinjurycounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries,
+        _, spinalcordinjurycounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries,
                                                                                         spinalcordinjurycodes)
         self.totsci += spinalcordinjurycounts
         amputationcodes = ['782', '782a', '782b', '783', '882', '883', '884']
-        idx, amputationcounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, amputationcodes)
+        _, amputationcounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, amputationcodes)
         self.totamp += amputationcounts
         eyecodes = ['291']
-        idx, eyecounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, eyecodes)
+        _, eyecounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, eyecodes)
         self.toteye += eyecounts
         externallacerationcodes = ['1101', '2101', '3101', '4101', '5101', '7101', '8101']
-        idx, externallacerationcounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries,
+        _, externallacerationcounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries,
                                                                                           externallacerationcodes)
         self.totextlac += externallacerationcounts
         burncodes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
-        idx, burncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, burncodes)
+        _, burncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, burncodes)
         self.totburns += burncounts
         totalinj = \
             fraccounts + dislocationcounts + tbicounts + softtissueinjcounts + organinjurycounts + \
