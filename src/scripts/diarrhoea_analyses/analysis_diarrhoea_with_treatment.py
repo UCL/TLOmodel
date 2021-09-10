@@ -286,4 +286,3 @@ plt.title('Deaths per year due to Childhood Diarrhoea, 2015-2019')
 plt.tight_layout()
 plt.savefig(outputpath / ("Diarrhoea_death_rate-calibration_0-4_year_olds" + datestamp + ".png"), format='png')
 plt.show()
-

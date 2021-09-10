@@ -25,7 +25,6 @@ from tlo.methods import (
 from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Treatment_Outpatient,
     HSI_Diarrhoea_Treatment_Inpatient,
-    PropertiesOfOtherModules
 )
 from tlo.methods.healthsystem import HSI_Event
 
