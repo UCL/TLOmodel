@@ -340,3 +340,32 @@ def test_if_no_healthsystem_and_zero_death():
         df = sim.population.props
 
         assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{condition}').any()
+
+def test_if_no_healthsystem_and_hundred_death():
+    # Make the health-system unavailable to run any HSI event and set death rate to zero to check that no one dies
+
+    # Make a list of all conditions and events to run this test for
+    condition_list = ['diabetes', 'hypertension', 'chronic_kidney_disease', 'chronic_lower_back_pain',
+                      'chronic_ischemic_hd']
+
+    for condition in condition_list:
+        # Disable the healthcare system
+        sim = make_simulation_healthsystemdisabled()
+        # make initial population
+        sim.make_initial_population(n=100)
+        # force all individuals to have condition
+        sim.population.props.loc[
+            sim.population.props.is_alive & (sim.population.props.age_years >= 20), f"nc_{condition}"] = True
+
+        p = sim.modules['CardioMetabolicDisorders'].parameters
+
+        # set annual probability of death from condition to 1
+        p[f'{condition}_death']["baseline_annual_probability"] = 10000
+
+        # simulate for one year
+        sim.simulate(end_date=Date(year=2011, month=1, day=1))
+
+        # check that no one died of condition
+        df = sim.population.props
+
+        assert not (df.loc[~df.date_of_birth.isna() & df[f'nc_{condition}'] & (df.age_years >= 20), 'is_alive']).all()
