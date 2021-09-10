@@ -400,7 +400,7 @@ class Lifestyle(Module):
         urban_index = df.index[df.is_alive & df.li_urban]
         rural_index = df.index[df.is_alive & ~df.li_urban]
 
-        # randomly sample wealth category according to urban/rural wealth _probs
+        # randomly sample wealth category according to urban/rural wealth probs
         df.loc[urban_index, 'li_wealth'] = rng.choice([1, 2, 3, 4, 5], size=len(urban_index), p=m.init_p_wealth_urban)
         df.loc[rural_index, 'li_wealth'] = rng.choice([1, 2, 3, 4, 5], size=len(rural_index), p=m.init_p_wealth_rural)
 
