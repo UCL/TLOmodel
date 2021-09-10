@@ -3847,8 +3847,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
             tbi = ['133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135']
             tbi_injury = [injury for injury in tbi if injury in person['rt_injuries_to_heal_with_time']]
             if len(tbi_injury) > 0:
-                columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, tbi_injury)
-                                                 [0])
+                columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, tbi_injury)[0])
                 # ask if this injury will be permanent
                 perm_injury = self.module.rng.random_sample(size=1)
                 if perm_injury < self.prob_perm_disability_with_treatment_severe_TBI:
@@ -5146,7 +5145,6 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                     if injury not in df.loc[person_id, 'rt_injuries_for_major_surgery']:
                         df.loc[person_id, 'rt_injuries_for_major_surgery'].append(injury)
                 assert len(injuries_to_be_treated) == len(df.loc[person_id, 'rt_injuries_for_major_surgery'])
-                code = df.loc[person_id, column]
                 columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, [code])
 
                 # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
@@ -5176,7 +5174,6 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 if injury not in df.loc[person_id, 'rt_injuries_for_major_surgery']:
                     df.loc[person_id, 'rt_injuries_for_major_surgery'].append(injury)
             assert len(injuries_to_be_treated) == len(df.loc[person_id, 'rt_injuries_for_major_surgery'])
-            code = df.loc[person_id, column]
             columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, [code])
             # Schedule recovery for the end of the simulation, thereby making the injury permanent
 
