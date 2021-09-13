@@ -168,7 +168,7 @@ class HealthSystem(Module):
 
         # Check that the capabilities coefficient is correct
         assert capabilities_coefficient >= 0
-        assert type(capabilities_coefficient) is float
+        assert isinstance(capabilities_coefficient, float)
         self.capabilities_coefficient = capabilities_coefficient
 
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
