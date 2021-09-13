@@ -1071,7 +1071,7 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
     """
     This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with any symptoms.
     This event results in a blood pressure measurement being taken that may result in diagnosis and the scheduling of
-    treatment for hypertension.
+    treatment for a condition.
     """
 
     def __init__(self, module, person_id, condition):
