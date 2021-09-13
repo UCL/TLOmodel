@@ -135,9 +135,9 @@ def test_basic_run_with_high_incidence_hypertension():
                                                                                  0)
     p['chronic_kidney_disease_onset'] = p['chronic_kidney_disease_onset'].mask(p['chronic_kidney_disease_onset'] > 0, 0)
     p['diabetes_initial_prev'] = p['diabetes_initial_prev'].mask(p['diabetes_initial_prev'] > 0, 0)
-    p['chronic_lower_back_pain_initial_prev'] = p['chronic_lower_back_pain_initial_prev'].\
+    p['chronic_lower_back_pain_initial_prev'] = p['chronic_lower_back_pain_initial_prev']. \
         mask(p['chronic_lower_back_pain_initial_prev'] > 0, 0)
-    p['chronic_kidney_disease_initial_prev'] = p['chronic_kidney_disease_initial_prev'].\
+    p['chronic_kidney_disease_initial_prev'] = p['chronic_kidney_disease_initial_prev']. \
         mask(p['chronic_kidney_disease_initial_prev'] > 0, 0)
 
     # Increase RR of heart disease very high if individual has hypertension
@@ -168,6 +168,7 @@ def test_basic_run_with_high_incidence_hypertension():
     # check that everyone has hypertension and CIHD by end
     assert df.loc[df.is_alive & (df.age_years >= 20)].nc_hypertension.all()
     assert df.loc[df.is_alive & (df.age_years >= 20)].nc_chronic_ischemic_hd.all()
+
 
 def hsi_checks(sim):
     """
@@ -219,6 +220,7 @@ def hsi_checks(sim):
     assert df.loc[df.is_alive & df.nc_ever_stroke_on_medication].nc_ever_stroke_ever_diagnosed.all()
     assert df.loc[df.is_alive & df.nc_ever_heart_attack_on_medication].nc_ever_heart_attack_ever_diagnosed.all()
 
+
 def start_sim_and_clear_event_queues(sim):
     """Simulate for 0 days so as to complete all the initialisation steps, but then clear the event queues"""
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -226,7 +228,8 @@ def start_sim_and_clear_event_queues(sim):
     sim.event_queue.queue.clear()
     return sim
 
-def test_if_healthsystem_cannot_run():
+
+def test_if_health_system_cannot_run():
     # Make the health-system unavailable to run any HSI event and check events to make sure no one initiates or
     # continues treatment
 
@@ -294,6 +297,7 @@ def test_if_healthsystem_cannot_run():
     assert not df.at[0, "nc_diabetes_on_medication"]
     assert not df.at[1, "nc_diabetes_on_medication"]
 
+
 # helper function to run the sim with the healthcare system disabled
 def make_simulation_healthsystemdisabled():
     """Make the simulation with:
@@ -315,8 +319,11 @@ def make_simulation_healthsystemdisabled():
                  )
     return sim
 
-def test_if_no_healthsystem_and_zero_death():
-    # Make the health-system unavailable to run any HSI event and set death rate to zero to check that no one dies
+
+def test_if_no_health_system_and_zero_death():
+    """"
+    Make the health-system unavailable to run any HSI event and set death rate to zero to check that no one dies
+    """
 
     # Make a list of all conditions and events to run this test for
     condition_list = ['diabetes', 'hypertension', 'chronic_kidney_disease', 'chronic_lower_back_pain',
@@ -344,8 +351,11 @@ def test_if_no_healthsystem_and_zero_death():
 
         assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{condition}').any()
 
-def test_if_no_healthsystem_and_hundred_death():
-    # Make the health-system unavailable to run any HSI event and set death rate to zero to check that no one dies
+
+def test_if_no_health_system_and_hundred_death():
+    """"
+    Make the health-system unavailable to run any HSI event and set death rate to 100% to check that everyone dies
+    """
 
     # Make a list of all conditions and events to run this test for
     condition_list = ['diabetes', 'chronic_kidney_disease', 'chronic_ischemic_hd']
@@ -393,4 +403,3 @@ def test_if_no_healthsystem_and_hundred_death():
         df = sim.population.props
 
         assert not (df.loc[~df.date_of_birth.isna() & df[f'nc_{event}'] & (df.age_years >= 20), 'is_alive']).all()
-
