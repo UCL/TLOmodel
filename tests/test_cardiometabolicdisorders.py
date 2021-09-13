@@ -319,6 +319,27 @@ def make_simulation_healthsystemdisabled():
                  )
     return sim
 
+# helper function to run the sim with the healthcare system disabled
+def make_simulation_healthsystem_functional():
+    """Make the simulation with:
+    * the demography module with the OtherDeathsPoll not running
+    """
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
+                 )
+    return sim
+
 
 def test_if_no_health_system_and_zero_death():
     """"
@@ -412,21 +433,7 @@ def test_if_medication_prevents_all_death():
     # Make a list of all conditions and events to run this test for
     condition_list = ['diabetes', 'chronic_kidney_disease', 'chronic_ischemic_hd']
     for condition in condition_list:
-        sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
-
-        # Register the appropriate modules
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False),
-                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                     depression.Depression(resourcefilepath=resourcefilepath),
-                     cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
-                     )
-
+        sim = make_simulation_healthsystem_functional()
         sim.make_initial_population(n=1000)
 
         # force all individuals to have condition and be on medication
