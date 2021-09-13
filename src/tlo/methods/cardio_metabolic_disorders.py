@@ -1349,7 +1349,8 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                 )['Item_Code'][item_code]
                 if result_of_cons_request:
                     logger.debug(key='debug', data='Treatment will be provided.')
-                    treatmentworks = self.module.rng.rand() < 0.5  # TODO: @britta change to data
+                    treatmentworks = self.module.rng.rand() < self.module.parameters[
+                        f'{self.event}_hsi'].pr_treatment_works  # TODO: @britta change to data
                     if treatmentworks:
                         # cancel the scheduled death data
                         df.at[person_id, f'nc_{self.event}_scheduled_date_death'] = pd.NaT
