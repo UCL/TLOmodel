@@ -2339,7 +2339,7 @@ class RTI(Module):
             self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5
         )
         prob_676 = self.spine_prob_spinal_cord_lesion * self.spine_prob_spinal_cord_lesion_neck_level * \
-                    self.spine_prob_spinal_cord_lesion_neck_level_AIS6
+                   self.spine_prob_spinal_cord_lesion_neck_level_AIS6
 
         injuries = {
             # injuries to the head
@@ -2397,11 +2397,11 @@ class RTI(Module):
             'spine': {'612': [self.spine_prob_fracture, 6, 1, 2],
                       '673a': [prob_673a, 6, 7, 3],
                       '673b': [prob_673b, 6, 7, 3],
-                     '674a': [prob_675a, 6, 7, 4],
-                     '674b': [prob_674b, 6, 7, 4],
-                     '675a': [prob_675a, 6, 7, 5],
-                     '675b': [prob_675b, 6, 7, 5],
-                     '676': [prob_676, 6, 7, 6]
+                      '674a': [prob_674a, 6, 7, 4],
+                      '674b': [prob_674b, 6, 7, 4],
+                      '675a': [prob_675a, 6, 7, 5],
+                      '675b': [prob_675b, 6, 7, 5],
+                      '676': [prob_676, 6, 7, 6]
                       },
             # injuries to the upper extremities
             'upper_ex': {'7101': [self.upper_ex_prob_skin_wound * self.upper_ex_prob_skin_wound_open, 7, 10, 1],
@@ -3790,7 +3790,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         assert person['rt_diagnosed'], 'person sent here has not been through A and E'
         # Check that those who arrive here have at least one injury
         _, counts = RTI.rti_find_and_count_injuries(person_injuries,
-                                                      self.module.PROPERTIES.get('rt_injury_1').categories[1:-1])
+                                                    self.module.PROPERTIES.get('rt_injury_1').categories[1:-1])
         assert counts > 0, 'This person has asked for medical treatment despite not being injured'
         # update the model's properties to reflect that this person has sought medical care
         df.at[person_id, 'rt_med_int'] = True
@@ -5996,11 +5996,11 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         self.totintorg += organinjurycounts
         internalbleedingcodes = ['361', '363', '461', '463']
         _, internalbleedingcounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries,
-                                                                                        internalbleedingcodes)
+                                                                                      internalbleedingcodes)
         self.totintbled += internalbleedingcounts
         spinalcordinjurycodes = ['673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676']
         _, spinalcordinjurycounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries,
-                                                                                        spinalcordinjurycodes)
+                                                                                      spinalcordinjurycodes)
         self.totsci += spinalcordinjurycounts
         amputationcodes = ['782', '782a', '782b', '783', '882', '883', '884']
         _, amputationcounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, amputationcodes)
@@ -6010,7 +6010,7 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         self.toteye += eyecounts
         externallacerationcodes = ['1101', '2101', '3101', '4101', '5101', '7101', '8101']
         _, externallacerationcounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries,
-                                                                                          externallacerationcodes)
+                                                                                        externallacerationcodes)
         self.totextlac += externallacerationcounts
         burncodes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
         _, burncounts = road_traffic_injuries.rti_find_and_count_injuries(df_injuries, burncodes)

@@ -45,7 +45,7 @@ yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 service_availability = ['*']
-pop_size = 5000
+pop_size = 10000
 nsim = 2
 # Iterate over the number of simulations nsim
 log_file_location = './outputs/single_injury_model_vs_multiple_injury/'
@@ -1010,6 +1010,7 @@ plt.xticks(np.arange(2), ['Estimated number\n of deaths\nwith healthsystem',
 plt.title("The model's estimated number of deaths with and without the health system providing health care")
 plt.savefig(save_file_path + f"multiple_vs_no_hs_number_of_deaths_{imm_death}.png",
             bbox_inches='tight')
+plt.clf()
 # Plot the multiple injury model's number of DALYs with and without health system
 mult_mean_est_dalys = np.mean(mult_list_extrapolated_dalys)
 no_hs_mean_est_dalys = np.mean(no_hs_list_extrapolated_dalys)
@@ -1020,6 +1021,7 @@ plt.xticks(np.arange(2), ['Estimated number\n of DALYs\nwith healthsystem',
 plt.title("The model's estimated number of DALYs with and without the health system providing health care")
 plt.savefig(save_file_path + f"multiple_vs_no_hs_number_of_dalys_{imm_death}.png",
             bbox_inches='tight')
+plt.clf()
 # Plot the multiple injury model's incidence of death with and without health system
 multiple_injury_mean_incidence_rti_death = np.mean(mult_inj_incidences_of_death)
 no_hs_mean_inc_death = np.mean(no_hs_inj_incidences_of_death)
@@ -1030,3 +1032,4 @@ plt.xticks(np.arange(2), ['Incidence of\ndeath\nwith healthsystem',
 plt.title("The model's predicted incidence of death with and without the health system providing health care")
 plt.savefig(save_file_path + f"multiple_vs_no_hs_inc_of_death_{imm_death}.png",
             bbox_inches='tight')
+plt.clf()
