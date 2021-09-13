@@ -326,8 +326,7 @@ def test_if_no_health_system_and_zero_death():
     """
 
     # Make a list of all conditions and events to run this test for
-    condition_list = ['diabetes', 'hypertension', 'chronic_kidney_disease', 'chronic_lower_back_pain',
-                      'chronic_ischemic_hd']
+    condition_list = ['diabetes', 'chronic_kidney_disease', 'chronic_ischemic_hd']
 
     for condition in condition_list:
         # Disable the healthcare system
@@ -403,3 +402,47 @@ def test_if_no_health_system_and_hundred_death():
         df = sim.population.props
 
         assert not (df.loc[~df.date_of_birth.isna() & df[f'nc_{event}'] & (df.age_years >= 20), 'is_alive']).all()
+
+
+def test_if_medication_prevents_all_death():
+    """"
+    Make medication 100% effective to check that no one dies
+    """
+
+    # Make a list of all conditions and events to run this test for
+    condition_list = ['diabetes', 'chronic_kidney_disease', 'chronic_ischemic_hd']
+    for condition in condition_list:
+        sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
+
+        # Register the appropriate modules
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False),
+                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                     depression.Depression(resourcefilepath=resourcefilepath),
+                     cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
+                     )
+
+        sim.make_initial_population(n=1000)
+
+        # force all individuals to have condition and be on medication
+        sim.population.props.loc[
+            sim.population.props.is_alive & (sim.population.props.age_years >= 20), f"nc_{condition}"] = True
+        sim.population.props.loc[
+            sim.population.props.is_alive & (sim.population.props.age_years >= 20),
+            f"nc_{condition}_on_medication"] = True
+
+        # set probability of treatment working to 1
+        p = sim.modules['CardioMetabolicDisorders'].parameters
+        p[f'{condition}_hsi']["pr_treatment_works"] = 1
+
+        sim.simulate(end_date=Date(year=2011, month=1, day=1))
+
+        # check that no one died of condition while on medication
+        df = sim.population.props
+
+        assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{condition}').any()
