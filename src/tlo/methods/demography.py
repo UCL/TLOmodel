@@ -487,6 +487,27 @@ class Demography(Module):
             return census_popsize / model_popsize_in_year_of_census
 
 
+def compute_initial_population_scaling_factor(resource_file_path, initial_population):
+    """Compute ratio of initial simulation population to estimated population in 2010.
+
+    Uses the total of the per-region estimated populations in 2010 used to initialise
+    the simulation population as the baseline figure, with this value corresponding to
+    the 2010 projected population from [wpp2019]_.
+
+    .. [wpp2019] World Population Prospects 2019. United Nations Department of Economic
+    and Social Affairs. URL: https://population.un.org/wpp/Download/Standard/Population/
+
+    :param resource_file_path: Path to directory where resource files are stored.
+    :param initial_population: Initial population to calculate ratio for.
+
+    :returns: Ratio of ``initial_population`` to 2010 baseline population.
+    """
+    baseline_total_population = pd.read_csv(
+        Path(resource_file_path) / 'demography' / 'ResourceFile_Population_2010.csv'
+    )['Count'].sum()
+    return initial_population / baseline_total_population
+
+
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
     """
     This event updates the age_exact_years, age_years and age_range columns for the population based
