@@ -5145,7 +5145,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                     if injury not in df.loc[person_id, 'rt_injuries_for_major_surgery']:
                         df.loc[person_id, 'rt_injuries_for_major_surgery'].append(injury)
                 assert len(injuries_to_be_treated) == len(df.loc[person_id, 'rt_injuries_for_major_surgery'])
-                columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, [code])
+                columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id,
+                                                                                                [self.treated_code])
 
                 # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
                 # it permanent)
@@ -5169,12 +5170,12 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             self.treated_code = "P" + self.treated_code
             df.loc[person_id, column] = self.treated_code
             injuries_to_be_treated.append(self.treated_code)
-            # df.loc[person_id, 'rt_injuries_for_major_surgery'] = injuries_to_be_treated
             for injury in injuries_to_be_treated:
                 if injury not in df.loc[person_id, 'rt_injuries_for_major_surgery']:
                     df.loc[person_id, 'rt_injuries_for_major_surgery'].append(injury)
             assert len(injuries_to_be_treated) == len(df.loc[person_id, 'rt_injuries_for_major_surgery'])
-            columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, [code])
+            columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id,
+                                                                                            [self.treated_code])
             # Schedule recovery for the end of the simulation, thereby making the injury permanent
 
             df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = \
