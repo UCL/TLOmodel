@@ -830,9 +830,6 @@ class PregnancySupervisor(Module):
 
         if df.at[mother_id, 'is_alive']:
 
-            # Check only the correct women arrive at this function
-            assert not df.at[mother_id, 'la_intrapartum_still_birth']
-
             # We reset all womans gestational age when they deliver as they are no longer pregnant
             df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
             df.at[mother_id, 'ps_date_of_anc1'] = pd.NaT

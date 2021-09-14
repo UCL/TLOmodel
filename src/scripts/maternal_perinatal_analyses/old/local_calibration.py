@@ -319,6 +319,6 @@ def do_run_using_dummy_contraception(config_name, start_date, end_date, seed, po
     sim.simulate(end_date=end_date)
 
 
-do_run_using_dummy_contraception(config_name='test_dummy_contraception_newseed_10k', start_date=Date(2010, 1, 1),
-                                 end_date=Date(2011, 1, 1), seed=333, population=20000, parameters=2010)
+do_run_using_dummy_contraception(config_name='test_num_pregs', start_date=Date(2010, 1, 1),
+                                 end_date=Date(2014, 1, 1), seed=333, population=7500, parameters=2010)
 

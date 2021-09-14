@@ -354,9 +354,6 @@ class CareOfWomenDuringPregnancy(Module):
         #  run a check at birth to make sure no women exceed 8 visits
         assert df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] < 9
 
-        # and that this function is called for the correct women only
-        assert not df.at[mother_id, 'la_intrapartum_still_birth']
-
         # We log the total number of ANC contacts a woman has undergone at the time of birth via this dictionary
         if 'ga_anc_one' in mni[mother_id].keys():
             ga_anc_one = mni[mother_id]['ga_anc_one']
@@ -449,8 +446,27 @@ class CareOfWomenDuringPregnancy(Module):
         # We check that women will only be scheduled for the next ANC contact in the schedule
         assert df.at[individual_id, 'ps_gestational_age_in_weeks'] < recommended_gestation_next_anc
 
-        # This function houses the code that schedules the next visit, it is abstracted to prevent repetition
-        def set_anc_date(visit_to_be_scheduled):
+        # This function uses a womans gestation age to determine when the next visit should occur and schedules it
+        # accordingly
+        def calculate_visit_date_and_schedule_visit(visit):
+            # We subtract this womans current gestational age from the recommended gestational age for the next
+            # contact
+            weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
+                                                                              'ps_gestational_age_in_weeks'])
+
+            # And use this value as the number of weeks until she is required to return for her next ANC
+            visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
+                                                                topen=visit_date,
+                                                                tclose=visit_date + DateOffset(days=7))
+            logger.debug(key='message', data=f'mother {individual_id} will seek ANC {visit_to_be_scheduled} '
+                                             f'contact on {visit_date}')
+
+            # We store the date of her next visit and use this date as part of a check when the ANC HSIs run
+            df.at[individual_id, 'ac_date_next_contact'] = visit_date
+
+        # This function determines the correct next visit and if that visit will go ahead
+        def select_visit_and_determine_if_woman_will_attend(visit_to_be_scheduled):
 
             # We store the ANC contacts as variables prior to scheduling. Facility level of the next contact is carried
             # forward from a womans first ANC contact (we assume she will always seek care within the same facility
@@ -488,69 +504,29 @@ class CareOfWomenDuringPregnancy(Module):
             # scheduled
             if visit_to_be_scheduled <= 4:
                 if df.at[individual_id, 'ps_anc4']:
-
-                    # We subtract this womans current gestational age from the recommended gestational age for the next
-                    # contact
-                    weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
-                                                                                      'ps_gestational_age_in_weeks'])
-
-                    # And use this value as the number of weeks until she is required to return for her next ANC
-                    visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
-                                                                        topen=visit_date,
-                                                                        tclose=visit_date + DateOffset(days=7))
-                    logger.debug(key='message', data=f'mother {individual_id} will seek ANC {visit_to_be_scheduled} '
-                                                     f'contact on {visit_date}')
-
-                    # We store the date of her next visit and use this date as part of a check when the ANC HSIs run
-                    df.at[individual_id, 'ac_date_next_contact'] = visit_date
-
+                    calculate_visit_date_and_schedule_visit(visit)
                 else:
                     # If she is not predicted to attend 4 or more visits, we use a probability to determine if she will
                     # seek care for her next contact
-
                     # If so, the HSI is scheduled in the same way
                     if self.rng.random_sample() < params['prob_anc_continues']:
-                        weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
-                                                                                          'ps_gestational_age_in_'
-                                                                                          'weeks'])
-                        visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
-                                                                            topen=visit_date,
-                                                                            tclose=visit_date + DateOffset(days=7))
-
-                        logger.debug(key='message', data=f'mother {individual_id} will seek ANC '
-                                                         f'{visit_to_be_scheduled} contact on {visit_date}')
-
-                        df.at[individual_id, 'ac_date_next_contact'] = visit_date
+                        calculate_visit_date_and_schedule_visit(visit)
                     else:
                         # If additional ANC care is not sought nothing happens
                         logger.debug(key='message', data=f'mother {individual_id} will not seek any additional '
                                                          f'antenatal care for this pregnancy')
-
             elif visit_to_be_scheduled > 4:
                 # After 4 or more visits we use this probability to determine if the woman will seek care for
                 # her next contact
-
                 if self.rng.random_sample() < params['prob_anc_continues']:
-                    weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
-                                                                                      'ps_gestational_age_in_'
-                                                                                      'weeks'])
-                    visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
-                                                                        topen=visit_date,
-                                                                        tclose=visit_date + DateOffset(days=7))
-                    logger.debug(key='message', data=f'mother {individual_id} will seek ANC {visit_to_be_scheduled} '
-                                                     f'contact on {visit_date}')
-                    df.at[individual_id, 'ac_date_next_contact'] = visit_date
-
+                    calculate_visit_date_and_schedule_visit(visit)
                 else:
                     logger.debug(key='message', data=f'mother {individual_id} will not seek any additional antenatal '
                                                      f'care for this pregnancy')
 
         # We run the function to schedule the HSI
         if 2 <= visit_to_be_scheduled <= 8:
-            set_anc_date(visit_to_be_scheduled)
+            select_visit_and_determine_if_woman_will_attend(visit_to_be_scheduled)
 
     def schedule_admission(self, individual_id):
         """
@@ -559,6 +535,9 @@ class CareOfWomenDuringPregnancy(Module):
         :param individual_id: individual_id
         """
         df = self.sim.population.props
+
+        # check correct women have been sent
+        assert df.at[individual_id, 'ac_to_be_admitted']
 
         # Use a weighted random draw to determine which level of facility the woman will be admitted too
         # facility_level = int(self.rng.choice([1, 2, 3], p=params['prob_an_ip_at_facility_level_1_2_3']))
@@ -1047,10 +1026,9 @@ class CareOfWomenDuringPregnancy(Module):
         if 'hiv' in mni[person_id]['anc_ints']:
             return
         else:
-            mni[person_id]['anc_ints'].append('hiv')
-
             if 'Hiv' in self.sim.modules:
                 if ~df.at[person_id, 'hv_diagnosed']:
+                    mni[person_id]['anc_ints'].append('hiv')
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                        HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
                        topen=self.sim.date,
@@ -1106,7 +1084,6 @@ class CareOfWomenDuringPregnancy(Module):
         if 'gdm_screen' in mni[person_id]['anc_ints']:
             return
         else:
-            mni[person_id]['anc_ints'].append('gdm_screen')
 
             # We check if this women has any of the key risk factors, if so they are sent for additional blood tests
             if df.at[person_id, 'li_bmi'] >= 4 or df.at[person_id, 'ps_prev_gest_diab'] or df.at[person_id,
@@ -1144,6 +1121,7 @@ class CareOfWomenDuringPregnancy(Module):
                                                                                hsi_event=hsi_event):
 
                         logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'gdm_screen'})
+                        mni[person_id]['anc_ints'].append('gdm_screen')
 
                         # We assume women with a positive GDM screen will be admitted (if they are not already receiving
                         # outpatient care)

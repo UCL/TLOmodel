@@ -20,9 +20,8 @@ class DummyContraceptionModule(Module):
                   'date_of_last_pregnancy': Property(Types.DATE, "")
                   }
 
-    def __init__(self, name=None, hiv_prev=0.1):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.hiv_prev = hiv_prev
 
     def read_parameters(self, data_folder):
         pass
@@ -54,14 +53,14 @@ class DummyContraceptionModule(Module):
 
 class DummyPregnancyPoll(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module, ):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(days=1))
 
     def apply(self, population):
-        df = population.props
+        df = self.sim.population.props
 
         possible_pregnancy = ((df.sex == 'F') & df.is_alive & ~df.is_pregnant & ~df.la_currently_in_labour &
-                              ~df.la_has_had_hysterectomy & df.age_years.between(15, 49) & ~df.la_is_postpartum &
-                              (df.ps_ectopic_pregnancy == 'none') & ~df.hs_is_inpatient)
+                              ~df.la_has_had_hysterectomy & (df.age_years > 14) & (df.age_years < 50) &
+                              ~df.la_is_postpartum & (df.ps_ectopic_pregnancy == 'none') & ~df.hs_is_inpatient)
 
         for woman in possible_pregnancy.loc[possible_pregnancy].index:
             df.at[woman, 'is_pregnant'] = True

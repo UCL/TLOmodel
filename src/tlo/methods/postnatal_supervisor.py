@@ -391,7 +391,8 @@ class PostnatalSupervisor(Module):
         # We store the ID number of the child this woman has most recently delivered as a property of the woman. This is
         # because PNC is scheduled for the woman during the Labour Module but must act on both mother and child. If this
         # is a twin birth, only the id of the first born child is stored
-        df.at[mother_id, 'pn_id_most_recent_child'] = child_id
+        if not df.at[mother_id, 'la_intrapartum_still_birth']:
+            df.at[mother_id, 'pn_id_most_recent_child'] = child_id
 
         if df.at[mother_id, 'is_alive']:
             # Here we determine if, following childbirth, this woman will develop a fistula
@@ -1026,6 +1027,23 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # newborn are receiving treatment following the last PNC visit (around day 42)
 
         # Maternal variables
+        week_8_postnatal_women_htn = \
+            df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 8) & \
+            (df.pn_htn_disorders.str.contains('gest_htn|severe_gest_htn|mild_pre_eclamp|severe_pre_eclamp|eclampsia'))
+
+        # Schedule date of resolution for any women with hypertension
+        for person in week_8_postnatal_women_htn.loc[week_8_postnatal_women_htn].index:
+            if not pd.isnull(mni[person]['hypertension_onset']):
+                store_dalys_in_mni(person, 'hypertension_resolution')
+
+        week_8_postnatal_women_anaemia = \
+            df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 8) & \
+            (df.pn_anaemia_following_pregnancy != 'none')
+
+        # Schedule date of resolution for any women with anaemia
+        for person in week_8_postnatal_women_anaemia.loc[week_8_postnatal_women_anaemia].index:
+            store_dalys_in_mni(person, f'{df.at[person, "pn_anaemia_following_pregnancy"]}_anaemia_pp_resolution')
+
         week_8_postnatal_women = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 8)
 
         # Set mni[person]['delete_mni'] to True meaning after the next DALY event each womans MNI dict is delted
@@ -1042,26 +1060,7 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[week_8_postnatal_women, 'pn_postpartum_haem_secondary'] = False
         self.module.deficiencies_following_pregnancy.unset(week_8_postnatal_women, 'iron', 'folate', 'b12')
 
-        week_8_postnatal_women_htn = \
-            df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 8) & \
-            (df.pn_htn_disorders.str.contains('gest_htn|severe_gest_htn|mild_pre_eclamp|severe_pre_eclamp|eclampsia'))
-
-        # Schedule date of resolution for any women with hypertension
-        for person in week_8_postnatal_women_htn.loc[week_8_postnatal_women_htn].index:
-            if not pd.isnull(mni[person]['hypertension_onset']):
-                store_dalys_in_mni(person, 'hypertension_resolution')
-
         df.loc[week_8_postnatal_women, 'pn_htn_disorders'] = 'none'
-
-        week_8_postnatal_women_anaemia = \
-            df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 8) & \
-            (df.pn_anaemia_following_pregnancy != 'none')
-
-        # Schedule date of resolution for any women with anaemia
-        for person in week_8_postnatal_women_anaemia.loc[week_8_postnatal_women_anaemia].index:
-            for severity in df.at[person, 'pn_anaemia_following_pregnancy']:
-                store_dalys_in_mni(person, f'{severity}_anaemia_pp_resolution')
-
         df.loc[week_8_postnatal_women, 'pn_anaemia_following_pregnancy'] = 'none'
 
         # For the neonates we now determine if they will develop any long term neurodevelopmental impairment following

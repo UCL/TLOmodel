@@ -638,7 +638,8 @@ class Labour(Module):
     def initialise_simulation(self, sim):
 
         # We set the LoggingEvent to run a the last day of each year to produce statistics for that year
-        sim.schedule_event(LabourLoggingEvent(self), sim.date + DateOffset(years=1))
+        # todo: change back to years
+        sim.schedule_event(LabourLoggingEvent(self), sim.date + DateOffset(days=1))
 
         # This list contains all the women who are currently in labour and is used for checks/testing
         self.women_in_labour = []
@@ -917,17 +918,16 @@ class Labour(Module):
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        assert not df.at[mother_id, 'la_intrapartum_still_birth']
-
         # log delivery setting
         logger.info(key='delivery_setting_and_mode', data={'mother': mother_id,
                                                            'facility_type': mni[mother_id]['delivery_setting'],
                                                            'mode': mni[mother_id]['mode_of_delivery']})
 
         # Store only live births to a mother parity
-        df.at[mother_id, 'la_parity'] += 1  # Only live births contribute to parity
-        logger.info(key='live_birth', data={'mother': mother_id, 'child': child_id,
-                                            'ga': df.at[mother_id, 'ps_gestational_age_in_weeks']})
+        if not df.at[mother_id, 'la_intrapartum_still_birth']:
+            df.at[mother_id, 'la_parity'] += 1  # Only live births contribute to parity
+            logger.info(key='live_birth', data={'mother': mother_id, 'child': child_id,
+                                                'ga': df.at[mother_id, 'ps_gestational_age_in_weeks']})
 
         # Currently we assume women who received antihypertensive in the antenatal period will continue to use them
         if df.at[mother_id, 'ac_gest_htn_on_treatment']:
@@ -1479,38 +1479,35 @@ class Labour(Module):
                 df.at[individual_id, 'la_eclampsia_treatment'] = False
                 df.at[individual_id, 'la_sepsis_treatment'] = False
 
-                # ================================ RESET LABOUR MODULE VARIABLES =====================================
-                if not mni[individual_id]['passed_through_week_one']:
-                    # Reset labour variable
-                    df.at[individual_id, 'la_currently_in_labour'] = False
-                    df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
-
-                    #  complication variables
-                    df.at[individual_id, 'la_intrapartum_still_birth'] = False
-                    df.at[individual_id, 'la_postpartum_haem'] = False
-                    df.at[individual_id, 'la_obstructed_labour'] = False
-                    df.at[individual_id, 'la_placental_abruption'] = False
-                    df.at[individual_id, 'la_antepartum_haem'] = 'none'
-                    df.at[individual_id, 'la_uterine_rupture'] = False
-                    df.at[individual_id, 'la_sepsis'] = False
-                    df.at[individual_id, 'la_sepsis_pp'] = False
-                    df.at[individual_id, 'la_postpartum_haem'] = False
-
-                    # Labour specific treatment variables
-                    df.at[individual_id, 'la_antepartum_haem_treatment'] = False
-                    df.at[individual_id, 'la_uterine_rupture_treatment'] = False
-
-                    self.pph_treatment.unset(
-                        [individual_id], 'uterotonics', 'manual_removal_placenta', 'surgery', 'hysterectomy')
-
         # ================================ SCHEDULE POSTNATAL WEEK ONE EVENT =====================================
-        # For women who have survived first 24 hours after birth we scheduled them to attend the first event in the
-        # PostnatalSupervisorModule - PostnatalWeekOne Event
+        # For women who have survived first 24 hours after birth we reset all the key labour variables and
+        # scheduled them to attend the first event in the PostnatalSupervisorModule - PostnatalWeekOne Event
 
-        # This event determines if women/newborns will develop complications in week one. We stagger when women
-        # arrive at this event to simulate bunching of complications in the first few days after birth
         if not mni[individual_id]['passed_through_week_one']:
 
+            df.at[individual_id, 'la_currently_in_labour'] = False
+            df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
+
+            #  complication variables
+            df.at[individual_id, 'la_intrapartum_still_birth'] = False
+            df.at[individual_id, 'la_postpartum_haem'] = False
+            df.at[individual_id, 'la_obstructed_labour'] = False
+            df.at[individual_id, 'la_placental_abruption'] = False
+            df.at[individual_id, 'la_antepartum_haem'] = 'none'
+            df.at[individual_id, 'la_uterine_rupture'] = False
+            df.at[individual_id, 'la_sepsis'] = False
+            df.at[individual_id, 'la_sepsis_pp'] = False
+            df.at[individual_id, 'la_postpartum_haem'] = False
+
+            # Labour specific treatment variables
+            df.at[individual_id, 'la_antepartum_haem_treatment'] = False
+            df.at[individual_id, 'la_uterine_rupture_treatment'] = False
+
+            self.pph_treatment.unset(
+                [individual_id], 'uterotonics', 'manual_removal_placenta', 'surgery', 'hysterectomy')
+
+            # This event determines if women/newborns will develop complications in week one. We stagger when women
+            # arrive at this event to simulate bunching of complications in the first few days after birth
             days_post_birth_td = self.sim.date - df.at[individual_id, 'la_date_most_recent_delivery']
             days_post_birth_int = int(days_post_birth_td / np.timedelta64(1, 'D'))
 
@@ -1529,6 +1526,7 @@ class Labour(Module):
 
         if mni[individual_id]['passed_through_week_one']:
             assert individual_id not in self.women_in_labour
+            assert ~df.at[individual_id, 'la_currently_in_labour']
 
     def labour_characteristics_checker(self, individual_id):
         """This function is called at multiples points in the module to ensure women of the right characteristics are
@@ -2823,6 +2821,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
                 # This variable is therefore only ever true when the pregnancy has ended in stillbirth
                 df.at[individual_id, 'ps_prev_stillbirth'] = True
                 df.at[individual_id, 'is_pregnant'] = False
+                # todo: reset more properties
 
             # If one twin survives we store this as a property of the MNI which is reference on_birth of the newborn
             # outcomes to ensure this twin pregnancy only leads to one birth
@@ -2894,6 +2893,12 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
                 self.sim.do_birth(mother_id)
 
         df = self.sim.population.props
+
+        if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'la_intrapartum_still_birth']:
+            self.sim.modules['Labour'].further_on_birth_labour(mother_id, child_id='none')
+            self.sim.modules['PregnancySupervisor'].further_on_birth_pregnancy_supervisor(mother_id)
+            self.sim.modules['PostnatalSupervisor'].further_on_birth_postnatal_supervisor(mother_id, child_id='none')
+            self.sim.modules['CareOfWomenDuringPregnancy'].further_on_birth_care_of_women_in_pregnancy(mother_id)
 
         # Next we apply the risk of complications following delivery
         if df.at[mother_id, 'is_alive']:
@@ -3424,5 +3429,25 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=self.repeat))
 
     def apply(self, population):
-        pass
+        df = self.sim.population.props
+        repro_women = df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)
+
+        hysterectomy = df.is_alive & (df.sex == 'F') & df.la_has_had_hysterectomy & (df.age_years > 14) & \
+                       (df.age_years < 50)
+        labour = df.is_alive & (df.sex == 'F') & df.la_currently_in_labour & (df.age_years > 14) & \
+                       (df.age_years < 50)
+        postnatal = df.is_alive & (df.sex == 'F') & df.la_is_postpartum & (df.age_years > 14) & \
+                       (df.age_years < 50)
+        inpatient = df.is_alive & (df.sex == 'F') & df.hs_is_inpatient & (df.age_years > 14) & \
+                       (df.age_years < 50)
+
+        prop_hyst = (len(hysterectomy.loc[hysterectomy]) / len(repro_women.loc[repro_women])) * 100
+        prop_in_labour = (len(labour.loc[labour]) / len(repro_women.loc[repro_women])) * 100
+        prop_pn = (len(postnatal.loc[postnatal]) / len(repro_women.loc[repro_women])) * 100
+        prop_ip = (len(inpatient.loc[inpatient]) / len(repro_women.loc[repro_women])) * 100
+
+        logger.info(key='women_data_debug', data={'hyst': prop_hyst,
+                                                  'labour': prop_in_labour,
+                                                  'pn': prop_pn,
+                                                  'ip': prop_ip})
 
