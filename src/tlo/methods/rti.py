@@ -1357,6 +1357,7 @@ class RTI(Module):
         if 'include_thoroscopy' in self.allowed_interventions:
             additional_codes = ['441', '443', '453', '453a', '453b', '463']
             surgically_treated_codes.extend(additional_codes)
+        # check this person has an injury which should be treated here
         assert len(set(person.rt_injuries_for_major_surgery) & set(surgically_treated_codes)) > 0, \
             'This person has asked for surgery but does not have an appropriate injury'
         # isolate the relevant injury information
@@ -1365,6 +1366,8 @@ class RTI(Module):
         _, counts = RTI.rti_find_and_count_injuries(person_injuries, surgically_treated_codes)
         assert counts > 0, 'This person has been sent to major surgery without the right injuries'
         assert len(person.rt_injuries_for_major_surgery) > 0
+        # for each injury which has been assigned to be treated by major surgery make sure that the injury hasn't
+        # already been treated
         for code in person.rt_injuries_for_major_surgery:
             column, found_code = self.rti_find_injury_column(person_id, [code])
             index_in_rt_recovery_dates = int(column[-1]) - 1
@@ -1407,8 +1410,7 @@ class RTI(Module):
         for code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
             column, found_code = self.rti_find_injury_column(person_id, [code])
             index_in_rt_recovery_dates = int(column[-1]) - 1
-            if not pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates]):
-                df.loc[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates] = pd.NaT
+            assert pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates])
         # check that this person's injuries that were decided to be treated with a minor surgery and the injuries
         # actually treated by minor surgeries coincide
         assert len(set(df.loc[person_id, 'rt_injuries_for_minor_surgery']) & set(surgically_treated_codes)) > 0, \
@@ -1493,7 +1495,7 @@ class RTI(Module):
         person = df.loc[person_id]
         if not person.is_alive:
             return
-        assert person.rt_in_shock, 'person requesting shock treatment is not in shocl'
+        assert person.rt_in_shock, 'person requesting shock treatment is not in shock'
 
         self.sim.modules['HealthSystem'].schedule_hsi_event(
             hsi_event=HSI_RTI_Shock_Treatment(module=self,
@@ -1646,35 +1648,23 @@ class RTI(Module):
         :param codes: The injury codes being searched for
         :return: which column out of rt_injury_1 to rt_injury_8 the injury code occurs in, and the injury code itself
         """
-        df = self.sim.population.props
-        # Isolate the relevant injury information
-        df = df.loc[[person_id], RTI.INJURY_COLUMNS]
-
-        # Set up the number to iterate over
-        injury_numbers = range(1, 9)
-        # create empty variables to return if the search doesn't find a code/column
+        df = self.sim.population.props.loc[[person_id], RTI.INJURY_COLUMNS]
+        # iterate over the codes to search the dataframe for
         injury_column = ''
         injury_code = ''
-        # Iterate over the list of codes to begin the search
         for code in codes:
-            # Iterate over the injury columns
-            for injury_number in injury_numbers:
-                # Create a dataframe where the rows are those who have injury code 'code' within the column
-                # 'rt_injury_(injury_number)', if the person doesn't have 'code' in column 'rt_injury_(injury_number)',
-                # then the dataframe is empty
-                found = df[df[f"rt_injury_{injury_number}"].str.contains(code)]
-                # check if the dataframe is non-empty
-                if len(found) > 0:
-                    # if the dataframe is non-empty, then we have found the injury column corresponding to the injury
-                    # code for person 'person_id'. Assign the found column/code to injury_column and injury_code and
-                    # break the for loop.
-                    injury_column = f"rt_injury_{injury_number}"
+            # iterate over the columns where the code can be found
+            for col in RTI.INJURY_COLUMNS:
+                # if the code appears in the series, store
+                if df[col].str.contains(code).any():
+                    injury_column = col
                     injury_code = code
                     break
         # Check that the search found the injury column
         assert injury_column != '', df
         # Return the found column for the injury code
         return injury_column, injury_code
+
 
     def rti_find_all_columns_of_treated_injuries(self, person_id, codes):
         """

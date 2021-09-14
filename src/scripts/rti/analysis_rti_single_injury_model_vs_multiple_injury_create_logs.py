@@ -1007,7 +1007,7 @@ plt.bar(np.arange(2), [mult_mean_est_dalys, no_hs_mean_est_deaths])
 plt.ylabel('Number of deaths')
 plt.xticks(np.arange(2), ['Estimated number\n of deaths\nwith healthsystem',
                           'Estimated number\n of deaths\nwithout healthsystem'])
-plt.title("The model's estimated number of deaths with and without the health system providing health care")
+plt.title("The model's estimated number of deaths\n with and without the health system\n providing health care")
 plt.savefig(save_file_path + f"multiple_vs_no_hs_number_of_deaths_{imm_death}.png",
             bbox_inches='tight')
 plt.clf()
@@ -1018,7 +1018,7 @@ plt.bar(np.arange(2), [mult_mean_est_dalys, no_hs_mean_est_dalys])
 plt.ylabel('Number of DALYs')
 plt.xticks(np.arange(2), ['Estimated number\n of DALYs\nwith healthsystem',
                           'Estimated number\n of DALYs\nwithout healthsystem'])
-plt.title("The model's estimated number of DALYs with and without the health system providing health care")
+plt.title("The model's estimated number of DALYs\n with and without the health system\n providing health care")
 plt.savefig(save_file_path + f"multiple_vs_no_hs_number_of_dalys_{imm_death}.png",
             bbox_inches='tight')
 plt.clf()
@@ -1029,7 +1029,7 @@ plt.bar(np.arange(2), [multiple_injury_mean_incidence_rti_death, no_hs_mean_inc_
 plt.ylabel('Incidence of death per 100,000 person years')
 plt.xticks(np.arange(2), ['Incidence of\ndeath\nwith healthsystem',
                           'Incidence of\ndeath\nwithout healthsystem'])
-plt.title("The model's predicted incidence of death with and without the health system providing health care")
+plt.title("The model's predicted incidence of death\n with and without the health system\n providing health care")
 plt.savefig(save_file_path + f"multiple_vs_no_hs_inc_of_death_{imm_death}.png",
             bbox_inches='tight')
 plt.clf()
