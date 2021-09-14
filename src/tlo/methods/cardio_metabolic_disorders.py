@@ -877,8 +877,8 @@ class CardioMetabolicDisordersDeathEvent(Event, IndividualScopeEventMixin):
 
             if df.at[person_id, f'nc_{self.condition}_on_medication']:
                 # TODO: @britta replace with data specific for each condition/event
-                reduction_in_death_risk = self.module.rng.uniform(low=0.2, high=0.6, size=1)
-                if self.module.rng.rand() > reduction_in_death_risk:
+                treatmentworks = self.module.parameters[f'{self.condition}_hsi'].pr_treatment_works
+                if self.module.rng.rand() < treatmentworks:
                     self.check_if_event_and_do_death(person_id)
 
             else:

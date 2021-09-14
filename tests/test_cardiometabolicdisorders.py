@@ -299,7 +299,7 @@ def test_if_health_system_cannot_run():
 
 
 # helper function to run the sim with the healthcare system disabled
-def make_simulation_healthsystemdisabled():
+def make_simulation_health_system_disabled():
     """Make the simulation with:
     * the demography module with the OtherDeathsPoll not running
     """
@@ -320,7 +320,7 @@ def make_simulation_healthsystemdisabled():
     return sim
 
 # helper function to run the sim with the healthcare system disabled
-def make_simulation_healthsystem_functional():
+def make_simulation_health_system_functional():
     """Make the simulation with:
     * the demography module with the OtherDeathsPoll not running
     """
@@ -351,7 +351,7 @@ def test_if_no_health_system_and_zero_death():
 
     for condition in condition_list:
         # Disable the healthcare system
-        sim = make_simulation_healthsystemdisabled()
+        sim = make_simulation_health_system_disabled()
         # make initial population
         sim.make_initial_population(n=2000)
         # force all individuals to have condition
@@ -382,7 +382,7 @@ def test_if_no_health_system_and_hundred_death():
 
     for condition in condition_list:
         # Disable the healthcare system
-        sim = make_simulation_healthsystemdisabled()
+        sim = make_simulation_health_system_disabled()
         # make initial population
         sim.make_initial_population(n=100)
         # force all individuals to have condition
@@ -406,7 +406,7 @@ def test_if_no_health_system_and_hundred_death():
 
     for event in event_list:
         # Disable the healthcare system
-        sim = make_simulation_healthsystemdisabled()
+        sim = make_simulation_health_system_disabled()
         # make initial population
         sim.make_initial_population(n=100)
 
@@ -430,11 +430,34 @@ def test_if_medication_prevents_all_death():
     Make medication 100% effective to check that no one dies
     """
 
+    event_list = ['ever_stroke', 'ever_heart_attack']
+
+    for event in event_list:
+        # Create the sim with an enabled healthcare system
+        sim = make_simulation_health_system_functional()
+        # make initial population
+        sim.make_initial_population(n=100)
+
+        p = sim.modules['CardioMetabolicDisorders'].parameters
+
+        # increase annual probability of onset
+        p[f'{event}_onset']["baseline_annual_probability"] = 10000
+
+        # set probability of treatment working to 1
+        p[f'{event}_hsi']["pr_treatment_works"] = 1
+
+        # simulate for one year
+        sim.simulate(end_date=Date(year=2011, month=1, day=1))
+
+        # check that no one died of event
+        df = sim.population.props
+        assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{event}').any()
+
     # Make a list of all conditions and events to run this test for
     condition_list = ['diabetes', 'chronic_kidney_disease', 'chronic_ischemic_hd']
     for condition in condition_list:
-        sim = make_simulation_healthsystem_functional()
-        sim.make_initial_population(n=1000)
+        sim = make_simulation_health_system_functional()
+        sim.make_initial_population(n=100)
 
         # force all individuals to have condition and be on medication
         sim.population.props.loc[
@@ -453,3 +476,7 @@ def test_if_medication_prevents_all_death():
         df = sim.population.props
 
         assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{condition}').any()
+
+
+
+
