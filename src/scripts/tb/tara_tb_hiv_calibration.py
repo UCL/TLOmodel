@@ -23,7 +23,8 @@ tlo batch-job tlo_q1_demo-123 --tasks
 Download result files for a completed job:
 tlo batch-download tlo_q1_demo-123
 
-
+This currently will run multiple simulations of the baseline scenario
+with all parameters set to default
 
 """
 
@@ -33,6 +34,7 @@ from pathlib import Path
 
 import pandas as pd
 import numpy as np
+from random import randint
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -58,7 +60,8 @@ class TestScenario(BaseScenario):
 
     def __init__(self):
         super().__init__()
-        self.seed = 5
+        self.seed = randint(0, 5000)
+
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2030, 1, 1)
         self.pop_size = 35000

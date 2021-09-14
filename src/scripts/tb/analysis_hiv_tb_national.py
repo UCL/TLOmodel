@@ -5,6 +5,7 @@ save outputs for plotting (file: output_plots_tb.py)
 
 import datetime
 import pickle
+import random
 from pathlib import Path
 
 import pandas as pd
@@ -36,8 +37,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 3000
+end_date = Date(2021, 1, 1)
+popsize = 10000
 
 # set up the log config
 log_config = {
@@ -53,7 +54,8 @@ log_config = {
 
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
-sim = Simulation(start_date=start_date, seed=200, log_config=log_config)
+seed = random.randint(0, 5000)
+sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
              enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),

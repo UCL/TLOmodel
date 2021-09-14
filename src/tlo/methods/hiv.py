@@ -626,7 +626,7 @@ class Hiv(Module):
         df = sim.population.props
 
         # 1) Schedule the Main HIV Regular Polling Event
-        sim.schedule_event(HivRegularPollingEvent(self), sim.date)
+        sim.schedule_event(HivRegularPollingEvent(self), sim.date + DateOffset(days=365.25))
 
         # 2) Schedule the Logging Event
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=0))
@@ -876,7 +876,7 @@ class Hiv(Module):
                 #  mother has existing infection, mother ON ART and VL suppressed at time of delivery
                 child_infected = self.rng.random_sample() < params["prob_mtct_treated"]
             else:
-                # mother was infected prior to prgenancy but is not on VL suppressed at time of delivery
+                # mother was infected prior to pregnancy but is not on VL suppressed at time of delivery
                 child_infected = self.rng.random_sample() < params["prob_mtct_untreated"]
 
         elif mother_infected_during_pregnancy:
@@ -1901,7 +1901,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
                 ]
         )
-        denom_adults_15plus = len(df[df.is_alive & ~df.hv_inf & (df.age_years >= 15)])
+        denom_adults_15plus = len(df[df.is_alive & (df.age_years >= 15)])
         adult_inc_15plus = n_new_infections_adult_15plus / denom_adults_15plus
 
         n_new_infections_adult_1549 = len(
@@ -1911,7 +1911,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
                 ]
         )
-        denom_adults_1549 = len(df[df.is_alive & ~df.hv_inf & df.age_years.between(15, 49)])
+        denom_adults_1549 = len(df[df.is_alive & df.age_years.between(15, 49)])
         adult_inc_1549 = n_new_infections_adult_1549 / denom_adults_1549
 
         # incidence in the period since the last log for 0-14 year-olds (denominator is approximate)
@@ -1922,7 +1922,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
                 ]
         )
-        denom_children = len(df[df.is_alive & ~df.hv_inf & (df.age_years < 15)])
+        denom_children = len(df[df.is_alive & (df.age_years < 15)])
         child_inc = (n_new_infections_children / denom_children)
 
         # hiv prev among female sex workers (aged 15-49)

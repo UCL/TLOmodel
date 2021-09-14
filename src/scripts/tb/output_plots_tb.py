@@ -38,7 +38,7 @@ def make_plot(
     plt.title(title_str)
     plt.legend(['Model', 'Data'])
     plt.gca().set_ylim(bottom=0)
-    # plt.savefig(outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
+    plt.savefig(outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
     # plt.show()
 
 
@@ -305,6 +305,9 @@ plt.show()
 make_plot(
     title_str="HIV Incidence in Children (0-14) (per 100 pyar)",
     model=prev_and_inc_over_time['hiv_child_inc'] * 100,
+    data_mid=data_hiv_aidsinfo['incidence0_14_per100py'],
+    data_low=data_hiv_aidsinfo['incidence0_14_per100py_lower'],
+    data_high=data_hiv_aidsinfo['incidence0_14_per100py_upper']
 )
 plt.show()
 
@@ -396,7 +399,7 @@ plt.show()
 
 # HIV/TB deaths only
 make_plot(
-    title_str='TB/HIV mortality rate per 100,000 population',
+    title_str='TB_HIV mortality rate per 100,000 population',
     model=tot_tb_hiv_deaths,
     data_mid=data_tb_who['mortality_tb_hiv_per_100k'],
     data_low=data_tb_who['mortality_tb_hiv_per_100k_low'],
@@ -499,6 +502,8 @@ make_plot(
     model=cov_over_time["prop_men_circ"]
 )
 plt.show()
+
+
 # ---------------------------------------------------------------------- #
 
 # PrEP among FSW
@@ -507,6 +512,8 @@ make_plot(
     model=cov_over_time["prop_fsw_on_prep"]
 )
 plt.show()
+
+
 # ---------------------------------------------------------------------- #
 
 # Behaviour Change
