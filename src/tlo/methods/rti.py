@@ -1665,7 +1665,6 @@ class RTI(Module):
         # Return the found column for the injury code
         return injury_column, injury_code
 
-
     def rti_find_all_columns_of_treated_injuries(self, person_id, codes):
         """
         This function searches for treated injuries (supplied by the parameter codes) for a specific person, finding and
@@ -1675,22 +1674,16 @@ class RTI(Module):
         :param codes: The treated injury codes
         :return: All columns and codes of the successfully treated injuries
         """
-        df = self.sim.population.props
-        # Isolate the relevant injury information
-        df = df.loc[[person_id], RTI.INJURY_COLUMNS]
+        df = self.sim.population.props.loc[[person_id], RTI.INJURY_COLUMNS]
         # create empty variables to return the columns and codes of the treated injuries
         columns_to_return = []
         codes_to_return = []
-        injury_numbers = range(1, 9)
         # iterate over the codes in the list codes and also the injury columns
         for code in codes:
-            for injury_number in injury_numbers:
+            for col in df.columns:
                 # Search a sub-dataframe that is non-empty if the code is present is in that column and empty if not
-                found = len(df[df[f"rt_injury_{injury_number}"] == code])
-                if found > 0:
-                    # if the code is in the column, store the column and code in columns_to_return and codes_to_return
-                    # respectively
-                    columns_to_return.append(f"rt_injury_{injury_number}")
+                if df[col].str.contains(code).any():
+                    columns_to_return.append(col)
                     codes_to_return.append(code)
 
         return columns_to_return, codes_to_return
