@@ -1788,7 +1788,7 @@ class RTI(Module):
             'daly_wt_burns_less_than_20_percent_body_area_with_treatment']
         self.daly_wt_burns_less_than_20_percent_body_area_without_treatment = p[
             'daly_wt_burns_less_than_20_percent_body_area_with_treatment']
-        #===============================================================================================================
+        # ==============================================================================================================
         # Check that those sent here have been involved in a road traffic accident
         assert sum(df.loc[injured_index, 'rt_road_traffic_inc']) == len(injured_index)
         # Check everyone here has at least one injury to be given a daly weight to
@@ -2148,7 +2148,7 @@ class RTI(Module):
         df.loc[person_id, 'rt_debugging_DALY_wt'] = np.round(df.loc[person_id, 'rt_debugging_DALY_wt'], 4)
         # Check that the person's true disability burden is positive
         assert df.loc[person_id, 'rt_debugging_DALY_wt'] >= 0, (person_injuries.values,
-                                                                             df.loc[person_id, 'rt_debugging_DALY_wt'])
+                                                                df.loc[person_id, 'rt_debugging_DALY_wt'])
         # catch rounding point errors where the disability weights should be zero but aren't
         if df.loc[person_id, 'rt_disability'] < 0:
             df.loc[person_id, 'rt_disability'] = df.loc[person_id, 'rt_debugging_DALY_wt']
@@ -2502,8 +2502,9 @@ class RTI(Module):
             self.spine_prob_spinal_cord_lesion_below_neck_level *
             self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5
         )
-        prob_676 = self.spine_prob_spinal_cord_lesion * self.spine_prob_spinal_cord_lesion_neck_level * \
-                   self.spine_prob_spinal_cord_lesion_neck_level_AIS6
+        prob_676 = \
+            self.spine_prob_spinal_cord_lesion * self.spine_prob_spinal_cord_lesion_neck_level * \
+            self.spine_prob_spinal_cord_lesion_neck_level_AIS6
 
         injuries = {
             # injuries to the head
