@@ -2533,7 +2533,7 @@ class RTI(Module):
             # Calculate the squares of the AIS scores for the three most severely injured body regions
             z['sqrsev'] = z['Severity max'] ** 2
             # From the squared AIS scores, calculate the ISS score
-            ISSscore = sum(z['sqrsev'])
+            ISSscore = int(sum(z['sqrsev']))
             if ISSscore < 15:
                 severity_category.append('mild')
             else:
@@ -2566,7 +2566,7 @@ class RTI(Module):
         # iterate of the injur AIS scores and calculate the associated MAIS score
         if number > 0:
             for item in injdf['Injury AIS'].tolist():
-                MAIS.append(max(item) + 1)
+                MAIS.append(int(max(item) + 1))
         # Store the predicted Military AIS scores
         injdf['MAIS_M'] = MAIS
         # store the number of injuries this person received
@@ -3012,9 +3012,10 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         description = description.set_index(selected_for_rti_inj.index)
         # copy over values from the assign injury dataframe to self.sim.population.props
 
-        df.loc[selected_for_rti_inj.index, 'rt_ISS_score'] = description.loc[selected_for_rti_inj.index, 'ISS']
-        df.loc[selected_for_rti_inj.index, 'rt_MAIS_military_score'] = description.loc[selected_for_rti_inj.index,
-                                                                                       'MAIS_M']
+        df.loc[selected_for_rti_inj.index, 'rt_ISS_score'] = \
+            description.loc[selected_for_rti_inj.index, 'ISS'].astype(int)
+        df.loc[selected_for_rti_inj.index, 'rt_MAIS_military_score'] = \
+            description.loc[selected_for_rti_inj.index, 'MAIS_M'].astype(int)
         # ======================== Apply the injuries to the population dataframe ======================================
         # Find the corresponding column names
         injury_columns = pd.Index(RTI.INJURY_COLUMNS)
