@@ -1,6 +1,7 @@
 """
 General utility functions for TLO analysis
 """
+import json
 import os
 import pickle
 from ast import literal_eval
@@ -55,6 +56,14 @@ def _parse_line(line):
     return info
 
 
+def split_big_log_file_into_smaller_log_files(dict_of_keys, line, json_data):
+    """parses logged output from a big log file and create smaller log files"""
+    # open/create a logfile
+    log_info_file = open(Path('./outputs') / f"{dict_of_keys[json_data['uuid']]}.log", mode="a")
+    log_info_file.write(line)  # append log info.
+    log_info_file.close()
+
+
 def parse_log_file(filepath, level: int = logging.INFO):
     """Parses logged output from a TLO run and returns Pandas dataframes.
 
@@ -86,6 +95,7 @@ def parse_log_file(filepath, level: int = logging.INFO):
     :param level: logging level to be parsed for structured logging
     :return: dictionary of parsed log data
     """
+    dict_of_keys = {}
     oldstyle_loglines = []
     log_data = LogData()
     with open(filepath) as log_file:
@@ -93,9 +103,20 @@ def parse_log_file(filepath, level: int = logging.INFO):
             # only parse json entities
             if line.startswith('{'):
                 log_data.parse_log_line(line, level)
+                log_data_json = json.loads(line)
+                if 'type' in log_data_json.keys():
+                    if log_data_json['uuid'] in dict_of_keys.keys():
+                        pass
+                    else:
+                        dict_of_keys[log_data_json["uuid"]] = log_data_json["module"]
+                        split_big_log_file_into_smaller_log_files(dict_of_keys, line, log_data_json)
+
+                else:
+                    if log_data_json['uuid'] in dict_of_keys.keys():
+                        split_big_log_file_into_smaller_log_files(dict_of_keys, line, log_data_json)
+
             else:
                 oldstyle_loglines.append(line)
-
     # convert dictionaries to dataframes
     output_logs = {**log_data.get_log_dataframes(), **_oldstyle_parse_output(oldstyle_loglines)}
     return output_logs
@@ -487,6 +508,7 @@ def format_gbd(gbd_df: pd.DataFrame):
 def create_pickles_locally(scenario_output_dir):
     """For a run from the Batch system that has not resulted in the creation of the pickles, reconstruct the pickles
      locally."""
+
     def turn_log_into_pickles(logfile):
         print(f"Opening {logfile}")
         outputs = parse_log_file(logfile)
