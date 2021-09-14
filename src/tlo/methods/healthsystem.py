@@ -12,7 +12,7 @@ import heapq as hp
 from collections import Counter, defaultdict
 from itertools import repeat
 from pathlib import Path
-from typing import Iterable, NamedTuple, Optional, Sequence, Tuple
+from typing import Iterable, List, NamedTuple, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -128,18 +128,41 @@ class HealthSystem(Module):
 
     def __init__(
         self,
-        name=None,
-        resourcefilepath=None,
-        service_availability=None,  # must be a list of treatment_ids to allow
-        mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
-        ignore_cons_constraints=False,  # mode for consumable constraints (if ignored, all consumables available)
-        ignore_priority=False,  # do not use the priority information in HSI event to schedule
-        capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
-        disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
-        disable_and_reject_all=False,  # disable healthsystem and no HSI runs
-        store_hsi_events_that_have_run=False,  # convenience function for debugging
-        record_hsi_event_details=False,  # Whether to record details of HSI events used
+        name: Optional[str] = None,
+        resourcefilepath: Optional[Path] = None,
+        service_availability: Optional[List[str]] = None,
+        mode_appt_constraints: int = 0,
+        ignore_cons_constraints: bool = False,
+        ignore_priority: bool = False,
+        capabilities_coefficient: Optional[float] = None,
+        disable: bool = False,
+        disable_and_reject_all: bool = False,
+        store_hsi_events_that_have_run: bool = False,
+        record_hsi_event_details: bool = False,
     ):
+        """
+        :param name: Name to use for module, defaults to module class name if ``None``.
+        :param resourcefilepath: Path to directory containing resource files.
+        :param service_availability: A list of treatment IDs to allow.
+        :param mode_appt_constraints: Integer code in ``{0, 1, 2}`` determining mode of
+            constraints with regards to officer numbers and time - 0: no constraints,
+            all HSI events run with no squeeze factor, 1: elastic constraints, all HSI
+            events run with squeeze factor, 2: hard constraints, only HSI events with
+            no squeeze factor run.
+        :param ignore_cons_constraints: Mode for consumable constraints (if ``True``,
+            all consumables available).
+        :param ignore_priority: If ``True`` do not use the priority information in HSI
+            event to schedule
+        :param capabilities_coefficient: Multiplier for the capabilities of health
+            officers, if ``None`` set to ratio of initial population to estimated 2010
+            population.
+        :param disable: If ``True``, disables the health system (no constraints and no
+            logging) and every HSI event runs.
+        :param disable_and_reject_all: If ``True``, disable health system and no HSI
+            events run
+        :param store_hsi_events_that_have_run: Convenience flag for debugging.
+        :param record_hsi_event_details: Whether to record details of HSI events used.
+        """
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
@@ -149,14 +172,13 @@ class HealthSystem(Module):
 
         assert type(disable) is bool
         assert type(disable_and_reject_all) is bool
-        assert not (disable and disable_and_reject_all), 'Cannot have both disable and disable_and_reject_all selected'
+        assert not (disable and disable_and_reject_all), (
+            'Cannot have both disable and disable_and_reject_all selected'
+        )
         self.disable = disable
         self.disable_and_reject_all = disable_and_reject_all
 
-        assert mode_appt_constraints in [0, 1, 2]  # Mode of constraints
-        # 0: no constraints -- all HSI Events run with no squeeze factor
-        # 1: elastic -- all HSI Events run - with squeeze factor
-        # 2: hard -- only HSI events with no squeeze factor run
+        assert mode_appt_constraints in {0, 1, 2}
 
         self.mode_appt_constraints = mode_appt_constraints
 
@@ -167,8 +189,9 @@ class HealthSystem(Module):
         self.service_availability = ['*']  # provided so that there is a default even before simulation is run
 
         # Check that the capabilities coefficient is correct
-        assert capabilities_coefficient >= 0
-        assert isinstance(capabilities_coefficient, float)
+        if capabilities_coefficient is not None:
+            assert capabilities_coefficient >= 0
+            assert isinstance(capabilities_coefficient, float)
         self.capabilities_coefficient = capabilities_coefficient
 
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
@@ -354,6 +377,15 @@ class HealthSystem(Module):
         self.bed_days.pre_initialise_population()
 
     def initialise_population(self, population):
+        # If capabilities coefficient was not explicitly specified, use ratio of initial
+        # population size to estimated actual population in 2010
+        if self.capabilities_coefficient is None:
+            demography_module = self.sim.modules['Demography']
+            self.capabilities_coefficient = (
+                demography_module.compute_initial_population_scaling_factor(
+                    population.initial_size
+                )
+            )
         df = population.props
         # Assign hs_dist_to_facility'
         # (For now, let this be a random number, but in future it may be properly informed based on \
@@ -754,27 +786,25 @@ class HealthSystem(Module):
         assert abs(capabilities_ex['Total_Minutes_Per_Day'].sum() - capabilities['Total_Minutes_Per_Day'].sum()) < 1e-7
         assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
 
-        # Apply the capabilities coefficient
-        capabilities_ex['Total_Minutes_Per_Day'] *= self.capabilities_coefficient
-
         # Updates the capabilities table with the reformatted version
         self.parameters['Daily_Capabilities'] = capabilities_ex
 
-    def get_capabilities_today(self):
+    def get_capabilities_today(self) -> pd.Series:
         """
         Get the capabilities of the health system today.
-        returns: DataFrame giving minutes available for each officer type in each facility type
+        returns: Series giving minutes available for each officer type in each facility type
 
         Functions can go in here in the future that could expand the time available,
         simulating increasing efficiency (the concept of a productivitiy ratio raised
         by Martin Chalkley).
 
-        For now this method does nothing.
-
-        Note that the scaling by `capabilities_coefficient` is applied on the initial
-        processing of the `Daily_Capabilities` data in `reformat_daily_capabilities`.
+        For now this method only scales by the static `capabilities_coefficient` scale
+        factor.
         """
-        return self.parameters['Daily_Capabilities']
+        return (
+            self.parameters['Daily_Capabilities']['Total_Minutes_Per_Day']
+            * self.capabilities_coefficient
+        )
 
     def get_blank_appt_footprint(self):
         """
@@ -905,7 +935,7 @@ class HealthSystem(Module):
         :param total_footprint: Counter, containing the total minutes required from
             each health officer in each health facility when non-zero, (using the
             standard index)
-        :param current_capabilities: Dataframe giving the amount of time available from
+        :param current_capabilities: Series giving the amount of time available for
             each health officer in each health facility (using the standard index)
 
         :return: squeeze_factors: an array of the squeeze factors for each HSI event
@@ -914,10 +944,9 @@ class HealthSystem(Module):
 
         # 1) Compute the load factors for each officer type at each facility that is
         # called-upon in this list of HSIs
-        total_available = current_capabilities['Total_Minutes_Per_Day']
         load_factor = {}
         for officer, call in total_footprint.items():
-            availability = total_available.get(officer)
+            availability = current_capabilities.get(officer)
             if availability is None:
                 load_factor[officer] = 99.99
             elif availability == 0:
@@ -1165,7 +1194,8 @@ class HealthSystem(Module):
 
         # Combine the current_capabiliites and total_footprint per-officer totals
         total_calls_per_officer = pd.Series(total_footprint, dtype='float64')
-        comparison = current_capabilities[['Facility_ID', 'Total_Minutes_Per_Day']].copy()
+        comparison = self.parameters['Daily_Capabilities'][['Facility_ID']].copy()
+        comparison['Total_Minutes_Per_Day'] = current_capabilities
         comparison['Minutes_Used'] = total_calls_per_officer
         comparison['Minutes_Used'].fillna(0, inplace=True)
         total_calls = total_calls_per_officer.sum()

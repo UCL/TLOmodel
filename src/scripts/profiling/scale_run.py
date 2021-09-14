@@ -204,16 +204,6 @@ sim = Simulation(
     show_progress_bar=args.show_progress_bar
 )
 
-# If capabilities coefficient not explicitly specified, use ratio of initial population
-# to estimated actual population at simulation start date
-capabilities_coefficient = (
-    demography.compute_initial_population_scaling_factor(
-        resourcefilepath, args.initial_population
-    )
-    if args.capabilities_coefficient is None else
-    args.capabilities_coefficient
-)
-
 # Register the appropriate modules
 sim.register(
     # Standard modules:
@@ -231,7 +221,7 @@ sim.register(
         resourcefilepath=resourcefilepath,
         disable=args.disable_health_system,
         mode_appt_constraints=args.mode_appt_constraints,
-        capabilities_coefficient=capabilities_coefficient,
+        capabilities_coefficient=args.capabilities_coefficient,
         record_hsi_event_details=args.record_hsi_event_details
     ),
     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
