@@ -1014,27 +1014,12 @@ class Models:
         # Models:
         self.incidence_equations_by_pathogen = None
         self.prob_symptoms = None
-        self.prob_diarrhoea_is_persistent_if_prolonged = None
         self.risk_of_death_diarrhoea = None
 
         # Prepare linear models / lookups
         self.write_incidence_equations_by_pathogen()
         self.write_prob_symptoms()
-        self.write_lm_prob_diarrhoea_is_persistent_if_prolonged()
 
-    def write_lm_prob_diarrhoea_is_persistent_if_prolonged(self):
-        """Create the linear model for the probability that the diarrhoea is 'persistent', given that it is prolonged"""
-        self.prob_diarrhoea_is_persistent_if_prolonged = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            self.p['prob_prolonged_to_persistent_diarr'],
-            Predictor('age_years')
-                .when(1, self.p['rr_bec_persistent_age12to23'])
-                .when('.between(2, 4)', self.p['rr_diarr_death_age24to59mo']),
-            Predictor('un_HAZ_category').when('HAZ<-3', self.p['rr_bec_persistent_stunted']),
-            Predictor('un_clinical_acute_malnutrition').when('SAM', self.p['rr_bec_persistent_SAM']),
-            Predictor().when('(hv_inf == True) & (hv_art == "not")', self.p['rr_bec_persistent_HIV']),
-            Predictor('nb_breastfeeding_status').when('exclusive', 1.0)  # todo: ?!?!
-        )
 
     def write_prob_symptoms(self):
         """Make a dict containing the probability of symptoms onset given acquisition of diarrhoea caused
@@ -1061,37 +1046,70 @@ class Models:
             ]
         )
 
-    def get_duration(self, pathogen, person_id):
-        """For new incident case of diarrhoea, determine its duration, based on pathogen and characteristics of person"""
-        # todo the logic here could be simplified
+    def get_prob_persisent_if_prolonged(self,
+                                        age_years,
+                                        un_HAZ_category,
+                                        un_clinical_acute_malnutrition,
+                                        untreated_hiv,
+                                        nb_breastfeeding_status
+                                        ):
+        # Baseline prob:
+        prob_persistent_if_prolonged = self.p['prob_prolonged_to_persistent_diarr']
 
-        df_slice = self.module.sim.population.props.loc[[person_id]]
+        if age_years == 1:
+            prob_persistent_if_prolonged *= self.p['rr_bec_persistent_age12to23']
+        elif age_years < 5:
+            prob_persistent_if_prolonged *= self.p['rr_diarr_death_age24to59mo']
 
-        min_dur_acute = self.p['min_dur_acute']
-        min_dur_prolonged = self.p['min_dur_prolonged']
-        min_dur_persistent = self.p['min_dur_persistent']
-        max_dur_persistent = self.p['max_dur_persistent']
+        if un_HAZ_category == 'HAZ<-3':
+            prob_persistent_if_prolonged *= self.p['rr_bec_persistent_stunted']
 
-        assert min_dur_acute < min_dur_prolonged < min_dur_persistent < max_dur_persistent
+        if un_clinical_acute_malnutrition == 'SAM':
+            prob_persistent_if_prolonged *= self.p['rr_bec_persistent_SAM']
 
-        # --------------------------------------------------------------------------------------------
-        # # Get mean duration
-        # # todo: these are not being used!!!
-        # mean_duration_in_days_of_diarrhoea = p[f"mean_days_duration_with_{pathogen}"]
+        if untreated_hiv:
+            prob_persistent_if_prolonged *= self.p['rr_bec_persistent_HIV']
 
-        if self.p[f"prob_prolonged_diarr_{pathogen}"] > self.rng.rand():
+        if nb_breastfeeding_status == 'exclusive':
+            prob_persistent_if_prolonged *= 1.0  # todo!?!?!
 
-            if self.prob_diarrhoea_is_persistent_if_prolonged.predict(df_slice, self.rng):
-                # Persistent dirarrhoa
-                duration = self.rng.randint(min_dur_persistent, max_dur_persistent)
+        return prob_persistent_if_prolonged
+
+
+    def get_duration(self,
+                     pathogen,
+                     age_years,
+                     un_HAZ_category,
+                     un_clinical_acute_malnutrition,
+                     untreated_hiv,
+                     nb_breastfeeding_status
+                     ):
+        """For new incident case of diarrhoea, determine its duration.
+        1) Determine if this will be acute or prolonged; and if prolonged, will it be persistent.
+        2) Randomly select a duration from with a range defined for each classification."""
+
+        # Get probability of this episode being "prolonged"
+        prob_prolonged = self.p[f"prob_prolonged_diarr_{pathogen}"]
+
+        # Get probability of this episode being "persistent" if it is "prolonged"
+        prob_persistent_if_prolonged = self.get_prob_persisent_if_prolonged(
+            age_years,
+            un_HAZ_category,
+            un_clinical_acute_malnutrition,
+            untreated_hiv,
+            nb_breastfeeding_status
+        )
+
+        if self.rng.rand() < prob_prolonged:
+            if self.rng.rand() < prob_persistent_if_prolonged:
+                # "Persistent" dirarrhoa
+                return self.rng.randint(self.p['min_dur_persistent'], self.p['max_dur_persistent'])
             else:
                 # "Prolonged" but not "persistnet"
-                duration = self.rng.randint(min_dur_prolonged, min_dur_persistent)
+                return self.rng.randint(self.p['min_dur_prolonged'], self.p['min_dur_persistent'])
         else:
             # If not prolonged, the episode is acute: duration of 4 days
-            duration = self.rng.randint(min_dur_acute, min_dur_prolonged)
-
-        return duration
+            return self.rng.randint(self.p['min_dur_acute'], self.p['min_dur_prolonged'])
 
     def get_type(self, pathogen):
         """For new incident case of dirarrhoea, determine the type - 'watery' or 'bloody'"""
@@ -1296,6 +1314,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         rng = m.rng
 
         person = df.loc[person_id]
+        untreated_hiv = person['hv_inf'] and (person['hv_art'] != "on_VL_suppressed")
 
         # The event will not run if the person is not currently alive
         if not person.is_alive:
@@ -1307,7 +1326,13 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
 
         # Determine the duration of the dirarrhoea, the date of outcome and the end of episode (the date when this
         # episode ends. It is the last possible data that any HSI could affect this episode.)
-        duration_in_days = m.models.get_duration(pathogen=self.pathogen, person_id=person_id)
+        duration_in_days = m.models.get_duration(pathogen=self.pathogen,
+                                                 age_years=person.age_years,
+                                                 un_HAZ_category=person.un_HAZ_category,
+                                                 un_clinical_acute_malnutrition=person.un_clinical_acute_malnutrition,
+                                                 untreated_hiv=untreated_hiv,
+                                                 nb_breastfeeding_status=person.nb_breastfeeding_status
+                                                 )
         date_of_outcome = self.sim.date + DateOffset(days=duration_in_days)
 
         # Collected updated properties of this person
@@ -1332,7 +1357,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             dehydration=props_new['gi_dehydration'],
             age_exact_years=person['age_exact_years'],
             ri_current_infection_status=person['ri_current_infection_status'],
-            untreated_hiv=person['hv_inf'] and person['hv_art'] != "on_VL_suppressed",
+            untreated_hiv=untreated_hiv,
             un_clinical_acute_malnutrition=person['un_clinical_acute_malnutrition']
         ):
             # person will die (unless treated)
