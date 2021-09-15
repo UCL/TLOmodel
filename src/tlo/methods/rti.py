@@ -1408,6 +1408,8 @@ class RTI(Module):
             'this person has asked for a minor surgery but does not need it'
         # check that for each injury due to be treated with a minor surgery, the injury hasn't previously been treated
         for code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
+
+
             column, found_code = self.rti_find_injury_column(person_id, [code])
             index_in_rt_recovery_dates = int(column[-1]) - 1
             assert pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates])
@@ -4521,14 +4523,13 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
             is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=self,
                 cons_req_as_footprint=consumables_burns,
-                to_log=True)
-            logger.debug(is_cons_available)
-            cond = is_cons_available
-            if all(value == 1 for value in cond.values()):
+                to_log=True)['Item_Code']
+            if all(value for value in is_cons_available.values()):
                 logger.debug('This facility has burn treatment available which has been used for person %d.',
                              person_id)
                 logger.debug(f'This facility treated their {burncounts} burns')
                 df.at[person_id, 'rt_med_int'] = True
+                person = df.loc[person_id]
                 non_empty_injuries = person_injuries[person_injuries != "none"]
                 injury_columns = non_empty_injuries.columns
                 columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, codes)[0])
@@ -4541,29 +4542,17 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 swapping_codes = RTI.SWAPPING_CODES[:]
                 swapping_codes = [code for code in swapping_codes if code in codes]
                 # remove codes that will be treated elsewhere
-                for code in df.loc[person_id, 'rt_injuries_for_major_surgery']:
-                    if code in swapping_codes:
-                        swapping_codes.remove(code)
-                for code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
-                    if code in swapping_codes:
-                        swapping_codes.remove(code)
-                for code in df.loc[person_id, 'rt_injuries_to_cast']:
-                    if code in swapping_codes:
-                        swapping_codes.remove(code)
-                for code in df.loc[person_id, 'rt_injuries_to_heal_with_time']:
-                    if code in swapping_codes:
-                        swapping_codes.remove(code)
-                for code in df.loc[person_id, 'rt_injuries_for_open_fracture_treatment']:
-                    if code in swapping_codes:
-                        swapping_codes.remove(code)
+                treatment_plan = person['rt_injuries_for_major_surgery'] + person['rt_injuries_for_minor_surgery'] + \
+                                 person['rt_injuries_for_minor_surgery'] + person['rt_injuries_to_cast'] + \
+                                 person['rt_injuries_to_heal_with_time'] + \
+                                 person['rt_injuries_for_open_fracture_treatment']
+                swapping_codes = [code for code in swapping_codes if code not in treatment_plan]
                 relevant_codes = np.intersect1d(non_empty_injuries.values, swapping_codes)
-                for code in relevant_codes:
-                    if code in swapping_codes:
-                        road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, relevant_codes)
-                        break
-                for col in columns:
-                    assert df.loc[person_id, 'rt_date_to_remove_daly'][col] > self.sim.date, \
-                        'recovery date assigned to past'
+                if len(relevant_codes) > 0:
+                    road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, relevant_codes)
+
+                assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date, \
+                    'recovery date assigned to past'
             else:
                 logger.debug('This facility has no treatment for burns available.')
 
