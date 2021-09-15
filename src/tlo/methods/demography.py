@@ -501,11 +501,7 @@ class Demography(Module):
 
         :returns: Ratio of ``initial_population`` to 2010 baseline population.
         """
-        baseline_total_population = pd.read_csv(
-            Path(self.resourcefilepath)
-            / 'demography'
-            / 'ResourceFile_Population_2010.csv'
-        )['Count'].sum()
+        baseline_total_population = self.parameters['pop_2010']['Count'].sum()
         return initial_population / baseline_total_population
 
 
