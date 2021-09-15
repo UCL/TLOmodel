@@ -568,10 +568,8 @@ class Diarrhoea(Module):
         # Store the symptoms that this module will use:
         self.symptoms = {
             'diarrhoea',
-            'bloody_stool',
             'fever',
             'vomiting',
-            'dehydration'  # <-- NB. This is non-severe dehydration todo; remove??
         }
 
     def read_parameters(self, data_folder):
@@ -694,15 +692,12 @@ class Diarrhoea(Module):
         dehyrdration.
         """
         df = self.sim.population.props
-        who_has_symptoms = self.sim.modules['SymptomManager'].who_has
 
-        total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
-
-        total_daly_values.loc[who_has_symptoms('diarrhoea')] = self.daly_wts['mild_diarrhoea']
-        total_daly_values.loc[who_has_symptoms(['diarrhoea', 'dehydration'])] = self.daly_wts['moderate_diarrhoea']
-        total_daly_values.loc[
-            df.is_alive & (df.gi_dehydration == 'severe')
-            ] = self.daly_wts['severe_diarrhoea']
+        total_daly_values = df.loc[df.is_alive, 'gi_dehydration'].map({
+            'none': self.daly_wts['mild_diarrhoea'],
+            'some': self.daly_wts['moderate_diarrhoea'],
+            'severe': self.daly_wts['severe_diarrhoea']
+        }).astype(float).fillna(0.0)
 
         # Split out by pathogen that causes the diarrhoea
         dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index,
@@ -732,7 +727,7 @@ class Diarrhoea(Module):
                 'Item_Code': _item
             }
 
-        #todo-- which codes!?!?!?!
+        #todo-- Some of these codes seem to be not used.
         ors_code = get_code(package='ORS')
         severe_diarrhoea_code = get_code(package='Treatment of severe diarrhea')
         zinc_under_6m_code = get_code(package='Zinc for Children 0-6 months')
@@ -1048,10 +1043,8 @@ class Models:
         def make_symptom_probs(patho):
             return {
                 'diarrhoea': 1.0,
-                'bloody_stool': 1 - self.p[f'proportion_AWD_in_{patho}'],
                 'fever': self.p[f'prob_fever_by_{patho}'],
                 'vomiting': self.p[f'prob_vomiting_by_{patho}'],
-                'dehydration': self.p[f'prob_dehydration_by_{patho}'],
             }
 
         self.prob_symptoms = dict()
@@ -1068,8 +1061,8 @@ class Models:
             ]
         )
 
-    def get_duration_of_new_episode(self, pathogen, person_id):
-        """Determine the duration of an episode of diarrhoea, based on pathogen and characteristics of person"""
+    def get_duration(self, pathogen, person_id):
+        """For new incident case of diarrhoea, determine its duration, based on pathogen and characteristics of person"""
         # todo the logic here could be simplified
 
         df_slice = self.module.sim.population.props.loc[[person_id]]
@@ -1099,6 +1092,20 @@ class Models:
             duration = self.rng.randint(min_dur_acute, min_dur_prolonged)
 
         return duration
+
+    def get_type(self, pathogen):
+        """For new incident case of dirarrhoea, determine the type - 'watery' or 'bloody'"""
+        return 'watery' if self.rng.rand() < self.p[f'proportion_AWD_in_{pathogen}'] else 'bloody'
+
+    def get_dehydration(self, pathogen):
+        """For new incident case of diarrhoea, determine the degree of dehydration - 'none', 'some' or 'severe'"""
+        if self.rng.rand() < self.p[f'prob_dehydration_by_{pathogen}']:
+            if self.rng.rand() < self.p['probability_of_severe_dehydration_if_some_dehydration']:
+                return 'severe'
+            else:
+                return 'some'
+        else:
+            return 'none'
 
     def will_die(self,
                  pathogen,
@@ -1300,43 +1307,22 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
 
         # Determine the duration of the dirarrhoea, the date of outcome and the end of episode (the date when this
         # episode ends. It is the last possible data that any HSI could affect this episode.)
-        duration_in_days = m.models.get_duration_of_new_episode(pathogen=self.pathogen, person_id=person_id)
+        duration_in_days = m.models.get_duration(pathogen=self.pathogen, person_id=person_id)
         date_of_outcome = self.sim.date + DateOffset(days=duration_in_days)
 
         # Collected updated properties of this person
         props_new = {
             'gi_has_diarrhoea': True,
             'gi_pathogen': self.pathogen,
-            'gi_type': 'watery',
-            'gi_dehydration': 'none',
+            'gi_type': m.models.get_type(self.pathogen),
+            'gi_dehydration': m.models.get_dehydration(self.pathogen),
             'gi_duration_longer_than_13days': duration_in_days >= 13,
             'gi_date_of_onset': self.sim.date,
-            'gi_scheduled_date_recovery': pd.NaT,
-            'gi_scheduled_date_death': pd.NaT,
-            'gi_treatment_date': pd.NaT,
             'gi_date_end_of_last_episode': date_of_outcome + DateOffset(days=p['days_between_treatment_and_cure']),
+            'gi_scheduled_date_recovery': pd.NaT,   # <-- determined below
+            'gi_scheduled_date_death': pd.NaT,      # <-- determined below
+            'gi_treatment_date': pd.NaT,            # <-- pd.NaT until treatment is provided.
         }
-
-        # Determine symptoms for this episode
-        # todo -- this logic could be improved
-        for symptom, prob in m.models.prob_symptoms[self.pathogen].items():
-            if rng.rand() < prob:
-                self.sim.modules['SymptomManager'].change_symptom(
-                    person_id=person_id,
-                    symptom_string=symptom,
-                    add_or_remove='+',
-                    disease_module=self.module
-                )
-                if symptom == 'bloody_stool':
-                    props_new['gi_type'] = 'bloody'
-                elif symptom == 'dehydration':
-                    props_new['gi_dehydration'] = 'some'
-
-        # Determine the progress to severe dehydration for this episode
-        if props_new['gi_dehydration'] == 'some':
-            if rng.rand() < p['probability_of_severe_dehydration_if_some_dehydration']:
-                # Change the status:
-                props_new['gi_dehydration'] = 'severe'
 
         # Determine outcome (recovery or death) of this episode
         if m.models.will_die(
@@ -1359,6 +1345,16 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
 
         # Update the entry in the population dataframe
         df.loc[person_id, props_new.keys()] = props_new.values()
+
+        # Apply other symptoms for this episode (these do not affect the course of disease)
+        for symptom, prob in m.models.prob_symptoms[self.pathogen].items():
+            if rng.rand() < prob:
+                self.sim.modules['SymptomManager'].change_symptom(
+                    person_id=person_id,
+                    symptom_string=symptom,
+                    add_or_remove='+',
+                    disease_module=self.module
+                )
 
         # Log this incident case:
         logger.info(
