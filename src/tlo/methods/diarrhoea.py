@@ -379,8 +379,8 @@ class Diarrhoea(Module):
             Parameter(Types.REAL,
                       'relative risk of diarrhoea death if the duration episode is 13 days or longer'
                       ),
-        'rr_diarr_death_dehydration':
-            Parameter(Types.REAL, 'relative risk of diarrhoea death for cases with (some) dehyadration'
+        'rr_diarr_death_severe_dehydration':
+            Parameter(Types.REAL, 'relative risk of diarrhoea death for cases with severe dehyadration'
                       ),
         'rr_diarr_death_untreated_HIV':
             Parameter(Types.REAL, 'relative risk of diarrhoea death for untreated HIV'
@@ -1101,9 +1101,10 @@ class Models:
         return duration
 
     def will_die(self,
-                 gi_pathogen,
-                 gi_type,
-                 gi_duration_longer_than_13days,
+                 pathogen,
+                 type,
+                 duration_longer_than_13days,
+                 dehydration,
                  age_exact_years,
                  ri_current_infection_status,
                  untreated_hiv,
@@ -1112,19 +1113,22 @@ class Models:
         """Determine whether an episode of diarrhorea will result in death"""
 
         # Baseline risks:
-        if gi_type == 'watery':
+        if type == 'watery':
             risk = self.p['case_fatality_rate_AWD'] * self.p['adjustment_factor_on_cfr']
         else:
             risk = self.p['case_fatality_rate_dysentery'] * self.p['adjustment_factor_on_cfr']
 
         # Factors that adjust risk up or down:
-        if gi_pathogen == 'cryptosporidium':
+        if pathogen == 'cryptosporidium':
             risk *= self.p['rr_diarr_death_cryptosporidium']
-        elif gi_pathogen == 'shigella':
+        elif pathogen == 'shigella':
             self.p['rr_diarr_death_shigella']
 
-        if gi_duration_longer_than_13days:
+        if duration_longer_than_13days:
             risk *= self.p['rr_diarr_death_if_duration_longer_than_13_days']
+
+        if dehydration == 'severe':
+            risk *= self.p['rr_diarr_death_severe_dehydration']
 
         if (1.0 <= age_exact_years < 2.0):
             risk *= self.p['rr_diarr_death_age12to23mo']
@@ -1141,6 +1145,8 @@ class Models:
 
         if un_clinical_acute_malnutrition == 'SAM':
             risk *= self.p['rr_diarrhoea_SAM']
+
+
 
         # Return bool following coin-flip to determine outcome
         return self.rng.rand() < risk
@@ -1334,9 +1340,10 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
 
         # Determine outcome (recovery or death) of this episode
         if m.models.will_die(
-            gi_pathogen=props_new['gi_pathogen'],
-            gi_type=props_new['gi_type'],
-            gi_duration_longer_than_13days=props_new['gi_duration_longer_than_13days'],
+            pathogen=props_new['gi_pathogen'],
+            type=props_new['gi_type'],
+            duration_longer_than_13days=props_new['gi_duration_longer_than_13days'],
+            dehydration=props_new['gi_dehydration'],
             age_exact_years=person['age_exact_years'],
             ri_current_infection_status=person['ri_current_infection_status'],
             untreated_hiv=person['hv_inf'] and person['hv_art'] != "on_VL_suppressed",
