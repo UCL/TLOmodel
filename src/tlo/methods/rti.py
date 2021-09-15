@@ -4112,7 +4112,6 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         idx_for_untreated_injuries = np.where(assigned_injury_recovery_time)[0]
         untreated_injury_cols = [RTI.INJURY_COLUMNS[idx] for idx in idx_for_untreated_injuries]
         person_injuries = df.loc[[person_id], untreated_injury_cols]
-
         # check if they have a fracture that requires a cast
         codes = ['712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
         _, fracturecastcounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
@@ -4148,31 +4147,33 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             hsi_event=self,
             cons_req_as_footprint=consumables_fractures,
             to_log=True)
+        # if the consumables are available then the appointment can run
         if is_cons_available:
             logger.debug(f"Fracture casts available for person %d's {fracturecastcounts + slingcounts} fractures",
                          person_id)
+            # update the property rt_med_int to indicate they are recieving treatment
             df.at[person_id, 'rt_med_int'] = True
             # Find the persons injuries
             non_empty_injuries = person_injuries[person_injuries != "none"]
             non_empty_injuries = non_empty_injuries.dropna(axis=1)
             # Find the injury codes treated by fracture casts/slings
             codes = ['712a', '712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
-            # Some TLO codes have daly weights associated with treated and non-treated injuries, swap-able codes are
-            # listed below
+            # Some TLO codes have daly weights associated with treated and non-treated injuries, copy the list of
+            # swapping codes
             swapping_codes = RTI.SWAPPING_CODES[:]
+            # find the relevant swapping codes for this treatment
             swapping_codes = [code for code in swapping_codes if code in codes]
             # remove codes that will be treated elsewhere
             injuries_treated_elsewhere = \
                 p['rt_injuries_for_minor_surgery'] + p['rt_injuries_for_major_surgery'] + \
                 p['rt_injuries_to_heal_with_time'] + p['rt_injuries_for_open_fracture_treatment']
-            for injury in injuries_treated_elsewhere:
-                if injury in swapping_codes:
-                    swapping_codes.remove(injury)
-
+            # remove codes that are being treated elsewhere
+            swapping_codes = [code for code in swapping_codes if code not in injuries_treated_elsewhere]
+            # find any potential codes this person has that are due to be swapped and then swap with
+            # rti_swap_injury_daly_upon_treatment
             relevant_codes = np.intersect1d(non_empty_injuries.values, swapping_codes)
             if len(relevant_codes) > 0:
                 road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, relevant_codes)
-
             # Find the injuries that have been treated and then schedule a recovery date
             columns, codes = \
                 road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, df.loc[person_id,
@@ -4248,15 +4249,14 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         # check if they have a fracture that requires a cast
         codes = ['813bo', '813co', '813do', '813eo']
         _, open_fracture_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
-
+        assert open_fracture_counts > 0
         consumables_fractures = {'Intervention_Package_Code': dict(), 'Item_Code': dict()}
         # Check the person sent here is alive, been through the generic first appointment,
         # been through the RTI med intervention
         assert df.loc[person_id, 'rt_diagnosed'], 'person sent here has not been diagnosed'
         assert df.loc[person_id, 'rt_med_int'], 'person sent here has not been treated'
-        # Check that the person sent here has an injury treated by this module
-        assert open_fracture_counts > 0
-        # If they have a fracture that needs a cast, ask for plaster of paris
+
+        # If they have an open fracture, ask for consumables to treat fracture
         if open_fracture_counts > 0:
             # Ask for ceftriaxon antibiotics as first choice.
             first_choice_antibiotic_code = pd.unique(
@@ -4298,47 +4298,26 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         if is_cons_available:
             logger.debug(f"Fracture casts available for person %d's {open_fracture_counts} open fractures",
                          person_id)
-            df.at[person_id, 'rt_med_int'] = True
+            person = df.loc[person_id]
+            # update the dataframe to show this person is recieving treatment
+            person['rt_med_int'] = True
             # Find the persons injuries to be treated
-            non_empty_injuries = df.loc[person_id, 'rt_injuries_for_open_fracture_treatment']
-
-            # Find the injury codes treated by fracture casts/slings
-            swapping_codes = RTI.SWAPPING_CODES[:]
-            # remove codes that will be treated elsewhere
-            for code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
-                if code in swapping_codes:
-                    swapping_codes.remove(code)
-            for code in df.loc[person_id, 'rt_injuries_for_major_surgery']:
-                if code in swapping_codes:
-                    swapping_codes.remove(code)
-            for code in df.loc[person_id, 'rt_injuries_to_cast']:
-                if code in swapping_codes:
-                    swapping_codes.remove(code)
-            for code in df.loc[person_id, 'rt_injuries_to_heal_with_time']:
-                if code in swapping_codes:
-                    swapping_codes.remove(code)
-            relevant_codes = np.intersect1d(non_empty_injuries, swapping_codes)
-            treated_code = self.module.rng.choice(relevant_codes)
+            non_empty_injuries = person['rt_injuries_for_open_fracture_treatment']
+            columns, code = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(
+                person_id, non_empty_injuries
+            )
             # Some TLO codes have daly weights associated with treated and non-treated injuries
-            if treated_code == '813bo':
-                road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, treated_code)
-            # Find the injury that has been treated and then schedule a recovery date
-            columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, [treated_code])
+            if code[0] == '813bo':
+                road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, code[0])
+            # Schedule a recovery date for the injury
             # estimated 6-9 months recovery times for open fractures
             df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] = self.sim.date + DateOffset(months=7)
             assert df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1] > self.sim.date
-            non_empty_injuries = person_injuries[person_injuries != "none"]
-
-            injury_columns = non_empty_injuries.columns
-
-            columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, [treated_code])[0])
-
-            assert not pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]), \
+            assert not pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][int(columns[0][-1]) - 1]), \
                 'no recovery date given for this injury'
-            assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
             # remove code from open fracture list
-            if treated_code in df.loc[person_id, 'rt_injuries_for_open_fracture_treatment']:
-                df.loc[person_id, 'rt_injuries_for_open_fracture_treatment'].remove(treated_code)
+            if code[0] in df.loc[person_id, 'rt_injuries_for_open_fracture_treatment']:
+                df.loc[person_id, 'rt_injuries_for_open_fracture_treatment'].remove(code[0])
         else:
             logger.debug(f"Person %d's has {open_fracture_counts} open fractures without treatment",
                          person_id)
