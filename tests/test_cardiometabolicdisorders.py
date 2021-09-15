@@ -393,14 +393,24 @@ def test_if_no_health_system_and_hundred_death():
 
         # set annual probability of death from condition to 1
         p[f'{condition}_death']["baseline_annual_probability"] = 10000
+        p[f'{condition}_death']["rr_20_24"] = 1
+        p[f'{condition}_death']["rr_25_29"] = 1
+        p[f'{condition}_death']["rr_30_34"] = 1
+        p[f'{condition}_death']["rr_35_39"] = 1
+        p[f'{condition}_death']["rr_40_44"] = 1
+        p[f'{condition}_death']["rr_45_49"] = 1
+        p[f'{condition}_death']["rr_50_54"] = 1
+        p[f'{condition}_death']["rr_55_59"] = 1
+        p[f'{condition}_onset']["baseline_annual_probability"] = 0
+        p[f'{condition}_hsi']["pr_treatment_works"] = 0
 
         # simulate for one year
         sim.simulate(end_date=Date(year=2011, month=1, day=1))
 
-        # check that no one died of condition
+        # check that everyone one died
         df = sim.population.props
 
-        assert not (df.loc[~df.date_of_birth.isna() & df[f'nc_{condition}'] & (df.age_years >= 20), 'is_alive']).all()
+        assert not (df.loc[~df.date_of_birth.isna() & df[f'nc_{condition}'] & (df.age_years >= 20), 'is_alive']).any()
 
     event_list = ['ever_stroke', 'ever_heart_attack']
 
@@ -422,7 +432,7 @@ def test_if_no_health_system_and_hundred_death():
         # check that no one died of condition
         df = sim.population.props
 
-        assert not (df.loc[~df.date_of_birth.isna() & df[f'nc_{event}'] & (df.age_years >= 20), 'is_alive']).all()
+        assert not (df.loc[~df.date_of_birth.isna() & df[f'nc_{event}'] & (df.age_years >= 20), 'is_alive']).any()
 
 
 def test_if_medication_prevents_all_death():
