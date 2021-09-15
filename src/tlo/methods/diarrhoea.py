@@ -17,12 +17,12 @@ Outstanding Issues
 * Treatment algorithm (https://docs.google.com/drawings/d/14PsRAXwJU0T_8k0MWky43fJ_ukYPktm8U3mnc2eyW2M/edit)
 * Footprint for in-patient HSI (2 bed days?)
 * Effect of breastfeeding on duration in `write_lm_prob_diarrhoea_is_persistent_if_prolonged`
-* nb_low_birth_weight_status is never used: remove?
+ - yes
 
 * Needs a big tidy-up:
     * large numbers of unused parameters
-    * unused symptom of 'dehydration'
     * unused consumables codes
+    * nb_low_birth_weight_status is never used: remove -yes
 
 * Calibration
     * Incidence and deaths OK but does not seem reconciled with CFR in GBD
@@ -566,15 +566,8 @@ class Diarrhoea(Module):
         self.consumables_used_in_hsi = dict()
         self.do_checks = do_checks
 
-        # Store the symptoms that this module will use:
-        self.symptoms = {
-            'diarrhoea',
-            'fever',
-            'vomiting',
-        }
-
     def read_parameters(self, data_folder):
-        """ Setup parameters values used by the module """
+        """ Setup parameters values used by the module"""
         p = self.parameters
 
         # Read parameters from the resourcefile
@@ -590,14 +583,6 @@ class Diarrhoea(Module):
             assert isinstance(p[param_name],
                               param_type.python_type), f'Parameter "{param_name}" is not read in correctly from the ' \
                                                        f'resourcefile.'
-
-        # Declare symptoms that this module will cause and which are not included in the generic symptoms:
-        generic_symptoms = self.sim.modules['SymptomManager'].generic_symptoms
-        for symptom_name in self.symptoms:
-            if symptom_name not in generic_symptoms:
-                self.sim.modules['SymptomManager'].register_symptom(
-                    Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
-                )
 
     def initialise_population(self, population):
         """
@@ -842,6 +827,7 @@ class Diarrhoea(Module):
             self.cancel_death_date(person_id)
 
             # Curing event occurs one sooner if the person does receive Zinc
+            # todo - make sooner than recovery
             self.sim.schedule_event(
                 DiarrhoeaCureEvent(self, person_id),
                 self.sim.date + DateOffset(
@@ -1020,40 +1006,63 @@ class Models:
         self.p = module.parameters
         self.rng = module.rng
 
-        # Models:
-        self.incidence_equations_by_pathogen = None
-        self.prob_symptoms = None
-        self.risk_of_death_diarrhoea = None
-
-        # Prepare linear models / lookups
-        self.write_incidence_equations_by_pathogen()
-        self.write_prob_symptoms()
+        # Write model for incidence of each pathogen
+        self.linear_model_for_incidence_by_pathogen = self.write_linear_model_for_incidence_of_pathogens()
 
 
-    def write_prob_symptoms(self):
-        """Make a dict containing the probability of symptoms onset given acquisition of diarrhoea caused
-        # by a particular pathogen"""
+    def write_linear_model_for_incidence_of_pathogens(self):
+        """Make a dict to hold the equations that govern the probability that a person acquires diarrhoea that is
+        caused (primarily) by a pathogen"""
 
-        def make_symptom_probs(patho):
-            return {
-                'diarrhoea': 1.0,
-                'fever': self.p[f'prob_fever_by_{patho}'],
-                'vomiting': self.p[f'prob_vomiting_by_{patho}'],
-            }
+        def make_scaled_linear_model(patho):
+            """Makes the unscaled linear model with default intercept of 1. Calculates the mean incidents rate for
+            0-year-olds and then creates a new linear model with adjusted intercept so incidents in 0-year-olds
+            matches the specified value in the model when averaged across the population
+            """
 
-        self.prob_symptoms = dict()
+            def make_linear_model(patho, intercept=1.0):
+                base_inc_rate = f'base_inc_rate_diarrhoea_by_{patho}'
+                return LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    intercept,
+                    Predictor('age_years',
+                              conditions_are_mutually_exclusive=True,
+                              conditions_are_exhaustive=True,
+                              ) .when(0, self.p[base_inc_rate][0])
+                                .when(1, self.p[base_inc_rate][1])
+                                .when('.between(2, 4)', self.p[base_inc_rate][2])
+                                .when('> 4', 0.0),
+                    Predictor('li_no_access_handwashing').when(False, self.p['rr_diarrhoea_HHhandwashing']),
+                    Predictor('li_no_clean_drinking_water').when(False, self.p['rr_diarrhoea_clean_water']),
+                    Predictor('li_unimproved_sanitation').when(False, self.p['rr_diarrhoea_improved_sanitation']),
+                    Predictor().when('(hv_inf == True) & (hv_art == "not")', self.p['rr_diarrhoea_untreated_HIV']),
+                    Predictor('un_clinical_acute_malnutrition').when('SAM', self.p['rr_diarrhoea_SAM']),
+                    Predictor().when('(nb_breastfeeding_status == "none") & (age_exact_years < 0.5)',
+                                     self.p['rr_diarrhoea_exclusive_vs_no_breastfeeding_<6mo']),
+                    Predictor().when('(nb_breastfeeding_status == "non_exclusive") & (age_exact_years < 0.5)',
+                                     self.p['rr_diarrhoea_exclusive_vs_partial_breastfeeding_<6mo']),
+                    Predictor().when('(nb_breastfeeding_status == "none") & (0.5 < age_exact_years < 1)',
+                                     self.p['rr_diarrhoea_any_vs_no_breastfeeding_6_11mo']),
+
+                )
+
+            df = self.module.sim.population.props
+            unscaled_lm = make_linear_model(patho)
+            target_mean = self.p[f'base_inc_rate_diarrhoea_by_{patho}'][0]
+            actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()
+            scaled_intercept = 1.0 * (target_mean / actual_mean) \
+                if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
+            scaled_lm = make_linear_model(patho, intercept=scaled_intercept)
+            # check by applying the model to mean incidence of 0-year-olds
+            if (df.is_alive & (df.age_years == 0)).sum() > 0:
+                assert (target_mean - scaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
+            return scaled_lm
+
+        _incidence_equations_by_pathogen = dict()
         for pathogen in self.module.pathogens:
-            self.prob_symptoms[pathogen] = make_symptom_probs(pathogen)
+            _incidence_equations_by_pathogen[pathogen] = make_scaled_linear_model(pathogen)
 
-        # Check that each pathogen has a risk of developing each symptom
-        assert set(self.module.pathogens) == set(self.prob_symptoms.keys())
-
-        assert all(
-            [
-                set(self.module.symptoms) == set(self.prob_symptoms[pathogen].keys())
-                for pathogen in self.prob_symptoms.keys()
-            ]
-        )
+        return _incidence_equations_by_pathogen
 
     def get_prob_persisent_if_prolonged(self,
                                         age_years,
@@ -1083,7 +1092,6 @@ class Models:
             prob_persistent_if_prolonged *= 1.0  # todo!?!?!
 
         return prob_persistent_if_prolonged
-
 
     def get_duration(self,
                      pathogen,
@@ -1185,57 +1193,19 @@ class Models:
         # Return bool following coin-flip to determine outcome
         return self.rng.rand() < risk
 
-    def write_incidence_equations_by_pathogen(self):
-        """Make a dict to hold the equations that govern the probability that a person acquires diarrhoea that is
-        caused (primarily) by a pathogen"""
+    def get_symptoms(self, pathogen):
+        """For new incident case of diarrhoea, determine the symptoms that onset."""
 
-        def make_scaled_linear_model(patho):
-            """Makes the unscaled linear model with default intercept of 1. Calculates the mean incidents rate for
-            0-year-olds and then creates a new linear model with adjusted intercept so incidents in 0-year-olds
-            matches the specified value in the model when averaged across the population
-            """
-
-            def make_linear_model(patho, intercept=1.0):
-                base_inc_rate = f'base_inc_rate_diarrhoea_by_{patho}'
-                return LinearModel(
-                    LinearModelType.MULTIPLICATIVE,
-                    intercept,
-                    Predictor('age_years',
-                              conditions_are_mutually_exclusive=True,
-                              conditions_are_exhaustive=True,
-                              ) .when(0, self.p[base_inc_rate][0])
-                                .when(1, self.p[base_inc_rate][1])
-                                .when('.between(2, 4)', self.p[base_inc_rate][2])
-                                .when('> 4', 0.0),
-                    Predictor('li_no_access_handwashing').when(False, self.p['rr_diarrhoea_HHhandwashing']),
-                    Predictor('li_no_clean_drinking_water').when(False, self.p['rr_diarrhoea_clean_water']),
-                    Predictor('li_unimproved_sanitation').when(False, self.p['rr_diarrhoea_improved_sanitation']),
-                    Predictor().when('(hv_inf == True) & (hv_art == "not")', self.p['rr_diarrhoea_untreated_HIV']),
-                    Predictor('un_clinical_acute_malnutrition').when('SAM', self.p['rr_diarrhoea_SAM']),
-                    Predictor().when('(nb_breastfeeding_status == "none") & (age_exact_years < 0.5)',
-                                     self.p['rr_diarrhoea_exclusive_vs_no_breastfeeding_<6mo']),
-                    Predictor().when('(nb_breastfeeding_status == "non_exclusive") & (age_exact_years < 0.5)',
-                                     self.p['rr_diarrhoea_exclusive_vs_partial_breastfeeding_<6mo']),
-                    Predictor().when('(nb_breastfeeding_status == "none") & (0.5 < age_exact_years < 1)',
-                                     self.p['rr_diarrhoea_any_vs_no_breastfeeding_6_11mo']),
-
-                )
-
-            df = self.module.sim.population.props
-            unscaled_lm = make_linear_model(patho)
-            target_mean = self.p[f'base_inc_rate_diarrhoea_by_{patho}'][0]
-            actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()
-            scaled_intercept = 1.0 * (target_mean / actual_mean) \
-                if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
-            scaled_lm = make_linear_model(patho, intercept=scaled_intercept)
-            # check by applying the model to mean incidence of 0-year-olds
-            if (df.is_alive & (df.age_years == 0)).sum() > 0:
-                assert (target_mean - scaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
-            return scaled_lm
-
-        self.incidence_equations_by_pathogen = dict()
-        for pathogen in self.module.pathogens:
-            self.incidence_equations_by_pathogen[pathogen] = make_scaled_linear_model(pathogen)
+        probs = {
+            'diarrhoea': 1.0,
+            'fever': self.p[f'prob_fever_by_{pathogen}'],
+            'vomiting': self.p[f'prob_vomiting_by_{pathogen}'],
+        }
+        symptoms_that_onset = list()
+        for symptom, prob in probs.items():
+            if self.rng.rand() < prob:
+                symptoms_that_onset.append(symptom)
+        return symptoms_that_onset
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1283,7 +1253,7 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Compute the incidence rate for each person getting diarrhoea
         inc_of_acquiring_pathogen = pd.DataFrame(index=df.loc[mask_could_get_new_diarrhoea_episode].index)
         for pathogen in m.pathogens:
-            inc_of_acquiring_pathogen[pathogen] = models.incidence_equations_by_pathogen[pathogen] \
+            inc_of_acquiring_pathogen[pathogen] = models.linear_model_for_incidence_by_pathogen[pathogen] \
                 .predict(df.loc[mask_could_get_new_diarrhoea_episode])
 
         # Convert the incidence rates into risk of an event occurring before the next polling event
@@ -1380,15 +1350,14 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         # Update the entry in the population dataframe
         df.loc[person_id, props_new.keys()] = props_new.values()
 
-        # Apply other symptoms for this episode (these do not affect the course of disease)
-        for symptom, prob in m.models.prob_symptoms[self.pathogen].items():
-            if rng.rand() < prob:
-                self.sim.modules['SymptomManager'].change_symptom(
-                    person_id=person_id,
-                    symptom_string=symptom,
-                    add_or_remove='+',
-                    disease_module=self.module
-                )
+        # Apply symptoms for this episode (these do not affect the course of disease)
+        for symptom in m.models.get_symptoms(self.pathogen):
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=person_id,
+                symptom_string=symptom,
+                add_or_remove='+',
+                disease_module=self.module
+            )
 
         # Log this incident case:
         logger.info(
