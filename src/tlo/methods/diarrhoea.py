@@ -85,7 +85,7 @@ class Diarrhoea(Module):
 
     # Declare Causes of Death and Disability
     CAUSES_OF_DISABILITY = {
-        f'Diarrhoea_{path}': Cause(gbd_causes='Diarrheal diseases', label='Childhood Diarrhoea')
+        'Diarrhoea': Cause(gbd_causes='Diarrheal diseases', label='Childhood Diarrhoea')
         for path in pathogens
     }
 
@@ -562,6 +562,7 @@ class Diarrhoea(Module):
         self.resourcefilepath = resourcefilepath
         self.models = None
         self.daly_wts = dict()
+        self.unreported_dalys = list()
         self.consumables_used_in_hsi = dict()
         self.do_checks = do_checks
 
@@ -642,9 +643,9 @@ class Diarrhoea(Module):
         # Get DALY weights
         if 'HealthBurden' in self.sim.modules.keys():
             get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
-            self.daly_wts['mild_diarrhoea'] = get_daly_weight(sequlae_code=32)
-            self.daly_wts['moderate_diarrhoea'] = get_daly_weight(sequlae_code=35)
-            self.daly_wts['severe_diarrhoea'] = get_daly_weight(sequlae_code=34)
+            self.daly_wts['dehydration=none'] = get_daly_weight(sequlae_code=32)
+            self.daly_wts['dehydration=some'] = get_daly_weight(sequlae_code=35)
+            self.daly_wts['dehydration=severe'] = get_daly_weight(sequlae_code=34)
 
         # Look-up and store the consumables that are required for each HSI
         self.look_up_consumables()
@@ -687,26 +688,26 @@ class Diarrhoea(Module):
 
     def report_daly_values(self):
         """
-        This returns DALYS values relating to the current status of persons.
-        Assumes that the current DALY loading is linked to currently having the symptom of diarrhoea and the status of
-        dehyrdration.
+        This returns person-time live with disability values to the HealthBurden module.
+        At the end of each episode, a record is made in a list, `self.unreported_dalys`, of the form
+        (person_id, duration_in_days_of_episode * average_daly_weight). This record is used to create the pd.Series
+        that is returned (index: person_id for all those alive, value: the average disability weight during the
+        preceding month). The list is then cleared.
         """
         df = self.sim.population.props
 
-        total_daly_values = df.loc[df.is_alive, 'gi_dehydration'].map({
-            'none': self.daly_wts['mild_diarrhoea'],
-            'some': self.daly_wts['moderate_diarrhoea'],
-            'severe': self.daly_wts['severe_diarrhoea']
-        }).astype(float).fillna(0.0)
+        # count number of days last month (knowing that this function is called on the first day of the month).
+        days_last_month = (
+            (self.sim.date - pd.DateOffset(days=1)) - (self.sim.date - pd.DateOffset(days=1) - pd.DateOffset(months=1))
+        ).days
 
-        # Split out by pathogen that causes the diarrhoea
-        dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index,
-                                                     'gi_pathogen'],
-                                              dtype='float')
-        daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0)
+        # Get the person_id and the values from the list, and clear the list.
+        idx, values = zip(*self.unreported_dalys)
+        self.unreported_dalys = list()  # <-- clear list
 
-        # return with columns labelled to match the declare CAUSES_OF_DISABILITY
-        return daly_values_by_pathogen.add_prefix('Diarrhoea_')
+        # Create the pd.Series to reurn
+        yld = pd.Series(values, idx) / days_last_month  # <-- to create average of the disability over the last month
+        return yld.reindex(index=df.loc[df.is_alive].index, fill_value=0.0)
 
     def look_up_consumables(self):
         """Look up and store the consumables used in each of the HSI."""
@@ -864,6 +865,7 @@ class Diarrhoea(Module):
     def end_episode(self, person_id, outcome):
         """Helper function that enacts the end of the episode of diarrhoea (either by natural recovery, death or  cure)
         * Logs that the episode has ended
+        * Stores the total time-lived-with-disability during the episode
         * Enacts the death (if the outcome=='death'); Otherwise, removes symptoms and resets properties
         """
         assert outcome in ['recovery', 'cure', 'death']
@@ -871,6 +873,7 @@ class Diarrhoea(Module):
         df = self.sim.population.props
         person = df.loc[person_id]
 
+        # Log that the episode has ended
         logger.info(
             key='end_of_case',
             data={
@@ -881,6 +884,12 @@ class Diarrhoea(Module):
             description='information when a case is ended by recovery, cure or death.'
         )
 
+        # Store the totals of days * daly_weight incurred during the episode
+        days_duration = (self.sim.date - person.gi_date_of_onset).days
+        daly_wt = self.daly_wts[f'dehydration={person.gi_dehydration}']
+        self.unreported_dalys.append((person_id, daly_wt * days_duration))
+
+        # Enacts the death (if the outcome=='death'); Otherwise, removes symptoms and resets properties
         if outcome == 'death':
             # If outcome is death, implement the death immidiately:
             self.sim.modules['Demography'].do_death(
