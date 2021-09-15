@@ -1062,13 +1062,12 @@ class CareOfWomenDuringPregnancy(Module):
                 all_available = hsi_event.get_all_consumables(
                     pkg_codes=[pkg_code_iptp])
 
-                if self.rng.random_sample() < params['prob_intervention_delivered_iptp']:
-                    if all_available:
+                if self.rng.random_sample() < params['prob_intervention_delivered_iptp'] and all_available:
 
-                        # IPTP is a single dose drug given at a number of time points during pregnancy. Therefore the
-                        # number of doses received during this pregnancy are stored as an integer
-                        df.at[person_id, 'ac_doses_of_iptp_received'] += 1
-                        logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'iptp'})
+                    # IPTP is a single dose drug given at a number of time points during pregnancy. Therefore the
+                    # number of doses received during this pregnancy are stored as an integer
+                    df.at[person_id, 'ac_doses_of_iptp_received'] += 1
+                    logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'iptp'})
 
     def gdm_screening(self, hsi_event):
         """This function contains intervention of gestational diabetes screening during ANC. Screening is only conducted
@@ -1448,7 +1447,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # Start iron and folic acid treatment
         if outcome_of_request_for_consumables['Item_Code'][item_code_iron_folic_acid]:
-            if self.rng.random_sample() > params['prob_adherent_ifa']:
+            if self.rng.random_sample() < params['prob_adherent_ifa']:
                 df.at[individual_id, 'ac_receiving_iron_folic_acid'] = True
 
             logger.debug(key='msg', data=f'Mother {individual_id} has been started on IFA supplementation after being '
@@ -1612,22 +1611,6 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-
-        # todo: delete if appropriate
-        """# Define the consumable package code
-        pkg_code_eclampsia_and_spe = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
-                            'Intervention_Pkg_Code'])[0]
-
-        all_available = hsi_event.get_all_consumables(
-            pkg_codes=[pkg_code_eclampsia_and_spe])
-
-        # If available deliver the treatment
-        if all_available:
-            df.at[individual_id, 'ac_mag_sulph_treatment'] = True
-            logger.debug(key='msg', data=f'Mother {individual_id} has received magnesium sulphate during her admission '
-                                         f'for severe pre-eclampsia/eclampsia')
-        """
 
         item_code_mag_sulph = pd.unique(
             consumables.loc[consumables['Items'] == 'Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule',

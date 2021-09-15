@@ -10,11 +10,11 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'calibration_run_all_modules.py'  # <-- update this to look at other results
+scenario_filename = 'calibration_with_dummy_contraception.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_dummy_contraception_7kpop'
+graph_location = 'output_graphs_5k_calibration_with_dummy_contraception-2021-09-14T130117Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -146,7 +146,7 @@ def simple_line_chart(model_rate, target_rate, x_title, y_title, title, file_nam
     plt.ylabel(y_title)
     plt.title(title)
     plt.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -158,7 +158,7 @@ def simple_bar_chart(model_rates, x_title, y_title, title, file_name):
     plt.xlabel(x_title)
     plt.ylabel(y_title)
     plt.title(title)
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -170,7 +170,7 @@ def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_rate,
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(title)
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -194,7 +194,7 @@ ax.fill_between(sim_years, lq_dp, uq_dp, color='b', alpha=.1)
 plt.xlabel('Year')
 plt.ylabel('Pregnancies (mean)')
 plt.title('Mean number of pregnancies')
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
 plt.show()
 
 
@@ -255,7 +255,7 @@ ax.fill_between(sim_years, lq_bi, uq_bi, color='b', alpha=.1)
 plt.xlabel('Year')
 plt.ylabel('Births (mean)')
 plt.title('Mean number of Births per Year')
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/births.png')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/births.png')
 plt.show()
 
 # todo: some testing looking at live births vs total births...
@@ -374,7 +374,7 @@ plt.xlabel('Year')
 plt.ylabel('% total births')
 plt.title('Proportion of women attending ANC1, AN4, ANC8 ')
 plt.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_coverage.png')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_coverage.png')
 plt.show()
 
 anc_count_df = anc_count_df.drop([0])
@@ -411,7 +411,7 @@ ax.bar(labels, anc_count_df.loc[1], width, label=1,)
 ax.set_ylabel('% of total yearly visits')
 ax.set_title('Number of ANC visits at birth per year')
 ax.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_total_visits.png')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_total_visits.png')
 plt.show()
 
 
@@ -482,7 +482,7 @@ ax.bar(labels, anc_before_four_months, width, label='<4m')
 ax.set_ylabel('% of ANC1 visits by gestational age')
 ax.set_title('Gestational age at first ANC visit by Year')
 ax.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_ga_first_visit_update.png')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_ga_first_visit_update.png')
 plt.show()
 
 target_rate_eanc4 = list()
@@ -550,7 +550,7 @@ ax.bar(labels, home_birth_rate, width, label='Home Birth')
 ax.set_ylabel('% of Births by Location')
 ax.set_title('Proportion of Total Births by Location of Delivery')
 ax.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sba_delivery_location.png')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sba_delivery_location.png')
 plt.show()
 
 
@@ -623,7 +623,7 @@ plt.xlabel('Year')
 plt.ylabel('Proportion of total births')
 plt.title('Yearly trends for PNC1 attendance')
 plt.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pnc_pnc1.png')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pnc_pnc1.png')
 plt.show()
 
 
@@ -655,7 +655,7 @@ def get_early_late_pnc_split(module, target, file_name):
     ax.set_ylabel('% of PNC 1 visits')
     ax.set_title(f'Proportion of {target} PNC1 Visits Occuring pre/post 48hrs Postnatal')
     ax.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -851,7 +851,7 @@ def get_anaemia_graphs(df, timing):
     plt.ylabel(f'Prevalence at {timing}')
     plt.title(f'Yearly trends for prevalence of anaemia by severity at {timing}')
     plt.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anaemia_by_severity_{timing}.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anaemia_by_severity_{timing}.png')
     plt.show()
 
 
@@ -1249,7 +1249,7 @@ ax1.pie(sizes, labels=labels, autopct='%1.1f%%',
             shadow=True, startangle=90)
 ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
 plt.title(f'Proportion of total maternal deaths by cause (mean) 2011-2020')
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mat_death_by_cause_total.png')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mat_death_by_cause_total.png')
 plt.show()
 
 
@@ -1352,7 +1352,7 @@ plt.xlabel('Year')
 plt.ylabel('Rate per 1000 births')
 plt.title('Yearly trends for Congenital Birth Anomalies')
 plt.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_rate_of_cong_anom.png')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_rate_of_cong_anom.png')
 plt.show()
 
 
@@ -1412,7 +1412,7 @@ for year, dictionary in zip(sim_years, list_of_proportions_dicts_nb):
             shadow=True, startangle=90)
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     plt.title(f'Proportion of total neonatal deaths by cause in {year} ')
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_death_by_cause_{year}.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_death_by_cause_{year}.png')
     plt.show()
 
 
