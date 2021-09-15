@@ -21,6 +21,7 @@ import shared
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    bladder_cancer,
     cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
@@ -38,6 +39,7 @@ from tlo.methods import (
     hiv,
     labour,
     malaria,
+    measles,
     newborn_outcomes,
     oesophagealcancer,
     other_adult_cancers,
@@ -64,7 +66,7 @@ parser.add_argument(
     "--initial-population",
     type=int,
     help="Initial population size",
-    default=20000
+    default=50000
 )
 parser.add_argument(
     "--tlo-dir",
@@ -122,9 +124,12 @@ parser.add_argument(
 )
 parser.add_argument(
     "--capabilities-coefficient",
-    help="Capabilities coefficient to use in HealthSystem",
+    help=(
+        "Capabilities coefficient to use in HealthSystem. If not specified the ratio of"
+        " the initial population to the estimated 2010 population will be used."
+    ),
     type=float,
-    default=0.01,
+    default=None,
 )
 parser.add_argument(
     "--mode-appt-constraints",
@@ -241,7 +246,9 @@ sim.register(
     hiv.Hiv(resourcefilepath=resourcefilepath),
     malaria.Malaria(resourcefilepath=resourcefilepath),
     oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath)
+    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
+    bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
+    measles.Measles(resourcefilepath=resourcefilepath),
 )
 
 # Run the simulation
