@@ -732,6 +732,7 @@ class Diarrhoea(Module):
                 'Item_Code': _item
             }
 
+        #todo-- which codes!?!?!?!
         ors_code = get_code(package='ORS')
         severe_diarrhoea_code = get_code(package='Treatment of severe diarrhea')
         zinc_under_6m_code = get_code(package='Zinc for Children 0-6 months')
@@ -815,30 +816,18 @@ class Diarrhoea(Module):
 
         # *** Implement the treatment algorithm ***
         # Check the child's condition
-        type_of_diarrhoea_is_bloody = df.at[person_id, 'gi_type'] == 'bloody'
-        dehydration = df.at[person_id, 'gi_dehydration']
+        type_of_diarrhoea_is_bloody = person.gi_type == 'bloody'
+        dehydration = person.gi_dehydration
 
+        # Compute probability of cure based on the true level of dehydration and type of diarrhoea
         prob_cure = 0.0
-        if (dehydration == 'some'):
-            # If some dehydration...
 
-            # Provide ORS (if available):
-            if hsi_event.get_all_consumables(footprint=self.consumables_used_in_hsi['ORS']):
-                # Set probaility of succesful treatment:
-                prob_cure = self.parameters['ors_effectiveness_on_diarrhoea_mortality']
+        # Provide ORS and incorporate its effect (if available):
+        if hsi_event.get_all_consumables(footprint=self.consumables_used_in_hsi['ORS']):
+            prob_cure = self.parameters['ors_effectiveness_on_diarrhoea_mortality'] if dehydration in ('none', 'some') \
+                else self.parameters['ors_effectiveness_against_severe_dehydration']
 
-        else:
-            # If Severe dehyrdation...
-
-            # Provide Package of medicines for Severe Dehyrdation (if available);
-            if hsi_event.get_all_consumables(footprint=self.consumables_used_in_hsi['Dehydration_Plan_C']):
-                # Set probability of succesful treatment:
-                prob_cure = self.parameters['ors_effectiveness_against_severe_dehydration']
-
-        # todo: Log the use of multivitamins -- in which case?
-        # _ = hsi_event.get_all_consumables(self.consumables_used_in_hsi['Multivitamins_for_Persistent'])
-
-        # If blood_in_stool (i.e., dysentery):
+        # If blood_in_stool (i.e., dysentery), provide antibiotics and incorporate its effect (if available):
         if type_of_diarrhoea_is_bloody:
             # Provide antibiotics (if available) #todo: how should these effects be combined??
             if hsi_event.get_all_consumables(footprint=self.consumables_used_in_hsi['Antibiotics_for_Dysentery']):
@@ -846,18 +835,29 @@ class Diarrhoea(Module):
             else:
                 prob_cure *= (1.0 - self.parameters['antibiotic_effectiveness_for_dysentery'])
 
+        # Determine if Zinc is provided
+        gets_zinc = hsi_event.get_all_consumables(footprint=self.consumables_used_in_hsi[
+            'Zinc_Under6mo' if person.age_exact_years < 0.5 else 'Zinc_Over6mo'])
+
+        # Determine if the treatment is effective
+        if prob_cure > self.rng.rand():
+
+            # If treatment is successful: cancel death and schedule cure event
+            self.cancel_death_date(person_id)
+
+            # Curing event occurs one sooner if the person does receive Zinc
+            self.sim.schedule_event(
+                DiarrhoeaCureEvent(self, person_id),
+                self.sim.date + DateOffset(
+                    days=self.parameters['days_between_treatment_and_cure']
+                         + (-self.parameters['number_of_days_reduced_duration_with_zinc'] if gets_zinc else 0)
+                )
+            )
+
         # -------------------------------------
         # Log that the treatment is provided:
         df.at[person_id, 'gi_treatment_date'] = self.sim.date
 
-        # Determine if the treatment is effective
-        if prob_cure > self.rng.rand():
-            # If treatment is successful: cancel death and schedule cure event
-            self.cancel_death_date(person_id)
-            self.sim.schedule_event(DiarrhoeaCureEvent(self, person_id),
-                                    self.sim.date + DateOffset(
-                                        days=self.parameters['days_between_treatment_and_cure']
-                                    ))
 
     def cancel_death_date(self, person_id):
         """
