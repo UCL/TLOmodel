@@ -204,8 +204,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
 
     # Check for non-zero-level of diarrhoea
     df = sim.population.props
-    assert 0 < df.loc[df.is_alive].gi_has_diarrhoea.sum()
-    assert not pd.isnull(df.loc[df.is_alive, 'gi_date_end_of_last_episode']).all()
+    assert pd.notnull(df.loc[df.is_alive, 'gi_date_end_of_last_episode']).any()
 
     # Check for non-zero level of death
     assert df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
@@ -305,8 +304,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
 
         # Check for non-zero-level of diarrhoea
         df = sim.population.props
-        assert 0 < df.loc[df.is_alive].gi_has_diarrhoea.sum()
-        assert not pd.isnull(df.loc[df.is_alive, 'gi_date_end_of_last_episode']).all()
+        assert pd.notnull(df.loc[df.is_alive, 'gi_date_end_of_last_episode']).any()
 
         # check that there have not been any deaths caused by Diarrhoea
         assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()

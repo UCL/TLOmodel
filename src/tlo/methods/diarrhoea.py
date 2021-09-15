@@ -361,11 +361,9 @@ class Diarrhoea(Module):
         'case_fatality_rate_AWD':
             Parameter(Types.REAL, 'case fatality rate for acute watery diarrhoea cases'
                       ),
-        'case_fatality_rate_dysentery':
-            Parameter(Types.REAL, 'case fatality rate for dysentery cases'
-                      ),
-        'case_fatality_rate_persistent':
-            Parameter(Types.REAL, 'case fatality rate for persistent diarrhoea cases'
+        'rr_diarr_death_bloody':
+            Parameter(Types.REAL, 'relative risk of diarrhoea death (compared to `case_fatality_rate_AWD` if the '
+                                  'diarrhoea is of type "bloody" (i.e. dyssentry).'
                       ),
         'rr_diarr_death_age12to23mo':
             Parameter(Types.REAL,
@@ -550,6 +548,7 @@ class Diarrhoea(Module):
                                                 'including allowing for the possibility of HSI events (pd.NaT if has '
                                                 'never had an episode). This is used to determine when a new episode '
                                                 'can begin and stops successive episodes interfering with one another.'
+                                                'This is notnull when the person has ever had an episode of diarrhoea.'
                                                 ),
         'gi_treatment_date': Property(Types.DATE,
                                       'The actual date on which treatment is first administered for the current episode'
@@ -686,13 +685,18 @@ class Diarrhoea(Module):
             (self.sim.date - pd.DateOffset(days=1)) - (self.sim.date - pd.DateOffset(days=1) - pd.DateOffset(months=1))
         ).days
 
-        # Get the person_id and the values from the list, and clear the list.
-        idx, values = zip(*self.unreported_dalys)
-        self.unreported_dalys = list()  # <-- clear list
+        yld = pd.Series(index=df.loc[df.is_alive].index, data=0.0)
 
-        # Create the pd.Series to reurn
-        yld = pd.Series(values, idx) / days_last_month  # <-- to create average of the disability over the last month
-        return yld.reindex(index=df.loc[df.is_alive].index, fill_value=0.0)
+        if len(self.unreported_dalys) == 0:
+            return yld
+        else:
+            # Get the person_id and the values from the list, and clear the list.
+            idx, values = zip(*self.unreported_dalys)
+            self.unreported_dalys = list()  # <-- clear list
+
+            average_daly_weight_in_last_month = pd.Series(values, idx) / days_last_month
+            return yld.add(average_daly_weight_in_last_month, fill_value=0.0)
+
 
     def look_up_consumables(self):
         """Look up and store the consumables used in each of the HSI."""
@@ -871,9 +875,10 @@ class Diarrhoea(Module):
         )
 
         # Store the totals of days * daly_weight incurred during the episode
-        days_duration = (self.sim.date - person.gi_date_of_onset).days
-        daly_wt = self.daly_wts[f'dehydration={person.gi_dehydration}']
-        self.unreported_dalys.append((person_id, daly_wt * days_duration))
+        if 'HealthBurden' in self.sim.modules.keys():
+            days_duration = (self.sim.date - person.gi_date_of_onset).days
+            daly_wt = self.daly_wts[f'dehydration={person.gi_dehydration}']
+            self.unreported_dalys.append((person_id, daly_wt * days_duration))
 
         # Enacts the death (if the outcome=='death'); Otherwise, removes symptoms and resets properties
         if outcome == 'death':
@@ -1154,13 +1159,13 @@ class Models:
                  ):
         """Determine whether an episode of diarrhorea will result in death"""
 
-        # Baseline risks:
-        if type == 'watery':
-            risk = self.p['case_fatality_rate_AWD'] * self.p['adjustment_factor_on_cfr']
-        else:
-            risk = self.p['case_fatality_rate_dysentery'] * self.p['adjustment_factor_on_cfr']
+        # Baseline risks for diarrhoea of type 'watery', including 'adjustment factor'
+        risk = self.p['case_fatality_rate_AWD'] * self.p['adjustment_factor_on_cfr']
 
         # Factors that adjust risk up or down:
+        if type == 'bloody':
+            risk *= self.p['rr_diarr_death_bloody']
+
         if pathogen == 'cryptosporidium':
             risk *= self.p['rr_diarr_death_cryptosporidium']
         elif pathogen == 'shigella':
@@ -1197,11 +1202,11 @@ class Models:
         """For new incident case of diarrhoea, determine the symptoms that onset."""
 
         probs = {
-            'diarrhoea': 1.0,
             'fever': self.p[f'prob_fever_by_{pathogen}'],
             'vomiting': self.p[f'prob_vomiting_by_{pathogen}'],
         }
-        symptoms_that_onset = list()
+
+        symptoms_that_onset = ['diarrhoea']
         for symptom, prob in probs.items():
             if self.rng.rand() < prob:
                 symptoms_that_onset.append(symptom)
