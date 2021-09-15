@@ -4300,7 +4300,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
                          person_id)
             person = df.loc[person_id]
             # update the dataframe to show this person is recieving treatment
-            person['rt_med_int'] = True
+            df.loc[person_id, 'rt_med_int'] = True
             # Find the persons injuries to be treated
             non_empty_injuries = person['rt_injuries_for_open_fracture_treatment']
             columns, code = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(
@@ -4482,16 +4482,13 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
         _, burncounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        # check the person sent here has an injury treated by this module
+        assert burncounts > 0
         # check the person sent here didn't die due to rti, has been through A and E and had RTI_med_int
         assert df.loc[person_id, 'rt_diagnosed'], 'this person has not been through a and e'
         assert df.loc[person_id, 'rt_med_int'], 'this person has not been treated'
-        # check the person sent here has an injury treated by this module
-        assert burncounts > 0
         if burncounts > 0:
             # Request materials for burn treatment
-            possible_large_TBSA_burn_codes = ['7113', '8113', '4113', '5113']
-            idx2, bigburncounts = \
-                road_traffic_injuries.rti_find_and_count_injuries(person_injuries, possible_large_TBSA_burn_codes)
             item_code_cetrimide_chlorhexidine = pd.unique(
                 consumables.loc[consumables['Items'] ==
                                 'Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST', 'Item_Code'])[0]
@@ -4499,7 +4496,9 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 consumables.loc[
                     consumables['Items'] == "Dressing, paraffin gauze 9.5cm x 9.5cm (square)_packof 36_CMST",
                     'Item_Code'])[0]
-
+            possible_large_TBSA_burn_codes = ['7113', '8113', '4113', '5113']
+            idx2, bigburncounts = \
+                road_traffic_injuries.rti_find_and_count_injuries(person_injuries, possible_large_TBSA_burn_codes)
             random_for_severe_burn = self.module.rng.random_sample(size=1)
             # ======================== If burns severe enough then give IV fluid replacement ===========================
             if (burncounts > 1) or ((len(idx2) > 0) & (random_for_severe_burn > self.prob_mild_burns)):
@@ -5581,24 +5580,27 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
         self.prob_death_TBI_SCI_no_treatment = p['prob_death_TBI_SCI_no_treatment']
         self.prob_death_fractures_no_treatment = p['prob_death_fractures_no_treatment']
         self.prop_death_burns_no_treatment = p['prop_death_burns_no_treatment']
-        # self.scheduled_death = 0
 
     def apply(self, person_id):
         # self.scheduled_death = 0
         df = self.sim.population.props
-        # =========================================== Tests ============================================================
-        non_lethal_injuries = ['241', '291', '322', '323', '461', '442', '1101', '2101', '3101', '4101', '5101', '7101',
-                               '8101', '722', '822a', '822b']
-        severeinjurycodes = ['133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135',
-                             '342', '343', '361', '363', '414', '441', '443', '453a', '453b', '463', '552',
-                             '553', '554', '673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b',
-                             '676', '782a', '782b', '782c', '783', '882', '883', '884', 'P133', 'P133a', 'P133b',
-                             'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135', 'P673', 'P673a', 'P673b', 'P674',
-                             'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676', 'P782a', 'P782b', 'P782c', 'P783',
-                             'P882', 'P883', 'P884']
-        fractureinjurycodes = ['112', '113', '211', '212', '412', '612', '712', '712a', '712b', '712c', '811',
-                               '812', '813', '813a', '813b', '813c']
-        burninjurycodes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
+        # create a dictionary to store the injuries and corresponding probability of death for untreated injuries
+        untreated_dict = {'non-lethal': [['241', '291', '322', '323', '461', '442', '1101', '2101', '3101', '4101',
+                                         '5101', '7101', '8101', '722', '822a', '822b'], 0],
+                          'severe': [['133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135', '342', '343',
+                                      '361', '363', '414', '441', '443', '453a', '453b', '463', '552', '553', '554',
+                                      '673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676',
+                                      '782a', '782b', '782c', '783', '882', '883', '884', 'P133', 'P133a', 'P133b',
+                                      'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135', 'P673', 'P673a', 'P673b',
+                                      'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676', 'P782a', 'P782b',
+                                      'P782c', 'P783', 'P882', 'P883', 'P884', '813bo', '813co', '813do', '813eo'],
+                                     self.prob_death_TBI_SCI_no_treatment],
+                          'fracture': [['112', '113', '211', '212', '412', '612', '712', '712a', '712b', '712c', '811',
+                                        '812', '813', '813a', '813b', '813c'], self.prob_death_fractures_no_treatment],
+                          'burn': [['1114', '2114', '3113', '4113', '5113', '7113', '8113'],
+                                   self.prop_death_burns_no_treatment]
+                          }
+
         persons_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         non_empty_injuries = persons_injuries[persons_injuries != "none"]
         non_empty_injuries = non_empty_injuries.dropna(axis=1)
@@ -5609,17 +5611,9 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
             if pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1]):
                 untreated_injuries.append(df.at[person_id, col])
         for injury in untreated_injuries:
-            if injury in severeinjurycodes:
-                if prob_death < self.prob_death_TBI_SCI_no_treatment:
-                    prob_death = self.prob_death_TBI_SCI_no_treatment
-            elif injury in fractureinjurycodes:
-                if prob_death < self.prob_death_fractures_no_treatment:
-                    prob_death = self.prob_death_fractures_no_treatment
-            elif injury in burninjurycodes:
-                if prob_death < self.prop_death_burns_no_treatment:
-                    prob_death = self.prop_death_burns_no_treatment
-            elif injury in non_lethal_injuries:
-                pass
+            for severity_level in untreated_dict:
+                if injury in untreated_dict[severity_level][0]:
+                    prob_death = untreated_dict[severity_level][1]
         randfordeath = self.module.rng.random_sample(size=1)
         if randfordeath < prob_death:
             df.loc[person_id, 'rt_unavailable_med_death'] = True
