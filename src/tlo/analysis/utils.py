@@ -6,7 +6,7 @@ import os
 import pickle
 from ast import literal_eval
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, TextIO
 
 import numpy as np
 import pandas as pd
@@ -56,15 +56,7 @@ def _parse_line(line):
     return info
 
 
-def split_big_log_file_into_smaller_log_files(dict_of_keys, line, json_data):
-    """parses logged output from a big log file and create smaller log files"""
-    # open/create a logfile
-    log_info_file = open(Path('./outputs') / f"{dict_of_keys[json_data['uuid']]}.log", mode="a")
-    log_info_file.write(line)  # append log info.
-    log_info_file.close()
-
-
-def parse_log_file(filepath, level: int = logging.INFO):
+def _parse_log_file_inner_loop(filepath, level: int = logging.INFO):
     """Parses logged output from a TLO run and returns Pandas dataframes.
 
     The format can be one of two style, old-style TLO logging like ::
@@ -95,7 +87,6 @@ def parse_log_file(filepath, level: int = logging.INFO):
     :param level: logging level to be parsed for structured logging
     :return: dictionary of parsed log data
     """
-    dict_of_keys = {}
     oldstyle_loglines = []
     log_data = LogData()
     with open(filepath) as log_file:
@@ -103,23 +94,51 @@ def parse_log_file(filepath, level: int = logging.INFO):
             # only parse json entities
             if line.startswith('{'):
                 log_data.parse_log_line(line, level)
-                log_data_json = json.loads(line)
-                if 'type' in log_data_json.keys():
-                    if log_data_json['uuid'] in dict_of_keys.keys():
-                        pass
-                    else:
-                        dict_of_keys[log_data_json["uuid"]] = log_data_json["module"]
-                        split_big_log_file_into_smaller_log_files(dict_of_keys, line, log_data_json)
-
-                else:
-                    if log_data_json['uuid'] in dict_of_keys.keys():
-                        split_big_log_file_into_smaller_log_files(dict_of_keys, line, log_data_json)
-
             else:
                 oldstyle_loglines.append(line)
     # convert dictionaries to dataframes
     output_logs = {**log_data.get_log_dataframes(), **_oldstyle_parse_output(oldstyle_loglines)}
     return output_logs
+
+
+def parse_log_file(filepath, level: int = logging.INFO):
+    """Parses logged output from a TLO run and split it into smaller log files.
+
+    The module name becomes the log file name
+    """
+
+    uuid_to_module_name: Dict[str, str] = dict()  # uuid to module name
+
+    module_name_to_filehandle: Dict[str, TextIO] = dict()  # module name to file handle
+    module_specific_log_path = {}
+    module_specific_parsed_log_results = {}
+    with open(filepath) as log_file:
+        for line in log_file:
+            # only parse json entities
+            if line.startswith('{'):
+                log_data_json = json.loads(line)
+                if 'type' in log_data_json.keys():
+                    if log_data_json['uuid'] in uuid_to_module_name.keys():
+                        pass
+                    else:
+                        uuid_to_module_name[log_data_json["uuid"]] = log_data_json["module"]
+                        module_specific_log_path[uuid_to_module_name[log_data_json["uuid"]]] = \
+                            Path('./outputs') / f"{uuid_to_module_name[log_data_json['uuid']]}.log"
+                        module_name_to_filehandle[uuid_to_module_name[log_data_json["uuid"]]] = \
+                            open(Path('./outputs') / f"{uuid_to_module_name[log_data_json['uuid']]}.log", mode="a")
+                        # append log info.
+                        module_name_to_filehandle[uuid_to_module_name[log_data_json["uuid"]]].write(line)
+
+                else:
+                    # append log info.
+                    module_name_to_filehandle[uuid_to_module_name[log_data_json["uuid"]]].write(line)
+
+    module_name_to_filehandle[uuid_to_module_name[log_data_json["uuid"]]].close()
+
+    for file_path in module_specific_log_path.values():
+        module_specific_parsed_log_results[file_path] = _parse_log_file_inner_loop(file_path)
+
+    return module_specific_parsed_log_results
 
 
 def _oldstyle_parse_output(list_of_log_lines):
@@ -130,7 +149,7 @@ def _oldstyle_parse_output(list_of_log_lines):
     Each input line follows the format:
     INFO|<logger name>|<simulation datestamp>|<log key>|<python list or dictionary>
 
-    e.g.
+    se.g.
 
     [
     'INFO|tlo.methods.demography|2010-11-02 23:00:59.111968|on_birth|{'mother': 17, 'child': 50}',
@@ -511,7 +530,7 @@ def create_pickles_locally(scenario_output_dir):
 
     def turn_log_into_pickles(logfile):
         print(f"Opening {logfile}")
-        outputs = parse_log_file(logfile)
+        outputs = _parse_log_file_inner_loop(logfile)
         for key, output in outputs.items():
             if key.startswith("tlo."):
                 print(f" - Writing {key}.pickle")
@@ -534,7 +553,7 @@ def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
     * Requires output from the module `tlo.methods.demography`
     * Will do scaling automatically if the scaling-factor has been computed in the simulation (but not otherwise).
     """
-    output = parse_log_file(logfile)
+    output = _parse_log_file_inner_loop(logfile)
 
     # 1) Get model outputs:
     # - get scaling factor if it has been computed:
