@@ -322,9 +322,15 @@ class Contraception(Module):
         # sample a single row of the init2 probabilities (weighted by those same probabilities)
         chosen_co = on_birth_co_probs.sample(n=1, weights=on_birth_co_probs, random_state=self.rng)
 
-        # update the contracption choice (nb. the index of the row is the contraception type)
+        # update the contraception choice (nb. the index of the row is the contraception type)
         df = self.sim.population.props
         df.at[mother_id, 'co_contraception'] = chosen_co.index[0]
+
+        # though don't allow female sterilization to any woman below 30
+        younger_woman = df.loc[mother_id, 'age_years'] < 30
+        female_sterilization = chosen_co.index == 'female_sterilization'
+        if younger_woman==True & female_sterilization==[ True]:
+            df.at[mother_id, 'co_contraception'] = 'not_using'
 
         # Log that this women had initiated this contraceptive following birth:
         self.log_contraception_change(mother_id,
@@ -427,9 +433,10 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # select a random contraceptive for everyone not currently using
         random_co = df.loc[individuals_not_using, 'age_years'].apply(pick_random_contraceptive)
 
-        # don't allow female sterilization to any woman below 30
-        #female_sterilization = random_co.index[random_co == 'female_sterilization']
-        #df.index[female_sterilization & (df.age_years.between(15, 29))]] == [random_co == 'not_using']
+        # though don't allow female sterilization to any woman below 30
+        younger_women = df.loc[random_co.index, 'age_years'] < 30
+        female_sterilization = random_co.loc[younger_women.loc[younger_women].index] == 'female_sterilization'
+        random_co.loc[female_sterilization.loc[female_sterilization].index] = 'not_using'
 
         # get index of all those now using
         now_using_co = random_co.index[random_co != 'not_using']
@@ -468,6 +475,14 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
         # select new contraceptive using switching matrix
         new_co = transition_states(df.loc[switch_co, 'co_contraception'], switching_matrix, rng)
+
+        # though don't allow female sterilization to any woman below 30
+        younger_women = df.loc[new_co.index, 'age_years'] < 30
+        female_sterilization = new_co.loc[younger_women.loc[younger_women].index] == 'female_sterilization'
+        # make them switch to injections instead
+        # Todo: ideally this should revert to no switch though couldn't see how to do this
+        #  note that (reverting to 'not_using' throws an error in discontinuation as we are in individuals_using here)
+        new_co.loc[female_sterilization.loc[female_sterilization].index] = 'injections'
 
         # log women that are switching to a new contraceptive
         for woman in switch_co:

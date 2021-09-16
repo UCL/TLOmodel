@@ -32,12 +32,14 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    hiv,
     labour,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
+)
+from tlo.methods.hiv import(
+    DummyHivModule,
 )
 from tlo.util import create_age_range_lookup
 
@@ -86,7 +88,7 @@ def run():
         labour.Labour(resourcefilepath=resources),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
-        hiv.Hiv(resourcefilepath=resources),
+        DummyHivModule(),
         dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resources),
     )
 
