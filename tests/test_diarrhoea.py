@@ -22,11 +22,6 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
-from tlo.methods.diarrhoea import (
-    HSI_Diarrhoea_Treatment_Outpatient,
-    HSI_Diarrhoea_Treatment_Inpatient,
-)
-from tlo.methods.healthsystem import HSI_Event
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -68,6 +63,7 @@ def increase_incidence_of_pathogens(sim):
             sim.modules['Diarrhoea'].parameters[param_name] = 1.0
     return sim
 
+
 def increase_risk_of_death(sim):
     """Helper function to increase death and make it dependent on dehydration and blood-in-diarrhoea that are cured by
      treatment"""
@@ -99,6 +95,7 @@ def make_treatment_perfect(sim):
     sim.modules['Diarrhoea'].parameters['specificity_danger_signs_visual_inspection'] = 1.0
 
     return sim
+
 
 def get_combined_log(log_filepath):
     """Merge the logs for incident_case and end_of_episode to give a record of each incident case that has ended"""
@@ -299,7 +296,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
             sp_symps.loc[
                 sp_symps['generic_symptom_name'] == symp,
                 ['prob_spurious_occurrence_in_adults_per_day', 'prob_spurious_occurrence_in_children_per_day']
-            ] = 5.0/1000 if symp == 'diarrhoea' else 0.0
+            ] = 5.0 / 1000 if symp == 'diarrhoea' else 0.0
 
         # Increase incidence of pathogens:
         sim = increase_incidence_of_pathogens(sim)

@@ -30,6 +30,7 @@ Outstanding Issues
 
 """
 from pathlib import Path
+from typing import Iterable
 
 import numpy as np
 import pandas as pd
@@ -41,11 +42,7 @@ from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date, sample_outcome
-
-from itertools import repeat
-from typing import Iterable
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -460,69 +457,7 @@ class Diarrhoea(Module):
         'number_of_days_reduced_duration_with_zinc':
             Parameter(Types.INT, 'number of days reduced duration with zinc'),
         'days_between_treatment_and_cure':
-            Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'),
-
-        # JUNK **
-        # 'mean_days_duration_with_rotavirus':
-        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by rotavirus'),
-        # 'mean_days_duration_with_shigella':
-        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by shigella'),
-        # 'mean_days_duration_with_adenovirus':
-        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by adenovirus'),
-        # 'mean_days_duration_with_cryptosporidium':
-        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by cryptosporidium'
-        #               ),
-        # 'mean_days_duration_with_campylobacter':
-        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by campylobacter'),
-        # 'mean_days_duration_with_ETEC':
-        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by ETEC'),
-        # 'mean_days_duration_with_sapovirus':
-        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by sapovirus'),
-        # 'mean_days_duration_with_norovirus':
-        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by norovirus'),
-        # 'mean_days_duration_with_astrovirus':
-        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by astrovirus'),
-        # 'mean_days_duration_with_tEPEC':
-        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by tEPEC'),
-
-        # 'rr_severe_diarrhoea_RV1':
-        #     Parameter(Types.REAL, 'relative rate of severe diarrhoea for rotavirus vaccine'
-        #               ),
-
-        # 'range_in_days_duration_of_episode':
-        #     Parameter(Types.INT, 'the duration of an episode of diarrhoea is a uniform distribution around the mean '
-        #                          'with a range equal by this number.'),
-        #
-        # 'rr_diarr_death_vitaminA_supplementation':
-        #     Parameter(Types.REAL,
-        #               'relative risk of death with vitamin A supplementation'),
-        # 'mean_days_reduced_with_zinc_supplementation_in_acute_diarrhoea':
-        #     Parameter(Types.REAL,
-        #               'mean duration in days reduced when managed with zinc supplementation, '
-        #               'in acute diarrhoea of > 6 months old'),
-        # 'mean_days_reduced_with_zinc_supplementation_in_malnourished_children':
-        #     Parameter(Types.REAL,
-        #               'mean duration in days reduced when managed with zinc supplementation, '
-        #               'in malnourished children of > 6 months old'),
-        #
-        # # Parameters describing the treatment of diarrhoea:
-        # 'prob_recommended_treatment_given_by_hw':
-        #     Parameter(Types.REAL,
-        #               'probability of recommended treatment given by health care worker'
-        #               ),
-        # 'prob_at_least_ors_given_by_hw':
-        #     Parameter(Types.REAL,
-        #               'probability of ORS given by health care worker, with or without zinc'
-        #               ),
-        # 'prob_antibiotic_given_for_dysentery_by_hw':
-        #     Parameter(Types.REAL,
-        #               'probability of antibiotics given by health care worker, for dysentery'
-        #               ),
-        # 'prob_multivitamins_given_for_persistent_diarrhoea_by_hw':
-        #     Parameter(Types.REAL,
-        #               'probability of multivitamins given by health care worker, for persistent diarrhoea'
-        #               ),
-
+            Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.')
     }
 
     PROPERTIES = {
@@ -719,7 +654,6 @@ class Diarrhoea(Module):
             average_daly_weight_in_last_month = pd.Series(values, idx) / days_last_month
             return average_daly_weight_in_last_month.reindex(index=df.loc[df.is_alive].index, fill_value=0.0)
 
-
     def look_up_consumables(self):
         """Look up and store the consumables used in each of the HSI."""
 
@@ -737,7 +671,8 @@ class Diarrhoea(Module):
         self.consumables_used_in_hsi['Treatment_Severe_Dehydration'] = get_code(package='Treatment of severe diarrhea')
         self.consumables_used_in_hsi['Zinc_Under6mo'] = get_code(package='Zinc for Children 0-6 months')
         self.consumables_used_in_hsi['Zinc_Over6mo'] = get_code(package='Zinc for Children 6-59 months')
-        self.consumables_used_in_hsi['Antibiotics_for_Dysentery'] = get_code(package='Antibiotics for treatment of dysentery')
+        self.consumables_used_in_hsi['Antibiotics_for_Dysentery'] = get_code(
+            package='Antibiotics for treatment of dysentery')
 
     def do_when_presentation_with_diarrhoea(self, person_id, hsi_event):
         """This routine is called when Diarrhoea is a symptom for a child attending a Generic HSI Appointment. It
@@ -803,7 +738,7 @@ class Diarrhoea(Module):
         # Check the child's condition
         type_of_diarrhoea_is_bloody = person.gi_type == 'bloody'
         dehydration_is_severe = person.gi_dehydration == 'severe'
-        days_elapsed_with_diarrhoea = (self.sim.date - person.gi_date_of_onset).days
+        # days_elapsed_with_diarrhoea = (self.sim.date - person.gi_date_of_onset).days
         will_die = pd.notnull(person.gi_scheduled_date_death)
         is_in_patient = isinstance(hsi_event, HSI_Diarrhoea_Treatment_Inpatient)
 
@@ -811,14 +746,21 @@ class Diarrhoea(Module):
         if will_die:
 
             # STEP ONE: Aim to alleviate dehydration:
-            if is_in_patient and hsi_event.get_all_consumables(pkg_codes=self.consumables_used_in_hsi['Treatment_Severe_Dehydration']):
+            if is_in_patient and hsi_event.get_all_consumables(
+                pkg_codes=self.consumables_used_in_hsi['Treatment_Severe_Dehydration']
+            ):
                 # In-patient receiving IV fluids (WHO Plan C)
-                prob_remove_dehydration = p['prob_WHOPlanC_cures_dehydration_if_severe_dehydration'] if dehydration_is_severe \
+                prob_remove_dehydration = \
+                    p['prob_WHOPlanC_cures_dehydration_if_severe_dehydration'] if dehydration_is_severe \
                     else self.parameters['prob_ORS_cures_dehydration_if_non_severe_dehydration']
-            elif (not is_in_patient) and hsi_event.get_all_consumables(pkg_codes=self.consumables_used_in_hsi['ORS']):
+
+            elif (not is_in_patient) and hsi_event.get_all_consumables(
+                pkg_codes=self.consumables_used_in_hsi['ORS']
+            ):
                 # Out-patient receiving ORS
-                prob_remove_dehydration = self.parameters['prob_ORS_cures_dehydration_if_severe_dehydration'] if dehydration_is_severe \
-                        else self.parameters['prob_ORS_cures_dehydration_if_non_severe_dehydration']
+                prob_remove_dehydration = \
+                    self.parameters['prob_ORS_cures_dehydration_if_severe_dehydration'] if dehydration_is_severe \
+                    else self.parameters['prob_ORS_cures_dehydration_if_non_severe_dehydration']
             else:
                 prob_remove_dehydration = 0.0
 
@@ -826,9 +768,10 @@ class Diarrhoea(Module):
             dehydration_after_treatment = 'none' if self.rng.rand() < prob_remove_dehydration else person.gi_dehydration
 
             # STEP TWO: If has bloody diarrhoea (i.e., dysentry), then aim to clear bacterial infection
-            if type_of_diarrhoea_is_bloody and \
-                hsi_event.get_all_consumables(pkg_codes=self.consumables_used_in_hsi['Antibiotics_for_Dysentery']):
-                    prob_clear_bacterial_infection = self.parameters['prob_antibiotic_cures_dysentery']
+            if type_of_diarrhoea_is_bloody and hsi_event.get_all_consumables(
+                pkg_codes=self.consumables_used_in_hsi['Antibiotics_for_Dysentery']
+            ):
+                prob_clear_bacterial_infection = self.parameters['prob_antibiotic_cures_dysentery']
             else:
                 prob_clear_bacterial_infection = 0.0
 
@@ -859,15 +802,13 @@ class Diarrhoea(Module):
         # Log that the treatment is provided:
         df.at[person_id, 'gi_treatment_date'] = self.sim.date
 
-
-        # # todo STEP THREE: If the the diarrhoea has already lasted longer than 13 days, provide Zinc which brings forward
-        # # date of recovery for those that do not die.
+        # # todo STEP THREE: If the the diarrhoea has already lasted longer than 13 days, provide Zinc which brings
+        #  forward date of recovery for those that do not die.
         # if days_elapsed_with_diarrhoea >= 13:
         #     reduced_dur_by_zinc = hsi_event.get_all_consumables(pkg_codes=self.consumables_used_in_hsi[
         #         'Zinc_Under6mo' if person.age_exact_years < 0.5 else 'Zinc_Over6mo'])
         # else:
         #     reduced_dur_by_zinc = False
-
 
     def cancel_death_date(self, person_id):
         """
@@ -1038,7 +979,6 @@ class Models:
         # Write model for incidence of each pathogen
         self.linear_model_for_incidence_by_pathogen = self.write_linear_model_for_incidence_of_pathogens()
 
-
     def write_linear_model_for_incidence_of_pathogens(self):
         """Make a dict to hold the equations that govern the probability that a person acquires diarrhoea that is
         caused (primarily) by a pathogen"""
@@ -1118,7 +1058,7 @@ class Models:
             prob_persistent_if_prolonged *= self.p['rr_bec_persistent_HIV']
 
         if (nb_breastfeeding_status == 'exclusive'):
-            prob_persistent_if_prolonged *= 1.0  # todo USING rr_bec_persistent_excl_breast AND rr_bec_persistent_cont_breast
+            prob_persistent_if_prolonged *= 1.0  # todo; rr_bec_persistent_excl_breast, rr_bec_persistent_cont_breast
 
         return prob_persistent_if_prolonged
 
@@ -1219,7 +1159,6 @@ class Models:
 
         return risk
 
-
     def will_die(self,
                  pathogen,
                  type,
@@ -1273,7 +1212,6 @@ class Models:
 
         # Return outcome, determine probabilstically
         return self.rng.rand() < prob_treatment_blocks_death
-
 
     def get_symptoms(self, pathogen):
         """For new incident case of diarrhoea, determine the symptoms that onset."""
@@ -1372,7 +1310,6 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         df = self.sim.population.props  # shortcut to the dataframe
         m = self.module
         p = m.parameters
-        rng = m.rng
 
         person = df.loc[person_id]
         untreated_hiv = person.hv_inf and (person.hv_art != "on_VL_suppressed")
