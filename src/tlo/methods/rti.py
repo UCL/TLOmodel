@@ -3338,7 +3338,6 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
         # Iterate over all the injured people who are having medical treatment
         for person in recovery_dates.index:
             # Iterate over all the dates in 'rt_date_to_remove_daly'
-            persons_injuries = df.loc[[person], RTI.INJURY_COLUMNS]
             for date in df.loc[person, 'rt_date_to_remove_daly']:
                 # check that a recovery date hasn't been assigned to the past
                 if not pd.isnull(date):
@@ -3362,11 +3361,13 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                     if df.loc[person, 'rt_date_to_remove_daly'] == default_recovery:
                         # remove the injury severity as person is uninjured
                         df.loc[person, 'rt_inj_severity'] = "none"
-                        untreated_injuries = df.loc[person, 'rt_injuries_to_heal_with_time'] + \
-                                             df.loc[person, 'rt_injuries_for_minor_surgery'] + \
-                                             df.loc[person, 'rt_injuries_for_major_surgery'] + \
-                                             df.loc[person, 'rt_injuries_for_open_fracture_treatment'] + \
-                                             df.loc[person, 'rt_injuries_to_cast']
+                        untreated_injuries = (
+                            df.loc[person, 'rt_injuries_to_heal_with_time'] +
+                            df.loc[person, 'rt_injuries_for_minor_surgery'] +
+                            df.loc[person, 'rt_injuries_for_major_surgery'] +
+                            df.loc[person, 'rt_injuries_for_open_fracture_treatment'] +
+                            df.loc[person, 'rt_injuries_to_cast']
+                        )
                         assert untreated_injuries == [], f"not every injury removed from dataframe when treated " \
                                                          f"{untreated_injuries}"
             # Check that the date to remove dalys is removed if the date to remove the daly is today
@@ -4512,6 +4513,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                     'recovery date assigned to past'
             else:
                 logger.debug('This facility has no treatment for burns available.')
+
     def did_not_run(self, person_id):
         logger.debug('Burn treatment unavailable for person %d', person_id)
 
