@@ -849,7 +849,7 @@ class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
         # --------- DETERMINE OUTCOME OF THIS EVENT ---------------
         prob_death = self.module.parameters[f'{self.event}_death'].get('baseline_annual_probability')
         # Schedule a future death event for 2 days' time
-        date_of_outcome = self.sim.date + DateOffset(days=2)
+        date_of_outcome = self.sim.date + DateOffset(days=12)
         if self.module.rng.random_sample() < prob_death:
             df.at[person_id, f'nc_{self.event}_scheduled_date_death'] = date_of_outcome
             self.sim.schedule_event(CardioMetabolicDisordersDeathEvent(self.module, person_id, condition=self.event),
@@ -1356,6 +1356,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                 )['Item_Code'][item_code]
                 if result_of_cons_request:
                     logger.debug(key='debug', data='Treatment will be provided.')
+                    df.at[person_id, f'nc_{self.event}_on_medication'] = True
                     treatmentworks = self.module.rng.rand() < self.module.parameters[
                         f'{self.event}_hsi'].pr_treatment_works  # TODO: @britta change to data
                     if treatmentworks:
