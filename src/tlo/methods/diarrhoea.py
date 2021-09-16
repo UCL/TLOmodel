@@ -703,22 +703,21 @@ class Diarrhoea(Module):
         """
         df = self.sim.population.props
 
-        # count number of days last month (knowing that this function is called on the first day of the month).
-        days_last_month = (
-            (self.sim.date - pd.DateOffset(days=1)) - (self.sim.date - pd.DateOffset(days=1) - pd.DateOffset(months=1))
-        ).days
-
-        yld = pd.Series(index=df.loc[df.is_alive].index, data=0.0)
-
         if len(self.unreported_dalys) == 0:
-            return yld
+            return pd.Series(index=df.loc[df.is_alive].index, data=0.0)
         else:
+            # Count number of days last month (knowing that this function is called on the first day of the month).
+            days_last_month = (
+                (self.sim.date - pd.DateOffset(days=1)) - (
+                    self.sim.date - pd.DateOffset(days=1) - pd.DateOffset(months=1))
+            ).days
+
             # Get the person_id and the values from the list, and clear the list.
             idx, values = zip(*self.unreported_dalys)
             self.unreported_dalys = list()  # <-- clear list
 
             average_daly_weight_in_last_month = pd.Series(values, idx) / days_last_month
-            return yld.add(average_daly_weight_in_last_month, fill_value=0.0)
+            return average_daly_weight_in_last_month.reindex(index=df.loc[df.is_alive].index, fill_value=0.0)
 
 
     def look_up_consumables(self):
@@ -1118,8 +1117,8 @@ class Models:
         if untreated_hiv:
             prob_persistent_if_prolonged *= self.p['rr_bec_persistent_HIV']
 
-        if nb_breastfeeding_status == 'exclusive':
-            prob_persistent_if_prolonged *= 1.0  # todo!?!?!
+        if (nb_breastfeeding_status == 'exclusive'):
+            prob_persistent_if_prolonged *= 1.0  # todo USING rr_bec_persistent_excl_breast AND rr_bec_persistent_cont_breast
 
         return prob_persistent_if_prolonged
 
@@ -1216,7 +1215,7 @@ class Models:
             risk *= self.p['rr_diarr_death_untreated_HIV']
 
         if un_clinical_acute_malnutrition == 'SAM':
-            risk *= self.p['rr_diarrhoea_SAM']
+            risk *= self.p['rr_diarr_death_SAM']
 
         return risk
 
