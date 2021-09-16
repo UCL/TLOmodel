@@ -3330,8 +3330,6 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
         # # Isolate the relevant population
-        # treated_persons = df.loc[(df.is_alive & df.rt_med_int) | (df.is_alive & df.rt_recovery_no_med)]
-        # recovery_dates = treated_persons['rt_date_to_remove_daly']
         any_not_null = df.loc[df.is_alive, 'rt_date_to_remove_daly'].apply(lambda x: pd.notnull(x).any())
         relevant_population = any_not_null.index[any_not_null]
 
@@ -3365,46 +3363,14 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                     if df.loc[person, 'rt_date_to_remove_daly'] == default_recovery:
                         # remove the injury severity as person is uninjured
                         df.loc[person, 'rt_inj_severity'] = "none"
-                        # check that all codes in rt_injuries_to_heal_with_time are removed
-                        for code in df.loc[person, 'rt_injuries_to_heal_with_time']:
-                            _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
-                            if counts == 0:
-                                # if for some reason the code hasn't been removed, remove it
-                                df.loc[person, 'rt_injuries_to_heal_with_time'].remove(code)
-                            # check that all codes in rt_injuries_for_minor_surgery are removed
-                        for code in df.loc[person, 'rt_injuries_for_minor_surgery']:
-                            _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
-                            if counts == 0:
-                                # if for some reason the code hasn't been removed, remove it
-                                df.loc[person, 'rt_injuries_for_minor_surgery'].remove(code)
-                            # check that all codes in rt_injuries_for_major_surgery are removed
-                        for code in df.loc[person, 'rt_injuries_for_major_surgery']:
-                            _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
-                            if counts == 0:
-                                # if for some reason the code hasn't been removed, remove it
-                                df.loc[person, 'rt_injuries_for_major_surgery'].remove(code)
-                        # check that all codes in rt_injuries_for_open_fracture_treatment are removed
-                        for code in df.loc[person, 'rt_injuries_for_open_fracture_treatment']:
-                            _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
-                            if counts == 0:
-                                # if for some reason the code hasn't been removed, remove it
-                                df.loc[person, 'rt_injuries_for_open_fracture_treatment'].remove(code)
-                        # check that all codes in rt_injuries_to_cast are removed
-                        for code in df.loc[person, 'rt_injuries_to_cast']:
-                            _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, [code])
-                            if counts == 0:
-                                # if for some reason the code hasn't been removed, remove it
-                                df.loc[person, 'rt_injuries_to_cast'].remove(code)
-                        assert df.loc[person, 'rt_injuries_to_heal_with_time'] == [], \
-                            df.loc[person, 'rt_injuries_to_heal_with_time']
-                        assert df.loc[person, 'rt_injuries_for_minor_surgery'] == [], \
-                            df.loc[person, 'rt_injuries_for_minor_surgery']
-                        assert df.loc[person, 'rt_injuries_for_major_surgery'] == [], \
-                            df.loc[person, 'rt_injuries_for_major_surgery']
-                        assert df.loc[person, 'rt_injuries_for_open_fracture_treatment'] == [], \
-                            df.loc[person, 'rt_injuries_for_open_fracture_treatment']
-                        assert df.loc[person, 'rt_injuries_to_cast'] == [], \
-                            df.loc[person, 'rt_injuries_to_cast']
+                        untreated_injuries = df.loc[person, 'rt_injuries_to_heal_with_time'] + \
+                                             df.loc[person, 'rt_injuries_for_minor_surgery'] + \
+                                             df.loc[person, 'rt_injuries_for_major_surgery'] + \
+                                             df.loc[person, 'rt_injuries_for_open_fracture_treatment'] + \
+                                             df.loc[person, 'rt_injuries_to_cast']
+                        assert untreated_injuries == [], f"not every injury removed from dataframe when treated " \
+                                                         f"{untreated_injuries}"
+
             # Check that the date to remove dalys is removed if the date to remove the daly is today
             assert now not in df.loc[person, 'rt_date_to_remove_daly']
             # finally ensure the reported disability burden is an appropriate value
