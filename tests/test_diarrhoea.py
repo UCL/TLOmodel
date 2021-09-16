@@ -367,6 +367,78 @@ def test_run_each_of_the_HSI():
         hsi_event.run(squeeze_factor=0)
 
 
+def test_does_treatment_prevent_death():
+    """Check that the helper function 'does_treatment_prevent_death' works as expected."""
+
+    start_date = Date(2010, 1, 1)
+    popsize = 1000
+    sim = Simulation(start_date=start_date, seed=0)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 dx_algorithm_child.DxAlgorithmChild(),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+                 diarrhoea.PropertiesOfOtherModules(),
+                 hiv.DummyHivModule(),
+                 )
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+
+    does_treatment_prevent_death = sim.modules['Diarrhoea'].models.does_treatment_prevent_death
+
+    # False if there is no change in characteristics
+    assert False is does_treatment_prevent_death(
+        pathogen='shigella',
+        type=('bloody', 'bloody'),
+        duration_longer_than_13days=False,
+        dehydration=('severe', 'severe'),
+        age_exact_years=2,
+        ri_current_infection_status=False,
+        untreated_hiv=False,
+        un_clinical_acute_malnutrition='SAM'
+    )
+
+    # True some of the time if there a improvement in dehydration (severe --> none)
+    assert any([does_treatment_prevent_death(
+        pathogen='shigella',
+        type='watery',
+        duration_longer_than_13days=False,
+        dehydration=('severe', 'none'),
+        age_exact_years=2,
+        ri_current_infection_status=False,
+        untreated_hiv=False,
+        un_clinical_acute_malnutrition='SAM'
+    ) for _ in range(1000)])
+
+    # True some of the time if there a improvement in type (watery --> bloody)
+    assert any([does_treatment_prevent_death(
+        pathogen='shigella',
+        type=('bloody', 'watery'),
+        duration_longer_than_13days=False,
+        dehydration='none',
+        age_exact_years=2,
+        ri_current_infection_status=False,
+        untreated_hiv=False,
+        un_clinical_acute_malnutrition='SAM'
+    ) for _ in range(1000)])
+
+
+def test_do_treatment():
+    """Check that the function `do_treatment` work as expected"""
+    # todo!
+    pass
+
+
+
+
+
+
 # todo - align this with the logic desired for the algorithm
 # def test_dx_algorithm_for_diarrhoea_outcomes():
 #     """Create a person and check if the functions in dx_algorithm_child create the correct HSI"""

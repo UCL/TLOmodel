@@ -44,6 +44,9 @@ from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date, sample_outcome
 
+from itertools import repeat
+from typing import Iterable
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -90,6 +93,7 @@ class Diarrhoea(Module):
     }
 
     PARAMETERS = {
+        # Parameters governing the incidence of infection with a pathogen that causes diarrhoea
         'base_inc_rate_diarrhoea_by_rotavirus':
             Parameter(Types.LIST,
                       'incidence rate (per person-year)'
@@ -149,27 +153,26 @@ class Diarrhoea(Module):
         'rr_diarrhoea_clean_water':
             Parameter(Types.REAL, 'relative rate of diarrhoea for access to clean drinking water'
                       ),
-        'rr_diarrhoea_untreated_HIV':
-            Parameter(Types.REAL, 'relative rate of diarrhoea for HIV positive status'
-                      ),
-        'rr_diarrhoea_SAM':
-            Parameter(Types.REAL, 'relative rate of diarrhoea for severe malnutrition'
+        'rr_diarrhoea_exclusive_vs_partial_breastfeeding_<6mo':
+            Parameter(Types.REAL, 'relative rate of diarrhoea for partial breastfeeding in <6 months old, '
+                                  'compared to exclusive breastfeeding'
                       ),
         'rr_diarrhoea_exclusive_vs_no_breastfeeding_<6mo':
             Parameter(Types.REAL, 'relative rate of diarrhoea for no breastfeeding in <6 months old, '
-                                  'compared to exclusive breastfeeding'
-                      ),
-        'rr_diarrhoea_exclusive_vs_partial_breastfeeding_<6mo':
-            Parameter(Types.REAL, 'relative rate of diarrhoea for partial breastfeeding in <6 months old, '
                                   'compared to exclusive breastfeeding'
                       ),
         'rr_diarrhoea_any_vs_no_breastfeeding_6_11mo':
             Parameter(Types.REAL, 'relative rate of diarrhoea for no breastfeeding in 6 months old to 1 years old, '
                                   'compared to any breastfeeding at this age group'
                       ),
-        'rr_severe_diarrhoea_RV1':
-            Parameter(Types.REAL, 'relative rate of severe diarrhoea for rotavirus vaccine'
+        'rr_diarrhoea_untreated_HIV':
+            Parameter(Types.REAL, 'relative rate of diarrhoea for HIV positive status'
                       ),
+        'rr_diarrhoea_SAM':
+            Parameter(Types.REAL, 'relative rate of diarrhoea for severe malnutrition'
+                      ),
+
+        # Parameters governing the type of diarrhoea (Watery [AWD: Acute Watery Diarrhoea ]or bloody)
         'proportion_AWD_in_rotavirus':
             Parameter(Types.REAL, 'acute diarrhoea type caused in rotavirus-attributed diarrhoea'
                       ),
@@ -200,66 +203,8 @@ class Diarrhoea(Module):
         'proportion_AWD_in_tEPEC':
             Parameter(Types.REAL, 'acute diarrhoea type in tEPEC-attributed diarrhoea'
                       ),
-        'prob_fever_by_rotavirus':
-            Parameter(Types.REAL, 'probability of fever caused by rotavirus'
-                      ),
-        'prob_fever_by_shigella':
-            Parameter(Types.REAL, 'probability of fever caused by shigella'
-                      ),
-        'prob_fever_by_adenovirus':
-            Parameter(Types.REAL, 'probability of fever caused by adenovirus'
-                      ),
-        'prob_fever_by_cryptosporidium':
-            Parameter(Types.REAL, 'probability of fever caused by cryptosporidium'
-                      ),
-        'prob_fever_by_campylobacter':
-            Parameter(Types.REAL, 'probability of fever caused by campylobacter'
-                      ),
-        'prob_fever_by_ETEC':
-            Parameter(Types.REAL, 'probability of fever caused by ETEC'
-                      ),
-        'prob_fever_by_sapovirus':
-            Parameter(Types.REAL, 'probability of fever caused by sapovirus'
-                      ),
-        'prob_fever_by_norovirus':
-            Parameter(Types.REAL, 'probability of fever caused by norovirus'
-                      ),
-        'prob_fever_by_astrovirus':
-            Parameter(Types.REAL, 'probability of fever caused by astrovirus'
-                      ),
-        'prob_fever_by_tEPEC':
-            Parameter(Types.REAL, 'probability of fever caused by tEPEC'
-                      ),
-        'prob_vomiting_by_rotavirus':
-            Parameter(Types.REAL, 'probability of vomiting caused by rotavirus'
-                      ),
-        'prob_vomiting_by_shigella':
-            Parameter(Types.REAL, 'probability of vomiting caused by shigella'
-                      ),
-        'prob_vomiting_by_adenovirus':
-            Parameter(Types.REAL, 'probability of vomiting caused by adenovirus'
-                      ),
-        'prob_vomiting_by_cryptosporidium':
-            Parameter(Types.REAL, 'probability of vomiting caused by cryptosporidium'
-                      ),
-        'prob_vomiting_by_campylobacter':
-            Parameter(Types.REAL, 'probability of vomiting caused by campylobacter'
-                      ),
-        'prob_vomiting_by_ETEC':
-            Parameter(Types.REAL, 'probability of vomiting caused by ETEC'
-                      ),
-        'prob_vomiting_by_sapovirus':
-            Parameter(Types.REAL, 'probability of vomiting caused by sapovirus'
-                      ),
-        'prob_vomiting_by_norovirus':
-            Parameter(Types.REAL, 'probability of vomiting caused by norovirus'
-                      ),
-        'prob_vomiting_by_astrovirus':
-            Parameter(Types.REAL, 'probability of vomiting caused by astrovirus'
-                      ),
-        'prob_vomiting_by_tEPEC':
-            Parameter(Types.REAL, 'probability of vomiting caused by tEPEC'
-                      ),
+
+        # Parameters governing the extent of dehydration
         'prob_dehydration_by_rotavirus':
             Parameter(Types.REAL, 'probability of any dehydration caused by rotavirus'
                       ),
@@ -290,6 +235,11 @@ class Diarrhoea(Module):
         'prob_dehydration_by_tEPEC':
             Parameter(Types.REAL, 'probability of any dehydration caused by tEPEC'
                       ),
+        'probability_of_severe_dehydration_if_some_dehydration':
+            Parameter(Types.REAL, 'probability that someone with diarrhoea and some dehydration develops severe '
+                                  'dehydration'),
+
+        # Parameters governing the duration of the episode
         'prob_prolonged_diarr_rotavirus':
             Parameter(Types.REAL, 'probability of prolonged episode in rotavirus-attributed diarrhoea'
                       ),
@@ -358,6 +308,90 @@ class Diarrhoea(Module):
             Parameter(Types.REAL,
                       'relative rate of acute diarrhoea becoming persistent diarrhoea for continued breastfeeding'
                       ),
+        'min_dur_acute':
+            Parameter(Types.INT,
+                      'The minimum duration (in days) for an episode that is classified as an acute episode'
+                      ),
+        'min_dur_prolonged':
+            Parameter(Types.INT,
+                      'The minimum duration (in days) for an episode that is classified as a prolonged episode'
+                      ),
+        'min_dur_persistent':
+            Parameter(Types.INT,
+                      'The minimum duration (in days) for an episode that is classified as a persistent episode'
+                      ),
+        'max_dur_persistent':
+            Parameter(Types.INT,
+                      'The maximum duration (in days) for an episode that is classified as a persistent episode'
+                      ),
+
+        # Parameters governing the occurence of other symptoms during the episode (fever, vomiting)
+        'prob_fever_by_rotavirus':
+            Parameter(Types.REAL, 'probability of fever caused by rotavirus'
+                      ),
+        'prob_fever_by_shigella':
+            Parameter(Types.REAL, 'probability of fever caused by shigella'
+                      ),
+        'prob_fever_by_adenovirus':
+            Parameter(Types.REAL, 'probability of fever caused by adenovirus'
+                      ),
+        'prob_fever_by_cryptosporidium':
+            Parameter(Types.REAL, 'probability of fever caused by cryptosporidium'
+                      ),
+        'prob_fever_by_campylobacter':
+            Parameter(Types.REAL, 'probability of fever caused by campylobacter'
+                      ),
+        'prob_fever_by_ETEC':
+            Parameter(Types.REAL, 'probability of fever caused by ETEC'
+                      ),
+        'prob_fever_by_sapovirus':
+            Parameter(Types.REAL, 'probability of fever caused by sapovirus'
+                      ),
+        'prob_fever_by_norovirus':
+            Parameter(Types.REAL, 'probability of fever caused by norovirus'
+                      ),
+        'prob_fever_by_astrovirus':
+            Parameter(Types.REAL, 'probability of fever caused by astrovirus'
+                      ),
+        'prob_fever_by_tEPEC':
+            Parameter(Types.REAL, 'probability of fever caused by tEPEC'
+                      ),
+        'prob_vomiting_by_rotavirus':
+            Parameter(Types.REAL, 'probability of vomiting caused by rotavirus'
+                      ),
+        'prob_vomiting_by_shigella':
+            Parameter(Types.REAL, 'probability of vomiting caused by shigella'
+                      ),
+        'prob_vomiting_by_adenovirus':
+            Parameter(Types.REAL, 'probability of vomiting caused by adenovirus'
+                      ),
+        'prob_vomiting_by_cryptosporidium':
+            Parameter(Types.REAL, 'probability of vomiting caused by cryptosporidium'
+                      ),
+        'prob_vomiting_by_campylobacter':
+            Parameter(Types.REAL, 'probability of vomiting caused by campylobacter'
+                      ),
+        'prob_vomiting_by_ETEC':
+            Parameter(Types.REAL, 'probability of vomiting caused by ETEC'
+                      ),
+        'prob_vomiting_by_sapovirus':
+            Parameter(Types.REAL, 'probability of vomiting caused by sapovirus'
+                      ),
+        'prob_vomiting_by_norovirus':
+            Parameter(Types.REAL, 'probability of vomiting caused by norovirus'
+                      ),
+        'prob_vomiting_by_astrovirus':
+            Parameter(Types.REAL, 'probability of vomiting caused by astrovirus'
+                      ),
+        'prob_vomiting_by_tEPEC':
+            Parameter(Types.REAL, 'probability of vomiting caused by tEPEC'
+                      ),
+
+        # Parameters governing the risk of death due to Diarrhoea
+        'adjustment_factor_on_cfr':
+            Parameter(Types.REAL,
+                      'Factor by which fatality probabilities are multiplied (to be used in calibration)'
+                      ),
         'case_fatality_rate_AWD':
             Parameter(Types.REAL, 'case fatality rate for acute watery diarrhoea cases'
                       ),
@@ -396,84 +430,7 @@ class Diarrhoea(Module):
             Parameter(Types.REAL, 'relative risk of diarrhoea death if caused by shigella'
                       ),
 
-        # todo --- all these mean_days_duration_with_PATHOGEN are not used!
-        'mean_days_duration_with_rotavirus':
-            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by rotavirus'),
-        'mean_days_duration_with_shigella':
-            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by shigella'),
-        'mean_days_duration_with_adenovirus':
-            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by adenovirus'),
-        'mean_days_duration_with_cryptosporidium':
-            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by cryptosporidium'
-                      ),
-        'mean_days_duration_with_campylobacter':
-            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by campylobacter'),
-        'mean_days_duration_with_ETEC':
-            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by ETEC'),
-        'mean_days_duration_with_sapovirus':
-            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by sapovirus'),
-        'mean_days_duration_with_norovirus':
-            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by norovirus'),
-        'mean_days_duration_with_astrovirus':
-            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by astrovirus'),
-        'mean_days_duration_with_tEPEC':
-            Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by tEPEC'),
-        'prob_of_cure_given_WHO_PlanC':
-            Parameter(Types.REAL, 'probability of the person being cured if is provided with Treatment Plan C'),
-
-        'probability_of_severe_dehydration_if_some_dehydration':
-            Parameter(Types.REAL, 'probability that someone with diarrhoea and some dehydration develops severe '
-                                  'dehydration'),
-        'range_in_days_duration_of_episode':
-            Parameter(Types.INT, 'the duration of an episode of diarrhoea is a uniform distribution around the mean '
-                                 'with a range equal by this number.'),
-
-        # TODO check the below parmaeters for those HSI are relevant
-        'ors_effectiveness_against_severe_dehydration':
-            Parameter(Types.REAL, 'effectiveness of ORS in treating severe dehydration'),
-        'number_of_days_reduced_duration_with_zinc':
-            Parameter(Types.INT, 'number of days reduced duration with zinc'),
-        'days_between_treatment_and_cure':
-            Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'),
-        'ors_effectiveness_on_diarrhoea_mortality':
-            Parameter(Types.REAL,
-                      'effectiveness of ORS in treating acute diarrhoea'),
-        'antibiotic_effectiveness_for_dysentery':
-            Parameter(Types.REAL,
-                      'probability of cure of dysentery when treated with antibiotics'),
-        'rr_diarr_death_vitaminA_supplementation':
-            Parameter(Types.REAL,
-                      'relative risk of death with vitamin A supplementation'),
-        'mean_days_reduced_with_zinc_supplementation_in_acute_diarrhoea':
-            Parameter(Types.REAL,
-                      'mean duration in days reduced when managed with zinc supplementation, '
-                      'in acute diarrhoea of > 6 months old'),
-        'mean_days_reduced_with_zinc_supplementation_in_malnourished_children':
-            Parameter(Types.REAL,
-                      'mean duration in days reduced when managed with zinc supplementation, '
-                      'in malnourished children of > 6 months old'),
-
-        # Parameters describing the treatment of diarrhoea: todo --  redefine as necc.
-        'prob_recommended_treatment_given_by_hw':
-            Parameter(Types.REAL,
-                      'probability of recommended treatment given by health care worker'
-                      ),
-        'prob_at_least_ors_given_by_hw':
-            Parameter(Types.REAL,
-                      'probability of ORS given by health care worker, with or without zinc'
-                      ),
-        'prob_antibiotic_given_for_dysentery_by_hw':
-            Parameter(Types.REAL,
-                      'probability of antibiotics given by health care worker, for dysentery'
-                      ),
-        'prob_multivitamins_given_for_persistent_diarrhoea_by_hw':
-            Parameter(Types.REAL,
-                      'probability of multivitamins given by health care worker, for persistent diarrhoea'
-                      ),
-        'prob_hospitalization_referral_for_severe_diarrhoea':
-            Parameter(Types.REAL,
-                      'probability of hospitalisation of severe diarrhoea'
-                      ),
+        # Parameters governing the care provided to those that present with Diarrhoea
         'sensitivity_danger_signs_visual_inspection':
             Parameter(Types.REAL,
                       'sensitivity of health care workers visual inspection of danger signs'
@@ -482,26 +439,90 @@ class Diarrhoea(Module):
             Parameter(Types.REAL,
                       'specificity of health care workers visual inspection of danger signs'
                       ),
-        'adjustment_factor_on_cfr':
+        'prob_hospitalization_referral_for_severe_diarrhoea':  # todo-- rename this re danger signs and use!
             Parameter(Types.REAL,
-                      'Factor by which fatality probabilities are multiplied (to be used in calibration)'
+                      'probability of hospitalisation of severe diarrhoea'
                       ),
-        'min_dur_acute':
-            Parameter(Types.INT,
-                      'The minimum duration (in days) for an episode that is classified as an acute episode'
-                      ),
-        'min_dur_prolonged':
-            Parameter(Types.INT,
-                      'The minimum duration (in days) for an episode that is classified as a prolonged episode'
-                      ),
-        'min_dur_persistent':
-            Parameter(Types.INT,
-                      'The minimum duration (in days) for an episode that is classified as a persistent episode'
-                      ),
-        'max_dur_persistent':
-            Parameter(Types.INT,
-                      'The maximum duration (in days) for an episode that is classified as a persistent episode'
-                      ),
+
+        # Parameters governing the efficacy of treatments
+        'prob_WHOPlanC_cures_dehydration_if_severe_dehydration':
+            Parameter(Types.REAL,
+                      'probability that severe dehydration is cured by Treatment Plan C'),
+        'prob_ORS_cures_dehydration_if_severe_dehydration':
+            Parameter(Types.REAL,
+                      'probability that severe dehydration is cured by ORS'),
+        'prob_ORS_cures_dehydration_if_non_severe_dehydration':
+            Parameter(Types.REAL,
+                      'probability that non-severe dehydration is cured by ORS'),
+        'prob_antibiotic_cures_dysentery':
+            Parameter(Types.REAL,
+                      'probability that blood-in-stool is removed by the use of antibiotics'),
+        'number_of_days_reduced_duration_with_zinc':
+            Parameter(Types.INT, 'number of days reduced duration with zinc'),
+        'days_between_treatment_and_cure':
+            Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'),
+
+        # JUNK **
+        # 'mean_days_duration_with_rotavirus':
+        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by rotavirus'),
+        # 'mean_days_duration_with_shigella':
+        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by shigella'),
+        # 'mean_days_duration_with_adenovirus':
+        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by adenovirus'),
+        # 'mean_days_duration_with_cryptosporidium':
+        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by cryptosporidium'
+        #               ),
+        # 'mean_days_duration_with_campylobacter':
+        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by campylobacter'),
+        # 'mean_days_duration_with_ETEC':
+        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by ETEC'),
+        # 'mean_days_duration_with_sapovirus':
+        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by sapovirus'),
+        # 'mean_days_duration_with_norovirus':
+        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by norovirus'),
+        # 'mean_days_duration_with_astrovirus':
+        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by astrovirus'),
+        # 'mean_days_duration_with_tEPEC':
+        #     Parameter(Types.LIST, 'mean, std, min, max number of days duration with diarrhoea caused by tEPEC'),
+
+        # 'rr_severe_diarrhoea_RV1':
+        #     Parameter(Types.REAL, 'relative rate of severe diarrhoea for rotavirus vaccine'
+        #               ),
+
+        # 'range_in_days_duration_of_episode':
+        #     Parameter(Types.INT, 'the duration of an episode of diarrhoea is a uniform distribution around the mean '
+        #                          'with a range equal by this number.'),
+        #
+        # 'rr_diarr_death_vitaminA_supplementation':
+        #     Parameter(Types.REAL,
+        #               'relative risk of death with vitamin A supplementation'),
+        # 'mean_days_reduced_with_zinc_supplementation_in_acute_diarrhoea':
+        #     Parameter(Types.REAL,
+        #               'mean duration in days reduced when managed with zinc supplementation, '
+        #               'in acute diarrhoea of > 6 months old'),
+        # 'mean_days_reduced_with_zinc_supplementation_in_malnourished_children':
+        #     Parameter(Types.REAL,
+        #               'mean duration in days reduced when managed with zinc supplementation, '
+        #               'in malnourished children of > 6 months old'),
+        #
+        # # Parameters describing the treatment of diarrhoea:
+        # 'prob_recommended_treatment_given_by_hw':
+        #     Parameter(Types.REAL,
+        #               'probability of recommended treatment given by health care worker'
+        #               ),
+        # 'prob_at_least_ors_given_by_hw':
+        #     Parameter(Types.REAL,
+        #               'probability of ORS given by health care worker, with or without zinc'
+        #               ),
+        # 'prob_antibiotic_given_for_dysentery_by_hw':
+        #     Parameter(Types.REAL,
+        #               'probability of antibiotics given by health care worker, for dysentery'
+        #               ),
+        # 'prob_multivitamins_given_for_persistent_diarrhoea_by_hw':
+        #     Parameter(Types.REAL,
+        #               'probability of multivitamins given by health care worker, for persistent diarrhoea'
+        #               ),
+
     }
 
     PROPERTIES = {
@@ -635,6 +656,8 @@ class Diarrhoea(Module):
         self.look_up_consumables()
 
         # Define test to determine danger signs
+        # The danger signs are classified collectively and are based on the result of a DxTest representing the ability
+        # of the clinician to correctly determine the true value of the property 'gi_dehydration' being 'severe'.=
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             danger_signs_visual_inspection=DxTest(
                 property='gi_dehydration',
@@ -711,30 +734,11 @@ class Diarrhoea(Module):
                 column = 'Item_Code'
             return pd.unique(consumables.loc[condition, column])[0]
 
-        def add_consumable(_condition, _package, _item):
-            self.consumables_used_in_hsi[_condition] = {
-                'Intervention_Package_Code': _package,
-                'Item_Code': _item
-            }
-
-        #todo-- Some of these codes seem to be not used.
-        ors_code = get_code(package='ORS')
-        severe_diarrhoea_code = get_code(package='Treatment of severe diarrhea')
-        zinc_under_6m_code = get_code(package='Zinc for Children 0-6 months')
-        zinc_over_6m_code = get_code(package='Zinc for Children 6-59 months')
-        zinc_tablet_code = get_code(item='Zinc, tablet, 20 mg')
-        antibiotics_code = get_code(package='Antibiotics for treatment of dysentery')
-        cipro_code = get_code(item='Ciprofloxacin 250mg_100_CMST')
-
-        # -- Assemble the footprints for each diarrhoea-related condition or plan:
-        add_consumable('ORS', {ors_code: 1}, {})
-        add_consumable('Dehydration_Plan_A', {ors_code: 1}, {})
-        add_consumable('Dehydration_Plan_B', {ors_code: 1}, {})
-        add_consumable('Dehydration_Plan_C', {severe_diarrhoea_code: 1}, {})
-        add_consumable('Zinc_Under6mo', {zinc_under_6m_code: 1}, {zinc_tablet_code: 5})
-        add_consumable('Zinc_Over6mo', {zinc_over_6m_code: 1}, {zinc_tablet_code: 5})
-        add_consumable('Antibiotics_for_Dysentery', {antibiotics_code: 1}, {cipro_code: 6})
-        add_consumable('Multivitamins_for_Persistent', {zinc_under_6m_code: 1}, {zinc_tablet_code: 5})
+        self.consumables_used_in_hsi['ORS'] = get_code(package='ORS')
+        self.consumables_used_in_hsi['Treatment_Severe_Dehydration'] = get_code(package='Treatment of severe diarrhea')
+        self.consumables_used_in_hsi['Zinc_Under6mo'] = get_code(package='Zinc for Children 0-6 months')
+        self.consumables_used_in_hsi['Zinc_Over6mo'] = get_code(package='Zinc for Children 6-59 months')
+        self.consumables_used_in_hsi['Antibiotics_for_Dysentery'] = get_code(package='Antibiotics for treatment of dysentery')
 
     def do_when_presentation_with_diarrhoea(self, person_id, hsi_event):
         """This routine is called when Diarrhoea is a symptom for a child attending a Generic HSI Appointment. It
@@ -767,23 +771,21 @@ class Diarrhoea(Module):
 
     def do_treatment(self, person_id, hsi_event):
         """Method that enacts decisions about a treatment and its effect for diarrhoea caused by a pathogen.
-        (It will do anything if the diarrhoea is caused by another module.)
+        (It will do nothing if the diarrhoea is caused by another module.)
         Actions:
         * Log the treatment date
         * Prevents this episode of diarrhoea from causing a death if the treatment is succesful
         * Schedules the cure event, at which symptoms are alleviated.
 
+        * NB. Provisions for cholera are not included
+
         See this report:
           https://apps.who.int/iris/bitstream/handle/10665/104772/9789241506823_Chartbook_eng.pdf (page 3).
-        NB:
-        * Provisions for cholera are not included
-        * The danger signs are classified collectively and are based on the result of a DxTest representing the
-          ability of the clinician to correctly determine the true value of the
-          property 'gi_dehydration' being equal to 'severe'
         """
 
         df = self.sim.population.props
         person = df.loc[person_id]
+        p = self.parameters
 
         if not person.is_alive:
             return
@@ -799,50 +801,73 @@ class Diarrhoea(Module):
         ):
             return
 
-        # *** Implement the treatment algorithm ***
         # Check the child's condition
         type_of_diarrhoea_is_bloody = person.gi_type == 'bloody'
-        dehydration = person.gi_dehydration
+        dehydration_is_severe = person.gi_dehydration == 'severe'
+        days_elapsed_with_diarrhoea = (self.sim.date - person.gi_date_of_onset).days
+        will_die = pd.notnull(person.gi_scheduled_date_death)
+        is_in_patient = isinstance(hsi_event, HSI_Diarrhoea_Treatment_Inpatient)
 
-        # Compute probability of cure based on the true level of dehydration and type of diarrhoea
-        prob_cure = 0.0
+        # Implement the treatment that may prevent the child from dying.
+        if will_die:
 
-        # Provide ORS and incorporate its effect (if available):
-        if hsi_event.get_all_consumables(footprint=self.consumables_used_in_hsi['ORS']):
-            prob_cure = self.parameters['ors_effectiveness_on_diarrhoea_mortality'] if dehydration in ('none', 'some') \
-                else self.parameters['ors_effectiveness_against_severe_dehydration']
-
-        # If blood_in_stool (i.e., dysentery), provide antibiotics and incorporate its effect (if available):
-        if type_of_diarrhoea_is_bloody:
-            # Provide antibiotics (if available) #todo: how should these effects be combined??
-            if hsi_event.get_all_consumables(footprint=self.consumables_used_in_hsi['Antibiotics_for_Dysentery']):
-                pass
+            # STEP ONE: Aim to alleviate dehydration:
+            if is_in_patient and hsi_event.get_all_consumables(pkg_codes=self.consumables_used_in_hsi['Treatment_Severe_Dehydration']):
+                # In-patient receiving IV fluids (WHO Plan C)
+                prob_remove_dehydration = p['prob_WHOPlanC_cures_dehydration_if_severe_dehydration'] if dehydration_is_severe \
+                    else self.parameters['prob_ORS_cures_dehydration_if_non_severe_dehydration']
+            elif (not is_in_patient) and hsi_event.get_all_consumables(pkg_codes=self.consumables_used_in_hsi['ORS']):
+                # Out-patient receiving ORS
+                prob_remove_dehydration = self.parameters['prob_ORS_cures_dehydration_if_severe_dehydration'] if dehydration_is_severe \
+                        else self.parameters['prob_ORS_cures_dehydration_if_non_severe_dehydration']
             else:
-                prob_cure *= (1.0 - self.parameters['antibiotic_effectiveness_for_dysentery'])
+                prob_remove_dehydration = 0.0
 
-        # Determine if Zinc is provided
-        gets_zinc = hsi_event.get_all_consumables(footprint=self.consumables_used_in_hsi[
-            'Zinc_Under6mo' if person.age_exact_years < 0.5 else 'Zinc_Over6mo'])
+            # Determine dehydration after treatment
+            dehydration_after_treatment = 'none' if self.rng.rand() < prob_remove_dehydration else person.gi_dehydration
 
-        # Determine if the treatment is effective
-        if prob_cure > self.rng.rand():
+            # STEP TWO: If has bloody diarrhoea (i.e., dysentry), then aim to clear bacterial infection
+            if type_of_diarrhoea_is_bloody and \
+                hsi_event.get_all_consumables(pkg_codes=self.consumables_used_in_hsi['Antibiotics_for_Dysentery']):
+                    prob_clear_bacterial_infection = self.parameters['prob_antibiotic_cures_dysentery']
+            else:
+                prob_clear_bacterial_infection = 0.0
 
-            # If treatment is successful: cancel death and schedule cure event
-            self.cancel_death_date(person_id)
+            # Determine type after treatment
+            type_after_treatment = 'watery' if self.rng.rand() < prob_clear_bacterial_infection else person.gi_type
 
-            # Curing event occurs one sooner if the person does receive Zinc
-            # todo - make sooner than recovery
-            self.sim.schedule_event(
-                DiarrhoeaCureEvent(self, person_id),
-                self.sim.date + DateOffset(
-                    days=self.parameters['days_between_treatment_and_cure']
-                         + (-self.parameters['number_of_days_reduced_duration_with_zinc'] if gets_zinc else 0)
+            # Determine if the changes in dehydration or type (if any) will cause the treatment to block the death:
+            if self.models.does_treatment_prevent_death(
+                pathogen=person.gi_pathogen,
+                type=(person.gi_type, type_after_treatment),  # <-- type may have changed
+                duration_longer_than_13days=person.gi_duration_longer_than_13days,
+                dehydration=(person.gi_dehydration, dehydration_after_treatment),  # <-- dehydration may have changed
+                age_exact_years=person.age_exact_years,
+                ri_current_infection_status=person.ri_current_infection_status,
+                untreated_hiv=person.hv_inf and (person.hv_art != "on_VL_suppressed"),
+                un_clinical_acute_malnutrition=person.un_clinical_acute_malnutrition
+            ):
+                # Treatment is successful: cancel death and schedule cure event
+                self.cancel_death_date(person_id)
+                self.sim.schedule_event(
+                    DiarrhoeaCureEvent(self, person_id),
+                    self.sim.date + DateOffset(
+                        days=self.parameters['days_between_treatment_and_cure']
+                    )
                 )
-            )
 
         # -------------------------------------
         # Log that the treatment is provided:
         df.at[person_id, 'gi_treatment_date'] = self.sim.date
+
+
+        # # todo STEP THREE: If the the diarrhoea has already lasted longer than 13 days, provide Zinc which brings forward
+        # # date of recovery for those that do not die.
+        # if days_elapsed_with_diarrhoea >= 13:
+        #     reduced_dur_by_zinc = hsi_event.get_all_consumables(pkg_codes=self.consumables_used_in_hsi[
+        #         'Zinc_Under6mo' if person.age_exact_years < 0.5 else 'Zinc_Over6mo'])
+        # else:
+        #     reduced_dur_by_zinc = False
 
 
     def cancel_death_date(self, person_id):
@@ -880,7 +905,7 @@ class Diarrhoea(Module):
             daly_wt = self.daly_wts[f'dehydration={person.gi_dehydration}']
             self.unreported_dalys.append((person_id, daly_wt * days_duration))
 
-        # Enacts the death (if the outcome=='death'); Otherwise, removes symptoms and resets properties
+        # Enacts the death (if the outcome is 'death'); Otherwise, removes symptoms and resets properties
         if outcome == 'death':
             # If outcome is death, implement the death immidiately:
             self.sim.modules['Demography'].do_death(
@@ -891,7 +916,7 @@ class Diarrhoea(Module):
         else:
             # If outcome is not death, then remove all symptoms and reset properties:
             self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
-                                                              disease_module=self.sim.modules['Diarrhoea'])
+                                                              disease_module=self)
 
             df.loc[person_id, [
                 'gi_has_diarrhoea',
@@ -1147,17 +1172,17 @@ class Models:
         else:
             return 'none'
 
-    def will_die(self,
-                 pathogen,
-                 type,
-                 duration_longer_than_13days,
-                 dehydration,
-                 age_exact_years,
-                 ri_current_infection_status,
-                 untreated_hiv,
-                 un_clinical_acute_malnutrition
-                 ):
-        """Determine whether an episode of diarrhorea will result in death"""
+    def prob_death(self,
+                   pathogen,
+                   type,
+                   duration_longer_than_13days,
+                   dehydration,
+                   age_exact_years,
+                   ri_current_infection_status,
+                   untreated_hiv,
+                   un_clinical_acute_malnutrition
+                   ):
+        """Compute probability will die given a set of conditions"""
 
         # Baseline risks for diarrhoea of type 'watery', including 'adjustment factor'
         risk = self.p['case_fatality_rate_AWD'] * self.p['adjustment_factor_on_cfr']
@@ -1193,10 +1218,63 @@ class Models:
         if un_clinical_acute_malnutrition == 'SAM':
             risk *= self.p['rr_diarrhoea_SAM']
 
+        return risk
 
+
+    def will_die(self,
+                 pathogen,
+                 type,
+                 duration_longer_than_13days,
+                 dehydration,
+                 age_exact_years,
+                 ri_current_infection_status,
+                 untreated_hiv,
+                 un_clinical_acute_malnutrition
+                 ):
+        """For new incident case of dirarrhoea, determine whether death will result.
+        This gets the probability of death and determines outcome probabilistically. """
+
+        prob = self.prob_death(
+            pathogen,
+            type,
+            duration_longer_than_13days,
+            dehydration,
+            age_exact_years,
+            ri_current_infection_status,
+            untreated_hiv,
+            un_clinical_acute_malnutrition
+        )
 
         # Return bool following coin-flip to determine outcome
-        return self.rng.rand() < risk
+        return self.rng.rand() < prob
+
+    def does_treatment_prevent_death(self, **kwargs):
+        """For a case of diarrhoea that will cause death if untreated, that is now being treated, determine if the
+        treatment will prevent a death from occuring.
+        Each parameter can be provided as a single value or as an itterable representing the status as that
+        ("before_treatment", "after_treatment").
+        This method is called for a person for whom a death is scheduled and is receiving treatment. If the outcome is
+        True then the death should be cancalled as the change in circumstances (treatment of diarrhoea type or
+        dehydration) have reduced the probabilty of death such that there it will not occur."""
+
+        is_iterable_and_not_string = lambda x: isinstance(x, Iterable) and not isinstance(x, str)
+
+        prob_death = dict()
+        for i, case in enumerate(['before_treatment', 'after_treatment']):
+            prob_death[case] = (
+                self.prob_death(
+                    **{
+                        k: v[i] if is_iterable_and_not_string(v) else v for k, v in kwargs.items()
+                    }
+                )
+            )
+
+        # Probability that treatment "blocks" the death for someone that would have died.
+        prob_treatment_blocks_death = 1 - prob_death['after_treatment']/prob_death['before_treatment']
+
+        # Return outcome, determine probabilstically
+        return self.rng.rand() < prob_treatment_blocks_death
+
 
     def get_symptoms(self, pathogen):
         """For new incident case of diarrhoea, determine the symptoms that onset."""
@@ -1298,7 +1376,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         rng = m.rng
 
         person = df.loc[person_id]
-        untreated_hiv = person['hv_inf'] and (person['hv_art'] != "on_VL_suppressed")
+        untreated_hiv = person.hv_inf and (person.hv_art != "on_VL_suppressed")
 
         # The event will not run if the person is not currently alive
         if not person.is_alive:
