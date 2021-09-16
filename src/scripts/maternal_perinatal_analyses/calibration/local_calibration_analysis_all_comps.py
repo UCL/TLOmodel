@@ -1,6 +1,6 @@
 
 from tlo.analysis.utils import parse_log_file
-from src.scripts.maternal_perinatal_analyses import graph_maker
+from scripts.maternal_perinatal_analyses.calibration import graph_maker_for_local_calibration
 
 antenatal_comps = ['spontaneous_abortion', 'induced_abortion', 'spontaneous_abortion_haemorrhage',
                    'induced_abortion_haemorrhage', 'spontaneous_abortion_sepsis', 'spontaneous_abortion_other_comp',
@@ -40,9 +40,9 @@ indirect_causes = ['AIDS', 'severe_malaria', 'Suicide', 'diabetes', 'chronic_kid
 logs_dict = dict()
 
 new_parse_log_2010 = {2010: parse_log_file(
-    filepath=f"./outputs/calibration_files/test_num_pregs_calibration_333__2021-09-14T123921.log")}
+    filepath=f"./outputs/calibration_files/p_pph_cfr_2010_calibration_77__2021-09-15T173023.log")}
 new_parse_log_2015 = {2015: parse_log_file(
-    filepath=f"./outputs/calibration_files/interventions_2015_updated_calibration_161__2021-07-13T180046.log")}
+    filepath=f"./outputs/calibration_files/p_pph_cfr_2015_calibration_2__2021-09-15T173216.log")}
 logs_dict.update(new_parse_log_2010)
 logs_dict.update(new_parse_log_2015)
 
@@ -59,11 +59,11 @@ def update_dicts(comps, dict_2010, dict_2015, module, age_group):
     for complication in comps:
         new_row = {complication: 0}
         dict_2010.update(new_row)
-        graph_maker.get_incidence(logs_dict[2010], module, complication, dict_2010, specific_year=False, year=2010,
-                                  age_group=age_group)
+        graph_maker_for_local_calibration.get_incidence(logs_dict[2010], module, complication, dict_2010, specific_year=False, year=2010,
+                                                        age_group=age_group)
         dict_2015.update(new_row)
-        graph_maker.get_incidence(logs_dict[2015], module, complication, dict_2015, specific_year=False, year=2015,
-                                  age_group=age_group)
+        graph_maker_for_local_calibration.get_incidence(logs_dict[2015], module, complication, dict_2015, specific_year=False, year=2015,
+                                                        age_group=age_group)
 
 update_dicts(antenatal_comps, master_dict_an_2010, master_dict_an_2015, 'pregnancy_supervisor', 'maternal')
 update_dicts(intrapartum_comps, master_dict_la_2010, master_dict_la_2015, 'labour', 'maternal')
@@ -73,24 +73,24 @@ update_dicts(neonatal_comps, master_dict_nb_2010, master_dict_nb_2015, 'newborn_
 
 #graph_maker.get_parity_graphs(logs_dict[2010])
 
-total_births_2010 = graph_maker.get_total_births(logs_dict[2010])
-total_births_2015 = graph_maker.get_total_births(logs_dict[2015])
+total_births_2010 = graph_maker_for_local_calibration.get_total_births(logs_dict[2010])
+total_births_2015 = graph_maker_for_local_calibration.get_total_births(logs_dict[2015])
 
 #pregnancies_2011 = graph_maker.get_pregnancies_in_a_year(logs_dict[2010], 2010)
 #pregnancies_2016 = graph_maker.get_pregnancies_in_a_year(logs_dict[2015], 2015)
 
-dummy_pregnancies = graph_maker.get_pregnancies_from_dummy_contraception(logs_dict[2010], 2010)
-total_ended_pregnancies = graph_maker.get_completed_pregnancies_in_a_year(logs_dict[2010], master_dict_an_2010)
+dummy_pregnancies = graph_maker_for_local_calibration.get_pregnancies_from_dummy_contraception(logs_dict[2010], 2010)
+total_ended_pregnancies = graph_maker_for_local_calibration.get_completed_pregnancies_in_a_year(logs_dict[2010], master_dict_an_2010)
 
 # SPONTANEOUS/INDUCED ABORTION...
-graph_maker.get_single_year_generic_incidence_graph('ectopic_unruptured', master_dict_an_2010, dummy_pregnancies,
-                                                    4.9, ['firebrick', 'lightcoral'])
+graph_maker_for_local_calibration.get_single_year_generic_incidence_graph('ectopic_unruptured', master_dict_an_2010, dummy_pregnancies,
+                                                                          4.9, ['firebrick', 'lightcoral'])
 
 
-graph_maker.get_single_year_generic_incidence_graph('spontaneous_abortion', master_dict_an_2010,
-                                         total_ended_pregnancies, 189, ['firebrick', 'lightcoral'])
-graph_maker.get_single_year_generic_incidence_graph('induced_abortion', master_dict_an_2010,
-                                         total_ended_pregnancies, 86, ['firebrick', 'lightcoral'])
+graph_maker_for_local_calibration.get_single_year_generic_incidence_graph('spontaneous_abortion', master_dict_an_2010,
+                                                                          total_ended_pregnancies, 189, ['firebrick', 'lightcoral'])
+graph_maker_for_local_calibration.get_single_year_generic_incidence_graph('induced_abortion', master_dict_an_2010,
+                                                                          total_ended_pregnancies, 86, ['firebrick', 'lightcoral'])
 
 # nb. for twins you want total twin births/total births not total twin pregnancies
 #graph_maker.get_single_year_twins_graph(logs_dict[2010], total_births_2010, 3.9, ['firebrick', 'lightcoral'])
@@ -98,11 +98,11 @@ graph_maker.get_single_year_generic_incidence_graph('induced_abortion', master_d
 #graph_maker.get_total_anaemia_graph(logs_dict[2010], logs_dict[2015], ['red', 'pink'])
 
 
-graph_maker.get_preterm_birth_graph(master_dict_la_2010, master_dict_la_2015, total_births_2010, total_births_2015,
-                                   ['plum', 'thistle'])
+graph_maker_for_local_calibration.get_preterm_birth_graph(master_dict_la_2010, master_dict_la_2015, total_births_2010, total_births_2015,
+                                                          ['plum', 'thistle'])
 
-graph_maker.get_htn_disorders_graph(master_dict_an_2010, master_dict_la_2010, master_dict_pn_2010, total_births_2010,
-                                    2010)
+graph_maker_for_local_calibration.get_htn_disorders_graph(master_dict_an_2010, master_dict_la_2010, master_dict_pn_2010, total_births_2010,
+                                                          2010)
 #graph_maker.get_htn_disorders_graph(master_dict_an_2015, master_dict_la_2015, master_dict_pn_2015, total_births_2015,
 #                                    2015)
 

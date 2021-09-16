@@ -14,7 +14,7 @@ scenario_filename = 'calibration_with_dummy_contraception.py'  # <-- update this
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_5k_calibration_with_dummy_contraception-2021-09-14T130117Z'
+graph_location = 'output_graphs_5k_pop_calibration_with_dummy_contraception-2021-09-15T112141Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -232,7 +232,7 @@ plt.show()
 ##plt.xlabel('Year')
 ##plt.ylabel('Pregnancies (mean)')
 ##plt.title('Mean number of pregnancies')
-###plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
+###plt.savefig('./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
 ##plt.show()
 
 # -----------------------------------------------------Total births...------------------------------------------------
