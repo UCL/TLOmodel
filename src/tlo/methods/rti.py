@@ -3169,6 +3169,14 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = population.props
         now = self.sim.date
+        probabilities_of_death = {
+            '1': 0,
+            '2': 0,
+            '3': self.prob_death_MAIS3,
+            '4': self.prob_death_MAIS4,
+            '5': self.prob_death_MAIS5,
+            '6': self.prob_death_MAIS6
+        }
         # check if anyone is due to have their mortality without medical intervention determined today
         if len(df.loc[df['rt_date_death_no_med'] == now]) > 0:
             # Get an index of those scheduled to have their mortality checked
@@ -3178,17 +3186,9 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                 # Create a random number to determine mortality
                 rand_for_death = self.module.rng.random_sample(1)
                 # create a variable to show if a person has died due to their untreated injuries
-                died = False
                 # for each rt_MAIS_military_score, determine mortality
-                if (df.loc[person, 'rt_MAIS_military_score'] == 3) & (rand_for_death < self.prob_death_MAIS3):
-                    died = True
-                elif (df.loc[person, 'rt_MAIS_military_score'] == 4) & (rand_for_death < self.prob_death_MAIS4):
-                    died = True
-                elif (df.loc[person, 'rt_MAIS_military_score'] == 5) & (rand_for_death < self.prob_death_MAIS5):
-                    died = True
-                elif (df.loc[person, 'rt_MAIS_military_score'] == 6) & (rand_for_death < self.prob_death_MAIS6):
-                    died = True
-                if died:
+                prob_death = probabilities_of_death[str(df.loc[person, 'rt_MAIS_military_score'])]
+                if rand_for_death < prob_death:
                     # If determined to die, schedule a death without med
                     df.loc[person, 'rt_no_med_death'] = True
                     self.sim.modules['Demography'].do_death(individual_id=person, cause="RTI_death_without_med",
@@ -4425,12 +4425,6 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
             else:
                 logger.debug('This facility has no treatment for open wounds available.')
 
-        else:
-            logger.debug("Did event run????")
-            logger.debug(person_id)
-
-            pass
-
     def did_not_run(self, person_id):
         logger.debug('Suture kits unavailable for person %d', person_id)
 
@@ -4554,12 +4548,6 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                     'recovery date assigned to past'
             else:
                 logger.debug('This facility has no treatment for burns available.')
-
-        else:
-            logger.debug("Did event run????")
-            logger.debug(person_id)
-            pass
-
     def did_not_run(self, person_id):
         logger.debug('Burn treatment unavailable for person %d', person_id)
 
@@ -4595,7 +4583,6 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
         # check the person sent here has an injury treated by this module
         codes_for_tetanus = ['1101', '2101', '3101', '4101', '5101', '7101', '8101',
                              '1114', '2114', '3113', '4113', '5113', '7113', '8113']
-
         _, counts = RTI.rti_find_and_count_injuries(person_injuries, codes_for_tetanus)
         assert counts > 0
         # If they have a laceration/burn ask request the tetanus vaccine
@@ -5153,21 +5140,19 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                     self.sim.date + DateOffset(days=maj_surg_recovery_time_in_days[self.treated_code])
                 assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
 
+        # some injuries have a daly weight that swaps upon treatment, get list of those codes
         swapping_codes = RTI.SWAPPING_CODES[:]
+        # isolate that swapping codes that will be treated here
         swapping_codes = [code for code in swapping_codes if code in surgically_treated_codes]
+        # find the injuries this person will have treated in other forms of treatment
+        person = df.loc[person_id]
+        treatment_plan = (
+            person['rt_injuries_for_minor_surgery'] + person['rt_injuries_to_cast'] +
+            person['rt_injuries_to_heal_with_time'] + person['rt_injuries_for_open_fracture_treatment']
+        )
         # remove codes that will be treated elsewhere
-        for code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
-            if code in swapping_codes:
-                swapping_codes.remove(code)
-        for code in df.loc[person_id, 'rt_injuries_to_cast']:
-            if code in swapping_codes:
-                swapping_codes.remove(code)
-        for code in df.loc[person_id, 'rt_injuries_to_heal_with_time']:
-            if code in swapping_codes:
-                swapping_codes.remove(code)
-        for code in df.loc[person_id, 'rt_injuries_for_open_fracture_treatment']:
-            if code in swapping_codes:
-                swapping_codes.remove(code)
+        swapping_codes = [code for code in swapping_codes if code not in treatment_plan]
+        # swap the daly weight for any applicable injuries
         if self.treated_code in swapping_codes:
             road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, [self.treated_code])
         # Check that every injury treated has a recovery time
