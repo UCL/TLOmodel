@@ -5272,23 +5272,25 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         surgically_treated_codes = ['322', '211', '212', '323', '722', '291', '241', '811', '812', '813a', '813b',
                                     '813c']
         persons_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
+        person = df.loc[person_id]
         # =========================================== Tests ============================================================
         # check the people sent here hasn't died due to rti, have had their injuries diagnosed and been through RTI_Med
-        assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
-        assert df.loc[person_id, 'rt_med_int'], 'This person has not been through rti med int'
+        assert person['rt_diagnosed'], 'This person has not been through a and e'
+        assert person['rt_med_int'], 'This person has not been through rti med int'
         # check they have at least one injury treated by minor surgery
         _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, surgically_treated_codes)
         assert counts > 0
+        # find the injuries this person has
         non_empty_injuries = persons_injuries[persons_injuries != "none"]
         non_empty_injuries = non_empty_injuries.dropna(axis=1)
-
+        # find the injuries which will be treated here
         relevant_codes = np.intersect1d(df.loc[person_id, 'rt_injuries_for_minor_surgery'], surgically_treated_codes)
         # Check that a code has been selected to be treated
         assert len(relevant_codes) > 0
+        # choose an injury to treat
         treated_code = rng.choice(relevant_codes)
-
-        injury_columns = non_empty_injuries.columns
-        external_fixation = False
+        injury_columns = persons_injuries.columns
+        # create a dictionary to store the recovery times for each injury in days
         minor_surg_recov_time_days = {
             '322': 180,
             '323': 180,
@@ -5303,15 +5305,18 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
             '813b': 63,
             '813c': 63,
         }
+        # need to determine whether this person has an injury which will treated with external fixation
+        external_fixation = False
         external_fixation_codes = ['811', '812', '813a', '813b', '813c']
         if treated_code in external_fixation_codes:
             external_fixation = True
-        # assign a recovery time for the treated person
+        # assign a recovery time for the treated person from the dictionary, get the column which the injury is stored
+        # in
         columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, [treated_code])[0])
-        # using estimated 9 weeks for external fixation
-        external_fixation = True
+        # assign a recovery date
         df.loc[person_id, 'rt_date_to_remove_daly'][columns] = \
             self.sim.date + DateOffset(days=minor_surg_recov_time_days[treated_code])
+        # make sure the injury recovery date is in the future
         assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
         # If surgery requires external fixation, request the materials as part of the appointment footprint
         if external_fixation:
@@ -5330,32 +5335,25 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 logger.debug('An external fixator is available for this minor surgery'
                              'person %d.', person_id)
 
+        # some injuries have a change in daly weight if they are treated, find all possible swappable codes
         swapping_codes = RTI.SWAPPING_CODES[:]
-        for code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
-            if code in swapping_codes:
-                swapping_codes.remove(code)
-        for code in df.loc[person_id, 'rt_injuries_to_cast']:
-            if code in swapping_codes:
-                swapping_codes.remove(code)
-        for code in df.loc[person_id, 'rt_injuries_to_heal_with_time']:
-            if code in swapping_codes:
-                swapping_codes.remove(code)
-        for code in df.loc[person_id, 'rt_injuries_for_open_fracture_treatment']:
-            if code in swapping_codes:
-                swapping_codes.remove(code)
-
-        if code in swapping_codes:
-            road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, [code])
+        # exclude any codes that could be swapped but are due to be treated elsewhere
+        treatment_plan = (
+            person['rt_injuries_for_minor_surgery'] + person['rt_injuries_to_cast'] +
+            person['rt_injuries_to_heal_with_time'] + person['rt_injuries_for_open_fracture_treatment']
+        )
+        swapping_codes = [code for code in swapping_codes if code not in treatment_plan]
+        if treated_code in swapping_codes:
+            road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, [treated_code])
         logger.debug('This is RTI_Minor_Surgeries supplying minor surgeries for person %d on date %s!!!!!!',
                      person_id, self.sim.date)
+        # update the dataframe to reflect that this person is recieving medical care
         df.at[person_id, 'rt_med_int'] = True
-        # Check if the injury has been given a recovery date['211']
+        # Check if the injury has been given a recovery date
         columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, [treated_code])[0])
         assert not pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]), \
             'no recovery date given for this injury'
-        assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-
-        # remove code from minor surgeries list
+        # remove code from minor surgeries list as it has now been treated
         if treated_code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
             df.loc[person_id, 'rt_injuries_for_minor_surgery'].remove(treated_code)
 
