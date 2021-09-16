@@ -4662,44 +4662,39 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         road_traffic_injuries = self.sim.modules['RTI']
         pain_level = "none"
-        # Injuries causing mild pain include: Lacerations, mild soft tissue injuries, TBI (for now), eye injury
-        Mild_Pain_Codes = ['1101', '2101', '3101', '4101', '5101', '7101', '8101',  # lacerations
-                           '241',  # Minor soft tissue injuries
-                           '133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135',  # TBI
-                           'P133', 'P133a', 'P133b', 'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135',  # Perm TBI
-                           '291',  # Eye injury
-                           '442'
-                           ]
-        _, mild_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, Mild_Pain_Codes)
-        # Injuries causing moderate pain include: Fractures, dislocations, soft tissue and neck trauma
-        Moderate_Pain_Codes = ['112', '113', '211', '212', '412', '414', '612', '712', '712a', '712b', '712c',
-                               '811', '812', '813', '813a', '813b', '813c',  # fractures
-                               '322', '323', '722', '822', '822a', '822b',  # dislocations
-                               '342', '343', '361', '363',  # neck trauma
-                               '461',  # chest wall bruising
-                               '813bo', '813co', '813do', '813eo'  # open fractures
-                               ]
-        _, moderate_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, Moderate_Pain_Codes)
-        # Injuries causing severe pain include: All burns, amputations, spinal cord injuries, abdominal trauma see
-        # (https://bestbets.org/bets/bet.php?id=1247), severe chest trauma
-        Severe_Pain_Codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113',  # burns
-                             'P782', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884',  # amputations
-                             '673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676',
-                             'P673', 'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676',
-                             # SCI
-                             '552', '553', '554',  # abdominal trauma
-                             '463', '453', '453a', '453b', '441', '443'  # severe chest trauma
-                             ]
-        _, severe_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, Severe_Pain_Codes)
+        # create a dictionary to associate the level of pain to the codes
+        pain_dict = {
+            'severe': ['1114', '2114', '3113', '4113', '5113', '7113', '8113',  # burns
+                       'P782', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884',  # amputations
+                       '673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676',
+                       'P673', 'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676',  # SCI
+                       '552', '553', '554',  # abdominal trauma
+                       '463', '453', '453a', '453b', '441', '443'  # severe chest trauma
+                       ],
+            'moderate': ['112', '113', '211', '212', '412', '414', '612', '712', '712a', '712b', '712c',
+                         '811', '812', '813', '813a', '813b', '813c',  # fractures
+                         '322', '323', '722', '822', '822a', '822b',  # dislocations
+                         '342', '343', '361', '363',  # neck trauma
+                         '461',  # chest wall bruising
+                         '813bo', '813co', '813do', '813eo'  # open fractures
+                         ],
+            'mild': ['1101', '2101', '3101', '4101', '5101', '7101', '8101',  # lacerations
+                     '241',  # Minor soft tissue injuries
+                     '133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135',  # TBI
+                     'P133', 'P133a', 'P133b', 'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135',  # Perm TBI
+                     '291',  # Eye injury
+                     '442'
+                     ]
+        }
+        # iterate over the dictionary to find the pain level, going from highest pain to lowest pain in a for loop,
+        # then find the highest level of pain this person has by breaking the for loop
+        for severity in pain_dict.keys():
+            _, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, pain_dict[severity])
+            if counts > 0:
+                pain_level = severity
+                break
         # check that the people here have at least one injury
-        assert mild_counts + moderate_counts + severe_counts > 0
-        if severe_counts > 0:
-            pain_level = "severe"
-        elif moderate_counts > 0:
-            pain_level = "moderate"
-        elif mild_counts > 0:
-            pain_level = "mild"
-
+        assert counts > 0
         if pain_level == "mild":
             # Multiple options, some are conditional
             # Give paracetamol
