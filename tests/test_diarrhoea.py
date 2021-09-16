@@ -4,7 +4,6 @@ Basic tests for the Diarrhoea Module
 import os
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -22,12 +21,13 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.diarrhoea import (
+    increase_incidence_of_pathogens,
+    increase_risk_of_death,
+    make_treatment_perfect, HSI_Diarrhoea_Treatment_Outpatient, HSI_Diarrhoea_Treatment_Inpatient
+)
 
-try:
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-except NameError:
-    # running interactively
-    resourcefilepath = 'resources'
+resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 
 def check_dtypes(simulation):
@@ -35,66 +35,6 @@ def check_dtypes(simulation):
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
-
-
-def increase_incidence_of_pathogens(sim):
-    """Helper function to increase the incidence of pathogens and symptoms onset with Diarrhoea."""
-
-    # Increase incidence of pathogens (such that almost certain to get at least one pathogen each year)
-    pathogens = sim.modules['Diarrhoea'].pathogens
-    for pathogen in pathogens:
-        sim.modules['Diarrhoea'].parameters[f"base_inc_rate_diarrhoea_by_{pathogen}"] = \
-            [0.95 / len(sim.modules['Diarrhoea'].pathogens)] * 3
-
-    probs = pd.DataFrame(
-        [sim.modules['Diarrhoea'].parameters[f"base_inc_rate_diarrhoea_by_{pathogen}"] for pathogen in pathogens]
-    )
-    assert np.isclose(probs.sum(0), 0.95).all()
-
-    # Increase symptoms so that everyone gets symptoms:
-    for param_name in sim.modules['Diarrhoea'].parameters.keys():
-        if param_name.startswith('proportion_AWD_by_'):
-            sim.modules['Diarrhoea'].parameters[param_name] = 1.0
-        if param_name.startswith('fever_by_'):
-            sim.modules['Diarrhoea'].parameters[param_name] = 1.0
-        if param_name.startswith('vomiting_by_'):
-            sim.modules['Diarrhoea'].parameters[param_name] = 1.0
-        if param_name.startswith('dehydration_by_'):
-            sim.modules['Diarrhoea'].parameters[param_name] = 1.0
-    return sim
-
-
-def increase_risk_of_death(sim):
-    """Helper function to increase death and make it dependent on dehydration and blood-in-diarrhoea that are cured by
-     treatment"""
-
-    sim.modules['Diarrhoea'].parameters['case_fatality_rate_AWD'] = 0.0001
-    sim.modules['Diarrhoea'].parameters['rr_diarr_death_bloody'] = 1000
-    sim.modules['Diarrhoea'].parameters['rr_diarr_death_severe_dehydration'] = 1000
-    sim.modules['Diarrhoea'].parameters['rr_diarr_death_age12to23mo'] = 1.0
-    sim.modules['Diarrhoea'].parameters['rr_diarr_death_age24to59mo'] = 1.0
-    sim.modules['Diarrhoea'].parameters['rr_diarr_death_if_duration_longer_than_13_days'] = 1.0
-    sim.modules['Diarrhoea'].parameters['rr_diarr_death_untreated_HIV'] = 1.0
-    sim.modules['Diarrhoea'].parameters['rr_diarr_death_SAM'] = 1.0
-    sim.modules['Diarrhoea'].parameters['rr_diarr_death_alri'] = 1.0
-    sim.modules['Diarrhoea'].parameters['rr_diarr_death_cryptosporidium'] = 1.0
-    sim.modules['Diarrhoea'].parameters['rr_diarr_death_shigella'] = 1.0
-    return sim
-
-
-def make_treatment_perfect(sim):
-    """Apply perfect efficacy for treatments"""
-    sim.modules['Diarrhoea'].parameters['prob_WHOPlanC_cures_dehydration_if_severe_dehydration'] = 1.0
-    sim.modules['Diarrhoea'].parameters['prob_ORS_cures_dehydration_if_severe_dehydration'] = 1.0
-    sim.modules['Diarrhoea'].parameters['prob_ORS_cures_dehydration_if_non_severe_dehydration'] = 1.0
-    sim.modules['Diarrhoea'].parameters['prob_antibiotic_cures_dysentery'] = 1.0
-
-    # Apply perfect assessment and referral
-    sim.modules['Diarrhoea'].parameters['prob_hospitalization_referral_for_severe_diarrhoea'] = 1.0
-    sim.modules['Diarrhoea'].parameters['sensitivity_danger_signs_visual_inspection'] = 1.0
-    sim.modules['Diarrhoea'].parameters['specificity_danger_signs_visual_inspection'] = 1.0
-
-    return sim
 
 
 def get_combined_log(log_filepath):
@@ -177,7 +117,7 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
             sim.modules['Diarrhoea'].parameters[param_name] = 1.0
 
     # Increase death (to be consistent with other checks):
-    sim = increase_risk_of_death(sim)
+    increase_risk_of_death(sim.modules['Diarrhoea'])
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
@@ -219,10 +159,10 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
                  )
 
     # Increase incidence of pathogens:
-    sim = increase_incidence_of_pathogens(sim)
+    increase_incidence_of_pathogens(sim.modules['Diarrhoea'])
 
     # Increase death:
-    sim = increase_risk_of_death(sim)
+    increase_risk_of_death(sim.modules['Diarrhoea'])
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
@@ -299,13 +239,13 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
             ] = 5.0 / 1000 if symp == 'diarrhoea' else 0.0
 
         # Increase incidence of pathogens:
-        sim = increase_incidence_of_pathogens(sim)
+        increase_incidence_of_pathogens(sim.modules['Diarrhoea'])
 
         # Increase risk of death (and make it depend only on blood-in-diarrhoea and dehydration)
-        sim = increase_risk_of_death(sim)
+        increase_risk_of_death(sim.modules['Diarrhoea'])
 
         # Make treatment perfect
-        sim = make_treatment_perfect(sim)
+        make_treatment_perfect(sim.modules['Diarrhoea'])
 
         # Make long duration so as to allow time for healthcare seeking
         for pathogen in sim.modules['Diarrhoea'].pathogens:
@@ -365,16 +305,13 @@ def test_run_each_of_the_HSI():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date)
 
-    list_of_hsi = [
-        'HSI_Diarrhoea_Treatment_Outpatient',
-        'HSI_Diarrhoea_Treatment_Inpatient',
-    ]
+    # The Out-patient HSI
+    hsi_outpatient = HSI_Diarrhoea_Treatment_Outpatient(person_id=0, module=sim.modules['Diarrhoea'])
+    hsi_outpatient.run(squeeze_factor=0)
 
-    for name_of_hsi in list_of_hsi:
-        hsi_event = eval(name_of_hsi +
-                         "(person_id=0, "
-                         "module=sim.modules['Diarrhoea'])")
-        hsi_event.run(squeeze_factor=0)
+    # The In-patient HSI
+    hsi_outpatient = HSI_Diarrhoea_Treatment_Inpatient(person_id=0, module=sim.modules['Diarrhoea'])
+    hsi_outpatient.run(squeeze_factor=0)
 
 
 def test_does_treatment_prevent_death():
@@ -398,8 +335,9 @@ def test_does_treatment_prevent_death():
                  hiv.DummyHivModule(),
                  )
 
-    sim = increase_risk_of_death(sim)
-    sim = make_treatment_perfect(sim)
+    # Increase incidence and risk of death in Diarrhoea episodes
+    increase_risk_of_death(sim.modules['Diarrhoea'])
+    make_treatment_perfect(sim.modules['Diarrhoea'])
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date)

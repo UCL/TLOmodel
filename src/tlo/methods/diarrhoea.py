@@ -1553,7 +1553,7 @@ class HSI_Diarrhoea_Treatment_Inpatient(HSI_Event, IndividualScopeEventMixin):
 
 
 # ---------------------------------------------------------------------------------------------------------
-#   HELPER MODULES FOR USE IN TESTING
+#   HELPER MODULES AND METHODS FOR USE IN TESTING
 # ---------------------------------------------------------------------------------------------------------
 
 class PropertiesOfOtherModules(Module):
@@ -1616,3 +1616,60 @@ class DiarrhoeaCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         self.module.check_properties()
+
+
+def increase_incidence_of_pathogens(diarrhoea_module):
+    """Helper function to increase the incidence of pathogens and symptoms onset with Diarrhoea."""
+
+    # Increase incidence of pathogens (such that almost certain to get at least one pathogen each year)
+    pathogens = diarrhoea_module.pathogens
+    for pathogen in pathogens:
+        diarrhoea_module.parameters[f"base_inc_rate_diarrhoea_by_{pathogen}"] = \
+            [0.95 / len(diarrhoea_module.pathogens)] * 3
+
+    probs = pd.DataFrame(
+        [diarrhoea_module.parameters[f"base_inc_rate_diarrhoea_by_{pathogen}"] for pathogen in pathogens]
+    )
+    assert np.isclose(probs.sum(0), 0.95).all()
+
+    # Increase symptoms so that everyone gets symptoms:
+    for param_name in diarrhoea_module.parameters.keys():
+        if param_name.startswith('proportion_AWD_by_'):
+            diarrhoea_module.parameters[param_name] = 1.0
+        if param_name.startswith('fever_by_'):
+            diarrhoea_module.parameters[param_name] = 1.0
+        if param_name.startswith('vomiting_by_'):
+            diarrhoea_module.parameters[param_name] = 1.0
+        if param_name.startswith('dehydration_by_'):
+            diarrhoea_module.parameters[param_name] = 1.0
+
+
+
+def increase_risk_of_death(diarrhoea_module):
+    """Helper function to increase death and make it dependent on dehydration and blood-in-diarrhoea that are cured by
+     treatment"""
+
+    diarrhoea_module.parameters['case_fatality_rate_AWD'] = 0.0001
+    diarrhoea_module.parameters['rr_diarr_death_bloody'] = 1000
+    diarrhoea_module.parameters['rr_diarr_death_severe_dehydration'] = 1000
+    diarrhoea_module.parameters['rr_diarr_death_age12to23mo'] = 1.0
+    diarrhoea_module.parameters['rr_diarr_death_age24to59mo'] = 1.0
+    diarrhoea_module.parameters['rr_diarr_death_if_duration_longer_than_13_days'] = 1.0
+    diarrhoea_module.parameters['rr_diarr_death_untreated_HIV'] = 1.0
+    diarrhoea_module.parameters['rr_diarr_death_SAM'] = 1.0
+    diarrhoea_module.parameters['rr_diarr_death_alri'] = 1.0
+    diarrhoea_module.parameters['rr_diarr_death_cryptosporidium'] = 1.0
+    diarrhoea_module.parameters['rr_diarr_death_shigella'] = 1.0
+
+
+def make_treatment_perfect(diarrhoea_module):
+    """Apply perfect efficacy for treatments"""
+    diarrhoea_module.parameters['prob_WHOPlanC_cures_dehydration_if_severe_dehydration'] = 1.0
+    diarrhoea_module.parameters['prob_ORS_cures_dehydration_if_severe_dehydration'] = 1.0
+    diarrhoea_module.parameters['prob_ORS_cures_dehydration_if_non_severe_dehydration'] = 1.0
+    diarrhoea_module.parameters['prob_antibiotic_cures_dysentery'] = 1.0
+
+    # Apply perfect assessment and referral
+    diarrhoea_module.parameters['prob_hospitalization_referral_for_severe_diarrhoea'] = 1.0
+    diarrhoea_module.parameters['sensitivity_danger_signs_visual_inspection'] = 1.0
+    diarrhoea_module.parameters['specificity_danger_signs_visual_inspection'] = 1.0
