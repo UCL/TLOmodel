@@ -1408,8 +1408,6 @@ class RTI(Module):
             'this person has asked for a minor surgery but does not need it'
         # check that for each injury due to be treated with a minor surgery, the injury hasn't previously been treated
         for code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
-
-
             column, found_code = self.rti_find_injury_column(person_id, [code])
             index_in_rt_recovery_dates = int(column[-1]) - 1
             assert pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates])
@@ -4542,10 +4540,11 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 swapping_codes = RTI.SWAPPING_CODES[:]
                 swapping_codes = [code for code in swapping_codes if code in codes]
                 # remove codes that will be treated elsewhere
-                treatment_plan = person['rt_injuries_for_major_surgery'] + person['rt_injuries_for_minor_surgery'] + \
-                                 person['rt_injuries_for_minor_surgery'] + person['rt_injuries_to_cast'] + \
-                                 person['rt_injuries_to_heal_with_time'] + \
-                                 person['rt_injuries_for_open_fracture_treatment']
+                treatment_plan = (
+                    person['rt_injuries_for_major_surgery'] + person['rt_injuries_for_minor_surgery'] +
+                    person['rt_injuries_for_minor_surgery'] + person['rt_injuries_to_cast'] +
+                    person['rt_injuries_to_heal_with_time'] + person['rt_injuries_for_open_fracture_treatment']
+                )
                 swapping_codes = [code for code in swapping_codes if code not in treatment_plan]
                 relevant_codes = np.intersect1d(non_empty_injuries.values, swapping_codes)
                 if len(relevant_codes) > 0:
