@@ -3332,7 +3332,6 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
         # # Isolate the relevant population
         any_not_null = df.loc[df.is_alive, 'rt_date_to_remove_daly'].apply(lambda x: pd.notnull(x).any())
         relevant_population = any_not_null.index[any_not_null]
-
         # Isolate the relevant information
         recovery_dates = df.loc[relevant_population]['rt_date_to_remove_daly']
         default_recovery = [pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT]
@@ -3370,7 +3369,6 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                                              df.loc[person, 'rt_injuries_to_cast']
                         assert untreated_injuries == [], f"not every injury removed from dataframe when treated " \
                                                          f"{untreated_injuries}"
-
             # Check that the date to remove dalys is removed if the date to remove the daly is today
             assert now not in df.loc[person, 'rt_date_to_remove_daly']
             # finally ensure the reported disability burden is an appropriate value
@@ -5352,141 +5350,45 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
         # ======================================== Tests ==============================================================
         assert df.loc[person_id, 'rt_ISS_score'] > 0
         mortality_checked = False
+        probabilities_of_death = {
+            '1-4': [range(1, 5), 0],
+            '5-9': [range(5, 10), self.prob_death_iss_less_than_9],
+            '10-15': [range(10, 16), self.prob_death_iss_10_15],
+            '16-24': [range(16, 25), self.prob_death_iss_16_24],
+            '25-35': [range(25, 36), self.prob_death_iss_25_35],
+            '35-75': [range(25, 76), self.prob_death_iss_35_plus]
+        }
         # Schedule death for those who died from their injuries despite medical intervention
         if df.loc[person_id, 'cause_of_death'] == 'Other':
             pass
-        if df.loc[person_id, 'rt_ISS_score'] <= 4:
-            mortality_checked = True
-        elif 4 < df.loc[person_id, 'rt_ISS_score'] <= 9:
-            if randfordeath < self.prob_death_iss_less_than_9:
-                mortality_checked = True
-                df.loc[person_id, 'rt_post_med_death'] = True
-                dict_to_output = {'person': person_id,
-                                  'First injury': df.loc[person_id, 'rt_injury_1'],
-                                  'Second injury': df.loc[person_id, 'rt_injury_2'],
-                                  'Third injury': df.loc[person_id, 'rt_injury_3'],
-                                  'Fourth injury': df.loc[person_id, 'rt_injury_4'],
-                                  'Fifth injury': df.loc[person_id, 'rt_injury_5'],
-                                  'Sixth injury': df.loc[person_id, 'rt_injury_6'],
-                                  'Seventh injury': df.loc[person_id, 'rt_injury_7'],
-                                  'Eight injury': df.loc[person_id, 'rt_injury_8']}
-                logger.info(key='RTI_Death_Injury_Profile',
-                            data=dict_to_output,
-                            description='The injury profile of those who have died due to rtis despite medical care'
-                            )
-                # Schedule the death
-                self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_with_med",
-                                                        originating_module=self.module)
-                # Log the death
-                logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d who was '
-                             'treated for their injuries but still died on date %s',
-                             person_id, self.sim.date)
-            else:
-                mortality_checked = True
-        elif df.loc[person_id, 'rt_ISS_score'] <= 15:
-            if randfordeath < self.prob_death_iss_10_15:
-                mortality_checked = True
-                df.loc[person_id, 'rt_post_med_death'] = True
-                dict_to_output = {'person': person_id,
-                                  'First injury': df.loc[person_id, 'rt_injury_1'],
-                                  'Second injury': df.loc[person_id, 'rt_injury_2'],
-                                  'Third injury': df.loc[person_id, 'rt_injury_3'],
-                                  'Fourth injury': df.loc[person_id, 'rt_injury_4'],
-                                  'Fifth injury': df.loc[person_id, 'rt_injury_5'],
-                                  'Sixth injury': df.loc[person_id, 'rt_injury_6'],
-                                  'Seventh injury': df.loc[person_id, 'rt_injury_7'],
-                                  'Eight injury': df.loc[person_id, 'rt_injury_8']}
-                logger.info(key='RTI_Death_Injury_Profile',
-                            data=dict_to_output,
-                            description='The injury profile of those who have died due to rtis despite medical care'
-                            )
-                # Schedule the death
-                self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_with_med",
-                                                        originating_module=self.module)
-                # Log the death
-                logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d who was '
-                             'treated for their injuries but still died on date %s',
-                             person_id, self.sim.date)
-            else:
-                mortality_checked = True
-        elif df.loc[person_id, 'rt_ISS_score'] <= 24:
-            if randfordeath < self.prob_death_iss_16_24:
-                mortality_checked = True
-                df.loc[person_id, 'rt_post_med_death'] = True
-                dict_to_output = {'person': person_id,
-                                  'First injury': df.loc[person_id, 'rt_injury_1'],
-                                  'Second injury': df.loc[person_id, 'rt_injury_2'],
-                                  'Third injury': df.loc[person_id, 'rt_injury_3'],
-                                  'Fourth injury': df.loc[person_id, 'rt_injury_4'],
-                                  'Fifth injury': df.loc[person_id, 'rt_injury_5'],
-                                  'Sixth injury': df.loc[person_id, 'rt_injury_6'],
-                                  'Seventh injury': df.loc[person_id, 'rt_injury_7'],
-                                  'Eight injury': df.loc[person_id, 'rt_injury_8']}
-                logger.info(key='RTI_Death_Injury_Profile',
-                            data=dict_to_output,
-                            description='The injury profile of those who have died due to rtis despite medical care'
-                            )
-                # Schedule the death
-                self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_with_med",
-                                                        originating_module=self.module)
-                # Log the death
-                logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d who was '
-                             'treated for their injuries but still died on date %s',
-                             person_id, self.sim.date)
-            else:
-                mortality_checked = True
-        elif df.loc[person_id, 'rt_ISS_score'] <= 35:
-            if randfordeath < self.prob_death_iss_25_35:
-                mortality_checked = True
-                df.loc[person_id, 'rt_post_med_death'] = True
-                dict_to_output = {'person': person_id,
-                                  'First injury': df.loc[person_id, 'rt_injury_1'],
-                                  'Second injury': df.loc[person_id, 'rt_injury_2'],
-                                  'Third injury': df.loc[person_id, 'rt_injury_3'],
-                                  'Fourth injury': df.loc[person_id, 'rt_injury_4'],
-                                  'Fifth injury': df.loc[person_id, 'rt_injury_5'],
-                                  'Sixth injury': df.loc[person_id, 'rt_injury_6'],
-                                  'Seventh injury': df.loc[person_id, 'rt_injury_7'],
-                                  'Eight injury': df.loc[person_id, 'rt_injury_8']}
-                logger.info(key='RTI_Death_Injury_Profile',
-                            data=dict_to_output,
-                            description='The injury profile of those who have died due to rtis despite medical care'
-                            )
-                # Schedule the death
-                self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_with_med",
-                                                        originating_module=self.module)
-                # Log the death
-                logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d who was '
-                             'treated for their injuries but still died on date %s',
-                             person_id, self.sim.date)
-            else:
-                mortality_checked = True
-        else:
-            if randfordeath < self.prob_death_iss_35_plus:
-                mortality_checked = True
-                df.loc[person_id, 'rt_post_med_death'] = True
-                dict_to_output = {'person': person_id,
-                                  'First injury': df.loc[person_id, 'rt_injury_1'],
-                                  'Second injury': df.loc[person_id, 'rt_injury_2'],
-                                  'Third injury': df.loc[person_id, 'rt_injury_3'],
-                                  'Fourth injury': df.loc[person_id, 'rt_injury_4'],
-                                  'Fifth injury': df.loc[person_id, 'rt_injury_5'],
-                                  'Sixth injury': df.loc[person_id, 'rt_injury_6'],
-                                  'Seventh injury': df.loc[person_id, 'rt_injury_7'],
-                                  'Eight injury': df.loc[person_id, 'rt_injury_8']}
-                logger.info(key='RTI_Death_Injury_Profile',
-                            data=dict_to_output,
-                            description='The injury profile of those who have died due to rtis despite medical care'
-                            )
-                # Schedule the death
-                self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_with_med",
-                                                        originating_module=self.module)
-                # Log the death
-                logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d who was '
-                             'treated for their injuries but still died on date %s',
-                             person_id, self.sim.date)
-            else:
-                mortality_checked = True
+        for range_boundaries in probabilities_of_death.keys():
+            if df.loc[person_id].rt_ISS_score in probabilities_of_death[range_boundaries][0]:
+                if randfordeath < probabilities_of_death[range_boundaries][1]:
+                    mortality_checked = True
+                    df.loc[person_id, 'rt_post_med_death'] = True
+                    dict_to_output = {'person': person_id,
+                                      'First injury': df.loc[person_id, 'rt_injury_1'],
+                                      'Second injury': df.loc[person_id, 'rt_injury_2'],
+                                      'Third injury': df.loc[person_id, 'rt_injury_3'],
+                                      'Fourth injury': df.loc[person_id, 'rt_injury_4'],
+                                      'Fifth injury': df.loc[person_id, 'rt_injury_5'],
+                                      'Sixth injury': df.loc[person_id, 'rt_injury_6'],
+                                      'Seventh injury': df.loc[person_id, 'rt_injury_7'],
+                                      'Eight injury': df.loc[person_id, 'rt_injury_8']}
+                    logger.info(key='RTI_Death_Injury_Profile',
+                                data=dict_to_output,
+                                description='The injury profile of those who have died due to rtis despite medical care'
+                                )
+                    # Schedule the death
+                    self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_with_med",
+                                                            originating_module=self.module)
+                    # Log the death
+                    logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d who was '
+                                 'treated for their injuries but still died on date %s',
+                                 person_id, self.sim.date)
+                else:
+                    mortality_checked = True
+
         assert mortality_checked, 'Something missing in criteria'
 
 
