@@ -22,9 +22,11 @@ from tlo.methods import (
     symptommanager,
 )
 from tlo.methods.diarrhoea import (
+    HSI_Diarrhoea_Treatment_Inpatient,
+    HSI_Diarrhoea_Treatment_Outpatient,
     increase_incidence_of_pathogens,
     increase_risk_of_death,
-    make_treatment_perfect, HSI_Diarrhoea_Treatment_Outpatient, HSI_Diarrhoea_Treatment_Inpatient
+    make_treatment_perfect,
 )
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'

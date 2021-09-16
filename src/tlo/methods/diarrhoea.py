@@ -10,25 +10,8 @@ Individuals are exposed to the risk of onset of diarrhoea. They can have diarrho
 
 Health care seeking is prompted by the onset of the symptom diarrhoea. The individual can be treated; if successful the
  risk of death is removed and they are cured (symptom resolved) some days later.
-
-Outstanding Issues
-===================
-* Logic of death computation (https://docs.google.com/drawings/d/1B5mNlIL9Bry2bk2BQq_djtVFMxk1g_NGxv-Jfg5EnWU/edit)
-* Treatment algorithm (https://docs.google.com/drawings/d/14PsRAXwJU0T_8k0MWky43fJ_ukYPktm8U3mnc2eyW2M/edit)
-* Footprint for in-patient HSI (2 bed days?)
-* Effect of breastfeeding on duration in `write_lm_prob_diarrhoea_is_persistent_if_prolonged`
- - yes
-
-* Needs a big tidy-up:
-    * large numbers of unused parameters
-    * unused consumables codes
-    * nb_low_birth_weight_status is never used: remove -yes
-
-* Calibration
-    * Incidence and deaths OK but does not seem reconciled with CFR in GBD
-    (https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(18)30362-1/fulltext)
-
 """
+
 from pathlib import Path
 from typing import Iterable
 
@@ -1195,7 +1178,8 @@ class Models:
         True then the death should be cancalled as the change in circumstances (treatment of diarrhoea type or
         dehydration) have reduced the probabilty of death such that there it will not occur."""
 
-        is_iterable_and_not_string = lambda x: isinstance(x, Iterable) and not isinstance(x, str)
+        def is_iterable_and_not_string(x):
+            return isinstance(x, Iterable) and not isinstance(x, str)
 
         prob_death = dict()
         for i, case in enumerate(['before_treatment', 'after_treatment']):
@@ -1564,10 +1548,6 @@ class PropertiesOfOtherModules(Module):
         'hv_art': Property(Types.CATEGORICAL, 'temporary property for ART status',
                            categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
         'ri_current_infection_status': Property(Types.BOOL, 'temporary property'),
-        'nb_low_birth_weight_status': Property(Types.CATEGORICAL, 'temporary property',
-                                               categories=['extremely_low_birth_weight', 'very_low_birth_weight',
-                                                           'low_birth_weight', 'normal_birth_weight']),
-
         'nb_breastfeeding_status': Property(Types.CATEGORICAL, 'temporary property',
                                             categories=['none', 'non_exclusive', 'exclusive']),
         'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'temporary property',
@@ -1588,7 +1568,6 @@ class PropertiesOfOtherModules(Module):
         df.loc[df.is_alive, 'hv_inf'] = False
         df.loc[df.is_alive, 'hv_art'] = 'not'
         df.loc[df.is_alive, 'ri_current_infection_status'] = False
-        df.loc[df.is_alive, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
         df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
         df.loc[df.is_alive, 'un_HAZ_category'] = 'HAZ>=-2'
@@ -1601,7 +1580,6 @@ class PropertiesOfOtherModules(Module):
         df.at[child, 'hv_inf'] = False
         df.at[child, 'hv_art'] = 'not'
         df.at[child, 'ri_current_infection_status'] = False
-        df.at[child, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
         df.at[child, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.at[child, 'un_clinical_acute_malnutrition'] = 'well'
         df.at[child, 'un_HAZ_category'] = 'HAZ>=-2'
@@ -1642,7 +1620,6 @@ def increase_incidence_of_pathogens(diarrhoea_module):
             diarrhoea_module.parameters[param_name] = 1.0
         if param_name.startswith('dehydration_by_'):
             diarrhoea_module.parameters[param_name] = 1.0
-
 
 
 def increase_risk_of_death(diarrhoea_module):
