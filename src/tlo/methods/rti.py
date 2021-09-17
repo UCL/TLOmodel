@@ -5553,8 +5553,7 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         thoseininjuries = df.loc[df.rt_road_traffic_inc]
         df_injuries = thoseininjuries.loc[:, RTI.INJURY_COLUMNS]
         # ================================= Injury severity ===========================================================
-        sev = df.loc[df.rt_road_traffic_inc]
-        sev = sev['rt_inj_severity']
+        sev = thoseininjuries['rt_inj_severity']
         rural_injuries = df.loc[df.rt_road_traffic_inc & ~df.li_urban]
         if len(rural_injuries) > 0:
             percent_sev_rural = \
@@ -5567,9 +5566,6 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
                 len(urban_injuries.loc[urban_injuries['rt_inj_severity'] == 'severe']) / len(urban_injuries)
         else:
             percent_sev_urban = 'none_injured'
-        ISSlist = thoseininjuries['rt_ISS_score'].tolist()
-        ISSlist = list(filter(lambda num: num != 0, ISSlist))
-        self.ISSscore += ISSlist
         severity, severitycount = np.unique(sev, return_counts=True)
         if 'mild' in severity:
             idx = np.where(severity == 'mild')
@@ -5579,8 +5575,8 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             self.totsevere += len(idx)
         dict_to_output = {
             'total_mild_injuries': self.totmild,
-            'total_severe_injuries': self.totsevere,
-            'ISS_score': self.ISSscore,
+            ''
+            '_severe_injuries': self.totsevere,
             'Percent_severe_rural': percent_sev_rural,
             'Percent_severe_urban': percent_sev_urban
         }
@@ -5601,15 +5597,8 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         self.denominator += (n_alive - n_in_RTI) * (1 / 12)
         n_immediate_death = (df.rt_road_traffic_inc & df.rt_imm_death).sum()
         self.deathonscene += n_immediate_death
-        immdeathidx = df.index[df.rt_imm_death]
-        deathwithmedidx = df.index[df.rt_post_med_death]
-        deathwithoutmedidx = df.index[df.rt_no_med_death]
-        death_from_shock = df.index[df.rt_death_from_shock]
-        death_unavailable_med = df.index[df.rt_unavailable_med_death]
-        diedfromrtiidx = immdeathidx.union(deathwithmedidx)
-        diedfromrtiidx = diedfromrtiidx.union(deathwithoutmedidx)
-        diedfromrtiidx = diedfromrtiidx.union(death_from_shock)
-        diedfromrtiidx = diedfromrtiidx.union(death_unavailable_med)
+        diedfromrtiidx = df.index[df.rt_imm_death | df.rt_post_med_death | df.rt_no_med_death | df.rt_death_from_shock |
+                                  df.rt_unavailable_med_death]
         n_sought_care = (df.rt_road_traffic_inc & df.rt_med_int).sum()
         self.soughtmedcare += n_sought_care
         n_death_post_med = df.rt_post_med_death.sum()
@@ -5635,7 +5624,6 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             maleinrti = 1
             femaleinrti = 0
         mfratio = [maleinrti, femaleinrti]
-        incidence_of_injuries = (totalinj / (n_alive - n_in_RTI)) * 12 * 100000
         if (n_in_RTI - len(df.loc[df.rt_imm_death])) > 0:
             percent_sought_care = n_sought_care / (n_in_RTI - len(df.loc[df.rt_imm_death]))
         else:
@@ -5704,16 +5692,14 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             'incidence of death without med per 100,000': inc_death_no_med,
             'incidence of death due to unavailable med per 100,000': inc_death_unavailable_med,
             'incidence of fractures per 100,000': frac_incidence,
-            'injury incidence per 100,000': incidence_of_injuries,
             'number alive': n_alive,
             'number immediate deaths': n_immediate_death,
             'number deaths post med': n_death_post_med,
             'number deaths without med': len(df.loc[df.rt_no_med_death]),
             'number deaths unavailable med': len(df.loc[df.rt_unavailable_med_death]),
-            'number rti deaths': len(deathwithmedidx),
+            'number rti deaths': len(diedfromrtiidx),
             'number permanently disabled': n_perm_disabled,
             'percent of crashes that are fatal': percent_accidents_result_in_death,
-            'total injuries': totalinj,
             'male:female ratio': mfratio,
             'percent sought healthcare': percent_sought_care,
             'percentage died after med': percent_died_post_care,
