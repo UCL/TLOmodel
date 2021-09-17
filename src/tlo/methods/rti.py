@@ -2887,15 +2887,8 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
         # Reset injury properties after death, get an index of people who have died due to RTI, all causes
-        immdeathidx = df.index[df.rt_imm_death]
-        deathwithmedidx = df.index[df.rt_post_med_death]
-        deathwithoutmedidx = df.index[df.rt_no_med_death]
-        death_from_shock = df.index[df.rt_death_from_shock]
-        death_unavailable_med = df.index[df.rt_unavailable_med_death]
-        diedfromrtiidx = immdeathidx.union(deathwithmedidx)
-        diedfromrtiidx = diedfromrtiidx.union(deathwithoutmedidx)
-        diedfromrtiidx = diedfromrtiidx.union(death_from_shock)
-        diedfromrtiidx = diedfromrtiidx.union(death_unavailable_med)
+        diedfromrtiidx = df.index[df.rt_imm_death | df.rt_post_med_death | df.rt_no_med_death | df.rt_death_from_shock |
+                                  df.rt_unavailable_med_death]
         df.loc[diedfromrtiidx, "rt_imm_death"] = False
         df.loc[diedfromrtiidx, "rt_post_med_death"] = False
         df.loc[diedfromrtiidx, "rt_no_med_death"] = False
