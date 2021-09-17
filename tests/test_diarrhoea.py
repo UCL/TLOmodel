@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 
 import pandas as pd
-import pytest
 from pandas import DateOffset
 
 from tlo import Date, Simulation, logging
@@ -23,11 +22,13 @@ from tlo.methods import (
     symptommanager,
 )
 from tlo.methods.diarrhoea import (
+    DiarrhoeaCureEvent,
+    DiarrhoeaNaturalRecoveryEvent,
     HSI_Diarrhoea_Treatment_Inpatient,
     HSI_Diarrhoea_Treatment_Outpatient,
     increase_incidence_of_pathogens,
     increase_risk_of_death,
-    make_treatment_perfect, DiarrhoeaCureEvent, DiarrhoeaNaturalRecoveryEvent,
+    make_treatment_perfect,
 )
 from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel1
 
@@ -69,7 +70,7 @@ def test_basic_run_of_diarrhoea_module_with_default_params():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -81,6 +82,13 @@ def test_basic_run_of_diarrhoea_module_with_default_params():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
+
+    # Get combined log and check its content as are expected
+    m = get_combined_log(sim.log_filepath)
+    assert (m.loc[m.will_die].outcome == 'death').all()
+    assert (m.loc[~m.will_die].outcome == 'recovery').all()
+    assert not (m.outcome == 'cure').any()
+    assert (m['date_of_outcome'] == m['date_o']).all()
 
 
 def test_basic_run_of_diarrhoea_module_with_zero_incidence():
@@ -134,6 +142,58 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
 
     # Check for zero level of death
     assert not df.loc[~df.is_alive & ~pd.isnull(df.date_of_birth), 'cause_of_death'].str.startswith('Diarrhoea').any()
+
+
+def test_basic_run_of_diarrhoea_module_with_high_incidence_and_zero_death(tmpdir):
+    """Check that there are incident cases, and that everyone recovers naturally"""
+
+    start_date = Date(2010, 1, 1)
+    end_date = Date(2015, 12, 31)
+    popsize = 2000
+
+    log_config = {'filename': 'tmpfile',
+                  'directory': tmpdir,
+                  'custom_levels': {
+                      "Diarrhoea": logging.INFO}
+                  }
+
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
+                 )
+
+    # Increase incidence of pathogens:
+    increase_incidence_of_pathogens(sim.modules['Diarrhoea'])
+
+    # Make risk of death 0%:
+    sim.modules['Diarrhoea'].parameters['case_fatality_rate_AWD'] = 0.0
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+    # Check for non-zero-level of diarrhoea
+    df = sim.population.props
+    assert pd.notnull(df.loc[df.is_alive, 'gi_date_end_of_last_episode']).any()
+
+    # Check for zero level of death
+    assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
+
+    # Examine the log to check that logged outcomes are consistent with the expectations when case is onset and that
+    # everyone recovered.
+    m = get_combined_log(sim.log_filepath)
+    assert not m.will_die.any()
+    assert (m.outcome == 'recovery').all()
+    assert (m['date_of_outcome'] == m['date_o']).all()
 
 
 def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no_treatment(tmpdir):
@@ -194,7 +254,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
     assert (m['date_of_outcome'] == m['date_o']).all()
 
 
-@pytest.mark.group2
 def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_with_perfect_treatment(tmpdir):
     """Run with high incidence and perfect treatment, with and without spurious symptoms of diarrhoea being generated"""
 
@@ -278,44 +337,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
 
     # run with spurious symptoms
     run(spurious_symptoms=True)
-
-
-def test_run_each_of_the_HSI():
-    """Check that HSI specified can be run correctly"""
-    start_date = Date(2010, 1, 1)
-    popsize = 200  # smallest population size that works
-
-    sim = Simulation(start_date=start_date, seed=0)
-
-    # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=False,
-                     ignore_cons_constraints=True
-                 ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
-                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
-                 ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
-                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 )
-
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date)
-
-    # The Out-patient HSI
-    hsi_outpatient = HSI_Diarrhoea_Treatment_Outpatient(person_id=0, module=sim.modules['Diarrhoea'])
-    hsi_outpatient.run(squeeze_factor=0)
-
-    # The In-patient HSI
-    hsi_outpatient = HSI_Diarrhoea_Treatment_Inpatient(person_id=0, module=sim.modules['Diarrhoea'])
-    hsi_outpatient.run(squeeze_factor=0)
 
 
 def test_do_when_presentation_with_diarrhoea_severe_dehydration():
@@ -519,6 +540,44 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration():
 
     assert 1 == len(evs)
     assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
+
+
+def test_run_each_of_the_HSI():
+    """Check that HSI specified can be run correctly"""
+    start_date = Date(2010, 1, 1)
+    popsize = 200  # smallest population size that works
+
+    sim = Simulation(start_date=start_date, seed=0)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False,
+                     ignore_cons_constraints=True
+                 ),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(
+                     resourcefilepath=resourcefilepath,
+                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
+                 ),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
+                 )
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+
+    # The Out-patient HSI
+    hsi_outpatient = HSI_Diarrhoea_Treatment_Outpatient(person_id=0, module=sim.modules['Diarrhoea'])
+    hsi_outpatient.run(squeeze_factor=0)
+
+    # The In-patient HSI
+    hsi_outpatient = HSI_Diarrhoea_Treatment_Inpatient(person_id=0, module=sim.modules['Diarrhoea'])
+    hsi_outpatient.run(squeeze_factor=0)
 
 
 def test_does_treatment_prevent_death():
@@ -806,21 +865,20 @@ def test_do_treatment_for_those_that_will_not_die():
         module=sim.modules['Diarrhoea'], person_id=person_id)
     sim.modules['Diarrhoea'].do_treatment(person_id=person_id, hsi_event=in_patient_hsi)
 
-    # todo - check that a Cure Event is scheduled for earlier
+    # check that a Cure Event is scheduled for earlier
     evs = sim.find_events_for_person(person_id)
     assert 1 == len(evs)
     assert isinstance(evs[0][1], DiarrhoeaCureEvent)
     assert evs[0][0] == scheduled_date_recovery - \
            pd.DateOffset(days=sim.modules['Diarrhoea'].parameters['number_of_days_reduced_duration_with_zinc'])
 
-    # todo -- Run the Cure Event and check episode is ended.
+    #  Run the Cure Event and check episode is ended.
     sim.date = evs[0][0]
     evs[0][1].apply(person_id=person_id)
-
-    # Check that the person no longer has diarrhoea
     assert not df.at[person_id, 'gi_has_diarrhoea']
 
     # Check that a recovery event occurring later has no effect and does not error.
+    sim.date = scheduled_date_recovery
     recovery_event = DiarrhoeaNaturalRecoveryEvent(module=sim.modules['Diarrhoea'], person_id=person_id)
     recovery_event.apply(person_id=person_id)
     assert not df.at[person_id, 'gi_has_diarrhoea']
