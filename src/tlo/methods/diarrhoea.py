@@ -429,9 +429,9 @@ class Diarrhoea(Module):
             Parameter(Types.REAL,
                       'specificity of health care workers visual inspection of danger signs'
                       ),
-        'prob_hospitalization_referral_for_severe_diarrhoea':  # todo-- rename this re danger signs and use!
+        'prob_hospitalization_on_danger_signs':
             Parameter(Types.REAL,
-                      'probability of hospitalisation of severe diarrhoea'
+                      'probability of hospitalisation when danger signs are detected in an initial consultation'
                       ),
 
         # Parameters governing the efficacy of treatments
@@ -676,8 +676,8 @@ class Diarrhoea(Module):
             dx_tests_to_run="danger_signs_visual_inspection", hsi_event=hsi_event)
 
         # 2) Determine which HSI to use:
-        if danger_signs:
-            # Danger signs --> In-patient
+        if danger_signs and (self.rng.rand() < self.parameters['prob_hospitalization_on_danger_signs']):
+            # Danger signs and hospitalized --> In-patient
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Diarrhoea_Treatment_Inpatient(
                     person_id=person_id,
@@ -687,7 +687,7 @@ class Diarrhoea(Module):
                 tclose=None)
 
         else:
-            # No danger signs --> Out-patient
+            # No danger signs but not hospitalized --> Out-patient
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Diarrhoea_Treatment_Outpatient(
                     person_id=person_id,
@@ -796,6 +796,7 @@ class Diarrhoea(Module):
         df.at[person_id, 'gi_treatment_date'] = self.sim.date
 
         # # todo STEP THREE: If the the diarrhoea has already lasted longer than 13 days, provide Zinc which brings
+        # todo - ** and if not "will die" consume the ORS and Zinc **
         #  forward date of recovery for those that do not die.
         # if days_elapsed_with_diarrhoea >= 13:
         #     reduced_dur_by_zinc = hsi_event.get_all_consumables(pkg_codes=self.consumables_used_in_hsi[
@@ -1531,7 +1532,7 @@ class HSI_Diarrhoea_Treatment_Inpatient(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = 'Diarrhoea_Treatment_Inpatient'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 2, 'IPAdmission': 1})
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
