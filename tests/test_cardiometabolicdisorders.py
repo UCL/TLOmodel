@@ -441,29 +441,6 @@ def test_if_medication_prevents_all_death():
     Make medication 100% effective to check that no one dies
     """
 
-    event_list = ['ever_stroke', 'ever_heart_attack']
-
-    for event in event_list:
-        # Create the sim with an enabled healthcare system
-        sim = make_simulation_health_system_functional()
-        # make initial population
-        sim.make_initial_population(n=50)
-
-        p = sim.modules['CardioMetabolicDisorders'].parameters
-
-        # increase annual probability of onset
-        p[f'{event}_onset']["baseline_annual_probability"] = 10000
-
-        # set probability of treatment working to 1
-        p[f'{event}_hsi']["pr_treatment_works"] = 1
-
-        # simulate for one year
-        sim.simulate(end_date=Date(year=2011, month=1, day=1))
-
-        # check that no one died of event
-        df = sim.population.props
-        assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{event}').any()
-
     # Make a list of all conditions and events to run this test for
     condition_list = ['diabetes', 'chronic_kidney_disease', 'chronic_ischemic_hd']
     for condition in condition_list:
@@ -477,9 +454,10 @@ def test_if_medication_prevents_all_death():
             sim.population.props.is_alive & (sim.population.props.age_years >= 20),
             f"nc_{condition}_on_medication"] = True
 
-        # set probability of treatment working to 1
+        # set probability of treatment working to 1 and increase annual risk of death
         p = sim.modules['CardioMetabolicDisorders'].parameters
         p[f'{condition}_hsi']["pr_treatment_works"] = 1
+        p[f'{condition}_death']["baseline_annual_probability"] = 10000
 
         sim.simulate(end_date=Date(year=2011, month=1, day=1))
 
@@ -487,6 +465,30 @@ def test_if_medication_prevents_all_death():
         df = sim.population.props
 
         assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{condition}').any()
+
+    event_list = ['ever_stroke', 'ever_heart_attack']
+
+    for event in event_list:
+        # Create the sim with an enabled healthcare system
+        sim = make_simulation_health_system_functional()
+        # make initial population
+        sim.make_initial_population(n=50)
+
+        p = sim.modules['CardioMetabolicDisorders'].parameters
+
+        # increase annual probability of onset & probability of death
+        p[f'{event}_onset']["baseline_annual_probability"] = 10000
+        p[f'{event}_death']["baseline_annual_probability"] = 10000
+
+        # set probability of treatment working to 1
+        p[f'{event}_hsi']["pr_treatment_works"] = 1
+
+        # simulate for one year
+        sim.simulate(end_date=Date(year=2011, month=1, day=1))
+
+        # check that no one died of event
+        df = sim.population.props
+        assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{event}').any()
 
 
 
