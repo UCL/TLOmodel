@@ -263,13 +263,6 @@ class Diarrhoea(Module):
         'prob_prolonged_to_persistent_diarr':
             Parameter(Types.REAL, 'probability of prolonged diarrhoea becoming persistent diarrhoea'
                       ),
-        'prob_dysentery_become_persistent':
-            Parameter(Types.REAL, 'probability of dysentery becoming persistent diarrhoea'
-                      ),
-        'prob_watery_diarr_become_persistent':
-            Parameter(Types.REAL, 'probability of acute watery diarrhoea becoming persistent diarrhoea, '
-                                  'for children under 11 months, no SAM, no HIV'
-                      ),
         'rr_bec_persistent_age12to23':
             Parameter(Types.REAL,
                       'relative rate of acute diarrhoea becoming persistent diarrhoea for age 12 to 23 months'
@@ -289,14 +282,6 @@ class Diarrhoea(Module):
         'rr_bec_persistent_stunted':
             Parameter(Types.REAL,
                       'relative rate of acute diarrhoea becoming persistent diarrhoea for stunted children'
-                      ),
-        'rr_bec_persistent_excl_breast':
-            Parameter(Types.REAL,
-                      'relative rate of acute diarrhoea becoming persistent diarrhoea for exclusive breastfeeding'
-                      ),
-        'rr_bec_persistent_cont_breast':
-            Parameter(Types.REAL,
-                      'relative rate of acute diarrhoea becoming persistent diarrhoea for continued breastfeeding'
                       ),
         'min_dur_acute':
             Parameter(Types.INT,
@@ -1032,7 +1017,6 @@ class Models:
                                         un_HAZ_category,
                                         un_clinical_acute_malnutrition,
                                         untreated_hiv,
-                                        nb_breastfeeding_status
                                         ):
         # Baseline prob:
         prob_persistent_if_prolonged = self.p['prob_prolonged_to_persistent_diarr']
@@ -1051,9 +1035,6 @@ class Models:
         if untreated_hiv:
             prob_persistent_if_prolonged *= self.p['rr_bec_persistent_HIV']
 
-        if (nb_breastfeeding_status == 'exclusive'):
-            prob_persistent_if_prolonged *= 1.0  # todo; rr_bec_persistent_excl_breast, rr_bec_persistent_cont_breast
-
         return prob_persistent_if_prolonged
 
     def get_duration(self,
@@ -1062,7 +1043,6 @@ class Models:
                      un_HAZ_category,
                      un_clinical_acute_malnutrition,
                      untreated_hiv,
-                     nb_breastfeeding_status
                      ):
         """For new incident case of diarrhoea, determine its duration.
         1) Determine if this will be acute or prolonged; and if prolonged, will it be persistent.
@@ -1077,7 +1057,6 @@ class Models:
             un_HAZ_category,
             un_clinical_acute_malnutrition,
             untreated_hiv,
-            nb_breastfeeding_status
         )
 
         if self.rng.rand() < prob_prolonged:
@@ -1324,7 +1303,6 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
                                                  un_HAZ_category=person.un_HAZ_category,
                                                  un_clinical_acute_malnutrition=person.un_clinical_acute_malnutrition,
                                                  untreated_hiv=untreated_hiv,
-                                                 nb_breastfeeding_status=person.nb_breastfeeding_status
                                                  )
         date_of_outcome = self.sim.date + DateOffset(days=duration_in_days)
 

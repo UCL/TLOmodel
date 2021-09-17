@@ -382,6 +382,18 @@ def test_does_treatment_prevent_death():
         un_clinical_acute_malnutrition='SAM'
     ) for _ in range(1000)])
 
+    # True all of the time if there a improvement in type (watery --> bloody) and dehydration
+    assert all([does_treatment_prevent_death(
+        pathogen='shigella',
+        type=('bloody', 'watery'),
+        duration_longer_than_13days=False,
+        dehydration=('severe', 'none'),
+        age_exact_years=2,
+        ri_current_infection_status=False,
+        untreated_hiv=False,
+        un_clinical_acute_malnutrition='SAM'
+    ) for _ in range(1000)])
+
 
 def test_do_treatment():
     """Check that the function `do_treatment` work as expected"""
