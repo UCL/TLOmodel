@@ -57,14 +57,20 @@ def get_combined_log(log_filepath):
     return m
 
 
-def test_basic_run_of_diarrhoea_module_with_default_params():
+def test_basic_run_of_diarrhoea_module_with_default_params(tmpdir):
     """Check that the module run and that properties are maintained correctly, using health system and default
     parameters"""
     start_date = Date(2010, 1, 1)
     end_date = Date(2010, 12, 31)
     popsize = 1000
 
-    sim = Simulation(start_date=start_date, seed=0)
+    log_config = {'filename': 'tmpfile',
+                  'directory': tmpdir,
+                  'custom_levels': {
+                      "Diarrhoea": logging.INFO}
+                  }
+
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -112,8 +118,8 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
                  hiv.DummyHivModule(),
                  )
 
+    # **Zero-out incidence**:
     for param_name in sim.modules['Diarrhoea'].parameters.keys():
-        # **Zero-out incidence**:
         if param_name.startswith('base_inc_rate_diarrhoea_by_'):
             sim.modules['Diarrhoea'].parameters[param_name] = \
                 [0.0 * v for v in sim.modules['Diarrhoea'].parameters[param_name]]

@@ -33,7 +33,7 @@ no_existing_logfile = True
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-log_filename = outputpath / 'diarrhoea_with_treatment__2021-09-17T083118.log'
+log_filename = outputpath / 'XXXXX'
 # <-- insert name of log file to avoid re-running the simulation
 
 if not os.path.exists(log_filename):
