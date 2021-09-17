@@ -13,6 +13,8 @@ Health care seeking is prompted by the onset of the symptom diarrhoea. The indiv
 
  Outstanding Issues
  * To include rotavirus vaccine
+ * See todo
+
 """
 
 from pathlib import Path
@@ -676,6 +678,7 @@ class Diarrhoea(Module):
 
         else:
             # No danger signs but not hospitalized --> Out-patient
+            # todo - Should children that have no dehydration really get an Outpatient HSI?
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Diarrhoea_Treatment_Outpatient(
                     person_id=person_id,
@@ -699,7 +702,7 @@ class Diarrhoea(Module):
         # todo - Zinc is provided to all persons currently. It may be that this should be changed so that it is only
         #  provided to those persons who, at the time of the HSI, have had diarrhoea for 13 days or longer.
 
-        # todo - ORS is provided to all persons currently. It may be that it should only be provided to those with
+        # todo - ORS is provided to all persons currently It may be that it should only be provided to those with
         #  'some' dehydration. (It would have no effect -- only matters if the persons has severe dehydration).
 
         See this report:
@@ -724,14 +727,6 @@ class Diarrhoea(Module):
         ):
             return
 
-        # ** Implement the procedure for treatment **
-
-        # STEP ZERO: Get the Zinc consumable (happens irrespetive of whether child will die or not)
-        gets_zinc = hsi_event.get_all_consumables(
-            pkg_codes=self.consumables_used_in_hsi[
-                'Zinc_Under6mo' if person.age_exact_years < 0.5 else 'Zinc_Over6mo']
-        )
-
         # Check the child's condition
         type_of_diarrhoea_is_bloody = person.gi_type == 'bloody'
         dehydration_is_severe = person.gi_dehydration == 'severe'
@@ -739,43 +734,45 @@ class Diarrhoea(Module):
         will_die = pd.notnull(person.gi_scheduled_date_death)
         is_in_patient = isinstance(hsi_event, HSI_Diarrhoea_Treatment_Inpatient)
 
-        # Implement the treatment that may prevent the child from dying.
-        if will_die:
+        # ** Implement the procedure for treatment **
+        # STEP ZERO: Get the Zinc consumable (happens irrespective of whether child will die or not)
+        gets_zinc = hsi_event.get_all_consumables(
+            pkg_codes=self.consumables_used_in_hsi[
+                'Zinc_Under6mo' if person.age_exact_years < 0.5 else 'Zinc_Over6mo']
+        )
 
-            # STEP ONE: Aim to alleviate dehydration:
-            if is_in_patient and hsi_event.get_all_consumables(
-                pkg_codes=self.consumables_used_in_hsi['Treatment_Severe_Dehydration']
-            ):
+        # STEP ONE: Aim to alleviate dehydration:
+        prob_remove_dehydration = 0.0
+        if is_in_patient:
+            if hsi_event.get_all_consumables(pkg_codes=self.consumables_used_in_hsi['Treatment_Severe_Dehydration']):
                 # In-patient receiving IV fluids (WHO Plan C)
                 prob_remove_dehydration = \
                     p['prob_WHOPlanC_cures_dehydration_if_severe_dehydration'] if dehydration_is_severe \
                     else self.parameters['prob_ORS_cures_dehydration_if_non_severe_dehydration']
 
-            elif (not is_in_patient) and hsi_event.get_all_consumables(
-                pkg_codes=self.consumables_used_in_hsi['ORS']
-            ):
-                # Out-patient receiving ORS
+        else:
+            if hsi_event.get_all_consumables(pkg_codes=self.consumables_used_in_hsi['ORS']):
+                # Out-patient receving ORS
                 prob_remove_dehydration = \
                     self.parameters['prob_ORS_cures_dehydration_if_severe_dehydration'] if dehydration_is_severe \
                     else self.parameters['prob_ORS_cures_dehydration_if_non_severe_dehydration']
-            else:
-                prob_remove_dehydration = 0.0
 
-            # Determine dehydration after treatment
-            dehydration_after_treatment = 'none' if self.rng.rand() < prob_remove_dehydration else person.gi_dehydration
+        # Determine dehydration after treatment
+        dehydration_after_treatment = 'none' if self.rng.rand() < prob_remove_dehydration else person.gi_dehydration
 
-            # STEP TWO: If has bloody diarrhoea (i.e., dysentry), then aim to clear bacterial infection
-            if type_of_diarrhoea_is_bloody and hsi_event.get_all_consumables(
-                pkg_codes=self.consumables_used_in_hsi['Antibiotics_for_Dysentery']
-            ):
-                prob_clear_bacterial_infection = self.parameters['prob_antibiotic_cures_dysentery']
-            else:
-                prob_clear_bacterial_infection = 0.0
+        # STEP TWO: If has bloody diarrhoea (i.e., dysentry), then aim to clear bacterial infection
+        if type_of_diarrhoea_is_bloody and hsi_event.get_all_consumables(
+            pkg_codes=self.consumables_used_in_hsi['Antibiotics_for_Dysentery']
+        ):
+            prob_clear_bacterial_infection = self.parameters['prob_antibiotic_cures_dysentery']
+        else:
+            prob_clear_bacterial_infection = 0.0
 
-            # Determine type after treatment
-            type_after_treatment = 'watery' if self.rng.rand() < prob_clear_bacterial_infection else person.gi_type
+        # Determine type after treatment
+        type_after_treatment = 'watery' if self.rng.rand() < prob_clear_bacterial_infection else person.gi_type
 
-            # Determine if the changes in dehydration or type (if any) will cause the treatment to block the death:
+        # Determine if the changes in dehydration or type (if any) will cause the treatment to block the death:
+        if will_die:
             if self.models.does_treatment_prevent_death(
                 pathogen=person.gi_pathogen,
                 type=(person.gi_type, type_after_treatment),  # <-- type may have changed
@@ -795,15 +792,9 @@ class Diarrhoea(Module):
                             p['number_of_days_reduced_duration_with_zinc'] if gets_zinc else 0)
                     )
                 )
-
         else:
-            # The child will not die: but treatment can lead to an earlier end to the episode if they get zinc.
-
-            # 'Consume' the ORS
-            _ = hsi_event.get_all_consumables(
-                pkg_codes=self.consumables_used_in_hsi['ORS']
-            )
-
+            # The child would not die without treatment, but treatment can lead to an earlier end to the episode if they
+            # get zinc.
             if gets_zinc:
                 # Schedule the Cure Event to happen earlier that the scheduled recovery event
                 self.sim.schedule_event(
