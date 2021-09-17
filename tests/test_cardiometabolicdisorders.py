@@ -385,7 +385,7 @@ def test_if_no_health_system_and_hundred_death():
         # Disable the healthcare system
         sim = make_simulation_health_system_disabled()
         # make initial population
-        sim.make_initial_population(n=100)
+        sim.make_initial_population(n=50)
         # force all individuals to have condition
         sim.population.props.loc[
             sim.population.props.is_alive & (sim.population.props.age_years >= 20), f"nc_{condition}"] = True
@@ -419,7 +419,7 @@ def test_if_no_health_system_and_hundred_death():
         # Disable the healthcare system
         sim = make_simulation_health_system_disabled()
         # make initial population
-        sim.make_initial_population(n=100)
+        sim.make_initial_population(n=50)
 
         p = sim.modules['CardioMetabolicDisorders'].parameters
 
@@ -447,7 +447,7 @@ def test_if_medication_prevents_all_death():
         # Create the sim with an enabled healthcare system
         sim = make_simulation_health_system_functional()
         # make initial population
-        sim.make_initial_population(n=100)
+        sim.make_initial_population(n=50)
 
         p = sim.modules['CardioMetabolicDisorders'].parameters
 
@@ -468,7 +468,7 @@ def test_if_medication_prevents_all_death():
     condition_list = ['diabetes', 'chronic_kidney_disease', 'chronic_ischemic_hd']
     for condition in condition_list:
         sim = make_simulation_health_system_functional()
-        sim.make_initial_population(n=100)
+        sim.make_initial_population(n=50)
 
         # force all individuals to have condition and be on medication
         sim.population.props.loc[

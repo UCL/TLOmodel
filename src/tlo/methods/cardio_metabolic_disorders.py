@@ -849,7 +849,7 @@ class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
         # --------- DETERMINE OUTCOME OF THIS EVENT ---------------
         prob_death = self.module.parameters[f'{self.event}_death'].get('baseline_annual_probability')
         # Schedule a future death event for 2 days' time
-        date_of_outcome = self.sim.date + DateOffset(days=12)
+        date_of_outcome = self.sim.date + DateOffset(days=7)
         if self.module.rng.random_sample() < prob_death:
             df.at[person_id, f'nc_{self.event}_scheduled_date_death'] = date_of_outcome
             self.sim.schedule_event(CardioMetabolicDisordersDeathEvent(self.module, person_id, condition=self.event),
