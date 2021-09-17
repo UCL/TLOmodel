@@ -274,7 +274,7 @@ def test_other_modules_running_with_simplified_births_module():
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
 
                  # Supporting modules:
-                 diarrhoea.PropertiesOfOtherModules()
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules()
                  )
 
     sim.make_initial_population(n=1_000)

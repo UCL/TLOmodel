@@ -27,9 +27,9 @@ from tlo.methods.alri import (
     AlriIncidentCase,
     AlriNaturalRecoveryEvent,
     AlriPollingEvent,
+    AlriPropertiesOfOtherModules,
     HSI_Alri_GenericTreatment,
     Models,
-    PropertiesOfOtherModules,
 )
 
 # Path to the resource files used by the disease and intervention methods
@@ -60,7 +60,7 @@ def get_sim(tmpdir):
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
         dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
         alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=0, do_checks=True),
-        PropertiesOfOtherModules()
+        AlriPropertiesOfOtherModules()
     )
     return sim
 

@@ -83,11 +83,11 @@ class Alri(Module):
         'Demography',
         'Lifestyle',
         'SymptomManager',
-        # Currently need to include PropertiesOfOtherModules as there is no alternative
+        # Currently need to include AlriPropertiesOfOtherModules as there is no alternative
         # provider of un_clinical_acute_malnutrition property at the moment. As this
         # module also provides the required properties from NewbornOutcomes, Hiv and Epi
         # these are also not included here to avoid duplicated property definitions
-        'PropertiesOfOtherModules'
+        'AlriPropertiesOfOtherModules'
     }
 
     # Declare Metadata
@@ -1843,11 +1843,11 @@ class AlriIndividualLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
 
-class PropertiesOfOtherModules(Module):
+class AlriPropertiesOfOtherModules(Module):
     """For the purpose of the testing, this module generates the properties upon which the Alri module relies"""
 
     INIT_DEPENDENCIES = {'Demography'}
-    ALTERNATIVE_TO = {'Hiv', 'Epi'}
+    ALTERNATIVE_TO = {'Hiv', 'Epi','NewbornOutcomes'}
 
     PROPERTIES = {
         'hv_inf': Property(Types.BOOL, 'temporary property'),
@@ -1861,7 +1861,6 @@ class PropertiesOfOtherModules(Module):
         'va_hib_all_doses': Property(Types.BOOL, 'temporary property'),
         'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'temporary property',
                                                    categories=['MAM', 'SAM', 'well']),
-
     }
 
     def __init__(self, name=None):

@@ -70,7 +70,7 @@ for label, service_avail in scenarios.items():
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-                 diarrhoea.PropertiesOfOtherModules(),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
 
     sim.make_initial_population(n=popsize)

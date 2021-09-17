@@ -72,7 +72,7 @@ def test_basic_run_of_diarrhoea_module_with_default_params():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
-                 diarrhoea.PropertiesOfOtherModules(),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  dx_algorithm_child.DxAlgorithmChild()
                  )
 
@@ -98,7 +98,7 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-                 diarrhoea.PropertiesOfOtherModules(),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  hiv.DummyHivModule(),
                  )
 
@@ -157,7 +157,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
-                 diarrhoea.PropertiesOfOtherModules(),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
 
     # Increase incidence of pathogens:
@@ -229,7 +229,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                          # every symptom leads to healthcare seeking
                      ),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
-                     diarrhoea.PropertiesOfOtherModules(),
+                     diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                      dx_algorithm_child.DxAlgorithmChild()
                      )
         # Edit rate of spurious symptoms to be limited to additional cases of diarrhoea:
@@ -301,7 +301,7 @@ def test_run_each_of_the_HSI():
                  ),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
-                 diarrhoea.PropertiesOfOtherModules(),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
 
     sim.make_initial_population(n=popsize)
@@ -333,7 +333,7 @@ def test_does_treatment_prevent_death():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-                 diarrhoea.PropertiesOfOtherModules(),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  hiv.DummyHivModule(),
                  )
 

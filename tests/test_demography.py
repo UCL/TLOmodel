@@ -148,7 +148,7 @@ def test_cause_of_death_being_registered(tmpdir):
         newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
 
         # Supporting modules:
-        diarrhoea.PropertiesOfOtherModules()
+        diarrhoea.DiarrhoeaPropertiesOfOtherModules()
     )
     # Increase risk of death of Diarrhoea to ensure that are at least some deaths
     increase_risk_of_death(sim.modules['Diarrhoea'])

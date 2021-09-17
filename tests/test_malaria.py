@@ -325,7 +325,7 @@ def test_dx_algorithm_for_non_malaria_outcomes():
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
 
                      # Supporting modules:
-                     diarrhoea.PropertiesOfOtherModules()
+                     diarrhoea.DiarrhoeaPropertiesOfOtherModules()
                      )
 
         sim.make_initial_population(n=popsize)

@@ -128,7 +128,7 @@ def test_cause_of_disability_being_registered():
         healthburden.HealthBurden(resourcefilepath=rfp),
 
         # Supporting modules:
-        diarrhoea.PropertiesOfOtherModules()
+        diarrhoea.DiarrhoeaPropertiesOfOtherModules()
     )
     # Increase risk of death of Diarrhoea to ensure that are at least some deaths
     increase_risk_of_death(sim.modules['Diarrhoea'])
