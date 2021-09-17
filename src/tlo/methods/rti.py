@@ -5446,10 +5446,15 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
         for col in non_empty_injuries:
             if pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1]):
                 untreated_injuries.append(df.at[person_id, col])
+        # people can have multiple untreated injuries, most serious injury will be used to determine the likelihood of
+        # their passing, so create an empty list to store probabilities of death associated with this person's untreated
+        # injury and take the max value
+        prob_deaths = []
         for injury in untreated_injuries:
             for severity_level in untreated_dict:
                 if injury in untreated_dict[severity_level][0]:
-                    prob_death = untreated_dict[severity_level][1]
+                    prob_deaths.append(untreated_dict[severity_level][1])
+        prob_death = max(prob_deaths)
         randfordeath = self.module.rng.random_sample(size=1)
         if randfordeath < prob_death:
             df.loc[person_id, 'rt_unavailable_med_death'] = True
