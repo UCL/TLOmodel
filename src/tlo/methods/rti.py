@@ -5542,9 +5542,7 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         time_stamped_file_name = "df_at_" + str(self.sim.date.month) + "_" + str(self.sim.date.year)
         if len(df.loc[df.is_alive]) > 750000:
             df.to_csv(f"C:/Users/Robbie Manning Smith/Documents/Dataframe_dump/{time_stamped_file_name}.csv")
-        road_traffic_injuries = self.sim.modules['RTI']
         thoseininjuries = df.loc[df.rt_road_traffic_inc]
-        df_injuries = thoseininjuries.loc[:, RTI.INJURY_COLUMNS]
         # ================================= Injury severity ===========================================================
         sev = thoseininjuries['rt_inj_severity']
         rural_injuries = df.loc[df.rt_road_traffic_inc & ~df.li_urban]
