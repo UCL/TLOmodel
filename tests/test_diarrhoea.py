@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+from pandas import DateOffset
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -26,8 +27,9 @@ from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Treatment_Outpatient,
     increase_incidence_of_pathogens,
     increase_risk_of_death,
-    make_treatment_perfect,
+    make_treatment_perfect, DiarrhoeaCureEvent, DiarrhoeaNaturalRecoveryEvent,
 )
+from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel1
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -316,6 +318,209 @@ def test_run_each_of_the_HSI():
     hsi_outpatient.run(squeeze_factor=0)
 
 
+def test_do_when_presentation_with_diarrhoea_severe_dehydration():
+    """Check that when someone presents with diarrhoea and severe dehydration, the correct HSI is created"""
+
+    start_date = Date(2010, 1, 1)
+    popsize = 200  # smallest population size that works
+
+    sim = Simulation(start_date=start_date, seed=0)
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False,
+                     ignore_cons_constraints=True
+                 ),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(
+                     resourcefilepath=resourcefilepath,
+                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
+                 ),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
+                 )
+
+    # Make DxTest for danger signs perfect:
+    sim.modules['Diarrhoea'].parameters['sensitivity_danger_signs_visual_inspection'] = 1.0
+    sim.modules['Diarrhoea'].parameters['specificity_danger_signs_visual_inspection'] = 1.0
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+    df = sim.population.props
+
+    # Set that person_id=0 is a child with bloody diarrhoea and severe dehydration
+    person_id = 0
+    props_new = {
+        'age_years': 2,
+        'age_exact_years': 2.0,
+        'gi_has_diarrhoea': True,
+        'gi_pathogen': 'shigella',
+        'gi_type': 'bloody',
+        'gi_dehydration': 'severe',
+        'gi_duration_longer_than_13days': True,
+        'gi_date_of_onset': sim.date,
+        'gi_date_end_of_last_episode': sim.date + DateOffset(days=20),
+        'gi_scheduled_date_recovery': pd.NaT,
+        'gi_scheduled_date_death': sim.date + DateOffset(days=2),
+        'gi_treatment_date': pd.NaT,
+    }
+    df.loc[person_id, props_new.keys()] = props_new.values()
+    generic_hsi = HSI_GenericFirstApptAtFacilityLevel1(
+        module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
+
+    # 1) If DxTest of danger signs perfect and 100% chance of referral --> Inpatient HSI should be created
+    sim.modules['HealthSystem'].reset_queue()
+    sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 1.0
+    sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
+        person_id=person_id, hsi_event=generic_hsi)
+    evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
+
+    assert 1 == len(evs)
+    assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Inpatient)
+
+    # 2) If DxTest of danger signs perfect but 0% chance of referral --> Inpatient HSI should not be created
+    sim.modules['HealthSystem'].reset_queue()
+    sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 0.0
+    sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
+        person_id=person_id, hsi_event=generic_hsi)
+    evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
+    assert 1 == len(evs)
+    assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
+
+
+def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfunctional():
+    """Check that when someone presents with diarrhoea and severe dehydration but the DxTest for danger signs
+    is not functional (0% sensitivity, 0% specificity) that an Outpatient appointment is created"""
+
+    start_date = Date(2010, 1, 1)
+    popsize = 200  # smallest population size that works
+
+    sim = Simulation(start_date=start_date, seed=0)
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False,
+                     ignore_cons_constraints=True
+                 ),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(
+                     resourcefilepath=resourcefilepath,
+                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
+                 ),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
+                 )
+
+    # Make DxTest for danger signs perfect:
+    sim.modules['Diarrhoea'].parameters['sensitivity_danger_signs_visual_inspection'] = 0.0
+    sim.modules['Diarrhoea'].parameters['specificity_danger_signs_visual_inspection'] = 0.0
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+    df = sim.population.props
+
+    # Set that person_id=0 is a child with bloody diarrhoea and severe dehydration
+    person_id = 0
+    props_new = {
+        'age_years': 2,
+        'age_exact_years': 2.0,
+        'gi_has_diarrhoea': True,
+        'gi_pathogen': 'shigella',
+        'gi_type': 'bloody',
+        'gi_dehydration': 'severe',
+        'gi_duration_longer_than_13days': True,
+        'gi_date_of_onset': sim.date,
+        'gi_date_end_of_last_episode': sim.date + DateOffset(days=20),
+        'gi_scheduled_date_recovery': pd.NaT,
+        'gi_scheduled_date_death': sim.date + DateOffset(days=2),
+        'gi_treatment_date': pd.NaT,
+    }
+    df.loc[person_id, props_new.keys()] = props_new.values()
+    generic_hsi = HSI_GenericFirstApptAtFacilityLevel1(
+        module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
+
+    # Only an out-patient appointment should be created as the DxTest for danger signs is not functional.
+    sim.modules['Diarrhoea'].parameters['prob_hospitalization_on_danger_signs'] = 0.0
+    sim.modules['HealthSystem'].reset_queue()
+    sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
+        person_id=person_id, hsi_event=generic_hsi)
+    evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
+    assert 1 == len(evs)
+    assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
+
+
+def test_do_when_presentation_with_diarrhoea_non_severe_dehydration():
+    """Check that when someone presents with diarrhoea and non-severe dehydration, the correct HSI is created"""
+
+    start_date = Date(2010, 1, 1)
+    popsize = 200  # smallest population size that works
+
+    sim = Simulation(start_date=start_date, seed=0)
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False,
+                     ignore_cons_constraints=True
+                 ),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(
+                     resourcefilepath=resourcefilepath,
+                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
+                 ),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
+                 )
+
+    # Make DxTest for danger signs perfect:
+    sim.modules['Diarrhoea'].parameters['sensitivity_danger_signs_visual_inspection'] = 1.0
+    sim.modules['Diarrhoea'].parameters['specificity_danger_signs_visual_inspection'] = 1.0
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+    df = sim.population.props
+
+    # Set that person_id=0 is a child with bloody diarrhoea and 'some' dehydration
+    person_id = 0
+    props_new = {
+        'age_years': 2,
+        'age_exact_years': 2.0,
+        'gi_has_diarrhoea': True,
+        'gi_pathogen': 'shigella',
+        'gi_type': 'bloody',
+        'gi_dehydration': 'some',
+        'gi_duration_longer_than_13days': True,
+        'gi_date_of_onset': sim.date,
+        'gi_date_end_of_last_episode': sim.date + DateOffset(days=20),
+        'gi_scheduled_date_recovery': pd.NaT,
+        'gi_scheduled_date_death': sim.date + DateOffset(days=2),
+        'gi_treatment_date': pd.NaT,
+    }
+    df.loc[person_id, props_new.keys()] = props_new.values()
+    generic_hsi = HSI_GenericFirstApptAtFacilityLevel1(
+        module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
+
+    # 1) Outpatient HSI should be created
+    sim.modules['HealthSystem'].reset_queue()
+    sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
+        person_id=person_id, hsi_event=generic_hsi)
+    evs = sim.modules['HealthSystem'].find_events_for_person(person_id)
+
+    assert 1 == len(evs)
+    assert isinstance(evs[0][1], HSI_Diarrhoea_Treatment_Outpatient)
+
+
 def test_does_treatment_prevent_death():
     """Check that the helper function 'does_treatment_prevent_death' works as expected."""
 
@@ -395,7 +600,227 @@ def test_does_treatment_prevent_death():
     ) for _ in range(1000)])
 
 
-def test_do_treatment():
-    """Check that the function `do_treatment` work as expected"""
-    # todo!
-    pass
+def test_do_treatment_for_those_that_will_die_if_consumables_available():
+    """Check that when someone who will die and is provided with treatment, that the death is prevented"""
+
+    # ** If consumables are available **:
+    start_date = Date(2010, 1, 1)
+    popsize = 200  # smallest population size that works
+    sim = Simulation(start_date=start_date, seed=0)
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False,
+                     ignore_cons_constraints=True
+                 ),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(
+                     resourcefilepath=resourcefilepath,
+                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
+                 ),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
+                 )
+    increase_risk_of_death(sim.modules['Diarrhoea'])
+    make_treatment_perfect(sim.modules['Diarrhoea'])
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+    df = sim.population.props
+
+    # Set that person_id=0 is a child with bloody diarrhoea and severe dehydration:
+    person_id = 0
+    props_new = {
+        'age_years': 2,
+        'age_exact_years': 2.0,
+        'gi_has_diarrhoea': True,
+        'gi_pathogen': 'shigella',
+        'gi_type': 'bloody',
+        'gi_dehydration': 'severe',
+        'gi_duration_longer_than_13days': True,
+        'gi_date_of_onset': sim.date,
+        'gi_date_end_of_last_episode': sim.date + DateOffset(days=20),
+        'gi_scheduled_date_recovery': pd.NaT,
+        'gi_scheduled_date_death': sim.date + DateOffset(days=2),
+        'gi_treatment_date': pd.NaT,
+    }
+    df.loc[person_id, props_new.keys()] = props_new.values()
+    sim.modules['SymptomManager'].change_symptom(
+        person_id=0,
+        symptom_string='diarrhoea',
+        add_or_remove='+',
+        disease_module=sim.modules['Diarrhoea']
+    )
+
+    # Run 'do_treatment' from an in-patient HSI.
+    in_patient_hsi = HSI_Diarrhoea_Treatment_Inpatient(
+        module=sim.modules['Diarrhoea'], person_id=person_id)
+    sim.modules['Diarrhoea'].do_treatment(person_id=person_id, hsi_event=in_patient_hsi)
+
+    # Check that death is cancelled
+    assert pd.isnull(df.at[person_id, 'gi_scheduled_date_death'])
+
+    # Check that cure event is scheduled
+    assert any([isinstance(ev[1], DiarrhoeaCureEvent) for ev in sim.find_events_for_person(person_id=person_id)])
+
+    # Check that treatment is recorded to have occurred
+    assert pd.notnull(df.at[person_id, 'gi_treatment_date'])
+
+
+def test_do_treatment_for_those_that_will_die_if_consumables_not_available():
+    """Check that when someone who will die and is provided with treatment, but that consumables are not available,
+    that the death is not prevented"""
+
+    # ** If consumables are available **:
+    start_date = Date(2010, 1, 1)
+    popsize = 200  # smallest population size that works
+    sim = Simulation(start_date=start_date, seed=0)
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False,
+                 ),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(
+                     resourcefilepath=resourcefilepath,
+                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
+                 ),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
+                 )
+    increase_risk_of_death(sim.modules['Diarrhoea'])
+    make_treatment_perfect(sim.modules['Diarrhoea'])
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+    df = sim.population.props
+
+    # Make availability of consumables zero
+    sim.modules['HealthSystem'].cons_available_today['Item_Code'] *= False
+    sim.modules['HealthSystem'].cons_available_today['Intervention_Package_Code'] *= False
+
+    # Set that person_id=0 is a child with bloody diarrhoea and severe dehydration:
+    person_id = 0
+    props_new = {
+        'age_years': 2,
+        'age_exact_years': 2.0,
+        'gi_has_diarrhoea': True,
+        'gi_pathogen': 'shigella',
+        'gi_type': 'bloody',
+        'gi_dehydration': 'severe',
+        'gi_duration_longer_than_13days': True,
+        'gi_date_of_onset': sim.date,
+        'gi_date_end_of_last_episode': sim.date + DateOffset(days=20),
+        'gi_scheduled_date_recovery': pd.NaT,
+        'gi_scheduled_date_death': sim.date + DateOffset(days=2),
+        'gi_treatment_date': pd.NaT,
+    }
+    df.loc[person_id, props_new.keys()] = props_new.values()
+    sim.modules['SymptomManager'].change_symptom(
+        person_id=0,
+        symptom_string='diarrhoea',
+        add_or_remove='+',
+        disease_module=sim.modules['Diarrhoea']
+    )
+
+    # Run 'do_treatment' from an in-patient HSI.
+    sim.event_queue.queue = []
+    in_patient_hsi = HSI_Diarrhoea_Treatment_Inpatient(
+        module=sim.modules['Diarrhoea'], person_id=person_id)
+    sim.modules['Diarrhoea'].do_treatment(person_id=person_id, hsi_event=in_patient_hsi)
+
+    # Check that death is not cancelled
+    assert pd.notnull(df.at[person_id, 'gi_scheduled_date_death'])
+
+    # Check that no cure event is scheduled
+    assert not any([isinstance(ev[1], DiarrhoeaCureEvent) for ev in sim.find_events_for_person(person_id=person_id)])
+
+    # Check that treatment is recorded to have occurred
+    assert pd.notnull(df.at[person_id, 'gi_treatment_date'])
+
+
+def test_do_treatment_for_those_that_will_not_die():
+    """Check that when someone who will not die and is provided with treatment and gets zinc, that the date of cure is
+    brought forward"""
+
+    # ** If consumables are available **:
+    start_date = Date(2010, 1, 1)
+    popsize = 200  # smallest population size that works
+    sim = Simulation(start_date=start_date, seed=0)
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False,
+                     ignore_cons_constraints=True
+                 ),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(
+                     resourcefilepath=resourcefilepath,
+                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
+                 ),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
+                 )
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+    df = sim.population.props
+
+    # Set that person_id=0 is a child with watery diarrhoea and 'some' dehydration:
+    person_id = 0
+    scheduled_date_recovery = sim.date + DateOffset(days=10)
+    props_new = {
+        'age_years': 2,
+        'age_exact_years': 2.0,
+        'gi_has_diarrhoea': True,
+        'gi_pathogen': 'shigella',
+        'gi_type': 'watery',
+        'gi_dehydration': 'some',
+        'gi_duration_longer_than_13days': True,
+        'gi_date_of_onset': sim.date,
+        'gi_date_end_of_last_episode': sim.date + DateOffset(days=20),
+        'gi_scheduled_date_recovery': scheduled_date_recovery,
+        'gi_scheduled_date_death': pd.NaT,
+        'gi_treatment_date': pd.NaT,
+    }
+    df.loc[person_id, props_new.keys()] = props_new.values()
+    sim.modules['SymptomManager'].change_symptom(
+        person_id=0,
+        symptom_string='diarrhoea',
+        add_or_remove='+',
+        disease_module=sim.modules['Diarrhoea']
+    )
+    # Run 'do_treatment' from an out-patient HSI.
+    in_patient_hsi = HSI_Diarrhoea_Treatment_Outpatient(
+        module=sim.modules['Diarrhoea'], person_id=person_id)
+    sim.modules['Diarrhoea'].do_treatment(person_id=person_id, hsi_event=in_patient_hsi)
+
+    # todo - check that a Cure Event is scheduled for earlier
+    evs = sim.find_events_for_person(person_id)
+    assert 1 == len(evs)
+    assert isinstance(evs[0][1], DiarrhoeaCureEvent)
+    assert evs[0][0] == scheduled_date_recovery - \
+           pd.DateOffset(days=sim.modules['Diarrhoea'].parameters['number_of_days_reduced_duration_with_zinc'])
+
+    # todo -- Run the Cure Event and check episode is ended.
+    sim.date = evs[0][0]
+    evs[0][1].apply(person_id=person_id)
+
+    # Check that the person no longer has diarrhoea
+    assert not df.at[person_id, 'gi_has_diarrhoea']
+
+    # Check that a recovery event occurring later has no effect and does not error.
+    recovery_event = DiarrhoeaNaturalRecoveryEvent(module=sim.modules['Diarrhoea'], person_id=person_id)
+    recovery_event.apply(person_id=person_id)
+    assert not df.at[person_id, 'gi_has_diarrhoea']

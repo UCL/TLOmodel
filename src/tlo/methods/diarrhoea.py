@@ -713,6 +713,14 @@ class Diarrhoea(Module):
         ):
             return
 
+        # ** Implement the procedure for treatment **
+
+        # STEP ZERO: Get the Zinc consumable (happens irrespetive of whether child will die or not)
+        gets_zinc = hsi_event.get_all_consumables(
+            pkg_codes=self.consumables_used_in_hsi[
+                'Zinc_Under6mo' if person.age_exact_years < 0.5 else 'Zinc_Over6mo']
+        )
+
         # Check the child's condition
         type_of_diarrhoea_is_bloody = person.gi_type == 'bloody'
         dehydration_is_severe = person.gi_dehydration == 'severe'
@@ -771,23 +779,33 @@ class Diarrhoea(Module):
                 self.cancel_death_date(person_id)
                 self.sim.schedule_event(
                     DiarrhoeaCureEvent(self, person_id),
-                    self.sim.date + DateOffset(
-                        days=self.parameters['days_between_treatment_and_cure']
+                    self.sim.date + pd.DateOffset(
+                        days=self.parameters['days_between_treatment_and_cure'] - (
+                            p['number_of_days_reduced_duration_with_zinc'] if gets_zinc else 0)
                     )
+                )
+
+        else:
+            # The child will not die: but treatment can lead to an earlier end to the episode if they get zinc.
+
+            # 'Consume' the ORS
+            _ = hsi_event.get_all_consumables(
+                pkg_codes=self.consumables_used_in_hsi['ORS']
+            )
+
+            if gets_zinc:
+                # Schedule the Cure Event to happen earlier that the scheduled recovery event
+                self.sim.schedule_event(
+                    DiarrhoeaCureEvent(self, person_id),
+                    max(self.sim.date,
+                        person.gi_scheduled_date_recovery - pd.DateOffset(
+                            days=p['number_of_days_reduced_duration_with_zinc'])
+                        )
                 )
 
         # -------------------------------------
         # Log that the treatment is provided:
         df.at[person_id, 'gi_treatment_date'] = self.sim.date
-
-        # # todo STEP THREE: If the the diarrhoea has already lasted longer than 13 days, provide Zinc which brings
-        # todo - ** and if not "will die" consume the ORS and Zinc **
-        #  forward date of recovery for those that do not die.
-        # if days_elapsed_with_diarrhoea >= 13:
-        #     reduced_dur_by_zinc = hsi_event.get_all_consumables(pkg_codes=self.consumables_used_in_hsi[
-        #         'Zinc_Under6mo' if person.age_exact_years < 0.5 else 'Zinc_Over6mo'])
-        # else:
-        #     reduced_dur_by_zinc = False
 
     def cancel_death_date(self, person_id):
         """
@@ -1306,6 +1324,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
                                                  )
         date_of_outcome = self.sim.date + DateOffset(days=duration_in_days)
 
+        # Collected updated properties of this person
         # Collected updated properties of this person
         props_new = {
             'gi_has_diarrhoea': True,

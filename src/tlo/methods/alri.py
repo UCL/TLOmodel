@@ -1847,7 +1847,7 @@ class AlriPropertiesOfOtherModules(Module):
     """For the purpose of the testing, this module generates the properties upon which the Alri module relies"""
 
     INIT_DEPENDENCIES = {'Demography'}
-    ALTERNATIVE_TO = {'Hiv', 'Epi','NewbornOutcomes'}
+    ALTERNATIVE_TO = {'Hiv', 'Epi', 'NewbornOutcomes'}
 
     PROPERTIES = {
         'hv_inf': Property(Types.BOOL, 'temporary property'),
