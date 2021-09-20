@@ -112,6 +112,9 @@ def create_mappers_from_causes_to_label(causes: dict, all_gbd_causes: set = None
     # 2) Create dicts for mapping (gbd_cause --> label) and (tlo_cause --> label)
     lookup_df = pd.DataFrame.from_dict(lookup, orient='index').applymap(lambda x: list(x))
 
+    # Sort the lists and sort the index to provide reliable structure
+    lookup_df = lookup_df.applymap(sorted).sort_index()
+
     #  - from tlo_cause --> label (key=tlo_cause, value=label)
     mapper_from_tlo_causes = dict((v, k) for k, v in (
         lookup_df.tlo_causes.apply(pd.Series).stack().reset_index(level=1, drop=True)

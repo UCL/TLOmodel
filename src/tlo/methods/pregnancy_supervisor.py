@@ -6,9 +6,8 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging, util
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata
+from tlo.methods import Metadata, labour
 from tlo.methods.causes import Cause
-from tlo.methods.labour import LabourOnsetEvent
 from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
@@ -40,6 +39,11 @@ class PregnancySupervisor(Module):
 
         # This variable will store a Bitset handler for the property ps_abortion_complications
         self.abortion_complication = None
+
+    INIT_DEPENDENCIES = {'Demography'}
+    ADDITIONAL_DEPENDENCIES = {
+        'CareOfWomenDuringPregnancy', 'Contraception', 'HealthSystem', 'Lifestyle'
+    }
 
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHBURDEN}
@@ -407,7 +411,7 @@ class PregnancySupervisor(Module):
                 params['prob_spontaneous_abortion_per_month'],
                 Predictor('ps_prev_spont_abortion').when(True, params['rr_spont_abortion_prev_sa']),
                 Predictor('age_years').when('>34', params['rr_spont_abortion_age_35'])
-                                      .when('.between(30,35)', params['rr_spont_abortion_age_31_34'])),
+                                      .when('.between(31, 34)', params['rr_spont_abortion_age_31_34'])),
 
             # This equation calculates a womans monthly risk of induced abortion and is applied monthly until 28 weeks
             # gestation
@@ -461,8 +465,9 @@ class PregnancySupervisor(Module):
             'gest_diab': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_gest_diab_per_month'],
-                Predictor('li_bmi').when('4', params['rr_gest_diab_obesity'])
-                                   .when('5', params['rr_gest_diab_obesity'])),
+                Predictor('li_bmi', conditions_are_mutually_exclusive=True)
+                .when('4', params['rr_gest_diab_obesity'])
+                .when('5', params['rr_gest_diab_obesity'])),
 
             # This equation calculates a womans monthly risk of developing placental abruption
             # during her pregnancy.
@@ -498,10 +503,11 @@ class PregnancySupervisor(Module):
                 Predictor('ps_gest_diab').when('uncontrolled', params['rr_still_birth_gest_diab']),
                 Predictor().when('(ps_gest_diab == "controlled ") & (ac_gest_diab_on_treatment != "none")',
                                  (params['rr_still_birth_gest_diab'] * params['treatment_effect_gdm_case_management'])),
-                Predictor('ps_htn_disorders').when('mild_pre_eclamp', params['rr_still_birth_mild_pre_eclamp'])
-                                             .when('gest_htn', params['rr_still_birth_gest_htn'])
-                                             .when('severe_gest_htn', params['rr_still_birth_severe_gest_htn'])
-                                             .when('severe_pre_eclamp', params['rr_still_birth_severe_pre_eclamp'])),
+                Predictor('ps_htn_disorders', conditions_are_mutually_exclusive=True)
+                .when('mild_pre_eclamp', params['rr_still_birth_mild_pre_eclamp'])
+                .when('gest_htn', params['rr_still_birth_gest_htn'])
+                .when('severe_gest_htn', params['rr_still_birth_severe_gest_htn'])
+                .when('severe_pre_eclamp', params['rr_still_birth_severe_pre_eclamp'])),
             #    Predictor('ma_is_infected').when(True, params['rr_still_birth_maternal_malaria'])),
 
             # This equation calculates a risk of dying after ectopic pregnancy and is mitigated by treatment
@@ -1403,8 +1409,10 @@ class PregnancySupervisor(Module):
                                              f'{new_due_date}')
 
             # And the labour onset event is scheduled for the new due date
-            self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person),
-                                    new_due_date)
+            self.sim.schedule_event(
+                labour.LabourOnsetEvent(self.sim.modules['Labour'], person),
+                new_due_date
+            )
 
     def update_variables_post_still_birth_for_data_frame(self, women):
         """

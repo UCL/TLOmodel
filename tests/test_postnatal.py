@@ -502,6 +502,7 @@ def test_application_of_risk_of_late_onset_neonatal_sepsis():
     params = sim.modules['PostnatalSupervisor'].parameters
     params['prob_late_onset_neonatal_sepsis'] = 1
     params['prob_care_seeking_postnatal_emergency_neonate'] = 1
+    params['treatment_effect_early_init_bf'] = 1
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 

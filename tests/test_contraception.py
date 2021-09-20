@@ -22,6 +22,29 @@ end_date = Date(2013, 1, 1)
 popsize = 200
 
 
+@pytest.fixture(scope='module')
+def simulation():
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    service_availability = ['*']
+
+    sim = Simulation(start_date=start_date, seed=0)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+
+    return sim
+
+
 def __check_properties(df):
     # basic checks on configuration of properties
     assert not ((~df.date_of_birth.isna()) & (df.sex == 'M') & (df.co_contraception != 'not_using')).any()

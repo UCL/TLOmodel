@@ -152,6 +152,8 @@ class SymptomManager(Module):
      caused by conditions not represented explicitly in the model).
     """
 
+    INIT_DEPENDENCIES = {'Demography'}
+
     # Declare Metadata
     METADATA = {}
 

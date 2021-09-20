@@ -26,6 +26,9 @@ class Contraception(Module):
     Switching contraceptive methods, and discontinuation rates by age.
     """
 
+    INIT_DEPENDENCIES = {'Demography'}
+    ADDITIONAL_DEPENDENCIES = {'Labour', 'PregnancySupervisor'}
+
     # Declare Metadata
     METADATA = {}
 
