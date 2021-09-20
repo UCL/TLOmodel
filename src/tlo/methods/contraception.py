@@ -464,15 +464,13 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # select new contraceptive using switching matrix
         new_co = transition_states(df.loc[switch_co, 'co_contraception'], switching_matrix, rng)
 
-        # # ... but don't allow female sterilization to any woman below 30
-        # female_sterilization = new_co.loc[df['age_years'] < 30] == 'female_sterilization'
-        #
-        # # make them switch to injections instead
-        # # Todo: ideally this should revert to no switch (i.e. stay on the method they are using, though couldn't see
-        # #  how to do this; note that (reverting to 'not_using' throws an error in discontinuation as we are in
-        # #  individuals_using here)
-        # new_co.loc[female_sterilization.loc[female_sterilization].index] = 'injections'
-
+        # # ... but don't allow female sterilization to any woman below 30 (no switch will occur)
+        new_co = new_co.drop(index=df.loc[
+            df.is_alive &
+            df.index.isin(new_co.index) &
+            (df['age_years'] < 30) &
+            (new_co == 'female_sterilization')
+            ].index)
 
         # log women that are switching to a new contraceptive
         for woman in switch_co:
@@ -526,7 +524,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         """Look across all women who are using a contraception method to determine if they become pregnant i.e. the
          method fails according to failure_rate."""
 
-        df = self.population.props
+        df = self.module.sim.population.props
         p = self.module.parameters
         rng = self.module.rng
 
