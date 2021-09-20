@@ -37,6 +37,8 @@ class OesophagealCancer(Module):
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'Lifestyle', 'SymptomManager'}
 
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,

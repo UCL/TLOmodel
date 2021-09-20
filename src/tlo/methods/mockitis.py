@@ -28,6 +28,8 @@ class Mockitis(Module):
 
     INIT_DEPENDENCIES = {'Demography', 'SymptomManager'}
 
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,

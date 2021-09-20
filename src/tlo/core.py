@@ -188,6 +188,11 @@ class Module:
     # this module
     INIT_DEPENDENCIES = frozenset()
 
+    # Subclasses can override this to declare the set of optional init. dependencies
+    # Declares modules that need to be registered in simulation and initialised before
+    # this module if they are present, but are not required otherwise
+    OPTIONAL_INIT_DEPENDENCIES = frozenset()
+
     # Subclasses can override this to declare the set of additional dependencies
     # Declares any modules that need to be registered in simulation in addition to those
     # in INIT_DEPENDENCIES to allow running simulation

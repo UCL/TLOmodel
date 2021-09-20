@@ -9,6 +9,7 @@ from tlo import Date, Module, Simulation
 from tlo.dependencies import (
     ModuleDependencyError,
     get_all_dependencies,
+    get_all_required_dependencies,
     get_dependencies_and_initialise,
     get_module_class_map,
 )
@@ -203,7 +204,7 @@ def test_module_dependencies_complete(sim, module_class):
         if module.__name__ not in {
             'DxAlgorithmAdult', 'DxAlgorithmChild', 'NewbornOutcomes'
         }
-        for dependency_name in get_all_dependencies(module)
+        for dependency_name in get_all_required_dependencies(module)
     ],
     ids=lambda pair: f"{pair[0].__name__}, {pair[1].__name__}"
 )
