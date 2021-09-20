@@ -1,12 +1,12 @@
 """
-This file defines a batch run of a large population for a long time. It's used for calibrations (demographic patterns,
-health burdens and healthsytstem usage)
+This file defines a batch run of a large population for a long time with *NO* disease modules.
+It's used for calibrations of the demographic components of the model only.
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/calibration_analyses/long_run/long_run.py```
+```tlo batch-submit src/scripts/calibration_analyses/long_run/long_run_no_diseases.py```
 
 or locally using:
-    ```tlo scenario-run src/scripts/calibration_analyses/long_run/long_run.py```
+    ```tlo scenario-run src/scripts/calibration_analyses/long_run/long_run_no_diseases.py```
 
 """
 
@@ -68,13 +68,9 @@ class LongRun(BaseScenario):
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             symptommanager.SymptomManager(resourcefilepath=self.resources, spurious_symptoms=False),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
-            healthburden.HealthBurden(resourcefilepath=self.resources),
 
             # Representations of the Healthcare System
-            healthsystem.HealthSystem(resourcefilepath=self.resources),
-            epi.Epi(resourcefilepath=self.resources),
-            dx_algorithm_child.DxAlgorithmChild(resourcefilepath=self.resources),
-            dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=self.resources),
+            healthsystem.HealthSystem(resourcefilepath=self.resources, disable=True),
 
             # - Contraception, Pregnancy and Labour
             contraception.Contraception(resourcefilepath=self.resources),
@@ -84,29 +80,8 @@ class LongRun(BaseScenario):
             newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
             postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
 
-            # - Conditions of Early Childhood
-            diarrhoea.Diarrhoea(resourcefilepath=self.resources),
-
-            # - Communicable Diseases
-            hiv.Hiv(resourcefilepath=self.resources),
-            malaria.Malaria(resourcefilepath=self.resources),
-
-            # - Non-Communicable Conditions
-            # -- Cancers
-            bladder_cancer.BladderCancer(resourcefilepath=self.resources),
-            breast_cancer.BreastCancer(resourcefilepath=self.resources),
-            oesophagealcancer.OesophagealCancer(resourcefilepath=self.resources),
-            other_adult_cancers.OtherAdultCancer(resourcefilepath=self.resources),
-            prostate_cancer.ProstateCancer(resourcefilepath=self.resources),
-
-            # -- Caridometabolic Diorders
-            cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
-
-            # -- Injuries (Forthcoming)
-
-            # -- Other Non-Communicable Conditions
-            depression.Depression(resourcefilepath=self.resources),
-            epilepsy.Epilepsy(resourcefilepath=self.resources),
+            # - Supportiving Modules
+            hiv.DummyHivModule(),
         ]
 
     def draw_parameters(self, draw_number, rng):
