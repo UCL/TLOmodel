@@ -1,9 +1,9 @@
 """
-Plot to demonstrate correspondence between model and data outputs wrt births, population size and total deaths
-In the combination of both the codes from Tim C in Contraception and Tim H in Demography
+Plot to demonstrate correspondence between model and data outputs wrt births, population size and total deaths when
+running on a small population localling.
 
 # NB. For a version of this code that uses results from a run on Batch see:
- src/scripts/calibration_analyses/long_run/analysis_demography_calibrations.py
+ src/scripts/calibration_analyses/long_run/analysis_scripts/analysis_demography_calibrations.py
 
 """
 

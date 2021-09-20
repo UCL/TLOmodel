@@ -456,13 +456,16 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # select new contraceptive using switching matrix
         new_co = transition_states(df.loc[switch_co, 'co_contraception'], switching_matrix, rng)
 
-        # # ... but don't allow female sterilization to any woman below 30 (no switch will occur)
-        new_co = new_co.drop(index=df.loc[
+        # ... but don't allow female sterilization to any woman below 30 (no switch will occur)
+        to_drop = df.loc[
             df.is_alive &
             df.index.isin(new_co.index) &
             (df['age_years'] < 30) &
             (new_co == 'female_sterilization')
-            ].index)
+            ].index
+
+        switch_co = switch_co.drop(to_drop)
+        new_co = new_co.drop(to_drop)
 
         # log women that are switching to a new contraceptive
         for woman in switch_co:
