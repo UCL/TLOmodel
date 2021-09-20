@@ -10,13 +10,6 @@ from tlo.util import transition_states
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-"""
-# Issues remaining:
-# * We could encapsulate each init and swtich inside an HSI pretty easily now -- shall we do this? Could make it an
-optional thing (argument for ```no_hsi=True``` could preserve current behaviour)
-# todo  - Should remove women with hysterectomy from being on contraception??
-"""
-
 
 class Contraception(Module):
     """
@@ -130,9 +123,6 @@ class Contraception(Module):
         workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Contraception.xlsx', sheet_name=None)
 
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
-        # todo @TimC - is this the WPP fertility scheudle? To keep things in sync, I'd suggest we use instead:
-        #  "ResourceFile_ASFR_WPP.csv"  Response: this needs to be baseline fertility without contraceptives so I don't
-        #  think we can use WPP here. It matches fairly well though (see my workbook calibration.xlsx)
 
         self.parameters['contraception_failure'] = workbook['Failure'].loc[0]
         # this Excel sheet is from contraception_failure_discontinuation_switching.csv outputs from
@@ -182,8 +172,7 @@ class Contraception(Module):
         df.loc[df.is_alive, 'co_contraception'] = 'not_using'
         df.loc[df.is_alive, 'is_pregnant'] = False
         df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
-        df.loc[df.is_alive, 'co_unintended_preg'] = False  # todo should this be np.nan? Response: this is BOOL like
-        #   'is_pregnant' two lines above, so should be False?
+        df.loc[df.is_alive, 'co_unintended_preg'] = False
 
         # Assign contraception method
         # 1. select females aged 15-49 from population, for current year
@@ -233,8 +222,7 @@ class Contraception(Module):
             'not_using',
             False,
             pd.NaT,
-            False  # todo should this be np.nan? Response: this is BOOL like
-            #   'is_pregnant' two lines above, so should be False?
+            False
         )
 
         # 2) Reset the mother's is_pregnant status showing that she is no longer pregnant
@@ -245,8 +233,7 @@ class Contraception(Module):
 
     def process_parameters(self):
         """Process parameters that have been read-in"""
-        # todo - this could be tidied-up! Response:  ok, though no time right now sorry and don't want to break it now
-        #  it's doing what I want it too :)
+
         # =================== ARRANGE INPUTS FOR USE BY REGULAR EVENTS =============================
 
         # For ContraceptionPoll.init1 -----------------------------------------------------
@@ -477,14 +464,15 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # select new contraceptive using switching matrix
         new_co = transition_states(df.loc[switch_co, 'co_contraception'], switching_matrix, rng)
 
-        # though don't allow female sterilization to any woman below 30
-        younger_women = df.loc[new_co.index, 'age_years'] < 30
-        female_sterilization = new_co.loc[younger_women.loc[younger_women].index] == 'female_sterilization'
-        # make them switch to injections instead
-        # Todo: ideally this should revert to no switch (i.e. stay on the method they are using, though couldn't see
-        #  how to do this; note that (reverting to 'not_using' throws an error in discontinuation as we are in
-        #  individuals_using here)
-        new_co.loc[female_sterilization.loc[female_sterilization].index] = 'injections'
+        # # ... but don't allow female sterilization to any woman below 30
+        # female_sterilization = new_co.loc[df['age_years'] < 30] == 'female_sterilization'
+        #
+        # # make them switch to injections instead
+        # # Todo: ideally this should revert to no switch (i.e. stay on the method they are using, though couldn't see
+        # #  how to do this; note that (reverting to 'not_using' throws an error in discontinuation as we are in
+        # #  individuals_using here)
+        # new_co.loc[female_sterilization.loc[female_sterilization].index] = 'injections'
+
 
         # log women that are switching to a new contraceptive
         for woman in switch_co:
@@ -538,41 +526,38 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         """Look across all women who are using a contraception method to determine if they become pregnant i.e. the
          method fails according to failure_rate."""
 
-        def apply(self, population):  # Todo: why is apply greyed out here in Python? is it somehow not being used?!
-            df = population.props
-            p = self.module.parameters
-            rng = self.module.rng
+        df = self.population.props
+        p = self.module.parameters
+        rng = self.module.rng
 
-            prob_of_failure = p['contraception_failure']
+        prob_of_failure = p['contraception_failure']
 
-            # Get the women who are using a contracpetive that may fail and who may become pregnanct (i.e., women who
-            # are not in labour, have been pregnant in the last month, have previously had a hysterectomy, cannot get
-            # pregnant.)
+        # Get the women who are using a contracpetive that may fail and who may become pregnanct (i.e., women who
+        # are not in labour, have been pregnant in the last month, have previously had a hysterectomy, cannot get
+        # pregnant.)
 
-            possible_to_fail = ((df.sex == 'F') &
-                                df.is_alive &
-                                ~df.is_pregnant &
-                                ~df.la_currently_in_labour &
-                                ~df.la_has_had_hysterectomy &
-                                df.age_years.between(self.age_low, self.age_high) &
-                                ~df.co_contraception.isin(['not_using', 'female_steralization']) &
-                                ~df.la_is_postpartum &
-                                (df.ps_ectopic_pregnancy == 'none')
-                                )
+        possible_to_fail = ((df.sex == 'F') &
+                            df.is_alive &
+                            ~df.is_pregnant &
+                            ~df.la_currently_in_labour &
+                            ~df.la_has_had_hysterectomy &
+                            df.age_years.between(self.age_low, self.age_high) &
+                            ~df.co_contraception.isin(['not_using', 'female_steralization']) &
+                            ~df.la_is_postpartum &
+                            (df.ps_ectopic_pregnancy == 'none')
+                            )
 
-            prob_of_failure = df.loc[possible_to_fail, 'co_contraception'].map(prob_of_failure)
+        prob_of_failure = df.loc[possible_to_fail, 'co_contraception'].map(prob_of_failure)
 
-            # apply increased risk of failure to under 25s
-            prob_of_failure.loc[df.index[possible_to_fail & (df.age_years.between(15, 25))]] *= p['rr_fail_under25']
+        # apply increased risk of failure to under 25s
+        prob_of_failure.loc[df.index[possible_to_fail & (df.age_years.between(15, 25))]] *= p['rr_fail_under25']
 
-            # randomly select some individual's for contraceptive failure
-            # todo convert 12mo to 1mo probability of pregnancy - just checked and failure rates are already monthly so
-            #  not sure why this to do comment was added, I think it can be deleted
-            random_draw = rng.random_sample(size=len(prob_of_failure))
-            women_co_failure = prob_of_failure.index[prob_of_failure > random_draw]
+        # randomly select some individual's for contraceptive failure
+        random_draw = rng.random_sample(size=len(prob_of_failure))
+        women_co_failure = prob_of_failure.index[prob_of_failure > random_draw]
 
-            # Effect these women to be pregnant now:
-            self.set_new_pregnancy(women_id=women_co_failure)
+        # Effect these women to be pregnant now:
+        self.set_new_pregnancy(women_id=women_co_failure)
 
     def pregnancy_for_those_not_on_contraceptive(self):
         """
@@ -629,17 +614,18 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         for w in women_id:
             woman = df.loc[w]
 
-            # Determine if this is unintended or not.  For now let this be the simple rule of if it 'unintended' if
-            # the women is using a contraceptive.
-            # todo - @TimC - update this logic as you see fit! response: this looks good, thanks Tim!
+            # Determine if this is unintended or not: it is 'unintended' if the women is using a contraceptive at the
+            # when she becomes pregnant.
             unintended = (woman['co_contraception'] != 'not_using')
 
-            # Update properties:
+            # Update properties (including that she is no longer on any contraception)
             df.loc[w, (
+                'co_contraception',
                 'is_pregnant',
                 'date_of_last_pregnancy',
                 'co_unintended_preg'
             )] = (
+                'not_using',
                 True,
                 self.sim.date,
                 unintended
@@ -658,10 +644,6 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
                         },
                         description='pregnancy following the failure of contraceptive method')
 
-        # todo: @TimC/Joe - should a woman who is now pregnant stop any contraceptive method she may be on (apart from
-        #  'female_sterilization')? Response, yes, and even female_sterilization should be set back to not_using I think
-        #  given it failed. Though currently there is a zero probability of failre of female_sterlization
-
 
 class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
@@ -679,7 +661,7 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Costs for each contraceptive
         # We multiply each Unit_Cost by Expected_Units_Per_Case so they can be summed for all Items for each
         # contraceptive package to get cost of each contraceptive user for each contraceptive.
-        # todo @TimC - do you want each to represent a year's use? Response: Yes please
+
         # NB. Cost of "other modern method" is estimated to be equal to the cost of a female condom
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         item_cost = consumables['Expected_Units_Per_Case'] * consumables['Unit_Cost']
@@ -701,44 +683,7 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = population.props
 
-        # Log usage of contracpetive
-        num_using = df.loc[df.is_alive & (df.sex == 'F'), 'co_contraception'].value_counts().to_dict()
+        # Log summary of usage of contracpetives
         logger.info(key='contraception_use_yearly_summary',
-                    data=num_using,
+                    data=df.loc[df.is_alive & (df.sex == 'F'), 'co_contraception'].value_counts().to_dict(),
                     description='Counts of women on each type of contraceptive at a point each time.')
-
-        # Log costs associated with the consumables used for this pattern of usage (if annualised)
-        # todo @TimC - I've made this work for now, but note that this is only giving a rough estimate and its based
-        #  on a cross-sectional measure taken every year and people will start and stop in the intervening time. The log
-        #  already contains the full information (every person that starts and stops and the dates), so I think it'd
-        #  be better to contruct estimates of cost outside of the simulation and in the analysis files. If you did want
-        #  to continue using this, then to be accurate its frequency must be at lesst equal to monthly. I haven't made
-        #  that change to allow your script files to still work, but if you do, you would need to adjust the cost calcs.
-        #  Also - note that the HSI system automatically keeps track of all consumables etc, so either way I think it's
-        #  not neccessary, but this working works as intended, I think.
-        #   Response: Thanks Tim, maybe as per your comment on Git it's worth adding in the HSIs instead - very happy
-        #   for you to do this if it's relatively easy for you (your comment: "We could encapsulate each init and
-        #   swtich inside an HSI pretty easily now -- shall we do this? Could make it an optional thing
-        #   (argument for no_hsi=True could preserve current behaviour)"
-
-        # Public health costs per year of interventions - sum these annually below:
-        c_intervention = self.module.parameters['contraception_interventions']
-        c_intervention = c_intervention.set_index('contraception').T
-        cost_per_year1 = c_intervention.iloc[1]  # cost_per_year_multiplier for increasing r_init1
-        cost_per_year2 = c_intervention.iloc[3]  # cost_per_year_multiplier for increasing r_init2 PPFP
-
-        costs = {
-            'public_health_costs1': sum(cost_per_year1),
-            'public_health_costs2': sum(cost_per_year2)
-        }
-
-        # Get cost for provisioning of each type of contraceptive
-        for method in self.costs.keys():
-            costs.update({
-                f"{method}_annual_cost": num_using[method] * self.costs[method]
-            })
-
-        logger.info(key='contraception_costs_yearly_summary',
-                    data=costs,
-                    description='Annual cost (if current pattern of usaage is annualised) for the consumables required'
-                                'for each contraceptive method')
