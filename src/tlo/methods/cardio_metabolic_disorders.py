@@ -1221,7 +1221,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         # don't advise those with CKD to lose weight, but do so for all other conditions
         if self.condition != 'chronic_kidney_disease':
             self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
-            # Schedule a post-weight loss event for 6-9 months for individual to potentially lose weight:
+            # Schedule a post-weight loss event for individual to potentially lose weight:
             start = self.sim.date
             end = self.sim.date + DateOffset(months=self.module.parameters['interval_between_polls'], days=-1)
             ndays = (end - start).days

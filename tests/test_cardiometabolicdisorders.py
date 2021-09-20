@@ -18,6 +18,8 @@ from tlo.methods import (
     symptommanager,
 )
 from tlo.methods.cardio_metabolic_disorders import (
+    HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms,
+    HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms,
     HSI_CardioMetabolicDisorders_StartWeightLossAndMedication,
     HSI_CardioMetabolicDisorders_Refill_Medication
 )
@@ -491,5 +493,99 @@ def test_if_medication_prevents_all_death():
         assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{event}').any()
 
 
+def test_hsi_investigation_not_following_symptoms():
+    """Create a person and check if the functions in HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms
+    create the correct HSI"""
+
+    # Make a list of all conditions and events to run this test for
+    condition_list = ['diabetes', 'hypertension', 'chronic_lower_back_pain', 'chronic_kidney_disease',
+                      'chronic_ischemic_hd']
+    for condition in condition_list:
+        # Create the sim with an enabled healthcare system
+        sim = make_simulation_health_system_functional()
+
+        # make initial population
+        sim.make_initial_population(n=50)
+
+        # simulate for zero days
+        sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+        sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+        sim.event_queue.queue.clear()
+
+        df = sim.population.props
+
+        # Get target person and make them have condition but not be diagnosed yet
+        person_id = 0
+        df.at[person_id, f"nc_{condition}"] = True
+        df.at[person_id, f"nc_{condition}_ever_diagnosed"] = False
+        df.at[person_id, f"nc_{condition}_on_medication"] = False
+
+        # Run the InvestigationNotFollowingSymptoms event
+        t = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(module=sim.modules[
+            'CardioMetabolicDisorders'], person_id=person_id, condition=f'{condition}')
+        t.apply(person_id=person_id, squeeze_factor=0.0)
+
+        # Check that there is StartWeightLossAndMedication event scheduled
+        date_event, event = [
+            ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+            isinstance(ev[1], cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_StartWeightLossAndMedication)
+        ][0]
+
+        # Run the event:
+        event.apply(person_id=person_id, squeeze_factor=0.0)
+
+        # Check that the person has now experienced weight loss treatment (except for CKD)
+        if condition != 'chronic_kidney_disease':
+            assert df.at[person_id, "nc_ever_weight_loss_treatment"]
 
 
+def test_hsi_investigation_following_symptoms():
+    """Create a person and check if the functions in HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms
+    create the correct HSI"""
+
+    # Make a list of all conditions and events to run this test for
+    condition_list = ['diabetes', 'chronic_lower_back_pain', 'chronic_kidney_disease', 'chronic_ischemic_hd']
+    for condition in condition_list:
+        # Create the sim with an enabled healthcare system
+        sim = make_simulation_health_system_functional()
+
+        # make initial population
+        sim.make_initial_population(n=50)
+
+        # simulate for zero days
+        sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+        sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+        sim.event_queue.queue.clear()
+
+        df = sim.population.props
+
+        # Get target person and make them have condition, be symptomatic, but not be diagnosed yet
+        person_id = 0
+        df.at[person_id, f"nc_{condition}"] = True
+        df.at[person_id, f"nc_{condition}_ever_diagnosed"] = False
+        df.at[person_id, f"nc_{condition}_on_medication"] = False
+
+        sim.modules['SymptomManager'].change_symptom(
+            person_id=person_id,
+            symptom_string=f'{condition}_symptoms',
+            disease_module=sim.modules['CardioMetabolicDisorders'],
+            add_or_remove='+'
+        )
+
+        # Run the InvestigationNotFollowingSymptoms event
+        t = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(module=sim.modules[
+            'CardioMetabolicDisorders'], person_id=person_id, condition=f'{condition}')
+        t.apply(person_id=person_id, squeeze_factor=0.0)
+
+        # Check that there is StartWeightLossAndMedication event scheduled
+        date_event, event = [
+            ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+            isinstance(ev[1], cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_StartWeightLossAndMedication)
+        ][0]
+
+        # Run the event:
+        event.apply(person_id=person_id, squeeze_factor=0.0)
+
+        # Check that the person has now experienced weight loss treatment (except for CKD)
+        if condition != 'chronic_kidney_disease':
+            assert df.at[person_id, "nc_ever_weight_loss_treatment"]
