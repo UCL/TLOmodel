@@ -11,8 +11,6 @@ logger.setLevel(logging.INFO)
 
 """
 # Issues remaining:
-# * it would also be useful to run a check that when there is no contracpetive, then the number of births matches WPP
-very closely (ResourceFile_ASFR_WPP.csv) (as does the simplified_birth module)
 # * We could encapsulate each init and swtich inside an HSI pretty easily now -- shall we do this? Could make it an
 optional thing (argument for ```no_hsi=True``` could preserve current behaviour)
 # todo  - Should remove women with hysterectomy from being on contraception??
@@ -25,8 +23,8 @@ class Contraception(Module):
     Switching contraceptive methods, and discontinuation rates by age.
     """
 
-    INIT_DEPENDENCIES = {'Demography'}
-    ADDITIONAL_DEPENDENCIES = {'Labour', 'PregnancySupervisor'}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem'}
+    ADDITIONAL_DEPENDENCIES = {'Labour', 'PregnancySupervisor', 'Hiv'}
 
     # Declare Metadata
     METADATA = {}
