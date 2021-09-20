@@ -2,7 +2,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.util import transition_states
@@ -184,8 +183,8 @@ class Contraception(Module):
         df.loc[df.is_alive, 'co_contraception'] = 'not_using'
         df.loc[df.is_alive, 'is_pregnant'] = False
         df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
-        df.loc[df.is_alive, 'co_unintended_preg'] = False   # todo should this be np.nan? Response: this is BOOL like
-                                                            #   'is_pregnant' two lines above, so should be False?
+        df.loc[df.is_alive, 'co_unintended_preg'] = False  # todo should this be np.nan? Response: this is BOOL like
+        #   'is_pregnant' two lines above, so should be False?
 
         # Assign contraception method
         # 1. select females aged 15-49 from population, for current year
@@ -235,8 +234,8 @@ class Contraception(Module):
             'not_using',
             False,
             pd.NaT,
-            False       # todo should this be np.nan? Response: this is BOOL like
-                        #   'is_pregnant' two lines above, so should be False?
+            False  # todo should this be np.nan? Response: this is BOOL like
+            #   'is_pregnant' two lines above, so should be False?
         )
 
         # 2) Reset the mother's is_pregnant status showing that she is no longer pregnant
@@ -330,9 +329,9 @@ class Contraception(Module):
         df.at[mother_id, 'co_contraception'] = chosen_co.index[0]
 
         # though don't allow female sterilization to any woman below 30
-        younger_woman = df.loc[mother_id, 'age_years'] < 30
+        is_younger_woman = df.at[mother_id, 'age_years'] < 30
         female_sterilization = chosen_co.index == 'female_sterilization'
-        if younger_woman==True & female_sterilization==[ True]:
+        if is_younger_woman & female_sterilization == [True]:
             df.at[mother_id, 'co_contraception'] = 'not_using'
 
         # Log that this women had initiated this contraceptive following birth:
@@ -540,7 +539,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         """Look across all women who are using a contraception method to determine if they become pregnant i.e. the
          method fails according to failure_rate."""
 
-        def apply(self, population):    #Todo: why is apply greyed out here in Python? is it somehow not being used?!
+        def apply(self, population):  # Todo: why is apply greyed out here in Python? is it somehow not being used?!
             df = population.props
             p = self.module.parameters
             rng = self.module.rng
@@ -664,6 +663,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         #  'female_sterilization')? Response, yes, and even female_sterilization should be set back to not_using I think
         #  given it failed. Though currently there is a zero probability of failre of female_sterlization
 
+
 class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Logs state of contraceptive usage in the population each year."""
@@ -743,5 +743,3 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     data=costs,
                     description='Annual cost (if current pattern of usaage is annualised) for the consumables required'
                                 'for each contraceptive method')
-
-

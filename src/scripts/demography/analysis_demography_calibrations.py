@@ -16,12 +16,12 @@ from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import (
+    compare_number_of_deaths,
+    format_gbd,
     make_age_grp_types,
     make_calendar_period_lookup,
     make_calendar_period_type,
     parse_log_file,
-    format_gbd,
-    compare_number_of_deaths
 )
 from tlo.methods import (
     care_of_women_during_pregnancy,
@@ -38,9 +38,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
-from tlo.methods.hiv import(
-    DummyHivModule,
-)
+from tlo.methods.hiv import DummyHivModule
 from tlo.util import create_age_range_lookup
 
 
@@ -109,7 +107,7 @@ sim = run()
 filename = sim.log_filepath
 
 # OR:
-#filename = Path('demography_calibrations__2021-08-07T134821.log')
+# filename = Path('demography_calibrations__2021-08-07T134821.log')
 
 
 # %% Run Analysis
@@ -127,7 +125,7 @@ model_df = scaled_output["tlo.methods.demography"]["population"]
 model_df['year'] = pd.to_datetime(model_df.date).dt.year
 
 # Load Data: WPP_Annual
-wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" /  "ResourceFile_Pop_Annual_WPP.csv")
+wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_WPP.csv")
 wpp_ann_total = wpp_ann.groupby(['Year']).sum().sum(axis=1)
 
 # Load Data: Census
@@ -203,7 +201,7 @@ for year in [2010]:
 
     if year == 2018:
         # Import and format Census data, and add to the comparison if the year is 2018 (year of census)
-        cens = pd.read_csv(Path(resourcefilepath) / "demography" /  "ResourceFile_PopulationSize_2018Census.csv")
+        cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
         cens_m = cens.loc[cens['Sex'] == 'M'].groupby(by='Age_Grp')['Count'].sum()
         cens_m.index = cens_m.index.astype(make_age_grp_types())
         cens_m = cens_m.loc[cens_m.index.dropna()]
@@ -236,7 +234,7 @@ births_model = births_model.groupby(by='Period')['count'].sum()
 births_model.index = births_model.index.astype(make_calendar_period_type())
 
 # Births over time (WPP)
-wpp = pd.read_csv(Path(resourcefilepath) / "demography" /  "ResourceFile_TotalBirths_WPP.csv")
+wpp = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalBirths_WPP.csv")
 wpp = wpp.groupby(['Period', 'Variant'])['Total_Births'].sum().unstack()
 wpp.index = wpp.index.astype(make_calendar_period_type())
 wpp.columns = 'WPP_' + wpp.columns
@@ -341,4 +339,4 @@ plt.show()
 log_file_location = Path('./outputs/demography_calibrations__2021-08-07T124051.log')
 resource_file_location = Path('./resources')
 death_summary = compare_number_of_deaths(log_file_location, resource_file_location)
-#death_summary = compare_number_of_deaths(parsed_output, resourcefilepath)
+# death_summary = compare_number_of_deaths(parsed_output, resourcefilepath)

@@ -44,7 +44,8 @@ def run():
 
 
 def get_scaling_ratio(sim):
-    cens_tot = pd.read_csv(Path(resourcefilepath) / 'demography' / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
+    cens_tot = pd.read_csv(Path(resourcefilepath) / 'demography' / "ResourceFile_PopulationSize_2018Census.csv")[
+        'Count'].sum()
     cens_yr = 2018
     cens_date = Date(cens_yr, 7, 1)  # notional date for census at midpoint of the census year.
     assert sim.date >= cens_date, "Cannot scale if simulation does not include the census date"

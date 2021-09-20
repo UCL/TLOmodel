@@ -19,30 +19,7 @@ from tlo.methods.hiv import DummyHivModule
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 1)
-popsize = 200
-
-
-@pytest.fixture(scope='module')
-def simulation():
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    service_availability = ['*']
-
-    sim = Simulation(start_date=start_date, seed=0)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=service_availability),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-
-    return sim
+popsize = 1000
 
 
 def __check_properties(df):
@@ -60,7 +37,7 @@ def __check_dtypes(simulation):
 
 
 def test_contraception(tmpdir):
-    """test that what comes out in log is as expected"""
+    """Test that the contraception module function and that what comes out in log is as expected"""
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
     log_config = {
@@ -78,7 +55,7 @@ def test_contraception(tmpdir):
         demography.Demography(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
 
         # - modules for mechanistic representation of contraception -> pregnancy -> labour -> delivery etc.
         contraception.Contraception(resourcefilepath=resourcefilepath),
@@ -100,12 +77,8 @@ def test_contraception(tmpdir):
     __check_properties(sim.population.props)
 
     logs = parse_log_file(sim.log_filepath)['tlo.methods.contraception']
-    assert set(logs.keys()) == set([
-        'contraception_use_yearly_summary',
-        'contraception_costs_yearly_summary',
-        'pregnancy',
-        'contraception',
-    ])
+    assert set(logs.keys()) == {'contraception_use_yearly_summary', 'contraception_costs_yearly_summary', 'pregnancy',
+                                'contraception'}
 
     # check that pregnancies are happening:
     assert len(logs['pregnancy'])
