@@ -869,7 +869,7 @@ class PregnancySupervisor(Module):
         abortion = self.apply_linear_model(
             params['ps_linear_equations']['induced_abortion'],
             df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
-                   (df['ps_ectopic_pregnancy'] == 'none') & ~df['hs_is_inpatient']])
+                   (df['ps_ectopic_pregnancy'] == 'none') & ~df['hs_is_inpatient'] & df['co_unintended_preg']])
 
         for person in abortion.loc[abortion].index:
             # Similarly the abortion function is called for each of these women
