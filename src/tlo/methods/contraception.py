@@ -6,6 +6,8 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.util import transition_states
+from tlo.methods.healthsystem import HSI_Event
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -321,18 +323,37 @@ class Contraception(Module):
                                       init_after_pregnancy=True)
 
     def do_contraceptive_change(self, index, old, new):
-        """Enact the change in contraception, either instantly without use of HSI or through HSI"""
-        # todo - make more efficient way of doing this:
-
+        """Enact the change in contraception, either instantly without use of HSI or through HSI
+        index: pd.Index of the woman for whom the contraceptive state is changing
+        old: itterable giving the corresponding contraceptive state being switched from
+        new: itterable giving the corresponding contraceptive state being switched to
+        """
         df = self.sim.population.props
 
         if not self.use_healthsystem:
             # Do the change:
             df.loc[index, "co_contraception"] = new
 
-            # Do the logging: # todo-Vectorize this
-            for woman_id in index:
-                self.log_contraception_change(woman_id=woman_id, old=old[woman_id], new=new[woman_id])
+            # Do the logging:
+            for _woman_id, _old, _new in zip(index, old, new):
+                self.log_contraception_change(woman_id=_woman_id, old=_old, new=_new)
+
+        else:
+            for _woman_id, _old, _new in zip(index, old, new):
+                # todo 1) Should _all_ types come through here
+                # todo 2) Initiation after pregnancy to also come through HSI system
+
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_Contraceptive_StartOrSwitch(
+                        person_id=_woman_id,
+                        module=self,
+                        old_contraceptive=_old,
+                        new_contraceptive=_new
+                    ),
+                    topen=self.sim.date,
+                    tclose=None,
+                    priority=1
+                )
 
     def log_contraception_change(self, woman_id: int, old, new, init_after_pregnancy=False):
         """Log a start / stop / switch of contraception. """
@@ -441,8 +462,8 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         if len(now_using_co) > 0:
             self.module.do_contraceptive_change(
                 index=now_using_co,
-                old=pd.Series(index=now_using_co, data='not_using'),
-                new=random_co[now_using_co]
+                old=['not_using'] * len(now_using_co),
+                new=random_co[now_using_co].values
             )
 
 
@@ -489,8 +510,8 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         if len(switch_co) > 0:
             self.module.do_contraceptive_change(
                 index=switch_co,
-                old=df.loc[switch_co, 'co_contraception'],
-                new=new_co[switch_co]
+                old=df.loc[switch_co, 'co_contraception'].values,
+                new=new_co[switch_co].values
             )
 
 
@@ -523,8 +544,8 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         if len(co_discontinue) > 0:
             self.module.do_contraceptive_change(
                 index=co_discontinue,
-                old=df.loc[co_discontinue, 'co_contraception'],
-                new=pd.Series(index=co_discontinue, data='not_using')
+                old=df.loc[co_discontinue, 'co_contraception'].values,
+                new=['not_using'] * len(co_discontinue)
             )
 
 
@@ -673,3 +694,35 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='contraception_use_yearly_summary',
                     data=df.loc[df.is_alive & (df.sex == 'F'), 'co_contraception'].value_counts().to_dict(),
                     description='Counts of women on each type of contraceptive at a point each time (yearly).')
+
+
+class HSI_Contraceptive_StartOrSwitch(HSI_Event, IndividualScopeEventMixin):
+    """HSI event for the starting or switching of a contraceptive"""
+    def __init__(self, module, person_id, old_contraceptive, new_contraceptive):
+        super().__init__(module, person_id=person_id)
+        self.old_contraceptive = old_contraceptive
+        self.new_contraceptive = new_contraceptive
+
+        self.TREATMENT_ID = "Contracpetion_StartOrSwitch"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        """Enact the change in contraception and log it"""
+        df = self.sim.population.props
+
+        # Do change:
+        df.loc[person_id, "co_contraception"] = self.new_contraceptive
+
+        # Log:
+        self.module.log_contraception_change(
+            woman_id=person_id,
+            old=self.old_contraceptive,
+            new=self.new_contraceptive
+        )
+
+        # todo: Assocoate this with use of consuambles
+
+
+        # todo: For those that don't switch, they still need a regular appointment.
