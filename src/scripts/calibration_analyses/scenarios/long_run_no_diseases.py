@@ -3,10 +3,10 @@ This file defines a batch run of a large population for a long time with *NO* di
 It's used for calibrations of the demographic components of the model only.
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/calibration_analyses/long_run/long_run_no_diseases.py```
+```tlo batch-submit src/scripts/calibration_analyses/scenarios/long_run_no_diseases.py```
 
 or locally using:
-    ```tlo scenario-run src/scripts/calibration_analyses/long_run/long_run_no_diseases.py```
+    ```tlo scenario-run src/scripts/calibration_analyses/scenarios/long_run_no_diseases.py```
 
 """
 
