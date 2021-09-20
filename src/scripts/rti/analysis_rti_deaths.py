@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import numpy as np
-
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
@@ -18,7 +17,6 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
-
 
 # To reproduce the results, you must set the seed for the Simulation instance. The Simulation
 # will seed the random number generators for each module when they are registered.
