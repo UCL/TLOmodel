@@ -18,7 +18,7 @@ from tlo.methods import (
 from tlo.methods.hiv import DummyHivModule
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
+end_date = Date(2012, 12, 31)
 popsize = 1000
 
 
@@ -77,8 +77,7 @@ def test_contraception(tmpdir):
     __check_properties(sim.population.props)
 
     logs = parse_log_file(sim.log_filepath)['tlo.methods.contraception']
-    assert set(logs.keys()) == {'contraception_use_yearly_summary', 'contraception_costs_yearly_summary', 'pregnancy',
-                                'contraception'}
+    assert set(logs.keys()) == {'contraception_use_yearly_summary', 'pregnancy', 'contraception'}
 
     # check that pregnancies are happening:
     assert len(logs['pregnancy'])

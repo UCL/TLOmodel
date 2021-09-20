@@ -116,10 +116,6 @@ class Contraception(Module):
         Please see documentation for description of the relationships between baseline fertility rate, intitiation
         rates, discontinuation, failure and switching rates, and being on contraception or not and being pregnant.
         """
-        # todo - something in here is generrating a warning? Yes, not sure what, the message is:
-        #   /Users/timothycolbourn/opt/anaconda3/envs/tlo38/lib/python3.8/site-packages/openpyxl/worksheet/
-        #   _reader.py:308: UserWarning: Unknown extension is not supported and will be removed warn(msg)
-
         workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Contraception.xlsx', sheet_name=None)
 
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
@@ -139,13 +135,9 @@ class Contraception(Module):
 
         # from Stata analysis Step 3.5 of discontinuation & switching rates_age.do: fracpoly: regress drate_allmeth age:
         # - see 'Discontinuation by age' worksheet, results are in 'r_discont_age' sheet
-
         self.parameters['r_init_year'] = workbook['r_init_year'].set_index('year')
-
         self.parameters['r_discont_year'] = workbook['r_discont_year'].set_index('year')
-
         self.parameters['r_hiv'] = workbook['r_hiv']
-
         self.parameters['contraception_interventions'] = workbook['interventions']
         # this has multipliers of initiation rates to model effect of interventions to increase contraception uptake
         # multiplier: of r_init1 by contraception type e.g. 1.2 for pill means a 20% increase in initiation of pill
@@ -648,35 +640,6 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """Logs state of contraceptive usage in the population each year."""
         self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
-        self.age_low = 15
-        self.age_high = 49
-
-        self.get_costs_of_each_contraceptive()
-
-    def get_costs_of_each_contraceptive(self):
-        """Get the cost for a year's useage of the consumable"""
-
-        # Costs for each contraceptive
-        # We multiply each Unit_Cost by Expected_Units_Per_Case so they can be summed for all Items for each
-        # contraceptive package to get cost of each contraceptive user for each contraceptive.
-
-        # NB. Cost of "other modern method" is estimated to be equal to the cost of a female condom
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        item_cost = consumables['Expected_Units_Per_Case'] * consumables['Unit_Cost']
-
-        self.costs = dict()
-        self.costs['pill'] = item_cost.loc[consumables['Intervention_Pkg'] == 'Pill'].sum()
-        self.costs['IUD'] = item_cost.loc[consumables['Intervention_Pkg'] == 'IUD'].sum()
-        self.costs['injections'] = item_cost.loc[consumables['Intervention_Pkg'] == 'Injectable'].sum()
-        self.costs['implant'] = item_cost.loc[consumables['Intervention_Pkg'] == 'Implant'].sum()
-        self.costs['male_condom'] = item_cost.loc[consumables['Intervention_Pkg'] == 'Male condom'].sum()
-        self.costs['female_sterilization'] = item_cost.loc[
-            consumables['Intervention_Pkg'] == 'Female sterilization'].sum()
-        self.costs['other_modern'] = item_cost.loc[consumables['Intervention_Pkg'] == 'Female Condom'].sum()
-
-        assert set(self.costs.keys()).issubset(self.module.all_contraception_states)
-        assert set(self.costs.keys()) == set(['male_condom', 'injections', 'other_modern', 'IUD', 'pill',
-                                              'female_sterilization', 'implant'])
 
     def apply(self, population):
         df = population.props
@@ -684,4 +647,4 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Log summary of usage of contracpetives
         logger.info(key='contraception_use_yearly_summary',
                     data=df.loc[df.is_alive & (df.sex == 'F'), 'co_contraception'].value_counts().to_dict(),
-                    description='Counts of women on each type of contraceptive at a point each time.')
+                    description='Counts of women on each type of contraceptive at a point each time (yearly).')
