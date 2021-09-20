@@ -1379,9 +1379,9 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                             topen=self.sim.date,
                             tclose=None
                         )
-                    else:
-                        # Consumables not available
-                        logger.debug(key='debug', data='Treatment will not be provided due to no available consumables')
+                else:
+                    # Consumables not available
+                    logger.debug(key='debug', data='Treatment will not be provided due to no available consumables')
 
             else:
                 # Squeeze factor is too large
