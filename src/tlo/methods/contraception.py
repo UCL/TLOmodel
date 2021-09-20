@@ -105,10 +105,12 @@ class Contraception(Module):
                                                    'contraception failure)'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=False):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.all_contraception_states = set(self.PROPERTIES['co_contraception'].categories)
+        self.use_healthsystem = use_healthsystem  # True: initiation and switches to contracption require an HSI
+                                                  # False: initiation and switching do not occur through an HSI
 
     def read_parameters(self, data_folder):
         """
@@ -318,6 +320,20 @@ class Contraception(Module):
                                       new=df.at[mother_id, 'co_contraception'],
                                       init_after_pregnancy=True)
 
+    def do_contraceptive_change(self, index, old, new):
+        """Enact the change in contraception, either instantly without use of HSI or through HSI"""
+        # todo - make more efficient way of doing this:
+
+        df = self.sim.population.props
+
+        if not self.use_healthsystem:
+            # Do the change:
+            df.loc[index, "co_contraception"] = new
+
+            # Do the logging: # todo-Vectorize this
+            for woman_id in index:
+                self.log_contraception_change(woman_id=woman_id, old=old[woman_id], new=new[woman_id])
+
     def log_contraception_change(self, woman_id: int, old, new, init_after_pregnancy=False):
         """Log a start / stop / switch of contraception. """
         assert old in self.all_contraception_states
@@ -421,12 +437,14 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # get index of all those now using
         now_using_co = random_co.index[random_co != 'not_using']
 
-        # only update entries for all those now using a contraceptive
-        df.loc[now_using_co, 'co_contraception'] = random_co[now_using_co]
+        # Do the contraceptive change
+        if len(now_using_co) > 0:
+            self.module.do_contraceptive_change(
+                index=now_using_co,
+                old=pd.Series(index=now_using_co, data='not_using'),
+                new=random_co[now_using_co]
+            )
 
-        # log women that are starting a new contraceptive
-        for woman in now_using_co:
-            self.module.log_contraception_change(woman, old='not_using', new=df.at[woman, 'co_contraception'])
 
     def switch(self, df: pd.DataFrame, individuals_using: pd.Index):
         """check all females using contraception to determine if contraception Switches
@@ -467,12 +485,14 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         switch_co = switch_co.drop(to_drop)
         new_co = new_co.drop(to_drop)
 
-        # log women that are switching to a new contraceptive
-        for woman in switch_co:
-            self.module.log_contraception_change(woman, old=df.at[woman, 'co_contraception'], new=new_co[woman])
+        # Do the contraceptive change
+        if len(switch_co) > 0:
+            self.module.do_contraceptive_change(
+                index=switch_co,
+                old=df.loc[switch_co, 'co_contraception'],
+                new=new_co[switch_co]
+            )
 
-        # update contraception for all who switched
-        df.loc[switch_co, 'co_contraception'] = new_co
 
     def discontinue(self, df: pd.DataFrame, individuals_using: pd.Index):
         """check all females using contraception to determine if contraception discontinues
@@ -499,12 +519,14 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # random choose some to discontinue
         co_discontinue = discontinue_prob.index[discontinue_prob > rng.rand(len(individuals_using))]
 
-        # Log information for each woman about the contraceptive being initiated:
-        for woman in co_discontinue:
-            self.module.log_contraception_change(woman, old=df.at[woman, 'co_contraception'], new='not_using')
+        # Do the contraceptive change
+        if len(co_discontinue) > 0:
+            self.module.do_contraceptive_change(
+                index=co_discontinue,
+                old=df.loc[co_discontinue, 'co_contraception'],
+                new=pd.Series(index=co_discontinue, data='not_using')
+            )
 
-        # Update contraception property:
-        df.loc[co_discontinue, 'co_contraception'] = 'not_using'
 
     def update_pregnancy(self):
         """Determine who will become pregnant"""

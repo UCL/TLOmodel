@@ -19,7 +19,7 @@ from tlo.methods.hiv import DummyHivModule
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 12, 31)
-popsize = 1000
+popsize = 4000
 
 
 def __check_properties(df):
@@ -36,7 +36,7 @@ def __check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def test_contraception(tmpdir):
+def test_contraception_not_using_healthsystem(tmpdir):
     """Test that the contraception module function and that what comes out in log is as expected"""
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -71,6 +71,10 @@ def test_contraception(tmpdir):
     sim.make_initial_population(n=popsize)
     __check_dtypes(sim)
     __check_properties(sim.population.props)
+
+    # Make most of the population women
+    df = sim.population.props
+    df.loc[df.is_alive, 'sex'] = sim.modules['Demography'].rng.choice(['M', 'F'], p=[0.5, 0.5], size=df.is_alive.sum())
 
     sim.simulate(end_date=end_date)
     __check_dtypes(sim)
