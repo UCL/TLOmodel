@@ -21,7 +21,8 @@ from tlo.methods.cardio_metabolic_disorders import (
     HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms,
     HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms,
     HSI_CardioMetabolicDisorders_StartWeightLossAndMedication,
-    HSI_CardioMetabolicDisorders_Refill_Medication
+    HSI_CardioMetabolicDisorders_Refill_Medication,
+    HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment
 )
 from tlo.methods.healthsystem import HealthSystemScheduler
 
@@ -592,7 +593,7 @@ def test_hsi_investigation_following_symptoms():
 
 
 def test_hsi_weight_loss_and_medication():
-    """Create a person and check if the functions in HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms
+    """Create a person and check if the functions in HSI_CardioMetabolicDisorders_StartWeightLossAndMedication
     create the correct HSI"""
 
     # Make a list of all conditions and events to run this test for
@@ -617,17 +618,66 @@ def test_hsi_weight_loss_and_medication():
         df.at[person_id, f"nc_{condition}_ever_diagnosed"] = True
         df.at[person_id, f"nc_{condition}_on_medication"] = False
 
-        # Run the InvestigationNotFollowingSymptoms event
+        # Run the StartWeightLossAndMedication event
         t = HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(module=sim.modules[
             'CardioMetabolicDisorders'], person_id=person_id, condition=f'{condition}')
         t.apply(person_id=person_id, squeeze_factor=0.0)
 
         # Check that the individual is now on medication and that there is Refill_Medication event scheduled
         assert df.at[person_id, f"nc_{condition}_on_medication"]
-        date_event, event = [
-            ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-            isinstance(ev[1], cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_Refill_Medication)
-        ][0]
+        assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4],
+                          HSI_CardioMetabolicDisorders_Refill_Medication)
 
-        # Run the event:
-        event.apply(person_id=person_id, squeeze_factor=0.0)
+
+def test_hsi_emergency_events():
+    """Create a person and check if the functions in HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment
+    create the correct HSI"""
+
+    # Make a list of all conditions and events to run this test for
+    event_list = ['ever_stroke', 'ever_heart_attack']
+    for event in event_list:
+        # Create the sim with an enabled healthcare system
+        sim = make_simulation_health_system_functional()
+
+        # make initial population
+        sim.make_initial_population(n=50)
+
+        # change treatment parameter to always work
+        p = sim.modules['CardioMetabolicDisorders'].parameters
+        p[f'{event}_hsi']["pr_treatment_works"] = 1
+
+        # simulate for zero days
+        sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+        sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+        sim.event_queue.queue.clear()
+
+        df = sim.population.props
+
+        # Get target person and make them have condition and diagnosed but not on medication yet
+        person_id = 0
+        df.at[person_id, f"nc_{event}"] = True
+        df.at[person_id, f"nc_{event}_ever_diagnosed"] = True
+        df.at[person_id, f"nc_{event}_on_medication"] = False
+        df.at[person_id, f'nc_{event}_scheduled_date_death'] = sim.date + pd.DateOffset(days=7)
+
+        # Make them have symptoms of event
+        sim.modules['SymptomManager'].change_symptom(
+            person_id=person_id,
+            symptom_string=f'{event}_damage',
+            disease_module=sim.modules['CardioMetabolicDisorders'],
+            add_or_remove='+'
+        )
+
+        # Run the SeeksEmergencyCareAndGetsTreatment event
+        t = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(module=sim.modules[
+            'CardioMetabolicDisorders'], person_id=person_id, ev=f'{event}')
+        t.apply(person_id=person_id, squeeze_factor=0.0)
+
+        # Check that the individual is now diagnosed, on medication, there is a StartMedication event scheduled, and
+        # symptoms have been removed
+        assert df.at[person_id, f'nc_{event}_date_diagnosis'] == sim.date
+        assert df.at[person_id, f'nc_{event}_on_medication']
+        assert pd.isnull(df.at[person_id, f'nc_{event}_scheduled_date_death'])
+        assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4],
+                          HSI_CardioMetabolicDisorders_StartWeightLossAndMedication)
+        assert f"{event}_damage" not in sim.modules['SymptomManager'].has_what(person_id)
