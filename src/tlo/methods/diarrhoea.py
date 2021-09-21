@@ -1122,7 +1122,7 @@ class Models:
         if pathogen == 'cryptosporidium':
             risk *= self.p['rr_diarr_death_cryptosporidium']
         elif pathogen == 'shigella':
-            self.p['rr_diarr_death_shigella']
+            risk *= self.p['rr_diarr_death_shigella']
 
         if duration_longer_than_13days:
             risk *= self.p['rr_diarr_death_if_duration_longer_than_13_days']
