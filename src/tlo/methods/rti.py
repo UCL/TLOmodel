@@ -1088,10 +1088,6 @@ class RTI(Module):
         # test the injury location distribution
         assert 0.9999 < sum(p['injury_location_distribution'][1]) < 1.0001, \
             "The injured body region distribution doesn't sum to one"
-        # test the distributions used to assign daly weights for certain injury codes
-        daly_weight_distributions = [val for key, val in p.items() if 'daly_dist_code_' in key]
-        for dist in daly_weight_distributions:
-            assert 0.9999 < sum(dist) < 1.0001, 'daly weight distribution does not sum to one'
         # test the distributions to assign injuries to certain body regions
         # get the first characters of the parameter names
         body_part_strings = ['head_prob_', 'face_prob_', 'neck_prob_', 'thorax_prob_', 'abdomen_prob_',
