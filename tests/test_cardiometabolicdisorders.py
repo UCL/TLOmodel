@@ -22,7 +22,9 @@ from tlo.methods.cardio_metabolic_disorders import (
     HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms,
     HSI_CardioMetabolicDisorders_StartWeightLossAndMedication,
     HSI_CardioMetabolicDisorders_Refill_Medication,
-    HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment
+    HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment,
+    CardioMetabolicDisordersEvent,
+    CardioMetabolicDisordersDeathEvent
 )
 from tlo.methods.healthsystem import HealthSystemScheduler
 
@@ -722,3 +724,68 @@ def test_no_availability_of_consumables_for_conditions():
 
         # Check that the individual has dropped off of medication due to lack of consumables
         assert not df.at[person_id, f"nc_{condition}_on_medication"]
+
+
+def test_no_availability_of_consumables_for_events():
+    """Check if consumables aren't available that HSI events are commissioned but individual dies of event anyway"""
+
+    # Create a list of the item codes used by this module
+    all_item_codes = {216, 233, 221, 226, 47, 2064, 225, 234}
+
+    # Make a list of all events to run this test for
+    event_list = ['ever_stroke', 'ever_heart_attack']
+    for event in event_list:
+        # Create the sim with an enabled healthcare system
+        sim = make_simulation_health_system_functional()
+
+        # make initial population
+        sim.make_initial_population(n=1000)
+
+        # simulate for zero days
+        sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+        sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+        sim.event_queue.queue.clear()
+
+        # Make consumables not available
+        sim.modules['HealthSystem'].prob_item_codes_available.loc[all_item_codes] = 0.0
+        sim.modules['HealthSystem'].determine_availability_of_consumables_today()
+
+        df = sim.population.props
+
+        # Get target person and make them have condition, diagnosed and on medication
+        person_id = 0
+        df.at[person_id, f"nc_{event}"] = False
+        df.at[person_id, f"nc_{event}_ever_diagnosed"] = False
+        df.at[person_id, f"nc_{event}_on_medication"] = False
+
+        # Run the Refill_Medication event
+        t = CardioMetabolicDisordersEvent(module=sim.modules['CardioMetabolicDisorders'], person_id=person_id, event=event)
+        t.apply(person_id=person_id)
+
+        events_for_this_person = sim.find_events_for_person(person_id)
+        assert 1 == len(events_for_this_person)
+        next_event_date, next_event_obj = events_for_this_person[person_id]
+        assert isinstance(next_event_obj, cardio_metabolic_disorders.CardioMetabolicDisordersDeathEvent)
+        assert next_event_date >= sim.date
+
+        # Run the SeeksEmergencyCareAndGetsTreatment event on this person
+        t = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(module=sim.modules[
+            'CardioMetabolicDisorders'], person_id=person_id, ev=f'{event}')
+        t.apply(person_id=person_id, squeeze_factor=0.0)
+
+        # Check that the individual is not on medication due to lack of consumables, and that there is a scheduled date
+        # of death still and DeathEvent  is still in queue
+        assert not df.at[person_id, f'nc_{event}_on_medication']
+        assert df.at[person_id, f'nc_{event}_scheduled_date_death'] == next_event_date
+
+        # change date of death to today's date to run DeathEvent
+        df.at[person_id, f'nc_{event}_scheduled_date_death'] = sim.date
+
+        # Run the DeathEvent on this person
+        t = CardioMetabolicDisordersDeathEvent(module=sim.modules['CardioMetabolicDisorders'], person_id=person_id,
+                                               condition=f'{event}')
+        t.apply(person_id=person_id)
+
+        assert not df.at[person_id, 'is_alive']
+        assert df.at[person_id, 'cause_of_death'] == f'{event}'
+
