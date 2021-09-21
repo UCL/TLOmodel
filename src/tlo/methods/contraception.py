@@ -113,6 +113,7 @@ class Contraception(Module):
         self.all_contraception_states = set(self.PROPERTIES['co_contraception'].categories)
         self.use_healthsystem = use_healthsystem  # True: initiation and switches to contracption require an HSI
                                                   # False: initiation and switching do not occur through an HSI
+        self.cons_codes = dict()  # (Will store the consumables codes for use in the HSI)
 
     def read_parameters(self, data_folder):
         """
@@ -193,12 +194,17 @@ class Contraception(Module):
     def initialise_simulation(self, sim):
         """
         * Schedule the recurring events: ContraceptiveSwitchingPoll, Fail, PregnancyPoll, ContraceptiveLoggingEvent
+        * Retreive the consumables codes for the consumables used
         """
         # starting contraception, switching contraception metho, and stopping contraception:
         sim.schedule_event(ContraceptionPoll(self), sim.date)
 
         # Launch the repeating event that will store statistics about the population structure
         sim.schedule_event(ContraceptionLoggingEvent(self), sim.date)
+
+        # Retreive the consumables codes for the consumables used
+        if self.use_healthsystem:
+            self.cons_codes = self.get_item_code_for_each_contraceptive()
 
     def on_birth(self, mother_id, child_id):
         """
@@ -309,12 +315,31 @@ class Contraception(Module):
         )
 
         # ... but don't allow female sterilization to any woman below 30: reset to 'not_using'
-        if (self.sim.population.props[mother_id, 'age_years'] < 30) and (new_contraceptive == 'female_sterilization'):
+        if (self.sim.population.props.at[mother_id, 'age_years'] < 30) and (new_contraceptive == 'female_sterilization'):
             new_contraceptive = 'not_using'
 
         # Do the change in contracpetive
         self.do_contraceptive_change(ids=mother_id, old='not_using', new=new_contraceptive)
 
+    def get_item_code_for_each_contraceptive(self):
+        """Get the item_code for each contraceptive"""
+        # NB. The consumable female condom is used for the contraceptive state of "other modern method"
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        _cons_codes = dict()
+        _cons_codes['pill'] = consumables.loc[consumables['Intervention_Pkg'] == 'Pill']
+        _cons_codes['IUD'] = consumables.loc[consumables['Intervention_Pkg'] == 'IUD']
+        _cons_codes['injections'] = consumables.loc[consumables['Intervention_Pkg'] == 'Injectable']
+        _cons_codes['implant'] = consumables.loc[consumables['Intervention_Pkg'] == 'Implant']
+        _cons_codes['male_condom'] = consumables.loc[consumables['Intervention_Pkg'] == 'Male condom']
+        _cons_codes['female_sterilization'] = consumables.loc[consumables['Intervention_Pkg'] == 'Female sterilization']
+        _cons_codes['other_modern'] = consumables.loc[consumables['Intervention_Pkg'] == 'Female Condom']
+
+        assert set(self.costs.keys()).issubset(self.module.all_contraception_states)
+        assert set(self.costs.keys()) == set(['male_condom', 'injections', 'other_modern', 'IUD', 'pill',
+                                              'female_sterilization', 'implant'])
+
+        return _cons_codes
 
     def do_contraceptive_change(self, ids, old, new):
         """Enact the change in contraception, either instantly without use of HSI or through HSI

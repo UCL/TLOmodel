@@ -145,8 +145,8 @@ def test_contraception(tmpdir):
 
 
 def test_contraception_using_healthsystem_but_no_capability(tmpdir):
-    """todo Check that if switching and initiatin use healthsystem but that no HSI occur in the healthsystem that there
-    is no initiation or switching"""
+    """Check that if switching and initiation use the HealthSystem but that no HSI occur that there is no initiation or
+     switching"""
 
     # Run simulation whereby contraception requires HSI but the Healthsystem prevent HSI occurring
     sim = run_sim(tmpdir=tmpdir, use_healthsystem=True, healthsystem_disable_and_reject_all=True)
