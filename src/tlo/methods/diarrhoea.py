@@ -564,7 +564,7 @@ class Diarrhoea(Module):
         self.models = Models(self)
 
         # Get DALY weights
-        if 'HealthBurden' in self.sim.modules.keys():
+        if 'HealthBurden' in self.sim.modules:
             get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
             self.daly_wts['dehydration=none'] = get_daly_weight(sequlae_code=32)
             self.daly_wts['dehydration=some'] = get_daly_weight(sequlae_code=35)
@@ -839,7 +839,7 @@ class Diarrhoea(Module):
         )
 
         # Store the totals of days * daly_weight incurred during the episode
-        if 'HealthBurden' in self.sim.modules.keys():
+        if 'HealthBurden' in self.sim.modules:
             days_duration = (self.sim.date - person.gi_date_of_onset).days
             daly_wt = self.daly_wts[f'dehydration={person.gi_dehydration}']
             self.unreported_dalys.append((person_id, daly_wt * days_duration))
@@ -1624,7 +1624,7 @@ def increase_incidence_of_pathogens(diarrhoea_module):
     assert np.isclose(probs.sum(0), 0.95).all()
 
     # Increase symptoms so that everyone gets symptoms:
-    for param_name in diarrhoea_module.parameters.keys():
+    for param_name in diarrhoea_module.parameters:
         if param_name.startswith('proportion_AWD_by_'):
             diarrhoea_module.parameters[param_name] = 1.0
         if param_name.startswith('fever_by_'):
