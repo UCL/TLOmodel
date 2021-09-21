@@ -628,123 +628,126 @@ class RTI(Module):
         ),
         'head_prob_113': Parameter(
             Types.REAL,
-            "The probability that this person's head injury is a skull fracture"
+            "The probability that this person's head injury is a basilar skull fracture"
         ),
         'head_prob_133a': Parameter(
             Types.REAL,
-            "The probability that this person's head injury is a skull fracture"
+            "The probability that this person's head injury is a Subarachnoid hematoma"
         ),
         'head_prob_133b': Parameter(
             Types.REAL,
-            "The probability that this person's head injury is a skull fracture"
+            "The probability that this person's head injury is a Brain contusion"
         ),
         'head_prob_133c': Parameter(
             Types.REAL,
-            "The probability that this person's head injury is a skull fracture"
+            "The probability that this person's head injury is an Intraventricular haemorrhage"
         ),
         'head_prob_133d': Parameter(
             Types.REAL,
-            "The probability that this person's head injury is a skull fracture"
+            "The probability that this person's head injury is a Subgaleal hematoma"
         ),
         'head_prob_134a': Parameter(
             Types.REAL,
-            "The probability that this person's head injury is a skull fracture"
+            "The probability that this person's head injury is an Epidural hematoma"
         ),
         'head_prob_134b': Parameter(
             Types.REAL,
-            "The probability that this person's head injury is a skull fracture"
+            "The probability that this person's head injury is a Subdural hematoma"
         ),
         'head_prob_135': Parameter(
             Types.REAL,
-            "The probability that this person's head injury is a skull fracture"
+            "The probability that this person's head injury is a Diffuse axonal injury/midline shift"
         ),
         'head_prob_1101': Parameter(
             Types.REAL,
-            "The probability that this person's head injury is a skull fracture"
+            "The probability that this person's head injury is a laceration"
         ),
         'head_prob_1114': Parameter(
             Types.REAL,
-            "The probability that this person's head injury is a skull fracture"
+            "The probability that this person's head injury is a burn"
         ),
         'face_prob_211': Parameter(
             Types.REAL,
-            "The probability that this person's face injury is a skull fracture"
+            "The probability that this person's face injury is a Facial fracture (nasal/unspecified)"
         ),
         'face_prob_212': Parameter(
             Types.REAL,
-            "The probability that this person's face injury is a skull fracture"
+            "The probability that this person's face injury is a Facial fracture (mandible/zygomatic)"
         ),
         'face_prob_241': Parameter(
             Types.REAL,
-            "The probability that this person's face injury is a skull fracture"
+            "The probability that this person's face injury is a soft tissue injury"
         ),
         'face_prob_2101': Parameter(
             Types.REAL,
-            "The probability that this person's face injury is a skull fracture"
+            "The probability that this person's face injury is a laceration"
         ),
         'face_prob_2114': Parameter(
             Types.REAL,
-            "The probability that this person's face injury is a skull fracture"
+            "The probability that this person's face injury is a burn"
         ),
         'face_prob_291': Parameter(
             Types.REAL,
-            "The probability that this person's face injury is a skull fracture"
+            "The probability that this person's face injury is an eye injury"
         ),
         'neck_prob_3101': Parameter(
             Types.REAL,
-            "The probability that this person's neck injury is a skull fracture"
+            "The probability that this person's neck injury is a laceration"
         ),
         'neck_prob_3113': Parameter(
             Types.REAL,
-            "The probability that this person's neck injury is a skull fracture"
+            "The probability that this person's neck injury is a burn"
         ),
         'neck_prob_342': Parameter(
             Types.REAL,
-            "The probability that this person's neck injury is a skull fracture"
+            "The probability that this person's neck injury is a Soft tissue injury in neck (vertebral artery "
+            "laceration)"
         ),
         'neck_prob_343': Parameter(
             Types.REAL,
-            "The probability that this person's neck injury is a skull fracture"
+            "The probability that this person's neck injury is a Soft tissue injury in neck (pharynx contusion)"
         ),
         'neck_prob_361': Parameter(
             Types.REAL,
-            "The probability that this person's neck injury is a skull fracture"
+            "The probability that this person's neck injury is a Sternomastoid m. hemorrhage/ Hemorrhage, "
+            "supraclavicular triangle/Hemorrhage, posterior triangle/Anterior vertebral vessel hemorrhage/ Neck muscle "
+            "hemorrhage"
         ),
         'neck_prob_363': Parameter(
             Types.REAL,
-            "The probability that this person's neck injury is a skull fracture"
+            "The probability that this person's neck injury is a Hematoma in carotid sheath/Carotid sheath hemorrhage"
         ),
         'neck_prob_322': Parameter(
             Types.REAL,
-            "The probability that this person's neck injury is a skull fracture"
+            "The probability that this person's neck injury is an Atlanto-occipital subluxation"
         ),
         'neck_prob_323': Parameter(
             Types.REAL,
-            "The probability that this person's neck injury is a skull fracture"
+            "The probability that this person's neck injury is an Atlanto-axial subluxation"
         ),
         'thorax_prob_4101': Parameter(
             Types.REAL,
-            "The probability that this person's thorax injury is a skull fracture"
+            "The probability that this person's thorax injury is a laceration"
         ),
         'thorax_prob_4113': Parameter(
             Types.REAL,
-            "The probability that this person's thorax injury is a skull fracture"
+            "The probability that this person's thorax injury is a burn"
         ),
         'thorax_prob_461': Parameter(
             Types.REAL,
-            "The probability that this person's thorax injury is a skull fracture"
+            "The probability that this person's thorax injury is Chest wall bruises/haematoma"
         ),
         'thorax_prob_463': Parameter(
             Types.REAL,
-            "The probability that this person's thorax injury is a skull fracture"
+            "The probability that this person's thorax injury is Haemothorax"
         ),
         'thorax_prob_453a': Parameter(
             Types.REAL,
-            "The probability that this person's thorax injury is a skull fracture"
+            "The probability that this person's thorax injury is a Lung contusion"
         ),
         'thorax_prob_453b': Parameter(
             Types.REAL,
-            "The probability that this person's thorax injury is a skull fracture"
+            "The probability that this person's thorax injury is a Diaphragm rupture"
         ),
         'thorax_prob_412': Parameter(
             Types.REAL,
@@ -756,15 +759,15 @@ class RTI(Module):
         ),
         'thorax_prob_441': Parameter(
             Types.REAL,
-            "The probability that this person's thorax injury is a skull fracture"
+            "The probability that this person's thorax injury is a Chest wall lacerations/avulsions"
         ),
         'thorax_prob_442': Parameter(
             Types.REAL,
-            "The probability that this person's thorax injury is a skull fracture"
+            "The probability that this person's thorax injury is a Surgical emphysema"
         ),
         'thorax_prob_443': Parameter(
             Types.REAL,
-            "The probability that this person's thorax injury is a skull fracture"
+            "The probability that this person's thorax injury is a Closed pneumothorax/ open pneumothorax"
         ),
         'abdomen_prob_5101': Parameter(
             Types.REAL,
@@ -780,11 +783,12 @@ class RTI(Module):
         ),
         'abdomen_prob_553': Parameter(
             Types.REAL,
-            "The probability that this person's thorax injury is a skull fracture"
+            "The probability that this person's thorax injury is an Injury to stomach/intestines/colon"
         ),
         'abdomen_prob_554': Parameter(
             Types.REAL,
-            "The probability that this person's thorax injury is a skull fracture"
+            "The probability that this person's thorax injury is an Injury to spleen/Urinary bladder/Liver/Urethra/"
+            "Diaphragm"
         ),
         'spine_prob_612': Parameter(
             Types.REAL,
@@ -792,31 +796,31 @@ class RTI(Module):
         ),
         'spine_prob_673a': Parameter(
             Types.REAL,
-            "The probability that this person's spine injury is a vertabrae fracture"
+            "The probability that this person's spine injury is a Spinal cord injury at neck level"
         ),
         'spine_prob_673b': Parameter(
             Types.REAL,
-            "The probability that this person's spine injury is a vertabrae fracture"
+            "The probability that this person's spine injury is a Spinal cord injury below neck level"
         ),
         'spine_prob_674a': Parameter(
             Types.REAL,
-            "The probability that this person's spine injury is a vertabrae fracture"
+            "The probability that this person's spine injury is a Spinal cord injury at neck level"
         ),
         'spine_prob_674b': Parameter(
             Types.REAL,
-            "The probability that this person's spine injury is a vertabrae fracture"
+            "The probability that this person's spine injury is a Spinal cord injury below neck level"
         ),
         'spine_prob_675a': Parameter(
             Types.REAL,
-            "The probability that this person's spine injury is a vertabrae fracture"
+            "The probability that this person's spine injury is a Spinal cord injury at neck level"
         ),
         'spine_prob_675b': Parameter(
             Types.REAL,
-            "The probability that this person's spine injury is a vertabrae fracture"
+            "The probability that this person's spine injury is a Spinal cord injury below neck level"
         ),
         'spine_prob_676': Parameter(
             Types.REAL,
-            "The probability that this person's spine injury is a vertabrae fracture"
+            "The probability that this person's spine injury is a Spinal cord injury at neck level"
         ),
         'upper_ex_prob_7101': Parameter(
             Types.REAL,
@@ -828,15 +832,15 @@ class RTI(Module):
         ),
         'upper_ex_prob_712a': Parameter(
             Types.REAL,
-            "The probability that this person's upper extremity injury is a laceration"
+            "The probability that this person's upper extremity injury is a Fracture to Clavicle, scapula, humerus"
         ),
         'upper_ex_prob_712b': Parameter(
             Types.REAL,
-            "The probability that this person's upper extremity injury is a laceration"
+            "The probability that this person's upper extremity injury is a Fracture to Hand/wrist"
         ),
         'upper_ex_prob_712c': Parameter(
             Types.REAL,
-            "The probability that this person's upper extremity injury is a laceration"
+            "The probability that this person's upper extremity injury is a Fracture to Radius/ulna"
         ),
         'upper_ex_prob_722': Parameter(
             Types.REAL,
@@ -844,15 +848,15 @@ class RTI(Module):
         ),
         'upper_ex_prob_782a': Parameter(
             Types.REAL,
-            "The probability that this person's upper extremity injury is a laceration"
+            "The probability that this person's upper extremity injury is an Amputated finger"
         ),
         'upper_ex_prob_782b': Parameter(
             Types.REAL,
-            "The probability that this person's upper extremity injury is a laceration"
+            "The probability that this person's upper extremity injury is a Unilateral arm amputation"
         ),
         'upper_ex_prob_782c': Parameter(
             Types.REAL,
-            "The probability that this person's upper extremity injury is a laceration"
+            "The probability that this person's upper extremity injury is a Thumb amputation"
         ),
         'upper_ex_prob_783': Parameter(
             Types.REAL,
@@ -876,51 +880,52 @@ class RTI(Module):
         ),
         'lower_ex_prob_812': Parameter(
             Types.REAL,
-            "The probability that this person's lower extremity injury is a laceration"
+            "The probability that this person's lower extremity injury is a Fracture to patella, tibia, fibula, ankle"
         ),
         'lower_ex_prob_813eo': Parameter(
             Types.REAL,
-            "The probability that this person's lower extremity injury is a laceration"
+            "The probability that this person's lower extremity injury is an open Fracture to patella, tibia, fibula, "
+            "ankle"
         ),
         'lower_ex_prob_813a': Parameter(
             Types.REAL,
-            "The probability that this person's lower extremity injury is a laceration"
+            "The probability that this person's lower extremity injury is a Hip fracture"
         ),
         'lower_ex_prob_813b': Parameter(
             Types.REAL,
-            "The probability that this person's lower extremity injury is a laceration"
+            "The probability that this person's lower extremity injury is a Pelvis fracture"
         ),
         'lower_ex_prob_813bo': Parameter(
             Types.REAL,
-            "The probability that this person's lower extremity injury is a laceration"
+            "The probability that this person's lower extremity injury is an open Pelvis fracture"
         ),
         'lower_ex_prob_813c': Parameter(
             Types.REAL,
-            "The probability that this person's lower extremity injury is a laceration"
+            "The probability that this person's lower extremity injury is a Femur fracture"
         ),
         'lower_ex_prob_813co': Parameter(
             Types.REAL,
-            "The probability that this person's lower extremity injury is a laceration"
+            "The probability that this person's lower extremity injury is an open Femur fracture"
         ),
         'lower_ex_prob_822a': Parameter(
             Types.REAL,
-            "The probability that this person's lower extremity injury is a laceration"
+            "The probability that this person's lower extremity injury is a Dislocated hip"
         ),
         'lower_ex_prob_822b': Parameter(
             Types.REAL,
-            "The probability that this person's lower extremity injury is a laceration"
+            "The probability that this person's lower extremity injury is a Dislocated knee"
         ),
         'lower_ex_prob_882': Parameter(
             Types.REAL,
-            "The probability that this person's lower extremity injury is a laceration"
+            "The probability that this person's lower extremity injury is an Amputation of toes"
         ),
         'lower_ex_prob_883': Parameter(
             Types.REAL,
-            "The probability that this person's lower extremity injury is a laceration"
+            "The probability that this person's lower extremity injury is a Unilateral leg amputation"
         ),
         'lower_ex_prob_884': Parameter(
             Types.REAL,
-            "The probability that this person's lower extremity injury is a laceration"
+            "The probability that this person's lower extremity injury is a Bilateral leg amputation "
         ),
 
     }
