@@ -165,6 +165,7 @@ def test_contraception_using_healthsystem(tmpdir):
 
     check_logs(sim)
 
+# todo: check that the two logs are equal as well as each being correct!
 
 def test_contraception_using_healthsystem_but_no_capability(tmpdir):
     """todo Check that if switching and initiatin use healthsystem but that no HSI occur in the healthsystem that there

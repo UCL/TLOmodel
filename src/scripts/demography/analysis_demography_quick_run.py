@@ -2,7 +2,7 @@
 Plot to demonstrate correspondence between model and data outputs wrt births, population size and total deaths when
 running on a small population localling.
 
-# NB. For a version of this code that uses results from a run on Batch see:
+# NB. ** For a version of this code that uses results from a run on Batch see **
  src/scripts/calibration_analyses/long_run/analysis_scripts/analysis_demography_calibrations.py
 
 """
@@ -65,7 +65,7 @@ def run():
 
     # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
     # `log_config` arguments, these will override the default behaviour.
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 
     # Path to the resource files used by the disease and intervention methods
     resources = "./resources"

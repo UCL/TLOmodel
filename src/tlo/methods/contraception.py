@@ -322,25 +322,29 @@ class Contraception(Module):
                                       new=df.at[mother_id, 'co_contraception'],
                                       init_after_pregnancy=True)
 
-    def do_contraceptive_change(self, index, old, new):
+    def do_contraceptive_change(self, ids, old, new):
         """Enact the change in contraception, either instantly without use of HSI or through HSI
-        index: pd.Index of the woman for whom the contraceptive state is changing
+        ids: pd.Index of the woman for whom the contraceptive state is changing
         old: itterable giving the corresponding contraceptive state being switched from
         new: itterable giving the corresponding contraceptive state being switched to
         """
         df = self.sim.population.props
 
         if not self.use_healthsystem:
+            # Enact the changes immidiately without using HSI events:
+
             # Do the change:
-            df.loc[index, "co_contraception"] = new
+            df.loc[ids, "co_contraception"] = new
 
             # Do the logging:
-            for _woman_id, _old, _new in zip(index, old, new):
+            for _woman_id, _old, _new in zip(ids, old, new):
                 self.log_contraception_change(woman_id=_woman_id, old=_old, new=_new)
 
         else:
-            for _woman_id, _old, _new in zip(index, old, new):
-                # todo 1) Should _all_ types come through here
+            # Create HSI event for each change in contracpetion
+
+            for _woman_id, _old, _new in zip(ids, old, new):
+                # todo 1) Should _all_ types come through here?
                 # todo 2) Initiation after pregnancy to also come through HSI system
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -350,7 +354,7 @@ class Contraception(Module):
                         old_contraceptive=_old,
                         new_contraceptive=_new
                     ),
-                    topen=self.sim.date,
+                    topen=self.sim.date,  # todo: scatter dates
                     tclose=None,
                     priority=1
                 )
@@ -461,11 +465,10 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # Do the contraceptive change
         if len(now_using_co) > 0:
             self.module.do_contraceptive_change(
-                index=now_using_co,
+                ids=now_using_co,
                 old=['not_using'] * len(now_using_co),
                 new=random_co[now_using_co].values
             )
-
 
     def switch(self, df: pd.DataFrame, individuals_using: pd.Index):
         """check all females using contraception to determine if contraception Switches
@@ -509,11 +512,10 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # Do the contraceptive change
         if len(switch_co) > 0:
             self.module.do_contraceptive_change(
-                index=switch_co,
+                ids=switch_co,
                 old=df.loc[switch_co, 'co_contraception'].values,
                 new=new_co[switch_co].values
             )
-
 
     def discontinue(self, df: pd.DataFrame, individuals_using: pd.Index):
         """check all females using contraception to determine if contraception discontinues
@@ -543,11 +545,10 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # Do the contraceptive change
         if len(co_discontinue) > 0:
             self.module.do_contraceptive_change(
-                index=co_discontinue,
+                ids=co_discontinue,
                 old=df.loc[co_discontinue, 'co_contraception'].values,
                 new=['not_using'] * len(co_discontinue)
             )
-
 
     def update_pregnancy(self):
         """Determine who will become pregnant"""
