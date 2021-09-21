@@ -10,11 +10,11 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'calibration_with_dummy_contraception.py'  # <-- update this to look at other results
+scenario_filename = 'calibration_run_all_modules.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_5k_pop_calibration_with_dummy_contraception-2021-09-15T112141Z'
+graph_location = 'output_graphs_10k_pop_normal_contra_calibration_run_all_modules-2021-09-16T080108Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -176,64 +176,64 @@ def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_rate,
 
 # ============================================  DENOMINATORS... ======================================================
 # ---------------------------------------------Total_pregnancies...---------------------------------------------------
-dummy_pregnancies = extract_results(
+#dummy_pregnancies = extract_results(
+#    results_folder,
+#    module="tlo.methods.dummy_contraception",
+#    key="pregnancy",
+#    custom_generate_series=(
+#        lambda df: df.assign(year=pd.to_datetime(df['date']).dt.year).groupby(['year'])['year'].count()
+#    ))
+
+#total_pregnancies_per_year = get_mean_and_quants(dummy_pregnancies)[0]
+#lq_dp = get_mean_and_quants(dummy_pregnancies)[1]
+#uq_dp = get_mean_and_quants(dummy_pregnancies)[2]
+#fig, ax = plt.subplots()
+
+#ax.plot(sim_years, total_pregnancies_per_year)
+#ax.fill_between(sim_years, lq_dp, uq_dp, color='b', alpha=.1)
+#plt.xlabel('Year')
+#plt.ylabel('Pregnancies (mean)')
+#plt.title('Mean number of pregnancies')
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
+#plt.show()
+
+
+pregnancy_poll_results = extract_results(
     results_folder,
-    module="tlo.methods.dummy_contraception",
-    key="pregnancy",
+    module="tlo.methods.contraception",
+    key="pregnant_at_age",
     custom_generate_series=(
         lambda df: df.assign(year=pd.to_datetime(df['date']).dt.year).groupby(['year'])['year'].count()
     ))
 
-total_pregnancies_per_year = get_mean_and_quants(dummy_pregnancies)[0]
-lq_dp = get_mean_and_quants(dummy_pregnancies)[1]
-uq_dp = get_mean_and_quants(dummy_pregnancies)[2]
-fig, ax = plt.subplots()
+contraception_failure = extract_results(
+    results_folder,
+    module="tlo.methods.contraception",
+    key="fail_contraception",
+    custom_generate_series=(
+        lambda df: df.assign(year=pd.to_datetime(df['date']).dt.year).groupby(['year'])['year'].count()
+    ))
 
+mean_pp_pregs = get_mean_and_quants(pregnancy_poll_results)[0]
+mean_cf_pregs = get_mean_and_quants(contraception_failure)[0]
+total_pregnancies_per_year = [x + y for x, y in zip(mean_pp_pregs, mean_cf_pregs)]
+
+lq_pp = get_mean_and_quants(pregnancy_poll_results)[1]
+lq_cf = get_mean_and_quants(contraception_failure)[1]
+uq_pp = get_mean_and_quants(pregnancy_poll_results)[2]
+uq_cf = get_mean_and_quants(contraception_failure)[2]
+total_lq = [x + y for x, y in zip(lq_pp, lq_cf)]
+total_uq = [x + y for x, y in zip(uq_pp, uq_cf)]
+
+
+fig, ax = plt.subplots()
 ax.plot(sim_years, total_pregnancies_per_year)
-ax.fill_between(sim_years, lq_dp, uq_dp, color='b', alpha=.1)
+ax.fill_between(sim_years, total_lq, total_uq, color='b', alpha=.1)
 plt.xlabel('Year')
 plt.ylabel('Pregnancies (mean)')
 plt.title('Mean number of pregnancies')
 plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
 plt.show()
-
-
-#pregnancy_poll_results = extract_results(
-#    results_folder,
-#    module="tlo.methods.contraception",
-#    key="pregnant_at_age",
-#    custom_generate_series=(
-#        lambda df: df.assign(year=pd.to_datetime(df['date']).dt.year).groupby(['year'])['year'].count()
-#    ))
-
-#contraception_failure = extract_results(
-#    results_folder,
-#    module="tlo.methods.contraception",
-#    key="fail_contraception",
-#    custom_generate_series=(
-#        lambda df: df.assign(year=pd.to_datetime(df['date']).dt.year).groupby(['year'])['year'].count()
-#    ))
-
-#mean_pp_pregs = get_mean_and_quants(pregnancy_poll_results)[0]
-#mean_cf_pregs = get_mean_and_quants(contraception_failure)[0]
-#total_pregnancies_per_year = [x + y for x, y in zip(mean_pp_pregs, mean_cf_pregs)]
-
-#lq_pp = get_mean_and_quants(pregnancy_poll_results)[1]
-#lq_cf = get_mean_and_quants(contraception_failure)[1]
-#uq_pp = get_mean_and_quants(pregnancy_poll_results)[2]
-#uq_cf = get_mean_and_quants(contraception_failure)[2]
-#total_lq = [x + y for x, y in zip(lq_pp, lq_cf)]
-#total_uq = [x + y for x, y in zip(uq_pp, uq_cf)]
-
-
-#fig, ax = plt.subplots()
-#ax.plot(sim_years, total_pregnancies_per_year)
-#ax.fill_between(sim_years, total_lq, total_uq, color='b', alpha=.1)
-##plt.xlabel('Year')
-##plt.ylabel('Pregnancies (mean)')
-##plt.title('Mean number of pregnancies')
-###plt.savefig('./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
-##plt.show()
 
 # -----------------------------------------------------Total births...------------------------------------------------
 births_results = extract_results(

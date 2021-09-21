@@ -538,6 +538,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # check correct women have been sent
         assert df.at[individual_id, 'ac_to_be_admitted']
+        logger.info(key='anc_interventions', data={'mother': individual_id, 'intervention': 'admission'})
 
         # Use a weighted random draw to determine which level of facility the woman will be admitted too
         # facility_level = int(self.rng.choice([1, 2, 3], p=params['prob_an_ip_at_facility_level_1_2_3']))
@@ -649,7 +650,6 @@ class CareOfWomenDuringPregnancy(Module):
                                                                                    'ac_gest_htn_on_treatment']:
 
                 df.at[person_id, 'ac_to_be_admitted'] = True
-                logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'admission'})
 
         # Here we conduct screening and initiate treatment for depression as needed
         if 'Depression' in self.sim.modules:
@@ -880,7 +880,6 @@ class CareOfWomenDuringPregnancy(Module):
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='point_of_care_hb_test',
                                                                        hsi_event=hsi_event):
                 df.at[person_id, 'ac_to_be_admitted'] = True
-                logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'admission'})
 
     def albendazole_administration(self, hsi_event):
         """
@@ -1131,8 +1130,6 @@ class CareOfWomenDuringPregnancy(Module):
 
                             df.at[person_id, 'ac_to_be_admitted'] = True
 
-                            logger.info(key='anc_interventions', data={'mother': person_id,
-                                                                       'intervention': 'admission'})
 
     def interventions_delivered_each_visit_from_anc2(self, hsi_event):
         """This function contains a collection of interventions that are delivered to women every time they attend ANC
@@ -1831,8 +1828,7 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             # And ensure only women whose first contact with ANC services are attending this event
-            assert mother.ps_gestational_age_in_weeks is not None
-            assert mother.ps_gestational_age_in_weeks is not pd.NaT
+            assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 7
 
             #  =================================== INTERVENTIONS ====================================================
@@ -1924,8 +1920,7 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
                                          f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
 
             assert mother.ac_total_anc_visits_current_pregnancy == 1
-            assert mother.ps_gestational_age_in_weeks is not None
-            assert mother.ps_gestational_age_in_weeks is not pd.NaT
+            assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 19
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
@@ -1933,7 +1928,6 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
             #  =================================== INTERVENTIONS ====================================================
             # First we administer the administer the interventions all women will receive at this contact regardless of
             # gestational age
-            self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
             self.module.tetanus_vaccination(hsi_event=self)
 
@@ -2023,15 +2017,13 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
                                              f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
 
             assert mother.ac_total_anc_visits_current_pregnancy == 2
-            assert mother.ps_gestational_age_in_weeks is not None
-            assert mother.ps_gestational_age_in_weeks is not pd.NaT
+            assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 25
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-            self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
             if mother.ps_gestational_age_in_weeks < 40:
@@ -2056,9 +2048,6 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
 
             elif mother.ps_gestational_age_in_weeks < 40:
                 self.module.iptp_administration(hsi_event=self)
-
-            elif mother.ps_gestational_age_in_weeks >= 40:
-                pass
 
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
@@ -2113,17 +2102,13 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
                                              f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
 
             assert mother.ac_total_anc_visits_current_pregnancy == 3
-            assert mother.ps_gestational_age_in_weeks is not None
-            assert mother.ps_gestational_age_in_weeks is not pd.NaT
+            assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 29
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
-            if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 4:
-                logger.info(key='anc4+', data={'mother': person_id})
 
             #  =================================== INTERVENTIONS ====================================================
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-            self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
             if mother.ps_gestational_age_in_weeks < 40:
@@ -2199,18 +2184,14 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
                                          f'{df.at[person_id, "ac_facility_type"]} at gestation '
                                          f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
 
-            assert mother.ps_gestational_age_in_weeks is not None
-            assert mother.ps_gestational_age_in_weeks is not pd.NaT
+            assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 33
             assert mother.ac_total_anc_visits_current_pregnancy == 4
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
-            if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 4:
-                logger.info(key='anc4+', data={'mother': person_id})
 
             #  =================================== INTERVENTIONS ====================================================
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-            self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
             if mother.ps_gestational_age_in_weeks < 40:
@@ -2285,18 +2266,14 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
                                          f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
 
             assert mother.ac_total_anc_visits_current_pregnancy == 5
-            assert mother.ps_gestational_age_in_weeks is not None
-            assert mother.ps_gestational_age_in_weeks is not pd.NaT
+            assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 35
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
-            if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 4:
-                logger.info(key='anc4+', data={'mother': person_id})
 
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
 
             #  =================================== INTERVENTIONS ====================================================
-            self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
             if mother.ps_gestational_age_in_weeks < 40:
@@ -2365,17 +2342,13 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
                                          f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
 
             assert mother.ac_total_anc_visits_current_pregnancy == 6
-            assert mother.ps_gestational_age_in_weeks is not None
-            assert mother.ps_gestational_age_in_weeks is not pd.NaT
+            assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 37
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
-            if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 4:
-                logger.info(key='anc4+', data={'mother': person_id})
 
             #  =================================== INTERVENTIONS ====================================================
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-            self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
             if mother.ps_gestational_age_in_weeks < 40:
@@ -2440,17 +2413,11 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
                                          f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
 
             assert mother.ac_total_anc_visits_current_pregnancy == 7
-            assert mother.ps_gestational_age_in_weeks is not None
-            assert mother.ps_gestational_age_in_weeks is not pd.NaT
+            assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 39
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
-            if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 4:
-                logger.info(key='anc4+', data={'mother': person_id})
 
-            logger.info(key='anc8+', data={'mother': person_id})
-
-            self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
             if df.at[person_id, 'ac_to_be_admitted']:
