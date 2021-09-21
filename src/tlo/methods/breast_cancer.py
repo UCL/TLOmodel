@@ -33,6 +33,8 @@ class BreastCancer(Module):
         self.lm_onset_breast_lump_discernible = None
         self.daly_wts = dict()
 
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
@@ -218,9 +220,10 @@ class BreastCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             sum(p['init_prop_breast_cancer_stage']),
             Predictor('sex').when('F', 1.0).otherwise(0.0),
-            Predictor('age_years').when('.between(30,49)', p['rp_breast_cancer_age3049'])
-                                  .when('.between(0,14)', 0.0)
-                                  .when('.between(50,120)', p['rp_breast_cancer_agege50']),
+            Predictor('age_years', conditions_are_mutually_exclusive=True)
+            .when('.between(30,49)', p['rp_breast_cancer_age3049'])
+            .when('.between(0,14)', 0.0)
+            .when('.between(50,120)', p['rp_breast_cancer_agege50']),
         )
 
         brc_status_any_stage = \
@@ -245,11 +248,16 @@ class BreastCancer(Module):
         # Create shorthand variable for the initial proportion of discernible breast cancer lumps in the population
         bc_init_prop_discernible_lump = p['init_prop_breast_lump_discernible_breast_cancer_by_stage']
         lm_init_breast_lump_discernible = LinearModel.multiplicative(
-            Predictor('brc_status').when("none", 0.0)
-                                   .when("stage1", bc_init_prop_discernible_lump[0])
-                                   .when("stage2", bc_init_prop_discernible_lump[1])
-                                   .when("stage3", bc_init_prop_discernible_lump[2])
-                                   .when("stage4", bc_init_prop_discernible_lump[3])
+            Predictor(
+                'brc_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when("none", 0.0)
+            .when("stage1", bc_init_prop_discernible_lump[0])
+            .when("stage2", bc_init_prop_discernible_lump[1])
+            .when("stage3", bc_init_prop_discernible_lump[2])
+            .when("stage4", bc_init_prop_discernible_lump[3])
         )
 
         has_breast_lump_discernible_at_init = lm_init_breast_lump_discernible.predict(df.loc[df.is_alive], self.rng)
@@ -266,11 +274,16 @@ class BreastCancer(Module):
         bc_initial_prop_diagnosed_discernible_lump = \
             p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage']
         lm_init_diagnosed = LinearModel.multiplicative(
-            Predictor('brc_status') .when("none", 0.0)
-                                    .when("stage1", bc_initial_prop_diagnosed_discernible_lump[0])
-                                    .when("stage2", bc_initial_prop_diagnosed_discernible_lump[1])
-                                    .when("stage3", bc_initial_prop_diagnosed_discernible_lump[2])
-                                    .when("stage4", bc_initial_prop_diagnosed_discernible_lump[3])
+            Predictor(
+                'brc_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when("none", 0.0)
+            .when("stage1", bc_initial_prop_diagnosed_discernible_lump[0])
+            .when("stage2", bc_initial_prop_diagnosed_discernible_lump[1])
+            .when("stage3", bc_initial_prop_diagnosed_discernible_lump[2])
+            .when("stage4", bc_initial_prop_diagnosed_discernible_lump[3])
         )
         ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -285,10 +298,16 @@ class BreastCancer(Module):
         # cancer stages in the population
         bc_inital_treament_status = p['init_prop_treatment_status_breast_cancer']
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
-            Predictor('brc_status').when("none", 0.0) .when("stage1", bc_inital_treament_status[0])
-                                                      .when("stage2", bc_inital_treament_status[1])
-                                                      .when("stage3", bc_inital_treament_status[2])
-                                                      .when("stage4", bc_inital_treament_status[3])
+            Predictor(
+                'brc_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when("none", 0.0)
+            .when("stage1", bc_inital_treament_status[0])
+            .when("stage2", bc_inital_treament_status[1])
+            .when("stage3", bc_inital_treament_status[2])
+            .when("stage4", bc_inital_treament_status[3])
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -342,9 +361,10 @@ class BreastCancer(Module):
             p['r_stage1_none'],
             Predictor('sex').when('M', 0.0),
             Predictor('brc_status').when('none', 1.0).otherwise(0.0),
-            Predictor('age_years').when('.between(0,14)', 0.0)
-                                  .when('.between(30,49)', p['rr_stage1_none_age3049'])
-                                  .when('.between(50,120)', p['rr_stage1_none_agege50'])
+            Predictor('age_years', conditions_are_mutually_exclusive=True)
+            .when('.between(0,14)', 0.0)
+            .when('.between(30,49)', p['rr_stage1_none_age3049'])
+            .when('.between(50,120)', p['rr_stage1_none_agege50'])
         )
 
         lm['stage2'] = LinearModel(
@@ -384,13 +404,18 @@ class BreastCancer(Module):
         stage2 = p['rr_breast_lump_discernible_stage2'] * p['r_breast_lump_discernible_stage1']
         stage3 = p['rr_breast_lump_discernible_stage3'] * p['r_breast_lump_discernible_stage1']
         stage4 = p['rr_breast_lump_discernible_stage4'] * p['r_breast_lump_discernible_stage1']
-        self.lm_onset_breast_lump_discernible = LinearModel.multiplicative(Predictor('brc_status')
-                                                                           .when('stage1', stage1)
-                                                                           .when('stage2', stage2)
-                                                                           .when('stage3', stage3)
-                                                                           .when('stage4', stage4)
-                                                                           .otherwise(0.0)
-                                                                           )
+        self.lm_onset_breast_lump_discernible = LinearModel.multiplicative(
+            Predictor(
+                'brc_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when('stage1', stage1)
+            .when('stage2', stage2)
+            .when('stage3', stage3)
+            .when('stage4', stage4)
+            .when('none', 0.0)
+        )
 
         # ----- DX TESTS -----
         # Create the diagnostic test representing the use of a biopsy to brc_status

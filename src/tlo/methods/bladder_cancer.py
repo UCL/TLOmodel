@@ -35,6 +35,8 @@ class BladderCancer(Module):
         self.lm_onset_pelvic_pain = None
         self.daly_wts = dict()
 
+    INIT_DEPENDENCIES = {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
@@ -236,10 +238,11 @@ class BladderCancer(Module):
             Predictor('li_tob').when(True, p['rp_bladder_cancer_tobacco']),
             # todo: add line when schisto is merged
             # Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
-            Predictor('age_years').when('.between(30,49)', p['rp_bladder_cancer_age3049'])
-                                  .when('.between(50,69)', p['rp_bladder_cancer_age5069'])
-                                  .when('.between(70,120)', p['rp_bladder_cancer_agege70'])
-                                  .when('.between(0,14)', 0.0)
+            Predictor('age_years', conditions_are_mutually_exclusive=True)
+            .when('.between(30,49)', p['rp_bladder_cancer_age3049'])
+            .when('.between(50,69)', p['rp_bladder_cancer_age5069'])
+            .when('.between(70,120)', p['rp_bladder_cancer_agege70'])
+            .when('.between(0,14)', 0.0)
         )
 
         bc_status_any_stage = lm_init_bc_status_any_stage.predict(df.loc[df.is_alive], self.rng)
@@ -259,10 +262,15 @@ class BladderCancer(Module):
         # -------------------- SYMPTOMS -----------
         # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of blood_urine:
         lm_init_blood_urine = LinearModel.multiplicative(
-            Predictor('bc_status').when("none", 0.0)
-                                  .when("tis_t1", p['init_prop_blood_urine_bladder_cancer_by_stage'][0])
-                                  .when("t2p", p['init_prop_blood_urine_bladder_cancer_by_stage'][1])
-                                  .when("metastatic", p['init_prop_blood_urine_bladder_cancer_by_stage'][2])
+            Predictor(
+                'bc_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when("none", 0.0)
+            .when("tis_t1", p['init_prop_blood_urine_bladder_cancer_by_stage'][0])
+            .when("t2p", p['init_prop_blood_urine_bladder_cancer_by_stage'][1])
+            .when("metastatic", p['init_prop_blood_urine_bladder_cancer_by_stage'][2])
         )
         has_blood_urine_at_init = lm_init_blood_urine.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
@@ -274,10 +282,15 @@ class BladderCancer(Module):
 
         # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of pelvic pain:
         lm_init_pelvic_pain = LinearModel.multiplicative(
-            Predictor('bc_status').when("none", 0.0)
-                                  .when("tis_t1", p['init_prop_pelvic_pain_bladder_cancer_by_stage'][0])
-                                  .when("t2p", p['init_prop_pelvic_pain_bladder_cancer_by_stage'][1])
-                                  .when("metastatic", p['init_prop_pelvic_pain_bladder_cancer_by_stage'][2])
+            Predictor(
+                'bc_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when("none", 0.0)
+            .when("tis_t1", p['init_prop_pelvic_pain_bladder_cancer_by_stage'][0])
+            .when("t2p", p['init_prop_pelvic_pain_bladder_cancer_by_stage'][1])
+            .when("metastatic", p['init_prop_pelvic_pain_bladder_cancer_by_stage'][2])
         )
         has_pelvic_pain_at_init = lm_init_pelvic_pain.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
@@ -289,13 +302,15 @@ class BladderCancer(Module):
 
         # -------------------- bc_date_diagnosis -----------
         lm_init_diagnosed = LinearModel.multiplicative(
-            Predictor('bc_status').when("none", 0.0)
-                                  .when("tis_t1",
-                                        p['init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage'][0])
-                                  .when("t2p",
-                                        p['init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage'][1])
-                                  .when("metastatic",
-                                        p['init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage'][2])
+            Predictor(
+                'bc_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when("none", 0.0)
+            .when("tis_t1", p['init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage'][0])
+            .when("t2p", p['init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage'][1])
+            .when("metastatic", p['init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage'][2])
         )
         ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -307,10 +322,15 @@ class BladderCancer(Module):
 
         # -------------------- bc_date_treatment -----------
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
-            Predictor('bc_status').when("none", 0.0)
-                                  .when("tis_t1", p['init_prop_treatment_status_bladder_cancer'][0])
-                                  .when("t2p", p['init_prop_treatment_status_bladder_cancer'][1])
-                                  .when("metastatic", p['init_prop_treatment_status_bladder_cancer'][2])
+            Predictor(
+                'bc_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when("none", 0.0)
+            .when("tis_t1", p['init_prop_treatment_status_bladder_cancer'][0])
+            .when("t2p", p['init_prop_treatment_status_bladder_cancer'][1])
+            .when("metastatic", p['init_prop_treatment_status_bladder_cancer'][2])
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -369,10 +389,11 @@ class BladderCancer(Module):
             p['r_tis_t1_bladder_cancer_none'],
             # todo: add in when schisto is in
             # Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
-            Predictor('age_years').when('.between(30,49)', p['rp_bladder_cancer_age3049'])
-                                  .when('.between(50,69)', p['rp_bladder_cancer_age5069'])
-                                  .when('.between(70,120)', p['rp_bladder_cancer_agege70'])
-                                  .when('.between(0,14)', 0.0),
+            Predictor('age_years', conditions_are_mutually_exclusive=True)
+            .when('.between(30,49)', p['rp_bladder_cancer_age3049'])
+            .when('.between(50,69)', p['rp_bladder_cancer_age5069'])
+            .when('.between(70,120)', p['rp_bladder_cancer_agege70'])
+            .when('.between(0,14)', 0.0),
             Predictor('li_tob').when(True, p['rr_tis_t1_bladder_cancer_none_tobacco']),
             # todo: add in when schisto module in master
             # Predictor('sh_').when(True, p['rr_tis_t1_bladder_cancer_none_ex_alc']),
@@ -404,20 +425,30 @@ class BladderCancer(Module):
         self.lm_onset_blood_urine = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['r_blood_urine_tis_t1_bladder_cancer'],
-            Predictor('bc_status').when('tis_t1', 1.0)
-                                  .when('t2p', p['rr_blood_urine_t2p_bladder_cancer'])
-                                  .when('metastatic', p['rr_blood_urine_metastatic_bladder_cancer'])
-                                  .otherwise(0.0)
+            Predictor(
+                'bc_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when('tis_t1', 1.0)
+            .when('t2p', p['rr_blood_urine_t2p_bladder_cancer'])
+            .when('metastatic', p['rr_blood_urine_metastatic_bladder_cancer'])
+            .when('none', 0.0)
         )
 
         # Linear Model for the onset of pelvic_pain, in each 3 month period
         self.lm_onset_pelvic_pain = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['r_pelvic_pain_tis_t1_bladder_cancer'],
-            Predictor('bc_status').when('tis_t1', 1.0)
-                                  .when('t2p', p['rr_pelvic_pain_t2p_bladder_cancer'])
-                                  .when('metastatic', p['rr_pelvic_pain_metastatic_bladder_cancer'])
-                                  .otherwise(0.0)
+            Predictor(
+                'bc_status',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when('tis_t1', 1.0)
+            .when('t2p', p['rr_pelvic_pain_t2p_bladder_cancer'])
+            .when('metastatic', p['rr_pelvic_pain_metastatic_bladder_cancer'])
+            .when('none', 0.0)
         )
 
         # ----- DX TESTS -----

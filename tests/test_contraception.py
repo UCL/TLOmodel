@@ -30,7 +30,7 @@ def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     service_availability = ['*']
 
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
@@ -45,7 +45,6 @@ def simulation():
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
-    sim.seed_rngs(0)
     return sim
 
 

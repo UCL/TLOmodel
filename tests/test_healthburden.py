@@ -256,6 +256,8 @@ def test_arithmetic_of_disability_aggregation_calcs():
         DiseaseThatCausesC(name='DiseaseThatCausesC1'),  # intentionally two instances of DiseaseThatCausesC
         DiseaseThatCausesC(name='DiseaseThatCausesC2'),
         DiseaseThatCausesNothing(),
+        # Disable sorting to allow registering multiple instances of DiseaseThatCausesC
+        sort_modules=False
     )
     sim.make_initial_population(n=4)
     sim.simulate(end_date=start_date)

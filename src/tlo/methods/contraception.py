@@ -28,6 +28,9 @@ class Contraception(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
+    INIT_DEPENDENCIES = {'Demography'}
+    ADDITIONAL_DEPENDENCIES = {'Labour', 'PregnancySupervisor'}
+
     # Declare Metadata
     METADATA = {}
 

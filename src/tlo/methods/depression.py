@@ -28,6 +28,10 @@ class Depression(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
+    INIT_DEPENDENCIES = {
+        'Demography', 'Contraception', 'HealthSystem', 'Lifestyle', 'SymptomManager'
+    }
+
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -219,10 +223,15 @@ class Depression(Module):
             Predictor('li_wealth').when('.isin([4,5])', p['init_rp_depr_wealth45']),
             Predictor().when('(sex=="F") & de_recently_pregnant', p['init_rp_depr_f_rec_preg']),
             Predictor().when('(sex=="F") & ~de_recently_pregnant', p['init_rp_depr_f_not_rec_preg']),
-            Predictor('age_years').when('.between(0, 14)', 0)
-                .when('.between(15, 19)', 1.0)
-                .when('.between(20, 59)', p['init_rp_depr_age2059'])
-                .otherwise(p['init_rp_depr_agege60'])
+            Predictor(
+                'age_years',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when('.between(0, 14)', 0)
+            .when('.between(15, 19)', 1.0)
+            .when('.between(20, 59)', p['init_rp_depr_age2059'])
+            .when('>= 60', p['init_rp_depr_agege60'])
         )
 
         self.linearModels['Depression_Ever_At_Population_Initialisation_Males'] = LinearModel.multiplicative(
@@ -261,9 +270,10 @@ class Depression(Module):
             LinearModelType.MULTIPLICATIVE,
             p['base_3m_prob_depr'],
             Predictor('de_cc').when(True, p['rr_depr_cc']),
-            Predictor('age_years').when('.between(0, 14)', 0)
-                                  .when('.between(15, 19)', p['rr_depr_age1519'])
-                                  .when('>=60', p['rr_depr_agege60']),
+            Predictor('age_years', conditions_are_mutually_exclusive=True)
+            .when('.between(0, 14)', 0)
+            .when('.between(15, 19)', p['rr_depr_age1519'])
+            .when('>=60', p['rr_depr_agege60']),
             Predictor('li_wealth').when('.isin([4,5])', p['rr_depr_wealth45']),
             Predictor('sex').when('F', p['rr_depr_female']),
             Predictor('de_recently_pregnant').when(True, p['rr_depr_pregnancy']),

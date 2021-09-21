@@ -41,7 +41,7 @@ This file to be updated in full when TB module is completed.
 # popsize = 500
 #
 # # Establish the simulation object
-# sim = Simulation(start_date=start_date)
+# sim = Simulation(start_date=start_date, seed=0)
 #
 # # ----- Control over the types of intervention that can occur -----
 # # Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
@@ -79,7 +79,6 @@ This file to be updated in full when TB module is completed.
 # logfile = sim.configure_logging(filename="HivTb_LogFile", custom_levels=custom_levels)
 #
 # # Run the simulation and flush the logger
-# sim.seed_rngs(0)
 # sim.make_initial_population(n=popsize)
 # sim.simulate(end_date=end_date)
 #
