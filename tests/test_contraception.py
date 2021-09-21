@@ -138,7 +138,7 @@ def test_contraception(tmpdir):
     check_logs(sim_does_not_use_healthsystem )
 
     # Check that the output of these two simulations are the same:
-    for key in {'contraception_use_yearly_summary', 'pregnancy', 'contraception'}:
+    for key in {'contraception_use_yearly_summary', 'pregnancy', 'contraception_change'}:
         assert parse_log_file(sim_uses_healthsystem.log_filepath)['tlo.methods.contraception'][key].equals(
             parse_log_file(sim_does_not_use_healthsystem.log_filepath)['tlo.methods.contraception'][key]
         )
@@ -148,14 +148,10 @@ def test_contraception_using_healthsystem_but_no_capability(tmpdir):
     """todo Check that if switching and initiatin use healthsystem but that no HSI occur in the healthsystem that there
     is no initiation or switching"""
 
-    # Run simulation whereby contraception requires HSI but the Healthsystes prevent HSI occuring
+    # Run simulation whereby contraception requires HSI but the Healthsystem prevent HSI occurring
     sim = run_sim(tmpdir=tmpdir, use_healthsystem=True, healthsystem_disable_and_reject_all=True)
 
     log = parse_log_file(sim.log_filepath)['tlo.methods.contraception']
 
-    # todo No record of starting/switching contraception
-
-
-
-
-
+    # No record of starting/switching contraception
+    assert "contraception_change" not in log

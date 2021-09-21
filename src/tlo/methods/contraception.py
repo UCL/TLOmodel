@@ -287,40 +287,34 @@ class Contraception(Module):
         c_baseline = self.parameters['irate2_']
         # this Excel sheet is irate2_all.csv outputs from 'initiation rates_age_stcox.do'
         # Stata analysis of DHS contraception calendar data
-        c_baseline = c_baseline.drop(columns=['not_using'])
-        c_adjusted = c_baseline.mul(c_intervention2.iloc[0])
-        self.parameters['contraception_initiation2'] = c_adjusted.loc[0]
+        self.parameters['contraception_initiation2'] = self.parameters['irate2_'].iloc[0] / \
+                                                       self.parameters['irate2_'].iloc[0].sum()
+        assert set(self.parameters['contraception_initiation2'].index) == self.all_contraception_states
+        assert np.isclose(1.0, self.parameters['contraception_initiation2'].sum())
 
     def select_contraceptive_following_birth(self, mother_id):
         """
-        Initiation of mother's contraception after birth (was previously Init2 event)
+        Initiation of mother's contraception after birth.
         Decide what contraceptive method they have (including not_using, according to
          initiation_rate2 (irate_2)
         Note the irate2s are low as they are just for the month after pregnancy and
         then for the 99.48% who 'initiate' to 'not_using' (i.e. 1 - sum(irate2s))
         they are then subject to the usual irate1s per month
         """
-        # - see Contraception-Pregnancy.pdf schematic
-        on_birth_co_probs: pd.Series = self.parameters['contraception_initiation2']
 
-        # sample a single row of the init2 probabilities (weighted by those same probabilities)
-        chosen_co = on_birth_co_probs.sample(n=1, weights=on_birth_co_probs, random_state=self.rng)
+        # sample a single row of the `init2` probabilities
+        new_contraceptive = self.rng.choice(
+            self.parameters['contraception_initiation2'].index,
+            p=self.parameters['contraception_initiation2'].values
+        )
 
-        # update the contraception choice (nb. the index of the row is the contraception type)
-        df = self.sim.population.props
-        df.at[mother_id, 'co_contraception'] = chosen_co.index[0]
+        # ... but don't allow female sterilization to any woman below 30: reset to 'not_using'
+        if (self.sim.population.props[mother_id, 'age_years'] < 30) and (new_contraceptive == 'female_sterilization'):
+            new_contraceptive = 'not_using'
 
-        # though don't allow female sterilization to any woman below 30
-        is_younger_woman = df.at[mother_id, 'age_years'] < 30
-        female_sterilization = chosen_co.index == 'female_sterilization'
-        if is_younger_woman & female_sterilization == [True]:
-            df.at[mother_id, 'co_contraception'] = 'not_using'
+        # Do the change in contracpetive
+        self.do_contraceptive_change(ids=mother_id, old='not_using', new=new_contraceptive)
 
-        # Log that this women had initiated this contraceptive following birth:
-        self.log_contraception_change(mother_id,
-                                      old='not_using',
-                                      new=df.at[mother_id, 'co_contraception'],
-                                      init_after_pregnancy=True)
 
     def do_contraceptive_change(self, ids, old, new):
         """Enact the change in contraception, either instantly without use of HSI or through HSI
@@ -345,7 +339,6 @@ class Contraception(Module):
 
             for _woman_id, _old, _new in zip(ids, old, new):
                 # todo 1) Should _all_ types come through here?
-                # todo 2) Initiation after pregnancy to also come through HSI system
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_Contraception_StartOrSwitch(
@@ -366,7 +359,7 @@ class Contraception(Module):
 
         df = self.sim.population.props
         woman = df.loc[woman_id]
-        logger.info(key='contraception',
+        logger.info(key='contraception_change',
                     data={
                         'woman': woman_id,
                         'age': woman['age_years'],
@@ -723,7 +716,10 @@ class HSI_Contraception_StartOrSwitch(HSI_Event, IndividualScopeEventMixin):
             new=self.new_contraceptive
         )
 
-        # todo: Assocoate this with use of consuambles
+        # todo: Associate this with use of consuambles
+
+
+
 
 
         # todo: For those that don't switch, they still need a regular appointment.
