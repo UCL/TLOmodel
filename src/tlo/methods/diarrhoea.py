@@ -66,6 +66,8 @@ class Diarrhoea(Module):
         'DiarrhoeaPropertiesOfOtherModules'
     }
 
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,

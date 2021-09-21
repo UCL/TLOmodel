@@ -90,6 +90,8 @@ class Alri(Module):
         'AlriPropertiesOfOtherModules'
     }
 
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,
