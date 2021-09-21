@@ -186,334 +186,6 @@ class RTI(Module):
             Types.LIST,
             'The distribution of where injuries are located in the body, based on the AIS body region definition'
         ),
-        'head_prob_skin_wound': Parameter(
-            Types.REAL,
-            'Proportion of head wounds that result in a skin wound'
-        ),
-        'head_prob_skin_wound_open': Parameter(
-            Types.REAL,
-            'Proportion of skin wounds in the head that result in an open wound'
-        ),
-        'head_prob_skin_wound_burn': Parameter(
-            Types.REAL,
-            'Proportion of skin wounds in the head that result in an open wound'
-        ),
-        'head_prob_fracture': Parameter(
-            Types.REAL,
-            'Proportion of head wounds that result in a fractured skull'
-        ),
-        'head_prob_fracture_unspecified': Parameter(
-            Types.REAL,
-            'Proportion of skull fractures in an unspecified location in the skull, carrying a lower AIS score'
-        ),
-        'head_prob_fracture_basilar': Parameter(
-            Types.REAL,
-            'Proportion of skull fractures in the base of the skull, carrying a higher AIS score'
-        ),
-        'head_prob_TBI': Parameter(
-            Types.REAL,
-            'Proportion of head injuries that result in traumatic brain injury'
-        ),
-        'head_prob_TBI_AIS3': Parameter(
-            Types.REAL,
-            'Proportion of traumatic brain injuries with an AIS score of 3'
-        ),
-        'head_prob_TBI_AIS4': Parameter(
-            Types.REAL,
-            'Proportion of traumatic brain injuries with an AIS score of 4'
-        ),
-        'head_prob_TBI_AIS5': Parameter(
-            Types.REAL,
-            'Proportion of traumatic brain injuries with an AIS score of 3'
-        ),
-        'face_prob_skin_wound': Parameter(
-            Types.REAL,
-            'Proportion of facial wounds that result in a skin wound'
-        ),
-        'face_prob_skin_wound_open': Parameter(
-            Types.REAL,
-            'Proportion of skin wounds in the face that result in an open wound'
-        ),
-        'face_prob_skin_wound_burn': Parameter(
-            Types.REAL,
-            'Proportion of skin wounds in the face that result in an open wound'
-        ),
-        'face_prob_fracture': Parameter(
-            Types.REAL,
-            'Proportion of facial wounds that result in a fractured skull'
-        ),
-        'face_prob_fracture_AIS1': Parameter(
-            Types.REAL,
-            'Proportion of facial fractures with an AIS score of 1'
-        ),
-        'face_prob_fracture_AIS2': Parameter(
-            Types.REAL,
-            'Proportion of facial fractures with an AIS score of 2'
-        ),
-        'face_prob_soft_tissue_injury': Parameter(
-            Types.REAL,
-            'Proportion of facial injuries that result in soft tissue injury'
-        ),
-        'face_prob_eye_injury': Parameter(
-            Types.REAL,
-            'Proportion of facial injuries that result in eye injury'
-        ),
-        'neck_prob_skin_wound': Parameter(
-            Types.REAL,
-            'Proportion of neck injuries that result in skin wounds'
-        ),
-        'neck_prob_skin_wound_open': Parameter(
-            Types.REAL,
-            'Proportion of skin wounds in the neck that are open wounds'
-        ),
-        'neck_prob_skin_wound_burn': Parameter(
-            Types.REAL,
-            'Proportion of skin wounds in the neck that are burns'
-        ),
-        'neck_prob_soft_tissue_injury': Parameter(
-            Types.REAL,
-            'Proportion of neck injuries that result in soft tissue injury'
-        ),
-        'neck_prob_soft_tissue_injury_AIS2': Parameter(
-            Types.REAL,
-            'Proportion of soft tissue injuries with an AIS score of 2'
-        ),
-        'neck_prob_soft_tissue_injury_AIS3': Parameter(
-            Types.REAL,
-            'Proportion of soft tissue injuries with an AIS score of 3'
-        ),
-        'neck_prob_internal_bleeding': Parameter(
-            Types.REAL,
-            'Proportion of neck injuries that result in internal bleeding'
-        ),
-        'neck_prob_internal_bleeding_AIS1': Parameter(
-            Types.REAL,
-            'Proportion of internal bleeding in the neck with an AIS score of 1'
-        ),
-        'neck_prob_internal_bleeding_AIS3': Parameter(
-            Types.REAL,
-            'Proportion of internal bleeding in the neck with an AIS score of 3'
-        ),
-        'neck_prob_dislocation': Parameter(
-            Types.REAL,
-            'Proportion of neck injuries that result in a dislocated neck vertebrae'
-        ),
-        'neck_prob_dislocation_AIS2': Parameter(
-            Types.REAL,
-            'Proportion dislocated neck vertebrae with an AIS score of 2'
-        ),
-        'neck_prob_dislocation_AIS3': Parameter(
-            Types.REAL,
-            'Proportion dislocated neck vertebrae with an AIS score of 3'
-        ),
-        'thorax_prob_skin_wound': Parameter(
-            Types.REAL,
-            'Proportion of thorax injuries that result in a skin wound'
-        ),
-        'thorax_prob_skin_wound_open': Parameter(
-            Types.REAL,
-            'Proportion of thorax skin wounds that are open wounds'
-        ),
-        'thorax_prob_skin_wound_burn': Parameter(
-            Types.REAL,
-            'Proportion of thorax skin wounds that are burns'
-        ),
-        'thorax_prob_internal_bleeding': Parameter(
-            Types.REAL,
-            'Proportion of thorax injuries that result in internal bleeding'
-        ),
-        'thorax_prob_internal_bleeding_AIS1': Parameter(
-            Types.REAL,
-            'Proportion of internal bleeding in thorax with AIS score of 1'
-        ),
-        'thorax_prob_internal_bleeding_AIS3': Parameter(
-            Types.REAL,
-            'Proportion of internal bleeding in thorax with AIS score of 3'
-        ),
-        'thorax_prob_internal_organ_injury': Parameter(
-            Types.REAL,
-            'Proportion of thorax injuries that result in internal organ injuries'
-        ),
-        'thorax_prob_fracture': Parameter(
-            Types.REAL,
-            'Proportion of thorax injuries that result in rib fractures/ flail chest'
-        ),
-        'thorax_prob_fracture_ribs': Parameter(
-            Types.REAL,
-            'Proportion of rib fractures in  thorax fractures'
-        ),
-        'thorax_prob_fracture_flail_chest': Parameter(
-            Types.REAL,
-            'Proportion of flail chest in thorax fractures'
-        ),
-        'thorax_prob_soft_tissue_injury': Parameter(
-            Types.REAL,
-            'Proportion of thorax injuries resulting in soft tissue injury'
-        ),
-        'thorax_prob_soft_tissue_injury_AIS1': Parameter(
-            Types.REAL,
-            'Proportion of soft tissue injuries in the thorax with an AIS score of 1'
-        ),
-        'thorax_prob_soft_tissue_injury_AIS2': Parameter(
-            Types.REAL,
-            'Proportion of soft tissue injuries in the thorax with an AIS score of 2'
-        ),
-        'thorax_prob_soft_tissue_injury_AIS3': Parameter(
-            Types.REAL,
-            'Proportion of soft tissue injuries in the thorax with an AIS score of 3'
-        ),
-        'abdomen_prob_skin_wound': Parameter(
-            Types.REAL,
-            'Proportion of abdomen injuries that are skin wounds'
-        ),
-        'abdomen_prob_skin_wound_open': Parameter(
-            Types.REAL,
-            'Proportion skin wounds to the abdomen that are open wounds'
-        ),
-        'abdomen_prob_skin_wound_burn': Parameter(
-            Types.REAL,
-            'Proportion skin wounds to the abdomen that are burns'
-        ),
-        'abdomen_prob_internal_organ_injury': Parameter(
-            Types.REAL,
-            'Proportion of abdomen injuries that result in internal organ injury'
-        ),
-        'abdomen_prob_internal_organ_injury_AIS2': Parameter(
-            Types.REAL,
-            'Proportion of abdomen injuries that result in internal organ injury with an AIS score of 2'
-        ),
-        'abdomen_prob_internal_organ_injury_AIS3': Parameter(
-            Types.REAL,
-            'Proportion of abdomen injuries that result in internal organ injury with an AIS score of 2'
-        ),
-        'abdomen_prob_internal_organ_injury_AIS4': Parameter(
-            Types.REAL,
-            'Proportion of abdomen injuries that result in internal organ injury with an AIS score of 2'
-        ),
-        'spine_prob_spinal_cord_lesion': Parameter(
-            Types.REAL,
-            'Proportion of injuries to spine that result in spinal cord lesions'
-        ),
-        'spine_prob_spinal_cord_lesion_neck_level': Parameter(
-            Types.REAL,
-            'Proportion of spinal cord lesions that happen at neck level'
-        ),
-        'spine_prob_spinal_cord_lesion_neck_level_AIS3': Parameter(
-            Types.REAL,
-            'Proportion of spinal cord lesions that happen at neck level with an AIS score of 3'
-        ),
-        'spine_prob_spinal_cord_lesion_neck_level_AIS4': Parameter(
-            Types.REAL,
-            'Proportion of spinal cord lesions that happen at neck level with an AIS score of 4'
-        ),
-        'spine_prob_spinal_cord_lesion_neck_level_AIS5': Parameter(
-            Types.REAL,
-            'Proportion of spinal cord lesions that happen at neck level with an AIS score of 5'
-        ),
-        'spine_prob_spinal_cord_lesion_neck_level_AIS6': Parameter(
-            Types.REAL,
-            'Proportion of spinal cord lesions that happen at neck level with an AIS score of 6'
-        ),
-        'spine_prob_spinal_cord_lesion_below_neck_level': Parameter(
-            Types.REAL,
-            'Proportion of spinal cord lesions that happen below neck level'
-        ),
-        'spine_prob_spinal_cord_lesion_below_neck_level_AIS3': Parameter(
-            Types.REAL,
-            'Proportion of spinal cord lesions that happen below neck level with an AIS score of 3'
-        ),
-        'spine_prob_spinal_cord_lesion_below_neck_level_AIS4': Parameter(
-            Types.REAL,
-            'Proportion of spinal cord lesions that happen below neck level with an AIS score of 4'
-        ),
-        'spine_prob_spinal_cord_lesion_below_neck_level_AIS5': Parameter(
-            Types.REAL,
-            'Proportion of spinal cord lesions that happen below neck level with an AIS score of 5'
-        ),
-        'spine_prob_fracture': Parameter(
-            Types.REAL,
-            'Proportion of spinal injuries that result in vertebrae fractures'
-        ),
-        'upper_ex_prob_skin_wound': Parameter(
-            Types.REAL,
-            'Proportion of upper extremity injuries that result in skin wounds'
-        ),
-        'upper_ex_prob_skin_wound_open': Parameter(
-            Types.REAL,
-            'Proportion of upper extremity injuries that result in open wounds'
-        ),
-        'upper_ex_prob_skin_wound_burn': Parameter(
-            Types.REAL,
-            'Proportion of upper extremity injuries that result in burns'
-        ),
-        'upper_ex_prob_fracture': Parameter(
-            Types.REAL,
-            'Proportion of upper extremity injuries that result in fractures'
-        ),
-        'upper_ex_prob_dislocation': Parameter(
-            Types.REAL,
-            'Proportion of upper extremity injuries that result in dislocation'
-        ),
-        'upper_ex_prob_amputation': Parameter(
-            Types.REAL,
-            'Proportion of upper extremity injuries that result in amputation'
-        ),
-        'upper_ex_prob_amputation_AIS2': Parameter(
-            Types.REAL,
-            'Proportion of upper extremity injuries that result in amputation with AIS 2'
-        ),
-        'upper_ex_prob_amputation_AIS3': Parameter(
-            Types.REAL,
-            'Proportion of upper extremity injuries that result in amputation with AIS 3'
-        ),
-        'lower_ex_prob_skin_wound': Parameter(
-            Types.REAL,
-            'Proportion of lower extremity injuries that result in skin wounds'
-        ),
-        'lower_ex_prob_skin_wound_open': Parameter(
-            Types.REAL,
-            'Proportion of lower extremity injuries that result in open wounds'
-        ),
-        'lower_ex_prob_skin_wound_burn': Parameter(
-            Types.REAL,
-            'Proportion of lower extremity injuries that result in burns'
-        ),
-        'lower_ex_prob_fracture': Parameter(
-            Types.REAL,
-            'Proportion of lower extremity injuries that result in fractures'
-        ),
-        'lower_ex_prob_fracture_AIS1': Parameter(
-            Types.REAL,
-            'Proportion of lower extremity injuries that result in fractures with an AIS of 1'
-        ),
-        'lower_ex_prob_fracture_AIS2': Parameter(
-            Types.REAL,
-            'Proportion of lower extremity injuries that result in fractures with an AIS of 2'
-        ),
-        'lower_ex_prob_fracture_AIS3': Parameter(
-            Types.REAL,
-            'Proportion of lower extremity injuries that result in fractures with an AIS of 3'
-        ),
-        'lower_ex_prob_dislocation': Parameter(
-            Types.REAL,
-            'Proportion of lower extremity injuries that result in dislocation'
-        ),
-        'lower_ex_prob_amputation': Parameter(
-            Types.REAL,
-            'Proportion of lower extremity injuries that result in amputation'
-        ),
-        'lower_ex_prob_amputation_AIS2': Parameter(
-            Types.REAL,
-            'Proportion of lower extremity injuries that result in amputation with AIS 2'
-        ),
-        'lower_ex_prob_amputation_AIS3': Parameter(
-            Types.REAL,
-            'Proportion of lower extremity injuries that result in amputation with AIS 3'
-        ),
-        'lower_ex_prob_amputation_AIS4': Parameter(
-            Types.REAL,
-            'Proportion of lower extremity injuries that result in amputation with AIS 4'
-        ),
         # Length of stay
         'mean_los_ISS_less_than_4': Parameter(
             Types.REAL,
@@ -804,42 +476,6 @@ class RTI(Module):
             Types.REAL,
             'daly_wt_bilateral_lower_limb_amputation_without_treatment - code 1735'
         ),
-        'daly_dist_code_133': Parameter(
-            Types.LIST,
-            'Mapping parameter of injury code 133 to the various injuries associated with the code'
-        ),
-        'daly_dist_code_134': Parameter(
-            Types.LIST,
-            'Mapping parameter of injury code 134 to the various injuries associated with the code'
-        ),
-        'daly_dist_code_453': Parameter(
-            Types.LIST,
-            'Mapping parameter of injury code 453 to the various injuries associated with the code'
-        ),
-        'daly_dist_code_673': Parameter(
-            Types.LIST,
-            'Mapping parameter of injury code 673 to the various injuries associated with the code'
-        ),
-        'daly_dist_codes_674_675': Parameter(
-            Types.LIST,
-            'Mapping parameter of injury code 674/675 to the various injuries associated with the codes'
-        ),
-        'daly_dist_code_712': Parameter(
-            Types.LIST,
-            'Mapping parameter of injury code 712 to the various injuries associated with the code'
-        ),
-        'daly_dist_code_782': Parameter(
-            Types.LIST,
-            'Mapping parameter of injury code 782 to the various injuries associated with the code'
-        ),
-        'daly_dist_code_813': Parameter(
-            Types.LIST,
-            'Mapping parameter of injury code 813 to the various injuries associated with the code'
-        ),
-        'daly_dist_code_822': Parameter(
-            Types.LIST,
-            'Mapping parameter of injury code 822 to the various injuries associated with the code'
-        ),
         'rt_emergency_care_ISS_score_cut_off': Parameter(
             Types.INT,
             'A parameter to determine which level of injury severity corresponds to the emergency health care seeking '
@@ -978,22 +614,6 @@ class RTI(Module):
             Types.REAL,
             'The standard deviation in length of stay in the ICU for those with TBI'
         ),
-        'prob_foot_fracture_open': Parameter(
-            Types.REAL,
-            'The probability that a foot fracture will be open'
-        ),
-        'prob_patella_tibia_fibula_ankle_fracture_open': Parameter(
-            Types.REAL,
-            'The probability that a patella/tibia/fibula/ankle fracture will be open'
-        ),
-        'prob_pelvis_fracture_open': Parameter(
-            Types.REAL,
-            'The probability that a pelvis fracture will be open'
-        ),
-        'prob_femur_fracture_open': Parameter(
-            Types.REAL,
-            'The probability that a femur fracture will be open'
-        ),
         'prob_open_fracture_contaminated': Parameter(
             Types.REAL,
             'The probability that an open fracture will be contaminated'
@@ -1001,7 +621,308 @@ class RTI(Module):
         'allowed_interventions': Parameter(
             Types.LIST,
             'List of additional interventions that can be included when performing model analysis'
-        )
+        ),
+        'head_prob_112': Parameter(
+            Types.REAL,
+            "The probability that this person's head injury is a skull fracture"
+        ),
+        'head_prob_113': Parameter(
+            Types.REAL,
+            "The probability that this person's head injury is a skull fracture"
+        ),
+        'head_prob_133a': Parameter(
+            Types.REAL,
+            "The probability that this person's head injury is a skull fracture"
+        ),
+        'head_prob_133b': Parameter(
+            Types.REAL,
+            "The probability that this person's head injury is a skull fracture"
+        ),
+        'head_prob_133c': Parameter(
+            Types.REAL,
+            "The probability that this person's head injury is a skull fracture"
+        ),
+        'head_prob_133d': Parameter(
+            Types.REAL,
+            "The probability that this person's head injury is a skull fracture"
+        ),
+        'head_prob_134a': Parameter(
+            Types.REAL,
+            "The probability that this person's head injury is a skull fracture"
+        ),
+        'head_prob_134b': Parameter(
+            Types.REAL,
+            "The probability that this person's head injury is a skull fracture"
+        ),
+        'head_prob_135': Parameter(
+            Types.REAL,
+            "The probability that this person's head injury is a skull fracture"
+        ),
+        'head_prob_1101': Parameter(
+            Types.REAL,
+            "The probability that this person's head injury is a skull fracture"
+        ),
+        'head_prob_1114': Parameter(
+            Types.REAL,
+            "The probability that this person's head injury is a skull fracture"
+        ),
+        'face_prob_211': Parameter(
+            Types.REAL,
+            "The probability that this person's face injury is a skull fracture"
+        ),
+        'face_prob_212': Parameter(
+            Types.REAL,
+            "The probability that this person's face injury is a skull fracture"
+        ),
+        'face_prob_241': Parameter(
+            Types.REAL,
+            "The probability that this person's face injury is a skull fracture"
+        ),
+        'face_prob_2101': Parameter(
+            Types.REAL,
+            "The probability that this person's face injury is a skull fracture"
+        ),
+        'face_prob_2114': Parameter(
+            Types.REAL,
+            "The probability that this person's face injury is a skull fracture"
+        ),
+        'face_prob_291': Parameter(
+            Types.REAL,
+            "The probability that this person's face injury is a skull fracture"
+        ),
+        'neck_prob_3101': Parameter(
+            Types.REAL,
+            "The probability that this person's neck injury is a skull fracture"
+        ),
+        'neck_prob_3113': Parameter(
+            Types.REAL,
+            "The probability that this person's neck injury is a skull fracture"
+        ),
+        'neck_prob_342': Parameter(
+            Types.REAL,
+            "The probability that this person's neck injury is a skull fracture"
+        ),
+        'neck_prob_343': Parameter(
+            Types.REAL,
+            "The probability that this person's neck injury is a skull fracture"
+        ),
+        'neck_prob_361': Parameter(
+            Types.REAL,
+            "The probability that this person's neck injury is a skull fracture"
+        ),
+        'neck_prob_363': Parameter(
+            Types.REAL,
+            "The probability that this person's neck injury is a skull fracture"
+        ),
+        'neck_prob_322': Parameter(
+            Types.REAL,
+            "The probability that this person's neck injury is a skull fracture"
+        ),
+        'neck_prob_323': Parameter(
+            Types.REAL,
+            "The probability that this person's neck injury is a skull fracture"
+        ),
+        'thorax_prob_4101': Parameter(
+            Types.REAL,
+            "The probability that this person's thorax injury is a skull fracture"
+        ),
+        'thorax_prob_4113': Parameter(
+            Types.REAL,
+            "The probability that this person's thorax injury is a skull fracture"
+        ),
+        'thorax_prob_461': Parameter(
+            Types.REAL,
+            "The probability that this person's thorax injury is a skull fracture"
+        ),
+        'thorax_prob_463': Parameter(
+            Types.REAL,
+            "The probability that this person's thorax injury is a skull fracture"
+        ),
+        'thorax_prob_453a': Parameter(
+            Types.REAL,
+            "The probability that this person's thorax injury is a skull fracture"
+        ),
+        'thorax_prob_453b': Parameter(
+            Types.REAL,
+            "The probability that this person's thorax injury is a skull fracture"
+        ),
+        'thorax_prob_412': Parameter(
+            Types.REAL,
+            "The probability that this person's thorax injury is a rib fracture"
+        ),
+        'thorax_prob_414': Parameter(
+            Types.REAL,
+            "The probability that this person's thorax injury is flail chest"
+        ),
+        'thorax_prob_441': Parameter(
+            Types.REAL,
+            "The probability that this person's thorax injury is a skull fracture"
+        ),
+        'thorax_prob_442': Parameter(
+            Types.REAL,
+            "The probability that this person's thorax injury is a skull fracture"
+        ),
+        'thorax_prob_443': Parameter(
+            Types.REAL,
+            "The probability that this person's thorax injury is a skull fracture"
+        ),
+        'abdomen_prob_5101': Parameter(
+            Types.REAL,
+            "The probability that this person's abdomen injury is a laceration"
+        ),
+        'abdomen_prob_5113': Parameter(
+            Types.REAL,
+            "The probability that this person's thorax injury is a burn"
+        ),
+        'abdomen_prob_552': Parameter(
+            Types.REAL,
+            "The probability that this person's thorax injury is a skull fracture"
+        ),
+        'abdomen_prob_553': Parameter(
+            Types.REAL,
+            "The probability that this person's thorax injury is a skull fracture"
+        ),
+        'abdomen_prob_554': Parameter(
+            Types.REAL,
+            "The probability that this person's thorax injury is a skull fracture"
+        ),
+        'spine_prob_612': Parameter(
+            Types.REAL,
+            "The probability that this person's spine injury is a vertabrae fracture"
+        ),
+        'spine_prob_673a': Parameter(
+            Types.REAL,
+            "The probability that this person's spine injury is a vertabrae fracture"
+        ),
+        'spine_prob_673b': Parameter(
+            Types.REAL,
+            "The probability that this person's spine injury is a vertabrae fracture"
+        ),
+        'spine_prob_674a': Parameter(
+            Types.REAL,
+            "The probability that this person's spine injury is a vertabrae fracture"
+        ),
+        'spine_prob_674b': Parameter(
+            Types.REAL,
+            "The probability that this person's spine injury is a vertabrae fracture"
+        ),
+        'spine_prob_675a': Parameter(
+            Types.REAL,
+            "The probability that this person's spine injury is a vertabrae fracture"
+        ),
+        'spine_prob_675b': Parameter(
+            Types.REAL,
+            "The probability that this person's spine injury is a vertabrae fracture"
+        ),
+        'spine_prob_676': Parameter(
+            Types.REAL,
+            "The probability that this person's spine injury is a vertabrae fracture"
+        ),
+        'upper_ex_prob_7101': Parameter(
+            Types.REAL,
+            "The probability that this person's upper extremity injury is a laceration"
+        ),
+        'upper_ex_prob_7113': Parameter(
+            Types.REAL,
+            "The probability that this person's upper extremity injury is a burn"
+        ),
+        'upper_ex_prob_712a': Parameter(
+            Types.REAL,
+            "The probability that this person's upper extremity injury is a laceration"
+        ),
+        'upper_ex_prob_712b': Parameter(
+            Types.REAL,
+            "The probability that this person's upper extremity injury is a laceration"
+        ),
+        'upper_ex_prob_712c': Parameter(
+            Types.REAL,
+            "The probability that this person's upper extremity injury is a laceration"
+        ),
+        'upper_ex_prob_722': Parameter(
+            Types.REAL,
+            "The probability that this person's upper extremity injury is a dislocated shoulder"
+        ),
+        'upper_ex_prob_782a': Parameter(
+            Types.REAL,
+            "The probability that this person's upper extremity injury is a laceration"
+        ),
+        'upper_ex_prob_782b': Parameter(
+            Types.REAL,
+            "The probability that this person's upper extremity injury is a laceration"
+        ),
+        'upper_ex_prob_782c': Parameter(
+            Types.REAL,
+            "The probability that this person's upper extremity injury is a laceration"
+        ),
+        'upper_ex_prob_783': Parameter(
+            Types.REAL,
+            "The probability that this person's upper extremity injury is a bilateral arm amputation"
+        ),
+        'lower_ex_prob_8101': Parameter(
+            Types.REAL,
+            "The probability that this person's lower extremity injury is a laceration"
+        ),
+        'lower_ex_prob_8113': Parameter(
+            Types.REAL,
+            "The probability that this person's lower extremity injury is a burn"
+        ),
+        'lower_ex_prob_811': Parameter(
+            Types.REAL,
+            "The probability that this person's lower extremity injury is a foot fracture"
+        ),
+        'lower_ex_prob_813do': Parameter(
+            Types.REAL,
+            "The probability that this person's lower extremity injury is an open foot fracture"
+        ),
+        'lower_ex_prob_812': Parameter(
+            Types.REAL,
+            "The probability that this person's lower extremity injury is a laceration"
+        ),
+        'lower_ex_prob_813eo': Parameter(
+            Types.REAL,
+            "The probability that this person's lower extremity injury is a laceration"
+        ),
+        'lower_ex_prob_813a': Parameter(
+            Types.REAL,
+            "The probability that this person's lower extremity injury is a laceration"
+        ),
+        'lower_ex_prob_813b': Parameter(
+            Types.REAL,
+            "The probability that this person's lower extremity injury is a laceration"
+        ),
+        'lower_ex_prob_813bo': Parameter(
+            Types.REAL,
+            "The probability that this person's lower extremity injury is a laceration"
+        ),
+        'lower_ex_prob_813c': Parameter(
+            Types.REAL,
+            "The probability that this person's lower extremity injury is a laceration"
+        ),
+        'lower_ex_prob_813co': Parameter(
+            Types.REAL,
+            "The probability that this person's lower extremity injury is a laceration"
+        ),
+        'lower_ex_prob_822a': Parameter(
+            Types.REAL,
+            "The probability that this person's lower extremity injury is a laceration"
+        ),
+        'lower_ex_prob_822b': Parameter(
+            Types.REAL,
+            "The probability that this person's lower extremity injury is a laceration"
+        ),
+        'lower_ex_prob_882': Parameter(
+            Types.REAL,
+            "The probability that this person's lower extremity injury is a laceration"
+        ),
+        'lower_ex_prob_883': Parameter(
+            Types.REAL,
+            "The probability that this person's lower extremity injury is a laceration"
+        ),
+        'lower_ex_prob_884': Parameter(
+            Types.REAL,
+            "The probability that this person's lower extremity injury is a laceration"
+        ),
+
     }
 
     # Define the module's parameters
@@ -2347,101 +2268,6 @@ class RTI(Module):
         """
         p = self.parameters
 
-        # Parameters used to assign injuries
-        # Injuries to AIS region 1
-        self.head_prob_skin_wound = p['head_prob_skin_wound']
-        self.head_prob_skin_wound_open = p['head_prob_skin_wound_open']
-        self.head_prob_skin_wound_burn = p['head_prob_skin_wound_burn']
-        self.head_prob_fracture = p['head_prob_fracture']
-        self.head_prob_fracture_unspecified = p['head_prob_fracture_unspecified']
-        self.head_prob_fracture_basilar = p['head_prob_fracture_basilar']
-        self.head_prob_TBI = p['head_prob_TBI']
-        self.head_prob_TBI_AIS3 = p['head_prob_TBI_AIS3']
-        self.head_prob_TBI_AIS4 = p['head_prob_TBI_AIS4']
-        self.head_prob_TBI_AIS5 = p['head_prob_TBI_AIS5']
-        # Injuries to AIS region 2
-        self.face_prob_skin_wound = p['face_prob_skin_wound']
-        self.face_prob_skin_wound_open = p['face_prob_skin_wound_open']
-        self.face_prob_skin_wound_burn = p['face_prob_skin_wound_burn']
-        self.face_prob_fracture = p['face_prob_fracture']
-        self.face_prob_fracture_AIS1 = p['face_prob_fracture_AIS1']
-        self.face_prob_fracture_AIS2 = p['face_prob_fracture_AIS2']
-        self.face_prob_soft_tissue_injury = p['face_prob_soft_tissue_injury']
-        self.face_prob_eye_injury = p['face_prob_eye_injury']
-        # Injuries to AIS region 3
-        self.neck_prob_skin_wound = p['neck_prob_skin_wound']
-        self.neck_prob_skin_wound_open = p['neck_prob_skin_wound_open']
-        self.neck_prob_skin_wound_burn = p['neck_prob_skin_wound_burn']
-        self.neck_prob_soft_tissue_injury = p['neck_prob_soft_tissue_injury']
-        self.neck_prob_soft_tissue_injury_AIS2 = p['neck_prob_soft_tissue_injury_AIS2']
-        self.neck_prob_soft_tissue_injury_AIS3 = p['neck_prob_soft_tissue_injury_AIS3']
-        self.neck_prob_internal_bleeding = p['neck_prob_internal_bleeding']
-        self.neck_prob_internal_bleeding_AIS1 = p['neck_prob_internal_bleeding_AIS1']
-        self.neck_prob_internal_bleeding_AIS3 = p['neck_prob_internal_bleeding_AIS3']
-        self.neck_prob_dislocation = p['neck_prob_dislocation']
-        self.neck_prob_dislocation_AIS2 = p['neck_prob_dislocation_AIS2']
-        self.neck_prob_dislocation_AIS3 = p['neck_prob_dislocation_AIS3']
-        # Injuries to AIS region 4
-        self.thorax_prob_skin_wound = p['thorax_prob_skin_wound']
-        self.thorax_prob_skin_wound_open = p['thorax_prob_skin_wound_open']
-        self.thorax_prob_skin_wound_burn = p['thorax_prob_skin_wound_burn']
-        self.thorax_prob_internal_bleeding = p['thorax_prob_internal_bleeding']
-        self.thorax_prob_internal_bleeding_AIS1 = p['thorax_prob_internal_bleeding_AIS1']
-        self.thorax_prob_internal_bleeding_AIS3 = p['thorax_prob_internal_bleeding_AIS3']
-        self.thorax_prob_internal_organ_injury = p['thorax_prob_internal_organ_injury']
-        self.thorax_prob_fracture = p['thorax_prob_fracture']
-        self.thorax_prob_fracture_ribs = p['thorax_prob_fracture_ribs']
-        self.thorax_prob_fracture_flail_chest = p['thorax_prob_fracture_flail_chest']
-        self.thorax_prob_soft_tissue_injury = p['thorax_prob_soft_tissue_injury']
-        self.thorax_prob_soft_tissue_injury_AIS1 = p['thorax_prob_soft_tissue_injury_AIS1']
-        self.thorax_prob_soft_tissue_injury_AIS2 = p['thorax_prob_soft_tissue_injury_AIS2']
-        self.thorax_prob_soft_tissue_injury_AIS3 = p['thorax_prob_soft_tissue_injury_AIS3']
-        # Injuries to AIS region 5
-        self.abdomen_prob_skin_wound = p['abdomen_prob_skin_wound']
-        self.abdomen_prob_skin_wound_open = p['abdomen_prob_skin_wound_open']
-        self.abdomen_prob_skin_wound_burn = p['abdomen_prob_skin_wound_burn']
-        self.abdomen_prob_internal_organ_injury = p['abdomen_prob_internal_organ_injury']
-        self.abdomen_prob_internal_organ_injury_AIS2 = p['abdomen_prob_internal_organ_injury_AIS2']
-        self.abdomen_prob_internal_organ_injury_AIS3 = p['abdomen_prob_internal_organ_injury_AIS3']
-        self.abdomen_prob_internal_organ_injury_AIS4 = p['abdomen_prob_internal_organ_injury_AIS4']
-        # Injuries to AIS region 6
-        self.spine_prob_spinal_cord_lesion = p['spine_prob_spinal_cord_lesion']
-        self.spine_prob_spinal_cord_lesion_neck_level = p['spine_prob_spinal_cord_lesion_neck_level']
-        self.spine_prob_spinal_cord_lesion_neck_level_AIS3 = p['spine_prob_spinal_cord_lesion_neck_level_AIS3']
-        self.spine_prob_spinal_cord_lesion_neck_level_AIS4 = p['spine_prob_spinal_cord_lesion_neck_level_AIS4']
-        self.spine_prob_spinal_cord_lesion_neck_level_AIS5 = p['spine_prob_spinal_cord_lesion_neck_level_AIS5']
-        self.spine_prob_spinal_cord_lesion_neck_level_AIS6 = p['spine_prob_spinal_cord_lesion_neck_level_AIS6']
-        self.spine_prob_spinal_cord_lesion_below_neck_level = p['spine_prob_spinal_cord_lesion_below_neck_level']
-        self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3 = \
-            p['spine_prob_spinal_cord_lesion_below_neck_level_AIS3']
-        self.spine_prob_spinal_cord_lesion_below_neck_level_AIS4 = \
-            p['spine_prob_spinal_cord_lesion_below_neck_level_AIS4']
-        self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5 = \
-            p['spine_prob_spinal_cord_lesion_below_neck_level_AIS5']
-        self.spine_prob_fracture = p['spine_prob_fracture']
-        # Injuries to AIS region 7
-        self.upper_ex_prob_skin_wound = p['upper_ex_prob_skin_wound']
-        self.upper_ex_prob_skin_wound_open = p['upper_ex_prob_skin_wound_open']
-        self.upper_ex_prob_skin_wound_burn = p['upper_ex_prob_skin_wound_burn']
-        self.upper_ex_prob_fracture = p['upper_ex_prob_fracture']
-        self.upper_ex_prob_dislocation = p['upper_ex_prob_dislocation']
-        self.upper_ex_prob_amputation = p['upper_ex_prob_amputation']
-        self.upper_ex_prob_amputation_AIS2 = p['upper_ex_prob_amputation_AIS2']
-        self.upper_ex_prob_amputation_AIS3 = p['upper_ex_prob_amputation_AIS3']
-        # Injuries to AIS region 8
-        self.lower_ex_prob_skin_wound = p['lower_ex_prob_skin_wound']
-        self.lower_ex_prob_skin_wound_open = p['lower_ex_prob_skin_wound_open']
-        self.lower_ex_prob_skin_wound_burn = p['lower_ex_prob_skin_wound_burn']
-        self.lower_ex_prob_fracture = p['lower_ex_prob_fracture']
-        self.lower_ex_prob_fracture_AIS1 = p['lower_ex_prob_fracture_AIS1']
-        self.lower_ex_prob_fracture_AIS2 = p['lower_ex_prob_fracture_AIS2']
-        self.lower_ex_prob_fracture_AIS3 = p['lower_ex_prob_fracture_AIS3']
-        self.lower_ex_prob_dislocation = p['lower_ex_prob_dislocation']
-        self.lower_ex_prob_amputation = p['lower_ex_prob_amputation']
-        self.lower_ex_prob_amputation_AIS2 = p['lower_ex_prob_amputation_AIS2']
-        self.lower_ex_prob_amputation_AIS3 = p['lower_ex_prob_amputation_AIS3']
-        self.lower_ex_prob_amputation_AIS4 = p['lower_ex_prob_amputation_AIS3']
-
         # Import the distribution of injured body regions from the VIBES study
         number_of_injured_body_regions_distribution = p['number_of_injured_body_regions_distribution']
         # Create empty lists to store information on the person's injuries
@@ -2472,147 +2298,99 @@ class RTI(Module):
         # location, the subdict containing the probability of injury occuring, the ais injury location, category and
         # ais score
         # creat shorthand variable names for spinal chord injuries
-        prob_673a = self.spine_prob_spinal_cord_lesion * p['daly_dist_code_673'][0] * (
-            self.spine_prob_spinal_cord_lesion_neck_level * self.spine_prob_spinal_cord_lesion_neck_level_AIS3 +
-            self.spine_prob_spinal_cord_lesion_below_neck_level *
-            self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3
-        )
-        prob_673b = self.spine_prob_spinal_cord_lesion * p['daly_dist_code_673'][1] * (
-            self.spine_prob_spinal_cord_lesion_neck_level * self.spine_prob_spinal_cord_lesion_neck_level_AIS3 +
-            self.spine_prob_spinal_cord_lesion_below_neck_level *
-            self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3
-        )
-        prob_674a = self.spine_prob_spinal_cord_lesion * p['daly_dist_codes_674_675'][0] * (
-            self.spine_prob_spinal_cord_lesion_neck_level * self.spine_prob_spinal_cord_lesion_neck_level_AIS4 +
-            self.spine_prob_spinal_cord_lesion_below_neck_level *
-            self.spine_prob_spinal_cord_lesion_below_neck_level_AIS4
-        )
-        prob_674b = self.spine_prob_spinal_cord_lesion * p['daly_dist_codes_674_675'][1] * (
-            self.spine_prob_spinal_cord_lesion_neck_level * self.spine_prob_spinal_cord_lesion_neck_level_AIS4 +
-            self.spine_prob_spinal_cord_lesion_below_neck_level *
-            self.spine_prob_spinal_cord_lesion_below_neck_level_AIS4
-        )
-        prob_675a = self.spine_prob_spinal_cord_lesion * p['daly_dist_codes_674_675'][0] * (
-            self.spine_prob_spinal_cord_lesion_neck_level * self.spine_prob_spinal_cord_lesion_neck_level_AIS5 +
-            self.spine_prob_spinal_cord_lesion_below_neck_level *
-            self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5
-        )
-        prob_675b = self.spine_prob_spinal_cord_lesion * p['daly_dist_codes_674_675'][1] * (
-            self.spine_prob_spinal_cord_lesion_neck_level * self.spine_prob_spinal_cord_lesion_neck_level_AIS5 +
-            self.spine_prob_spinal_cord_lesion_below_neck_level *
-            self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5
-        )
-        prob_676 = \
-            self.spine_prob_spinal_cord_lesion * self.spine_prob_spinal_cord_lesion_neck_level * \
-            self.spine_prob_spinal_cord_lesion_neck_level_AIS6
 
         injuries = {
             # injuries to the head
-            'head': {'112': [self.head_prob_fracture * self.head_prob_fracture_unspecified, 1, 1, 2],
-                     '113': [self.head_prob_fracture * self.head_prob_fracture_basilar, 1, 1, 3],
-                     '133a': [self.head_prob_TBI * self.head_prob_TBI_AIS3 * p['daly_dist_code_133'][0], 1, 3, 3],
-                     '133b': [self.head_prob_TBI * self.head_prob_TBI_AIS3 * p['daly_dist_code_133'][1], 1, 3, 3],
-                     '133c': [self.head_prob_TBI * self.head_prob_TBI_AIS3 * p['daly_dist_code_133'][2], 1, 3, 3],
-                     '133d': [self.head_prob_TBI * self.head_prob_TBI_AIS3 * p['daly_dist_code_133'][3], 1, 3, 3],
-                     '134a': [self.head_prob_TBI * self.head_prob_TBI_AIS4 * p['daly_dist_code_134'][0], 1, 3, 4],
-                     '134b': [self.head_prob_TBI * self.head_prob_TBI_AIS4 * p['daly_dist_code_134'][1], 1, 3, 4],
-                     '135': [self.head_prob_TBI * self.head_prob_TBI_AIS5, 1, 3, 5],
-                     '1101': [self.head_prob_skin_wound * self.head_prob_skin_wound_open, 1, 10, 1],
-                     '1114': [self.head_prob_skin_wound * self.head_prob_skin_wound_burn, 1, 11, 4]},
+            'head': {'112': [p['head_prob_112'], 1, 1, 2],
+                     '113': [p['head_prob_113'], 1, 1, 3],
+                     '133a': [p['head_prob_133a'], 1, 3, 3],
+                     '133b': [p['head_prob_133b'], 1, 3, 3],
+                     '133c': [p['head_prob_133c'], 1, 3, 3],
+                     '133d': [p['head_prob_133d'], 1, 3, 3],
+                     '134a': [p['head_prob_134a'], 1, 3, 4],
+                     '134b': [p['head_prob_134b'], 1, 3, 4],
+                     '135': [p['head_prob_135'], 1, 3, 5],
+                     '1101': [p['head_prob_1101'], 1, 10, 1],
+                     '1114': [p['head_prob_1114'], 1, 11, 4]},
             # injuries to the face
-            'face': {'211': [self.face_prob_fracture * self.face_prob_fracture_AIS1, 2, 1, 1],
-                     '212': [self.face_prob_fracture * self.face_prob_fracture_AIS2, 2, 1, 2],
-                     '241': [self.face_prob_soft_tissue_injury, 2, 4, 1],
-                     '2101': [self.face_prob_skin_wound * self.face_prob_skin_wound_open, 2, 10, 1],
-                     '2114': [self.face_prob_skin_wound * self.face_prob_skin_wound_burn, 2, 11, 4],
-                     '291': [self.face_prob_eye_injury, 2, 9, 1]},
+            'face': {'211': [p['face_prob_211'], 2, 1, 1],
+                     '212': [p['face_prob_212'], 2, 1, 2],
+                     '241': [p['face_prob_241'], 2, 4, 1],
+                     '2101': [p['face_prob_2101'], 2, 10, 1],
+                     '2114': [p['face_prob_2114'], 2, 11, 4],
+                     '291': [p['face_prob_291'], 2, 9, 1]},
             # injuries to the neck
-            'neck': {'3101': [self.neck_prob_skin_wound * self.neck_prob_skin_wound_open, 3, 10, 1],
-                     '3113': [self.neck_prob_skin_wound * self.neck_prob_skin_wound_burn, 3, 11, 3],
-                     '342': [self.neck_prob_soft_tissue_injury * self.neck_prob_soft_tissue_injury_AIS2, 3, 4, 2],
-                     '343': [self.neck_prob_soft_tissue_injury * self.neck_prob_soft_tissue_injury_AIS3, 3, 4, 3],
-                     '361': [self.neck_prob_internal_bleeding * self.neck_prob_internal_bleeding_AIS1, 3, 6, 1],
-                     '363': [self.neck_prob_internal_bleeding * self.neck_prob_internal_bleeding_AIS3, 3, 6, 3],
-                     '322': [self.neck_prob_dislocation * self.neck_prob_dislocation_AIS2, 3, 2, 2],
-                     '323': [self.neck_prob_dislocation * self.neck_prob_dislocation_AIS3, 3, 2, 3],
+            'neck': {'3101': [p['neck_prob_3101'], 3, 10, 1],
+                     '3113': [p['neck_prob_3113'], 3, 11, 3],
+                     '342': [p['neck_prob_342'], 3, 4, 2],
+                     '343': [p['neck_prob_343'], 3, 4, 3],
+                     '361': [p['neck_prob_361'], 3, 6, 1],
+                     '363': [p['neck_prob_363'], 3, 6, 3],
+                     '322': [p['neck_prob_322'], 3, 2, 2],
+                     '323': [p['neck_prob_323'], 3, 2, 3],
                      },
             # injuries to the chest
-            'chest': {'4101': [self.thorax_prob_skin_wound * self.thorax_prob_skin_wound_open, 4, 10, 1],
-                      '4113': [self.thorax_prob_skin_wound * self.thorax_prob_skin_wound_burn, 4, 11, 3],
-                      '461': [self.thorax_prob_internal_bleeding * self.thorax_prob_internal_bleeding_AIS1, 4, 6, 1],
-                      '463': [self.thorax_prob_internal_bleeding * self.thorax_prob_internal_bleeding_AIS3, 4, 6, 3],
-                      '453a': [self.thorax_prob_internal_organ_injury * p['daly_dist_code_453'][0], 4, 5, 3],
-                      '453b': [self.thorax_prob_internal_organ_injury * p['daly_dist_code_453'][1], 4, 5, 3],
-                      '412': [self.thorax_prob_fracture * self.thorax_prob_fracture_ribs, 4, 1, 2],
-                      '414': [self.thorax_prob_fracture * self.thorax_prob_fracture_flail_chest, 4, 1, 4],
-                      '441': [self.thorax_prob_soft_tissue_injury * self.thorax_prob_soft_tissue_injury_AIS1, 4, 4, 1],
-                      '442': [self.thorax_prob_soft_tissue_injury * self.thorax_prob_soft_tissue_injury_AIS2, 4, 4, 2],
-                      '443': [self.thorax_prob_soft_tissue_injury * self.thorax_prob_soft_tissue_injury_AIS3, 4, 4, 3],
+            'chest': {'4101': [p['thorax_prob_4101'], 4, 10, 1],
+                      '4113': [p['thorax_prob_4113'], 4, 11, 3],
+                      '461': [p['thorax_prob_461'], 4, 6, 1],
+                      '463': [p['thorax_prob_463'], 4, 6, 3],
+                      '453a': [p['thorax_prob_453a'], 4, 5, 3],
+                      '453b': [p['thorax_prob_453b'], 4, 5, 3],
+                      '412': [p['thorax_prob_412'], 4, 1, 2],
+                      '414': [p['thorax_prob_414'], 4, 1, 4],
+                      '441': [p['thorax_prob_441'], 4, 4, 1],
+                      '442': [p['thorax_prob_442'], 4, 4, 2],
+                      '443': [p['thorax_prob_443'], 4, 4, 3],
                       },
             # injuries to the abdomen
-            'abdomen': {'5101': [self.abdomen_prob_skin_wound * self.abdomen_prob_skin_wound_open, 5, 10, 1],
-                        '5113': [self.abdomen_prob_skin_wound * self.abdomen_prob_skin_wound_burn, 5, 11, 3],
-                        '552': [self.abdomen_prob_internal_organ_injury * self.abdomen_prob_internal_organ_injury_AIS2,
-                                5, 5, 2],
-                        '553': [self.abdomen_prob_internal_organ_injury * self.abdomen_prob_internal_organ_injury_AIS3,
-                                5, 5, 3],
-                        '554': [self.abdomen_prob_internal_organ_injury * self.abdomen_prob_internal_organ_injury_AIS4,
-                                5, 5, 4]},
+            'abdomen': {'5101': [p['abdomen_prob_5101'], 5, 10, 1],
+                        '5113': [p['abdomen_prob_5113'], 5, 11, 3],
+                        '552': [p['abdomen_prob_552'], 5, 5, 2],
+                        '553': [p['abdomen_prob_553'], 5, 5, 3],
+                        '554': [p['abdomen_prob_554'], 5, 5, 4]},
             # injuries to the spine
-            'spine': {'612': [self.spine_prob_fracture, 6, 1, 2],
-                      '673a': [prob_673a, 6, 7, 3],
-                      '673b': [prob_673b, 6, 7, 3],
-                      '674a': [prob_674a, 6, 7, 4],
-                      '674b': [prob_674b, 6, 7, 4],
-                      '675a': [prob_675a, 6, 7, 5],
-                      '675b': [prob_675b, 6, 7, 5],
-                      '676': [prob_676, 6, 7, 6]
+            'spine': {'612': [p['spine_prob_612'], 6, 1, 2],
+                      '673a': [p['spine_prob_673a'], 6, 7, 3],
+                      '673b': [p['spine_prob_673b'], 6, 7, 3],
+                      '674a': [p['spine_prob_674a'], 6, 7, 4],
+                      '674b': [p['spine_prob_674b'], 6, 7, 4],
+                      '675a': [p['spine_prob_675a'], 6, 7, 5],
+                      '675b': [p['spine_prob_675b'], 6, 7, 5],
+                      '676': [p['spine_prob_676'], 6, 7, 6]
                       },
             # injuries to the upper extremities
-            'upper_ex': {'7101': [self.upper_ex_prob_skin_wound * self.upper_ex_prob_skin_wound_open, 7, 10, 1],
-                         '7113': [self.upper_ex_prob_skin_wound * self.upper_ex_prob_skin_wound_burn, 7, 11, 3],
-                         '712a': [self.upper_ex_prob_fracture * p['daly_dist_code_712'][0], 7, 1, 2],
-                         '712b': [self.upper_ex_prob_fracture * p['daly_dist_code_712'][1], 7, 1, 2],
-                         '712c': [self.upper_ex_prob_fracture * p['daly_dist_code_712'][2], 7, 1, 2],
-                         '722': [self.upper_ex_prob_dislocation, 7, 2, 2],
-                         '782a': [(self.upper_ex_prob_amputation * self.upper_ex_prob_amputation_AIS2 *
-                                  p['daly_dist_code_782'][0]), 7, 8, 2],
-                         '782b': [(self.upper_ex_prob_amputation * self.upper_ex_prob_amputation_AIS2 *
-                                  p['daly_dist_code_782'][1]), 7, 8, 2],
-                         '782c': [(self.upper_ex_prob_amputation * self.upper_ex_prob_amputation_AIS2 *
-                                  p['daly_dist_code_782'][2]), 7, 8, 2],
-                         '783': [self.upper_ex_prob_amputation * self.upper_ex_prob_amputation_AIS3, 7, 8, 3]
+            'upper_ex': {'7101': [p['upper_ex_prob_7101'], 7, 10, 1],
+                         '7113': [p['upper_ex_prob_7113'], 7, 11, 3],
+                         '712a': [p['upper_ex_prob_712a'], 7, 1, 2],
+                         '712b': [p['upper_ex_prob_712b'], 7, 1, 2],
+                         '712c': [p['upper_ex_prob_712c'], 7, 1, 2],
+                         '722': [p['upper_ex_prob_722'], 7, 2, 2],
+                         '782a': [p['upper_ex_prob_782a'], 7, 8, 2],
+                         '782b': [p['upper_ex_prob_782b'], 7, 8, 2],
+                         '782c': [p['upper_ex_prob_782c'], 7, 8, 2],
+                         '783': [p['upper_ex_prob_783'], 7, 8, 3]
                          },
             # injuries to the lower extremities
-            'lower_ex': {'8101': [self.lower_ex_prob_skin_wound * self.lower_ex_prob_skin_wound_open, 8, 10, 1],
-                         '8113': [self.lower_ex_prob_skin_wound * self.lower_ex_prob_skin_wound_burn, 8, 11, 3],
+            'lower_ex': {'8101': [p['lower_ex_prob_8101'], 8, 10, 1],
+                         '8113': [p['lower_ex_prob_8113'], 8, 11, 3],
                          # foot fracture, can be open or not, open is more severe
-                         '811': [self.lower_ex_prob_fracture * self.lower_ex_prob_fracture_AIS1 *
-                                 (1 - p['prob_foot_fracture_open']), 8, 1, 1],
-                         '813do': [self.lower_ex_prob_fracture * self.lower_ex_prob_fracture_AIS1 *
-                                   p['prob_foot_fracture_open'], 8, 1, 3],
+                         '811': [p['lower_ex_prob_811'], 8, 1, 1],
+                         '813do': [p['lower_ex_prob_813do'], 8, 1, 3],
                          # lower leg fracture can be open or not
-                         '812':  [self.lower_ex_prob_fracture * self.lower_ex_prob_fracture_AIS2 *
-                                  (1 - p['prob_patella_tibia_fibula_ankle_fracture_open']), 8, 1, 2],
-                         '813eo': [self.lower_ex_prob_fracture * self.lower_ex_prob_fracture_AIS2 *
-                                   p['prob_patella_tibia_fibula_ankle_fracture_open'], 8, 1, 3],
-                         '813a': [self.lower_ex_prob_fracture * self.lower_ex_prob_fracture_AIS3 *
-                                  p['daly_dist_code_813'][0], 8, 1, 3],
+                         '812':  [p['lower_ex_prob_812'], 8, 1, 2],
+                         '813eo': [p['lower_ex_prob_813eo'], 8, 1, 3],
+                         '813a': [p['lower_ex_prob_813a'], 8, 1, 3],
                          # pelvis fracture can be open or closed
-                         '813b': [self.lower_ex_prob_fracture * self.lower_ex_prob_fracture_AIS3 *
-                                  p['daly_dist_code_813'][1] * (1 - p['prob_pelvis_fracture_open']), 8, 1, 3],
-                         '813bo': [self.lower_ex_prob_fracture * self.lower_ex_prob_fracture_AIS3 *
-                                   p['daly_dist_code_813'][1] * p['prob_pelvis_fracture_open'], 8, 1, 3],
+                         '813b': [p['lower_ex_prob_813b'], 8, 1, 3],
+                         '813bo': [p['lower_ex_prob_813bo'], 8, 1, 3],
                          # femur fracture can be open or closed
-                         '813c': [self.lower_ex_prob_fracture * self.lower_ex_prob_fracture_AIS3 *
-                                  p['daly_dist_code_813'][2] * (1 - p['prob_femur_fracture_open']), 8, 1, 3],
-                         '813co': [self.lower_ex_prob_fracture * self.lower_ex_prob_fracture_AIS3 *
-                                   p['daly_dist_code_813'][2] * p['prob_femur_fracture_open'], 8, 1, 3],
-                         '822a': [self.lower_ex_prob_dislocation * p['daly_dist_code_822'][0], 8, 2, 2],
-                         '822b': [self.lower_ex_prob_dislocation * p['daly_dist_code_822'][1], 8, 2, 2],
-                         '882': [self.lower_ex_prob_amputation * self.lower_ex_prob_amputation_AIS2, 8, 8, 2],
-                         '883': [self.lower_ex_prob_amputation * self.lower_ex_prob_amputation_AIS3, 8, 8, 3],
-                         '884': [self.lower_ex_prob_amputation * self.lower_ex_prob_amputation_AIS4, 8, 8, 4]
+                         '813c': [p['lower_ex_prob_813c'], 8, 1, 3],
+                         '813co': [p['lower_ex_prob_813co'], 8, 1, 3],
+                         '822a': [p['lower_ex_prob_822a'], 8, 2, 2],
+                         '822b': [p['lower_ex_prob_822b'], 8, 2, 2],
+                         '882': [p['lower_ex_prob_882'], 8, 8, 2],
+                         '883': [p['lower_ex_prob_883'], 8, 8, 3],
+                         '884': [p['lower_ex_prob_884'], 8, 8, 4]
                          }
         }
         # ============================= Begin assigning injuries to people =====================================

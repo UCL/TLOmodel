@@ -17,7 +17,6 @@ from tlo.methods import (
     symptommanager,
 )
 
-
 # To reproduce the results, you must set the seed for the Simulation instance. The Simulation
 # will seed the random number generators for each module when they are registered.
 # If a seed argument is not given, one is generated. It is output in the log and can be
