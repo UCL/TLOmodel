@@ -348,7 +348,7 @@ class Contraception(Module):
                 # todo 2) Initiation after pregnancy to also come through HSI system
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event=HSI_Contraceptive_StartOrSwitch(
+                    hsi_event=HSI_Contraception_StartOrSwitch(
                         person_id=_woman_id,
                         module=self,
                         old_contraceptive=_old,
@@ -697,7 +697,7 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     description='Counts of women on each type of contraceptive at a point each time (yearly).')
 
 
-class HSI_Contraceptive_StartOrSwitch(HSI_Event, IndividualScopeEventMixin):
+class HSI_Contraception_StartOrSwitch(HSI_Event, IndividualScopeEventMixin):
     """HSI event for the starting or switching of a contraceptive"""
     def __init__(self, module, person_id, old_contraceptive, new_contraceptive):
         super().__init__(module, person_id=person_id)

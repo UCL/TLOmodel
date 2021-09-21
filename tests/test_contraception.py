@@ -17,10 +17,6 @@ from tlo.methods import (
 )
 from tlo.methods.hiv import DummyHivModule
 
-start_date = Date(2010, 1, 1)
-end_date = Date(2012, 12, 31)
-popsize = 4000
-
 
 def __check_properties(df):
     # basic checks on configuration of properties
@@ -67,107 +63,99 @@ def check_logs(sim):
     # no switching from female_sterilization
     assert not (con.switch_from == 'female_sterilization').any()
 
+    # todo some stopping
 
-def test_contraception_not_using_healthsystem(tmpdir):
+
+def run_sim(tmpdir, use_healthsystem=False, healthsystem_disable_and_reject_all=False):
+    """Run basic checks on function of contraception module"""
+
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+
+    start_date = Date(2010, 1, 1)
+    end_date = Date(2012, 12, 31)
+    popsize = 2000
+
+    log_config = {
+        'filename': 'temp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "*": logging.WARNING,
+            'tlo.methods.contraception': logging.INFO
+        }
+    }
+
+    sim = Simulation(start_date=start_date, log_config=log_config)
+
+    sim.register(
+        # - core modules:
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  disable=(not healthsystem_disable_and_reject_all),
+                                  disable_and_reject_all=healthsystem_disable_and_reject_all
+                                  ),
+
+        # - modules for mechanistic representation of contraception -> pregnancy -> labour -> delivery etc.
+        contraception.Contraception(resourcefilepath=resourcefilepath, use_healthsystem=use_healthsystem),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+
+        # - Dummy HIV module (as contraception requires the property hv_inf)
+        DummyHivModule()
+    )
+
+    sim.make_initial_population(n=popsize)
+    __check_dtypes(sim)
+    __check_properties(sim.population.props)
+
+    # Make most of the population women
+    df = sim.population.props
+    df.loc[df.is_alive, 'sex'] = sim.modules['Demography'].rng.choice(['M', 'F'], p=[0.5, 0.5],
+                                                                      size=df.is_alive.sum())
+    df.loc[(df.sex == 'M'), "co_contraception"] = "not_using"
+
+    sim.simulate(end_date=end_date)
+    __check_dtypes(sim)
+    __check_properties(sim.population.props)
+
+    return sim
+
+
+def test_contraception(tmpdir):
     """Test that the contraception module function and that what comes out in log is as expected when initiation and
     switching is NOT going through the HealthSystem."""
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
-    log_config = {
-        'filename': 'temp',
-        'directory': tmpdir,
-        'custom_levels': {
-            "*": logging.WARNING,
-            'tlo.methods.contraception': logging.INFO
-        }
-    }
+    # Run basic check, for the case when the model is using the healthsystem and when not
+    sim_uses_healthsystem = run_sim(tmpdir=tmpdir, use_healthsystem=False)
+    sim_does_not_use_healthsystem = run_sim(tmpdir=tmpdir, use_healthsystem=True)
 
-    sim = Simulation(start_date=start_date, log_config=log_config)
-    sim.register(
-        # - core modules:
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+    # Check that the logs show functionality of the Contraception Module
+    check_logs(sim_uses_healthsystem)
+    check_logs(sim_does_not_use_healthsystem )
 
-        # - modules for mechanistic representation of contraception -> pregnancy -> labour -> delivery etc.
-        contraception.Contraception(resourcefilepath=resourcefilepath),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        labour.Labour(resourcefilepath=resourcefilepath),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+    # Check that the output of these two simulations are the same:
+    for key in {'contraception_use_yearly_summary', 'pregnancy', 'contraception'}:
+        assert parse_log_file(sim_uses_healthsystem.log_filepath)['tlo.methods.contraception'][key].equals(
+            parse_log_file(sim_does_not_use_healthsystem.log_filepath)['tlo.methods.contraception'][key]
+        )
 
-        # - Dummy HIV module (as contraception requires the property hv_inf)
-        DummyHivModule()
-    )
-    sim.make_initial_population(n=popsize)
-    __check_dtypes(sim)
-    __check_properties(sim.population.props)
-
-    # Make most of the population women
-    df = sim.population.props
-    df.loc[df.is_alive, 'sex'] = sim.modules['Demography'].rng.choice(['M', 'F'], p=[0.5, 0.5], size=df.is_alive.sum())
-    df.loc[(df.sex == 'M'), "co_contraception"] = "not_using"
-
-    sim.simulate(end_date=end_date)
-    __check_dtypes(sim)
-    __check_properties(sim.population.props)
-
-    check_logs(sim)
-
-
-def test_contraception_using_healthsystem(tmpdir):
-    """Test that the contraception module function and that what comes out in log is as expected when initiation and
-    switching is going through the HealthsSystem."""
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-
-    log_config = {
-        'filename': 'temp',
-        'directory': tmpdir,
-        'custom_levels': {
-            "*": logging.WARNING,
-            'tlo.methods.contraception': logging.INFO
-        }
-    }
-
-    sim = Simulation(start_date=start_date, log_config=log_config)
-    sim.register(
-        # - core modules:
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-
-        # - modules for mechanistic representation of contraception -> pregnancy -> labour -> delivery etc.
-        contraception.Contraception(resourcefilepath=resourcefilepath, use_healthsystem=True),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        labour.Labour(resourcefilepath=resourcefilepath),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-
-        # - Dummy HIV module (as contraception requires the property hv_inf)
-        DummyHivModule()
-    )
-    sim.make_initial_population(n=popsize)
-    __check_dtypes(sim)
-    __check_properties(sim.population.props)
-
-    # Make most of the population women
-    df = sim.population.props
-    df.loc[df.is_alive, 'sex'] = sim.modules['Demography'].rng.choice(['M', 'F'], p=[0.5, 0.5], size=df.is_alive.sum())
-    df.loc[(df.sex == 'M'), "co_contraception"] = "not_using"
-
-    sim.simulate(end_date=end_date)
-    __check_dtypes(sim)
-    __check_properties(sim.population.props)
-
-    check_logs(sim)
-
-# todo: check that the two logs are equal as well as each being correct!
 
 def test_contraception_using_healthsystem_but_no_capability(tmpdir):
     """todo Check that if switching and initiatin use healthsystem but that no HSI occur in the healthsystem that there
     is no initiation or switching"""
-    pass
+
+    # Run simulation whereby contraception requires HSI but the Healthsystes prevent HSI occuring
+    sim = run_sim(tmpdir=tmpdir, use_healthsystem=True, healthsystem_disable_and_reject_all=True)
+
+    log = parse_log_file(sim.log_filepath)['tlo.methods.contraception']
+
+    # todo No record of starting/switching contraception
+
+
+
+
+
