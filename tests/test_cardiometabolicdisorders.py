@@ -631,9 +631,9 @@ def test_hsi_weight_loss_and_medication():
 
 def test_hsi_emergency_events():
     """Create a person and check if the functions in HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment
-    create the correct HSI"""
+    result in the correct order of events and create the correct HSI"""
 
-    # Make a list of all conditions and events to run this test for
+    # Make a list of all events to run this test for
     event_list = ['ever_stroke', 'ever_heart_attack']
     for event in event_list:
         # Create the sim with an enabled healthcare system
@@ -681,3 +681,44 @@ def test_hsi_emergency_events():
         assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4],
                           HSI_CardioMetabolicDisorders_StartWeightLossAndMedication)
         assert f"{event}_damage" not in sim.modules['SymptomManager'].has_what(person_id)
+
+
+def test_no_availability_of_consumables_for_conditions():
+    """Check if consumables aren't available that everyone drops off of treatment"""
+
+    # Create a list of the item codes used by this module
+    all_item_codes = {216, 233, 221, 226, 47, 2064, 225, 234}
+
+    # Make a list of all conditions and events to run this test for
+    condition_list = ['diabetes', 'chronic_lower_back_pain', 'chronic_kidney_disease', 'chronic_ischemic_hd']
+    for condition in condition_list:
+        # Create the sim with an enabled healthcare system
+        sim = make_simulation_health_system_functional()
+
+        # make initial population
+        sim.make_initial_population(n=50)
+
+        # simulate for zero days
+        sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+        sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+        sim.event_queue.queue.clear()
+
+        # Make consumables not available
+        sim.modules['HealthSystem'].prob_item_codes_available.loc[all_item_codes] = 0.0
+        sim.modules['HealthSystem'].determine_availability_of_consumables_today()
+
+        df = sim.population.props
+
+        # Get target person and make them have condition, diagnosed and on medication
+        person_id = 0
+        df.at[person_id, f"nc_{condition}"] = True
+        df.at[person_id, f"nc_{condition}_ever_diagnosed"] = True
+        df.at[person_id, f"nc_{condition}_on_medication"] = True
+
+        # Run the Refill_Medication event
+        t = HSI_CardioMetabolicDisorders_Refill_Medication(module=sim.modules['CardioMetabolicDisorders'],
+                                                           person_id=person_id, condition=f'{condition}')
+        t.apply(person_id=person_id, squeeze_factor=0.0)
+
+        # Check that the individual has dropped off of medication due to lack of consumables
+        assert not df.at[person_id, f"nc_{condition}_on_medication"]
