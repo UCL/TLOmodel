@@ -16,9 +16,8 @@ Health care seeking is prompted by the onset of the symptom diarrhoea. The indiv
  * See todo
 
 """
-
+from collections import Iterable
 from pathlib import Path
-from typing import Iterable
 
 import numpy as np
 import pandas as pd
@@ -623,19 +622,19 @@ class Diarrhoea(Module):
 
         if len(self.unreported_dalys) == 0:
             return pd.Series(index=df.loc[df.is_alive].index, data=0.0)
-        else:
-            # Count number of days last month (knowing that this function is called on the first day of the month).
-            days_last_month = (
-                (self.sim.date - pd.DateOffset(days=1)) - (
-                    self.sim.date - pd.DateOffset(days=1) - pd.DateOffset(months=1))
-            ).days
 
-            # Get the person_id and the values from the list, and clear the list.
-            idx, values = zip(*self.unreported_dalys)
-            self.unreported_dalys = list()  # <-- clear list
+        # Count number of days last month (knowing that this function is called on the first day of the month).
+        days_last_month = (
+            (self.sim.date - pd.DateOffset(days=1)) - (
+                self.sim.date - pd.DateOffset(days=1) - pd.DateOffset(months=1))
+        ).days
 
-            average_daly_weight_in_last_month = pd.Series(values, idx) / days_last_month
-            return average_daly_weight_in_last_month.reindex(index=df.loc[df.is_alive].index, fill_value=0.0)
+        # Get the person_id and the values from the list, and clear the list.
+        idx, values = zip(*self.unreported_dalys)
+        self.unreported_dalys = list()  # <-- clear list
+
+        average_daly_weight_in_last_month = pd.Series(values, idx) / days_last_month
+        return average_daly_weight_in_last_month.reindex(index=df.loc[df.is_alive].index, fill_value=0.0)
 
     def look_up_consumables(self):
         """Look up and store the consumables used in each of the HSI."""
@@ -922,9 +921,10 @@ class Diarrhoea(Module):
         # Check that those in a current episode have symptoms of diarrhoea [caused by the diarrhoea module]
         #  but not others (among those who are alive)
         has_symptoms_of_diar = set(self.sim.modules['SymptomManager'].who_has('diarrhoea'))
-        has_symptoms = set([p for p in has_symptoms_of_diar if
-                            'Diarrhoea' in self.sim.modules['SymptomManager'].causes_of(p, 'diarrhoea')
-                            ])
+        has_symptoms = {
+            p for p in has_symptoms_of_diar
+            if 'Diarrhoea' in self.sim.modules['SymptomManager'].causes_of(p, 'diarrhoea')
+        }
 
         in_current_episode_before_recovery = \
             df.is_alive & \
@@ -1081,17 +1081,15 @@ class Models:
 
         if self.rng.rand() < prob_prolonged:
             if self.rng.rand() < prob_persistent_if_prolonged:
-                # "Persistent" dirarrhoa
+                # "Persistent" diarrhoea
                 return self.rng.randint(self.p['min_dur_persistent'], self.p['max_dur_persistent'])
-            else:
-                # "Prolonged" but not "persistnet"
-                return self.rng.randint(self.p['min_dur_prolonged'], self.p['min_dur_persistent'])
-        else:
-            # If not prolonged, the episode is acute: duration of 4 days
-            return self.rng.randint(self.p['min_dur_acute'], self.p['min_dur_prolonged'])
+            # "Prolonged" but not "persistent"
+            return self.rng.randint(self.p['min_dur_prolonged'], self.p['min_dur_persistent'])
+        # If not prolonged, the episode is acute: duration of 4 days
+        return self.rng.randint(self.p['min_dur_acute'], self.p['min_dur_prolonged'])
 
     def get_type(self, pathogen):
-        """For new incident case of dirarrhoea, determine the type - 'watery' or 'bloody'"""
+        """For new incident case of diarrhoea, determine the type - 'watery' or 'bloody'"""
         return 'watery' if self.rng.rand() < self.p[f'proportion_AWD_in_{pathogen}'] else 'bloody'
 
     def get_dehydration(self, pathogen):
@@ -1099,10 +1097,8 @@ class Models:
         if self.rng.rand() < self.p[f'prob_dehydration_by_{pathogen}']:
             if self.rng.rand() < self.p['probability_of_severe_dehydration_if_some_dehydration']:
                 return 'severe'
-            else:
-                return 'some'
-        else:
-            return 'none'
+            return 'some'
+        return 'none'
 
     def prob_death(self,
                    pathogen,
@@ -1134,7 +1130,7 @@ class Models:
         if dehydration == 'severe':
             risk *= self.p['rr_diarr_death_severe_dehydration']
 
-        if (1.0 <= age_exact_years < 2.0):
+        if 1.0 <= age_exact_years < 2.0:
             risk *= self.p['rr_diarr_death_age12to23mo']
         elif age_exact_years < 5.0:
             risk *= self.p['rr_diarr_death_age24to59mo']
@@ -1410,7 +1406,7 @@ class DiarrhoeaNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
 
         # Do nothing if the recovery is not expected for today
         # (Because the person has already recovered, through being cured).
-        if not (self.sim.date == person.gi_scheduled_date_recovery):
+        if not self.sim.date == person.gi_scheduled_date_recovery:
             return
 
         # Confirm that this is event is occurring during a current episode of diarrhoea
@@ -1621,7 +1617,7 @@ def increase_incidence_of_pathogens(diarrhoea_module):
     probs = pd.DataFrame(
         [diarrhoea_module.parameters[f"base_inc_rate_diarrhoea_by_{pathogen}"] for pathogen in pathogens]
     )
-    assert np.isclose(probs.sum(0), 0.95).all()
+    assert np.isclose(probs.sum(axis=0), 0.95).all()
 
     # Increase symptoms so that everyone gets symptoms:
     for param_name in diarrhoea_module.parameters:
