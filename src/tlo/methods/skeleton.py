@@ -38,6 +38,10 @@ class Skeleton(Module):
     # this module
     INIT_DEPENDENCIES = {'Demography'}
 
+    # Declares optiona;l modules that need to be registered in simulation and
+    # initialised before this module if present
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
     # Declares any modules that need to be registered in simulation in addition to those
     # in INIT_DEPENDENCIES to allow running simulation
     ADDITIONAL_DEPENDENCIES = {'HealthSystem'}

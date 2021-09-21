@@ -35,6 +35,10 @@ class ChronicSyndrome(Module):
     # this module
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
+    # Declare optional modules that need to be registered in simulation and initialised
+    # before this module if present
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,

@@ -34,6 +34,7 @@ from tlo.methods import (
 )
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
+from tlo.methods.diarrhoea import increase_risk_of_death, make_treatment_perfect
 from tlo.methods.healthburden import Get_Current_DALYS
 
 try:
@@ -124,8 +125,15 @@ def test_cause_of_disability_being_registered():
         care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=rfp),
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=rfp),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
-        healthburden.HealthBurden(resourcefilepath=rfp)
+        healthburden.HealthBurden(resourcefilepath=rfp),
+
+        # Supporting modules:
+        diarrhoea.DiarrhoeaPropertiesOfOtherModules()
     )
+    # Increase risk of death of Diarrhoea to ensure that are at least some deaths
+    increase_risk_of_death(sim.modules['Diarrhoea'])
+    make_treatment_perfect(sim.modules['Diarrhoea'])
+
     sim.make_initial_population(n=20)
     sim.simulate(end_date=Date(2010, 1, 2))
     check_dtypes(sim)
