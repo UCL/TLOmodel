@@ -94,6 +94,7 @@ log_config_multiple = {
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
         "tlo.methods.rti": logging.INFO,
         "tlo.methods.healthsystem": logging.DEBUG,
+        "tlo.methods.healthburden": logging.INFO
     }
 }
 sim_multiple_injury = Simulation(start_date=start_date, seed=seed, log_config=log_config_multiple)
