@@ -28,7 +28,7 @@ from tlo.methods import (
 )
 from tlo.methods.hiv import DummyHivModule
 
-seed = 677
+seed = 674
 
 # The resource files
 try:
@@ -353,23 +353,16 @@ def test_run_all_births_end_in_miscarriage():
     assert (df.loc[pregnant_at_end_of_sim.index, 'ps_gestational_age_in_weeks'] < 5).all().all()
 
 
-def test_run_all_births_end_in_abortion():
+def test_induced_abortion_ends_pregnancies_as_expected():
     """Runs the simulation with the core modules and all women of reproductive age as pregnant. Sets abortion risk
     to 1 and runs checks """
+
     sim = register_core_modules()
     starting_population = 500
 
     sim.make_initial_population(n=starting_population)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
 
-    # Define women of interest in the population
-    df = sim.population.props
-    women = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14)]
-
-    # Set parity to 0 for an additional check for births
-    df.loc[women.index, 'la_parity'] = 0
-
-    # Risk of ectopic applied before miscarriage so set to 0
     params = sim.modules['PregnancySupervisor'].parameters
     params['prob_ectopic_pregnancy'] = 0
     params['prob_spontaneous_abortion_per_month'] = 0
@@ -377,21 +370,25 @@ def test_run_all_births_end_in_abortion():
     # set risk of abortion to 1
     params['prob_induced_abortion_per_month'] = 1
 
-    sim.simulate(end_date=Date(2011, 1, 1))
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
+    # Define women of interest in the population
     df = sim.population.props
+    women = df.loc[df.is_alive & (df.sex == 'F') & df.is_pregnant]
+    df.loc[women.index, 'co_unintended_preg'] = True
+    df.loc[women.index, 'date_of_last_pregnancy'] = sim.date - pd.DateOffset(weeks=6)
+    for woman in women.index:
+        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
 
-    # Check that there are no newborns =
-    possible_newborns = df.is_alive & (df.date_of_birth > sim.start_date)
-    assert possible_newborns.loc[possible_newborns].empty
+    # Run the event
+    pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
+    pregnancy_sup.apply(sim.population)
+    # Set parity to 0 for an additional check for births
 
-    # Check that no women that were ever pregnant have gained paritt
-    women_ever_pregnant = df.loc[~df.is_pregnant & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)
-                                 & ~pd.isnull(df.date_of_last_pregnancy)]
-    assert (df.loc[women_ever_pregnant.index, 'la_parity'] == 0).all().all()
-
-    pregnant_at_end_of_sim = df.loc[df.is_alive & df.is_pregnant]
-    assert (df.loc[pregnant_at_end_of_sim.index, 'ps_gestational_age_in_weeks'] < 9).all().all()
+    assert ~df.loc[women.index, 'is_pregnant'].all().all()
+    assert (df.loc[women.index, 'la_parity'] == 0).all().all()
+    assert (df.loc[women.index, 'ps_gestational_age_in_weeks'] == 0).all().all()
+    assert pd.isnull(df.loc[women.index, 'la_due_date_current_pregnancy']).all().all()
 
 
 def test_abortion_complications():
