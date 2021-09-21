@@ -499,6 +499,8 @@ tlo.methods.enhanced_lifestyle module
 
      **Class attributes:**
 
+     INIT_DEPENDENCIES : {'Demography'}
+
      METADATA : {}
 
      **Functions (defined or overridden in class Lifestyle):**

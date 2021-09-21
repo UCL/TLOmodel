@@ -186,9 +186,39 @@
 
 <div class="viewcode-block" id="Predictor"><a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.Predictor">[docs]</a><span class="k">class</span> <span class="nc">Predictor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">property_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">external</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;A Predictor variable for the regression model. The property_name is a property of the</span>
-<span class="sd">         population dataframe e.g. age, sex, etc.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">property_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">external</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">conditions_are_mutually_exclusive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">conditions_are_exhaustive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A Predictor variable for the regression model.</span>
+
+<span class="sd">        :param property_name: A property of the population dataframe e.g. age, sex, etc.</span>
+<span class="sd">            or if ``external=True`` the name of the external property that will be</span>
+<span class="sd">            passed as a keyword argument to the ``LinearModel.predict`` method.</span>
+<span class="sd">        :param external: Whether the named property is external (``True``) and so will</span>
+<span class="sd">            be passed as a keyword argument to the ``LinearModel.predict`` method) or is</span>
+<span class="sd">            a property of the population dataframe (``False``).</span>
+<span class="sd">        :param conditions_are_mutually_exclusive: Whether the set of conditions that</span>
+<span class="sd">            are declared for this predictor are all mutually exclusive, that is, for any</span>
+<span class="sd">            pair of conditions, one condition evaluating to ``True`` implies the other</span>
+<span class="sd">            must evaluate to ``False``. If this is declared to be the case a more</span>
+<span class="sd">            efficient method of evaluation will be used in ``LinearModel.predict``. Note</span>
+<span class="sd">            however that the validity of this declaration will not be checked so if this</span>
+<span class="sd">            is set to ``True`` for predictors with non-mutually exclusive conditions,</span>
+<span class="sd">            the model output will be erroneous.</span>
+<span class="sd">        :param conditions_are_exhaustive: Whether the set of conditions that are</span>
+<span class="sd">            declared for this predictor are all exhaustive, that is at least one</span>
+<span class="sd">            condition will always be ``True`` irrespective of the value of the property.</span>
+<span class="sd">            If this is declared to be the case, a more efficient method of evaluation</span>
+<span class="sd">            maye be used in ``LinearModel.predict`, though if a catch-all ``otherwise``</span>
+<span class="sd">            condition is included this flag will provide no benefit. Note that the</span>
+<span class="sd">            validity of this declaration will not be checked so if this is set to</span>
+<span class="sd">            ``True`` for predictors with non-exhaustive conditions, the model output</span>
+<span class="sd">            will be erroneous.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">property_name</span> <span class="o">=</span> <span class="n">property_name</span>
 
         <span class="c1"># If this is a property that is not part of the population dataframe</span>
@@ -199,6 +229,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">conditions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">has_otherwise</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conditions_are_mutually_exclusive</span> <span class="o">=</span> <span class="n">conditions_are_mutually_exclusive</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conditions_are_exhaustive</span> <span class="o">=</span> <span class="n">conditions_are_exhaustive</span>
 
 <div class="viewcode-block" id="Predictor.when"><a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.Predictor.when">[docs]</a>    <span class="k">def</span> <span class="nf">when</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">],</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Predictor&#39;</span><span class="p">:</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Can&#39;t use `when` on Predictor with function&quot;</span>
@@ -429,9 +461,6 @@
                             <span class="n">predictor_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">) * </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span>
                             <span class="n">any_prev_conds</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="c1"># conditions are potentially non-mutually exclusive and</span>
-                        <span class="c1"># are applied sequentially in order specified on subset</span>
-                        <span class="c1"># not matching any previous conditions</span>
                         <span class="k">if</span> <span class="n">condition</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                             <span class="c1"># &#39;otherwise&#39; fallback condition - matches all not</span>
                             <span class="c1"># so far matched therefore can ignore any remaining</span>
@@ -439,13 +468,26 @@
                             <span class="n">predictor_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; + (~(</span><span class="si">{</span><span class="n">any_prev_conds</span><span class="si">}</span><span class="s2">)) * </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span>
                             <span class="n">has_catch_all_condition</span> <span class="o">=</span> <span class="kc">True</span>
                             <span class="k">break</span>
+                        <span class="k">elif</span> <span class="n">predictor</span><span class="o">.</span><span class="n">conditions_are_mutually_exclusive</span><span class="p">:</span>
+                            <span class="c1"># conditions have been declared to be mutually exclusive</span>
+                            <span class="c1"># therefore we can just multiply conditions by coefficient</span>
+                            <span class="c1"># values as condition == ~any_prev_conds &amp; condition</span>
+                            <span class="n">predictor_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; + (</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">) * </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span>
+                            <span class="n">any_prev_conds</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; | </span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">&quot;</span>
+
                         <span class="k">else</span><span class="p">:</span>
+                            <span class="c1"># conditions are potentially non-mutually exclusive and</span>
+                            <span class="c1"># are applied sequentially in order specified on subset</span>
+                            <span class="c1"># not matching any previous conditions</span>
                             <span class="n">predictor_str</span> <span class="o">+=</span> <span class="p">(</span>
                                 <span class="sa">f</span><span class="s2">&quot; + (~(</span><span class="si">{</span><span class="n">any_prev_conds</span><span class="si">}</span><span class="s2">) &amp; </span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">) * </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                             <span class="n">any_prev_conds</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; | </span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="c1"># If no &#39;otherwise&#39; catch-all condition then add term corresponding to</span>
-                <span class="c1"># no effect when no previous conditions matched</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">has_catch_all_condition</span><span class="p">:</span>
+                <span class="c1"># If the predictor neither declares that the conditions are exhaustive</span>
+                <span class="c1"># (i.e. all cases are covered an any_prev_conds is guaranteed to be</span>
+                <span class="c1"># True) nor an &#39;otherwise&#39; catch-all condition has been used (in which</span>
+                <span class="c1"># case any_prev_conds is also guaranteed to be True) then add term</span>
+                <span class="c1"># corresponding to no effect when no previous conditions matched</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">predictor</span><span class="o">.</span><span class="n">conditions_are_exhaustive</span> <span class="ow">or</span> <span class="n">has_catch_all_condition</span><span class="p">):</span>
                     <span class="n">predictor_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; + ~(</span><span class="si">{</span><span class="n">any_prev_conds</span><span class="si">}</span><span class="s2">) * </span><span class="si">{</span><span class="n">null_coeff_value</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="n">predictor_strings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">predictor_str</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -606,7 +648,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

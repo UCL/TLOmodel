@@ -343,11 +343,15 @@ tlo.methods.postnatal_supervisor module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'maternal': <tlo.methods.causes.Cause object at 0x7fa07882dbb0>, 'neonatal': <tlo.methods.causes.Cause object at 0x7fa07884c4c0>}
+     ADDITIONAL_DEPENDENCIES : {'Labour', 'PregnancySupervisor', 'NewbornOutcomes', 'Lifestyle'}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7fa07884c520>}
+     CAUSES_OF_DEATH : {'maternal': <tlo.methods.causes.Cause object at 0x7f99679fb280>, 'neonatal': <tlo.methods.causes.Cause object at 0x7f99679fbb50>}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7f99679fbbb0>}
+
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem'}
+
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
 
      **Functions (defined or overridden in class PostnatalSupervisor):**
 

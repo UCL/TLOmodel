@@ -70,13 +70,17 @@ tlo.methods.measles module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Measles': <tlo.methods.causes.Cause object at 0x7fa0788855b0>}
+     CAUSES_OF_DEATH : {'Measles': <tlo.methods.causes.Cause object at 0x7f9967a36c40>}
 
-     CAUSES_OF_DISABILITY : {'Measles': <tlo.methods.causes.Cause object at 0x7fa078885640>}
+     CAUSES_OF_DISABILITY : {'Measles': <tlo.methods.causes.Cause object at 0x7f9967a36cd0>}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     INIT_DEPENDENCIES : {'Demography', 'SymptomManager', 'HealthSystem'}
 
-     SYMPTOMS : {'otitis_media', 'rash', 'encephalitis'}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>}
+
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
+
+     SYMPTOMS : {'encephalitis', 'otitis_media', 'rash'}
 
      **Functions (defined or overridden in class Measles):**
 

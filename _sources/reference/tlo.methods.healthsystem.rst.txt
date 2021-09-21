@@ -18,6 +18,9 @@ tlo.methods.healthsystem module
         * - Item
           - Type
           - Description
+        * - BedCapacity
+          - DATA_FRAME
+          - Data on the number of beds available of each type by facility_id
         * - Officer_Types
           - DATA_FRAME
           - The names of the types of health workers ("officers")
@@ -39,9 +42,6 @@ tlo.methods.healthsystem module
         * - Facilities_For_Each_District
           - DICT
           - Mapping between a district and all of the health facilities to which its                       population have access.
-        * - BedCapacity
-          - DATA_FRAME
-          - Bed-days capacity by facility
         * - Consumables
           - DATA_FRAME
           - List of consumables used in each intervention and their costs.
@@ -68,32 +68,12 @@ tlo.methods.healthsystem module
         * - hs_is_inpatient
           - BOOL
           - Whether or not the person is currently an in-patient at any medical facility
-        * - hs_next_first_day_in_bed_high_dependency_bed
-          - DATE
-          - Date when person will next enter bed_type high_dependency_bed. (pd.NaT) is nothing scheduled
-        * - hs_next_last_day_in_bed_high_dependency_bed
-          - DATE
-          - Date of the last day in the next stay in bed_type high_dependency_bed. (pd.NaT) is nothing scheduled
-        * - hs_next_first_day_in_bed_general_bed
-          - DATE
-          - Date when person will next enter bed_type general_bed. (pd.NaT) is nothing scheduled
-        * - hs_next_last_day_in_bed_general_bed
-          - DATE
-          - Date of the last day in the next stay in bed_type general_bed. (pd.NaT) is nothing scheduled
-        * - hs_next_first_day_in_bed_non_bed_space
-          - DATE
-          - Date when person will next enter bed_type non_bed_space. (pd.NaT) is nothing scheduled
-        * - hs_next_last_day_in_bed_non_bed_space
-          - DATE
-          - Date of the last day in the next stay in bed_type non_bed_space. (pd.NaT) is nothing scheduled
 
 
 
      **Class attributes:**
 
-     bed_type : non_bed_space
-
-     bed_types : ['high_dependency_bed', 'general_bed', 'non_bed_space']
+     INIT_DEPENDENCIES : {'Demography'}
 
      **Functions (defined or overridden in class HealthSystem):**
 
@@ -103,6 +83,8 @@ tlo.methods.healthsystem module
 
      .. automethod:: process_consumables_file
 
+     .. automethod:: pre_initialise_population
+
      .. automethod:: initialise_population
 
      .. automethod:: initialise_simulation
@@ -110,6 +92,8 @@ tlo.methods.healthsystem module
      .. automethod:: set_service_availability
 
      .. automethod:: on_birth
+
+     .. automethod:: on_simulation_end
 
      .. automethod:: register_disease_module
 
@@ -145,47 +129,15 @@ tlo.methods.healthsystem module
 
      .. automethod:: determine_availability_of_consumables_today
 
-     .. automethod:: get_blank_beddays_footprint
-
-     .. automethod:: check_beddays_footrpint_format
-
      .. automethod:: log_hsi_event
 
      .. automethod:: log_current_capabilities
 
      .. automethod:: find_events_for_person
 
-     .. automethod:: initialise_beddays_tracker
-
-     .. automethod:: impose_beddays_footprint
-
-     .. automethod:: edit_bed_tracker
-
-     .. automethod:: compute_dates_of_bed_use
-
-     .. automethod:: get_remaining_footprint
-
      .. automethod:: remove_beddays_footprint
 
-     .. automethod:: on_simulation_end
-
-
-
-
-
-
-
-
-.. autoclass:: RefreshInPatient
-
-     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
-
-
-     **Functions (defined or overridden in class RefreshInPatient):**
-
-     .. automethod:: __init__
-
-     .. automethod:: apply
+     .. automethod:: reset_queue
 
 
 
@@ -219,7 +171,7 @@ tlo.methods.healthsystem module
 
      **Class attributes:**
 
-     bed_days_allocated_to_this_event : <property object at 0x7fa0786a5b30>
+     bed_days_allocated_to_this_event : <property object at 0x7f99677a56d0>
 
      **Functions (defined or overridden in class HSI_Event):**
 

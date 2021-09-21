@@ -204,6 +204,19 @@
 <span class="sd">        - `on_hsi_alert(person_id, treatment_id)` [If this is disease module]</span>
 <span class="sd">        -  `report_daly_values()` [If this is disease module]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Declares modules that need to be registered in simulation and initialised before</span>
+    <span class="c1"># this module</span>
+    <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">}</span>
+
+    <span class="c1"># Declares optiona;l modules that need to be registered in simulation and</span>
+    <span class="c1"># initialised before this module if present</span>
+    <span class="n">OPTIONAL_INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">}</span>
+
+    <span class="c1"># Declares any modules that need to be registered in simulation in addition to those</span>
+    <span class="c1"># in INIT_DEPENDENCIES to allow running simulation</span>
+    <span class="n">ADDITIONAL_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">}</span>
+
     <span class="c1"># Declare Metadata (this is for a typical &#39;Disease Module&#39;)</span>
     <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">DISEASE_MODULE</span><span class="p">,</span>
@@ -454,7 +467,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

@@ -20,6 +20,7 @@ Submodules
 
    tlo.cli
    tlo.core
+   tlo.dependencies
    tlo.docs
    tlo.events
    tlo.lm

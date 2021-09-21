@@ -206,6 +206,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">lm_onset_pelvic_pain</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span></div>
 
+    <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;Lifestyle&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">,</span> <span class="s1">&#39;SymptomManager&#39;</span><span class="p">}</span>
+
+    <span class="n">OPTIONAL_INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">}</span>
+
     <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">DISEASE_MODULE</span><span class="p">,</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_SYMPTOMMANAGER</span><span class="p">,</span>
@@ -407,10 +411,11 @@
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_tob&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rp_bladder_cancer_tobacco&#39;</span><span class="p">]),</span>
             <span class="c1"># todo: add line when schisto is merged</span>
             <span class="c1"># Predictor(&#39;sh_infection_status&#39;).when(&#39;High-infection&#39;, p[&#39;rp_bladder_cancer_schisto_h&#39;]),</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(30,49)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rp_bladder_cancer_age3049&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(50,69)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rp_bladder_cancer_age5069&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(70,120)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rp_bladder_cancer_agege70&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0,14)&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(30,49)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rp_bladder_cancer_age3049&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(50,69)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rp_bladder_cancer_age5069&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(70,120)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rp_bladder_cancer_agege70&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0,14)&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
         <span class="p">)</span>
 
         <span class="n">bc_status_any_stage</span> <span class="o">=</span> <span class="n">lm_init_bc_status_any_stage</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
@@ -430,10 +435,15 @@
         <span class="c1"># -------------------- SYMPTOMS -----------</span>
         <span class="c1"># ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of blood_urine:</span>
         <span class="n">lm_init_blood_urine</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;bc_status&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;tis_t1&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_blood_urine_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;t2p&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_blood_urine_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;metastatic&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_blood_urine_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;bc_status&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;tis_t1&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_blood_urine_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;t2p&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_blood_urine_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;metastatic&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_blood_urine_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
         <span class="p">)</span>
         <span class="n">has_blood_urine_at_init</span> <span class="o">=</span> <span class="n">lm_init_blood_urine</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">change_symptom</span><span class="p">(</span>
@@ -445,10 +455,15 @@
 
         <span class="c1"># ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of pelvic pain:</span>
         <span class="n">lm_init_pelvic_pain</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;bc_status&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;tis_t1&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_pelvic_pain_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;t2p&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_pelvic_pain_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;metastatic&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_pelvic_pain_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;bc_status&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;tis_t1&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_pelvic_pain_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;t2p&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_pelvic_pain_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;metastatic&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_pelvic_pain_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
         <span class="p">)</span>
         <span class="n">has_pelvic_pain_at_init</span> <span class="o">=</span> <span class="n">lm_init_pelvic_pain</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">change_symptom</span><span class="p">(</span>
@@ -460,13 +475,15 @@
 
         <span class="c1"># -------------------- bc_date_diagnosis -----------</span>
         <span class="n">lm_init_diagnosed</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;bc_status&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;tis_t1&quot;</span><span class="p">,</span>
-                                        <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;t2p&quot;</span><span class="p">,</span>
-                                        <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;metastatic&quot;</span><span class="p">,</span>
-                                        <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;bc_status&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;tis_t1&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;t2p&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;metastatic&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
         <span class="p">)</span>
         <span class="n">ever_diagnosed</span> <span class="o">=</span> <span class="n">lm_init_diagnosed</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
 
@@ -478,10 +495,15 @@
 
         <span class="c1"># -------------------- bc_date_treatment -----------</span>
         <span class="n">lm_init_treatment_for_those_diagnosed</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;bc_status&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;tis_t1&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_bladder_cancer&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;t2p&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_bladder_cancer&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;metastatic&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_bladder_cancer&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;bc_status&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;tis_t1&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_bladder_cancer&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;t2p&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_bladder_cancer&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;metastatic&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_bladder_cancer&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
         <span class="p">)</span>
         <span class="n">treatment_initiated</span> <span class="o">=</span> <span class="n">lm_init_treatment_for_those_diagnosed</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
 
@@ -540,10 +562,11 @@
             <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_tis_t1_bladder_cancer_none&#39;</span><span class="p">],</span>
             <span class="c1"># todo: add in when schisto is in</span>
             <span class="c1"># Predictor(&#39;sh_infection_status&#39;).when(&#39;High-infection&#39;, p[&#39;rp_bladder_cancer_schisto_h&#39;]),</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(30,49)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rp_bladder_cancer_age3049&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(50,69)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rp_bladder_cancer_age5069&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(70,120)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rp_bladder_cancer_agege70&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0,14)&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(30,49)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rp_bladder_cancer_age3049&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(50,69)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rp_bladder_cancer_age5069&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(70,120)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rp_bladder_cancer_agege70&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0,14)&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_tob&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_tis_t1_bladder_cancer_none_tobacco&#39;</span><span class="p">]),</span>
             <span class="c1"># todo: add in when schisto module in master</span>
             <span class="c1"># Predictor(&#39;sh_&#39;).when(True, p[&#39;rr_tis_t1_bladder_cancer_none_ex_alc&#39;]),</span>
@@ -575,20 +598,30 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">lm_onset_blood_urine</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
             <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
             <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_blood_urine_tis_t1_bladder_cancer&#39;</span><span class="p">],</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;bc_status&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;tis_t1&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;t2p&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_blood_urine_t2p_bladder_cancer&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;metastatic&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_blood_urine_metastatic_bladder_cancer&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;bc_status&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;tis_t1&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;t2p&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_blood_urine_t2p_bladder_cancer&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;metastatic&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_blood_urine_metastatic_bladder_cancer&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
         <span class="p">)</span>
 
         <span class="c1"># Linear Model for the onset of pelvic_pain, in each 3 month period</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lm_onset_pelvic_pain</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
             <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
             <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_pelvic_pain_tis_t1_bladder_cancer&#39;</span><span class="p">],</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;bc_status&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;tis_t1&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;t2p&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_pelvic_pain_t2p_bladder_cancer&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;metastatic&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_pelvic_pain_metastatic_bladder_cancer&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;bc_status&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;tis_t1&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;t2p&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_pelvic_pain_t2p_bladder_cancer&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;metastatic&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_pelvic_pain_metastatic_bladder_cancer&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
         <span class="p">)</span>
 
         <span class="c1"># ----- DX TESTS -----</span>
@@ -1150,7 +1183,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

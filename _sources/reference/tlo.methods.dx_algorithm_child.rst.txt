@@ -12,6 +12,8 @@ tlo.methods.dx_algorithm_child module
 
      **Class attributes:**
 
+     ADDITIONAL_DEPENDENCIES : {'SymptomManager', 'HealthSystem'}
+
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
      **Functions (defined or overridden in class DxAlgorithmChild):**
@@ -25,8 +27,6 @@ tlo.methods.dx_algorithm_child module
      .. automethod:: initialise_simulation
 
      .. automethod:: on_birth
-
-     .. automethod:: do_when_diarrhoea
 
      .. automethod:: diagnose
 

@@ -226,12 +226,27 @@ e.g. <code class="docutils literal notranslate"><span class="pre">{'*':</span> <
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.simulation.Simulation.register">
-<span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">modules</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.register"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.register" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">modules</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort_modules</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_all_dependencies</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.register"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.register" title="Permalink to this definition">¶</a></dt>
 <dd><p>Register one or more disease modules with the simulation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>modules</strong> – the disease module(s) to use as part of this simulation.
-Multiple modules may be given as separate arguments to one call.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>modules</strong> – the disease module(s) to use as part of this simulation.
+Multiple modules may be given as separate arguments to one call.</p></li>
+<li><p><strong>sort_modules</strong> – Whether to topologically sort the modules so that any
+initialisation dependencies (specified by the <code class="docutils literal notranslate"><span class="pre">INIT_DEPENDENCIES</span></code>
+attribute) of a module are initialised before the module itself is. A
+<code class="docutils literal notranslate"><span class="pre">ModuleDependencyError</span></code> exception will be raised if there are missing
+initialisation dependencies or circular initialisation dependencies between
+modules that cannot be resolved. If this flag is set to <code class="docutils literal notranslate"><span class="pre">True</span></code> there is
+also a requirement that at most one instance of each module is registered
+and <code class="docutils literal notranslate"><span class="pre">MultipleModuleInstanceError</span></code> will be raised if this is not the case.</p></li>
+<li><p><strong>check_all_dependencies</strong> – Whether to check if all of each modules declared
+dependencies (that is, the union of the <code class="docutils literal notranslate"><span class="pre">INIT_DEPENDENCIES</span></code> and
+<code class="docutils literal notranslate"><span class="pre">ADDITIONAL_DEPENDENCIES</span></code> attributes) have been included in the set of
+modules to be registered. A <code class="docutils literal notranslate"><span class="pre">ModuleDependencyError</span></code> exception will
+be raised if there are missing dependencies.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -368,7 +383,7 @@ so we can tell which is least, i.e. earliest.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

@@ -308,15 +308,19 @@
                  <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="n">age</span> <span class="o">&lt;=</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="c1"># ----------------------------------- CHILD &lt;=5 -----------------------------------</span>
+            <span class="c1"># It&#39;s a child: Run the ICMI algorithm for this child:</span>
+            <span class="c1"># NB. This includes children who are aged 5</span>
+
+            <span class="c1"># If one of the symptoms is diarrhoea, then run the algorithm for when a child presents with diarrhoea:</span>
+            <span class="k">if</span> <span class="s1">&#39;diarrhoea&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;Diarrhoea&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Diarrhoea&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_when_presentation_with_diarrhoea</span><span class="p">(</span>
+                        <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+
         <span class="c1"># diagnostic algorithm for child &lt;5 yrs</span>
         <span class="k">if</span> <span class="n">age</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span>
-            <span class="c1"># ----------------------------------- CHILD &lt;5 -----------------------------------</span>
-            <span class="c1"># It&#39;s a child: Run the ICMI algorithm for this child:</span>
-
-            <span class="c1"># First, if one of the symptoms is diarrhoea, then run the diarrhoea for a child routine:</span>
-            <span class="k">if</span> <span class="s1">&#39;diarrhoea&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;DxAlgorithmChild&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_when_diarrhoea</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
-
             <span class="c1"># Next, run DxAlgorithmChild to get additional diagnoses:</span>
             <span class="n">diagnosis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;DxAlgorithmChild&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">diagnose</span><span class="p">(</span>
                 <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span>
@@ -342,7 +346,7 @@
                         <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
                         <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="mi">5</span> <span class="o">&lt;=</span> <span class="n">age</span> <span class="o">&lt;</span> <span class="mi">15</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="n">age</span> <span class="o">&lt;</span> <span class="mi">15</span><span class="p">:</span>
             <span class="c1"># ----------------------------------- CHILD 5-14 -----------------------------------</span>
             <span class="c1"># Run DxAlgorithmChild to get (additional) diagnoses:</span>
             <span class="n">diagnosis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;DxAlgorithmChild&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">diagnose</span><span class="p">(</span>
@@ -369,7 +373,7 @@
                         <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
                         <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">age</span> <span class="o">&gt;=</span> <span class="mi">15</span><span class="p">:</span>
+        <span class="k">else</span><span class="p">:</span>
             <span class="c1"># ----------------------------------- ADULT -----------------------------------</span>
             <span class="k">if</span> <span class="s1">&#39;OesophagealCancer&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
                 <span class="c1"># If the symptoms include dysphagia, then begin investigation for Oesophageal Cancer:</span>
@@ -708,7 +712,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

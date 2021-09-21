@@ -217,6 +217,12 @@
     <span class="n">events</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ever_stroke&#39;</span><span class="p">,</span>
               <span class="s1">&#39;ever_heart_attack&#39;</span><span class="p">]</span>
 
+    <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;Lifestyle&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">,</span> <span class="s1">&#39;SymptomManager&#39;</span><span class="p">}</span>
+
+    <span class="n">OPTIONAL_INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">}</span>
+
+    <span class="n">ADDITIONAL_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Depression&#39;</span><span class="p">}</span>
+
     <span class="c1"># Declare Metadata (this is for a typical &#39;Disease Module&#39;)</span>
     <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">DISEASE_MODULE</span><span class="p">,</span>
@@ -454,9 +460,6 @@
 <span class="sd">        :return: a linear model</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c1"># use temporary empty dict to save results</span>
-        <span class="n">lms_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-
         <span class="c1"># load parameters for correct condition/event</span>
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">lm_type</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
 
@@ -464,11 +467,16 @@
         <span class="c1"># LinearModel expects native python types - if it&#39;s numpy type, convert it</span>
         <span class="n">baseline_annual_probability</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">baseline_annual_probability</span><span class="p">)</span>
 
-        <span class="n">lms_dict</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
+        <span class="n">linear_model</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
             <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
             <span class="n">baseline_annual_probability</span><span class="p">,</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;sex&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_male&#39;</span><span class="p">]),</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0, 4)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_0_4&#39;</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;age_years&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0, 4)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_0_4&#39;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(5, 9)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_5_9&#39;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(10, 14)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_10_14&#39;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(15, 19)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_15_19&#39;</span><span class="p">])</span>
@@ -488,14 +496,24 @@
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(85, 89)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_85_89&#39;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(90, 94)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_90_94&#39;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(95, 99)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_95_99&#39;</span><span class="p">])</span>
-            <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_100&#39;</span><span class="p">]),</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&gt;= 100&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_100&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_urban&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_urban&#39;</span><span class="p">]),</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_wealth&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_wealth_1&#39;</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;li_wealth&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_wealth_1&#39;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_wealth_2&#39;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_wealth_3&#39;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;4&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_wealth_4&#39;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;5&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_wealth_5&#39;</span><span class="p">]),</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_bmi&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_bmi_1&#39;</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;li_bmi&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_bmi_1&#39;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_bmi_2&#39;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_bmi_3&#39;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;4&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_bmi_4&#39;</span><span class="p">])</span>
@@ -505,11 +523,21 @@
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_high_sugar&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_high_sugar&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_tob&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_tobacco&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_ex_alc&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_alcohol&#39;</span><span class="p">]),</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_mar_stat&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_marital_status_1&#39;</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;li_mar_stat&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_marital_status_1&#39;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_marital_status_2&#39;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_marital_status_3&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_in_ed&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_in_education&#39;</span><span class="p">]),</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_ed_lev&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_current_education_level_1&#39;</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;li_ed_lev&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_current_education_level_1&#39;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_current_education_level_2&#39;</span><span class="p">])</span>
             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_current_education_level_3&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_unimproved_sanitation&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_unimproved_sanitation&#39;</span><span class="p">]),</span>
@@ -525,7 +553,7 @@
             <span class="c1"># Predictor(&#39;nc_cancers&#39;).when(True, p[&#39;rr_cancers&#39;])</span>
         <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">lms_dict</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="n">linear_model</span></div>
 
 <div class="viewcode-block" id="CardioMetabolicDisorders.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.cardio_metabolic_disorders.html#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.</span>
@@ -608,15 +636,6 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">ndays</span><span class="p">))</span>
             <span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">lmpredict_rtn_a_series</span><span class="p">(</span><span class="n">lm</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;wrapper to call predict on a linear model, guranteeing that a pd.Series is returned even if the length</span>
-<span class="sd">            of the df is 1.&quot;&quot;&quot;</span>
-            <span class="n">res</span> <span class="o">=</span> <span class="n">lm</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">rng</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">==</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">res</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="n">res</span><span class="p">])</span>
-
         <span class="n">current_incidence_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">age_index</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">conditions</span><span class="p">)</span>
 
         <span class="c1"># Determine onset/removal of conditions</span>
@@ -624,7 +643,9 @@
 
             <span class="c1"># onset:</span>
             <span class="n">eligible_population</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
-            <span class="n">acquires_condition</span> <span class="o">=</span> <span class="n">lmpredict_rtn_a_series</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lms_onset</span><span class="p">[</span><span class="n">condition</span><span class="p">],</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">eligible_population</span><span class="p">])</span>
+            <span class="n">acquires_condition</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lms_onset</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">eligible_population</span><span class="p">],</span> <span class="n">rng</span><span class="p">,</span> <span class="n">squeeze_single_row_output</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
             <span class="n">idx_acquires_condition</span> <span class="o">=</span> <span class="n">acquires_condition</span><span class="p">[</span><span class="n">acquires_condition</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
             <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx_acquires_condition</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
@@ -635,7 +656,9 @@
 
             <span class="c1"># removal:</span>
             <span class="n">eligible_population</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
-            <span class="n">loses_condition</span> <span class="o">=</span> <span class="n">lmpredict_rtn_a_series</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lms_removal</span><span class="p">[</span><span class="n">condition</span><span class="p">],</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">eligible_population</span><span class="p">])</span>
+            <span class="n">loses_condition</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lms_removal</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">eligible_population</span><span class="p">],</span> <span class="n">rng</span><span class="p">,</span> <span class="n">squeeze_single_row_output</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
             <span class="n">idx_loses_condition</span> <span class="o">=</span> <span class="n">loses_condition</span><span class="p">[</span><span class="n">loses_condition</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
             <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx_loses_condition</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
 
@@ -874,7 +897,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

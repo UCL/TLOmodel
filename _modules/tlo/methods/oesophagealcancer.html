@@ -206,6 +206,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">lm_onset_dysphagia</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span></div>
 
+    <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">,</span> <span class="s1">&#39;Lifestyle&#39;</span><span class="p">,</span> <span class="s1">&#39;SymptomManager&#39;</span><span class="p">}</span>
+
+    <span class="n">OPTIONAL_INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">}</span>
+
     <span class="c1"># Declare Metadata</span>
     <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">DISEASE_MODULE</span><span class="p">,</span>
@@ -428,13 +432,18 @@
         <span class="c1"># -------------------- symptoms -----------</span>
         <span class="c1"># ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of dysphagia:</span>
         <span class="n">lm_init_disphagia</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;oc_status&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;low_grade_dysplasia&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_dysphagia_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;high_grade_dysplasia&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_dysphagia_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage1&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_dysphagia_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage2&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_dysphagia_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage3&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_dysphagia_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">4</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage4&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_dysphagia_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">5</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;oc_status&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;low_grade_dysplasia&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_dysphagia_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;high_grade_dysplasia&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_dysphagia_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage1&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_dysphagia_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage2&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_dysphagia_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage3&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_dysphagia_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">4</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage4&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_dysphagia_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">5</span><span class="p">])</span>
         <span class="p">)</span>
         <span class="n">has_dysphagia_at_init</span> <span class="o">=</span> <span class="n">lm_init_disphagia</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">change_symptom</span><span class="p">(</span>
@@ -446,15 +455,24 @@
 
         <span class="c1"># -------------------- oc_date_diagnosis -----------</span>
         <span class="n">lm_init_diagnosed</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;oc_status&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;low_grade_dysplasia&quot;</span><span class="p">,</span>
-                                        <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;high_grade_dysplasia&quot;</span><span class="p">,</span>
-                                        <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage1&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage2&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage3&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">4</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage4&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">5</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;oc_status&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s2">&quot;low_grade_dysplasia&quot;</span><span class="p">,</span>
+                <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s2">&quot;high_grade_dysplasia&quot;</span><span class="p">,</span>
+                <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage1&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage2&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage3&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">4</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage4&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage&#39;</span><span class="p">][</span><span class="mi">5</span><span class="p">])</span>
         <span class="p">)</span>
         <span class="n">ever_diagnosed</span> <span class="o">=</span> <span class="n">lm_init_diagnosed</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
 
@@ -466,13 +484,18 @@
 
         <span class="c1"># -------------------- oc_date_treatment -----------</span>
         <span class="n">lm_init_treatment_for_those_diagnosed</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;oc_status&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;low_grade_dysplasia&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_oes_cancer&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;high_grade_dysplasia&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_oes_cancer&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage1&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_oes_cancer&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage2&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_oes_cancer&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage3&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_oes_cancer&#39;</span><span class="p">][</span><span class="mi">4</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage4&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_oes_cancer&#39;</span><span class="p">][</span><span class="mi">5</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;oc_status&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;low_grade_dysplasia&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_oes_cancer&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;high_grade_dysplasia&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_oes_cancer&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage1&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_oes_cancer&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage2&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_oes_cancer&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage3&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_oes_cancer&#39;</span><span class="p">][</span><span class="mi">4</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage4&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_oes_cancer&#39;</span><span class="p">][</span><span class="mi">5</span><span class="p">])</span>
         <span class="p">)</span>
         <span class="n">treatment_initiated</span> <span class="o">=</span> <span class="n">lm_init_treatment_for_those_diagnosed</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
 
@@ -584,15 +607,24 @@
 
         <span class="c1"># Linear Model for the onset of dysphagia, in each 3 month period</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lm_onset_dysphagia</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;oc_status&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;low_grade_dysplasia&#39;</span><span class="p">,</span>
-                                        <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_dysphagia_low_grade_dysp&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_dysphagia_stage1&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;high_grade_dysplaisa&#39;</span><span class="p">,</span>
-                                        <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_dysphagia_high_grade_dysp&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_dysphagia_stage1&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;stage1&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_dysphagia_stage1&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;stage2&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_dysphagia_stage2&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_dysphagia_stage1&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;stage3&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_dysphagia_stage3&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_dysphagia_stage1&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;stage4&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_dysphagia_stage4&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_dysphagia_stage1&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;oc_status&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s1">&#39;low_grade_dysplasia&#39;</span><span class="p">,</span>
+                <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_dysphagia_low_grade_dysp&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_dysphagia_stage1&#39;</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s1">&#39;high_grade_dysplaisa&#39;</span><span class="p">,</span>
+                <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_dysphagia_high_grade_dysp&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_dysphagia_stage1&#39;</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;stage1&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_dysphagia_stage1&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;stage2&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_dysphagia_stage2&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_dysphagia_stage1&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;stage3&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_dysphagia_stage3&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_dysphagia_stage1&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;stage4&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_dysphagia_stage4&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_dysphagia_stage1&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
         <span class="p">)</span>
 
         <span class="c1"># ----- DX TESTS -----</span>
@@ -1061,7 +1093,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

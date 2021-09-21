@@ -184,6 +184,8 @@ are put here rather than the individual disease modules.</p>
 <p>There should be a method here to respond to every symptom that a child could present with. Currently this module is
 served by the following disease modules:
 * Diarrhoea</p>
+<p># todo - <strong>**</strong> this is being deprecated <strong>**</strong>
+# todo - algorithm re malaria will need to be reconciled with diarrhoea and alri when these are finalised.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.dx_algorithm_child.DxAlgorithmChild">
 <em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">DxAlgorithmChild</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/dx_algorithm_child.html#DxAlgorithmChild"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.dx_algorithm_child.DxAlgorithmChild" title="Permalink to this definition">¶</a></dt>
@@ -191,6 +193,7 @@ served by the following disease modules:
 These functions are called by an HSI (usually a Generic HSI)</p>
 <p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
+<p>ADDITIONAL_DEPENDENCIES : {‘SymptomManager’, ‘HealthSystem’}</p>
 <p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p><strong>Functions (defined or overridden in class DxAlgorithmChild):</strong></p>
 <dl class="py method">
@@ -259,24 +262,6 @@ simulation knows what order to initialise modules in!</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.dx_algorithm_child.DxAlgorithmChild.do_when_diarrhoea">
-<span class="sig-name descname"><span class="pre">do_when_diarrhoea</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/dx_algorithm_child.html#DxAlgorithmChild.do_when_diarrhoea"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.dx_algorithm_child.DxAlgorithmChild.do_when_diarrhoea" title="Permalink to this definition">¶</a></dt>
-<dd><p>This routine is called when Diarrhoea is reported.</p>
-<p>It diagnoses the condition of the child and schedules HSI Events appropriate to the condition.</p>
-<p>See this report <a class="reference external" href="https://apps.who.int/iris/bitstream/handle/10665/104772/9789241506823_Chartbook_eng.pdf">https://apps.who.int/iris/bitstream/handle/10665/104772/9789241506823_Chartbook_eng.pdf</a>
-(page 3).
-NB:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p>Provisions for cholera are not included</p></li>
-<li><p>The danger signs are classified collectively and are based on the result of a DxTest representing the
-ability of the clinician to correctly determine the true value of the
-property ‘gi_current_severe_dehydration’</p></li>
-</ul>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.dx_algorithm_child.DxAlgorithmChild.diagnose">
 <span class="sig-name descname"><span class="pre">diagnose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/dx_algorithm_child.html#DxAlgorithmChild.diagnose"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.dx_algorithm_child.DxAlgorithmChild.diagnose" title="Permalink to this definition">¶</a></dt>
 <dd><p>This will diagnose the condition of the person. It is being called from inside an HSI Event.</p>
@@ -312,7 +297,7 @@ property ‘gi_current_severe_dehydration’</p></li>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

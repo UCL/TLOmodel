@@ -655,7 +655,25 @@
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">model_popsize_in_year_of_census</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">popsize_by_year</span><span class="p">[</span><span class="n">year_of_census</span><span class="p">]</span>
-            <span class="k">return</span> <span class="n">census_popsize</span> <span class="o">/</span> <span class="n">model_popsize_in_year_of_census</span></div></div>
+            <span class="k">return</span> <span class="n">census_popsize</span> <span class="o">/</span> <span class="n">model_popsize_in_year_of_census</span></div>
+
+<div class="viewcode-block" id="Demography.compute_initial_population_scaling_factor"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.compute_initial_population_scaling_factor">[docs]</a>    <span class="k">def</span> <span class="nf">compute_initial_population_scaling_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_population</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute ratio of initial population to estimated population in 2010.</span>
+
+<span class="sd">        Uses the total of the per-region estimated populations in 2010 used to</span>
+<span class="sd">        initialise the simulation population as the baseline figure, with this value</span>
+<span class="sd">        corresponding to the 2010 projected population from [wpp2019]_.</span>
+
+<span class="sd">        .. [wpp2019] World Population Prospects 2019. United Nations Department of</span>
+<span class="sd">        Economic and Social Affairs. URL:</span>
+<span class="sd">        https://population.un.org/wpp/Download/Standard/Population/</span>
+
+<span class="sd">        :param initial_population: Initial population to calculate ratio for.</span>
+
+<span class="sd">        :returns: Ratio of ``initial_population`` to 2010 baseline population.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">baseline_total_population</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;pop_2010&#39;</span><span class="p">][</span><span class="s1">&#39;Count&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">initial_population</span> <span class="o">/</span> <span class="n">baseline_total_population</span></div></div>
 
 
 <div class="viewcode-block" id="AgeUpdateEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.AgeUpdateEvent">[docs]</a><span class="k">class</span> <span class="nc">AgeUpdateEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
@@ -929,7 +947,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

@@ -232,6 +232,10 @@ tlo.methods.care_of_women_during_pregnancy module
 
      **Class attributes:**
 
+     ADDITIONAL_DEPENDENCIES : {'Labour', 'Contraception', 'Lifestyle'}
+
+     INIT_DEPENDENCIES : {'Demography', 'PregnancySupervisor', 'HealthSystem'}
+
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
      **Functions (defined or overridden in class CareOfWomenDuringPregnancy):**

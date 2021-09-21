@@ -199,6 +199,12 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span></div>
 
+    <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;Contraception&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">,</span> <span class="s1">&#39;Lifestyle&#39;</span><span class="p">,</span> <span class="s1">&#39;SymptomManager&#39;</span>
+    <span class="p">}</span>
+
+    <span class="n">OPTIONAL_INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">}</span>
+
     <span class="c1"># Declare Metadata</span>
     <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">DISEASE_MODULE</span><span class="p">,</span>
@@ -390,10 +396,15 @@
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_wealth&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.isin([4,5])&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_rp_depr_wealth45&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">()</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;(sex==&quot;F&quot;) &amp; de_recently_pregnant&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_rp_depr_f_rec_preg&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">()</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;(sex==&quot;F&quot;) &amp; ~de_recently_pregnant&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_rp_depr_f_not_rec_preg&#39;</span><span class="p">]),</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0, 14)&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-                <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(15, 19)&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-                <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(20, 59)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_rp_depr_age2059&#39;</span><span class="p">])</span>
-                <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_rp_depr_agege60&#39;</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;age_years&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0, 14)&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(15, 19)&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(20, 59)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_rp_depr_age2059&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&gt;= 60&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_rp_depr_agege60&#39;</span><span class="p">])</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">linearModels</span><span class="p">[</span><span class="s1">&#39;Depression_Ever_At_Population_Initialisation_Males&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
@@ -432,9 +443,10 @@
             <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
             <span class="n">p</span><span class="p">[</span><span class="s1">&#39;base_3m_prob_depr&#39;</span><span class="p">],</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;de_cc&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_depr_cc&#39;</span><span class="p">]),</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0, 14)&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(15, 19)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_depr_age1519&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&gt;=60&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_depr_agege60&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0, 14)&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(15, 19)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_depr_age1519&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&gt;=60&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_depr_agege60&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_wealth&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.isin([4,5])&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_depr_wealth45&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;sex&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_depr_female&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;de_recently_pregnant&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_depr_pregnancy&#39;</span><span class="p">]),</span>
@@ -1120,7 +1132,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

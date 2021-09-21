@@ -32,6 +32,8 @@ tlo.methods.healthburden module
 
      **Class attributes:**
 
+     INIT_DEPENDENCIES : {'Demography'}
+
      METADATA : {}
 
      **Functions (defined or overridden in class HealthBurden):**

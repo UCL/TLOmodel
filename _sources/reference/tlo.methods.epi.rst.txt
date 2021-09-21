@@ -109,6 +109,8 @@ tlo.methods.epi module
 
      **Class attributes:**
 
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem'}
+
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
      **Functions (defined or overridden in class Epi):**

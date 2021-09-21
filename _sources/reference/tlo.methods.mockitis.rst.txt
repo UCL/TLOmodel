@@ -64,11 +64,15 @@ tlo.methods.mockitis module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Mockitis': <tlo.methods.causes.Cause object at 0x7fa078895490>}
+     CAUSES_OF_DEATH : {'Mockitis': <tlo.methods.causes.Cause object at 0x7f9967a41b20>}
 
-     CAUSES_OF_DISABILITY : {'Mockitis': <tlo.methods.causes.Cause object at 0x7fa078895520>}
+     CAUSES_OF_DISABILITY : {'Mockitis': <tlo.methods.causes.Cause object at 0x7f9967a41bb0>}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>}
+     INIT_DEPENDENCIES : {'Demography', 'SymptomManager'}
+
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
+
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
      **Functions (defined or overridden in class Mockitis):**
 

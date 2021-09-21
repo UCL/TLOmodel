@@ -218,6 +218,10 @@
         <span class="c1"># in the LoggingEvent to calculate key outcomes (i.e. incidence rates, neonatal mortality rate etc)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">postnatal_tracker</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span></div>
 
+    <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">}</span>
+
+    <span class="n">ADDITIONAL_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Labour&#39;</span><span class="p">,</span> <span class="s1">&#39;Lifestyle&#39;</span><span class="p">,</span> <span class="s1">&#39;NewbornOutcomes&#39;</span><span class="p">,</span> <span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">}</span>
+
     <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{</span><span class="n">Metadata</span><span class="o">.</span><span class="n">DISEASE_MODULE</span><span class="p">,</span>
                 <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHSYSTEM</span><span class="p">,</span>
                 <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHBURDEN</span><span class="p">}</span>  <span class="c1"># declare that this is a disease module (leave as empty set otherwise)</span>
@@ -2411,7 +2415,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

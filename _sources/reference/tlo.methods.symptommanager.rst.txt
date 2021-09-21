@@ -26,6 +26,8 @@ tlo.methods.symptommanager module
 
      **Class attributes:**
 
+     INIT_DEPENDENCIES : {'Demography'}
+
      METADATA : {}
 
      **Functions (defined or overridden in class SymptomManager):**

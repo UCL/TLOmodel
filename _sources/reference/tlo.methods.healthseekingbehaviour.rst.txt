@@ -71,6 +71,10 @@ tlo.methods.healthseekingbehaviour module
 
      **Class attributes:**
 
+     ADDITIONAL_DEPENDENCIES : {'Lifestyle'}
+
+     INIT_DEPENDENCIES : {'Demography', 'SymptomManager', 'HealthSystem'}
+
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
      **Functions (defined or overridden in class HealthSeekingBehaviour):**

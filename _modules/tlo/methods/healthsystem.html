@@ -183,7 +183,7 @@
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">defaultdict</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">repeat</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -192,6 +192,7 @@
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Date</span><span class="p">,</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.bed_days</span> <span class="kn">import</span> <span class="n">BedDays</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.dxmanager</span> <span class="kn">import</span> <span class="n">DxManager</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -261,15 +262,10 @@
 <span class="sd">    The execution of all health systems interactions are controlled through this module.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c1"># Define the types of bed that exist. The order give the sequences of bed that are used</span>
-    <span class="c1"># (i.e. in descending order of intensiveness)</span>
-    <span class="n">bed_types</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s2">&quot;high_dependency_bed&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;general_bed&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;non_bed_space&quot;</span><span class="p">,</span>
-    <span class="p">]</span>
+    <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">}</span>
 
     <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;BedCapacity&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s2">&quot;Data on the number of beds available of each type by facility_id&quot;</span><span class="p">),</span>
         <span class="s1">&#39;Officer_Types&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;The names of the types of health workers (&quot;officers&quot;)&#39;</span><span class="p">),</span>
         <span class="s1">&#39;Daily_Capabilities&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;The capabilities by facility and officer type available each day&#39;</span>
@@ -287,7 +283,6 @@
             <span class="s1">&#39;Mapping between a district and all of the health facilities to which its </span><span class="se">\</span>
 <span class="s1">                      population have access.&#39;</span><span class="p">,</span>
         <span class="p">),</span>
-        <span class="s1">&#39;BedCapacity&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;Bed-days capacity by facility&#39;</span><span class="p">),</span>
         <span class="s1">&#39;Consumables&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;List of consumables used in each intervention and their costs.&#39;</span><span class="p">),</span>
         <span class="s1">&#39;Consumables_Cost_List&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;List of each consumable item and it&#39;</span> <span class="s1">&#39;s cost&#39;</span><span class="p">),</span>
         <span class="s1">&#39;Service_Availability&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;List of services to be available.&#39;</span><span class="p">)</span>
@@ -302,27 +297,43 @@
         <span class="p">),</span>
     <span class="p">}</span>
 
-    <span class="c1"># add in internal properties for entry/exit to different types of bed</span>
-    <span class="k">for</span> <span class="n">bed_type</span> <span class="ow">in</span> <span class="n">bed_types</span><span class="p">:</span>
-        <span class="n">PROPERTIES</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;hs_next_first_day_in_bed_</span><span class="si">{</span><span class="n">bed_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Property</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">DATE</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Date when person will next enter bed_type </span><span class="si">{</span><span class="n">bed_type</span><span class="si">}</span><span class="s2">. (pd.NaT) is nothing scheduled&quot;</span><span class="p">)</span>
-        <span class="n">PROPERTIES</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;hs_next_last_day_in_bed_</span><span class="si">{</span><span class="n">bed_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Property</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">DATE</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Date of the last day in the next stay in bed_type </span><span class="si">{</span><span class="n">bed_type</span><span class="si">}</span><span class="s2">. (pd.NaT) is nothing scheduled&quot;</span><span class="p">)</span>
-
 <div class="viewcode-block" id="HealthSystem.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">service_availability</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># must be a list of treatment_ids to allow</span>
-        <span class="n">mode_appt_constraints</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>  <span class="c1"># mode of constraints to do with officer numbers and time</span>
-        <span class="n">ignore_cons_constraints</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># mode for consumable constraints (if ignored, all consumables available)</span>
-        <span class="n">ignore_priority</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># do not use the priority information in HSI event to schedule</span>
-        <span class="n">capabilities_coefficient</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>  <span class="c1"># multiplier for the capabilities of health officers</span>
-        <span class="n">disable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># disables the healthsystem (no constraints and no logging) and every HSI runs</span>
-        <span class="n">disable_and_reject_all</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># disable healthsystem and no HSI runs</span>
-        <span class="n">store_hsi_events_that_have_run</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># convenience function for debugging</span>
-        <span class="n">record_hsi_event_details</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># Whether to record details of HSI events used</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">resourcefilepath</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">service_availability</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">mode_appt_constraints</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">ignore_cons_constraints</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">ignore_priority</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">capabilities_coefficient</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">disable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">disable_and_reject_all</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">store_hsi_events_that_have_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">record_hsi_event_details</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param name: Name to use for module, defaults to module class name if ``None``.</span>
+<span class="sd">        :param resourcefilepath: Path to directory containing resource files.</span>
+<span class="sd">        :param service_availability: A list of treatment IDs to allow.</span>
+<span class="sd">        :param mode_appt_constraints: Integer code in ``{0, 1, 2}`` determining mode of</span>
+<span class="sd">            constraints with regards to officer numbers and time - 0: no constraints,</span>
+<span class="sd">            all HSI events run with no squeeze factor, 1: elastic constraints, all HSI</span>
+<span class="sd">            events run with squeeze factor, 2: hard constraints, only HSI events with</span>
+<span class="sd">            no squeeze factor run.</span>
+<span class="sd">        :param ignore_cons_constraints: Mode for consumable constraints (if ``True``,</span>
+<span class="sd">            all consumables available).</span>
+<span class="sd">        :param ignore_priority: If ``True`` do not use the priority information in HSI</span>
+<span class="sd">            event to schedule</span>
+<span class="sd">        :param capabilities_coefficient: Multiplier for the capabilities of health</span>
+<span class="sd">            officers, if ``None`` set to ratio of initial population to estimated 2010</span>
+<span class="sd">            population.</span>
+<span class="sd">        :param disable: If ``True``, disables the health system (no constraints and no</span>
+<span class="sd">            logging) and every HSI event runs.</span>
+<span class="sd">        :param disable_and_reject_all: If ``True``, disable health system and no HSI</span>
+<span class="sd">            events run</span>
+<span class="sd">        :param store_hsi_events_that_have_run: Convenience flag for debugging.</span>
+<span class="sd">        :param record_hsi_event_details: Whether to record details of HSI events used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
@@ -332,14 +343,13 @@
 
         <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">disable</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">bool</span>
         <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">disable_and_reject_all</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">bool</span>
-        <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span><span class="n">disable</span> <span class="ow">and</span> <span class="n">disable_and_reject_all</span><span class="p">),</span> <span class="s1">&#39;Cannot have both disable and disable_and_reject_all selected&#39;</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span><span class="n">disable</span> <span class="ow">and</span> <span class="n">disable_and_reject_all</span><span class="p">),</span> <span class="p">(</span>
+            <span class="s1">&#39;Cannot have both disable and disable_and_reject_all selected&#39;</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">disable</span> <span class="o">=</span> <span class="n">disable</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">disable_and_reject_all</span> <span class="o">=</span> <span class="n">disable_and_reject_all</span>
 
-        <span class="k">assert</span> <span class="n">mode_appt_constraints</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>  <span class="c1"># Mode of constraints</span>
-        <span class="c1"># 0: no constraints -- all HSI Events run with no squeeze factor</span>
-        <span class="c1"># 1: elastic -- all HSI Events run - with squeeze factor</span>
-        <span class="c1"># 2: hard -- only HSI events with no squeeze factor run</span>
+        <span class="k">assert</span> <span class="n">mode_appt_constraints</span> <span class="ow">in</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">=</span> <span class="n">mode_appt_constraints</span>
 
@@ -350,8 +360,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">service_availability</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>  <span class="c1"># provided so that there is a default even before simulation is run</span>
 
         <span class="c1"># Check that the capabilities coefficient is correct</span>
-        <span class="k">assert</span> <span class="n">capabilities_coefficient</span> <span class="o">&gt;=</span> <span class="mi">0</span>
-        <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">capabilities_coefficient</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">float</span>
+        <span class="k">if</span> <span class="n">capabilities_coefficient</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">capabilities_coefficient</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">capabilities_coefficient</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">capabilities_coefficient</span> <span class="o">=</span> <span class="n">capabilities_coefficient</span>
 
         <span class="c1"># Define (empty) list of registered disease modules (filled in at `initialise_simulation`)</span>
@@ -375,17 +386,11 @@
         <span class="k">if</span> <span class="n">record_hsi_event_details</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">hsi_event_details</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
 
-        <span class="c1"># Create store for ending in-patient status</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">list_of_cols_with_internal_dates</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">list_of_cols_with_internal_dates</span><span class="p">[</span><span class="s1">&#39;entries&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="sa">f</span><span class="s2">&quot;hs_next_first_day_in_bed_</span><span class="si">{</span><span class="n">bed_type</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">bed_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bed_types</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">list_of_cols_with_internal_dates</span><span class="p">[</span><span class="s1">&#39;exits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="sa">f</span><span class="s2">&quot;hs_next_last_day_in_bed_</span><span class="si">{</span><span class="n">bed_type</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">bed_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bed_types</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">list_of_cols_with_internal_dates</span><span class="p">[</span><span class="s1">&#39;all&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="bp">self</span><span class="o">.</span><span class="n">list_of_cols_with_internal_dates</span><span class="p">[</span><span class="s1">&#39;entries&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_of_cols_with_internal_dates</span><span class="p">[</span><span class="s1">&#39;exits&#39;</span><span class="p">]</span>
-
         <span class="c1"># Create the Diagnostic Test Manager to store and manage all Diagnostic Test</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dx_manager</span> <span class="o">=</span> <span class="n">DxManager</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dx_manager</span> <span class="o">=</span> <span class="n">DxManager</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="c1"># Create the instance of BedDays to record usage of in-patient bed days</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span> <span class="o">=</span> <span class="n">BedDays</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HealthSystem.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
 
@@ -492,14 +497,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Consumables.csv&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">process_consumables_file</span><span class="p">()</span>
 
-        <span class="c1"># Read in in-patient capacity</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;BedCapacity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
-            <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Bed_Capacity.csv&#39;</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;Facility_Name&#39;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="n">bed_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;BedCapacity&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span> <span class="k">for</span> <span class="n">bed_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bed_types</span><span class="p">])</span>
-
         <span class="c1"># Set default parameter for Service Availablity (everthing available)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Service_Availability&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Service_Availability&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Data on the number of beds available of each type by facility_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;BedCapacity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Bed_Capacity.csv&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HealthSystem.process_consumables_file"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.process_consumables_file">[docs]</a>    <span class="k">def</span> <span class="nf">process_consumables_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Helper function for processing the consumables data (stored as self.parameters[&#39;Consumables&#39;])</span>
@@ -510,7 +513,6 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Load the &#39;raw&#39; ResourceFile_Consumabes that is loaded in to self.parameters[&#39;Consumables&#39;]</span>
         <span class="n">raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
-
         <span class="c1"># -------------------------------------------------------------------------------------------------</span>
         <span class="c1"># Create a pd.DataFrame that maps pkg code (as index) to item code:</span>
         <span class="c1"># This is used to quickly look-up which items are required in each package</span>
@@ -542,20 +544,31 @@
             <span class="n">raw</span><span class="p">[[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">,</span> <span class="s1">&#39;Unit_Cost&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">)[</span><span class="s1">&#39;Unit_Cost&#39;</span><span class="p">]</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
+<div class="viewcode-block" id="HealthSystem.pre_initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.pre_initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">pre_initialise_population</span><span class="p">()</span></div>
 
+<div class="viewcode-block" id="HealthSystem.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+        <span class="c1"># If capabilities coefficient was not explicitly specified, use ratio of initial</span>
+        <span class="c1"># population size to estimated actual population in 2010</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities_coefficient</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">demography_module</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">capabilities_coefficient</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">demography_module</span><span class="o">.</span><span class="n">compute_initial_population_scaling_factor</span><span class="p">(</span>
+                    <span class="n">population</span><span class="o">.</span><span class="n">initial_size</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="c1"># Assign hs_dist_to_facility&#39;</span>
         <span class="c1"># (For now, let this be a random number, but in future it may be properly informed based on \</span>
         <span class="c1">#  population density distribitions)</span>
         <span class="c1"># Note that this characteritic is inherited from mother to child.</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;hs_dist_to_facility&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">5.00</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;hs_is_inpatient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-
-        <span class="c1"># Put pd.NaT for all the properties concerned with entry/exit of different types of bed.</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_of_cols_with_internal_dates</span><span class="p">[</span><span class="s1">&#39;all&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">initialise_population</span><span class="p">(</span><span class="n">df</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HealthSystem.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+
+        <span class="c1"># Set the tracker in preparation for the simulation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">initialise_beddays_tracker</span><span class="p">()</span>
 
         <span class="c1"># Capture list of disease modules:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">recognised_modules_names</span> <span class="o">=</span> <span class="p">[</span>
@@ -564,8 +577,8 @@
 
         <span class="c1"># Check that set of districts of residence in population are subset o districts from</span>
         <span class="c1"># Facilities_For_Each_District resource file</span>
-        <span class="n">pop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">districts_of_residence</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">pop</span><span class="p">[</span><span class="n">pop</span><span class="o">.</span><span class="n">is_alive</span><span class="p">][</span><span class="s2">&quot;district_of_residence&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="n">districts_of_residence</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s2">&quot;district_of_residence&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">categories</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span>
             <span class="n">districts_of_residence</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">per_level_facilities</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
             <span class="k">for</span> <span class="n">per_level_facilities</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Facilities_For_Each_District&quot;</span><span class="p">]</span>
@@ -580,12 +593,6 @@
 
         <span class="c1"># Update consumables available today:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">determine_availability_of_consumables_today</span><span class="p">()</span>
-
-        <span class="c1"># Initialise the bed-days-tracker:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">initialise_beddays_tracker</span><span class="p">()</span>
-
-        <span class="c1"># Schedule the first (repeating) event to update status of hs_is_in_patient</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">RefreshInPatient</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
 
         <span class="c1"># Determine service_availability</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_service_availability</span><span class="p">()</span></div>
@@ -613,8 +620,11 @@
         <span class="c1"># New child inherits the hs_dist_to_facility of the mother</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;hs_dist_to_facility&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;hs_dist_to_facility&#39;</span><span class="p">]</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;hs_is_inpatient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_of_cols_with_internal_dates</span><span class="p">[</span><span class="s1">&#39;all&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">on_birth</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="HealthSystem.on_simulation_end"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.on_simulation_end">[docs]</a>    <span class="k">def</span> <span class="nf">on_simulation_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Put out to the log the information from the tracker of the last day of the simulation&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">on_simulation_end</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="HealthSystem.register_disease_module"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.register_disease_module">[docs]</a>    <span class="k">def</span> <span class="nf">register_disease_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_disease_module</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -698,7 +708,7 @@
                 <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
                 <span class="k">assert</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_facility_levels</span>
 
-                <span class="bp">self</span><span class="o">.</span><span class="n">check_beddays_footrpint_format</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">check_beddays_footprint_format</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span><span class="p">)</span>
 
                 <span class="c1"># That it has a list for the other disease that will be alerted when it</span>
                 <span class="c1"># is run and that this make sense</span>
@@ -947,27 +957,25 @@
         <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">capabilities_ex</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">-</span> <span class="n">capabilities</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">&lt;</span> <span class="mf">1e-7</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">capabilities_ex</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">facility_ids</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">officer_type_codes</span><span class="p">)</span>
 
-        <span class="c1"># Apply the capabilities coefficient</span>
-        <span class="n">capabilities_ex</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities_coefficient</span>
-
         <span class="c1"># Updates the capabilities table with the reformatted version</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Daily_Capabilities&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">capabilities_ex</span></div>
 
-<div class="viewcode-block" id="HealthSystem.get_capabilities_today"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_capabilities_today">[docs]</a>    <span class="k">def</span> <span class="nf">get_capabilities_today</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthSystem.get_capabilities_today"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_capabilities_today">[docs]</a>    <span class="k">def</span> <span class="nf">get_capabilities_today</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the capabilities of the health system today.</span>
-<span class="sd">        returns: DataFrame giving minutes available for each officer type in each facility type</span>
+<span class="sd">        returns: Series giving minutes available for each officer type in each facility type</span>
 
 <span class="sd">        Functions can go in here in the future that could expand the time available,</span>
 <span class="sd">        simulating increasing efficiency (the concept of a productivitiy ratio raised</span>
 <span class="sd">        by Martin Chalkley).</span>
 
-<span class="sd">        For now this method does nothing.</span>
-
-<span class="sd">        Note that the scaling by `capabilities_coefficient` is applied on the initial</span>
-<span class="sd">        processing of the `Daily_Capabilities` data in `reformat_daily_capabilities`.</span>
+<span class="sd">        For now this method only scales by the static `capabilities_coefficient` scale</span>
+<span class="sd">        factor.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Daily_Capabilities&#39;</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Daily_Capabilities&#39;</span><span class="p">][</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span>
+            <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities_coefficient</span>
+        <span class="p">)</span></div>
 
 <div class="viewcode-block" id="HealthSystem.get_blank_appt_footprint"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_blank_appt_footprint">[docs]</a>    <span class="k">def</span> <span class="nf">get_blank_appt_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -1098,7 +1106,7 @@
 <span class="sd">        :param total_footprint: Counter, containing the total minutes required from</span>
 <span class="sd">            each health officer in each health facility when non-zero, (using the</span>
 <span class="sd">            standard index)</span>
-<span class="sd">        :param current_capabilities: Dataframe giving the amount of time available from</span>
+<span class="sd">        :param current_capabilities: Series giving the amount of time available for</span>
 <span class="sd">            each health officer in each health facility (using the standard index)</span>
 
 <span class="sd">        :return: squeeze_factors: an array of the squeeze factors for each HSI event</span>
@@ -1107,10 +1115,9 @@
 
         <span class="c1"># 1) Compute the load factors for each officer type at each facility that is</span>
         <span class="c1"># called-upon in this list of HSIs</span>
-        <span class="n">total_available</span> <span class="o">=</span> <span class="n">current_capabilities</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span>
         <span class="n">load_factor</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">officer</span><span class="p">,</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">total_footprint</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">availability</span> <span class="o">=</span> <span class="n">total_available</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">officer</span><span class="p">)</span>
+            <span class="n">availability</span> <span class="o">=</span> <span class="n">current_capabilities</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">officer</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">availability</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">load_factor</span><span class="p">[</span><span class="n">officer</span><span class="p">]</span> <span class="o">=</span> <span class="mf">99.99</span>
             <span class="k">elif</span> <span class="n">availability</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -1289,21 +1296,6 @@
             <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="n">pkgs</span>
         <span class="p">}</span></div>
 
-<div class="viewcode-block" id="HealthSystem.get_blank_beddays_footprint"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_blank_beddays_footprint">[docs]</a>    <span class="k">def</span> <span class="nf">get_blank_beddays_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Helper function to generate a blank footprint for the bed-days required by an HSI</span>
-<span class="sd">        :return: a footprint of the correct format, specifying no bed days</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bed_types</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bed_types</span><span class="p">)))</span></div>
-
-<div class="viewcode-block" id="HealthSystem.check_beddays_footrpint_format"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.check_beddays_footrpint_format">[docs]</a>    <span class="k">def</span> <span class="nf">check_beddays_footrpint_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beddays_footprint</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Check that the format of the beddays footprint (provided by an HSI) is correct&quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">beddays_footprint</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">dict</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bed_types</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">beddays_footprint</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">all</span><span class="p">([(</span><span class="n">bed_type</span> <span class="ow">in</span> <span class="n">beddays_footprint</span><span class="p">)</span> <span class="k">for</span> <span class="n">bed_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bed_types</span><span class="p">])</span>
-        <span class="k">assert</span> <span class="nb">all</span><span class="p">([((</span><span class="n">v</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">))</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">beddays_footprint</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
-        <span class="k">assert</span> <span class="n">beddays_footprint</span><span class="p">[</span><span class="s1">&#39;non_bed_space&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;A request cannot be made for this type of bed&quot;</span></div>
-
 <div class="viewcode-block" id="HealthSystem.log_hsi_event"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.log_hsi_event">[docs]</a>    <span class="k">def</span> <span class="nf">log_hsi_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="n">actual_appt_footprint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">did_run</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This will write to the log with a record that this HSI event has occured.</span>
@@ -1373,7 +1365,8 @@
 
         <span class="c1"># Combine the current_capabiliites and total_footprint per-officer totals</span>
         <span class="n">total_calls_per_officer</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">total_footprint</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span>
-        <span class="n">comparison</span> <span class="o">=</span> <span class="n">current_capabilities</span><span class="p">[[</span><span class="s1">&#39;Facility_ID&#39;</span><span class="p">,</span> <span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">comparison</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Daily_Capabilities&#39;</span><span class="p">][[</span><span class="s1">&#39;Facility_ID&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">comparison</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_capabilities</span>
         <span class="n">comparison</span><span class="p">[</span><span class="s1">&#39;Minutes_Used&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_calls_per_officer</span>
         <span class="n">comparison</span><span class="p">[</span><span class="s1">&#39;Minutes_Used&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">total_calls</span> <span class="o">=</span> <span class="n">total_calls_per_officer</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
@@ -1421,190 +1414,14 @@
 
         <span class="k">return</span> <span class="n">list_of_events</span></div>
 
-<div class="viewcode-block" id="HealthSystem.initialise_beddays_tracker"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.initialise_beddays_tracker">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_beddays_tracker</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialise the bed days tracker.</span>
-<span class="sd">        Create a dataframe for each type of beds that give the total number of beds currently available in each facility</span>
-<span class="sd">         (rows) by the date during the simulation (columns).</span>
-
-<span class="sd">        It is decremented by 1 for each person occupying a bed for one day.</span>
-
-<span class="sd">        The current implementation assumes that bed capacity is held constant throughout the simulation; but it could be</span>
-<span class="sd">         changed through modifications here.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bed_tracker</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">bed_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bed_types</span><span class="p">:</span>
-            <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-                <span class="n">index</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">start_date</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">end_date</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">),</span>
-                <span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;BedCapacity&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
-                <span class="n">data</span><span class="o">=</span><span class="mi">1</span>
-            <span class="p">)</span>
-            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;BedCapacity&#39;</span><span class="p">][</span><span class="n">bed_type</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">bed_tracker</span><span class="p">[</span><span class="n">bed_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span></div>
-
-<div class="viewcode-block" id="HealthSystem.impose_beddays_footprint"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.impose_beddays_footprint">[docs]</a>    <span class="k">def</span> <span class="nf">impose_beddays_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;This is called to reflect that a new occupany of bed-days should be recorded:</span>
-<span class="sd">        * Cause to be reflected in the bed_tracker that an hsi_event is being run that will cause bed to be</span>
-<span class="sd">         occupied.</span>
-<span class="sd">        * Update the property ```hs_is_inpatient``` to show that this person is now an in-patient</span>
-
-<span class="sd">         NB. If multiple bed types are required, then it is assumed that these run in the sequence given in</span>
-<span class="sd">         ```bed_types```.</span>
-<span class="sd">         &quot;&quot;&quot;</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">new_footprint</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">:</span>
-            <span class="c1"># If this is a population level event, do nothing</span>
-            <span class="k">return</span>
-
-        <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
-
-        <span class="k">def</span> <span class="nf">apply_footprint</span><span class="p">(</span><span class="n">footprint</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;Edit the internal properties in the dataframe to reflect this in-patient stay&quot;&quot;&quot;</span>
-            <span class="c1"># reset all internal properties about dates of transition between bed use states:</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_of_cols_with_internal_dates</span><span class="p">[</span><span class="s1">&#39;all&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
-
-            <span class="c1"># compute the entry/exit dates of bed use states:</span>
-            <span class="n">dates_of_bed_use</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_dates_of_bed_use</span><span class="p">(</span><span class="n">footprint</span><span class="p">)</span>
-
-            <span class="c1"># record these dates in the internal properties:</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="n">dates_of_bed_use</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span> <span class="o">=</span> <span class="n">dates_of_bed_use</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
-
-            <span class="c1"># enter these to tracker</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">edit_bed_tracker</span><span class="p">(</span>
-                <span class="n">dates_of_bed_use</span><span class="o">=</span><span class="n">dates_of_bed_use</span><span class="p">,</span>
-                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                <span class="n">add_footprint</span><span class="o">=</span><span class="kc">True</span>
-            <span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;hs_is_inpatient&#39;</span><span class="p">]:</span>
-            <span class="c1"># apply the new footprint if the person is not already an in-patient</span>
-            <span class="n">apply_footprint</span><span class="p">(</span><span class="n">new_footprint</span><span class="p">)</span>
-            <span class="c1"># label person as an in-patient</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;hs_is_inpatient&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># if person is already an in-patient:</span>
-            <span class="c1"># calculate how much time left in each bed remains for the person who is already an in-patient</span>
-            <span class="n">remaining_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_remaining_footprint</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
-
-            <span class="c1"># combine the remaining footprint with the new footprint, with days in each bed-type running concurrently:</span>
-            <span class="n">combo_footprint</span> <span class="o">=</span> <span class="p">{</span><span class="n">bed_type</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="n">new_footprint</span><span class="p">[</span><span class="n">bed_type</span><span class="p">],</span> <span class="n">remaining_footprint</span><span class="p">[</span><span class="n">bed_type</span><span class="p">])</span>
-                               <span class="k">for</span> <span class="n">bed_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bed_types</span>
-                               <span class="p">}</span>
-
-            <span class="c1"># remove the old footprint and apply the combined footprint</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">remove_beddays_footprint</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
-            <span class="n">apply_footprint</span><span class="p">(</span><span class="n">combo_footprint</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="HealthSystem.edit_bed_tracker"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.edit_bed_tracker">[docs]</a>    <span class="k">def</span> <span class="nf">edit_bed_tracker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dates_of_bed_use</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">add_footprint</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Helper function to record the usage (or freeing-up) of beds in the bed-tracker</span>
-<span class="sd">        dates_of_bed_use: the dates of entry/exit from beds of each type</span>
-<span class="sd">        person_id: used to find the facility to use</span>
-<span class="sd">        add_footprint: whether the footprint should be added (i.e. consume a bed), or the reversed (i.e. free a bed).</span>
-<span class="sd">            The latter is used to when a footprint is removed when a person dies or before a new footprint is added.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Exit silently if bed_tracker has not been initialised</span>
-        <span class="k">if</span> <span class="s1">&#39;bed_tracker&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-            <span class="k">return</span>
-
-        <span class="c1"># determine the facility_id</span>
-        <span class="n">the_facility_name</span> <span class="o">=</span> <span class="s1">&#39;National Hospital&#39;</span>  <span class="c1"># todo - make this specific to the district/region using person_id</span>
-        <span class="n">operation</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">add_footprint</span> <span class="k">else</span> <span class="mi">1</span>
-
-        <span class="k">for</span> <span class="n">bed_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bed_types</span><span class="p">:</span>
-            <span class="n">date_start_this_bed</span> <span class="o">=</span> <span class="n">dates_of_bed_use</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;hs_next_first_day_in_bed_</span><span class="si">{</span><span class="n">bed_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
-            <span class="n">date_end_this_bed</span> <span class="o">=</span> <span class="n">dates_of_bed_use</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;hs_next_last_day_in_bed_</span><span class="si">{</span><span class="n">bed_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">bed_tracker</span><span class="p">[</span><span class="n">bed_type</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">date_start_this_bed</span><span class="p">:</span> <span class="n">date_end_this_bed</span><span class="p">,</span> <span class="n">the_facility_name</span><span class="p">]</span> <span class="o">+=</span> <span class="n">operation</span></div>
-
-<div class="viewcode-block" id="HealthSystem.compute_dates_of_bed_use"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.compute_dates_of_bed_use">[docs]</a>    <span class="k">def</span> <span class="nf">compute_dates_of_bed_use</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">footprint</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Helper function to compute the dates of entry/exit from beds of each type according to a bed-days footprint</span>
-<span class="sd">         (which provides information in terms of number of whole days).</span>
-<span class="sd">        NB. It is always assumed that the footprint begins with today&#39;s date. &quot;&quot;&quot;</span>
-
-        <span class="n">now</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
-        <span class="n">start_allbeds</span> <span class="o">=</span> <span class="n">now</span>
-        <span class="n">end_allbeds</span> <span class="o">=</span> <span class="n">now</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="nb">sum</span><span class="p">(</span><span class="n">footprint</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-
-        <span class="n">dates_of_bed_use</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-
-        <span class="n">start_this_bed</span> <span class="o">=</span> <span class="n">start_allbeds</span>
-        <span class="k">for</span> <span class="n">bed_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bed_types</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">footprint</span><span class="p">[</span><span class="n">bed_type</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">end_this_bed</span> <span class="o">=</span> <span class="n">start_this_bed</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">footprint</span><span class="p">[</span><span class="n">bed_type</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-
-                <span class="c1"># record these dates:</span>
-                <span class="n">dates_of_bed_use</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;hs_next_first_day_in_bed_</span><span class="si">{</span><span class="n">bed_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">start_this_bed</span>
-                <span class="n">dates_of_bed_use</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;hs_next_last_day_in_bed_</span><span class="si">{</span><span class="n">bed_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">end_this_bed</span>
-
-                <span class="c1"># get ready for next bed type:</span>
-                <span class="n">start_this_bed</span> <span class="o">=</span> <span class="n">end_this_bed</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">dates_of_bed_use</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;hs_next_first_day_in_bed_</span><span class="si">{</span><span class="n">bed_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
-                <span class="n">dates_of_bed_use</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;hs_next_last_day_in_bed_</span><span class="si">{</span><span class="n">bed_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
-
-        <span class="c1"># check that dates run as expected</span>
-        <span class="k">assert</span> <span class="p">(</span><span class="n">start_this_bed</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span> <span class="o">==</span> <span class="n">end_allbeds</span>
-
-        <span class="k">return</span> <span class="n">dates_of_bed_use</span></div>
-
-<div class="viewcode-block" id="HealthSystem.get_remaining_footprint"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_remaining_footprint">[docs]</a>    <span class="k">def</span> <span class="nf">get_remaining_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Helper function to work out how many days remaining in each bed-type of current stay for a given person.&quot;&quot;&quot;</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">now</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
-
-        <span class="n">d</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_of_cols_with_internal_dates</span><span class="p">[</span><span class="s1">&#39;all&#39;</span><span class="p">]]</span>
-        <span class="n">remaining_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_blank_beddays_footprint</span><span class="p">()</span>
-
-        <span class="k">for</span> <span class="n">bed_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bed_types</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;hs_next_last_day_in_bed_</span><span class="si">{</span><span class="n">bed_type</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">now</span><span class="p">:</span>
-                <span class="n">remaining_footprint</span><span class="p">[</span><span class="n">bed_type</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> \
-                                                <span class="p">(</span>
-                                                    <span class="n">d</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;hs_next_last_day_in_bed_</span><span class="si">{</span><span class="n">bed_type</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
-                                                    <span class="o">-</span> <span class="nb">max</span><span class="p">(</span><span class="n">now</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;hs_next_first_day_in_bed_</span><span class="si">{</span><span class="n">bed_type</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">])</span>
-                                                <span class="p">)</span><span class="o">.</span><span class="n">days</span>
-                <span class="c1"># NB. The &#39;+1&#39; accounts for the fact that &#39;today&#39; is included</span>
-
-        <span class="k">return</span> <span class="n">remaining_footprint</span></div>
-
 <div class="viewcode-block" id="HealthSystem.remove_beddays_footprint"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.remove_beddays_footprint">[docs]</a>    <span class="k">def</span> <span class="nf">remove_beddays_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Helper function that will remove from the bed-days tracker the days of bed-days remaining for a person.</span>
-<span class="sd">        This is called when the person dies or when a new footprint is imposed&quot;&quot;&quot;</span>
-        <span class="n">remaining_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_remaining_footprint</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
-        <span class="n">dates_of_bed_use</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_dates_of_bed_use</span><span class="p">(</span><span class="n">remaining_footprint</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">edit_bed_tracker</span><span class="p">(</span>
-            <span class="n">dates_of_bed_use</span><span class="o">=</span><span class="n">dates_of_bed_use</span><span class="p">,</span>
-            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-            <span class="n">add_footprint</span><span class="o">=</span><span class="kc">False</span>
-        <span class="p">)</span></div>
+        <span class="c1"># removing bed_days from a particular individual if any</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">remove_beddays_footprint</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.on_simulation_end"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.on_simulation_end">[docs]</a>    <span class="k">def</span> <span class="nf">on_simulation_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Dump the record of the bed_tracker to the log&quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">bed_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bed_tracker</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bed_tracker</span><span class="p">[</span><span class="n">bed_type</span><span class="p">]</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
-                <span class="n">row</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
-                <span class="n">row</span><span class="p">[</span><span class="s1">&#39;Facility_Name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span>
-
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="n">key</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;bed_tracker_</span><span class="si">{</span><span class="n">bed_type</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
-                    <span class="n">data</span><span class="o">=</span><span class="n">row</span><span class="p">,</span>
-                    <span class="n">description</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;dataframe of bed_tracker of type </span><span class="si">{</span><span class="n">bed_type</span><span class="si">}</span><span class="s1">, broken down by day and facility&#39;</span>
-                <span class="p">)</span></div></div>
-
-
-<div class="viewcode-block" id="RefreshInPatient"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.RefreshInPatient">[docs]</a><span class="k">class</span> <span class="nc">RefreshInPatient</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Refresh the hs_in_patient status. This event runs every day&quot;&quot;&quot;</span>
-<div class="viewcode-block" id="RefreshInPatient.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.RefreshInPatient.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">HealthSystem</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
-
-<div class="viewcode-block" id="RefreshInPatient.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.RefreshInPatient.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">exit_cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">list_of_cols_with_internal_dates</span><span class="p">[</span><span class="s1">&#39;exits&#39;</span><span class="p">]</span>
-
-        <span class="c1"># if any &quot;date of last day in bed&quot; in not null and in the future, then the person is an in-patient:</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s2">&quot;hs_is_inpatient&quot;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="p">((</span><span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="n">exit_cols</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">())</span> <span class="o">&amp;</span> <span class="o">~</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="n">exit_cols</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">))</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div></div>
+<div class="viewcode-block" id="HealthSystem.reset_queue"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.reset_queue">[docs]</a>    <span class="k">def</span> <span class="nf">reset_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the HSI event queue to be empty&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">HSI_EVENT_QUEUE</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hsi_event_queue_counter</span> <span class="o">=</span> <span class="mi">0</span></div></div>
 
 
 <div class="viewcode-block" id="HealthSystemScheduler"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler">[docs]</a><span class="k">class</span> <span class="nc">HealthSystemScheduler</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
@@ -1633,16 +1450,31 @@
 
 <div class="viewcode-block" id="HealthSystemScheduler.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 
-        <span class="c1"># 0) Determine the availability of consumables today based on their probabilities</span>
+        <span class="c1"># 0) Refresh information ready for new day:</span>
+        <span class="c1"># - Update Bed Days trackers:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">processing_at_start_of_new_day</span><span class="p">()</span>
+
+        <span class="c1"># - Determine the availability of consumables today based on their probabilities</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">determine_availability_of_consumables_today</span><span class="p">()</span>
 
-        <span class="c1"># Create hold-over list (will become a heapq).</span>
-        <span class="c1"># This will hold events that cannot occur today before they are added back to the heapq</span>
+        <span class="c1"># - Create hold-over list (will become a heapq). This will hold events that cannot occur today before they are</span>
+        <span class="c1">#  added back to the heapq</span>
         <span class="n">hold_over</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
 
         <span class="c1"># 1) Get the events that are due today:</span>
         <span class="n">list_of_individual_hsi_event_tuples_due_today</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
         <span class="n">list_of_population_hsi_event_tuples_due_today</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+        <span class="c1"># To avoid repeated dataframe accesses in subsequent loop, assemble set of alive</span>
+        <span class="c1"># person IDs as  one-off operation, exploiting the improved efficiency of</span>
+        <span class="c1"># boolean-indexing of a Series compared to row-by-row access. From benchmarks</span>
+        <span class="c1"># converting Series to list before converting to set is ~2x more performant than</span>
+        <span class="c1"># direct conversion to set, while checking membership of set is ~10x quicker</span>
+        <span class="c1"># than checking membership of Pandas Index object and ~25x quicker than checking</span>
+        <span class="c1"># membership of list</span>
+        <span class="n">alive_persons</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">is_alive</span><span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+        <span class="p">)</span>
 
         <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">HSI_EVENT_QUEUE</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
 
@@ -1655,8 +1487,10 @@
                 <span class="c1"># The event has expired (after tclose) having never been run. Call the &#39;never_ran&#39; function</span>
                 <span class="n">event</span><span class="o">.</span><span class="n">never_ran</span><span class="p">()</span>
 
-            <span class="k">elif</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">target</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">tlo</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">Population</span><span class="p">)</span> \
-                    <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]):</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="p">(</span>
+                <span class="nb">type</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">target</span><span class="p">)</span> <span class="ow">is</span> <span class="n">tlo</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">Population</span>
+                <span class="ow">or</span> <span class="n">event</span><span class="o">.</span><span class="n">target</span> <span class="ow">in</span> <span class="n">alive_persons</span>
+            <span class="p">):</span>
                 <span class="c1"># if individual level event and the person who is the target is no longer alive, do nothing more</span>
                 <span class="k">pass</span>
 
@@ -1890,9 +1724,13 @@
         <span class="k">pass</span></div>
 
 <div class="viewcode-block" id="HSI_Event.post_apply_hook"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.post_apply_hook">[docs]</a>    <span class="k">def</span> <span class="nf">post_apply_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Do any required processing after apply() completes.&quot;&quot;&quot;</span>
-        <span class="c1"># Impose the bed-days footprint:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">impose_beddays_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+        <span class="sd">&quot;&quot;&quot;Impose the bed-days footprint (if target of the HSI is a person_id)&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;HealthSystem&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">impose_beddays_footprint</span><span class="p">(</span>
+                    <span class="n">person_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
+                    <span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bed_days_allocated_to_this_event</span>
+                <span class="p">)</span></div>
 
 <div class="viewcode-block" id="HSI_Event.run"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Make the event happen.&quot;&quot;&quot;</span>
@@ -1945,19 +1783,24 @@
 
 <div class="viewcode-block" id="HSI_Event.make_beddays_footprint"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.make_beddays_footprint">[docs]</a>    <span class="k">def</span> <span class="nf">make_beddays_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dict_of_beddays</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Helper function to make a correctly-formed &#39;bed-days footprint&#39;&quot;&quot;&quot;</span>
+
         <span class="c1"># get blank footprint</span>
-        <span class="n">footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_blank_beddays_footprint</span><span class="p">()</span>
+        <span class="k">if</span> <span class="s1">&#39;HealthSystem&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+            <span class="n">footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">get_blank_beddays_footprint</span><span class="p">()</span>
 
-        <span class="c1"># do checks</span>
-        <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">dict_of_beddays</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">dict</span>
-        <span class="k">assert</span> <span class="nb">all</span><span class="p">([(</span><span class="n">k</span> <span class="ow">in</span> <span class="n">footprint</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">dict_of_beddays</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
-        <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dict_of_beddays</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+            <span class="c1"># do checks</span>
+            <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">dict_of_beddays</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">dict</span>
+            <span class="k">assert</span> <span class="nb">all</span><span class="p">([(</span><span class="n">k</span> <span class="ow">in</span> <span class="n">footprint</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">dict_of_beddays</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
+            <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dict_of_beddays</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
 
-        <span class="c1"># make footprint (defaulting to zero where a type of bed-days is not specified)</span>
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dict_of_beddays</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">footprint</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+            <span class="c1"># make footprint (defaulting to zero where a type of bed-days is not specified)</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dict_of_beddays</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">footprint</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
 
-        <span class="k">return</span> <span class="n">footprint</span></div>
+            <span class="k">return</span> <span class="n">footprint</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{}</span></div>
 
 <div class="viewcode-block" id="HSI_Event.is_all_beddays_allocated"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.is_all_beddays_allocated">[docs]</a>    <span class="k">def</span> <span class="nf">is_all_beddays_allocated</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Check if the entire footprint requested is allocated&quot;&quot;&quot;</span>
@@ -2015,7 +1858,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

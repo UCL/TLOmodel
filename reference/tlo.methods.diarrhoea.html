@@ -181,27 +181,21 @@
 <p>Childhood Diarrhoea Module</p>
 <div class="section" id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
-<dl class="simple">
+<dl>
 <dt>Individuals are exposed to the risk of onset of diarrhoea. They can have diarrhoea caused by one pathogen at a time.</dt><dd><p>During an episode (prior to recovery- either natural or cured), the symptom of diarrhoea is present in addition to
 other possible symptoms. Diarrhoea may cause dehydration and this may progress to become ‘severe’ during an episode.
 The individual may recovery naturally or die.</p>
 </dd>
 <dt>Health care seeking is prompted by the onset of the symptom diarrhoea. The individual can be treated; if successful the</dt><dd><p>risk of death is removed and they are cured (symptom resolved) some days later.</p>
+<p>Outstanding Issues
+* To include rotavirus vaccine
+* See todo</p>
 </dd>
 </dl>
 </div>
-<div class="section" id="outstanding-issues">
-<h2>Outstanding issues:<a class="headerlink" href="#outstanding-issues" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><p>Onset of severe dehydration has no relationship to the risk of death (only the treatment that is provided)</p></li>
-<li><p>Risk of death is linked to duration of episode - but this is assigned randomly, so stricly  is not necessary.</p></li>
-<li><p>Follow-up appointments for initial HSI events.</p></li>
-<li><p>Double check parameters and consumables codes for the HSI events.</p></li>
-</ul>
-</div>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.diarrhoea.Diarrhoea">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Diarrhoea</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#Diarrhoea"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.Diarrhoea" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Diarrhoea</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_checks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#Diarrhoea"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.Diarrhoea" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
 <p><strong>PARAMETERS:</strong></p>
 <table class="colwidths-given docutils align-default">
@@ -237,9 +231,9 @@ The individual may recovery naturally or die.</p>
 <td><p>LIST</p></td>
 <td><p>incidence rate (per person-year) of diarrhoea caused by campylobacter spp in age groups 0-11, 12-23, 24-59 months</p></td>
 </tr>
-<tr class="row-odd"><td><p>base_inc_rate_diarrhoea_by_ST-ETEC</p></td>
+<tr class="row-odd"><td><p>base_inc_rate_diarrhoea_by_ETEC</p></td>
 <td><p>LIST</p></td>
-<td><p>incidence rate (per person-year) of diarrhoea caused by ST-ETEC in age groups 0-11, 12-23, 24-59 months</p></td>
+<td><p>incidence rate (per person-year) of diarrhoea caused by ETEC in age groups 0-11, 12-23, 24-59 months</p></td>
 </tr>
 <tr class="row-even"><td><p>base_inc_rate_diarrhoea_by_sapovirus</p></td>
 <td><p>LIST</p></td>
@@ -269,273 +263,281 @@ The individual may recovery naturally or die.</p>
 <td><p>REAL</p></td>
 <td><p>relative rate of diarrhoea for access to clean drinking water</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_diarrhoea_HIV</p></td>
+<tr class="row-odd"><td><p>rr_diarrhoea_exclusive_vs_partial_breastfeeding_&lt;6mo</p></td>
+<td><p>REAL</p></td>
+<td><p>relative rate of diarrhoea for partial breastfeeding in &lt;6 months old, compared to exclusive breastfeeding</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_diarrhoea_exclusive_vs_no_breastfeeding_&lt;6mo</p></td>
+<td><p>REAL</p></td>
+<td><p>relative rate of diarrhoea for no breastfeeding in &lt;6 months old, compared to exclusive breastfeeding</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_diarrhoea_any_vs_no_breastfeeding_6_11mo</p></td>
+<td><p>REAL</p></td>
+<td><p>relative rate of diarrhoea for no breastfeeding in 6 months old to 1 years old, compared to any breastfeeding at this age group</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_diarrhoea_untreated_HIV</p></td>
 <td><p>REAL</p></td>
 <td><p>relative rate of diarrhoea for HIV positive status</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_diarrhoea_SAM</p></td>
+<tr class="row-odd"><td><p>rr_diarrhoea_SAM</p></td>
 <td><p>REAL</p></td>
 <td><p>relative rate of diarrhoea for severe malnutrition</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_diarrhoea_excl_breast</p></td>
+<tr class="row-even"><td><p>proportion_AWD_in_rotavirus</p></td>
 <td><p>REAL</p></td>
-<td><p>relative rate of diarrhoea for exclusive breastfeeding upto 6 months</p></td>
+<td><p>acute diarrhoea type caused in rotavirus-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_diarrhoea_cont_breast</p></td>
+<tr class="row-odd"><td><p>proportion_AWD_in_shigella</p></td>
 <td><p>REAL</p></td>
-<td><p>relative rate of diarrhoea for continued breastfeeding 6 months to 2 years</p></td>
+<td><p>acute diarrhoea type caused in shigella-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_diarrhoea_rotavirus_vaccination</p></td>
+<tr class="row-even"><td><p>proportion_AWD_in_adenovirus</p></td>
 <td><p>REAL</p></td>
-<td><p>relative rate of diarrhoea for rotavirus vaccine</p></td>
+<td><p>acute diarrhoea type caused in adenovirus-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-even"><td><p>proportion_AWD_by_rotavirus</p></td>
+<tr class="row-odd"><td><p>proportion_AWD_in_cryptosporidium</p></td>
 <td><p>REAL</p></td>
-<td><p>acute diarrhoea type caused by rotavirus</p></td>
+<td><p>acute diarrhoea type caused in cryptosporidium-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-odd"><td><p>proportion_AWD_by_shigella</p></td>
+<tr class="row-even"><td><p>proportion_AWD_in_campylobacter</p></td>
 <td><p>REAL</p></td>
-<td><p>acute diarrhoea type caused by shigella</p></td>
+<td><p>acute diarrhoea type caused in campylobacter-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-even"><td><p>proportion_AWD_by_adenovirus</p></td>
+<tr class="row-odd"><td><p>proportion_AWD_in_ETEC</p></td>
 <td><p>REAL</p></td>
-<td><p>acute diarrhoea type caused by adenovirus</p></td>
+<td><p>acute diarrhoea type caused in ETEC-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-odd"><td><p>proportion_AWD_by_cryptosporidium</p></td>
+<tr class="row-even"><td><p>proportion_AWD_in_sapovirus</p></td>
 <td><p>REAL</p></td>
-<td><p>acute diarrhoea type caused by cryptosporidium</p></td>
+<td><p>acute diarrhoea type caused in sapovirus-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-even"><td><p>proportion_AWD_by_campylobacter</p></td>
+<tr class="row-odd"><td><p>proportion_AWD_in_norovirus</p></td>
 <td><p>REAL</p></td>
-<td><p>acute diarrhoea type caused by campylobacter</p></td>
+<td><p>acute diarrhoea type caused in norovirus-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-odd"><td><p>proportion_AWD_by_ST-ETEC</p></td>
+<tr class="row-even"><td><p>proportion_AWD_in_astrovirus</p></td>
 <td><p>REAL</p></td>
-<td><p>acute diarrhoea type caused by ST-ETEC</p></td>
+<td><p>acute diarrhoea type caused in astrovirus-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-even"><td><p>proportion_AWD_by_sapovirus</p></td>
+<tr class="row-odd"><td><p>proportion_AWD_in_tEPEC</p></td>
 <td><p>REAL</p></td>
-<td><p>acute diarrhoea type caused by sapovirus</p></td>
+<td><p>acute diarrhoea type in tEPEC-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-odd"><td><p>proportion_AWD_by_norovirus</p></td>
+<tr class="row-even"><td><p>prob_dehydration_by_rotavirus</p></td>
 <td><p>REAL</p></td>
-<td><p>acute diarrhoea type caused by norovirus</p></td>
+<td><p>probability of any dehydration caused by rotavirus</p></td>
 </tr>
-<tr class="row-even"><td><p>proportion_AWD_by_astrovirus</p></td>
+<tr class="row-odd"><td><p>prob_dehydration_by_shigella</p></td>
 <td><p>REAL</p></td>
-<td><p>acute diarrhoea type caused by astrovirus</p></td>
+<td><p>probability of any dehydration caused by shigella</p></td>
 </tr>
-<tr class="row-odd"><td><p>proportion_AWD_by_tEPEC</p></td>
+<tr class="row-even"><td><p>prob_dehydration_by_adenovirus</p></td>
 <td><p>REAL</p></td>
-<td><p>acute diarrhoea type caused by tEPEC</p></td>
+<td><p>probability of any dehydration caused by adenovirus</p></td>
 </tr>
-<tr class="row-even"><td><p>fever_by_rotavirus</p></td>
+<tr class="row-odd"><td><p>prob_dehydration_by_cryptosporidium</p></td>
 <td><p>REAL</p></td>
-<td><p>fever caused by rotavirus</p></td>
+<td><p>probability of any dehydration caused by cryptosporidium</p></td>
 </tr>
-<tr class="row-odd"><td><p>fever_by_shigella</p></td>
+<tr class="row-even"><td><p>prob_dehydration_by_campylobacter</p></td>
 <td><p>REAL</p></td>
-<td><p>fever caused by shigella</p></td>
+<td><p>probability of any dehydration caused by campylobacter</p></td>
 </tr>
-<tr class="row-even"><td><p>fever_by_adenovirus</p></td>
+<tr class="row-odd"><td><p>prob_dehydration_by_ETEC</p></td>
 <td><p>REAL</p></td>
-<td><p>fever caused by adenovirus</p></td>
+<td><p>probability of any dehydration caused by ETEC</p></td>
 </tr>
-<tr class="row-odd"><td><p>fever_by_cryptosporidium</p></td>
+<tr class="row-even"><td><p>prob_dehydration_by_sapovirus</p></td>
 <td><p>REAL</p></td>
-<td><p>fever caused by cryptosporidium</p></td>
+<td><p>probability of any dehydration caused by sapovirus</p></td>
 </tr>
-<tr class="row-even"><td><p>fever_by_campylobacter</p></td>
+<tr class="row-odd"><td><p>prob_dehydration_by_norovirus</p></td>
 <td><p>REAL</p></td>
-<td><p>fever caused by campylobacter</p></td>
+<td><p>probability of any dehydration caused by norovirus</p></td>
 </tr>
-<tr class="row-odd"><td><p>fever_by_ST-ETEC</p></td>
+<tr class="row-even"><td><p>prob_dehydration_by_astrovirus</p></td>
 <td><p>REAL</p></td>
-<td><p>fever caused by ST-ETEC</p></td>
+<td><p>probability of any dehydration caused by astrovirus</p></td>
 </tr>
-<tr class="row-even"><td><p>fever_by_sapovirus</p></td>
+<tr class="row-odd"><td><p>prob_dehydration_by_tEPEC</p></td>
 <td><p>REAL</p></td>
-<td><p>fever caused by sapovirus</p></td>
+<td><p>probability of any dehydration caused by tEPEC</p></td>
 </tr>
-<tr class="row-odd"><td><p>fever_by_norovirus</p></td>
+<tr class="row-even"><td><p>probability_of_severe_dehydration_if_some_dehydration</p></td>
 <td><p>REAL</p></td>
-<td><p>fever caused by norovirus</p></td>
+<td><p>probability that someone with diarrhoea and some dehydration develops severe dehydration</p></td>
 </tr>
-<tr class="row-even"><td><p>fever_by_astrovirus</p></td>
+<tr class="row-odd"><td><p>prob_prolonged_diarr_rotavirus</p></td>
 <td><p>REAL</p></td>
-<td><p>fever caused by astrovirus</p></td>
+<td><p>probability of prolonged episode in rotavirus-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-odd"><td><p>fever_by_tEPEC</p></td>
+<tr class="row-even"><td><p>prob_prolonged_diarr_shigella</p></td>
 <td><p>REAL</p></td>
-<td><p>fever caused by tEPEC</p></td>
+<td><p>probability of prolonged episode by shigella-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-even"><td><p>vomiting_by_rotavirus</p></td>
+<tr class="row-odd"><td><p>prob_prolonged_diarr_adenovirus</p></td>
 <td><p>REAL</p></td>
-<td><p>vomiting caused by rotavirus</p></td>
+<td><p>probability of prolonged episode by adenovirus-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-odd"><td><p>vomiting_by_shigella</p></td>
+<tr class="row-even"><td><p>prob_prolonged_diarr_cryptosporidium</p></td>
 <td><p>REAL</p></td>
-<td><p>vomiting caused by shigella</p></td>
+<td><p>probability of prolonged episode by cryptosporidium-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-even"><td><p>vomiting_by_adenovirus</p></td>
+<tr class="row-odd"><td><p>prob_prolonged_diarr_campylobacter</p></td>
 <td><p>REAL</p></td>
-<td><p>vomiting caused by adenovirus</p></td>
+<td><p>probability of prolonged episode by campylobacter-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-odd"><td><p>vomiting_by_cryptosporidium</p></td>
+<tr class="row-even"><td><p>prob_prolonged_diarr_ETEC</p></td>
 <td><p>REAL</p></td>
-<td><p>vomiting caused by cryptosporidium</p></td>
+<td><p>probability of prolonged episode by ETEC-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-even"><td><p>vomiting_by_campylobacter</p></td>
+<tr class="row-odd"><td><p>prob_prolonged_diarr_sapovirus</p></td>
 <td><p>REAL</p></td>
-<td><p>vomiting caused by campylobacter</p></td>
+<td><p>probability of prolonged episode by sapovirus-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-odd"><td><p>vomiting_by_ST-ETEC</p></td>
+<tr class="row-even"><td><p>prob_prolonged_diarr_norovirus</p></td>
 <td><p>REAL</p></td>
-<td><p>vomiting caused by ST-ETEC</p></td>
+<td><p>probability of prolonged episode by norovirus-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-even"><td><p>vomiting_by_sapovirus</p></td>
+<tr class="row-odd"><td><p>prob_prolonged_diarr_astrovirus</p></td>
 <td><p>REAL</p></td>
-<td><p>vomiting caused by sapovirus</p></td>
+<td><p>probability of prolonged episode by norovirus-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-odd"><td><p>vomiting_by_norovirus</p></td>
+<tr class="row-even"><td><p>prob_prolonged_diarr_tEPEC</p></td>
 <td><p>REAL</p></td>
-<td><p>vomiting caused by norovirus</p></td>
+<td><p>probability of prolonged episode by tEPEC-attributed diarrhoea</p></td>
 </tr>
-<tr class="row-even"><td><p>vomiting_by_astrovirus</p></td>
-<td><p>REAL</p></td>
-<td><p>vomiting caused by astrovirus</p></td>
-</tr>
-<tr class="row-odd"><td><p>vomiting_by_tEPEC</p></td>
-<td><p>REAL</p></td>
-<td><p>vomiting caused by tEPEC</p></td>
-</tr>
-<tr class="row-even"><td><p>dehydration_by_rotavirus</p></td>
-<td><p>REAL</p></td>
-<td><p>any dehydration caused by rotavirus</p></td>
-</tr>
-<tr class="row-odd"><td><p>dehydration_by_shigella</p></td>
-<td><p>REAL</p></td>
-<td><p>any dehydration caused by shigella</p></td>
-</tr>
-<tr class="row-even"><td><p>dehydration_by_adenovirus</p></td>
-<td><p>REAL</p></td>
-<td><p>any dehydration caused by adenovirus</p></td>
-</tr>
-<tr class="row-odd"><td><p>dehydration_by_cryptosporidium</p></td>
-<td><p>REAL</p></td>
-<td><p>any dehydration caused by cryptosporidium</p></td>
-</tr>
-<tr class="row-even"><td><p>dehydration_by_campylobacter</p></td>
-<td><p>REAL</p></td>
-<td><p>any dehydration caused by campylobacter</p></td>
-</tr>
-<tr class="row-odd"><td><p>dehydration_by_ST-ETEC</p></td>
-<td><p>REAL</p></td>
-<td><p>any dehydration caused by ST-ETEC</p></td>
-</tr>
-<tr class="row-even"><td><p>dehydration_by_sapovirus</p></td>
-<td><p>REAL</p></td>
-<td><p>any dehydration caused by sapovirus</p></td>
-</tr>
-<tr class="row-odd"><td><p>dehydration_by_norovirus</p></td>
-<td><p>REAL</p></td>
-<td><p>any dehydration caused by norovirus</p></td>
-</tr>
-<tr class="row-even"><td><p>dehydration_by_astrovirus</p></td>
-<td><p>REAL</p></td>
-<td><p>any dehydration caused by astrovirus</p></td>
-</tr>
-<tr class="row-odd"><td><p>dehydration_by_tEPEC</p></td>
-<td><p>REAL</p></td>
-<td><p>any dehydration caused by tEPEC</p></td>
-</tr>
-<tr class="row-even"><td><p>prolonged_diarr_rotavirus</p></td>
-<td><p>REAL</p></td>
-<td><p>prolonged episode by rotavirus</p></td>
-</tr>
-<tr class="row-odd"><td><p>prolonged_diarr_shigella</p></td>
-<td><p>REAL</p></td>
-<td><p>prolonged episode by shigella</p></td>
-</tr>
-<tr class="row-even"><td><p>prolonged_diarr_adenovirus</p></td>
-<td><p>REAL</p></td>
-<td><p>prolonged episode by adenovirus</p></td>
-</tr>
-<tr class="row-odd"><td><p>prolonged_diarr_cryptosporidium</p></td>
-<td><p>REAL</p></td>
-<td><p>prolonged episode by cryptosporidium</p></td>
-</tr>
-<tr class="row-even"><td><p>prolonged_diarr_campylobacter</p></td>
-<td><p>REAL</p></td>
-<td><p>prolonged episode by campylobacter</p></td>
-</tr>
-<tr class="row-odd"><td><p>prolonged_diarr_ST-ETEC</p></td>
-<td><p>REAL</p></td>
-<td><p>prolonged episode by ST-ETEC</p></td>
-</tr>
-<tr class="row-even"><td><p>prolonged_diarr_sapovirus</p></td>
-<td><p>REAL</p></td>
-<td><p>prolonged episode by sapovirus</p></td>
-</tr>
-<tr class="row-odd"><td><p>prolonged_diarr_norovirus</p></td>
-<td><p>REAL</p></td>
-<td><p>prolonged episode by norovirus</p></td>
-</tr>
-<tr class="row-even"><td><p>prolonged_diarr_astrovirus</p></td>
-<td><p>REAL</p></td>
-<td><p>prolonged episode by norovirus</p></td>
-</tr>
-<tr class="row-odd"><td><p>prolonged_diarr_tEPEC</p></td>
-<td><p>REAL</p></td>
-<td><p>prolonged episode by tEPEC</p></td>
-</tr>
-<tr class="row-even"><td><p>prob_prolonged_to_persistent_diarr</p></td>
+<tr class="row-odd"><td><p>prob_prolonged_to_persistent_diarr</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of prolonged diarrhoea becoming persistent diarrhoea</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_dysentery_become_persistent</p></td>
-<td><p>REAL</p></td>
-<td><p>probability of dysentery becoming persistent diarrhoea</p></td>
-</tr>
-<tr class="row-even"><td><p>prob_watery_diarr_become_persistent</p></td>
-<td><p>REAL</p></td>
-<td><p>probability of acute watery diarrhoea becoming persistent diarrhoea, for children under 11 months, no SAM, no HIV</p></td>
-</tr>
-<tr class="row-odd"><td><p>rr_bec_persistent_age12to23</p></td>
+<tr class="row-even"><td><p>rr_bec_persistent_age12to23</p></td>
 <td><p>REAL</p></td>
 <td><p>relative rate of acute diarrhoea becoming persistent diarrhoea for age 12 to 23 months</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_bec_persistent_age24to59</p></td>
+<tr class="row-odd"><td><p>rr_bec_persistent_age24to59</p></td>
 <td><p>REAL</p></td>
 <td><p>relative rate of acute diarrhoea becoming persistent diarrhoea for age 24 to 59 months</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_bec_persistent_HIV</p></td>
+<tr class="row-even"><td><p>rr_bec_persistent_HIV</p></td>
 <td><p>REAL</p></td>
 <td><p>relative rate of acute diarrhoea becoming persistent diarrhoea for HIV positive</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_bec_persistent_SAM</p></td>
+<tr class="row-odd"><td><p>rr_bec_persistent_SAM</p></td>
 <td><p>REAL</p></td>
 <td><p>relative rate of acute diarrhoea becoming persistent diarrhoea for severely acute malnutrition</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_bec_persistent_excl_breast</p></td>
+<tr class="row-even"><td><p>rr_bec_persistent_stunted</p></td>
 <td><p>REAL</p></td>
-<td><p>relative rate of acute diarrhoea becoming persistent diarrhoea for exclusive breastfeeding</p></td>
+<td><p>relative rate of acute diarrhoea becoming persistent diarrhoea for stunted children</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_bec_persistent_cont_breast</p></td>
+<tr class="row-odd"><td><p>min_dur_acute</p></td>
+<td><p>INT</p></td>
+<td><p>The minimum duration (in days) for an episode that is classified as an acute episode</p></td>
+</tr>
+<tr class="row-even"><td><p>min_dur_prolonged</p></td>
+<td><p>INT</p></td>
+<td><p>The minimum duration (in days) for an episode that is classified as a prolonged episode</p></td>
+</tr>
+<tr class="row-odd"><td><p>min_dur_persistent</p></td>
+<td><p>INT</p></td>
+<td><p>The minimum duration (in days) for an episode that is classified as a persistent episode</p></td>
+</tr>
+<tr class="row-even"><td><p>max_dur_persistent</p></td>
+<td><p>INT</p></td>
+<td><p>The maximum duration (in days) for an episode that is classified as a persistent episode</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_fever_by_rotavirus</p></td>
 <td><p>REAL</p></td>
-<td><p>relative rate of acute diarrhoea becoming persistent diarrhoea for continued breastfeeding</p></td>
+<td><p>probability of fever caused by rotavirus</p></td>
 </tr>
-<tr class="row-odd"><td><p>case_fatality_rate_AWD</p></td>
+<tr class="row-even"><td><p>prob_fever_by_shigella</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of fever caused by shigella</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_fever_by_adenovirus</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of fever caused by adenovirus</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_fever_by_cryptosporidium</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of fever caused by cryptosporidium</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_fever_by_campylobacter</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of fever caused by campylobacter</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_fever_by_ETEC</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of fever caused by ETEC</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_fever_by_sapovirus</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of fever caused by sapovirus</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_fever_by_norovirus</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of fever caused by norovirus</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_fever_by_astrovirus</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of fever caused by astrovirus</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_fever_by_tEPEC</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of fever caused by tEPEC</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_vomiting_by_rotavirus</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of vomiting caused by rotavirus</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_vomiting_by_shigella</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of vomiting caused by shigella</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_vomiting_by_adenovirus</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of vomiting caused by adenovirus</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_vomiting_by_cryptosporidium</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of vomiting caused by cryptosporidium</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_vomiting_by_campylobacter</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of vomiting caused by campylobacter</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_vomiting_by_ETEC</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of vomiting caused by ETEC</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_vomiting_by_sapovirus</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of vomiting caused by sapovirus</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_vomiting_by_norovirus</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of vomiting caused by norovirus</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_vomiting_by_astrovirus</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of vomiting caused by astrovirus</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_vomiting_by_tEPEC</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of vomiting caused by tEPEC</p></td>
+</tr>
+<tr class="row-odd"><td><p>adjustment_factor_on_cfr</p></td>
+<td><p>REAL</p></td>
+<td><p>Factor by which fatality probabilities are multiplied (to be used in calibration)</p></td>
+</tr>
+<tr class="row-even"><td><p>case_fatality_rate_AWD</p></td>
 <td><p>REAL</p></td>
 <td><p>case fatality rate for acute watery diarrhoea cases</p></td>
 </tr>
-<tr class="row-even"><td><p>case_fatality_rate_dysentery</p></td>
+<tr class="row-odd"><td><p>rr_diarr_death_bloody</p></td>
 <td><p>REAL</p></td>
-<td><p>case fatality rate for dysentery cases</p></td>
-</tr>
-<tr class="row-odd"><td><p>case_fatality_rate_persistent</p></td>
-<td><p>REAL</p></td>
-<td><p>case fatality rate for persistent diarrhoea cases</p></td>
+<td><p>relative risk of diarrhoea death (compared to <cite>case_fatality_rate_AWD</cite> if the diarrhoea is of type “bloody” (i.e. dyssentry).</p></td>
 </tr>
 <tr class="row-even"><td><p>rr_diarr_death_age12to23mo</p></td>
 <td><p>REAL</p></td>
@@ -549,101 +551,61 @@ The individual may recovery naturally or die.</p>
 <td><p>REAL</p></td>
 <td><p>relative risk of diarrhoea death if the duration episode is 13 days or longer</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_diarr_death_dehydration</p></td>
+<tr class="row-odd"><td><p>rr_diarr_death_severe_dehydration</p></td>
 <td><p>REAL</p></td>
-<td><p>relative risk of diarrhoea death for cases with (some) dehyadration</p></td>
+<td><p>relative risk of diarrhoea death for cases with severe dehyadration</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_diarr_death_HIV</p></td>
+<tr class="row-even"><td><p>rr_diarr_death_untreated_HIV</p></td>
 <td><p>REAL</p></td>
-<td><p>relative risk of diarrhoea death for HIV</p></td>
+<td><p>relative risk of diarrhoea death for untreated HIV</p></td>
 </tr>
 <tr class="row-odd"><td><p>rr_diarr_death_SAM</p></td>
 <td><p>REAL</p></td>
 <td><p>relative risk of diarrhoea death for severe acute malnutrition</p></td>
 </tr>
-<tr class="row-even"><td><p>days_onset_severe_dehydration_before_death</p></td>
-<td><p>INT</p></td>
-<td><p>number of days before a death (in the untreated case) that dehydration would be classified as severe and child ought to be classified as positive for the dangersigns</p></td>
-</tr>
-<tr class="row-odd"><td><p>mean_days_duration_with_rotavirus</p></td>
-<td><p>INT</p></td>
-<td><p>mean number of days duration with diarrhoea caused by rotavirus</p></td>
-</tr>
-<tr class="row-even"><td><p>mean_days_duration_with_shigella</p></td>
-<td><p>INT</p></td>
-<td><p>mean number of days duration with diarrhoea caused by shigella</p></td>
-</tr>
-<tr class="row-odd"><td><p>mean_days_duration_with_adenovirus</p></td>
-<td><p>INT</p></td>
-<td><p>mean number of days duration with diarrhoea caused by adenovirus</p></td>
-</tr>
-<tr class="row-even"><td><p>mean_days_duration_with_cryptosporidium</p></td>
-<td><p>INT</p></td>
-<td><p>mean number of days duration with diarrhoea caused by cryptosporidium</p></td>
-</tr>
-<tr class="row-odd"><td><p>mean_days_duration_with_campylobacter</p></td>
-<td><p>INT</p></td>
-<td><p>mean number of days duration with diarrhoea caused by campylobacter</p></td>
-</tr>
-<tr class="row-even"><td><p>mean_days_duration_with_ST-ETEC</p></td>
-<td><p>INT</p></td>
-<td><p>mean number of days duration with diarrhoea caused by ST-ETEC</p></td>
-</tr>
-<tr class="row-odd"><td><p>mean_days_duration_with_sapovirus</p></td>
-<td><p>INT</p></td>
-<td><p>mean number of days duration with diarrhoea caused by sapovirus</p></td>
-</tr>
-<tr class="row-even"><td><p>mean_days_duration_with_norovirus</p></td>
-<td><p>INT</p></td>
-<td><p>mean number of days duration with diarrhoea caused by norovirus</p></td>
-</tr>
-<tr class="row-odd"><td><p>mean_days_duration_with_astrovirus</p></td>
-<td><p>INT</p></td>
-<td><p>mean number of days duration with diarrhoea caused by astrovirus</p></td>
-</tr>
-<tr class="row-even"><td><p>mean_days_duration_with_tEPEC</p></td>
-<td><p>INT</p></td>
-<td><p>mean number of days duration with diarrhoea caused by tEPEC</p></td>
-</tr>
-<tr class="row-odd"><td><p>prob_of_cure_given_Treatment_PlanA</p></td>
+<tr class="row-even"><td><p>rr_diarr_death_alri</p></td>
 <td><p>REAL</p></td>
-<td><p>probability of the person being cured if is provided with Treatment Plan A</p></td>
+<td><p>relative risk of diarrhoea death if concurrent lower respiratory infection</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_of_cure_given_Treatment_PlanB</p></td>
+<tr class="row-odd"><td><p>rr_diarr_death_cryptosporidium</p></td>
 <td><p>REAL</p></td>
-<td><p>probability of the person being cured if is provided with Treatment Plan B</p></td>
+<td><p>relative risk of diarrhoea death if caused by cryptosporidium</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_of_cure_given_Treatment_PlanC</p></td>
+<tr class="row-even"><td><p>rr_diarr_death_shigella</p></td>
 <td><p>REAL</p></td>
-<td><p>probability of the person being cured if is provided with Treatment Plan C</p></td>
+<td><p>relative risk of diarrhoea death if caused by shigella</p></td>
 </tr>
-<tr class="row-even"><td><p>max_number_of_days_for_onset_of_severe_dehydration_before_end_of_episode</p></td>
+<tr class="row-odd"><td><p>sensitivity_danger_signs_visual_inspection</p></td>
+<td><p>REAL</p></td>
+<td><p>sensitivity of health care workers visual inspection of danger signs</p></td>
+</tr>
+<tr class="row-even"><td><p>specificity_danger_signs_visual_inspection</p></td>
+<td><p>REAL</p></td>
+<td><p>specificity of health care workers visual inspection of danger signs</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_hospitalization_on_danger_signs</p></td>
+<td><p>REAL</p></td>
+<td><p>probability of hospitalisation when danger signs are detected in an initial consultation</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_WHOPlanC_cures_dehydration_if_severe_dehydration</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that severe dehydration is cured by Treatment Plan C</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_ORS_cures_dehydration_if_severe_dehydration</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that severe dehydration is cured by ORS</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_ORS_cures_dehydration_if_non_severe_dehydration</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that non-severe dehydration is cured by ORS</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_antibiotic_cures_dysentery</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that blood-in-stool is removed by the use of antibiotics</p></td>
+</tr>
+<tr class="row-even"><td><p>number_of_days_reduced_duration_with_zinc</p></td>
 <td><p>INT</p></td>
-<td><p>if severe dehydration occurs, it onsets a number of days before the end of the episode of diarrhoea; that number of days is chosen from a uniform distribution between 0 and this number</p></td>
-</tr>
-<tr class="row-odd"><td><p>probability_of_severe_dehydration_if_some_dehydration</p></td>
-<td><p>REAL</p></td>
-<td><p>probability that someone with diarrhoea and some dehydration develops severe dehydration</p></td>
-</tr>
-<tr class="row-even"><td><p>min_days_duration_of_episode</p></td>
-<td><p>INT</p></td>
-<td><p>the shortest duration of any episode of diarrhoea</p></td>
-</tr>
-<tr class="row-odd"><td><p>range_in_days_duration_of_episode</p></td>
-<td><p>INT</p></td>
-<td><p>the duration of an episode of diarrhoea is a uniform distribution around the mean with a range equal by this number.</p></td>
-</tr>
-<tr class="row-even"><td><p>prob_of_cure_given_HSI_Diarrhoea_Severe_Persistent_Diarrhoea</p></td>
-<td><p>REAL</p></td>
-<td><p>probability of the person being cured if is provided with HSI_Diarrhoea_Severe_Persistent_Diarrhoea.</p></td>
-</tr>
-<tr class="row-odd"><td><p>prob_of_cure_given_HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea</p></td>
-<td><p>REAL</p></td>
-<td><p>probability of the person being cured if is provided with HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea.</p></td>
-</tr>
-<tr class="row-even"><td><p>prob_of_cure_given_HSI_Diarrhoea_Dysentery</p></td>
-<td><p>REAL</p></td>
-<td><p>probability of the person being cured if is provided with HSI_Diarrhoea_Dysentery.</p></td>
+<td><p>number of days reduced duration with zinc</p></td>
 </tr>
 <tr class="row-odd"><td><p>days_between_treatment_and_cure</p></td>
 <td><p>INT</p></td>
@@ -665,73 +627,59 @@ The individual may recovery naturally or die.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>gi_ever_had_diarrhoea</p></td>
+<tr class="row-even"><td><p>gi_has_diarrhoea</p></td>
 <td><p>BOOL</p></td>
-<td><p>Whether or not the person has ever had an episode of diarrhoea.</p></td>
+<td><p>Whether or not the person currently has an episode of diarrhoea.</p></td>
 </tr>
-<tr class="row-odd"><td><p>gi_last_diarrhoea_pathogen</p></td>
+<tr class="row-odd"><td><p>gi_pathogen</p></td>
 <td><p>CATEGORICAL</p></td>
-<td><p>Attributable pathogen for the last episode of diarrhoea.not_applicable is used if the person has never had an episode of diarrhoea.  Possible values are: [rotavirus, shigella, adenovirus, cryptosporidium, campylobacter, ST-ETEC, sapovirus, norovirus, astrovirus, tEPEC, not_applicable, ]</p></td>
+<td><p>The attributable pathogen for the current episode of diarrhoea (np.nan if the person does not currently have diarrhoea)..  Possible values are: [rotavirus, shigella, adenovirus, cryptosporidium, campylobacter, ETEC, sapovirus, norovirus, astrovirus, tEPEC, ]</p></td>
 </tr>
-<tr class="row-even"><td><p>gi_last_diarrhoea_type</p></td>
+<tr class="row-even"><td><p>gi_type</p></td>
 <td><p>CATEGORICAL</p></td>
-<td><p>Type of the last episode of diarrhoea: either watery or bloody.not_applicable is used if the person has never had an episode of diarrhoea..  Possible values are: [not_applicable, watery, bloody, ]</p></td>
+<td><p>Type (watery or blood) of the current episode of diarrhoea (np.nan if the person does not currently have diarrhoea)..  Possible values are: [watery, bloody, ]</p></td>
 </tr>
-<tr class="row-odd"><td><p>gi_last_diarrhoea_dehydration</p></td>
+<tr class="row-odd"><td><p>gi_dehydration</p></td>
 <td><p>CATEGORICAL</p></td>
-<td><p>Severity of dehydration of last episode of diarrhoea.not_applicable is used if the person has never had an episode of diarrhoea.  Possible values are: [not_applicable, none, some, severe, ]</p></td>
+<td><p>Severity of dehydration for the current episode of diarrhoea (np.nan if the person does not currently have diarrhoea)..  Possible values are: [none, some, severe, ]</p></td>
 </tr>
-<tr class="row-even"><td><p>gi_last_diarrhoea_date_of_onset</p></td>
-<td><p>DATE</p></td>
-<td><p>date of onset of last episode of diarrhoea. pd.NaT if never had diarrhoea</p></td>
-</tr>
-<tr class="row-odd"><td><p>gi_last_diarrhoea_duration</p></td>
-<td><p>REAL</p></td>
-<td><p>number of days of last episode of diarrhoea. pd.nan if never had diarrhoea</p></td>
-</tr>
-<tr class="row-even"><td><p>gi_last_diarrhoea_recovered_date</p></td>
-<td><p>DATE</p></td>
-<td><p>date of recovery from last episode of diarrhoea. pd.NaT if never had an episode or if the last episode causeddeath.This is scheduled when the episode is onset and may be revisedsubsequently if a cure is enacted by a treatment.</p></td>
-</tr>
-<tr class="row-odd"><td><p>gi_last_diarrhoea_death_date</p></td>
-<td><p>DATE</p></td>
-<td><p>date of death caused by last episode of diarrhoea.pd.NaT if never had an episode or if the last episode did not cause death.This is scheduled when the episode is onset and may be revised to pd.NaT if a cure is enacted.</p></td>
-</tr>
-<tr class="row-even"><td><p>gi_last_diarrhoea_treatment_date</p></td>
-<td><p>DATE</p></td>
-<td><p>date of first treatment on the last episode of diarrhoea.pd.NaT is never had an episode or if the last episode did not receive treatment.It is set to pd.NaT at onset of the episode and may be revised iftreatment is received.</p></td>
-</tr>
-<tr class="row-odd"><td><p>gi_end_of_last_episode</p></td>
-<td><p>DATE</p></td>
-<td><p>date on which the last episode of diarrhoea is resolved, (including allowing for the possibility that a cure is scheduled following onset). This is used to determine when a new episode can begin. This stops successive episodes interfering with one another.</p></td>
-</tr>
-<tr class="row-even"><td><p>tmp_malnutrition</p></td>
+<tr class="row-even"><td><p>gi_duration_longer_than_13days</p></td>
 <td><p>BOOL</p></td>
-<td><p>temporary property - malnutrition status</p></td>
+<td><p>Whether the duration of the current episode would last longer than 13 days if untreated. (False if does not have current episode)</p></td>
 </tr>
-<tr class="row-odd"><td><p>tmp_exclusive_breastfeeding</p></td>
-<td><p>BOOL</p></td>
-<td><p>temporary property - exclusive breastfeeding upto 6 mo</p></td>
+<tr class="row-odd"><td><p>gi_date_of_onset</p></td>
+<td><p>DATE</p></td>
+<td><p>Date of onset of current episode of diarrhoea (pd.NaT if does not have current episode of diarrhoea).</p></td>
 </tr>
-<tr class="row-even"><td><p>tmp_continued_breastfeeding</p></td>
-<td><p>BOOL</p></td>
-<td><p>temporary property - continued breastfeeding 6mo-2years</p></td>
+<tr class="row-even"><td><p>gi_scheduled_date_recovery</p></td>
+<td><p>DATE</p></td>
+<td><p>Scheduled date of recovery from current episode of diarrhoea (pd.NaT if does not have current episode or current episode is scheduled to result in death). This is scheduled when the episode is onset and may be revised subsequently if the episode is cured by a treatment</p></td>
 </tr>
-<tr class="row-odd"><td><p>tmp_hv_inf</p></td>
-<td><p>BOOL</p></td>
-<td><p>Temporary property - current HIV infection</p></td>
+<tr class="row-odd"><td><p>gi_scheduled_date_death</p></td>
+<td><p>DATE</p></td>
+<td><p>Scheduled date of death caused by current episode of diarrhoea (pd.NaT if does not have current episode or if current episode will not result in death). This is scheduled when the episode is onset and may be revised subsequently if the episode is cured by a treatment.</p></td>
+</tr>
+<tr class="row-even"><td><p>gi_date_end_of_last_episode</p></td>
+<td><p>DATE</p></td>
+<td><p>The date on which the last episode of diarrhoea is fully resolved, including allowing for the possibility of HSI events (pd.NaT if has never had an episode). This is used to determine when a new episode can begin and stops successive episodes interfering with one another.This is notnull when the person has ever had an episode of diarrhoea.</p></td>
+</tr>
+<tr class="row-odd"><td><p>gi_treatment_date</p></td>
+<td><p>DATE</p></td>
+<td><p>The actual date on which treatment is first administered for the current episode (pd.NaT if does not have current episode or if no treatment has yet been provided in the current episode).</p></td>
 </tr>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘Diarrhoea_rotavirus’: &lt;tlo.methods.causes.Cause object at 0x7fa078922520&gt;, ‘Diarrhoea_shigella’: &lt;tlo.methods.causes.Cause object at 0x7fa078922580&gt;, ‘Diarrhoea_adenovirus’: &lt;tlo.methods.causes.Cause object at 0x7fa0789225e0&gt;, ‘Diarrhoea_cryptosporidium’: &lt;tlo.methods.causes.Cause object at 0x7fa078922640&gt;, ‘Diarrhoea_campylobacter’: &lt;tlo.methods.causes.Cause object at 0x7fa0789226a0&gt;, ‘Diarrhoea_ST-ETEC’: &lt;tlo.methods.causes.Cause object at 0x7fa078922700&gt;, ‘Diarrhoea_sapovirus’: &lt;tlo.methods.causes.Cause object at 0x7fa078922760&gt;, ‘Diarrhoea_norovirus’: &lt;tlo.methods.causes.Cause object at 0x7fa0789227c0&gt;, ‘Diarrhoea_astrovirus’: &lt;tlo.methods.causes.Cause object at 0x7fa078922820&gt;, ‘Diarrhoea_tEPEC’: &lt;tlo.methods.causes.Cause object at 0x7fa078922880&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘Diarrhoea_rotavirus’: &lt;tlo.methods.causes.Cause object at 0x7fa0789228e0&gt;, ‘Diarrhoea_shigella’: &lt;tlo.methods.causes.Cause object at 0x7fa078922940&gt;, ‘Diarrhoea_adenovirus’: &lt;tlo.methods.causes.Cause object at 0x7fa0789229a0&gt;, ‘Diarrhoea_cryptosporidium’: &lt;tlo.methods.causes.Cause object at 0x7fa078922a00&gt;, ‘Diarrhoea_campylobacter’: &lt;tlo.methods.causes.Cause object at 0x7fa078922a60&gt;, ‘Diarrhoea_ST-ETEC’: &lt;tlo.methods.causes.Cause object at 0x7fa078922ac0&gt;, ‘Diarrhoea_sapovirus’: &lt;tlo.methods.causes.Cause object at 0x7fa078922b20&gt;, ‘Diarrhoea_norovirus’: &lt;tlo.methods.causes.Cause object at 0x7fa078922b80&gt;, ‘Diarrhoea_astrovirus’: &lt;tlo.methods.causes.Cause object at 0x7fa078922be0&gt;, ‘Diarrhoea_tEPEC’: &lt;tlo.methods.causes.Cause object at 0x7fa078922c40&gt;}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
-<p>pathogens : [‘rotavirus’, ‘shigella’, ‘adenovirus’, ‘cryptosporidium’, ‘campylobacter’, ‘ST-ETEC’, ‘sapovirus’, ‘norovirus’, ‘astrovirus’, ‘tEPEC’]</p>
+<p>CAUSES_OF_DEATH : {‘Diarrhoea_rotavirus’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39b80&gt;, ‘Diarrhoea_shigella’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39be0&gt;, ‘Diarrhoea_adenovirus’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39c40&gt;, ‘Diarrhoea_cryptosporidium’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39ca0&gt;, ‘Diarrhoea_campylobacter’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39d00&gt;, ‘Diarrhoea_ETEC’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39d60&gt;, ‘Diarrhoea_sapovirus’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39dc0&gt;, ‘Diarrhoea_norovirus’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39e20&gt;, ‘Diarrhoea_astrovirus’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39e80&gt;, ‘Diarrhoea_tEPEC’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39ee0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Diarrhoea’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39fa0&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’, ‘Lifestyle’, ‘HealthSystem’, ‘DiarrhoeaPropertiesOfOtherModules’, ‘SymptomManager’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
+<p>pathogens : [‘rotavirus’, ‘shigella’, ‘adenovirus’, ‘cryptosporidium’, ‘campylobacter’, ‘ETEC’, ‘sapovirus’, ‘norovirus’, ‘astrovirus’, ‘tEPEC’]</p>
 <p><strong>Functions (defined or overridden in class Diarrhoea):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.diarrhoea.Diarrhoea.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#Diarrhoea.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.Diarrhoea.__init__" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_checks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#Diarrhoea.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.Diarrhoea.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
 generator.</p>
@@ -760,8 +708,10 @@ generator.</p>
 <dd><p>Prepares for simulation:
 * Schedules the main polling event
 * Schedules the main logging event
+* Schedule the check properties event (if needed)
 * Establishes the linear models and other data structures using the parameters that have been read-in
-* Store the consumables that are required in each of the HSI</p>
+* Store the consumables that are required in each of the HSI
+* Register test for the determination of ‘danger signs’</p>
 </dd></dl>
 
 <dl class="py method">
@@ -779,9 +729,11 @@ generator.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.diarrhoea.Diarrhoea.report_daly_values">
 <span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#Diarrhoea.report_daly_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.Diarrhoea.report_daly_values" title="Permalink to this definition">¶</a></dt>
-<dd><p>This returns DALYS values relating to the current status of persons.
-Assumes that the current DALY loading is linked to currently having the symptom of diarrhoea and the status of
-dehyrdration.</p>
+<dd><p>This returns person-time live with disability values to the HealthBurden module.
+At the end of each episode, a record is made in a list, <cite>self.unreported_dalys</cite>, of the form
+(person_id, duration_in_days_of_episode * average_daly_weight). This record is used to create the pd.Series
+that is returned (index: person_id for all those alive, value: the average disability weight during the
+preceding month). The list is then cleared.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -791,18 +743,40 @@ dehyrdration.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.Diarrhoea.do_when_presentation_with_diarrhoea">
+<span class="sig-name descname"><span class="pre">do_when_presentation_with_diarrhoea</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#Diarrhoea.do_when_presentation_with_diarrhoea"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.Diarrhoea.do_when_presentation_with_diarrhoea" title="Permalink to this definition">¶</a></dt>
+<dd><p>This routine is called when Diarrhoea is a symptom for a child attending a Generic HSI Appointment. It
+checks for danger signs and schedules HSI Events appropriately.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.diarrhoea.Diarrhoea.do_treatment">
-<span class="sig-name descname"><span class="pre">do_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prob_of_cure</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#Diarrhoea.do_treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.Diarrhoea.do_treatment" title="Permalink to this definition">¶</a></dt>
-<dd><p>Helper function that enacts the effects of a treatment to diarrhoea caused by a pathogen.
-It will only do something if the diarrhoea is caused by a pathogen (this module). It will not allow any effect</p>
+<span class="sig-name descname"><span class="pre">do_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#Diarrhoea.do_treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.Diarrhoea.do_treatment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method called by the HSI that enacts decisions about a treatment and its effect for diarrhoea caused by a
+pathogen. (It will do nothing if the diarrhoea is caused by another module.)
+Actions:
+* If the episode will cause death: if the treatment is successful, prevents this episode of diarrhoea from</p>
 <blockquote>
-<div><p>if the diarrhoea is caused by another module.</p>
+<div><p>causing a death and schedules Cure Event</p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Log the treatment date</p></li>
-<li><p>Prevents this episode of diarrhoea from causing a death</p></li>
-<li><p>Schedules the cure event, at which symptoms are alleviated.</p></li>
+<li><p>If the episode will not cause death: if treatment is succesful, schedules a CureEvent that will occur earlier</p></li>
 </ul>
+<blockquote>
+<div><p>than the <cite>NaturalRecovery</cite> event.</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Records that treatment is provided.</p></li>
+</ul>
+<p>NB. Provisions for cholera are not included</p>
+<p># todo - Zinc is provided to all persons currently. It may be that this should be changed so that it is only
+#  provided to those persons who, at the time of the HSI, have had diarrhoea for 13 days or longer.</p>
+<p># todo - ORS is provided to all persons currently It may be that it should only be provided to those with
+#  ‘some’ dehydration. (It would have no effect – only matters if the persons has severe dehydration).</p>
+<dl class="simple">
+<dt>See this report:</dt><dd><p><a class="reference external" href="https://apps.who.int/iris/bitstream/handle/10665/104772/9789241506823_Chartbook_eng.pdf">https://apps.who.int/iris/bitstream/handle/10665/104772/9789241506823_Chartbook_eng.pdf</a> (page 3).</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -810,14 +784,21 @@ It will only do something if the diarrhoea is caused by a pathogen (this module)
 <span class="sig-name descname"><span class="pre">cancel_death_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#Diarrhoea.cancel_death_date"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.Diarrhoea.cancel_death_date" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cancels a scheduled date of death due to diarrhoea for a person. This is called prior to the scheduling the
 CureEvent to prevent deaths happening in the time between a treatment being given and the cure event occurring.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – </p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p></p>
-</dd>
-</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.Diarrhoea.end_episode">
+<span class="sig-name descname"><span class="pre">end_episode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#Diarrhoea.end_episode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.Diarrhoea.end_episode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function that enacts the end of the episode of diarrhoea (either by natural recovery, death or  cure)
+* Logs that the episode has ended
+* Stores the total time-lived-with-disability during the episode
+* Enacts the death (if the outcome==’death’); Otherwise, removes symptoms and resets properties</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.Diarrhoea.check_properties">
+<span class="sig-name descname"><span class="pre">check_properties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#Diarrhoea.check_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.Diarrhoea.check_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that the properties are ok: for use in testing only</p>
 </dd></dl>
 
 </dd></dl>
@@ -851,6 +832,13 @@ age-groups. This is a small effect when the frequency of the polling event is hi
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaPollingEvent.compute_fraction_of_year_between_polling_event">
+<span class="sig-name descname"><span class="pre">compute_fraction_of_year_between_polling_event</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaPollingEvent.compute_fraction_of_year_between_polling_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaPollingEvent.compute_fraction_of_year_between_polling_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute fraction of a year that elapses between polling event. This is used to adjust the risk of
+infection</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaPollingEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaPollingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaPollingEvent.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply this event to the population.</p>
@@ -878,8 +866,6 @@ age-groups. This is a small effect when the frequency of the polling event is hi
 </dd>
 </dl>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Class attributes:</strong></p>
-<p>AGE_GROUPS : {0: ‘0y’, 1: ‘1y’, 2: ‘2-4y’, 3: ‘2-4y’, 4: ‘2-4y’}</p>
 <p><strong>Functions (defined or overridden in class DiarrhoeaIncidentCase):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaIncidentCase.__init__">
@@ -913,7 +899,7 @@ constructor, but may also take further keyword arguments.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaNaturalRecoveryEvent">
 <em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">DiarrhoeaNaturalRecoveryEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaNaturalRecoveryEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaNaturalRecoveryEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>#This is the Natural Recovery event. It is part of the natural history and represents the end of an episode of
+<dd><p>This is the Natural Recovery event. It is part of the natural history and represents the end of an episode of
 Diarrhoea.
 It does the following:</p>
 <blockquote>
@@ -941,48 +927,6 @@ constructor, but may also take further keyword arguments.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaNaturalRecoveryEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaNaturalRecoveryEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaNaturalRecoveryEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
-<p>Must be implemented by subclasses.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaSevereDehydrationEvent">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">DiarrhoeaSevereDehydrationEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaSevereDehydrationEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaSevereDehydrationEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>#This is the Severe Dehydration. It is part of the natural history and represents a change in the status of the
-person’s level of dehydration.
-It does the following:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p>changes the property ‘gi_last_diarrhoea_dehydration’ to severe</p></li>
-</ul>
-</div></blockquote>
-<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class DiarrhoeaSevereDehydrationEvent):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaSevereDehydrationEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaSevereDehydrationEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaSevereDehydrationEvent.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new event.</p>
-<p>Note that just creating an event does not schedule it to happen; that
-must be done by calling Simulation.schedule_event.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
-All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaSevereDehydrationEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaSevereDehydrationEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaSevereDehydrationEvent.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply this event to the given person.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -1076,15 +1020,194 @@ constructor, but may also take further keyword arguments.</p>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaLoggingEvent">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">DiarrhoeaLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaLoggingEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>This Event logs the number of incident cases that have occurred since the previous logging event.
-Analysis scripts expect that the frequency of this logging event is once per year.</p>
-<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class DiarrhoeaLoggingEvent):</strong></p>
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_Outpatient">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_Diarrhoea_Treatment_Outpatient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Treatment_Outpatient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_Outpatient" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a treatment for diarrhoea administered at outpatient.
+NB. This can be called when a child presents with Diarrhoea that is caused by another module/Symptom Manager.</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_Diarrhoea_Treatment_Outpatient):</strong></p>
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaLoggingEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaLoggingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaLoggingEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_Outpatient.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Treatment_Outpatient.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_Outpatient.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_Outpatient.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Treatment_Outpatient.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_Outpatient.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run <cite>do_treatment</cite> for this person from an out-potient setting.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_Inpatient">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_Diarrhoea_Treatment_Inpatient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Treatment_Inpatient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_Inpatient" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a treatment for acute diarrhoea with severe dehydration administered at inpatient when danger_signs have
+been diagnosed.</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_Diarrhoea_Treatment_Inpatient):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_Inpatient.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Treatment_Inpatient.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_Inpatient.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_Inpatient.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Treatment_Inpatient.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_Inpatient.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run <cite>do_treatment</cite> for this person from an in-potient setting.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaPropertiesOfOtherModules">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">DiarrhoeaPropertiesOfOtherModules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaPropertiesOfOtherModules"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaPropertiesOfOtherModules" title="Permalink to this definition">¶</a></dt>
+<dd><p>For the purpose of the testing, this module generates the properties upon which the Alri module relies</p>
+<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<p><strong>PROPERTIES:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>hv_inf</p></td>
+<td><p>BOOL</p></td>
+<td><p>temporary property for HIV infection status</p></td>
+</tr>
+<tr class="row-odd"><td><p>hv_art</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>temporary property for ART status.  Possible values are: [not, on_VL_suppressed, on_not_VL_suppressed, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>ri_current_infection_status</p></td>
+<td><p>BOOL</p></td>
+<td><p>temporary property</p></td>
+</tr>
+<tr class="row-odd"><td><p>nb_breastfeeding_status</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>temporary property.  Possible values are: [none, non_exclusive, exclusive, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>un_clinical_acute_malnutrition</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>temporary property.  Possible values are: [MAM, SAM, well, ]</p></td>
+</tr>
+<tr class="row-odd"><td><p>un_HAZ_category</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>temporary property.  Possible values are: [HAZ&lt;-3, -3&lt;=HAZ&lt;-2, HAZ&gt;=-2, ]</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Class attributes:</strong></p>
+<p>ALTERNATIVE_TO : {‘Hiv’, ‘NewbornOutcomes’, ‘Alri’}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’}</p>
+<p><strong>Functions (defined or overridden in class DiarrhoeaPropertiesOfOtherModules):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaPropertiesOfOtherModules.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaPropertiesOfOtherModules.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaPropertiesOfOtherModules.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaPropertiesOfOtherModules.read_parameters">
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaPropertiesOfOtherModules.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaPropertiesOfOtherModules.read_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read parameter values from file, if required.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data_folder</strong> – path of a folder supplied to the Simulation containing data files.
+Typically modules would read a particular file within here.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaPropertiesOfOtherModules.initialise_population">
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaPropertiesOfOtherModules.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaPropertiesOfOtherModules.initialise_population" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set our property values for the initial population.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This method is called by the simulation when creating the initial population, and is
+responsible for assigning initial values, for every individual, of those properties
+‘owned’ by this module, i.e. those declared in its PROPERTIES dictionary.</p>
+<p>TODO: We probably need to declare somehow which properties we ‘read’ here, so the
+simulation knows what order to initialise modules in!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the population of individuals</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaPropertiesOfOtherModules.initialise_simulation">
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaPropertiesOfOtherModules.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaPropertiesOfOtherModules.initialise_simulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get ready for simulation start.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This method is called just before the main simulation loop begins, and after all
+modules have read their parameters and the initial population has been created.
+It is a good place to add initial events to the event queue.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaPropertiesOfOtherModules.on_birth">
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaPropertiesOfOtherModules.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaPropertiesOfOtherModules.on_birth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise our properties for a newborn individual.</p>
+<p>Must be implemented by subclasses.</p>
+<p>This is called by the simulation whenever a new person is born.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mother</strong> – the mother for this child</p></li>
+<li><p><strong>child</strong> – the new child</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaCheckPropertiesEvent">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">DiarrhoeaCheckPropertiesEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaCheckPropertiesEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaCheckPropertiesEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This event runs daily and checks properties are in the right configuration. Only use whilst debugging!</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class DiarrhoeaCheckPropertiesEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaCheckPropertiesEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaCheckPropertiesEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaCheckPropertiesEvent.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1098,8 +1221,8 @@ Analysis scripts expect that the frequency of this logging event is once per yea
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaLoggingEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaLoggingEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.diarrhoea.DiarrhoeaCheckPropertiesEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#DiarrhoeaCheckPropertiesEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.DiarrhoeaCheckPropertiesEvent.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -1107,188 +1230,6 @@ Analysis scripts expect that the frequency of this logging event is once per yea
 <dd class="field-odd"><p><strong>population</strong> – the current population</p>
 </dd>
 </dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanA">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_Diarrhoea_Treatment_PlanA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Treatment_PlanA"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanA" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is a treatment for uncomplicated diarrhoea administered at outpatient setting through IMCI.
-“PLAN A”: for children no dehydration</p>
-<p>NB. This will be called when a child presents with Diarrhoea that is caused by another module/Symptom Manager.</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class HSI_Diarrhoea_Treatment_PlanA):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanA.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Treatment_PlanA.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanA.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new event.</p>
-<p>Note that just creating an event does not schedule it to happen; that
-must be done by calling Simulation.schedule_event.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
-All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanA.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Treatment_PlanA.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanA.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanB">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_Diarrhoea_Treatment_PlanB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Treatment_PlanB"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanB" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is a treatment for diarrhoea with some dehydration at outpatient setting through IMCI</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class HSI_Diarrhoea_Treatment_PlanB):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanB.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Treatment_PlanB.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanB.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new event.</p>
-<p>Note that just creating an event does not schedule it to happen; that
-must be done by calling Simulation.schedule_event.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
-All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanB.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Treatment_PlanB.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanB.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanC">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_Diarrhoea_Treatment_PlanC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Treatment_PlanC"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanC" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is a treatment for diarrhoea with severe dehydration administered at outpatient setting through IMCI</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class HSI_Diarrhoea_Treatment_PlanC):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanC.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Treatment_PlanC.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanC.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new event.</p>
-<p>Note that just creating an event does not schedule it to happen; that
-must be done by calling Simulation.schedule_event.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
-All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanC.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Treatment_PlanC.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_PlanC.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Severe_Persistent_Diarrhoea">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_Diarrhoea_Severe_Persistent_Diarrhoea</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Severe_Persistent_Diarrhoea"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Severe_Persistent_Diarrhoea" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is a treatment for Severe_Dehydration administered at FacilityLevel=1</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class HSI_Diarrhoea_Severe_Persistent_Diarrhoea):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Severe_Persistent_Diarrhoea.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Severe_Persistent_Diarrhoea.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Severe_Persistent_Diarrhoea.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new event.</p>
-<p>Note that just creating an event does not schedule it to happen; that
-must be done by calling Simulation.schedule_event.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
-All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Severe_Persistent_Diarrhoea.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Severe_Persistent_Diarrhoea.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Severe_Persistent_Diarrhoea.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is a treatment for Severe_Dehydration administered at FacilityLevel=1</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new event.</p>
-<p>Note that just creating an event does not schedule it to happen; that
-must be done by calling Simulation.schedule_event.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
-All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Dysentery">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_Diarrhoea_Dysentery</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Dysentery"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Dysentery" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is a treatment for Severe_Dehydration administered at FacilityLevel=1</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class HSI_Diarrhoea_Dysentery):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Dysentery.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Dysentery.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Dysentery.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new event.</p>
-<p>Note that just creating an event does not schedule it to happen; that
-must be done by calling Simulation.schedule_event.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
-All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.diarrhoea.HSI_Diarrhoea_Dysentery.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/diarrhoea.html#HSI_Diarrhoea_Dysentery.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.diarrhoea.HSI_Diarrhoea_Dysentery.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1310,7 +1251,7 @@ constructor, but may also take further keyword arguments.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

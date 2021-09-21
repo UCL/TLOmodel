@@ -351,6 +351,26 @@
 <span class="sd">    `sim`</span>
 <span class="sd">        The simulation this module is part of, once registered.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Subclasses can override this to declare the set of initialisation dependencies</span>
+    <span class="c1"># Declares modules that need to be registered in simulation and initialised before</span>
+    <span class="c1"># this module</span>
+    <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
+
+    <span class="c1"># Subclasses can override this to declare the set of optional init. dependencies</span>
+    <span class="c1"># Declares modules that need to be registered in simulation and initialised before</span>
+    <span class="c1"># this module if they are present, but are not required otherwise</span>
+    <span class="n">OPTIONAL_INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
+
+    <span class="c1"># Subclasses can override this to declare the set of additional dependencies</span>
+    <span class="c1"># Declares any modules that need to be registered in simulation in addition to those</span>
+    <span class="c1"># in INIT_DEPENDENCIES to allow running simulation</span>
+    <span class="n">ADDITIONAL_DEPENDENCIES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
+
+    <span class="c1"># Subclasses can override this to declare the set of modules that this module can be</span>
+    <span class="c1"># used in place of as a dependency</span>
+    <span class="n">ALTERNATIVE_TO</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
+
     <span class="c1"># Subclasses can override this set to add metadata tags to their class</span>
     <span class="c1"># See tlo.methods.Metadata class</span>
     <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{}</span>
@@ -543,7 +563,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

@@ -355,13 +355,13 @@ tlo.methods.alri module
           - Does the person currently have an infection with a pathogen that can cause Alri.
         * - ri_primary_pathogen
           - CATEGORICAL
-          - If infected, what is the pathogen with which the person is currently infected. (np.nan if not infected).  Possible values are: [Strep_pneumoniae_non_PCV13, Rhinovirus, P.jirovecii, H.influenzae_non_type_b, Bocavirus, other_bacterial_pathogens, Staph_aureus, Enterobacteriaceae, Parainfluenza, other_Strepto_Enterococci, Influenza, Hib, other_viral_pathogens, HMPV, Strep_pneumoniae_PCV13, RSV, Adenovirus, ]
+          - If infected, what is the pathogen with which the person is currently infected. (np.nan if not infected).  Possible values are: [Staph_aureus, Influenza, Hib, Enterobacteriaceae, other_bacterial_pathogens, HMPV, Strep_pneumoniae_non_PCV13, Adenovirus, Parainfluenza, RSV, Rhinovirus, Bocavirus, other_viral_pathogens, Strep_pneumoniae_PCV13, other_Strepto_Enterococci, H.influenzae_non_type_b, P.jirovecii, ]
         * - ri_secondary_bacterial_pathogen
           - CATEGORICAL
           - If infected, is there a secondary bacterial pathogen (np.nan if none or not applicable).  Possible values are: [Strep_pneumoniae_PCV13, Strep_pneumoniae_non_PCV13, Hib, H.influenzae_non_type_b, Staph_aureus, Enterobacteriaceae, other_Strepto_Enterococci, other_bacterial_pathogens, ]
         * - ri_disease_type
           - CATEGORICAL
-          - If infected, what disease type is the person currently suffering from..  Possible values are: [bronchiolitis, fungal_pneumonia, bacterial_pneumonia, viral_pneumonia, ]
+          - If infected, what disease type is the person currently suffering from..  Possible values are: [fungal_pneumonia, viral_pneumonia, bacterial_pneumonia, bronchiolitis, ]
         * - ri_on_treatment
           - BOOL
           - Is this person currently receiving treatment.
@@ -385,17 +385,21 @@ tlo.methods.alri module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'ALRI_Strep_pneumoniae_non_PCV13': <tlo.methods.causes.Cause object at 0x7fa0786c93d0>, 'ALRI_Rhinovirus': <tlo.methods.causes.Cause object at 0x7fa0786d79d0>, 'ALRI_P.jirovecii': <tlo.methods.causes.Cause object at 0x7fa0786d7b20>, 'ALRI_H.influenzae_non_type_b': <tlo.methods.causes.Cause object at 0x7fa0786e4910>, 'ALRI_Bocavirus': <tlo.methods.causes.Cause object at 0x7fa0786e4970>, 'ALRI_other_bacterial_pathogens': <tlo.methods.causes.Cause object at 0x7fa0786e49d0>, 'ALRI_Staph_aureus': <tlo.methods.causes.Cause object at 0x7fa0786e4a30>, 'ALRI_Enterobacteriaceae': <tlo.methods.causes.Cause object at 0x7fa0786e4a90>, 'ALRI_Parainfluenza': <tlo.methods.causes.Cause object at 0x7fa0786e4af0>, 'ALRI_other_Strepto_Enterococci': <tlo.methods.causes.Cause object at 0x7fa0786e4b50>, 'ALRI_Influenza': <tlo.methods.causes.Cause object at 0x7fa0786e4bb0>, 'ALRI_Hib': <tlo.methods.causes.Cause object at 0x7fa0786e4c10>, 'ALRI_other_viral_pathogens': <tlo.methods.causes.Cause object at 0x7fa0786e4c70>, 'ALRI_HMPV': <tlo.methods.causes.Cause object at 0x7fa0786e4cd0>, 'ALRI_Strep_pneumoniae_PCV13': <tlo.methods.causes.Cause object at 0x7fa0786e4d30>, 'ALRI_RSV': <tlo.methods.causes.Cause object at 0x7fa0786e4d90>, 'ALRI_Adenovirus': <tlo.methods.causes.Cause object at 0x7fa0786e4df0>}
+     CAUSES_OF_DEATH : {'ALRI_Staph_aureus': <tlo.methods.causes.Cause object at 0x7f9967878940>, 'ALRI_Influenza': <tlo.methods.causes.Cause object at 0x7f9967884f10>, 'ALRI_Hib': <tlo.methods.causes.Cause object at 0x7f99678910a0>, 'ALRI_Enterobacteriaceae': <tlo.methods.causes.Cause object at 0x7f9967891eb0>, 'ALRI_other_bacterial_pathogens': <tlo.methods.causes.Cause object at 0x7f9967891f10>, 'ALRI_HMPV': <tlo.methods.causes.Cause object at 0x7f9967891f70>, 'ALRI_Strep_pneumoniae_non_PCV13': <tlo.methods.causes.Cause object at 0x7f9967891fd0>, 'ALRI_Adenovirus': <tlo.methods.causes.Cause object at 0x7f99678a2070>, 'ALRI_Parainfluenza': <tlo.methods.causes.Cause object at 0x7f99678a20d0>, 'ALRI_RSV': <tlo.methods.causes.Cause object at 0x7f99678a2130>, 'ALRI_Rhinovirus': <tlo.methods.causes.Cause object at 0x7f99678a2190>, 'ALRI_Bocavirus': <tlo.methods.causes.Cause object at 0x7f99678a21f0>, 'ALRI_other_viral_pathogens': <tlo.methods.causes.Cause object at 0x7f99678a2250>, 'ALRI_Strep_pneumoniae_PCV13': <tlo.methods.causes.Cause object at 0x7f99678a22b0>, 'ALRI_other_Strepto_Enterococci': <tlo.methods.causes.Cause object at 0x7f99678a2310>, 'ALRI_H.influenzae_non_type_b': <tlo.methods.causes.Cause object at 0x7f99678a2370>, 'ALRI_P.jirovecii': <tlo.methods.causes.Cause object at 0x7f99678a23d0>}
 
-     CAUSES_OF_DISABILITY : {'ALRI_Strep_pneumoniae_non_PCV13': <tlo.methods.causes.Cause object at 0x7fa0786e4e50>, 'ALRI_Rhinovirus': <tlo.methods.causes.Cause object at 0x7fa0786e4eb0>, 'ALRI_P.jirovecii': <tlo.methods.causes.Cause object at 0x7fa0786e4f10>, 'ALRI_H.influenzae_non_type_b': <tlo.methods.causes.Cause object at 0x7fa0786e4f70>, 'ALRI_Bocavirus': <tlo.methods.causes.Cause object at 0x7fa0786e4fd0>, 'ALRI_other_bacterial_pathogens': <tlo.methods.causes.Cause object at 0x7fa0786f1070>, 'ALRI_Staph_aureus': <tlo.methods.causes.Cause object at 0x7fa0786f10d0>, 'ALRI_Enterobacteriaceae': <tlo.methods.causes.Cause object at 0x7fa0786f1130>, 'ALRI_Parainfluenza': <tlo.methods.causes.Cause object at 0x7fa0786f1190>, 'ALRI_other_Strepto_Enterococci': <tlo.methods.causes.Cause object at 0x7fa0786f11f0>, 'ALRI_Influenza': <tlo.methods.causes.Cause object at 0x7fa0786f1250>, 'ALRI_Hib': <tlo.methods.causes.Cause object at 0x7fa0786f12b0>, 'ALRI_other_viral_pathogens': <tlo.methods.causes.Cause object at 0x7fa0786f1310>, 'ALRI_HMPV': <tlo.methods.causes.Cause object at 0x7fa0786f1370>, 'ALRI_Strep_pneumoniae_PCV13': <tlo.methods.causes.Cause object at 0x7fa0786f13d0>, 'ALRI_RSV': <tlo.methods.causes.Cause object at 0x7fa0786f1430>, 'ALRI_Adenovirus': <tlo.methods.causes.Cause object at 0x7fa0786f1490>}
+     CAUSES_OF_DISABILITY : {'ALRI_Staph_aureus': <tlo.methods.causes.Cause object at 0x7f99678a2430>, 'ALRI_Influenza': <tlo.methods.causes.Cause object at 0x7f99678a2490>, 'ALRI_Hib': <tlo.methods.causes.Cause object at 0x7f99678a24f0>, 'ALRI_Enterobacteriaceae': <tlo.methods.causes.Cause object at 0x7f99678a2550>, 'ALRI_other_bacterial_pathogens': <tlo.methods.causes.Cause object at 0x7f99678a25b0>, 'ALRI_HMPV': <tlo.methods.causes.Cause object at 0x7f99678a2610>, 'ALRI_Strep_pneumoniae_non_PCV13': <tlo.methods.causes.Cause object at 0x7f99678a2670>, 'ALRI_Adenovirus': <tlo.methods.causes.Cause object at 0x7f99678a26d0>, 'ALRI_Parainfluenza': <tlo.methods.causes.Cause object at 0x7f99678a2730>, 'ALRI_RSV': <tlo.methods.causes.Cause object at 0x7f99678a2790>, 'ALRI_Rhinovirus': <tlo.methods.causes.Cause object at 0x7f99678a27f0>, 'ALRI_Bocavirus': <tlo.methods.causes.Cause object at 0x7f99678a2850>, 'ALRI_other_viral_pathogens': <tlo.methods.causes.Cause object at 0x7f99678a28b0>, 'ALRI_Strep_pneumoniae_PCV13': <tlo.methods.causes.Cause object at 0x7f99678a2910>, 'ALRI_other_Strepto_Enterococci': <tlo.methods.causes.Cause object at 0x7f99678a2970>, 'ALRI_H.influenzae_non_type_b': <tlo.methods.causes.Cause object at 0x7f99678a29d0>, 'ALRI_P.jirovecii': <tlo.methods.causes.Cause object at 0x7f99678a2a30>}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>}
+     INIT_DEPENDENCIES : {'Demography', 'AlriPropertiesOfOtherModules', 'SymptomManager', 'Lifestyle'}
 
-     all_pathogens : {'Strep_pneumoniae_non_PCV13', 'Rhinovirus', 'P.jirovecii', 'H.influenzae_non_type_b', 'Bocavirus', 'other_bacterial_pathogens', 'Staph_aureus', 'Enterobacteriaceae', 'Parainfluenza', 'other_Strepto_Enterococci', 'Influenza', 'Hib', 'other_viral_pathogens', 'HMPV', 'Strep_pneumoniae_PCV13', 'RSV', 'Adenovirus'}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
 
-     complications : {'respiratory_failure', 'meningitis', 'pleural_effusion', 'hypoxia', 'lung_abscess', 'empyema', 'sepsis', 'pneumothorax'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
-     disease_types : {'bronchiolitis', 'fungal_pneumonia', 'bacterial_pneumonia', 'viral_pneumonia'}
+     all_pathogens : {'Staph_aureus', 'Influenza', 'Hib', 'Enterobacteriaceae', 'other_bacterial_pathogens', 'HMPV', 'Strep_pneumoniae_non_PCV13', 'Adenovirus', 'Parainfluenza', 'RSV', 'Rhinovirus', 'Bocavirus', 'other_viral_pathogens', 'Strep_pneumoniae_PCV13', 'other_Strepto_Enterococci', 'H.influenzae_non_type_b', 'P.jirovecii'}
+
+     complications : {'lung_abscess', 'meningitis', 'hypoxia', 'empyema', 'pleural_effusion', 'sepsis', 'respiratory_failure', 'pneumothorax'}
+
+     disease_types : {'fungal_pneumonia', 'viral_pneumonia', 'bacterial_pneumonia', 'bronchiolitis'}
 
      pathogens : {'viral': ['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens'], 'bacterial': ['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', 'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', 'other_Strepto_Enterococci', 'other_bacterial_pathogens'], 'fungal': ['P.jirovecii']}
 
@@ -427,8 +431,6 @@ tlo.methods.alri module
 
      .. automethod:: check_properties
 
-     .. automethod:: random_date
-
      .. automethod:: impose_symptoms_for_complication
 
 
@@ -450,8 +452,6 @@ tlo.methods.alri module
      .. automethod:: compute_fraction_of_year_between_polling_event
 
      .. automethod:: apply
-
-     .. automethod:: sample_outcome
 
 
 
@@ -634,7 +634,7 @@ tlo.methods.alri module
 
 
 
-.. autoclass:: PropertiesOfOtherModules
+.. autoclass:: AlriPropertiesOfOtherModules
 
      Bases: :class:`tlo.core.Module`
 
@@ -668,7 +668,14 @@ tlo.methods.alri module
           - temporary property.  Possible values are: [MAM, SAM, well, ]
 
 
-     **Functions (defined or overridden in class PropertiesOfOtherModules):**
+
+     **Class attributes:**
+
+     ALTERNATIVE_TO : {'Hiv', 'NewbornOutcomes', 'Epi'}
+
+     INIT_DEPENDENCIES : {'Demography'}
+
+     **Functions (defined or overridden in class AlriPropertiesOfOtherModules):**
 
      .. automethod:: __init__
 

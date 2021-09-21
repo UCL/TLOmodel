@@ -237,6 +237,7 @@
 <span class="kn">from</span> <span class="nn">tlo.methods.causes</span> <span class="kn">import</span> <span class="n">Cause</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.healthsystem</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.symptommanager</span> <span class="kn">import</span> <span class="n">Symptom</span>
+<span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">random_date</span><span class="p">,</span> <span class="n">sample_outcome</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
@@ -248,6 +249,19 @@
 
 <div class="viewcode-block" id="Alri"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.Alri">[docs]</a><span class="k">class</span> <span class="nc">Alri</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;This is the disease module for Acute Lower Respiratory Infections.&quot;&quot;&quot;</span>
+
+    <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;Demography&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Lifestyle&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;SymptomManager&#39;</span><span class="p">,</span>
+        <span class="c1"># Currently need to include AlriPropertiesOfOtherModules as there is no alternative</span>
+        <span class="c1"># provider of un_clinical_acute_malnutrition property at the moment. As this</span>
+        <span class="c1"># module also provides the required properties from NewbornOutcomes, Hiv and Epi</span>
+        <span class="c1"># these are also not included here to avoid duplicated property definitions</span>
+        <span class="s1">&#39;AlriPropertiesOfOtherModules&#39;</span>
+    <span class="p">}</span>
+
+    <span class="n">OPTIONAL_INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">}</span>
 
     <span class="c1"># Declare Metadata</span>
     <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{</span>
@@ -1163,10 +1177,6 @@
         <span class="c1"># If person is on treatment, they should have a treatment start date</span>
         <span class="k">assert</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">curr_inf</span><span class="p">,</span> <span class="s1">&#39;ri_on_treatment&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">curr_inf</span><span class="p">,</span> <span class="s1">&#39;ri_ALRI_tx_start_date&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">())</span><span class="o">.</span><span class="n">all</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Alri.random_date"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.Alri.random_date">[docs]</a>    <span class="k">def</span> <span class="nf">random_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Generate a random date between `start` and `end` - sampling with precision of the day.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">start</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">days</span><span class="p">))</span></div>
-
 <div class="viewcode-block" id="Alri.impose_symptoms_for_complication"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.Alri.impose_symptoms_for_complication">[docs]</a>    <span class="k">def</span> <span class="nf">impose_symptoms_for_complication</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">complication</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Impose symptoms for a complication.&quot;&quot;&quot;</span>
         <span class="n">symptoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">symptoms_for_complication</span><span class="p">(</span><span class="n">complication</span><span class="o">=</span><span class="n">complication</span><span class="p">)</span>
@@ -1212,10 +1222,15 @@
                 <span class="k">return</span> <span class="n">LinearModel</span><span class="p">(</span>
                     <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
                     <span class="n">intercept</span><span class="p">,</span>
-                    <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0,0)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="n">base_inc_rate</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-                                          <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(1,1)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="n">base_inc_rate</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-                                          <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(2,4)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="n">base_inc_rate</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
-                                          <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span>
+                    <span class="n">Predictor</span><span class="p">(</span>
+                        <span class="s1">&#39;age_years&#39;</span><span class="p">,</span>
+                        <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="n">base_inc_rate</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="n">base_inc_rate</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(2,4)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="n">base_inc_rate</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&gt; 4&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
                     <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_no_access_handwashing&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_ALRI_HHhandwashing&#39;</span><span class="p">]),</span>
                     <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_wood_burn_stove&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_ALRI_indoor_air_pollution&#39;</span><span class="p">]),</span>
                     <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;hv_inf&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_ALRI_HIV_untreated&#39;</span><span class="p">]),</span>
@@ -1557,7 +1572,7 @@
         <span class="p">)</span>
 
         <span class="c1"># Sample to find outcomes:</span>
-        <span class="n">outcome</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_outcome</span><span class="p">(</span><span class="n">probs_of_acquiring_pathogen</span><span class="p">)</span>
+        <span class="n">outcome</span> <span class="o">=</span> <span class="n">sample_outcome</span><span class="p">(</span><span class="n">probs</span><span class="o">=</span><span class="n">probs_of_acquiring_pathogen</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
 
         <span class="c1"># For persons that will become infected with a particular pathogen:</span>
         <span class="k">for</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">pathogen</span> <span class="ow">in</span> <span class="n">outcome</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -1568,25 +1583,8 @@
                     <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
                     <span class="n">pathogen</span><span class="o">=</span><span class="n">pathogen</span><span class="p">,</span>
                 <span class="p">),</span>
-                <span class="n">date</span><span class="o">=</span><span class="n">m</span><span class="o">.</span><span class="n">random_date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">frequency</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-            <span class="p">)</span></div>
-
-<div class="viewcode-block" id="AlriPollingEvent.sample_outcome"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.AlriPollingEvent.sample_outcome">[docs]</a>    <span class="k">def</span> <span class="nf">sample_outcome</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Helper function to randomly sample an outcome from a set of probabilities.</span>
-<span class="sd">        Each row in the df is a person and each column gives the probability that a particular event may happen to the</span>
-<span class="sd">        person. The probabilities of each event are assumed to be independent but mutually exlusive.&quot;&quot;&quot;</span>
-
-        <span class="k">assert</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(),</span> <span class="s2">&quot;Probabilities across columns cannot sum to more than 1.0&quot;</span>
-
-        <span class="c1"># Compare uniform deviate to cumulative sum across columns, after including a &quot;null&quot; column (for no event).</span>
-        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;_&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># add implied &quot;none of these events&quot; category</span>
-        <span class="n">cumsum</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">draws</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cumsum</span><span class="p">)),</span> <span class="n">index</span><span class="o">=</span><span class="n">cumsum</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="n">cumsum</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="n">draws</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">outcome</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">idxmax</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="c1"># return as a dict of form {person_id: outcome} only in those cases where the outcome is one of the events.</span>
-        <span class="k">return</span> <span class="n">outcome</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="p">(</span><span class="n">outcome</span> <span class="o">==</span> <span class="s1">&#39;_&#39;</span><span class="p">)]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span></div></div>
+                <span class="n">date</span><span class="o">=</span><span class="n">random_date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">frequency</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">m</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
+            <span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="AlriIncidentCase"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.AlriIncidentCase">[docs]</a><span class="k">class</span> <span class="nc">AlriIncidentCase</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
@@ -1704,7 +1702,7 @@
             <span class="n">m</span><span class="o">.</span><span class="n">impose_symptoms_for_complication</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">complication</span><span class="o">=</span><span class="n">complication</span><span class="p">)</span>
 
         <span class="c1"># Consider delayed-onset of complications and schedule events accordingly</span>
-        <span class="n">date_of_onset_delayed_complications</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">random_date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">date_of_outcome</span><span class="p">)</span>
+        <span class="n">date_of_onset_delayed_complications</span> <span class="o">=</span> <span class="n">random_date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">date_of_outcome</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
         <span class="n">delayed_complications</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">delayed_complications</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">delayed_complication</span> <span class="ow">in</span> <span class="n">delayed_complications</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span>
@@ -2018,8 +2016,11 @@
             <span class="p">)</span></div></div>
 
 
-<div class="viewcode-block" id="PropertiesOfOtherModules"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.PropertiesOfOtherModules">[docs]</a><span class="k">class</span> <span class="nc">PropertiesOfOtherModules</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="AlriPropertiesOfOtherModules"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.AlriPropertiesOfOtherModules">[docs]</a><span class="k">class</span> <span class="nc">AlriPropertiesOfOtherModules</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;For the purpose of the testing, this module generates the properties upon which the Alri module relies&quot;&quot;&quot;</span>
+
+    <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">}</span>
+    <span class="n">ALTERNATIVE_TO</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Hiv&#39;</span><span class="p">,</span> <span class="s1">&#39;Epi&#39;</span><span class="p">,</span> <span class="s1">&#39;NewbornOutcomes&#39;</span><span class="p">}</span>
 
     <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;hv_inf&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;temporary property&#39;</span><span class="p">),</span>
@@ -2033,16 +2034,15 @@
         <span class="s1">&#39;va_hib_all_doses&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;temporary property&#39;</span><span class="p">),</span>
         <span class="s1">&#39;un_clinical_acute_malnutrition&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span> <span class="s1">&#39;temporary property&#39;</span><span class="p">,</span>
                                                    <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;MAM&#39;</span><span class="p">,</span> <span class="s1">&#39;SAM&#39;</span><span class="p">,</span> <span class="s1">&#39;well&#39;</span><span class="p">]),</span>
-
     <span class="p">}</span>
 
-<div class="viewcode-block" id="PropertiesOfOtherModules.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.PropertiesOfOtherModules.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="AlriPropertiesOfOtherModules.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.AlriPropertiesOfOtherModules.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="PropertiesOfOtherModules.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.PropertiesOfOtherModules.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+<div class="viewcode-block" id="AlriPropertiesOfOtherModules.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.AlriPropertiesOfOtherModules.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="PropertiesOfOtherModules.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.PropertiesOfOtherModules.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+<div class="viewcode-block" id="AlriPropertiesOfOtherModules.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.AlriPropertiesOfOtherModules.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;hv_inf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;nb_low_birth_weight_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;normal_birth_weight&#39;</span>
@@ -2051,10 +2051,10 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;va_hib_all_doses&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;un_clinical_acute_malnutrition&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;well&#39;</span></div>
 
-<div class="viewcode-block" id="PropertiesOfOtherModules.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.PropertiesOfOtherModules.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+<div class="viewcode-block" id="AlriPropertiesOfOtherModules.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.AlriPropertiesOfOtherModules.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="PropertiesOfOtherModules.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.PropertiesOfOtherModules.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother</span><span class="p">,</span> <span class="n">child</span><span class="p">):</span>
+<div class="viewcode-block" id="AlriPropertiesOfOtherModules.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.AlriPropertiesOfOtherModules.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother</span><span class="p">,</span> <span class="n">child</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child</span><span class="p">,</span> <span class="s1">&#39;hv_inf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child</span><span class="p">,</span> <span class="s1">&#39;nb_low_birth_weight_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;normal_birth_weight&#39;</span>
@@ -2074,7 +2074,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

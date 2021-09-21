@@ -571,11 +571,15 @@ tlo.methods.labour module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'maternal': <tlo.methods.causes.Cause object at 0x7fa0788146d0>, 'intrapartum stillbirth': <tlo.methods.causes.Cause object at 0x7fa07882d5e0>}
+     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'Contraception', 'CareOfWomenDuringPregnancy', 'PostnatalSupervisor'}
 
-     CAUSES_OF_DISABILITY : {'Labour': <tlo.methods.causes.Cause object at 0x7fa07882d7c0>}
+     CAUSES_OF_DEATH : {'maternal': <tlo.methods.causes.Cause object at 0x7f99679b3d60>, 'intrapartum stillbirth': <tlo.methods.causes.Cause object at 0x7f99679e0c70>}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     CAUSES_OF_DISABILITY : {'Labour': <tlo.methods.causes.Cause object at 0x7f99679e0e50>}
+
+     INIT_DEPENDENCIES : {'Demography', 'PregnancySupervisor', 'HealthSystem', 'Lifestyle'}
+
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
 
      **Functions (defined or overridden in class Labour):**
 

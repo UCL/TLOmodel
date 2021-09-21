@@ -85,6 +85,10 @@ tlo.methods.contraception module
 
      **Class attributes:**
 
+     ADDITIONAL_DEPENDENCIES : {'Labour', 'PregnancySupervisor'}
+
+     INIT_DEPENDENCIES : {'Demography'}
+
      METADATA : {}
 
      **Functions (defined or overridden in class Contraception):**

@@ -204,6 +204,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">lm_onset_breast_lump_discernible</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span></div>
 
+    <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">,</span> <span class="s1">&#39;SymptomManager&#39;</span><span class="p">}</span>
+
+    <span class="n">OPTIONAL_INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">}</span>
+
     <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">DISEASE_MODULE</span><span class="p">,</span>
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_SYMPTOMMANAGER</span><span class="p">,</span>
@@ -389,9 +393,10 @@
             <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
             <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_breast_cancer_stage&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;sex&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(30,49)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rp_breast_cancer_age3049&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0,14)&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(50,120)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rp_breast_cancer_agege50&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(30,49)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rp_breast_cancer_age3049&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0,14)&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(50,120)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rp_breast_cancer_agege50&#39;</span><span class="p">]),</span>
         <span class="p">)</span>
 
         <span class="n">brc_status_any_stage</span> <span class="o">=</span> \
@@ -416,11 +421,16 @@
         <span class="c1"># Create shorthand variable for the initial proportion of discernible breast cancer lumps in the population</span>
         <span class="n">bc_init_prop_discernible_lump</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_breast_lump_discernible_breast_cancer_by_stage&#39;</span><span class="p">]</span>
         <span class="n">lm_init_breast_lump_discernible</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;brc_status&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-                                   <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage1&quot;</span><span class="p">,</span> <span class="n">bc_init_prop_discernible_lump</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-                                   <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage2&quot;</span><span class="p">,</span> <span class="n">bc_init_prop_discernible_lump</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-                                   <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage3&quot;</span><span class="p">,</span> <span class="n">bc_init_prop_discernible_lump</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-                                   <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage4&quot;</span><span class="p">,</span> <span class="n">bc_init_prop_discernible_lump</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;brc_status&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage1&quot;</span><span class="p">,</span> <span class="n">bc_init_prop_discernible_lump</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage2&quot;</span><span class="p">,</span> <span class="n">bc_init_prop_discernible_lump</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage3&quot;</span><span class="p">,</span> <span class="n">bc_init_prop_discernible_lump</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage4&quot;</span><span class="p">,</span> <span class="n">bc_init_prop_discernible_lump</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
         <span class="p">)</span>
 
         <span class="n">has_breast_lump_discernible_at_init</span> <span class="o">=</span> <span class="n">lm_init_breast_lump_discernible</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
@@ -437,11 +447,16 @@
         <span class="n">bc_initial_prop_diagnosed_discernible_lump</span> <span class="o">=</span> \
             <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage&#39;</span><span class="p">]</span>
         <span class="n">lm_init_diagnosed</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;brc_status&#39;</span><span class="p">)</span> <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-                                    <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage1&quot;</span><span class="p">,</span> <span class="n">bc_initial_prop_diagnosed_discernible_lump</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-                                    <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage2&quot;</span><span class="p">,</span> <span class="n">bc_initial_prop_diagnosed_discernible_lump</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-                                    <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage3&quot;</span><span class="p">,</span> <span class="n">bc_initial_prop_diagnosed_discernible_lump</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-                                    <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage4&quot;</span><span class="p">,</span> <span class="n">bc_initial_prop_diagnosed_discernible_lump</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;brc_status&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage1&quot;</span><span class="p">,</span> <span class="n">bc_initial_prop_diagnosed_discernible_lump</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage2&quot;</span><span class="p">,</span> <span class="n">bc_initial_prop_diagnosed_discernible_lump</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage3&quot;</span><span class="p">,</span> <span class="n">bc_initial_prop_diagnosed_discernible_lump</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage4&quot;</span><span class="p">,</span> <span class="n">bc_initial_prop_diagnosed_discernible_lump</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
         <span class="p">)</span>
         <span class="n">ever_diagnosed</span> <span class="o">=</span> <span class="n">lm_init_diagnosed</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
 
@@ -456,10 +471,16 @@
         <span class="c1"># cancer stages in the population</span>
         <span class="n">bc_inital_treament_status</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_treatment_status_breast_cancer&#39;</span><span class="p">]</span>
         <span class="n">lm_init_treatment_for_those_diagnosed</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;brc_status&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage1&quot;</span><span class="p">,</span> <span class="n">bc_inital_treament_status</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-                                                      <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage2&quot;</span><span class="p">,</span> <span class="n">bc_inital_treament_status</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-                                                      <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage3&quot;</span><span class="p">,</span> <span class="n">bc_inital_treament_status</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-                                                      <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage4&quot;</span><span class="p">,</span> <span class="n">bc_inital_treament_status</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;brc_status&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage1&quot;</span><span class="p">,</span> <span class="n">bc_inital_treament_status</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage2&quot;</span><span class="p">,</span> <span class="n">bc_inital_treament_status</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage3&quot;</span><span class="p">,</span> <span class="n">bc_inital_treament_status</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s2">&quot;stage4&quot;</span><span class="p">,</span> <span class="n">bc_inital_treament_status</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
         <span class="p">)</span>
         <span class="n">treatment_initiated</span> <span class="o">=</span> <span class="n">lm_init_treatment_for_those_diagnosed</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
 
@@ -513,9 +534,10 @@
             <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_stage1_none&#39;</span><span class="p">],</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;sex&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;brc_status&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0,14)&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(30,49)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_stage1_none_age3049&#39;</span><span class="p">])</span>
-                                  <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(50,120)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_stage1_none_agege50&#39;</span><span class="p">])</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0,14)&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(30,49)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_stage1_none_age3049&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(50,120)&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_stage1_none_agege50&#39;</span><span class="p">])</span>
         <span class="p">)</span>
 
         <span class="n">lm</span><span class="p">[</span><span class="s1">&#39;stage2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
@@ -555,13 +577,18 @@
         <span class="n">stage2</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_breast_lump_discernible_stage2&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_breast_lump_discernible_stage1&#39;</span><span class="p">]</span>
         <span class="n">stage3</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_breast_lump_discernible_stage3&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_breast_lump_discernible_stage1&#39;</span><span class="p">]</span>
         <span class="n">stage4</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_breast_lump_discernible_stage4&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_breast_lump_discernible_stage1&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lm_onset_breast_lump_discernible</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span><span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;brc_status&#39;</span><span class="p">)</span>
-                                                                           <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;stage1&#39;</span><span class="p">,</span> <span class="n">stage1</span><span class="p">)</span>
-                                                                           <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;stage2&#39;</span><span class="p">,</span> <span class="n">stage2</span><span class="p">)</span>
-                                                                           <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;stage3&#39;</span><span class="p">,</span> <span class="n">stage3</span><span class="p">)</span>
-                                                                           <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;stage4&#39;</span><span class="p">,</span> <span class="n">stage4</span><span class="p">)</span>
-                                                                           <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
-                                                                           <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lm_onset_breast_lump_discernible</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;brc_status&#39;</span><span class="p">,</span>
+                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;stage1&#39;</span><span class="p">,</span> <span class="n">stage1</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;stage2&#39;</span><span class="p">,</span> <span class="n">stage2</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;stage3&#39;</span><span class="p">,</span> <span class="n">stage3</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;stage4&#39;</span><span class="p">,</span> <span class="n">stage4</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="p">)</span>
 
         <span class="c1"># ----- DX TESTS -----</span>
         <span class="c1"># Create the diagnostic test representing the use of a biopsy to brc_status</span>
@@ -1129,7 +1156,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

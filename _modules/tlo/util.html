@@ -172,7 +172,9 @@
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="kn">import</span> <span class="n">DateOffset</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Population</span>
 
@@ -253,6 +255,31 @@
             <span class="n">new_states</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">all_states</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_index</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="n">prob_matrix</span><span class="p">[</span><span class="n">state</span><span class="p">])</span>
             <span class="n">final_states</span><span class="p">[</span><span class="n">state_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_states</span>
     <span class="k">return</span> <span class="n">final_states</span></div>
+
+
+<div class="viewcode-block" id="sample_outcome"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.sample_outcome">[docs]</a><span class="k">def</span> <span class="nf">sample_outcome</span><span class="p">(</span><span class="n">probs</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Helper function to randomly sample an outcome for each individual in a population from a set of probabilities</span>
+<span class="sd">    that are specific to each individual.</span>
+
+<span class="sd">    :param _probs: Each row of this dataframe represents the person and the columns are the possible outcomes. The</span>
+<span class="sd">    values are the probability of that outcome for that individual. For each individual, the probabilities of each</span>
+<span class="sd">    outcome are assumed to be independent and mutually exlusive (but not neccesarily exhaustive).</span>
+<span class="sd">    :param rng: Random Number state to use for the generation of random numbers.</span>
+<span class="sd">    :return: A dict of the form {&lt;index&gt;:&lt;outcome&gt;} where an outcome is selected.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="p">(</span><span class="n">probs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(),</span> <span class="s2">&quot;Probabilities across columns cannot sum to more than 1.0&quot;</span>
+
+    <span class="c1"># Compare uniform deviate to cumulative sum across columns, after including a &quot;null&quot; column (for no event).</span>
+    <span class="n">_probs</span> <span class="o">=</span> <span class="n">probs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">_probs</span><span class="p">[</span><span class="s1">&#39;_&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">_probs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># add implied &quot;none of these events&quot; category</span>
+    <span class="n">cumsum</span> <span class="o">=</span> <span class="n">_probs</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">draws</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cumsum</span><span class="p">)),</span> <span class="n">index</span><span class="o">=</span><span class="n">cumsum</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">cumsum</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="n">draws</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">outcome</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">idxmax</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># return as a dict of form {person_id: outcome} only in those cases where the outcome is one of the events.</span>
+    <span class="k">return</span> <span class="n">outcome</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">outcome</span> <span class="o">!=</span> <span class="s1">&#39;_&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="BitsetHandler"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler">[docs]</a><span class="k">class</span> <span class="nc">BitsetHandler</span><span class="p">:</span>
@@ -399,6 +426,11 @@
 <div class="viewcode-block" id="BitsetHandler.clear"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.clear">[docs]</a>    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Clears all the bits for the specified rows&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">where</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span></div></div>
+
+
+<div class="viewcode-block" id="random_date"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.random_date">[docs]</a><span class="k">def</span> <span class="nf">random_date</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Generate a randomly-chosen day between `start` (inclusive) `end` (exclusive)&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">start</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">days</span><span class="p">))</span></div>
 </pre></div>
 
            </div>
@@ -411,7 +443,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

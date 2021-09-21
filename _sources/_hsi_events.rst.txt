@@ -49,12 +49,8 @@ Depression
 Diarrhoea
 *********
 
-* ``Dysentery`` at facility level 1 with appointment footprint: ``Under5OPD``.
-* ``Non_Severe_Persistent_Diarrhoea`` at facility level 1 with appointment footprint: ``Under5OPD``.
-* ``Severe_Persistent_Diarrhoea`` at facility level 1 with appointment footprint: ``Under5OPD``.
-* ``Treatment_PlanA`` at facility level 1 with appointment footprint: ``Under5OPD``.
-* ``Treatment_PlanB`` at facility level 1 with appointment footprint: ``Under5OPD``.
-* ``Treatment_PlanC`` at facility level 1 with appointment footprint: ``Under5OPD``.
+* ``Treatment_Inpatient`` at facility level 1 with appointment footprint: ``InpatientDays``, ``IPAdmission``.
+* ``Treatment_Outpatient`` at facility level 1 with appointment footprint: ``Under5OPD``.
 
 Epi
 ***

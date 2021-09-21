@@ -42,7 +42,7 @@
     
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="tlo.methods.bladder_cancer module" href="tlo.methods.bladder_cancer.html" />
+    <link rel="next" title="tlo.methods.bed_days module" href="tlo.methods.bed_days.html" />
     <link rel="prev" title="tlo.methods package" href="tlo.methods.html" /> 
 </head>
 
@@ -700,7 +700,7 @@ Is it right that ‘danger_signs’ is an indepednet symptom? It seems like this
 </tr>
 <tr class="row-odd"><td><p>ri_primary_pathogen</p></td>
 <td><p>CATEGORICAL</p></td>
-<td><p>If infected, what is the pathogen with which the person is currently infected. (np.nan if not infected).  Possible values are: [Strep_pneumoniae_non_PCV13, Rhinovirus, P.jirovecii, H.influenzae_non_type_b, Bocavirus, other_bacterial_pathogens, Staph_aureus, Enterobacteriaceae, Parainfluenza, other_Strepto_Enterococci, Influenza, Hib, other_viral_pathogens, HMPV, Strep_pneumoniae_PCV13, RSV, Adenovirus, ]</p></td>
+<td><p>If infected, what is the pathogen with which the person is currently infected. (np.nan if not infected).  Possible values are: [Staph_aureus, Influenza, Hib, Enterobacteriaceae, other_bacterial_pathogens, HMPV, Strep_pneumoniae_non_PCV13, Adenovirus, Parainfluenza, RSV, Rhinovirus, Bocavirus, other_viral_pathogens, Strep_pneumoniae_PCV13, other_Strepto_Enterococci, H.influenzae_non_type_b, P.jirovecii, ]</p></td>
 </tr>
 <tr class="row-even"><td><p>ri_secondary_bacterial_pathogen</p></td>
 <td><p>CATEGORICAL</p></td>
@@ -708,7 +708,7 @@ Is it right that ‘danger_signs’ is an indepednet symptom? It seems like this
 </tr>
 <tr class="row-odd"><td><p>ri_disease_type</p></td>
 <td><p>CATEGORICAL</p></td>
-<td><p>If infected, what disease type is the person currently suffering from..  Possible values are: [bronchiolitis, fungal_pneumonia, bacterial_pneumonia, viral_pneumonia, ]</p></td>
+<td><p>If infected, what disease type is the person currently suffering from..  Possible values are: [fungal_pneumonia, viral_pneumonia, bacterial_pneumonia, bronchiolitis, ]</p></td>
 </tr>
 <tr class="row-even"><td><p>ri_on_treatment</p></td>
 <td><p>BOOL</p></td>
@@ -737,12 +737,14 @@ Is it right that ‘danger_signs’ is an indepednet symptom? It seems like this
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘ALRI_Strep_pneumoniae_non_PCV13’: &lt;tlo.methods.causes.Cause object at 0x7fa0786c93d0&gt;, ‘ALRI_Rhinovirus’: &lt;tlo.methods.causes.Cause object at 0x7fa0786d79d0&gt;, ‘ALRI_P.jirovecii’: &lt;tlo.methods.causes.Cause object at 0x7fa0786d7b20&gt;, ‘ALRI_H.influenzae_non_type_b’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4910&gt;, ‘ALRI_Bocavirus’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4970&gt;, ‘ALRI_other_bacterial_pathogens’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e49d0&gt;, ‘ALRI_Staph_aureus’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4a30&gt;, ‘ALRI_Enterobacteriaceae’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4a90&gt;, ‘ALRI_Parainfluenza’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4af0&gt;, ‘ALRI_other_Strepto_Enterococci’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4b50&gt;, ‘ALRI_Influenza’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4bb0&gt;, ‘ALRI_Hib’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4c10&gt;, ‘ALRI_other_viral_pathogens’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4c70&gt;, ‘ALRI_HMPV’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4cd0&gt;, ‘ALRI_Strep_pneumoniae_PCV13’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4d30&gt;, ‘ALRI_RSV’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4d90&gt;, ‘ALRI_Adenovirus’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4df0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘ALRI_Strep_pneumoniae_non_PCV13’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4e50&gt;, ‘ALRI_Rhinovirus’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4eb0&gt;, ‘ALRI_P.jirovecii’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4f10&gt;, ‘ALRI_H.influenzae_non_type_b’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4f70&gt;, ‘ALRI_Bocavirus’: &lt;tlo.methods.causes.Cause object at 0x7fa0786e4fd0&gt;, ‘ALRI_other_bacterial_pathogens’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f1070&gt;, ‘ALRI_Staph_aureus’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f10d0&gt;, ‘ALRI_Enterobacteriaceae’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f1130&gt;, ‘ALRI_Parainfluenza’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f1190&gt;, ‘ALRI_other_Strepto_Enterococci’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f11f0&gt;, ‘ALRI_Influenza’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f1250&gt;, ‘ALRI_Hib’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f12b0&gt;, ‘ALRI_other_viral_pathogens’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f1310&gt;, ‘ALRI_HMPV’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f1370&gt;, ‘ALRI_Strep_pneumoniae_PCV13’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f13d0&gt;, ‘ALRI_RSV’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f1430&gt;, ‘ALRI_Adenovirus’: &lt;tlo.methods.causes.Cause object at 0x7fa0786f1490&gt;}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
-<p>all_pathogens : {‘Strep_pneumoniae_non_PCV13’, ‘Rhinovirus’, ‘P.jirovecii’, ‘H.influenzae_non_type_b’, ‘Bocavirus’, ‘other_bacterial_pathogens’, ‘Staph_aureus’, ‘Enterobacteriaceae’, ‘Parainfluenza’, ‘other_Strepto_Enterococci’, ‘Influenza’, ‘Hib’, ‘other_viral_pathogens’, ‘HMPV’, ‘Strep_pneumoniae_PCV13’, ‘RSV’, ‘Adenovirus’}</p>
-<p>complications : {‘respiratory_failure’, ‘meningitis’, ‘pleural_effusion’, ‘hypoxia’, ‘lung_abscess’, ‘empyema’, ‘sepsis’, ‘pneumothorax’}</p>
-<p>disease_types : {‘bronchiolitis’, ‘fungal_pneumonia’, ‘bacterial_pneumonia’, ‘viral_pneumonia’}</p>
+<p>CAUSES_OF_DEATH : {‘ALRI_Staph_aureus’: &lt;tlo.methods.causes.Cause object at 0x7f9967878940&gt;, ‘ALRI_Influenza’: &lt;tlo.methods.causes.Cause object at 0x7f9967884f10&gt;, ‘ALRI_Hib’: &lt;tlo.methods.causes.Cause object at 0x7f99678910a0&gt;, ‘ALRI_Enterobacteriaceae’: &lt;tlo.methods.causes.Cause object at 0x7f9967891eb0&gt;, ‘ALRI_other_bacterial_pathogens’: &lt;tlo.methods.causes.Cause object at 0x7f9967891f10&gt;, ‘ALRI_HMPV’: &lt;tlo.methods.causes.Cause object at 0x7f9967891f70&gt;, ‘ALRI_Strep_pneumoniae_non_PCV13’: &lt;tlo.methods.causes.Cause object at 0x7f9967891fd0&gt;, ‘ALRI_Adenovirus’: &lt;tlo.methods.causes.Cause object at 0x7f99678a2070&gt;, ‘ALRI_Parainfluenza’: &lt;tlo.methods.causes.Cause object at 0x7f99678a20d0&gt;, ‘ALRI_RSV’: &lt;tlo.methods.causes.Cause object at 0x7f99678a2130&gt;, ‘ALRI_Rhinovirus’: &lt;tlo.methods.causes.Cause object at 0x7f99678a2190&gt;, ‘ALRI_Bocavirus’: &lt;tlo.methods.causes.Cause object at 0x7f99678a21f0&gt;, ‘ALRI_other_viral_pathogens’: &lt;tlo.methods.causes.Cause object at 0x7f99678a2250&gt;, ‘ALRI_Strep_pneumoniae_PCV13’: &lt;tlo.methods.causes.Cause object at 0x7f99678a22b0&gt;, ‘ALRI_other_Strepto_Enterococci’: &lt;tlo.methods.causes.Cause object at 0x7f99678a2310&gt;, ‘ALRI_H.influenzae_non_type_b’: &lt;tlo.methods.causes.Cause object at 0x7f99678a2370&gt;, ‘ALRI_P.jirovecii’: &lt;tlo.methods.causes.Cause object at 0x7f99678a23d0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘ALRI_Staph_aureus’: &lt;tlo.methods.causes.Cause object at 0x7f99678a2430&gt;, ‘ALRI_Influenza’: &lt;tlo.methods.causes.Cause object at 0x7f99678a2490&gt;, ‘ALRI_Hib’: &lt;tlo.methods.causes.Cause object at 0x7f99678a24f0&gt;, ‘ALRI_Enterobacteriaceae’: &lt;tlo.methods.causes.Cause object at 0x7f99678a2550&gt;, ‘ALRI_other_bacterial_pathogens’: &lt;tlo.methods.causes.Cause object at 0x7f99678a25b0&gt;, ‘ALRI_HMPV’: &lt;tlo.methods.causes.Cause object at 0x7f99678a2610&gt;, ‘ALRI_Strep_pneumoniae_non_PCV13’: &lt;tlo.methods.causes.Cause object at 0x7f99678a2670&gt;, ‘ALRI_Adenovirus’: &lt;tlo.methods.causes.Cause object at 0x7f99678a26d0&gt;, ‘ALRI_Parainfluenza’: &lt;tlo.methods.causes.Cause object at 0x7f99678a2730&gt;, ‘ALRI_RSV’: &lt;tlo.methods.causes.Cause object at 0x7f99678a2790&gt;, ‘ALRI_Rhinovirus’: &lt;tlo.methods.causes.Cause object at 0x7f99678a27f0&gt;, ‘ALRI_Bocavirus’: &lt;tlo.methods.causes.Cause object at 0x7f99678a2850&gt;, ‘ALRI_other_viral_pathogens’: &lt;tlo.methods.causes.Cause object at 0x7f99678a28b0&gt;, ‘ALRI_Strep_pneumoniae_PCV13’: &lt;tlo.methods.causes.Cause object at 0x7f99678a2910&gt;, ‘ALRI_other_Strepto_Enterococci’: &lt;tlo.methods.causes.Cause object at 0x7f99678a2970&gt;, ‘ALRI_H.influenzae_non_type_b’: &lt;tlo.methods.causes.Cause object at 0x7f99678a29d0&gt;, ‘ALRI_P.jirovecii’: &lt;tlo.methods.causes.Cause object at 0x7f99678a2a30&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’, ‘AlriPropertiesOfOtherModules’, ‘SymptomManager’, ‘Lifestyle’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
+<p>all_pathogens : {‘Staph_aureus’, ‘Influenza’, ‘Hib’, ‘Enterobacteriaceae’, ‘other_bacterial_pathogens’, ‘HMPV’, ‘Strep_pneumoniae_non_PCV13’, ‘Adenovirus’, ‘Parainfluenza’, ‘RSV’, ‘Rhinovirus’, ‘Bocavirus’, ‘other_viral_pathogens’, ‘Strep_pneumoniae_PCV13’, ‘other_Strepto_Enterococci’, ‘H.influenzae_non_type_b’, ‘P.jirovecii’}</p>
+<p>complications : {‘lung_abscess’, ‘meningitis’, ‘hypoxia’, ‘empyema’, ‘pleural_effusion’, ‘sepsis’, ‘respiratory_failure’, ‘pneumothorax’}</p>
+<p>disease_types : {‘fungal_pneumonia’, ‘viral_pneumonia’, ‘bacterial_pneumonia’, ‘bronchiolitis’}</p>
 <p>pathogens : {‘viral’: [‘RSV’, ‘Rhinovirus’, ‘HMPV’, ‘Parainfluenza’, ‘Influenza’, ‘Adenovirus’, ‘Bocavirus’, ‘other_viral_pathogens’], ‘bacterial’: [‘Strep_pneumoniae_PCV13’, ‘Strep_pneumoniae_non_PCV13’, ‘Hib’, ‘H.influenzae_non_type_b’, ‘Staph_aureus’, ‘Enterobacteriaceae’, ‘other_Strepto_Enterococci’, ‘other_bacterial_pathogens’], ‘fungal’: [‘P.jirovecii’]}</p>
 <p><strong>Functions (defined or overridden in class Alri):</strong></p>
 <dl class="py method">
@@ -850,12 +852,6 @@ a treatment being given and the cure event occurring.
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.alri.Alri.random_date">
-<span class="sig-name descname"><span class="pre">random_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.random_date"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.random_date" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate a random date between <cite>start</cite> and <cite>end</cite> - sampling with precision of the day.</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.alri.Alri.impose_symptoms_for_complication">
 <span class="sig-name descname"><span class="pre">impose_symptoms_for_complication</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">complication</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#Alri.impose_symptoms_for_complication"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.Alri.impose_symptoms_for_complication" title="Permalink to this definition">¶</a></dt>
 <dd><p>Impose symptoms for a complication.</p>
@@ -900,14 +896,6 @@ infection</p>
 <dt class="sig sig-object py" id="tlo.methods.alri.AlriPollingEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriPollingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriPollingEvent.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determine who will become infected and schedule for them an AlriComplicationOnsetEvent</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.alri.AlriPollingEvent.sample_outcome">
-<span class="sig-name descname"><span class="pre">sample_outcome</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriPollingEvent.sample_outcome"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriPollingEvent.sample_outcome" title="Permalink to this definition">¶</a></dt>
-<dd><p>Helper function to randomly sample an outcome from a set of probabilities.
-Each row in the df is a person and each column gives the probability that a particular event may happen to the
-person. The probabilities of each event are assumed to be independent but mutually exlusive.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1244,8 +1232,8 @@ Analysis scripts expect that the frequency of this logging event is once per yea
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.alri.PropertiesOfOtherModules">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">PropertiesOfOtherModules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#PropertiesOfOtherModules"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.PropertiesOfOtherModules" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriPropertiesOfOtherModules">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">AlriPropertiesOfOtherModules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriPropertiesOfOtherModules"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriPropertiesOfOtherModules" title="Permalink to this definition">¶</a></dt>
 <dd><p>For the purpose of the testing, this module generates the properties upon which the Alri module relies</p>
 <p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
 <p><strong>PROPERTIES:</strong></p>
@@ -1288,10 +1276,13 @@ Analysis scripts expect that the frequency of this logging event is once per yea
 </tr>
 </tbody>
 </table>
-<p><strong>Functions (defined or overridden in class PropertiesOfOtherModules):</strong></p>
+<p><strong>Class attributes:</strong></p>
+<p>ALTERNATIVE_TO : {‘Hiv’, ‘NewbornOutcomes’, ‘Epi’}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’}</p>
+<p><strong>Functions (defined or overridden in class AlriPropertiesOfOtherModules):</strong></p>
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.alri.PropertiesOfOtherModules.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#PropertiesOfOtherModules.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.PropertiesOfOtherModules.__init__" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriPropertiesOfOtherModules.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriPropertiesOfOtherModules.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriPropertiesOfOtherModules.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
 generator.</p>
@@ -1303,8 +1294,8 @@ generator.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.alri.PropertiesOfOtherModules.read_parameters">
-<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#PropertiesOfOtherModules.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.PropertiesOfOtherModules.read_parameters" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriPropertiesOfOtherModules.read_parameters">
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriPropertiesOfOtherModules.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriPropertiesOfOtherModules.read_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read parameter values from file, if required.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -1316,8 +1307,8 @@ Typically modules would read a particular file within here.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.alri.PropertiesOfOtherModules.initialise_population">
-<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#PropertiesOfOtherModules.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.PropertiesOfOtherModules.initialise_population" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriPropertiesOfOtherModules.initialise_population">
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriPropertiesOfOtherModules.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriPropertiesOfOtherModules.initialise_population" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set our property values for the initial population.</p>
 <p>Must be implemented by subclasses.</p>
 <p>This method is called by the simulation when creating the initial population, and is
@@ -1333,8 +1324,8 @@ simulation knows what order to initialise modules in!</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.alri.PropertiesOfOtherModules.initialise_simulation">
-<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#PropertiesOfOtherModules.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.PropertiesOfOtherModules.initialise_simulation" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriPropertiesOfOtherModules.initialise_simulation">
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriPropertiesOfOtherModules.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriPropertiesOfOtherModules.initialise_simulation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get ready for simulation start.</p>
 <p>Must be implemented by subclasses.</p>
 <p>This method is called just before the main simulation loop begins, and after all
@@ -1343,8 +1334,8 @@ It is a good place to add initial events to the event queue.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.alri.PropertiesOfOtherModules.on_birth">
-<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#PropertiesOfOtherModules.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.PropertiesOfOtherModules.on_birth" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.alri.AlriPropertiesOfOtherModules.on_birth">
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/alri.html#AlriPropertiesOfOtherModules.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.alri.AlriPropertiesOfOtherModules.on_birth" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialise our properties for a newborn individual.</p>
 <p>Must be implemented by subclasses.</p>
 <p>This is called by the simulation whenever a new person is born.</p>
@@ -1368,7 +1359,7 @@ It is a good place to add initial events to the event queue.</p>
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="tlo.methods.bladder_cancer.html" class="btn btn-neutral float-right" title="tlo.methods.bladder_cancer module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tlo.methods.bed_days.html" class="btn btn-neutral float-right" title="tlo.methods.bed_days module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
         <a href="tlo.methods.html" class="btn btn-neutral float-left" title="tlo.methods package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
@@ -1377,7 +1368,7 @@ It is a good place to add initial events to the event queue.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>

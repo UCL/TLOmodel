@@ -9,6 +9,11 @@ tlo.methods.dx_algorithm_adult module
      Bases: :class:`tlo.core.Module`
 
 
+
+     **Class attributes:**
+
+     ADDITIONAL_DEPENDENCIES : {'SymptomManager', 'HealthSystem'}
+
      **Functions (defined or overridden in class DxAlgorithmAdult):**
 
      .. automethod:: __init__

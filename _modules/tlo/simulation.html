@@ -180,6 +180,7 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Date</span><span class="p">,</span> <span class="n">Population</span><span class="p">,</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">tlo.dependencies</span> <span class="kn">import</span> <span class="n">check_dependencies_present</span><span class="p">,</span> <span class="n">topologically_sort_modules</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">IndividualScopeEventMixin</span>
 <span class="kn">from</span> <span class="nn">tlo.progressbar</span> <span class="kn">import</span> <span class="n">ProgressBar</span>
 
@@ -242,7 +243,10 @@
         <span class="n">seed_from</span> <span class="o">=</span> <span class="s1">&#39;auto&#39;</span> <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;user&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_seed</span> <span class="o">=</span> <span class="n">seed</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_seed_seq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">SeedSequence</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;info&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Simulation RNG </span><span class="si">{</span><span class="n">seed_from</span><span class="si">}</span><span class="s1"> seed: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_seed</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="n">key</span><span class="o">=</span><span class="s1">&#39;info&#39;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Simulation RNG </span><span class="si">{</span><span class="n">seed_from</span><span class="si">}</span><span class="s1"> entropy = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_seed_seq</span><span class="o">.</span><span class="n">entropy</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">MT19937</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_seed_seq</span><span class="p">))</span>
 
 <div class="viewcode-block" id="Simulation.configure_logging"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.configure_logging">[docs]</a>    <span class="k">def</span> <span class="nf">configure_logging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">directory</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;./outputs&quot;</span><span class="p">,</span>
@@ -289,12 +293,29 @@
     <span class="k">def</span> <span class="nf">_set_module_log_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module_path</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">set_logging_levels</span><span class="p">({</span><span class="n">module_path</span><span class="p">:</span> <span class="n">level</span><span class="p">},</span> <span class="p">[</span><span class="n">module_path</span><span class="p">])</span>
 
-<div class="viewcode-block" id="Simulation.register"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.register">[docs]</a>    <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">modules</span><span class="p">):</span>
+<div class="viewcode-block" id="Simulation.register"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.register">[docs]</a>    <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">modules</span><span class="p">,</span> <span class="n">sort_modules</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check_all_dependencies</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Register one or more disease modules with the simulation.</span>
 
 <span class="sd">        :param modules: the disease module(s) to use as part of this simulation.</span>
 <span class="sd">            Multiple modules may be given as separate arguments to one call.</span>
+<span class="sd">        :param sort_modules: Whether to topologically sort the modules so that any</span>
+<span class="sd">            initialisation dependencies (specified by the ``INIT_DEPENDENCIES``</span>
+<span class="sd">            attribute) of a module are initialised before the module itself is. A</span>
+<span class="sd">            ``ModuleDependencyError`` exception will be raised if there are missing</span>
+<span class="sd">            initialisation dependencies or circular initialisation dependencies between</span>
+<span class="sd">            modules that cannot be resolved. If this flag is set to ``True`` there is</span>
+<span class="sd">            also a requirement that at most one instance of each module is registered</span>
+<span class="sd">            and ``MultipleModuleInstanceError`` will be raised if this is not the case.</span>
+<span class="sd">        :param check_all_dependencies: Whether to check if all of each modules declared</span>
+<span class="sd">            dependencies (that is, the union of the ``INIT_DEPENDENCIES`` and</span>
+<span class="sd">            ``ADDITIONAL_DEPENDENCIES`` attributes) have been included in the set of</span>
+<span class="sd">            modules to be registered. A ``ModuleDependencyError`` exception will</span>
+<span class="sd">            be raised if there are missing dependencies.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">sort_modules</span><span class="p">:</span>
+            <span class="n">modules</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">topologically_sort_modules</span><span class="p">(</span><span class="n">modules</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">check_all_dependencies</span><span class="p">:</span>
+            <span class="n">check_dependencies_present</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span>
         <span class="c1"># Iterate over modules and per-module seed sequences spawned from simulation</span>
         <span class="c1"># level seed sequence</span>
         <span class="k">for</span> <span class="n">module</span><span class="p">,</span> <span class="n">seed_seq</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">modules</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seed_seq</span><span class="o">.</span><span class="n">spawn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">))):</span>
@@ -303,7 +324,11 @@
 
             <span class="c1"># Seed the RNG for the registered module using spawned seed sequence</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="n">key</span><span class="o">=</span><span class="s1">&#39;info&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">module</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> RNG auto seed: </span><span class="si">{</span><span class="n">seed_seq</span><span class="o">.</span><span class="n">entropy</span><span class="si">}</span><span class="s1">&#39;</span>
+                <span class="n">key</span><span class="o">=</span><span class="s1">&#39;info&#39;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">module</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> RNG auto (entropy, spawn key) = &#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">seed_seq</span><span class="o">.</span><span class="n">entropy</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">seed_seq</span><span class="o">.</span><span class="n">spawn_key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">)&#39;</span>
+                <span class="p">)</span>
             <span class="p">)</span>
             <span class="n">module</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">MT19937</span><span class="p">(</span><span class="n">seed_seq</span><span class="p">))</span>
 
@@ -493,7 +518,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 01, 2021.
+        Last updated on Sep 21, 2021.
       </span>
 
     </p>
