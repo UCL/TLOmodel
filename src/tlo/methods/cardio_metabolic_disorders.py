@@ -647,7 +647,7 @@ class CardioMetabolicDisorders(Module):
         """
 
         def get_time_since_last_test(current_date, date_of_last_test):
-            return (current_date - date_of_last_test).days > 365.25/2
+            return (current_date - date_of_last_test).days > 365.25 / 2
 
         df = self.sim.population.props
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
@@ -658,7 +658,7 @@ class CardioMetabolicDisorders(Module):
                 # if the person hasn't ever been tested for the condition, test if over 50 or with some probability
                 if pd.isnull(df.at[person_id, f'nc_{condition}_date_last_test']):
                     if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
-                            f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
+                                f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
                         # initiate HSI event
                         hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
                             module=self,
@@ -679,7 +679,7 @@ class CardioMetabolicDisorders(Module):
                         # and if they're over 50 or are chosen to be tested with some probability...
                         # TODO: @britta make these not arbitrary
                         if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
-                                f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
+                                    f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
                             # initiate HSI event
                             hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
                                 module=self,
@@ -709,6 +709,7 @@ class CardioMetabolicDisorders(Module):
                     ev=ev,
                 )
                 health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
