@@ -35,6 +35,7 @@ class RTI(Module):
 
     INIT_DEPENDENCIES = {"SymptomManager",
                          "HealthBurden"}
+
     ADDITIONAL_DEPENDENCIES = {
         'Demography',
         'Lifestyle',
@@ -1112,6 +1113,222 @@ class RTI(Module):
                 emergency_in_children=True
             )
         )
+        # create an injury lookup table to handle all assigning injuries/daly weights and daly weight changes. The table
+        # is writted in the following format: [[1], 2, 3, 4]. [1] contains information used in assigning injuries e.g.
+        # probability of injury occuring followed by information used in logging, specifically injury location, injury
+        # category and injury severity. 2 contains the daly weight initially assigned to people who have this injury.
+        # 3 contains any potential changes to the persons health burden upon treatment. 4 contains the daly weight to
+        # remove once an injury is healed.
+
+        self.ASSIGN_INJURIES_AND_DALY_CHANGES = {
+            'none': [0, 0, 0, 0],
+            # injuries to the head
+            '112': [[p['head_prob_112'], 1, 1, 2], p['daly_wt_unspecified_skull_fracture'], 0,
+                    - p['daly_wt_unspecified_skull_fracture']],
+            '113': [[p['head_prob_113'], 1, 1, 3], p['daly_wt_basilar_skull_fracture'], 0,
+                    - p['daly_wt_basilar_skull_fracture']],
+            '133a': [[p['head_prob_133a'], 1, 3, 3], p['daly_wt_subarachnoid_hematoma'], 0,
+                     - p['daly_wt_subarachnoid_hematoma']],
+            '133b': [[p['head_prob_133b'], 1, 3, 3], p['daly_wt_brain_contusion'], 0, - p['daly_wt_brain_contusion']],
+            '133c': [[p['head_prob_133c'], 1, 3, 3], p['daly_wt_intraventricular_haemorrhage'], 0,
+                     - p['daly_wt_intraventricular_haemorrhage']],
+            '133d': [[p['head_prob_133d'], 1, 3, 3], p['daly_wt_subgaleal_hematoma'], 0,
+                     - p['daly_wt_subgaleal_hematoma']],
+            '134a': [[p['head_prob_134a'], 1, 3, 4], p['daly_wt_epidural_hematoma'], 0,
+                     - p['daly_wt_epidural_hematoma']],
+            '134b': [[p['head_prob_134b'], 1, 3, 4], p['daly_wt_subdural_hematoma'], 0,
+                     - p['daly_wt_subdural_hematoma']],
+            '135': [[p['head_prob_135'], 1, 3, 5], p['daly_wt_diffuse_axonal_injury'], 0,
+                    - p['daly_wt_diffuse_axonal_injury']],
+            '1101': [[p['head_prob_1101'], 1, 10, 1], p['daly_wt_facial_soft_tissue_injury'], 0,
+                     - p['daly_wt_facial_soft_tissue_injury']],
+            '1114': [[p['head_prob_1114'], 1, 11, 4], p['daly_wt_burns_greater_than_20_percent_body_area'], 0,
+                     - p['daly_wt_burns_greater_than_20_percent_body_area']],
+            # injuries to the face
+            '211': [[p['face_prob_211'], 2, 1, 1], p['daly_wt_facial_fracture'], 0, - p['daly_wt_facial_fracture']],
+            '212': [[p['face_prob_212'], 2, 1, 2], p['daly_wt_facial_fracture'], 0, - p['daly_wt_facial_fracture']],
+            '241': [[p['face_prob_241'], 2, 4, 1], p['daly_wt_facial_soft_tissue_injury'], 0,
+                    - p['daly_wt_facial_soft_tissue_injury']],
+            '2101': [[p['face_prob_2101'], 2, 10, 1], p['daly_wt_facial_soft_tissue_injury'], 0,
+                     - p['daly_wt_facial_soft_tissue_injury']],
+            '2114': [[p['face_prob_2114'], 2, 11, 4], p['daly_wt_burns_greater_than_20_percent_body_area'], 0,
+                     - p['daly_wt_burns_greater_than_20_percent_body_area']],
+            '291': [[p['face_prob_291'], 2, 9, 1], p['daly_wt_eye_injury'], 0, - p['daly_wt_eye_injury']],
+            # injuries to the neck
+            '3101': [[p['neck_prob_3101'], 3, 10, 1], p['daly_wt_facial_soft_tissue_injury'], 0,
+                     - p['daly_wt_facial_soft_tissue_injury']],
+            '3113': [[p['neck_prob_3113'], 3, 11, 3],
+                     p['daly_wt_burns_less_than_20_percent_body_area_without_treatment'],
+                     - p['daly_wt_burns_less_than_20_percent_body_area_without_treatment'] +
+                     p['daly_wt_burns_less_than_20_percent_body_area_with_treatment'],
+                     - p['daly_wt_burns_less_than_20_percent_body_area_with_treatment']],
+            '342': [[p['neck_prob_342'], 3, 4, 2], p['daly_wt_neck_internal_bleeding'], 0,
+                    - p['daly_wt_neck_internal_bleeding']],
+            '343': [[p['neck_prob_343'], 3, 4, 3], p['daly_wt_neck_internal_bleeding'], 0,
+                     - p['daly_wt_neck_internal_bleeding']],
+            '361': [[p['neck_prob_361'], 3, 6, 1], p['daly_wt_neck_internal_bleeding'], 0,
+                     - p['daly_wt_neck_internal_bleeding']],
+            '363': [[p['neck_prob_363'], 3, 6, 3], p['daly_wt_neck_internal_bleeding'], 0,
+                    - p['daly_wt_neck_internal_bleeding']],
+            '322': [[p['neck_prob_322'], 3, 2, 2], p['daly_wt_neck_dislocation'], 0, - p['daly_wt_neck_dislocation']],
+            '323': [[p['neck_prob_323'], 3, 2, 3], p['daly_wt_neck_dislocation'], 0, - p['daly_wt_neck_dislocation']],
+            # injuries to the chest
+            '4101': [[p['thorax_prob_4101'], 4, 10, 1], p['daly_wt_facial_soft_tissue_injury'], 0,
+                     - p['daly_wt_facial_soft_tissue_injury']],
+            '4113': [[p['thorax_prob_4113'], 4, 11, 3],
+                     p['daly_wt_burns_less_than_20_percent_body_area_without_treatment'],
+                     - p['daly_wt_burns_less_than_20_percent_body_area_without_treatment'] +
+                     p['daly_wt_burns_less_than_20_percent_body_area_with_treatment'],
+                     - p['daly_wt_burns_less_than_20_percent_body_area_with_treatment']],
+            '461': [[p['thorax_prob_461'], 4, 6, 1], p['daly_wt_chest_wall_bruises_hematoma'], 0,
+                    - p['daly_wt_chest_wall_bruises_hematoma']],
+            '463': [[p['thorax_prob_463'], 4, 6, 3], p['daly_wt_hemothorax'], 0, - p['daly_wt_hemothorax']],
+            '453a': [[p['thorax_prob_453a'], 4, 5, 3], p['daly_wt_diaphragm_rupture'], 0,
+                     - p['daly_wt_diaphragm_rupture']],
+            '453b': [[p['thorax_prob_453b'], 4, 5, 3], p['daly_wt_lung_contusion'], 0, - p['daly_wt_lung_contusion']],
+            '412': [[p['thorax_prob_412'], 4, 1, 2], p['daly_wt_rib_fracture'], 0, - p['daly_wt_rib_fracture']],
+            '414': [[p['thorax_prob_414'], 4, 1, 4], p['daly_wt_flail_chest'], 0, - p['daly_wt_flail_chest']],
+            '441': [[p['thorax_prob_441'], 4, 4, 1], p['daly_wt_closed_pneumothorax'], 0,
+                    - p['daly_wt_closed_pneumothorax']],
+            '442': [[p['thorax_prob_442'], 4, 4, 2], p['daly_wt_surgical_emphysema'], 0,
+                    - p['daly_wt_surgical_emphysema']],
+            '443': [[p['thorax_prob_443'], 4, 4, 3], p['daly_wt_open_pneumothorax'], 0,
+                    - p['daly_wt_open_pneumothorax']],
+            # injuries to the abdomen
+            '5101': [[p['abdomen_prob_5101'], 5, 10, 1], p['daly_wt_facial_soft_tissue_injury'], 0,
+                     - p['daly_wt_facial_soft_tissue_injury']],
+            '5113': [[p['abdomen_prob_5113'], 5, 11, 3],
+                     p['daly_wt_burns_less_than_20_percent_body_area_without_treatment'],
+                     - p['daly_wt_burns_less_than_20_percent_body_area_without_treatment'] +
+                     p['daly_wt_burns_less_than_20_percent_body_area_with_treatment'],
+                     - p['daly_wt_burns_less_than_20_percent_body_area_with_treatment']],
+            '552': [[p['abdomen_prob_552'], 5, 5, 2], p['daly_wt_abd_internal_organ_injury'], 0,
+                    - p['daly_wt_abd_internal_organ_injury']],
+            '553': [[p['abdomen_prob_553'], 5, 5, 3], p['daly_wt_abd_internal_organ_injury'], 0,
+                    - p['daly_wt_abd_internal_organ_injury']],
+            '554': [[p['abdomen_prob_554'], 5, 5, 4], p['daly_wt_abd_internal_organ_injury'], 0,
+                    - p['daly_wt_abd_internal_organ_injury']],
+            # injuries to the spine
+            '612': [[p['spine_prob_612'], 6, 1, 2], p['daly_wt_vertebrae_fracture'], 0,
+                    - p['daly_wt_vertebrae_fracture']],
+            '673a': [[p['spine_prob_673a'], 6, 7, 3], p['daly_wt_spinal_cord_lesion_neck_without_treatment'],
+                     - p['daly_wt_spinal_cord_lesion_neck_without_treatment'] +
+                     p['daly_wt_spinal_cord_lesion_neck_with_treatment'], 0],
+            '673b': [[p['spine_prob_673b'], 6, 7, 3], p['daly_wt_spinal_cord_lesion_below_neck_without_treatment'],
+                     - p['daly_wt_spinal_cord_lesion_below_neck_without_treatment'] +
+                     p['daly_wt_spinal_cord_lesion_below_neck_with_treatment'], 0],
+            '674a': [[p['spine_prob_674a'], 6, 7, 4], p['daly_wt_spinal_cord_lesion_neck_without_treatment'],
+                     - p['daly_wt_spinal_cord_lesion_neck_without_treatment'] +
+                     p['daly_wt_spinal_cord_lesion_neck_with_treatment'], 0],
+            '674b': [[p['spine_prob_674b'], 6, 7, 4], p['daly_wt_spinal_cord_lesion_below_neck_without_treatment'],
+                     - p['daly_wt_spinal_cord_lesion_below_neck_without_treatment'] +
+                     p['daly_wt_spinal_cord_lesion_below_neck_with_treatment'], 0],
+            '675a': [[p['spine_prob_675a'], 6, 7, 5], p['daly_wt_spinal_cord_lesion_neck_without_treatment'],
+                     - p['daly_wt_spinal_cord_lesion_neck_without_treatment'] +
+                     p['daly_wt_spinal_cord_lesion_neck_with_treatment'], 0],
+            '675b': [[p['spine_prob_675b'], 6, 7, 5], p['daly_wt_spinal_cord_lesion_below_neck_without_treatment'],
+                     - p['daly_wt_spinal_cord_lesion_below_neck_without_treatment'] +
+                     p['daly_wt_spinal_cord_lesion_below_neck_with_treatment'], 0],
+            '676': [[p['spine_prob_676'], 6, 7, 6], p['daly_wt_spinal_cord_lesion_neck_without_treatment'],
+                    - p['daly_wt_spinal_cord_lesion_neck_without_treatment'] +
+                    p['daly_wt_spinal_cord_lesion_neck_with_treatment'], 0],
+            # injuries to the upper extremities
+            '7101': [[p['upper_ex_prob_7101'], 7, 10, 1], p['daly_wt_facial_soft_tissue_injury'], 0,
+                     - p['daly_wt_facial_soft_tissue_injury']],
+            '7113': [[p['upper_ex_prob_7113'], 7, 11, 3],
+                     p['daly_wt_burns_less_than_20_percent_body_area_without_treatment'],
+                     - p['daly_wt_burns_less_than_20_percent_body_area_without_treatment'] +
+                     p['daly_wt_burns_less_than_20_percent_body_area_with_treatment'],
+                     - p['daly_wt_burns_less_than_20_percent_body_area_with_treatment']],
+            '712a': [[p['upper_ex_prob_712a'], 7, 1, 2], p['daly_wt_clavicle_scapula_humerus_fracture'], 0,
+                     - p['daly_wt_clavicle_scapula_humerus_fracture']],
+            '712b': [[p['upper_ex_prob_712b'], 7, 1, 2], p['daly_wt_hand_wrist_fracture_without_treatment'],
+                     - p['daly_wt_hand_wrist_fracture_without_treatment'] +
+                     p['daly_wt_hand_wrist_fracture_with_treatment'],
+                     - p['daly_wt_hand_wrist_fracture_with_treatment']],
+            '712c': [[p['upper_ex_prob_712c'], 7, 1, 2],
+                     p['daly_wt_radius_ulna_fracture_short_term_with_without_treatment'], 0,
+                     - p['daly_wt_radius_ulna_fracture_short_term_with_without_treatment']],
+            '722': [[p['upper_ex_prob_722'], 7, 2, 2], p['daly_wt_dislocated_shoulder'], 0,
+                    - p['daly_wt_dislocated_shoulder']],
+            '782a': [[p['upper_ex_prob_782a'], 7, 8, 2], p['daly_wt_amputated_finger'], 0, 0],
+            '782b': [[p['upper_ex_prob_782b'], 7, 8, 2], p['daly_wt_unilateral_arm_amputation_without_treatment'],
+                     - p['daly_wt_unilateral_arm_amputation_without_treatment'] +
+                     p['daly_wt_unilateral_arm_amputation_with_treatment'], 0],
+            '782c': [[p['upper_ex_prob_782c'], 7, 8, 2], p['daly_wt_amputated_thumb'], 0, 0],
+            '783': [[p['upper_ex_prob_783'], 7, 8, 3], p['daly_wt_bilateral_arm_amputation_without_treatment'],
+                    - p['daly_wt_bilateral_arm_amputation_without_treatment'] +
+                    p['daly_wt_bilateral_arm_amputation_with_treatment'], 0],
+            # injuries to the lower extremities
+            '8101': [[p['lower_ex_prob_8101'], 8, 10, 1], p['daly_wt_facial_soft_tissue_injury'], 0,
+                     - p['daly_wt_facial_soft_tissue_injury']],
+            '8113': [[p['lower_ex_prob_8113'], 8, 11, 3],
+                     p['daly_wt_burns_less_than_20_percent_body_area_without_treatment'],
+                     - p['daly_wt_burns_less_than_20_percent_body_area_without_treatment'] +
+                     p['daly_wt_burns_less_than_20_percent_body_area_with_treatment'],
+                     - p['daly_wt_burns_less_than_20_percent_body_area_with_treatment']],
+            # foot fracture, can be open or not, open is more severe
+            '811': [[p['lower_ex_prob_811'], 8, 1, 1], p['daly_wt_foot_fracture_short_term_with_without_treatment'], 0,
+                    - p['daly_wt_foot_fracture_short_term_with_without_treatment']],
+            '813do': [[p['lower_ex_prob_813do'], 8, 1, 3], p['daly_wt_foot_fracture_short_term_with_without_treatment']
+                      + p['daly_wt_facial_soft_tissue_injury'], 0,
+                      - p['daly_wt_foot_fracture_short_term_with_without_treatment'] -
+                      p['daly_wt_facial_soft_tissue_injury']],
+            # lower leg fracture can be open or not
+            '812': [[p['lower_ex_prob_812'], 8, 1, 2], p['daly_wt_patella_tibia_fibula_fracture_without_treatment'],
+                    - p['daly_wt_patella_tibia_fibula_fracture_without_treatment'] +
+                    p['daly_wt_patella_tibia_fibula_fracture_with_treatment'],
+                    - p['daly_wt_patella_tibia_fibula_fracture_with_treatment']],
+            '813eo': [[p['lower_ex_prob_813eo'], 8, 1, 3], p['daly_wt_patella_tibia_fibula_fracture_without_treatment']
+                      + p['daly_wt_facial_soft_tissue_injury'], 0,
+                      - p['daly_wt_patella_tibia_fibula_fracture_without_treatment'] -
+                      p['daly_wt_facial_soft_tissue_injury']],
+            '813a': [[p['lower_ex_prob_813a'], 8, 1, 3], p['daly_wt_hip_fracture_short_term_with_without_treatment'],
+                     - p['daly_wt_hip_fracture_short_term_with_without_treatment'] +
+                     p['daly_wt_hip_fracture_long_term_with_treatment'],
+                     - p['daly_wt_hip_fracture_long_term_with_treatment']],
+            # pelvis fracture can be open or closed
+            '813b': [[p['lower_ex_prob_813b'], 8, 1, 3], p['daly_wt_pelvis_fracture_short_term'],
+                     - p['daly_wt_pelvis_fracture_short_term'] + p['daly_wt_pelvis_fracture_long_term'],
+                     - p['daly_wt_pelvis_fracture_long_term']],
+            '813bo': [[p['lower_ex_prob_813bo'], 8, 1, 3], p['daly_wt_pelvis_fracture_short_term'] +
+                      p['daly_wt_facial_soft_tissue_injury'], - p['daly_wt_pelvis_fracture_short_term'] +
+                      p['daly_wt_pelvis_fracture_long_term'], - p['daly_wt_pelvis_fracture_long_term'] -
+                      p['daly_wt_facial_soft_tissue_injury']],
+            # femur fracture can be open or closed
+            '813c': [[p['lower_ex_prob_813c'], 8, 1, 3], p['daly_wt_femur_fracture_short_term'], 0,
+                     - p['daly_wt_femur_fracture_short_term']],
+            '813co': [[p['lower_ex_prob_813co'], 8, 1, 3], p['daly_wt_femur_fracture_short_term'] +
+                      p['daly_wt_facial_soft_tissue_injury'], 0, - p['daly_wt_femur_fracture_short_term'] -
+                      p['daly_wt_facial_soft_tissue_injury']],
+            '822a': [[p['lower_ex_prob_822a'], 8, 2, 2], p['daly_wt_dislocated_hip'], 0, - p['daly_wt_dislocated_hip']],
+            '822b': [[p['lower_ex_prob_822b'], 8, 2, 2], p['daly_wt_dislocated_knee'], 0,
+                     - p['daly_wt_dislocated_knee']],
+            '882': [[p['lower_ex_prob_882'], 8, 8, 2], p['daly_wt_amputated_toes'], 0, 0],
+            '883': [[p['lower_ex_prob_883'], 8, 8, 3], p['daly_wt_unilateral_lower_limb_amputation_without_treatment'],
+                    - p['daly_wt_unilateral_lower_limb_amputation_without_treatment'] +
+                    p['daly_wt_unilateral_lower_limb_amputation_with_treatment'], 0],
+            '884': [[p['lower_ex_prob_884'], 8, 8, 4], p['daly_wt_bilateral_lower_limb_amputation_without_treatment'],
+                    - p['daly_wt_bilateral_lower_limb_amputation_without_treatment'] +
+                    p['daly_wt_bilateral_lower_limb_amputation_with_treatment'], 0]
+        }
+        # The vast majority of the injuries should have a total change of daly weights that sum to zero, meaning that
+        # a person recieves an injury and has the health burden which will eventually be removed once the injury has
+        # healed. However some injuries are permanent so the person will always have some level of health burden. The
+        # injury codes for permanent injuries are given below.
+        permanent_injuries = ['673a', '673b', '674a', '674b', '675a', '675b', '676', '782a', '782b', '782c', '783',
+                              '882', '883', '884']
+        # We need to check that the changes to all other DALY weights over the course of treatment sum to zero, do so
+        # using pandas, convert dictionary into a dataframe
+        check_daly_change_df = pd.DataFrame(self.ASSIGN_INJURIES_AND_DALY_CHANGES)
+        # drop the row of the dataframe used to assign people injuries
+        check_daly_change_df = check_daly_change_df.drop([0], axis=0)
+        # calculate the sum of the dataframe
+        sum_check_daly_change_df = check_daly_change_df.sum()
+        # find the injuries where the change in daly weights does not sum to zero
+        non_zero_total_daly_change = sum_check_daly_change_df.where(sum_check_daly_change_df > 0).dropna().index
+        # ensure that these injuries are the permanent injuries
+        assert non_zero_total_daly_change.to_list() == permanent_injuries
 
     def rti_injury_diagnosis(self, person_id, the_appt_footprint):
         """
@@ -1626,90 +1843,7 @@ class RTI(Module):
         :return: n/a
         """
         df = self.sim.population.props
-        p = self.parameters
-        # ============================= DALY weights ===================================================================
-        self.daly_wt_unspecified_skull_fracture = p['daly_wt_unspecified_skull_fracture']
-        self.daly_wt_basilar_skull_fracture = p['daly_wt_basilar_skull_fracture']
-        self.daly_wt_epidural_hematoma = p['daly_wt_epidural_hematoma']
-        self.daly_wt_subdural_hematoma = p['daly_wt_subdural_hematoma']
-        self.daly_wt_subarachnoid_hematoma = p['daly_wt_subarachnoid_hematoma']
-        self.daly_wt_brain_contusion = p['daly_wt_brain_contusion']
-        self.daly_wt_intraventricular_haemorrhage = p['daly_wt_intraventricular_haemorrhage']
-        self.daly_wt_diffuse_axonal_injury = p['daly_wt_diffuse_axonal_injury']
-        self.daly_wt_subgaleal_hematoma = p['daly_wt_subgaleal_hematoma']
-        self.daly_wt_midline_shift = p['daly_wt_midline_shift']
-        self.daly_wt_facial_fracture = p['daly_wt_facial_fracture']
-        self.daly_wt_facial_soft_tissue_injury = p['daly_wt_facial_soft_tissue_injury']
-        self.daly_wt_eye_injury = p['daly_wt_eye_injury']
-        self.daly_wt_neck_soft_tissue_injury = p['daly_wt_neck_soft_tissue_injury']
-        self.daly_wt_neck_internal_bleeding = p['daly_wt_neck_internal_bleeding']
-        self.daly_wt_neck_dislocation = p['daly_wt_neck_dislocation']
-        self.daly_wt_chest_wall_bruises_hematoma = p['daly_wt_chest_wall_bruises_hematoma']
-        self.daly_wt_hemothorax = p['daly_wt_hemothorax']
-        self.daly_wt_lung_contusion = p['daly_wt_lung_contusion']
-        self.daly_wt_diaphragm_rupture = p['daly_wt_diaphragm_rupture']
-        self.daly_wt_rib_fracture = p['daly_wt_rib_fracture']
-        self.daly_wt_flail_chest = p['daly_wt_flail_chest']
-        self.daly_wt_chest_wall_laceration = p['daly_wt_chest_wall_laceration']
-        self.daly_wt_closed_pneumothorax = p['daly_wt_closed_pneumothorax']
-        self.daly_wt_open_pneumothorax = p['daly_wt_open_pneumothorax']
-        self.daly_wt_surgical_emphysema = p['daly_wt_surgical_emphysema']
-        self.daly_wt_abd_internal_organ_injury = p['daly_wt_abd_internal_organ_injury']
-        self.daly_wt_spinal_cord_lesion_neck_with_treatment = p['daly_wt_spinal_cord_lesion_neck_with_treatment']
-        self.daly_wt_spinal_cord_lesion_neck_without_treatment = p['daly_wt_spinal_cord_lesion_neck_without_treatment']
-        self.daly_wt_spinal_cord_lesion_below_neck_with_treatment = p[
-            'daly_wt_spinal_cord_lesion_below_neck_with_treatment']
-        self.daly_wt_spinal_cord_lesion_below_neck_without_treatment = p[
-            'daly_wt_spinal_cord_lesion_below_neck_without_treatment']
-        self.daly_wt_vertebrae_fracture = p['daly_wt_vertebrae_fracture']
-        self.daly_wt_clavicle_scapula_humerus_fracture = p['daly_wt_clavicle_scapula_humerus_fracture']
-        self.daly_wt_hand_wrist_fracture_with_treatment = p['daly_wt_hand_wrist_fracture_with_treatment']
-        self.daly_wt_hand_wrist_fracture_without_treatment = p['daly_wt_hand_wrist_fracture_without_treatment']
-        self.daly_wt_radius_ulna_fracture_short_term_with_without_treatment = p[
-            'daly_wt_radius_ulna_fracture_short_term_with_without_treatment']
-        self.daly_wt_radius_ulna_fracture_long_term_without_treatment = p[
-            'daly_wt_radius_ulna_fracture_long_term_without_treatment']
-        self.daly_wt_dislocated_shoulder = p['daly_wt_dislocated_shoulder']
-        self.daly_wt_amputated_finger = p['daly_wt_amputated_finger']
-        self.daly_wt_amputated_thumb = p['daly_wt_amputated_thumb']
-        self.daly_wt_unilateral_arm_amputation_with_treatment = p['daly_wt_unilateral_arm_amputation_with_treatment']
-        self.daly_wt_unilateral_arm_amputation_without_treatment = p[
-            'daly_wt_unilateral_arm_amputation_without_treatment']
-        self.daly_wt_bilateral_arm_amputation_with_treatment = p['daly_wt_bilateral_arm_amputation_with_treatment']
-        self.daly_wt_bilateral_arm_amputation_without_treatment = p[
-            'daly_wt_bilateral_arm_amputation_without_treatment']
-        self.daly_wt_foot_fracture_short_term_with_without_treatment = p[
-            'daly_wt_foot_fracture_short_term_with_without_treatment']
-        self.daly_wt_foot_fracture_long_term_without_treatment = p['daly_wt_foot_fracture_long_term_without_treatment']
-        self.daly_wt_patella_tibia_fibula_fracture_with_treatment = p[
-            'daly_wt_patella_tibia_fibula_fracture_with_treatment']
-        self.daly_wt_patella_tibia_fibula_fracture_without_treatment = p[
-            'daly_wt_patella_tibia_fibula_fracture_without_treatment']
-        self.daly_wt_hip_fracture_short_term_with_without_treatment = p[
-            'daly_wt_hip_fracture_short_term_with_without_treatment']
-        self.daly_wt_hip_fracture_long_term_with_treatment = p['daly_wt_hip_fracture_long_term_with_treatment']
-        self.daly_wt_hip_fracture_long_term_without_treatment = p['daly_wt_hip_fracture_long_term_without_treatment']
-        self.daly_wt_pelvis_fracture_short_term = p['daly_wt_pelvis_fracture_short_term']
-        self.daly_wt_pelvis_fracture_long_term = p['daly_wt_pelvis_fracture_long_term']
-        self.daly_wt_femur_fracture_short_term = p['daly_wt_femur_fracture_short_term']
-        self.daly_wt_femur_fracture_long_term_without_treatment = p[
-            'daly_wt_femur_fracture_long_term_without_treatment']
-        self.daly_wt_dislocated_hip = p['daly_wt_dislocated_hip']
-        self.daly_wt_dislocated_knee = p['daly_wt_dislocated_knee']
-        self.daly_wt_amputated_toes = p['daly_wt_amputated_toes']
-        self.daly_wt_unilateral_lower_limb_amputation_with_treatment = p[
-            'daly_wt_unilateral_lower_limb_amputation_with_treatment']
-        self.daly_wt_unilateral_lower_limb_amputation_without_treatment = p[
-            'daly_wt_unilateral_lower_limb_amputation_without_treatment']
-        self.daly_wt_bilateral_lower_limb_amputation_with_treatment = p[
-            'daly_wt_bilateral_lower_limb_amputation_with_treatment']
-        self.daly_wt_bilateral_lower_limb_amputation_without_treatment = p[
-            'daly_wt_bilateral_lower_limb_amputation_without_treatment']
-        self.daly_wt_burns_greater_than_20_percent_body_area = p['daly_wt_burns_greater_than_20_percent_body_area']
-        self.daly_wt_burns_less_than_20_percent_body_area_with_treatment = p[
-            'daly_wt_burns_less_than_20_percent_body_area_with_treatment']
-        self.daly_wt_burns_less_than_20_percent_body_area_without_treatment = p[
-            'daly_wt_burns_less_than_20_percent_body_area_with_treatment']
+
         # ==============================================================================================================
         # Check that those sent here have been involved in a road traffic accident
         assert sum(df.loc[injured_index, 'rt_road_traffic_inc']) == len(injured_index)
@@ -1722,131 +1856,9 @@ class RTI(Module):
                (sum(df.loc[injured_index, 'rt_imm_death']) == 0)
         selected_for_rti_inj = df.loc[injured_index, RTI.INJURY_COLUMNS]
 
-        daly_lookup = {
-            # =============================== AIS region 1: head =======================================================
-            # ------ Find those with skull fractures and update rt_fracture to match and call for treatment ------------
-            '112': self.daly_wt_unspecified_skull_fracture,
-            '113': self.daly_wt_basilar_skull_fracture,
-            # ------ Find those with traumatic brain injury and update rt_tbi to match and call the TBI treatment-------
-            '133a': self.daly_wt_subarachnoid_hematoma,
-            '133b': self.daly_wt_brain_contusion,
-            '133c': self.daly_wt_intraventricular_haemorrhage,
-            '133d': self.daly_wt_subgaleal_hematoma,
-            '134a': self.daly_wt_epidural_hematoma,
-            '134b': self.daly_wt_subdural_hematoma,
-            '135': self.daly_wt_diffuse_axonal_injury,
-            '1101': self.daly_wt_facial_soft_tissue_injury,
-            '1114': self.daly_wt_burns_greater_than_20_percent_body_area,
-            # =============================== AIS region 2: face =======================================================
-            # ----------------------- Find those with facial fractures and assign DALY weight --------------------------
-            '211': self.daly_wt_facial_fracture,
-            '212': self.daly_wt_facial_fracture,
-            # ----------------- Find those with lacerations/soft tissue injuries and assign DALY weight ----------------
-            '2101': self.daly_wt_facial_soft_tissue_injury,
-            # ----------------- Find those with eye injuries and assign DALY weight ------------------------------------
-            '291': self.daly_wt_eye_injury,
-            '241': self.daly_wt_facial_soft_tissue_injury,
-            '2114': self.daly_wt_burns_greater_than_20_percent_body_area,
-            # =============================== AIS region 3: Neck =======================================================
-            # -------------------------- soft tissue injuries and internal bleeding-------------------------------------
-            '342': self.daly_wt_neck_internal_bleeding,
-            '343': self.daly_wt_neck_internal_bleeding,
-            '361': self.daly_wt_neck_internal_bleeding,
-            '363': self.daly_wt_neck_internal_bleeding,
-            # -------------------------------- neck vertebrae dislocation ----------------------------------------------
-            '322': self.daly_wt_neck_dislocation,
-            '323': self.daly_wt_neck_dislocation,
-            '3101': self.daly_wt_facial_soft_tissue_injury,
-            '3113': self.daly_wt_burns_less_than_20_percent_body_area_without_treatment,
-            # ================================== AIS region 4: Thorax ==================================================
-            # --------------------------------- fractures & flail chest ------------------------------------------------
-            '412': self.daly_wt_rib_fracture,
-            '414': self.daly_wt_flail_chest,
-            # ------------------------------------ Internal bleeding ---------------------------------------------------
-            # chest wall bruises/hematoma
-            '461': self.daly_wt_chest_wall_bruises_hematoma,
-            '463': self.daly_wt_hemothorax,
-            # -------------------------------- Internal organ injury ---------------------------------------------------
-            '453a': self.daly_wt_diaphragm_rupture,
-            '453b': self.daly_wt_lung_contusion,
-            # ----------------------------------- Soft tissue injury ---------------------------------------------------
-            '442': self.daly_wt_surgical_emphysema,
-            # ---------------------------------- Pneumothoraxs ---------------------------------------------------------
-            '441': self.daly_wt_closed_pneumothorax,
-            '443': self.daly_wt_open_pneumothorax,
-            '4101': self.daly_wt_facial_soft_tissue_injury,
-            '4113': self.daly_wt_burns_less_than_20_percent_body_area_without_treatment,
-            # ================================== AIS region 5: Abdomen =================================================
-            '552': self.daly_wt_abd_internal_organ_injury,
-            '553': self.daly_wt_abd_internal_organ_injury,
-            '554': self.daly_wt_abd_internal_organ_injury,
-            '5101': self.daly_wt_facial_soft_tissue_injury,
-            '5113': self.daly_wt_burns_less_than_20_percent_body_area_without_treatment,
-            # =================================== AIS region 6: spine ==================================================
-            # ----------------------------------- vertebrae fracture ---------------------------------------------------
-            '612': self.daly_wt_vertebrae_fracture,
-            # ---------------------------------- Spinal cord injuries --------------------------------------------------
-            '673a': self.daly_wt_spinal_cord_lesion_neck_without_treatment,
-            '673b': self.daly_wt_spinal_cord_lesion_below_neck_without_treatment,
-            '674a': self.daly_wt_spinal_cord_lesion_neck_without_treatment,
-            '674b': self.daly_wt_spinal_cord_lesion_below_neck_without_treatment,
-            '675a': self.daly_wt_spinal_cord_lesion_neck_without_treatment,
-            '675b': self.daly_wt_spinal_cord_lesion_below_neck_without_treatment,
-            '676': self.daly_wt_spinal_cord_lesion_neck_without_treatment,
-            # ============================== AIS body region 7: upper extremities ======================================
-            # ------------------------------------------ fractures -----------------------------------------------------
-            # Fracture to Clavicle, scapula, humerus, Hand/wrist, Radius/ulna
-            '712a': self.daly_wt_clavicle_scapula_humerus_fracture,
-            '712b': self.daly_wt_hand_wrist_fracture_without_treatment,
-            '712c': self.daly_wt_radius_ulna_fracture_short_term_with_without_treatment,
-            # ------------------------------------ Dislocation of shoulder ---------------------------------------------
-            '722': self.daly_wt_dislocated_shoulder,
-            # ------------------------------------------ Amputations ---------------------------------------------------
-            # Amputation of fingers, Unilateral upper limb amputation, Thumb amputation
-            '782a': self.daly_wt_amputated_finger,
-            '782b': self.daly_wt_unilateral_arm_amputation_without_treatment,
-            '782c': self.daly_wt_amputated_thumb,
-            '783': self.daly_wt_bilateral_arm_amputation_without_treatment,
-            # ----------------------------------- cuts and bruises -----------------------------------------------------
-            '7101': self.daly_wt_facial_soft_tissue_injury,
-            '7113': self.daly_wt_burns_less_than_20_percent_body_area_without_treatment,
-            # ============================== AIS body region 8: Lower extremities ======================================
-            # ------------------------------------------ Fractures -----------------------------------------------------
-            # Broken foot
-            '811': self.daly_wt_foot_fracture_short_term_with_without_treatment,
-            # Broken foot (open), currently combining the daly weight used for open wounds and the fracture
-            '813do': (self.daly_wt_foot_fracture_short_term_with_without_treatment +
-                      self.daly_wt_facial_soft_tissue_injury),
-            # Broken patella, tibia, fibula
-            '812': self.daly_wt_patella_tibia_fibula_fracture_without_treatment,
-            # Broken foot (open), currently combining the daly weight used for open wounds and the fracture
-            '813eo': (self.daly_wt_patella_tibia_fibula_fracture_without_treatment +
-                      self.daly_wt_facial_soft_tissue_injury),
-            # Broken Hip, Pelvis, Femur other than femoral neck
-            '813a': self.daly_wt_hip_fracture_short_term_with_without_treatment,
-            '813b': self.daly_wt_pelvis_fracture_short_term,
-            # broken pelvis (open)
-            '813bo': self.daly_wt_pelvis_fracture_short_term + self.daly_wt_facial_soft_tissue_injury,
-            '813c': self.daly_wt_femur_fracture_short_term,
-            # broken femur (open)
-            '813co': self.daly_wt_femur_fracture_short_term + self.daly_wt_facial_soft_tissue_injury,
-            # -------------------------------------- Dislocations ------------------------------------------------------
-            # Dislocated hip, knee
-            '822a': self.daly_wt_dislocated_hip,
-            '822b': self.daly_wt_dislocated_knee,
-            # --------------------------------------- Amputations ------------------------------------------------------
-            # toes
-            '882': self.daly_wt_amputated_toes,
-            # Unilateral lower limb amputation
-            '883': self.daly_wt_unilateral_lower_limb_amputation_without_treatment,
-            # Bilateral lower limb amputation
-            '884': self.daly_wt_bilateral_lower_limb_amputation_without_treatment,
-            # ------------------------------------ cuts and bruises ----------------------------------------------------
-            '8101': self.daly_wt_facial_soft_tissue_injury,
-            '8113': self.daly_wt_burns_less_than_20_percent_body_area_without_treatment
-        }
-
-        daly_change = selected_for_rti_inj.applymap(lambda code: daly_lookup.get(code, 0)).sum(axis=1)
+        daly_change = selected_for_rti_inj.applymap(
+            lambda code: self.ASSIGN_INJURIES_AND_DALY_CHANGES[code][1]
+        ).sum(axis=1)
         df.loc[injured_index, 'rt_disability'] += daly_change
 
         # Store the true sum of DALY weights in the df
