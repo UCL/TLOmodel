@@ -47,6 +47,9 @@ class CardioMetabolicDisorders(Module):
               'ever_heart_attack']
 
     INIT_DEPENDENCIES = {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
+
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
     ADDITIONAL_DEPENDENCIES = {'Depression'}
 
     # Declare Metadata (this is for a typical 'Disease Module')

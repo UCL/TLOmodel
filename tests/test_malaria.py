@@ -39,7 +39,6 @@ def check_dtypes(simulation):
 
 
 def register_sim():
-    service_availability = list(["*"])
 
     sim = Simulation(start_date=start_date, seed=0)
 
@@ -48,12 +47,7 @@ def register_sim():
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
             resourcefilepath=resourcefilepath,
-            service_availability=service_availability,
-            mode_appt_constraints=0,
-            ignore_cons_constraints=True,
-            ignore_priority=True,
-            capabilities_coefficient=1.0,
-            disable=True,  # disables the health system constraints so all HSI events run
+            disable=True,
         ),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -329,6 +323,9 @@ def test_dx_algorithm_for_non_malaria_outcomes():
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                      dx_algorithm_adult.DxAlgorithmAdult(),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+
+                     # Supporting modules:
+                     diarrhoea.DiarrhoeaPropertiesOfOtherModules()
                      )
 
         sim.make_initial_population(n=popsize)

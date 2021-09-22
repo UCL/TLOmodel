@@ -62,6 +62,9 @@ class Hiv(Module):
         self.footprints_for_consumables_required = dict()
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'Lifestyle', 'SymptomManager'}
+
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
     ADDITIONAL_DEPENDENCIES = {'NewbornOutcomes'}
 
     METADATA = {
@@ -1334,7 +1337,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
 
         # Check that there are on Treatment currently:
         if not (person["hv_art"] in ["on_VL_suppressed", "on_not_VL_suppressed"]):
-            logger.warning('This event should not be running')
+            logger.warning(key='message', data='This event should not be running')
 
         # Determine if this appointment is actually attended by the person who has already started on PrEP
         if m.rng.random_sample() < m.parameters['probability_of_being_retained_on_art_every_6_months']:

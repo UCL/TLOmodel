@@ -38,6 +38,8 @@ class Measles(Module):
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
     # declare metadata
     METADATA = {
         Metadata.DISEASE_MODULE,
