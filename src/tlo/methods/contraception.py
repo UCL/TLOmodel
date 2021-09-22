@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
@@ -105,7 +106,7 @@ class Contraception(Module):
                                                    'contraception failure)'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=False):
+    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.all_contraception_states = set(self.PROPERTIES['co_contraception'].categories)
@@ -321,7 +322,7 @@ class Contraception(Module):
         ):
             new_contraceptive = 'not_using'
 
-        # Do the change in contracpetive
+        # Do the change in contraceptive
         self.schedule_batch_of_contraceptive_changes(ids=[mother_id], old=['not_using'], new=[new_contraceptive])
 
     def get_item_code_for_each_contraceptive(self):
@@ -365,13 +366,13 @@ class Contraception(Module):
                         old_contraceptive=_old,
                         new_contraceptive=_new
                     ),
-                    topen=random_date(  # scatter dates over the month
-                        self.sim.date, self.sim.date + pd.DateOffset(days=28), self.rng),
+                    topen=self.sim.date,
+                    # random_date( # scatter dates over the month self.sim.date, self.sim.date + pd.DateOffset(days=28), self.rng), but don't use own rng
                     tclose=None,
                     priority=1
                 )
             else:
-                # Otherwise, implement the change immidiately
+                # Otherwise, implement the change immediately
                 self.do_and_log_individual_contraception_change(woman_id=_woman_id, old=_old, new=_new)
 
     def do_and_log_individual_contraception_change(self, woman_id: int, old, new):
@@ -440,22 +441,20 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         currently_not_using_co = df.index[possible_co_users & (df.co_contraception == 'not_using')]
 
         # initiating: not using -> using
-        self.initiate(df, currently_not_using_co)
+        self.initiate(currently_not_using_co)
 
-        # discontinuing: using -> not using
-        self.discontinue(df, currently_using_co)
+        # continue/discontinue/switch: using --> using/not using
+        self.continue_discontinue_or_switch(currently_using_co)
 
-        # switching: using A -> using B: #  todo - this should not include those who have discontinued.
-        self.switch(df, currently_using_co)
-
-    def initiate(self, df: pd.DataFrame, individuals_not_using: pd.Index):
-        """check all females not using contraception to determine if contraception starts
+    def initiate(self, individuals_not_using: pd.Index):
+        """Check all females not using contraception to determine if contraception starts
         i.e. category should change from 'not_using'
         """
-        # exit if there are no individuals currenlty not using a contraceptive:
+        # Exit if there are no individuals currently not using a contraceptive:
         if not len(individuals_not_using):
             return
 
+        df = self.sim.population.props
         p = self.module.parameters
         rng = self.module.rng
 
@@ -466,109 +465,99 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # all the contraceptive types we can randomly choose
         co_types = list(co_start_prob_by_age.columns)
 
-        def pick_random_contraceptive(age):
-            """random selects a contraceptive using probabilities for given age"""
-            return rng.choice(co_types, p=co_start_prob_by_age.loc[age])
-
         # select a random contraceptive for everyone not currently using
-        random_co = df.loc[individuals_not_using, 'age_years'].apply(pick_random_contraceptive)
+        random_co = df.loc[individuals_not_using, 'age_years'].apply(
+            lambda age: rng.choice(co_types, p=co_start_prob_by_age.loc[age])
+        )
 
-        # though don't allow female sterilization to any woman below 30
-        younger_women = df.loc[random_co.index, 'age_years'] < 30
-        female_sterilization = random_co.loc[younger_women.loc[younger_women].index] == 'female_sterilization'
-        random_co.loc[female_sterilization.loc[female_sterilization].index] = 'not_using'
+        # ... but don't allow female sterilization to any woman below 30: default to "not_using"
+        random_co.loc[(random_co == 'female_sterilization') &
+                      (df.loc[random_co.index, 'age_years'] < 30)] = "not_using"
 
-        # get index of all those now using
-        now_using_co = random_co.index[random_co != 'not_using']
+        # Make pd.Series only containing those who are starting
+        now_using_co = random_co.loc[random_co != 'not_using']
 
         # Do the contraceptive change
         if len(now_using_co) > 0:
             self.module.schedule_batch_of_contraceptive_changes(
-                ids=now_using_co,
+                ids=now_using_co.index,
                 old=['not_using'] * len(now_using_co),
-                new=random_co[now_using_co].values
+                new=now_using_co.values
             )
 
-    def switch(self, df: pd.DataFrame, individuals_using: pd.Index):
-        """check all females using contraception to determine if contraception Switches
-        i.e. category should change from any method to a new method (not including 'not_using')
+    def continue_discontinue_or_switch(self, individuals_using: pd.Index):
+        """Check all females currently using contraception to determine if they discontinue it, switch to a different
+        one, or keep using the same one.
         """
-        # exit if there are no individuals currenlty using a contraceptive:
+        # exit if there are no individuals currently using a contraceptive:
         if not len(individuals_using):
             return
 
         p = self.module.parameters
         rng = self.module.rng
+        df = self.sim.population.props
 
-        switching_prob = p['contraception_switching']
-        switching_matrix = p['contraception_switching_matrix']
+        # -- Discontinuation
+        # Probability of discontinuing:
+        prob_discont_by_age_and_method = p['contraception_discontinuation'].mul(
+            p['r_discont_year'].at[self.sim.date.year, 'r_discont_year1']
+        )
 
-        # get the probability of switching contraceptive for all those currently using
-        co_switch_prob = df.loc[individuals_using, 'co_contraception'].map(switching_prob.probability)
+        # get the probability of discontinuing for all currently using a contraceptive
+        discontinue_prob = df.loc[individuals_using].apply(
+            lambda row: prob_discont_by_age_and_method.loc[row.age_years, row.co_contraception], axis=1
+        )
 
-        # randomly select some individuals to switch contraceptive
-        random_draw = rng.random_sample(size=len(individuals_using))
-        switch_co = co_switch_prob.index[co_switch_prob > random_draw]
-
-        # todo: For those that don't switch, schedule an HSI for every six months.
-        # if no one is switching, exit
-        if switch_co.empty:
-            return
-
-        # select new contraceptive using switching matrix
-        new_co = transition_states(df.loc[switch_co, 'co_contraception'], switching_matrix, rng)
-
-        # ... but don't allow female sterilization to any woman below 30 (no switch will occur)
-        to_drop = df.loc[
-            df.is_alive &
-            df.index.isin(new_co.index) &
-            (df['age_years'] < 30) &
-            (new_co == 'female_sterilization')
-            ].index
-
-        switch_co = switch_co.drop(to_drop)
-        new_co = new_co.drop(to_drop)
+        # randomly choose who will discontinue
+        co_discontinue_idx = discontinue_prob.index[discontinue_prob > rng.rand(len(individuals_using))]
 
         # Do the contraceptive change
-        if len(switch_co) > 0:
+        if len(co_discontinue_idx) > 0:
             self.module.schedule_batch_of_contraceptive_changes(
-                ids=switch_co,
-                old=df.loc[switch_co, 'co_contraception'].values,
-                new=new_co[switch_co].values
+                ids=co_discontinue_idx,
+                old=df.loc[co_discontinue_idx, 'co_contraception'].values,
+                new=['not_using'] * len(co_discontinue_idx)
             )
 
-    def discontinue(self, df: pd.DataFrame, individuals_using: pd.Index):
-        """check all females using contraception to determine if contraception discontinues
-        i.e. category should change to 'not_using'
-        """
-        # exit if there are no individuals currenlty using a contraceptive:
-        if not len(individuals_using):
-            return
+        # -- Switches and Continuations for that that do not Discontinue:
+        individuals_eligible_for_continue_or_switch = individuals_using.drop(co_discontinue_idx)
 
-        p = self.module.parameters
-        rng = self.module.rng
+        # Get the probability of switching contraceptive for all those currently using
+        co_switch_prob = df.loc[individuals_eligible_for_continue_or_switch, 'co_contraception'].map(
+            p['contraception_switching']['probability']
+        )
 
-        c_multiplier = p['r_discont_year'].at[self.sim.date.year, 'r_discont_year1']
-        c_adjustment = p['contraception_discontinuation'].mul(c_multiplier)
+        # randomly select who will switch contraceptive and who will remain on their current contraceptive
+        will_switch = co_switch_prob > rng.random_sample(size=len(individuals_eligible_for_continue_or_switch))
+        switch_idx = individuals_eligible_for_continue_or_switch[will_switch]
+        continue_idx = individuals_eligible_for_continue_or_switch[~will_switch]
 
-        def get_prob_discontinued(row):
-            """returns the probability of discontinuing contraceptive based on age and current
-            contraceptive"""
-            return c_adjustment.loc[row.age_years, row.co_contraception]
+        # For that do switch, select the new contraceptive using switching matrix
+        new_co = transition_states(df.loc[switch_idx, 'co_contraception'], p['contraception_switching_matrix'], rng)
 
-        # get the probability of discontinuing for all currently using
-        discontinue_prob = df.loc[individuals_using].apply(get_prob_discontinued, axis=1)
+        # ... but don't allow female sterilization to any woman below 30 (instead, they will continue on current method)
+        to_not_switch_to_sterilization = \
+            new_co.index[(new_co == 'female_sterilization') & (df.loc[new_co.index, 'age_years'] < 30)]
+        new_co = new_co.drop(to_not_switch_to_sterilization)
+        continue_idx = continue_idx.append([to_not_switch_to_sterilization])
 
-        # random choose some to discontinue
-        co_discontinue = discontinue_prob.index[discontinue_prob > rng.rand(len(individuals_using))]
-
-        # Do the contraceptive change
-        if len(co_discontinue) > 0:
+        # Do the contraceptive change for those switching
+        if len(new_co) > 0:
             self.module.schedule_batch_of_contraceptive_changes(
-                ids=co_discontinue,
-                old=df.loc[co_discontinue, 'co_contraception'].values,
-                new=['not_using'] * len(co_discontinue)
+                ids=new_co.index,
+                old=df.loc[new_co.index, 'co_contraception'].values,
+                new=new_co.values
             )
+
+        # todo - For that continue, send this to batch_report in case an HSI should be scheduled
+        # Do the contraceptive "change" for those not switching (this is so that an HSI may be logged)
+        # if len(continue_idx) > 0:
+        #     current_contraception = df.loc[continue_idx, 'co_contraception'].values
+        #     self.module.schedule_batch_of_contraceptive_changes(
+        #         ids=continue_idx,
+        #         old=current_contraception,
+        #         new=current_contraception
+        #     )
 
     def update_pregnancy(self):
         """Determine who will become pregnant"""

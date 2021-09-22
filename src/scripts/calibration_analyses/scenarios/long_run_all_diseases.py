@@ -1,5 +1,5 @@
 """
-This file defines a batch run of a large population for a long time with all disease modules.
+This file defines a batch run of a large population for a long time with all disease modules and full use of HSIs
 It's used for calibrations (demographic patterns, health burdens and healthsytstem usage)
 
 Run on the batch system using:
@@ -77,7 +77,7 @@ class LongRun(BaseScenario):
             dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=self.resources),
 
             # - Contraception, Pregnancy and Labour
-            contraception.Contraception(resourcefilepath=self.resources),
+            contraception.Contraception(resourcefilepath=self.resources, use_healthsystem=True),
             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
             labour.Labour(resourcefilepath=self.resources),

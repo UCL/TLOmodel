@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+import pandas as pd
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
@@ -61,8 +63,9 @@ def check_logs(sim):
     # some switching
     assert len(con.loc[(con.switch_from != "not_using") & (con.switch_to != "not_using")])
 
-    # no switching to female_sterilization if age less than 30
-    assert not (con.loc[con['age'] < 30, 'switch_to'] == 'female_sterilization').any()
+    # no switching to female_sterilization if age less than 30 (or equal to, in case they have aged since an HSI was
+    # scheduled)
+    assert not (con.loc[con['age'] <= 30, 'switch_to'] == 'female_sterilization').any()
 
     # no switching from female_sterilization
     assert not (con.switch_from == 'female_sterilization').any()
@@ -139,18 +142,24 @@ def test_contraception_use_and_not_using_healthsystem(tmpdir):
     sim_uses_healthsystem = run_sim(tmpdir=tmpdir, use_healthsystem=True)
     check_logs(sim_uses_healthsystem)
 
-    # Check that the output of these two simulations are the same (apart from dates, which may change as HSI dates are
-    # intentionally scattered.)
+    # Check that the output of these two simulations are the same (apart from day of the month, which may change as
+    # HSI dates are intentionally scattered over the month.)
+
+    def format_log(_log):
+        """Format the log so that date is replaced with the only the month and year"""
+        _log["year_month"] = pd.to_datetime(_log['date']).dt.to_period('M')
+        return _log.drop(columns=['date', 'age']).sort_values('year_month').reset_index(drop=True)
 
     for key in {'contraception_use_yearly_summary', 'pregnancy', 'contraception_change'}:
-        assert parse_log_file(sim_uses_healthsystem.log_filepath)['tlo.methods.contraception'][key].equals(
-            parse_log_file(sim_does_not_use_healthsystem.log_filepath)['tlo.methods.contraception'][key]
+        pd.testing.assert_frame_equal(
+            format_log(parse_log_file(sim_uses_healthsystem.log_filepath)['tlo.methods.contraception'][key]),
+            format_log(parse_log_file(sim_does_not_use_healthsystem.log_filepath)['tlo.methods.contraception'][key])
         )
 
-    u = parse_log_file(sim_uses_healthsystem.log_filepath)['tlo.methods.contraception']['contraception_change']
-    n = parse_log_file(sim_does_not_use_healthsystem.log_filepath)['tlo.methods.contraception']['contraception_change']
-
-    x = u.merge(n, left_on=['woman'], right_on=['woman'])
+    # u = format_log(parse_log_file(sim_uses_healthsystem.log_filepath)[
+    #                    'tlo.methods.contraception']['contraception_change'])
+    # n = format_log(parse_log_file(sim_does_not_use_healthsystem.log_filepath)[
+    #                    'tlo.methods.contraception']['contraception_change'])
 
 
 def test_contraception_using_healthsystem_but_no_capability(tmpdir):

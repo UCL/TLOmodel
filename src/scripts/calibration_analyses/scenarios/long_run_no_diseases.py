@@ -1,5 +1,6 @@
 """
-This file defines a batch run of a large population for a long time with *NO* disease modules.
+This file defines a batch run of a large population for a long time with *NO* disease modules and no tracking of
+HealthSystem usage.
 It's used for calibrations of the demographic components of the model only.
 
 Run on the batch system using:
@@ -59,7 +60,7 @@ class LongRun(BaseScenario):
             healthsystem.HealthSystem(resourcefilepath=self.resources, disable=True),
 
             # - Contraception, Pregnancy and Labour
-            contraception.Contraception(resourcefilepath=self.resources),
+            contraception.Contraception(resourcefilepath=self.resources, use_healthsystem=False),
             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
             labour.Labour(resourcefilepath=self.resources),
