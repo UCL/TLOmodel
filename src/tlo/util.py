@@ -3,7 +3,9 @@ from collections import defaultdict
 from typing import Dict, List, Union
 
 import numpy as np
+import pandas
 import pandas as pd
+from pandas import DateOffset
 
 from tlo import Population
 
@@ -84,6 +86,31 @@ def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng:
             new_states = rng.choice(all_states, len(state_index), p=prob_matrix[state])
             final_states[state_index] = new_states
     return final_states
+
+
+def sample_outcome(probs: pd.DataFrame, rng: np.random.RandomState):
+    """ Helper function to randomly sample an outcome for each individual in a population from a set of probabilities
+    that are specific to each individual.
+
+    :param _probs: Each row of this dataframe represents the person and the columns are the possible outcomes. The
+    values are the probability of that outcome for that individual. For each individual, the probabilities of each
+    outcome are assumed to be independent and mutually exlusive (but not neccesarily exhaustive).
+    :param rng: Random Number state to use for the generation of random numbers.
+    :return: A dict of the form {<index>:<outcome>} where an outcome is selected.
+    """
+
+    assert (probs.sum(axis=1) <= 1.0).all(), "Probabilities across columns cannot sum to more than 1.0"
+
+    # Compare uniform deviate to cumulative sum across columns, after including a "null" column (for no event).
+    _probs = probs.copy()
+    _probs['_'] = 1.0 - _probs.sum(axis=1)  # add implied "none of these events" category
+    cumsum = _probs.cumsum(axis=1)
+    draws = pd.Series(rng.rand(len(cumsum)), index=cumsum.index)
+    y = cumsum.gt(draws, axis=0)
+    outcome = y.idxmax(axis=1)
+
+    # return as a dict of form {person_id: outcome} only in those cases where the outcome is one of the events.
+    return outcome.loc[outcome != '_'].to_dict()
 
 
 class BitsetHandler:
@@ -230,3 +257,8 @@ class BitsetHandler:
     def clear(self, where) -> None:
         """Clears all the bits for the specified rows"""
         self.df.loc[where, self._column] = 0
+
+
+def random_date(start, end, rng):
+    """Generate a randomly-chosen day between `start` (inclusive) `end` (exclusive)"""
+    return start + DateOffset(days=rng.randint(0, (end - start).days))

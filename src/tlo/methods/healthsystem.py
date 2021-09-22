@@ -1247,6 +1247,11 @@ class HealthSystem(Module):
         # removing bed_days from a particular individual if any
         self.bed_days.remove_beddays_footprint(person_id=person_id)
 
+    def reset_queue(self):
+        """Set the HSI event queue to be empty"""
+        self.HSI_EVENT_QUEUE = []
+        self.hsi_event_queue_counter = 0
+
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """

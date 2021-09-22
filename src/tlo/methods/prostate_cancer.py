@@ -36,6 +36,8 @@ class ProstateCancer(Module):
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,

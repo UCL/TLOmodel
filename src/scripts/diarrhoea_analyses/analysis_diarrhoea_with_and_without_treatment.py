@@ -12,7 +12,6 @@ from matplotlib import pyplot as plt
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    contraception,
     demography,
     diarrhoea,
     dx_algorithm_child,
@@ -20,8 +19,7 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 
@@ -44,26 +42,35 @@ output_files = dict()
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 2)
-popsize = 5000
+end_date = Date(2014, 12, 31)
+popsize = 50_000
 
 for label, service_avail in scenarios.items():
-    log_config = {'filename': 'LogFile'}
+    log_config = {'filename': 'diarrhoea_with_treatment_with_and_without_treatment'}
+
+    if service_avail == []:
+        _disable = False
+        _disable_and_reject_all = True
+    else:
+        _disable = True
+        _disable_and_reject_all = False
+
     # add file handler for the purpose of logging
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
 
     # run the simulation
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable=_disable,
+                                           disable_and_reject_all=_disable_and_reject_all),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
 
     sim.make_initial_population(n=popsize)
@@ -77,15 +84,17 @@ for label, service_avail in scenarios.items():
 def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     output = parse_log_file(logfile)
 
-    # Calculate the "incidence rate" from the output counts of incidence
-    counts = output['tlo.methods.diarrhoea']['incidence_count_by_pathogen']
+    #  Get counts of cases by year, pathogen and custom age-group (0 year-old, 1 year-olds and 2-4 year-old)
+    counts = output['tlo.methods.diarrhoea']['incident_case']
     counts['year'] = pd.to_datetime(counts['date']).dt.year
-    counts.drop(columns='date', inplace=True)
-    counts.set_index(
-        'year',
-        drop=True,
-        inplace=True
-    )
+    counts['age_grp'] = counts['age_years'].map({
+        0: "0y",
+        1: "1y",
+        2: "2-4y",
+        3: "2-4y",
+        4: "2-4y"
+    }).fillna('5+y')
+    counts = counts.groupby(by=['year', 'pathogen', 'age_grp']).size().unstack()
 
     # get person-years of 0 year-old, 1 year-olds and 2-4 year-old
     py_ = output['tlo.methods.demography']['person_years']
@@ -104,7 +113,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     # Incidence rate among 0, 1, 2-4 year-olds
     inc_rate = dict()
     for age_grp in ['0y', '1y', '2-4y']:
-        inc_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
+        inc_rate[age_grp] = counts[age_grp].unstack().div(py[age_grp], axis=0).dropna()
 
     # Produce mean inicence rates of incidence rate during the simulation:
     inc_mean = pd.DataFrame()
@@ -134,7 +143,8 @@ def plot_for_column_of_interest(results, column_of_interest):
     data = 100 * pd.concat(summary_table, axis=1)
     data.plot.bar()
     plt.title(f'Incidence rate (/100 py): {column_of_interest}')
-    plt.savefig(outputpath / ("Diarrhoea_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
+    plt.tight_layout()
+    plt.savefig(outputpath / ("Diarrhoea_inc_rate_by_scenario" + datestamp + ".png"), format='png')
     plt.show()
 
 
@@ -142,11 +152,13 @@ def plot_for_column_of_interest(results, column_of_interest):
 for column_of_interest in inc_by_pathogen[list(inc_by_pathogen.keys())[0]].columns:
     plot_for_column_of_interest(inc_by_pathogen, column_of_interest)
 
+
 # Plot death rates by year: across the scenarios
 data = {}
 for label in deaths.keys():
     data.update({label: deaths[label]})
 pd.concat(data, axis=1).plot.bar()
 plt.title('Number of Deaths Due to Diarrhoea')
-plt.savefig(outputpath / ("Diarrhoea_deaths_by_scenario" + datestamp + ".pdf"), format='pdf')
+plt.savefig(outputpath / ("Diarrhoea_deaths_by_scenario" + datestamp + ".png"), format='png')
+plt.tight_layout()
 plt.show()

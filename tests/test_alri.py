@@ -5,7 +5,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -28,12 +27,13 @@ from tlo.methods.alri import (
     AlriIncidentCase,
     AlriNaturalRecoveryEvent,
     AlriPollingEvent,
+    AlriPropertiesOfOtherModules,
     HSI_Alri_GenericTreatment,
     Models,
-    PropertiesOfOtherModules,
 )
 
 # Path to the resource files used by the disease and intervention methods
+
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 # Default date for the start of simulations
@@ -60,7 +60,7 @@ def get_sim(tmpdir):
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
         dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
         alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=0, do_checks=True),
-        PropertiesOfOtherModules()
+        AlriPropertiesOfOtherModules()
     )
     return sim
 
@@ -810,32 +810,3 @@ def test_use_of_HSI(tmpdir):
     # Check that person is now on treatment:
     assert df.at[person_id, 'ri_on_treatment']
     assert sim.date == df.at[person_id, 'ri_ALRI_tx_start_date']
-
-
-def test_sample_outcome(tmpdir):
-    """Test helper function that determines outcomes"""
-    popsize = 100
-    sim = get_sim(tmpdir)
-    sim.make_initial_population(n=popsize)
-    poll = AlriPollingEvent(sim.modules['Alri'])
-    sample_outcome = poll.sample_outcome
-
-    df = pd.DataFrame({
-        'A': {0: 1.0, 1: 0.0, 2: 0.25},
-        'B': {0: 0.0, 1: 1.0, 2: 0.25},
-        'C': {0: 0.0, 1: 0.0, 2: 0.50}
-    })
-
-    res = list()
-    n = 1000
-    for i in range(n):
-        res.append(sample_outcome(df))
-    res = pd.DataFrame(res)
-
-    assert (res[0] == 'A').all()
-    assert (res[1] == 'B').all()
-    assert (res[2].isin(['A', 'B', 'C'])).all()
-
-    for op in ['A', 'B', 'C']:
-        prob = df.loc[2, op]
-        assert res[2].value_counts()[op] == pytest.approx(df.loc[2, op] * n, abs=2 * np.sqrt(n * prob * (1 - prob)))

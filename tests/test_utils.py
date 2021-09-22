@@ -179,3 +179,30 @@ class TestCreateAgeRangeLookup:
             assert lookup[i] == ranges[1]
         for i in range(10, 15):
             assert lookup[i] == ranges[2]
+
+
+def test_sample_outcome(tmpdir):
+    """Check that helper function `sample_outcome` works correctly."""
+
+    # Create probability matrix for four individual (0-3) with four possible outcomes (A, B, C).
+    probs = pd.DataFrame({
+        'A': {0: 1.0, 1: 0.0, 2: 0.25, 3: 0.0},
+        'B': {0: 0.0, 1: 1.0, 2: 0.25, 3: 0.0},
+        'C': {0: 0.0, 1: 0.0, 2: 0.50, 3: 0.0},
+    })
+    rng = np.random.RandomState(seed=0)
+
+    list_of_results = list()
+    n = 5000
+    for i in range(n):
+        list_of_results.append(tlo.util.sample_outcome(probs, rng))
+    res = pd.DataFrame(list_of_results)
+
+    assert (res[0] == 'A').all()
+    assert (res[1] == 'B').all()
+    assert (res[2].isin(['A', 'B', 'C'])).all()
+    assert 3 not in res.columns
+
+    for op in ['A', 'B', 'C']:
+        prob = probs.loc[2, op]
+        assert res[2].value_counts()[op] == pytest.approx(probs.loc[2, op] * n, abs=2 * np.sqrt(n * prob * (1 - prob)))

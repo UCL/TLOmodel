@@ -15,7 +15,7 @@ from tlo import Date, Module, Simulation
 from tlo.dependencies import (
     get_dependencies_and_initialise, get_module_class_map, is_valid_tlo_module_subclass
 )
-from tlo.methods import alri, healthseekingbehaviour, hiv
+from tlo.methods import alri, diarrhoea, healthseekingbehaviour, hiv
 from tlo.methods.healthsystem import HSI_Event, HSIEventDetails
 
 
@@ -378,7 +378,7 @@ if __name__ == '__main__':
         }
         # Map from tlo.methods module name to Module subclass to use for HSI events in
         # module for modules with multiple Module subclasses defined
-        multiple_module_class_map = {'hiv': hiv.Hiv, 'alri': alri.Alri}
+        multiple_module_class_map = {'hiv': hiv.Hiv, 'alri': alri.Alri, 'diarrhoea': diarrhoea.Diarrhoea}
         print('Getting details of defined HSI events by inspecting tlo.methods...')
         inspect_hsi_event_details = get_details_of_defined_hsi_events(
             excluded_modules=excluded_modules,
