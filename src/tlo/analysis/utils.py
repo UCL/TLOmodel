@@ -5,7 +5,7 @@ import json
 import os
 import pickle
 from pathlib import Path
-from typing import Optional, Dict, TextIO
+from typing import Dict, Optional, TextIO
 
 import numpy as np
 import pandas as pd
@@ -83,7 +83,7 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
                 # copy line from log file to module-specific log file (both headers and non-header lines)
                 module_name_to_filehandle[uuid_to_module_name[uuid]].write(line)
 
-    print(f'Finished writing module-specific log files.')
+    print('Finished writing module-specific log files.')
 
     # close all module-specific files
     for file_handle in module_name_to_filehandle.values():
@@ -105,7 +105,7 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
     if len(metadata) > 0:
         all_module_logs['_metadata'] = metadata
 
-    print(f'Finished.')
+    print('Finished.')
 
     return all_module_logs
 
