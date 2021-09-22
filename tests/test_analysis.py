@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 from tlo.analysis.utils import parse_log_file

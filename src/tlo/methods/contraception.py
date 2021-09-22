@@ -488,9 +488,11 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         # simplified with the addition of new postnatal property (women cant get pregnant 42 days post birth)
         # JC 10/02/2021
         # get the subset of women from the population dataframe and relevant characteristics
-        subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant & \
-                 (df.co_contraception == 'not_using') & ~df.la_currently_in_labour & ~df.la_has_had_hysterectomy & \
-                 ~df.la_is_postpartum & (df.ps_ectopic_pregnancy == 'none')
+        subset = (
+            (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant &
+            (df.co_contraception == 'not_using') & ~df.la_currently_in_labour & ~df.la_has_had_hysterectomy &
+            ~df.la_is_postpartum & (df.ps_ectopic_pregnancy == 'none')
+        )
 
         females = df.loc[subset, ['co_contraception', 'age_years']]
 
