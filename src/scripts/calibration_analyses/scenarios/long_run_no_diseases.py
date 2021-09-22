@@ -12,31 +12,17 @@ or locally using:
 
 from tlo import Date, logging
 from tlo.methods import (
-    bladder_cancer,
-    breast_cancer,
-    cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
     demography,
-    depression,
-    diarrhoea,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
-    epi,
-    epilepsy,
-    healthburden,
     healthseekingbehaviour,
     healthsystem,
     hiv,
     labour,
-    malaria,
     newborn_outcomes,
-    oesophagealcancer,
-    other_adult_cancers,
     postnatal_supervisor,
     pregnancy_supervisor,
-    prostate_cancer,
     symptommanager,
 )
 from tlo.scenario import BaseScenario
