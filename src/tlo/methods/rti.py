@@ -1945,13 +1945,15 @@ class RTI(Module):
         # Check the people that are sent here have had medical treatment
         assert df.loc[person_id, 'rt_med_int']
         # Check they have an appropriate injury code to swap
-
         swapping_codes = RTI.SWAPPING_CODES[:]
         relevant_codes = np.intersect1d(codes, swapping_codes)
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # check this person is injured, search they have an injury code that is swappable
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries, list(relevant_codes))
         assert counts > 0, 'This person has asked to swap an injury code, but it is not swap-able'
+        # If there are any permanent injuries which are due to be swapped, remove the "P" writted at the start of injury
+        # code in order to access the injury dictionary
+        relevant_codes = [code.replace('P', '') for code in relevant_codes]
         # swap the relevant code's daly weight, from the daly weight associated with the injury without treatment
         # and the daly weight for the disability with treatment.
         # keep track of the changes to the daly weights
@@ -2190,108 +2192,13 @@ class RTI(Module):
         # location, the subdict containing the probability of injury occuring, the ais injury location, category and
         # ais score
         # creat shorthand variable names for spinal chord injuries
-
-        injuries = {
-            # injuries to the head
-            'head': {'112': [p['head_prob_112'], 1, 1, 2],
-                     '113': [p['head_prob_113'], 1, 1, 3],
-                     '133a': [p['head_prob_133a'], 1, 3, 3],
-                     '133b': [p['head_prob_133b'], 1, 3, 3],
-                     '133c': [p['head_prob_133c'], 1, 3, 3],
-                     '133d': [p['head_prob_133d'], 1, 3, 3],
-                     '134a': [p['head_prob_134a'], 1, 3, 4],
-                     '134b': [p['head_prob_134b'], 1, 3, 4],
-                     '135': [p['head_prob_135'], 1, 3, 5],
-                     '1101': [p['head_prob_1101'], 1, 10, 1],
-                     '1114': [p['head_prob_1114'], 1, 11, 4]},
-            # injuries to the face
-            'face': {'211': [p['face_prob_211'], 2, 1, 1],
-                     '212': [p['face_prob_212'], 2, 1, 2],
-                     '241': [p['face_prob_241'], 2, 4, 1],
-                     '2101': [p['face_prob_2101'], 2, 10, 1],
-                     '2114': [p['face_prob_2114'], 2, 11, 4],
-                     '291': [p['face_prob_291'], 2, 9, 1]},
-            # injuries to the neck
-            'neck': {'3101': [p['neck_prob_3101'], 3, 10, 1],
-                     '3113': [p['neck_prob_3113'], 3, 11, 3],
-                     '342': [p['neck_prob_342'], 3, 4, 2],
-                     '343': [p['neck_prob_343'], 3, 4, 3],
-                     '361': [p['neck_prob_361'], 3, 6, 1],
-                     '363': [p['neck_prob_363'], 3, 6, 3],
-                     '322': [p['neck_prob_322'], 3, 2, 2],
-                     '323': [p['neck_prob_323'], 3, 2, 3],
-                     },
-            # injuries to the chest
-            'chest': {'4101': [p['thorax_prob_4101'], 4, 10, 1],
-                      '4113': [p['thorax_prob_4113'], 4, 11, 3],
-                      '461': [p['thorax_prob_461'], 4, 6, 1],
-                      '463': [p['thorax_prob_463'], 4, 6, 3],
-                      '453a': [p['thorax_prob_453a'], 4, 5, 3],
-                      '453b': [p['thorax_prob_453b'], 4, 5, 3],
-                      '412': [p['thorax_prob_412'], 4, 1, 2],
-                      '414': [p['thorax_prob_414'], 4, 1, 4],
-                      '441': [p['thorax_prob_441'], 4, 4, 1],
-                      '442': [p['thorax_prob_442'], 4, 4, 2],
-                      '443': [p['thorax_prob_443'], 4, 4, 3],
-                      },
-            # injuries to the abdomen
-            'abdomen': {'5101': [p['abdomen_prob_5101'], 5, 10, 1],
-                        '5113': [p['abdomen_prob_5113'], 5, 11, 3],
-                        '552': [p['abdomen_prob_552'], 5, 5, 2],
-                        '553': [p['abdomen_prob_553'], 5, 5, 3],
-                        '554': [p['abdomen_prob_554'], 5, 5, 4]},
-            # injuries to the spine
-            'spine': {'612': [p['spine_prob_612'], 6, 1, 2],
-                      '673a': [p['spine_prob_673a'], 6, 7, 3],
-                      '673b': [p['spine_prob_673b'], 6, 7, 3],
-                      '674a': [p['spine_prob_674a'], 6, 7, 4],
-                      '674b': [p['spine_prob_674b'], 6, 7, 4],
-                      '675a': [p['spine_prob_675a'], 6, 7, 5],
-                      '675b': [p['spine_prob_675b'], 6, 7, 5],
-                      '676': [p['spine_prob_676'], 6, 7, 6]
-                      },
-            # injuries to the upper extremities
-            'upper_ex': {'7101': [p['upper_ex_prob_7101'], 7, 10, 1],
-                         '7113': [p['upper_ex_prob_7113'], 7, 11, 3],
-                         '712a': [p['upper_ex_prob_712a'], 7, 1, 2],
-                         '712b': [p['upper_ex_prob_712b'], 7, 1, 2],
-                         '712c': [p['upper_ex_prob_712c'], 7, 1, 2],
-                         '722': [p['upper_ex_prob_722'], 7, 2, 2],
-                         '782a': [p['upper_ex_prob_782a'], 7, 8, 2],
-                         '782b': [p['upper_ex_prob_782b'], 7, 8, 2],
-                         '782c': [p['upper_ex_prob_782c'], 7, 8, 2],
-                         '783': [p['upper_ex_prob_783'], 7, 8, 3]
-                         },
-            # injuries to the lower extremities
-            'lower_ex': {'8101': [p['lower_ex_prob_8101'], 8, 10, 1],
-                         '8113': [p['lower_ex_prob_8113'], 8, 11, 3],
-                         # foot fracture, can be open or not, open is more severe
-                         '811': [p['lower_ex_prob_811'], 8, 1, 1],
-                         '813do': [p['lower_ex_prob_813do'], 8, 1, 3],
-                         # lower leg fracture can be open or not
-                         '812':  [p['lower_ex_prob_812'], 8, 1, 2],
-                         '813eo': [p['lower_ex_prob_813eo'], 8, 1, 3],
-                         '813a': [p['lower_ex_prob_813a'], 8, 1, 3],
-                         # pelvis fracture can be open or closed
-                         '813b': [p['lower_ex_prob_813b'], 8, 1, 3],
-                         '813bo': [p['lower_ex_prob_813bo'], 8, 1, 3],
-                         # femur fracture can be open or closed
-                         '813c': [p['lower_ex_prob_813c'], 8, 1, 3],
-                         '813co': [p['lower_ex_prob_813co'], 8, 1, 3],
-                         '822a': [p['lower_ex_prob_822a'], 8, 2, 2],
-                         '822b': [p['lower_ex_prob_822b'], 8, 2, 2],
-                         '882': [p['lower_ex_prob_882'], 8, 8, 2],
-                         '883': [p['lower_ex_prob_883'], 8, 8, 3],
-                         '884': [p['lower_ex_prob_884'], 8, 8, 4]
-                         }
-        }
         # ============================= Begin assigning injuries to people =====================================
         # Iterate over the total number of injured people
         for n in range(0, number):
             # Get the distribution of body regions which can be injured for each iteration.
             injlocdist = p['injury_location_distribution']
             # Convert the parameter to a numpy array
-            injlocdist = [list(injuries.keys()), p['injury_location_distribution'][1]]
+            injlocdist = [p['injury_location_distribution'][0], p['injury_location_distribution'][1]]
             # Generate a random number which will decide how many injuries the person will have,
             ninj = self.rng.choice(number_of_injured_body_regions_distribution[0],
                                    p=number_of_injured_body_regions_distribution[1])
@@ -2311,21 +2218,25 @@ class RTI(Module):
             injurylocation = self.rng.choice(injlocdist[0], ninj, p=injlocdist[1], replace=False)
             # iterate over the chosen injury locations to determine the exact injuries that this person will have
             for injlocs in injurylocation:
+                # get a list of the injuries that occur at this location
+                injuries_at_location = [injury for injury in self.ASSIGN_INJURIES_AND_DALY_CHANGES.keys() if
+                                        injury.startswith(str(injlocs))]
                 # find the probability of each injury
-                prob_of_each_injury_at_location = [val[0] for val in injuries[injlocs].values()]
+                prob_of_each_injury_at_location = [self.ASSIGN_INJURIES_AND_DALY_CHANGES[injury][0][0] for injury in
+                                                   injuries_at_location]
                 # make sure there are no rounding errors
                 prob_of_each_injury_at_location = np.divide(prob_of_each_injury_at_location,
                                                             sum(prob_of_each_injury_at_location))
                 # chose an injury to occur at this location
-                injury_chosen = self.rng.choice(list(injuries[injlocs].keys()), p=prob_of_each_injury_at_location)
+                injury_chosen = self.rng.choice(injuries_at_location, p=prob_of_each_injury_at_location)
                 # store this persons chosen injury at this location
                 injuries_chosen.append(injury_chosen)
                 # Store this person's injury location
-                allinjlocs.append(injuries[injlocs][injury_chosen][1])
+                allinjlocs.append(self.ASSIGN_INJURIES_AND_DALY_CHANGES[injury_chosen][0][1])
                 # store the injury category chosen
-                injcat.append(injuries[injlocs][injury_chosen][2])
+                injcat.append(self.ASSIGN_INJURIES_AND_DALY_CHANGES[injury_chosen][0][2])
                 # store the severity of the injury chosen
-                injais.append(injuries[injlocs][injury_chosen][3])
+                injais.append(self.ASSIGN_INJURIES_AND_DALY_CHANGES[injury_chosen][0][3])
 
             # Check that all the relevant injury information has been decided by checking there is a injury category,
             # AIS score, injury location for all injuries
