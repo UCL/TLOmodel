@@ -1787,15 +1787,13 @@ class RTI(Module):
         :param codes: The injury codes being searched for
         :return: which column out of rt_injury_1 to rt_injury_8 the injury code occurs in, and the injury code itself
         """
-        df = self.sim.population.props.loc[[person_id], RTI.INJURY_COLUMNS]
-        # iterate over the codes to search the dataframe for
+        df = self.sim.population.props
+        person_injuries = df.loc[person_id, RTI.INJURY_COLUMNS]        # iterate over the codes to search the dataframe for
         injury_column = ''
         injury_code = ''
         for code in codes:
-            # iterate over the columns where the code can be found
             for col in RTI.INJURY_COLUMNS:
-                # if the code appears in the series, store
-                if df[col].str.contains(code).any():
+                if person_injuries[col] == code:
                     injury_column = col
                     injury_code = code
                     break
@@ -3376,9 +3374,16 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                 # ask if this injury will be permanent
                 perm_injury = self.module.rng.random_sample(size=1)
                 if perm_injury < self.prob_perm_disability_with_treatment_severe_TBI:
+                    # injury is permanent so find where the injury is located
                     column, code = road_traffic_injuries.rti_find_injury_column(person_id=person_id, codes=tbi_injury)
+                    # put a P in front of the code to show it will be a perm injury
                     df.loc[person_id, column] = "P" + code
+                    # store the heal with time injury in heal_with_time_codes
                     heal_with_time_codes.append("P" + code)
+                    # update the property 'rt_injuries_to_heal_with_time' to contain the new code
+                    df.loc[person_id, 'rt_injuries_to_heal_with_time'].remove(code)
+                    df.loc[person_id, 'rt_injuries_to_heal_with_time'].append("P" + code)
+                    # schedule a recover date beyond this simulation's end
                     df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.end_date + DateOffset(days=1)
                     assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
                 else:
@@ -4568,9 +4573,12 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 # later on
                 code_to_drop_index = injuries_to_be_treated.index(self.treated_code)
                 injuries_to_be_treated.pop(code_to_drop_index)
+                # remove the old code from rt_injuries_for_major_surgery
                 self.treated_code = "P" + self.treated_code
                 df.loc[person_id, column] = self.treated_code
                 injuries_to_be_treated.append(self.treated_code)
+                # include the new code in rt_injuries_for_major_surgery
+                df.loc[person_id, 'rt_injuries_for_major_surgery'].append(self.treated_code)
                 assert len(injuries_to_be_treated) == len(df.loc[person_id, 'rt_injuries_for_major_surgery'])
 
             columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id,
@@ -4594,7 +4602,11 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                              person_id, self.sim.date)
                 code_to_drop_index = injuries_to_be_treated.index(self.treated_code)
                 injuries_to_be_treated.pop(code_to_drop_index)
+                # remove the code from 'rt_injuries_for_major_surgery'
+                df.loc[person_id, 'rt_injuries_for_major_surgery'].remove(self.treated_code)
                 self.treated_code = "P" + self.treated_code
+                # update the code for 'rt_injuries_for_major_surgery'
+                df.loc[person_id, 'rt_injuries_for_major_surgery'].append(self.treated_code)
                 df.loc[person_id, column] = self.treated_code
                 injuries_to_be_treated.append(self.treated_code)
                 for injury in injuries_to_be_treated:
@@ -4623,7 +4635,10 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             # later on
             code_to_drop_index = injuries_to_be_treated.index(self.treated_code)
             injuries_to_be_treated.pop(code_to_drop_index)
+            # remove the old code from rt_injuries_for_major_surgery
             self.treated_code = "P" + self.treated_code
+            # add the new code to rt_injuries_for_major_surgery
+            df.loc[person_id, 'rt_injuries_for_major_surgery'].append(self.treated_code)
             df.loc[person_id, column] = self.treated_code
             injuries_to_be_treated.append(self.treated_code)
             for injury in injuries_to_be_treated:
