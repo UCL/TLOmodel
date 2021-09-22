@@ -117,27 +117,23 @@ def parse_log_file(filepath, level: int = logging.INFO):
             # only parse json entities
             if line.startswith('{'):
                 log_data_json = json.loads(line)
-                if 'type' in log_data_json.keys():
-                    if log_data_json['uuid'] in uuid_to_module_name.keys():
-                        pass
-                    else:
-                        uuid_to_module_name[log_data_json["uuid"]] = log_data_json["module"]
-                        module_specific_log_path[uuid_to_module_name[log_data_json["uuid"]]] = \
-                            Path('./outputs') / f"{uuid_to_module_name[log_data_json['uuid']]}.log"
-                        module_name_to_filehandle[uuid_to_module_name[log_data_json["uuid"]]] = \
-                            open(Path('./outputs') / f"{uuid_to_module_name[log_data_json['uuid']]}.log", mode="a")
-                        # append log info.
-                        module_name_to_filehandle[uuid_to_module_name[log_data_json["uuid"]]].write(line)
+                uuid = log_data_json['uuid']
+                if 'type' in log_data_json.keys() and uuid not in uuid_to_module_name.keys():
+                    module_name = log_data_json["module"]
+                    uuid_to_module_name[uuid] = module_name
 
-                else:
+                    module_specific_log_path[module_name] = Path('./outputs') / f"{module_name}.log"
+                    module_name_to_filehandle[module_name] = \
+                        open(Path('./outputs') / f"{module_name}.log", mode="a")
                     # append log info.
-                    module_name_to_filehandle[uuid_to_module_name[log_data_json["uuid"]]].write(line)
+                    module_name_to_filehandle[uuid_to_module_name[uuid]].write(line)
 
-    module_name_to_filehandle[uuid_to_module_name[log_data_json["uuid"]]].close()
+                # append log info.
+                module_name_to_filehandle[uuid_to_module_name[uuid]].write(line)
+        module_name_to_filehandle[uuid_to_module_name[uuid]].close()
 
     for file_path in module_specific_log_path.values():
-        module_specific_parsed_log_results[file_path] = _parse_log_file_inner_loop(file_path)
-
+        module_specific_parsed_log_results.update(_parse_log_file_inner_loop(file_path))
     return module_specific_parsed_log_results
 
 
@@ -530,7 +526,7 @@ def create_pickles_locally(scenario_output_dir):
 
     def turn_log_into_pickles(logfile):
         print(f"Opening {logfile}")
-        outputs = _parse_log_file_inner_loop(logfile)
+        outputs = parse_log_file(logfile)
         for key, output in outputs.items():
             if key.startswith("tlo."):
                 print(f" - Writing {key}.pickle")
@@ -553,7 +549,7 @@ def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
     * Requires output from the module `tlo.methods.demography`
     * Will do scaling automatically if the scaling-factor has been computed in the simulation (but not otherwise).
     """
-    output = _parse_log_file_inner_loop(logfile)
+    output = parse_log_file(logfile)
 
     # 1) Get model outputs:
     # - get scaling factor if it has been computed:
