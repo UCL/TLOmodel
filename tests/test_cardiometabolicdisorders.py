@@ -18,13 +18,13 @@ from tlo.methods import (
     symptommanager,
 )
 from tlo.methods.cardio_metabolic_disorders import (
-    HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms,
+    CardioMetabolicDisordersDeathEvent,
+    CardioMetabolicDisordersEvent,
     HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms,
-    HSI_CardioMetabolicDisorders_StartWeightLossAndMedication,
+    HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms,
     HSI_CardioMetabolicDisorders_Refill_Medication,
     HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment,
-    CardioMetabolicDisordersEvent,
-    CardioMetabolicDisordersDeathEvent
+    HSI_CardioMetabolicDisorders_StartWeightLossAndMedication,
 )
 from tlo.methods.healthsystem import HealthSystemScheduler
 
@@ -326,6 +326,7 @@ def make_simulation_health_system_disabled():
                  cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
                  )
     return sim
+
 
 # helper function to run the sim with the healthcare system disabled
 def make_simulation_health_system_functional():
@@ -754,7 +755,8 @@ def test_no_availability_of_consumables_for_events():
         df.at[person_id, f"nc_{event}_on_medication"] = False
 
         # Run the Refill_Medication event
-        t = CardioMetabolicDisordersEvent(module=sim.modules['CardioMetabolicDisorders'], person_id=person_id, event=event)
+        t = CardioMetabolicDisordersEvent(module=sim.modules['CardioMetabolicDisorders'],
+                                          person_id=person_id, event=event)
         t.apply(person_id=person_id)
 
         events_for_this_person = sim.find_events_for_person(person_id)
@@ -783,4 +785,3 @@ def test_no_availability_of_consumables_for_events():
 
         assert not df.at[person_id, 'is_alive']
         assert df.at[person_id, 'cause_of_death'] == f'{event}'
-
