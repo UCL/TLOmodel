@@ -97,10 +97,13 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
         print(f'Parsing {file_handle.name}', end='', flush=True)
         module_specific_logs = _parse_log_file_inner_loop(file_handle.name, level)
         print(' - complete.')
-        metadata.update(module_specific_logs['_metadata'])
         all_module_logs.update(module_specific_logs)
+        # sometimes there is nothing to be parsed at a given level, so no metadata
+        if 'metadata_' in module_specific_logs:
+            metadata.update(module_specific_logs['_metadata'])
 
-    all_module_logs['_metadata'] = metadata
+    if len(metadata) > 0:
+        all_module_logs['_metadata'] = metadata
 
     print(f'Finished.')
 
