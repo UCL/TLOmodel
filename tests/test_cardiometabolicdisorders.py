@@ -95,10 +95,12 @@ def test_basic_run():
     p['hypertension_onset']["baseline_annual_probability"] = 0.75
     p['chronic_lower_back_pain_onset']["baseline_annual_probability"] = 0.75
     p['chronic_kidney_disease_onset']["baseline_annual_probability"] = 0.75
+    p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = 0.75
     p['ever_stroke_onset']["baseline_annual_probability"] = 0.75
     p['ever_heart_attack_onset']["baseline_annual_probability"] = 0.75
     p['diabetes_death']["baseline_annual_probability"] = 0.75
     p['chronic_kidney_disease_death']["baseline_annual_probability"] = 0.75
+    p['chronic_ischemic_hd_death']["baseline_annual_probability"] = 0.75
     p['ever_stroke_death']["baseline_annual_probability"] = 0.75
     p['ever_heart_attack_death']["baseline_annual_probability"] = 0.75
 
@@ -252,7 +254,8 @@ def test_if_health_system_cannot_run():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath)
                  )
 
     # Make the population
@@ -511,9 +514,7 @@ def test_hsi_investigation_not_following_symptoms():
         sim.make_initial_population(n=50)
 
         # simulate for zero days
-        sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-        sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
-        sim.event_queue.queue.clear()
+        sim = start_sim_and_clear_event_queues(sim)
 
         df = sim.population.props
 
@@ -556,9 +557,7 @@ def test_hsi_investigation_following_symptoms():
         sim.make_initial_population(n=50)
 
         # simulate for zero days
-        sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-        sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
-        sim.event_queue.queue.clear()
+        sim = start_sim_and_clear_event_queues(sim)
 
         df = sim.population.props
 
@@ -608,9 +607,7 @@ def test_hsi_weight_loss_and_medication():
         sim.make_initial_population(n=50)
 
         # simulate for zero days
-        sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-        sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
-        sim.event_queue.queue.clear()
+        sim = start_sim_and_clear_event_queues(sim)
 
         df = sim.population.props
 
@@ -649,9 +646,7 @@ def test_hsi_emergency_events():
         p[f'{event}_hsi']["pr_treatment_works"] = 1
 
         # simulate for zero days
-        sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-        sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
-        sim.event_queue.queue.clear()
+        sim = start_sim_and_clear_event_queues(sim)
 
         df = sim.population.props
 
@@ -701,9 +696,7 @@ def test_no_availability_of_consumables_for_conditions():
         sim.make_initial_population(n=50)
 
         # simulate for zero days
-        sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-        sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
-        sim.event_queue.queue.clear()
+        sim = start_sim_and_clear_event_queues(sim)
 
         # Make consumables not available
         sim.modules['HealthSystem'].prob_item_codes_available.loc[all_item_codes] = 0.0
@@ -738,13 +731,15 @@ def test_no_availability_of_consumables_for_events():
         # Create the sim with an enabled healthcare system
         sim = make_simulation_health_system_functional()
 
+        # Make probability of death 100%
+        p = sim.modules['CardioMetabolicDisorders'].parameters
+        p[f'{event}_death']["baseline_annual_probability"] = 1
+
         # make initial population
         sim.make_initial_population(n=1000)
 
         # simulate for zero days
-        sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-        sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
-        sim.event_queue.queue.clear()
+        sim = start_sim_and_clear_event_queues(sim)
 
         # Make consumables not available
         sim.modules['HealthSystem'].prob_item_codes_available.loc[all_item_codes] = 0.0
