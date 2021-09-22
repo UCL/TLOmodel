@@ -469,9 +469,6 @@ class CardioMetabolicDisorders(Module):
         :return: a linear model
         """
 
-        # use temporary empty dict to save results
-        lms_dict = dict()
-
         # load parameters for correct condition/event
         p = self.parameters[f'{condition}_{lm_type}']
 
@@ -479,11 +476,16 @@ class CardioMetabolicDisorders(Module):
         # LinearModel expects native python types - if it's numpy type, convert it
         baseline_annual_probability = float(baseline_annual_probability)
 
-        lms_dict[condition] = LinearModel(
+        linearmodel = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             baseline_annual_probability,
             Predictor('sex').when('M', p['rr_male']),
-            Predictor('age_years').when('.between(0, 4)', p['rr_0_4'])
+            Predictor(
+                'age_years',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True
+            )
+            .when('.between(0, 4)', p['rr_0_4'])
             .when('.between(5, 9)', p['rr_5_9'])
             .when('.between(10, 14)', p['rr_10_14'])
             .when('.between(15, 19)', p['rr_15_19'])
@@ -503,15 +505,24 @@ class CardioMetabolicDisorders(Module):
             .when('.between(85, 89)', p['rr_85_89'])
             .when('.between(90, 94)', p['rr_90_94'])
             .when('.between(95, 99)', p['rr_95_99'])
-            .otherwise(p['rr_100']),
+            .when('>= 100', p['rr_100']),
             Predictor('li_urban').when(True, p['rr_urban']),
-            Predictor('li_wealth').when('1', p['rr_wealth_1'])
+            Predictor(
+                'li_wealth',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when('1', p['rr_wealth_1'])
             .when('1', p['rr_wealth_1'])
             .when('2', p['rr_wealth_2'])
             .when('3', p['rr_wealth_3'])
             .when('4', p['rr_wealth_4'])
             .when('5', p['rr_wealth_5']),
-            Predictor('li_bmi').when('1', p['rr_bmi_1'])
+            Predictor(
+                'li_bmi',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True
+            )
             .when('1', p['rr_bmi_1'])
             .when('2', p['rr_bmi_2'])
             .when('3', p['rr_bmi_3'])
@@ -522,12 +533,20 @@ class CardioMetabolicDisorders(Module):
             Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
             Predictor('li_tob').when(True, p['rr_tobacco']),
             Predictor('li_ex_alc').when(True, p['rr_alcohol']),
-            Predictor('li_mar_stat').when('1', p['rr_marital_status_1'])
+            Predictor(
+                'li_mar_stat',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True
+            )
             .when('1', p['rr_marital_status_1'])
             .when('2', p['rr_marital_status_2'])
             .when('3', p['rr_marital_status_3']),
             Predictor('li_in_ed').when(True, p['rr_in_education']),
-            Predictor('li_ed_lev').when('1', p['rr_current_education_level_1'])
+            Predictor(
+                'li_ed_lev',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True
+            )
             .when('1', p['rr_current_education_level_1'])
             .when('2', p['rr_current_education_level_2'])
             .when('3', p['rr_current_education_level_3']),
@@ -544,7 +563,7 @@ class CardioMetabolicDisorders(Module):
             # Predictor('nc_cancers').when(True, p['rr_cancers'])
         )
 
-        return lms_dict[condition]
+        return linearmodel
 
     def build_linear_model_symptoms(self, condition, interval_between_polls):
         """
@@ -732,15 +751,6 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                 self.sim.date + DateOffset(days=self.module.rng.randint(ndays))
             )
 
-        def lmpredict_rtn_a_series(lm, df):
-            """wrapper to call predict on a linear model, guranteeing that a pd.Series is returned even if the length
-            of the df is 1."""
-            res = lm.predict(df, rng)
-            if type(res) == pd.Series:
-                return res
-            else:
-                return pd.Series(index=df.index, data=[res])
-
         current_incidence_df = pd.DataFrame(index=self.module.age_index, columns=self.module.conditions)
 
         # Determine onset/removal of conditions
@@ -748,7 +758,8 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
 
             # onset:
             eligible_population = df.is_alive & ~df[f'nc_{condition}']
-            acquires_condition = lmpredict_rtn_a_series(self.module.lms_onset[condition], df.loc[eligible_population])
+            acquires_condition = self.module.lms_onset[condition].predict(
+                df.loc[eligible_population], rng, squeeze_single_row_output=False)
             idx_acquires_condition = acquires_condition[acquires_condition].index
             df.loc[idx_acquires_condition, f'nc_{condition}'] = True
 
@@ -758,8 +769,9 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             # Schedule symptom onset for both those with new onset of condition and those who already have condition
             if len(self.module.lms_symptoms[condition]) > 0:
                 symptom_eligible_population = df.is_alive & df[f'nc_{condition}']
-                symptom_onset = lmpredict_rtn_a_series(self.module.lms_symptoms[condition][f'{condition}_symptoms'],
-                                                       df.loc[symptom_eligible_population])
+                symptom_onset = self.module.lms_symptoms[condition][f'{condition}_symptoms'].predict(
+                    df.loc[symptom_eligible_population], rng, squeeze_single_row_output=False
+                )
                 idx_symptom_onset = symptom_onset[symptom_onset].index
                 if idx_symptom_onset.any():
                     # schedule symptom onset some time before next polling event
@@ -778,7 +790,8 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
 
             # removal:
             eligible_population = df.is_alive & df[f'nc_{condition}']
-            loses_condition = lmpredict_rtn_a_series(self.module.lms_removal[condition], df.loc[eligible_population])
+            loses_condition = self.module.lms_removal[condition].predict(
+                df.loc[eligible_population], rng, squeeze_single_row_output=False)
             idx_loses_condition = loses_condition[loses_condition].index
             df.loc[idx_loses_condition, f'nc_{condition}'] = False
 
