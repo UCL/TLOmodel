@@ -239,11 +239,16 @@ def do_run_forcing_ectopic_pregnancy_to_look_at_cfr(config_name, start_date, end
 
     sim.simulate(end_date=end_date)
 
+def normal_run(config_name, start_date, end_date, seed, population, parameters):
+    log_config = set_logging(config_name, seed)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    register_modules(sim)
+    sim.make_initial_population(n=population)
+    allow_varying_parameter_sets_to_be_used(parameters, sim)
+    sim.simulate(end_date=end_date)
 
-do_run_forcing_ectopic_pregnancy_to_look_at_cfr('p_pph_cfr_2010', Date(2010, 1, 1),
-                                                Date(2010, 1, 14), 77, 1000, 2010)
-do_run_forcing_ectopic_pregnancy_to_look_at_cfr('p_pph_cfr_2015', Date(2010, 1, 1),
-                                                Date(2010, 1, 14), 2, 1000, 2015)
+normal_run('anc1_checker_10', Date(2010, 1, 1), Date(2011, 1, 1), 77, 10000, 2010)
+#normal_run('anc1_checker_15', Date(2010, 1, 1), Date(2011, 1, 1), 2, 10000, 2015)
 
 
 

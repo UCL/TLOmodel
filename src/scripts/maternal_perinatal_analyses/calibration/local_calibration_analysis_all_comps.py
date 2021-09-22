@@ -40,9 +40,9 @@ indirect_causes = ['AIDS', 'severe_malaria', 'Suicide', 'diabetes', 'chronic_kid
 logs_dict = dict()
 
 new_parse_log_2010 = {2010: parse_log_file(
-    filepath=f"./outputs/calibration_files/p_pph_cfr_2010_calibration_77__2021-09-15T173023.log")}
+    filepath=f"./outputs/calibration_files/anc1_checker_10_calibration_77__2021-09-22T152934.log")}
 new_parse_log_2015 = {2015: parse_log_file(
-    filepath=f"./outputs/calibration_files/p_pph_cfr_2015_calibration_2__2021-09-15T173216.log")}
+    filepath=f"./outputs/calibration_files/anc1_checker_15_calibration_2__2021-09-22T153811.log")}
 logs_dict.update(new_parse_log_2010)
 logs_dict.update(new_parse_log_2015)
 
@@ -76,8 +76,8 @@ update_dicts(neonatal_comps, master_dict_nb_2010, master_dict_nb_2015, 'newborn_
 total_births_2010 = graph_maker_for_local_calibration.get_total_births(logs_dict[2010])
 total_births_2015 = graph_maker_for_local_calibration.get_total_births(logs_dict[2015])
 
-#pregnancies_2011 = graph_maker.get_pregnancies_in_a_year(logs_dict[2010], 2010)
-#pregnancies_2016 = graph_maker.get_pregnancies_in_a_year(logs_dict[2015], 2015)
+pregnancies_2011 = graph_maker_for_local_calibration.get_pregnancies_in_a_year(logs_dict[2010], 2010)
+pregnancies_2016 = graph_maker_for_local_calibration.get_pregnancies_in_a_year(logs_dict[2015], 2015)
 
 dummy_pregnancies = graph_maker_for_local_calibration.get_pregnancies_from_dummy_contraception(logs_dict[2010], 2010)
 total_ended_pregnancies = graph_maker_for_local_calibration.get_completed_pregnancies_in_a_year(logs_dict[2010], master_dict_an_2010)

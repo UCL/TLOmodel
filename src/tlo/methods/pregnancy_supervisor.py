@@ -1063,8 +1063,13 @@ class PregnancySupervisor(Module):
 
         # As care seeking is applied at week 3 gestational age, women who seek care within month one must attend within
         # the next week
-        if anc_month == 1:
+
+        # TODO: CHANGE BACK!!!
+        if anc_month == 2:
             days_until_anc = self.rng.randint(0, 7)
+
+        #if anc_month == 1:
+        #    days_until_anc = self.rng.randint(0, 7)
 
         else:
             # Otherwise we draw a week between the min max weeks for predicted month of visit, and then a random day
@@ -1861,6 +1866,62 @@ class PregnancySupervisor(Module):
 
             del self.mother_and_newborn_info[individual_id]
 
+    def DUMMYanc_scheduler(self, gestation_of_interest):
+        df = self.sim.population.props
+        params = self.current_parameters
+
+        # ----------------------------------- SCHEDULING FIRST ANC VISIT -----------------------------------------
+        # Finally for these women we determine care seeking for the first antenatal care contact of their
+        # pregnancy. We use a linear model to predict if these women will attend early ANC and at least 4 visits
+
+        # First we identify all the women predicted to attend ANC, with the first visit occurring before 4 months
+        early_initiation_anc4 = self.apply_linear_model(
+            self.ps_linear_models['early_initiation_anc4'],
+            df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
+                   (df['ps_ectopic_pregnancy'] == 'none')])
+
+        # Of the women who will not attend ANC4 early, we determine who will attend ANC4
+        late_initation_anc4 = pd.Series(self.rng.random_sample(
+            len(early_initiation_anc4.loc[~early_initiation_anc4])) < params['prob_late_initiation_anc4'],
+                                        index=early_initiation_anc4.loc[~early_initiation_anc4].index)
+
+        for v in late_initation_anc4.loc[late_initation_anc4].index:
+            assert v not in early_initiation_anc4.loc[early_initiation_anc4].index
+
+        df.loc[early_initiation_anc4.loc[early_initiation_anc4].index, 'ps_anc4'] = True
+        df.loc[late_initation_anc4.loc[late_initation_anc4].index, 'ps_anc4'] = True
+
+        anc_below_4 = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == 3) & \
+                      (df.ps_ectopic_pregnancy == 'none') & ~df.ps_anc4
+
+        early_initiation_anc_below_4 = pd.Series(self.rng.random_sample(len(anc_below_4.loc[anc_below_4]))
+                                                 < params['prob_early_initiation_anc_below4'],
+                                                 index=anc_below_4.loc[anc_below_4].index)
+
+        def schedulde_early_visit(df_slice):
+            for person in df_slice.index:
+                random_draw_gest_at_anc = self.rng.choice([2, 3, 4],
+                                                                 p=[0.165, 0.165, 0.67])
+                self.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
+
+        for slice in [early_initiation_anc4.loc[early_initiation_anc4],
+                      early_initiation_anc_below_4.loc[early_initiation_anc_below_4]]:
+            schedulde_early_visit(slice)
+
+        def schedulde_late_visit(df_slice):
+            for person in df_slice.index:
+                random_draw_gest_at_anc = self.rng.choice([5, 6, 7, 8, 9, 10],
+                                                                 p=params['prob_anc1_months_5_to_9'])
+
+                # We use month ten to capture women who will never attend ANC during their pregnancy
+                if random_draw_gest_at_anc != 10:
+                    self.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
+
+        for slice in [late_initation_anc4.loc[late_initation_anc4],
+                      early_initiation_anc_below_4.loc[~early_initiation_anc_below_4]]:
+            schedulde_late_visit(slice)
+
+
     def generate_mother_and_newborn_dictionary_for_individual(self, individual_id):
         """ This function generates variables within the mni dictionary for women. It is abstracted to a function for
         testing purposes"""
@@ -2032,50 +2093,51 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # pregnancy. We use a linear model to predict if these women will attend early ANC and at least 4 visits
 
         # First we identify all the women predicted to attend ANC, with the first visit occurring before 4 months
-        early_initiation_anc4 = self.module.apply_linear_model(
-            self.module.ps_linear_models['early_initiation_anc4'],
-            df.loc[new_pregnancy & (df['ps_ectopic_pregnancy'] == 'none')])
+        #early_initiation_anc4 = self.module.apply_linear_model(
+        #    self.module.ps_linear_models['early_initiation_anc4'],
+        #    df.loc[new_pregnancy & (df['ps_ectopic_pregnancy'] == 'none')])
 
         # Of the women who will not attend ANC4 early, we determine who will attend ANC4
-        late_initation_anc4 = pd.Series(self.module.rng.random_sample(
-            len(early_initiation_anc4.loc[~early_initiation_anc4])) < params['prob_late_initiation_anc4'],
-                                        index=early_initiation_anc4.loc[~early_initiation_anc4].index)
+        #late_initation_anc4 = pd.Series(self.module.rng.random_sample(
+        #    len(early_initiation_anc4.loc[~early_initiation_anc4])) < params['prob_late_initiation_anc4'],
+        #                                index=early_initiation_anc4.loc[~early_initiation_anc4].index)
 
-        for v in late_initation_anc4.loc[late_initation_anc4].index:
-            assert v not in early_initiation_anc4.loc[early_initiation_anc4].index
+        #for v in late_initation_anc4.loc[late_initation_anc4].index:
+        #    assert v not in early_initiation_anc4.loc[early_initiation_anc4].index
 
-        df.loc[early_initiation_anc4.loc[early_initiation_anc4].index, 'ps_anc4'] = True
-        df.loc[late_initation_anc4.loc[late_initation_anc4].index, 'ps_anc4'] = True
+        #df.loc[early_initiation_anc4.loc[early_initiation_anc4].index, 'ps_anc4'] = True
+        #df.loc[late_initation_anc4.loc[late_initation_anc4].index, 'ps_anc4'] = True
 
-        anc_below_4 = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == 3) & \
-                      (df.ps_ectopic_pregnancy == 'none') & ~df.ps_anc4
+        #anc_below_4 = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == 3) & \
+        #              (df.ps_ectopic_pregnancy == 'none') & ~df.ps_anc4
 
-        early_initiation_anc_below_4 = pd.Series(self.module.rng.random_sample(len(anc_below_4.loc[anc_below_4]))
-                                                 < params['prob_early_initiation_anc_below4'],
-                                                 index=anc_below_4.loc[anc_below_4].index)
+        #early_initiation_anc_below_4 = pd.Series(self.module.rng.random_sample(len(anc_below_4.loc[anc_below_4]))
+        #                                         < params['prob_early_initiation_anc_below4'],
+        #                                         index=anc_below_4.loc[anc_below_4].index)
 
-        def schedulde_early_visit(df_slice):
-            for person in df_slice.index:
-                random_draw_gest_at_anc = self.module.rng.choice([1, 2, 3, 4],
-                                                                 p=params['prob_anc1_months_1_to_4'])
-                self.module.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
+        #def schedulde_early_visit(df_slice):
+        #    for person in df_slice.index:
+        #        random_draw_gest_at_anc = self.module.rng.choice([1, 2, 3, 4],
+        #                                                         p=params['prob_anc1_months_1_to_4'])
+        #        self.module.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
 
-        for slice in [early_initiation_anc4.loc[early_initiation_anc4],
-                      early_initiation_anc_below_4.loc[early_initiation_anc_below_4]]:
-            schedulde_early_visit(slice)
+        #for slice in [early_initiation_anc4.loc[early_initiation_anc4],
+        #              early_initiation_anc_below_4.loc[early_initiation_anc_below_4]]:
+        #    schedulde_early_visit(slice)
 
-        def schedulde_late_visit(df_slice):
-            for person in df_slice.index:
-                random_draw_gest_at_anc = self.module.rng.choice([5, 6, 7, 8, 9, 10],
-                                                                 p=params['prob_anc1_months_5_to_9'])
+        #def schedulde_late_visit(df_slice):
+        #    for person in df_slice.index:
+        #        random_draw_gest_at_anc = self.module.rng.choice([5, 6, 7, 8, 9, 10],
+        #                                                         p=params['prob_anc1_months_5_to_9'])
 
                 # We use month ten to capture women who will never attend ANC during their pregnancy
-                if random_draw_gest_at_anc != 10:
-                    self.module.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
+        #        if random_draw_gest_at_anc != 10:
+        #            self.module.schedule_anc_one(individual_id=person, anc_month=random_draw_gest_at_anc)
 
-        for slice in [late_initation_anc4.loc[late_initation_anc4],
-                      early_initiation_anc_below_4.loc[~early_initiation_anc_below_4]]:
-            schedulde_late_visit(slice)
+        #for slice in [late_initation_anc4.loc[late_initation_anc4],
+        #              early_initiation_anc_below_4.loc[~early_initiation_anc_below_4]]:
+        #    schedulde_late_visit(slice)
+
 
         # ------------------------ APPLY RISK OF ADDITIONAL PREGNANCY COMPLICATIONS -----------------------------------
         # The following functions apply risk of key complications/outcomes of pregnancy as specific time points of a
@@ -2093,6 +2155,10 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # induced abortion
         for gestation_of_interest in [8, 13, 17, 22]:
             self.module.apply_risk_of_induced_abortion(gestation_of_interest=gestation_of_interest)
+
+        # TODO: test
+        for gestation_of_interest in [8]:
+            self.module.DUMMYanc_scheduler(gestation_of_interest=gestation_of_interest)
 
         # Every month a risk of micronutrient deficiency and maternal anaemia is applied
         for gestation_of_interest in [4, 8, 13, 17, 22, 27, 31, 35, 40]:
