@@ -1901,87 +1901,9 @@ class RTI(Module):
         assert ~df.loc[person_id, 'rt_imm_death']
 
         # ------------------------------- Remove the daly weights for treated injuries ---------------------------------
-        # ==================================== heal with time injuries =================================================
-        # store open fracture daly weight codes in one variable
-        daly_wt_813bo = self.daly_wt_pelvis_fracture_long_term + self.daly_wt_facial_soft_tissue_injury
-        daly_wt_813co = self.daly_wt_femur_fracture_short_term + self.daly_wt_facial_soft_tissue_injury
-        daly_wt_813do = \
-            self.daly_wt_foot_fracture_short_term_with_without_treatment + self.daly_wt_facial_soft_tissue_injury
-        daly_wt_813eo = \
-            self.daly_wt_patella_tibia_fibula_fracture_without_treatment + self.daly_wt_facial_soft_tissue_injury
-        daly_weight_removal_lookup = {
-            # heal with time injuries
-            '322': self.daly_wt_neck_dislocation,
-            '323': self.daly_wt_neck_dislocation,
-            '822a': self.daly_wt_dislocated_hip,
-            '822b': self.daly_wt_dislocated_knee,
-            '112': self.daly_wt_unspecified_skull_fracture,
-            '113': self.daly_wt_basilar_skull_fracture,
-            '552': self.daly_wt_abd_internal_organ_injury,
-            '553': self.daly_wt_abd_internal_organ_injury,
-            '554': self.daly_wt_abd_internal_organ_injury,
-            '412': self.daly_wt_rib_fracture,
-            '442': self.daly_wt_surgical_emphysema,
-            '461': self.daly_wt_chest_wall_bruises_hematoma,
-            '612': self.daly_wt_vertebrae_fracture,
-            # injuries treated with suture
-            '1101': self.daly_wt_facial_soft_tissue_injury,
-            '2101': self.daly_wt_facial_soft_tissue_injury,
-            '3101': self.daly_wt_facial_soft_tissue_injury,
-            '4101': self.daly_wt_facial_soft_tissue_injury,
-            '5101': self.daly_wt_facial_soft_tissue_injury,
-            '7101': self.daly_wt_facial_soft_tissue_injury,
-            '8101': self.daly_wt_facial_soft_tissue_injury,
-            # injuries treated with a cast
-            '712a': self.daly_wt_clavicle_scapula_humerus_fracture,
-            '712b': self.daly_wt_hand_wrist_fracture_with_treatment,
-            '712c': self.daly_wt_radius_ulna_fracture_short_term_with_without_treatment,
-            '811': self.daly_wt_foot_fracture_short_term_with_without_treatment,
-            '812': self.daly_wt_patella_tibia_fibula_fracture_with_treatment,
-            # injuries treated with minor surgery
-            '722': self.daly_wt_dislocated_shoulder,
-            '291': self.daly_wt_eye_injury,
-            '241': self.daly_wt_facial_soft_tissue_injury,
-            '211': self.daly_wt_facial_fracture,
-            '212': self.daly_wt_facial_fracture,
-            # injuries treated with burn management
-            '1114': self.daly_wt_burns_greater_than_20_percent_body_area,
-            '2114': self.daly_wt_burns_greater_than_20_percent_body_area,
-            '3113': self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
-            '4113': self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
-            '5113': self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
-            '7113': self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
-            '8113': self.daly_wt_burns_less_than_20_percent_body_area_with_treatment,
-            # injuries treated with major surgery
-            '813a': self.daly_wt_hip_fracture_long_term_with_treatment,
-            '813b': self.daly_wt_pelvis_fracture_long_term,
-            '813c': self.daly_wt_femur_fracture_short_term,
-            '133a': self.daly_wt_subarachnoid_hematoma,
-            '133b': self.daly_wt_brain_contusion,
-            '133c': self.daly_wt_intraventricular_haemorrhage,
-            '133d': self.daly_wt_subgaleal_hematoma,
-            '134a': self.daly_wt_epidural_hematoma,
-            '134b': self.daly_wt_subdural_hematoma,
-            '135': self.daly_wt_diffuse_axonal_injury,
-            '342': self.daly_wt_neck_internal_bleeding,
-            '343': self.daly_wt_neck_internal_bleeding,
-            '361': self.daly_wt_neck_internal_bleeding,
-            '363': self.daly_wt_neck_internal_bleeding,
-            '414': self.daly_wt_flail_chest,
-            '441': self.daly_wt_closed_pneumothorax,
-            '443': self.daly_wt_open_pneumothorax,
-            '453a': self.daly_wt_diaphragm_rupture,
-            '453b': self.daly_wt_lung_contusion,
-            '463': self.daly_wt_hemothorax,
-            # injuries treated with open fracture treatment
-            '813bo': daly_wt_813bo,
-            '813co': daly_wt_813co,
-            '813do': daly_wt_813do,
-            '813eo': daly_wt_813eo,
-
-        }
         # update the total values of the daly weights
-        df.loc[person_id, 'rt_debugging_DALY_wt'] -= sum([daly_weight_removal_lookup[code] for code in codes])
+        df.loc[person_id, 'rt_debugging_DALY_wt'] += \
+            sum([self.ASSIGN_INJURIES_AND_DALY_CHANGES[code][3] for code in codes])
         # round off any potential floating point errors
         df.loc[person_id, 'rt_debugging_DALY_wt'] = np.round(df.loc[person_id, 'rt_debugging_DALY_wt'], 4)
         # if the person's true total for daly weights is greater than one, report rt_disability as one, if not
@@ -2030,55 +1952,12 @@ class RTI(Module):
         # check this person is injured, search they have an injury code that is swappable
         idx, counts = RTI.rti_find_and_count_injuries(person_injuries, list(relevant_codes))
         assert counts > 0, 'This person has asked to swap an injury code, but it is not swap-able'
-
-        daly_weight_change_lookup = {
-            '712b': (- self.daly_wt_hand_wrist_fracture_without_treatment +
-                     self.daly_wt_hand_wrist_fracture_with_treatment),
-            '812': (- self.daly_wt_patella_tibia_fibula_fracture_without_treatment +
-                    self.daly_wt_patella_tibia_fibula_fracture_with_treatment),
-            '3113': (- self.daly_wt_burns_less_than_20_percent_body_area_without_treatment +
-                     self.daly_wt_burns_less_than_20_percent_body_area_with_treatment),
-            '4113': (- self.daly_wt_burns_less_than_20_percent_body_area_without_treatment +
-                     self.daly_wt_burns_less_than_20_percent_body_area_with_treatment),
-            '5113': (- self.daly_wt_burns_less_than_20_percent_body_area_without_treatment +
-                     self.daly_wt_burns_less_than_20_percent_body_area_with_treatment),
-            '7113': (- self.daly_wt_burns_less_than_20_percent_body_area_without_treatment +
-                     self.daly_wt_burns_less_than_20_percent_body_area_with_treatment),
-            '8113': (- self.daly_wt_burns_less_than_20_percent_body_area_without_treatment +
-                     self.daly_wt_burns_less_than_20_percent_body_area_with_treatment),
-            '813a': (- self.daly_wt_hip_fracture_short_term_with_without_treatment +
-                     self.daly_wt_hip_fracture_long_term_with_treatment),
-            '813b': - self.daly_wt_pelvis_fracture_short_term + self.daly_wt_pelvis_fracture_long_term,
-            '813bo': - self.daly_wt_pelvis_fracture_short_term + self.daly_wt_pelvis_fracture_long_term,
-            'P673a': (- self.daly_wt_spinal_cord_lesion_neck_without_treatment +
-                      self.daly_wt_spinal_cord_lesion_neck_with_treatment),
-            'P673b': (- self.daly_wt_spinal_cord_lesion_below_neck_without_treatment +
-                      self.daly_wt_spinal_cord_lesion_below_neck_with_treatment),
-            'P674a': (- self.daly_wt_spinal_cord_lesion_neck_without_treatment +
-                      self.daly_wt_spinal_cord_lesion_neck_with_treatment),
-            'P674b': (- self.daly_wt_spinal_cord_lesion_below_neck_without_treatment +
-                      self.daly_wt_spinal_cord_lesion_below_neck_with_treatment),
-            'P675a': (- self.daly_wt_spinal_cord_lesion_neck_without_treatment +
-                      self.daly_wt_spinal_cord_lesion_neck_with_treatment),
-            'P675b': (- self.daly_wt_spinal_cord_lesion_below_neck_without_treatment +
-                      self.daly_wt_spinal_cord_lesion_below_neck_with_treatment),
-            'P676': (- self.daly_wt_spinal_cord_lesion_neck_without_treatment +
-                     self.daly_wt_spinal_cord_lesion_neck_with_treatment),
-            'P782b': (- self.daly_wt_unilateral_arm_amputation_without_treatment +
-                      self.daly_wt_unilateral_arm_amputation_with_treatment),
-            'P783': (- self.daly_wt_bilateral_arm_amputation_without_treatment +
-                     self.daly_wt_bilateral_arm_amputation_with_treatment),
-            'P883': (- self.daly_wt_unilateral_lower_limb_amputation_without_treatment +
-                     self.daly_wt_unilateral_lower_limb_amputation_with_treatment),
-            'P884': (- self.daly_wt_bilateral_lower_limb_amputation_without_treatment +
-                     self.daly_wt_bilateral_lower_limb_amputation_with_treatment)
-        }
-
         # swap the relevant code's daly weight, from the daly weight associated with the injury without treatment
         # and the daly weight for the disability with treatment.
         # keep track of the changes to the daly weights
         # update the disability burdens
-        df.loc[person_id, 'rt_debugging_DALY_wt'] += sum([daly_weight_change_lookup[code] for code in relevant_codes])
+        df.loc[person_id, 'rt_debugging_DALY_wt'] += \
+            sum([self.ASSIGN_INJURIES_AND_DALY_CHANGES[code][2] for code in relevant_codes])
         df.loc[person_id, 'rt_debugging_DALY_wt'] = np.round(df.loc[person_id, 'rt_debugging_DALY_wt'], 4)
         # Check that the person's true disability burden is positive
         assert df.loc[person_id, 'rt_debugging_DALY_wt'] >= 0, (person_injuries.values,
