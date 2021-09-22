@@ -101,40 +101,57 @@ def _parse_log_file_inner_loop(filepath, level: int = logging.INFO):
     return output_logs
 
 
-def parse_log_file(filepath, level: int = logging.INFO):
+def parse_log_file(log_filepath, level: int = logging.INFO):
     """Parses logged output from a TLO run and split it into smaller log files.
 
     The module name becomes the log file name
     """
-
+    print(f'Processing log file {log_filepath}')
     uuid_to_module_name: Dict[str, str] = dict()  # uuid to module name
-
     module_name_to_filehandle: Dict[str, TextIO] = dict()  # module name to file handle
-    module_specific_log_path = {}
-    module_specific_parsed_log_results = {}
-    with open(filepath) as log_file:
+
+    log_directory = Path(log_filepath).parent
+    print(f'Writing module-specific log files to {log_directory}')
+
+    # iterate over each line in the logfile
+    with open(log_filepath) as log_file:
         for line in log_file:
-            # only parse json entities
+            # only parse lines that are json log lines (old-style logging is not supported)
             if line.startswith('{'):
                 log_data_json = json.loads(line)
                 uuid = log_data_json['uuid']
-                if 'type' in log_data_json.keys() and uuid not in uuid_to_module_name.keys():
+                # if this is a header line (only header lines have a `type` key)
+                if 'type' in log_data_json:
                     module_name = log_data_json["module"]
                     uuid_to_module_name[uuid] = module_name
-
-                    module_specific_log_path[module_name] = Path('./outputs') / f"{module_name}.log"
-                    module_name_to_filehandle[module_name] = \
-                        open(Path('./outputs') / f"{module_name}.log", mode="a")
-                    # append log info.
-                    module_name_to_filehandle[uuid_to_module_name[uuid]].write(line)
-
-                # append log info.
+                    # we only need to create the file if we don't already have one for this module
+                    if module_name not in module_name_to_filehandle:
+                        module_name_to_filehandle[module_name] = open(log_directory / f"{module_name}.log", mode="w")
+                # copy line from log file to module-specific log file (both headers and non-header lines)
                 module_name_to_filehandle[uuid_to_module_name[uuid]].write(line)
-        module_name_to_filehandle[uuid_to_module_name[uuid]].close()
 
-    for file_path in module_specific_log_path.values():
-        module_specific_parsed_log_results.update(_parse_log_file_inner_loop(file_path))
-    return module_specific_parsed_log_results
+    print(f'Finished writing module-specific log files.')
+
+    # close all module-specific files
+    for file_handle in module_name_to_filehandle.values():
+        file_handle.close()
+
+    # parse each module-specific log file and collect the results into a single dictionary. metadata about each log
+    # is returned in the same key '_metadata', so it needs to be collected separately and then merged back in.
+    all_module_logs = dict()
+    metadata = dict()
+    for file_handle in module_name_to_filehandle.values():
+        print(f'Parsing {file_handle.name}', end='', flush=True)
+        module_specific_logs = _parse_log_file_inner_loop(file_handle.name, level)
+        print(' - complete.')
+        metadata.update(module_specific_logs['_metadata'])
+        all_module_logs.update(module_specific_logs)
+
+    all_module_logs['_metadata'] = metadata
+
+    print(f'Finished.')
+
+    return all_module_logs
 
 
 def _oldstyle_parse_output(list_of_log_lines):
