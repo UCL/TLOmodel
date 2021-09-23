@@ -1471,6 +1471,7 @@ class RTI(Module):
         :return: n/a
         """
         df = self.sim.population.props
+        p = self.parameters
         person = df.loc[person_id]
         # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to rti
         assert person.rt_med_int, 'person sent here not been through RTI_MedInt'
@@ -1487,13 +1488,13 @@ class RTI(Module):
 
         # If we allow surgical treatment of spinal cord injuries, extend the surgically treated codes to include spinal
         # cord injury codes
-        if 'include_spine_surgery' in self.allowed_interventions:
+        if 'include_spine_surgery' in p['allowed_interventions']:
             additional_codes = ['673a', '673b', '674a', '674b', '675a', '675b', '676', 'P673a', 'P673b', 'P674',
                                 'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676']
             surgically_treated_codes.extend(additional_codes)
         # If we allow surgical treatment of chest trauma, extend the surgically treated codes to include chest trauma
         # codes.
-        if 'include_thoroscopy' in self.allowed_interventions:
+        if 'include_thoroscopy' in p['allowed_interventions']:
             additional_codes = ['441', '443', '453', '453a', '453b', '463']
             surgically_treated_codes.extend(additional_codes)
         # check this person has an injury which should be treated here
@@ -3643,6 +3644,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         # Get the population and health system
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.module.parameters
         # if the person isn't alive return a blank footprint
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -3651,8 +3653,8 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         # isolate the relevant injury information
         # Find the untreated injuries
-        untreated_injury_cols = [RTI.INJURY_COLUMNS[i] for i, v in enumerate(df.at[person_id, 'rt_date_to_remove_daly'])
-                                 if pd.isnull(v)]
+        untreated_injury_cols = \
+            [RTI.INJURY_COLUMNS[i] for i, v in enumerate(df.at[person_id, 'rt_date_to_remove_daly']) if pd.isnull(v)]
         person_injuries = df.loc[[person_id], untreated_injury_cols]
         # check if they have a fracture that requires a cast
         codes = ['712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
@@ -4396,8 +4398,8 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
 
             if cond:
                 logger.debug(key='rti_general_message',
-                             data=f"This facility has pain management available for severe pain which has been used for "
-                                  f"person {person_id}")
+                             data=f"This facility has pain management available for severe pain which has been used for"
+                                  f" person {person_id}")
                 dict_to_output = {'person': person_id,
                                   'pain level': pain_level}
                 logger.info(key='Successful_Pain_Management',
@@ -4603,8 +4605,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 # Find the column and code where the permanent injury is stored
                 column, code = road_traffic_injuries.rti_find_injury_column(person_id=person_id, codes=codes)
                 logger.debug(key='rti_general_message',
-                             data=f"@@@@@@@@@@ Person {person_id} had intervention for TBI on {self.sim.date} but still "
-                                  f"disabled!!!!!!")
+                             data=f"@@@@@@@@@@ Person {person_id} had intervention for TBI on {self.sim.date} but still"
+                                  f" disabled!!!!!!")
                 # Update the code to make the injury permanent, so it will not have the associated daly weight removed
                 # later on
                 code_to_drop_index = injuries_to_be_treated.index(self.treated_code)
@@ -4667,8 +4669,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             # Find the column and code where the permanent injury is stored
             column, code = road_traffic_injuries.rti_find_injury_column(person_id=person_id, codes=[self.treated_code])
             logger.debug(key='rti_general_message',
-                         data=f"@@@@@@@@@@ Person {person_id} had intervention for an amputation on {self.sim.date} but "
-                              f"still disabled!!!!!!")
+                         data=f"@@@@@@@@@@ Person {person_id} had intervention for an amputation on {self.sim.date} but"
+                              f" still disabled!!!!!!")
             # Update the code to make the injury permanent, so it will not have the associated daly weight removed
             # later on
             code_to_drop_index = injuries_to_be_treated.index(self.treated_code)
@@ -4755,8 +4757,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             'no recovery date given for this injury'
         assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
         logger.debug(key='rti_general_message',
-                     data=f"This is RTI_Major_Surgeries supplying surgery for person {person_id} on date {self.sim.date}"
-                          f"!!!!!!, removing code")
+                     data=f"This is RTI_Major_Surgeries supplying surgery for person {person_id} on date "
+                          f"{self.sim.date}!!!!!!, removing code")
         # remove code from major surgeries list
         if self.treated_code in df.loc[person_id, 'rt_injuries_for_major_surgery']:
             df.loc[person_id, 'rt_injuries_for_major_surgery'].remove(self.treated_code)
@@ -5096,8 +5098,8 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
                                                     originating_module=self.module)
             # Log the death
             logger.debug(key='rti_general_message',
-                         data=f"This is RTINoMedicalInterventionDeathEvent scheduling a death for person {person_id} on "
-                              f"date {self.sim.date}")
+                         data=f"This is RTINoMedicalInterventionDeathEvent scheduling a death for person {person_id} on"
+                              f" date {self.sim.date}")
 
 
 # ---------------------------------------------------------------------------------------------------------
