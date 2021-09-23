@@ -501,18 +501,16 @@ class HealthSystem(Module):
         # Check that topen is strictly before tclose
         assert topen < tclose
 
-
-        # Check if healthsystem is disabled
+        # Check if healthsystem is disabled/disable_and_reject_all, and scheduled a the event with appropriate wrapper.
         if self.disable and (not self.disable_and_reject_all):
             # If healthsystem is disabled (but HSI can still run), ...
             #   ... put this event straight into the normal simulation scheduler.
-            self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run=True), topen)
+            self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=True), topen)
             return
         elif self.disable_and_reject_all:
             # If healthsystem is disabled the HSI will never run: schedule for the "never_ran" method for `tclose`.
-            self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run=False), tclose)
+            self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tclose)
             return
-
 
         # Check that this is a legitimate health system interaction (HSI) event
         # These checks are only performed when the flag `do_hsi_event_checks` is set
@@ -1666,11 +1664,11 @@ class HSIEventWrapper(Event):
      2) When the healthsytsem is in mode `diable_and_reject_all=True` such that HSI are not run but the `never_ran`
      method is run on the date of `tclose`.
     """
-    def __init__(self, hsi_event, run=True, *args, **kwargs):
+    def __init__(self, hsi_event, run_hsi=True, *args, **kwargs):
         super().__init__(hsi_event.module, *args, **kwargs)
         self.hsi_event = hsi_event
         self.target = hsi_event.target
-        self.run = run  # True to call the HSI's `run` method; False to call the HSI's `never_ran` method
+        self.run_hsi = run_hsi  # True to call the HSI's `run` method; False to call the HSI's `never_ran` method
 
     def run(self):
         """Do the appropriate action on the HSI event"""
@@ -1681,7 +1679,7 @@ class HSIEventWrapper(Event):
         if isinstance(self.hsi_event.target, tlo.population.Population) \
                 or (self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']):
 
-            if self.run:
+            if self.run_hsi:
                 # Run the event (with 0 squeeze_factor) and ignore the output
                 _ = self.hsi_event.run(squeeze_factor=0.0)
             else:

@@ -386,8 +386,8 @@ class Contraception(Module):
         old: itterable giving the corresponding contraceptive state being switched from
         new: itterable giving the corresponding contraceptive state being switched to
 
-        It is assumed that even with the option `self.use_healthsystem=True` that switches to traditional methods or to
-        "not_using" (i.e. discontinuation) do not require the use of HSI."""
+        It is assumed that even with the option `self.use_healthsystem=True` that switches to certain methods do not
+        require the use of HSI (these are in `states_that_may_require_HSI_to_switch_to`)."""
 
         df = self.sim.population.props
         date_today = self.sim.date
@@ -402,7 +402,9 @@ class Contraception(Module):
                 self.use_healthsystem and
                 (_new in self.states_that_may_require_HSI_to_switch_to) and
                 (
-                    (_old != _new) or ((date_today - date_of_last_appt[_woman_id]).days >= days_between_appts)
+                    (_old != _new) or
+                    pd.isnull(date_of_last_appt[_woman_id]) or
+                    ((date_today - date_of_last_appt[_woman_id]).days >= days_between_appts)
                 )
             ):
                 # If this is a change, or its maintenance and time for an appointment, schedule an appointment
@@ -749,7 +751,7 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Log summary of usage of contraceptives
         logger.info(key='contraception_use_yearly_summary',
-                    data=df.loc[df.is_alive & (df.sex == 'F'), 'co_contraception'].value_counts().to_dict(),
+                    data=df.loc[df.is_alive & (df.sex == 'F'), 'co_contraception'].value_counts().sort_index().to_dict(),
                     description='Counts of women on each type of contraceptive at a point each time (yearly).')
 
 
@@ -796,6 +798,9 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
     def never_ran(self):
         """If this HSI never ran, the person defaults to "not_using" a contraceptive."""
+        if not self.sim.population.props.at[self.target, 'is_alive']:
+            return
+
         self.module.do_and_log_individual_contraception_change(
             woman_id=self.target,
             old=self.old_contraceptive,
