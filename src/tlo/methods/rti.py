@@ -2048,10 +2048,7 @@ class RTI(Module):
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # Iterate over the codes
         for code in tloinjcodes:
-            if code in permanent_injuries:
-                # checks if the injury is permanent, if so the injury code is not removed.
-                pass
-            else:
+            if code not in permanent_injuries:
                 # Find which columns have treated injuries
                 injury_cols = person_injuries.columns[(person_injuries.values == code).any(0)].tolist()
                 # Reset the treated injury code to "none"
