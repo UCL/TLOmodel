@@ -1788,7 +1788,7 @@ class RTI(Module):
         :return: which column out of rt_injury_1 to rt_injury_8 the injury code occurs in, and the injury code itself
         """
         df = self.sim.population.props
-        person_injuries = df.loc[person_id, RTI.INJURY_COLUMNS]        # iterate over the codes to search the dataframe for
+        person_injuries = df.loc[person_id, RTI.INJURY_COLUMNS]
         injury_column = ''
         injury_code = ''
         for code in codes:
