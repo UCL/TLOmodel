@@ -38,6 +38,8 @@ class Malaria(Module):
         'Contraception', 'Demography', 'HealthSystem', 'SymptomManager'
     }
 
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,

@@ -4,7 +4,7 @@ import importlib
 import inspect
 import os
 import pkgutil
-from typing import Any, Callable, Generator, Iterable, Mapping, Optional, Set, Type
+from typing import Any, Callable, Generator, Iterable, Mapping, Optional, Set, Type, Union
 
 import tlo.methods
 from tlo import Module
@@ -18,25 +18,58 @@ class MultipleModuleInstanceError(Exception):
     """Raised when multiple instances of the same module are registered."""
 
 
-DependencyGetter = Callable[[Type[Module]], Set[str]]
+DependencyGetter = Callable[[Union[Module, Type[Module]], Set[str]], Set[str]]
 
 
-def get_init_dependencies(module: Type[Module]) -> Set[str]:
+def get_init_dependencies(
+    module: Union[Module, Type[Module]],
+    module_names_present: Set[str]
+) -> Set[str]:
     """Get the initialisation dependencies for a ``Module`` subclass.
 
     :param module: ``Module`` subclass to get dependencies for.
+    :param module_names_present: Set of names of ``Module`` subclasses that will be
+        present in simulation to use to select optional initialisation dependencies.
     :return: Set of ``Module`` subclass names corresponding to initialisation
-        dependencies of ``module``.
+        dependencies of ``module``, including any optional dependencies present.
     """
-    return module.INIT_DEPENDENCIES
+    return (
+        module.INIT_DEPENDENCIES
+        | (module.OPTIONAL_INIT_DEPENDENCIES & module_names_present)
+    )
 
 
-def get_all_dependencies(module: Type[Module]) -> Set[str]:
+def get_all_dependencies(
+    module: Union[Module, Type[Module]],
+    module_names_present: Set[str]
+) -> Set[str]:
     """Get all dependencies for a ``Module`` subclass.
 
     :param module: ``Module`` subclass to get dependencies for.
+    :param module_names_present: Set of names of ``Module`` subclasses that will be
+        present in simulation to use to select optional initialisation dependencies.
     :return: Set of ``Module`` subclass names corresponding to dependencies of
-        ``module``.
+        ``module``, including any optional dependencies present.
+    """
+    return (
+        get_init_dependencies(module, module_names_present)
+        | module.ADDITIONAL_DEPENDENCIES
+    )
+
+
+def get_all_required_dependencies(
+    module: Union[Module, Type[Module]],
+    module_names_present: Optional[Set[str]] = None
+) -> Set[str]:
+    """Get all non-optional dependencies for a ``Module`` subclass.
+
+    :param module: ``Module`` subclass to get dependencies for.
+    :param module_names_present: Set of names of ``Module`` subclasses that will be
+        present in simulation to use to select optional initialisation dependencies.
+        Unused by this function, but kept as an argument to ensure a consistent
+        interface with the other dependency-getter functions.
+    :return: Set of ``Module`` subclass names corresponding to non-optional dependencies
+        of ``module``.
     """
     return module.INIT_DEPENDENCIES | module.ADDITIONAL_DEPENDENCIES
 
@@ -84,7 +117,10 @@ def topologically_sort_modules(
                     f'Module {module} has circular dependencies.'
                 )
             currently_processing.add(module)
-            for dependency in sorted(get_dependencies(module_instance_map[module])):
+            dependencies = get_dependencies(
+                module_instance_map[module], module_instance_map.keys()
+            )
+            for dependency in sorted(dependencies):
                 if dependency not in module_instance_map:
                     alternatives_with_instances = [
                         name for name, instance in module_instance_map.items()
@@ -208,7 +244,8 @@ def get_dependencies_and_initialise(
         if module_class not in (visited | excluded_module_classes):
             visited.add(module_class)
             yield initialise_module(module_class)
-            for dependency_name in get_dependencies(module_class):
+            dependencies = get_dependencies(module_class, module_class_map.keys())
+            for dependency_name in sorted(dependencies):
                 yield from depth_first_search(module_class_map[dependency_name])
 
     for module_class in module_classes:
@@ -234,7 +271,7 @@ def check_dependencies_present(
         *(set(module.ALTERNATIVE_TO) for module in module_instances)
     )
     modules_required = set.union(
-        *(set(get_dependencies(module)) for module in module_instances)
+        *(set(get_dependencies(module, modules_present)) for module in module_instances)
     )
     missing_dependencies = modules_required - modules_present
     missing_dependencies_without_alternatives_present = (

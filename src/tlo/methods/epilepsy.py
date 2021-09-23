@@ -237,18 +237,16 @@ class Epilepsy(Module):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
-        logger.debug(
-            'This is Epilepsy, being alerted about a health system interaction person %d for: %s',
-            person_id,
-            treatment_id,
-        )
+        logger.debug(key='debug',
+                     data=f'This is Epilepsy, being alerted about a health system interaction '
+                          f'by person {person_id} for: {treatment_id}')
 
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
-        logger.debug('This is Epilepsy reporting my health values')
+        logger.debug(key='debug', data='This is Epilepsy reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
         disability_series_for_alive_persons = df.loc[df.is_alive, 'ep_disability']
@@ -332,9 +330,8 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         incidence_epilepsy = (n_incident_epilepsy * 4 * 100000) / n_alive
 
         logger.info(
-            '%s|incidence_epilepsy|%s',
-            self.sim.date,
-            {
+            key='incidence_epilepsy',
+            data={
                 'incident_epilepsy': incidence_epilepsy,
                 'n_incident_epilepsy': n_incident_epilepsy,
                 'n_alive': n_alive
@@ -450,9 +447,8 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         cum_deaths = (~df.is_alive).sum()
 
-        logger.info('%s|epilepsy_logging|%s',
-                    self.sim.date,
-                    {
+        logger.info(key='epilepsy_logging',
+                    data={
                         'prop_seiz_stat_0': prop_seiz_stat_0,
                         'prop_seiz_stat_1': prop_seiz_stat_1,
                         'prop_seiz_stat_2': prop_seiz_stat_2,
@@ -506,7 +502,7 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
         )
         if outcome_of_request_for_consumables['Item_Code'][item_code_phenobarbitone]:
             anti_epileptics_available = True
-            logger.debug(key='message', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+            logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
         else:
             item_code_carbamazepine = pd.unique(
                 consumables.loc[consumables['Items'] == 'Carbamazepine 200mg_1000_CMST', 'Item_Code'])[0]
@@ -520,7 +516,7 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
             )
             if outcome_of_request_for_consumables['Item_Code'][item_code_carbamazepine]:
                 anti_epileptics_available = True
-                logger.debug(key='message', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+                logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
             else:
                 item_code_phenytoin = pd.unique(
                     consumables.loc[consumables['Items'] == 'Phenytoin sodium 100mg_1000_CMST', 'Item_Code'])[0]
@@ -534,6 +530,6 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
                 )
                 if outcome_of_request_for_consumables['Item_Code'][item_code_phenytoin]:
                     anti_epileptics_available = True
-                    logger.debug(key='message', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+                    logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
         if anti_epileptics_available:
             df.at[person_id, 'ep_antiep'] = True

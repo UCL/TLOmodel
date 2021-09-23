@@ -37,6 +37,8 @@ class BladderCancer(Module):
 
     INIT_DEPENDENCIES = {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
 
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
