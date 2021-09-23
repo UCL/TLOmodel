@@ -317,10 +317,6 @@ def test_no_consumables_causes_no_use_of_contracptives(tmpdir):
     ).all()
 
 
-
-
-
-
 def test_occurence_of_HSI_for_maintain_and_switch(tmpdir):
     """Check HSI for the maintenance of a person on a contraceptive are scheduled as expected.."""
     # todo refactor "date of last appt for maintenance" --> "co_date_of_last_appointment"

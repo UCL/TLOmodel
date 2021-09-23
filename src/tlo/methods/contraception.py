@@ -749,9 +749,13 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = population.props
 
+        # Make value_counts (NB. sort_index ensures the resulting dict has keys of the resulting dict in the same order,
+        # which is requirement of the logging.)
+        value_counts = df.loc[df.is_alive & (df.sex == 'F'), 'co_contraception'].value_counts().sort_index().to_dict()
+
         # Log summary of usage of contraceptives
         logger.info(key='contraception_use_yearly_summary',
-                    data=df.loc[df.is_alive & (df.sex == 'F'), 'co_contraception'].value_counts().sort_index().to_dict(),
+                    data=value_counts,
                     description='Counts of women on each type of contraceptive at a point each time (yearly).')
 
 
