@@ -1066,7 +1066,7 @@ class PregnancySupervisor(Module):
 
         # TODO: CHANGE BACK!!!
         if anc_month == 2:
-            days_until_anc = self.rng.randint(0, 7)
+            days_until_anc = self.rng.randint(0, 6)
 
         #if anc_month == 1:
         #    days_until_anc = self.rng.randint(0, 7)

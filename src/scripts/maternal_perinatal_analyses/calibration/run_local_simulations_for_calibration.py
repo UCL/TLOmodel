@@ -245,9 +245,11 @@ def normal_run(config_name, start_date, end_date, seed, population, parameters):
     register_modules(sim)
     sim.make_initial_population(n=population)
     allow_varying_parameter_sets_to_be_used(parameters, sim)
+    sim.modules['PregnancySupervisor'].current_parameters['baseline_prob_early_labour_onset'] = [0.002, 0.008,
+                                                                                                 0.027, 0.063]
     sim.simulate(end_date=end_date)
 
-normal_run('anc1_checker_10', Date(2010, 1, 1), Date(2011, 1, 1), 77, 10000, 2010)
+normal_run('test_lbw_logging_less_eptb', Date(2010, 1, 1), Date(2011, 1, 1), 77, 10000, 2010)
 #normal_run('anc1_checker_15', Date(2010, 1, 1), Date(2011, 1, 1), 2, 10000, 2015)
 
 

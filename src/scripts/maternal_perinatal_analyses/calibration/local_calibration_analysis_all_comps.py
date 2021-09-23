@@ -40,7 +40,7 @@ indirect_causes = ['AIDS', 'severe_malaria', 'Suicide', 'diabetes', 'chronic_kid
 logs_dict = dict()
 
 new_parse_log_2010 = {2010: parse_log_file(
-    filepath=f"./outputs/calibration_files/anc1_checker_10_calibration_77__2021-09-22T152934.log")}
+    filepath=f"./outputs/calibration_files/test_lbw_logging_less_eptb_calibration_77__2021-09-23T112549.log")}
 new_parse_log_2015 = {2015: parse_log_file(
     filepath=f"./outputs/calibration_files/anc1_checker_15_calibration_2__2021-09-22T153811.log")}
 logs_dict.update(new_parse_log_2010)
@@ -75,35 +75,15 @@ update_dicts(neonatal_comps, master_dict_nb_2010, master_dict_nb_2015, 'newborn_
 
 total_births_2010 = graph_maker_for_local_calibration.get_total_births(logs_dict[2010])
 total_births_2015 = graph_maker_for_local_calibration.get_total_births(logs_dict[2015])
+graph_maker_for_local_calibration.output_distribution_of_ga_at_birth_for_logfile_year(logs_dict[2010])
+
 
 pregnancies_2011 = graph_maker_for_local_calibration.get_pregnancies_in_a_year(logs_dict[2010], 2010)
 pregnancies_2016 = graph_maker_for_local_calibration.get_pregnancies_in_a_year(logs_dict[2015], 2015)
 
-dummy_pregnancies = graph_maker_for_local_calibration.get_pregnancies_from_dummy_contraception(logs_dict[2010], 2010)
-total_ended_pregnancies = graph_maker_for_local_calibration.get_completed_pregnancies_in_a_year(logs_dict[2010], master_dict_an_2010)
+#total_ended_pregnancies = graph_maker_for_local_calibration.get_completed_pregnancies_in_a_year(logs_dict[2010],
+ #                                                                                               master_dict_an_2010)
 
-# SPONTANEOUS/INDUCED ABORTION...
-graph_maker_for_local_calibration.get_single_year_generic_incidence_graph('ectopic_unruptured', master_dict_an_2010, dummy_pregnancies,
-                                                                          4.9, ['firebrick', 'lightcoral'])
-
-
-graph_maker_for_local_calibration.get_single_year_generic_incidence_graph('spontaneous_abortion', master_dict_an_2010,
-                                                                          total_ended_pregnancies, 189, ['firebrick', 'lightcoral'])
-graph_maker_for_local_calibration.get_single_year_generic_incidence_graph('induced_abortion', master_dict_an_2010,
-                                                                          total_ended_pregnancies, 86, ['firebrick', 'lightcoral'])
-
-# nb. for twins you want total twin births/total births not total twin pregnancies
-#graph_maker.get_single_year_twins_graph(logs_dict[2010], total_births_2010, 3.9, ['firebrick', 'lightcoral'])
-
-#graph_maker.get_total_anaemia_graph(logs_dict[2010], logs_dict[2015], ['red', 'pink'])
-
-
-graph_maker_for_local_calibration.get_preterm_birth_graph(master_dict_la_2010, master_dict_la_2015, total_births_2010, total_births_2015,
-                                                          ['plum', 'thistle'])
-
-graph_maker_for_local_calibration.get_htn_disorders_graph(master_dict_an_2010, master_dict_la_2010, master_dict_pn_2010, total_births_2010,
-                                                          2010)
-#graph_maker.get_htn_disorders_graph(master_dict_an_2015, master_dict_la_2015, master_dict_pn_2015, total_births_2015,
-#                                    2015)
-
-
+graph_maker_for_local_calibration.get_single_year_generic_incidence_graph('low_birth_weight', master_dict_nb_2010,
+                                                                          total_births_2010, 12.5,
+                                                                          ['firebrick', 'lightcoral'], 100)

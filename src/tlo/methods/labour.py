@@ -2573,10 +2573,14 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                 0.9, loc=params['mean_birth_weights'][mean_birth_weight_list_location], scale=standard_deviation)
 
             # Make the appropriate changes to the mni dictionary (both are stored as property of the newborn on birth)
+
             if birth_weight >= 4000:
                 mni[individual_id]['birth_weight'] = 'macrosomia'
             elif birth_weight >= 2500:
-                mni[individual_id]['birth_weight'] = 'normal_birth_weight'
+                if self.module.rng.random_sample < 0.05:  #TODO: MAKE PARAMETER (or even LM?)
+                    mni[individual_id]['birth_weight'] = 'macrosomia'
+                else:
+                    mni[individual_id]['birth_weight'] = 'normal_birth_weight'
             elif 1500 <= birth_weight < 2500:
                 mni[individual_id]['birth_weight'] = 'low_birth_weight'
             elif 1000 <= birth_weight < 1500:

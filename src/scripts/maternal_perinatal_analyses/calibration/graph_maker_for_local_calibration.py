@@ -278,11 +278,12 @@ def get_single_year_twins_graph(log_dict, total_births, target, colours):
     plt.show()
 
 
-def get_single_year_generic_incidence_graph(complication, dict, denominator, target, colours):
-    rate = (dict[complication] / denominator) * 1000
+def get_single_year_generic_incidence_graph(complication, dict, denominator, target, colours, multiplier):
+    rate = (dict[complication] / denominator) * multiplier
     print(f'{complication} rate', rate)
     model_rates = [rate]
     target_rates = [target]
+    plt.style.use('ggplot')
 
     barWidth = 0.35
     r1 = np.arange(len(model_rates))
@@ -798,3 +799,27 @@ def get_mmr(logs_dict_file, list, live_births, year):
     ax.set_title(f'Maternal Mortality Ratio Calibration {year}')
     ax.legend()
     plt.show()
+
+def output_distribution_of_ga_at_birth_for_logfile_year(logs_dict):
+    ga_births = logs_dict['tlo.methods.labour']['live_birth']['ga'].sort_values(ascending=True).astype(int)
+    counts = ga_births.value_counts()
+
+    total = sum(counts)
+    for week in counts.index:
+        counts.at[week] = (counts.at[week]/total) * 100
+
+    x = counts.index
+    ga = counts.values
+
+    x_pos = [i for i, _ in enumerate(x)]
+
+    plt.style.use('ggplot')
+    plt.bar(x_pos, ga, color='green')
+    plt.xlabel("Weeks")
+    plt.ylabel("Proportion of total births")
+    plt.title("Gestational Age in Weeks at Birth ")
+
+    plt.xticks(x_pos, x)
+
+    plt.show()
+
