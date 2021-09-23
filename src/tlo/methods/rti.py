@@ -3651,10 +3651,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         # isolate the relevant injury information
         # Find the untreated injuries
-        p = df.loc[person_id]
-        assigned_injury_recovery_time = list(pd.isnull(p['rt_date_to_remove_daly']))
-        idx_for_untreated_injuries = np.where(assigned_injury_recovery_time)[0]
-        untreated_injury_cols = [RTI.INJURY_COLUMNS[idx] for idx in idx_for_untreated_injuries]
+        untreated_injury_cols = [RTI.INJURY_COLUMNS[i] for i, v in enumerate(df.at[person_id, 'rt_date_to_remove_daly']) if pd.isnull(v)]
         person_injuries = df.loc[[person_id], untreated_injury_cols]
         # check if they have a fracture that requires a cast
         codes = ['712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
