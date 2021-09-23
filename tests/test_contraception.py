@@ -382,8 +382,10 @@ def test_occurence_of_HSI_for_maintain_and_switch(tmpdir):
     assert not len(sim.modules['HealthSystem'].find_events_for_person(person_id))
 
 
-def test_changes_match_counts():
-    # todo
-    pass
-
-# test that can turn on/off initiation, switiching, discontinuation
+# Todo Items:
+# * test that can turn on/off initiation, switiching, discontinuation
+# * Changes so that female sterilization does not need HSI to be maintained (i.e. don't default)
+# * Put the check_logs into all the checks.
+# * Check running of analysis file
+# * Run long/large calibrations
+# * Clean up parameters!
