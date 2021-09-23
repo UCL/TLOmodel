@@ -3644,7 +3644,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         # Get the population and health system
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-        p = self.module.parameters
+        p = df.loc[person_id]
         # if the person isn't alive return a blank footprint
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
