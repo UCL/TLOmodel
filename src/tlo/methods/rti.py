@@ -1819,7 +1819,7 @@ class RTI(Module):
         for code in codes:
             for col in df.columns:
                 # Search a sub-dataframe that is non-empty if the code is present is in that column and empty if not
-                if df[col].str.contains(code).any():
+                if (df[col] == code).any():
                     columns_to_return.append(col)
                     codes_to_return.append(code)
 
