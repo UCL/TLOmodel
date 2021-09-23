@@ -2117,10 +2117,9 @@ class RTI(Module):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
-        logger.debug(
-            'This is RTI, being alerted about a health system interaction person %d for: %s',
-            person_id,
-            treatment_id,
+        logger.debug(key='rti_general_message',
+                     data=f"This is RTI, being alerted about a health system interaction person %d for: %s, {person_id}"
+                          f", {treatment_id}"
         )
 
     def report_daly_values(self):
@@ -2128,7 +2127,7 @@ class RTI(Module):
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
-        logger.debug('This is RTI reporting my daly values')
+        logger.debug(key='rti_general_message', data='This is RTI reporting my daly values')
         df = self.sim.population.props
         disability_series_for_alive_persons = df.loc[df.is_alive, "rt_disability"]
         return disability_series_for_alive_persons
@@ -3492,14 +3491,17 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # ============================== Ask if they die even with treatment ===========================================
         self.sim.schedule_event(RTI_Medical_Intervention_Death_Event(self.module, person_id), self.sim.date +
                                 DateOffset(days=self.inpatient_days))
-        logger.debug('This is RTIMedicalInterventionEvent scheduling a potential death on date %s (end of treatment)'
-                     ' for person %d', self.sim.date + DateOffset(days=self.inpatient_days), person_id)
+        logger.debug(key='rti_general_message',
+                     data=f"This is RTIMedicalInterventionEvent scheduling a potential death on date "
+                          f"{self.sim.date + DateOffset(days=self.inpatient_days)} (end of treatment) for person "
+                          f"{person_id}")
 
     def did_not_run(self):
         person_id = self.target
         df = self.sim.population.props
-        logger.debug('RTI_MedicalInterventionEvent: did not run for person  %d on date %s',
-                     person_id, self.sim.date)
+        logger.debug(key='rti_general_message',
+                     data=f"RTIMedicalInterventionEvent did not run on date {self.sim.date} (end of treatment) for "
+                          f"person {person_id}")
         injurycodes = {'First injury': df.loc[person_id, 'rt_injury_1'],
                        'Second injury': df.loc[person_id, 'rt_injury_2'],
                        'Third injury': df.loc[person_id, 'rt_injury_3'],
@@ -3508,7 +3510,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                        'Sixth injury': df.loc[person_id, 'rt_injury_6'],
                        'Seventh injury': df.loc[person_id, 'rt_injury_7'],
                        'Eight injury': df.loc[person_id, 'rt_injury_8']}
-        logger.debug(f'Injury profile of person %d, {injurycodes}', person_id)
+        logger.debug(key='rti_injury_profile_of_untreated_person', data=injurycodes)
 
 
 class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
@@ -3581,8 +3583,8 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
             cons_req_as_footprint=consumables_shock,
             to_log=True)
         if is_cons_available:
-            logger.debug("Hypovolemic shock treatment available for person %d",
-                         person_id)
+            logger.debug(key='rti_general_message',
+                         data=f"Hypovolemic shock treatment available for person {person_id}")
             df.at[person_id, 'rt_in_shock'] = False
 
     def did_not_run(self, person_id):
@@ -3593,9 +3595,10 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_shock",
                                                 originating_module=self.module)
         # Log the death
-        logger.debug('This is RTI_Shock_Treatment scheduling a death for person %d who did not recieve treatment'
-                     'for shock',
-                     person_id, self.sim.date)
+        logger.debug(key='rti_general_message',
+                     data=f"This is RTI_Shock_Treatment scheduling a death for person {person_id} who did not recieve "
+                          f"treatment for shock on {self.sim.date}"
+                     )
 
 
 class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
@@ -3648,7 +3651,8 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         # isolate the relevant injury information
         # Find the untreated injuries
-        untreated_injury_cols = [RTI.INJURY_COLUMNS[i] for i, v in enumerate(df.at[person_id, 'rt_date_to_remove_daly']) if pd.isnull(v)]
+        untreated_injury_cols = [RTI.INJURY_COLUMNS[i] for i, v in enumerate(df.at[person_id, 'rt_date_to_remove_daly'])
+                                 if pd.isnull(v)]
         person_injuries = df.loc[[person_id], untreated_injury_cols]
         # check if they have a fracture that requires a cast
         codes = ['712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
@@ -3687,8 +3691,10 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             to_log=True)
         # if the consumables are available then the appointment can run
         if is_cons_available:
-            logger.debug(f"Fracture casts available for person %d's {fracturecastcounts + slingcounts} fractures",
-                         person_id)
+            logger.debug(key='rti_general_message',
+                         data=f"Fracture casts available for person %d's {fracturecastcounts + slingcounts} fractures, "
+                              f"{person_id}"
+                         )
             # update the property rt_med_int to indicate they are recieving treatment
             df.at[person_id, 'rt_med_int'] = True
             # Find the persons injuries
@@ -3737,11 +3743,13 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             # remove codes from fracture cast list
             df.loc[person_id, 'rt_injuries_to_cast'].clear()
         else:
-            logger.debug(f"Person %d's has {fracturecastcounts + slingcounts} fractures without treatment",
-                         person_id)
+            logger.debug(key='rti_general_message',
+                         data=f"Person {person_id} has {fracturecastcounts + slingcounts} fractures without treatment"
+                         )
 
     def did_not_run(self, person_id):
-        logger.debug('Fracture casts unavailable for person %d', person_id)
+        logger.debug(key='rti_general_message',
+                     data=f"Fracture casts unavailable for person {person_id}")
 
 
 class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
@@ -3834,8 +3842,9 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
             cons_req_as_footprint=consumables_fractures,
             to_log=True)
         if is_cons_available:
-            logger.debug(f"Fracture casts available for person %d's {open_fracture_counts} open fractures",
-                         person_id)
+            logger.debug(key='rti_general_message',
+                         data=f"Fracture casts available for person {person_id} {open_fracture_counts} open fractures"
+                         )
             person = df.loc[person_id]
             # update the dataframe to show this person is recieving treatment
             df.loc[person_id, 'rt_med_int'] = True
@@ -3857,11 +3866,13 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
             if code[0] in df.loc[person_id, 'rt_injuries_for_open_fracture_treatment']:
                 df.loc[person_id, 'rt_injuries_for_open_fracture_treatment'].remove(code[0])
         else:
-            logger.debug(f"Person %d's has {open_fracture_counts} open fractures without treatment",
-                         person_id)
+            logger.debug(key='rti_general_message',
+                         data=f"Person {person_id}'s has {open_fracture_counts} open fractures without treatment",
+                         )
 
     def did_not_run(self, person_id):
-        logger.debug('Open fracture treatment unavailable for person %d', person_id)
+        logger.debug(key='rti_general_message',
+                     data=f"Open fracture treatment unavailable for person {person_id}")
 
 
 class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
@@ -3935,11 +3946,15 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
 
             # Availability of consumables determines if the intervention is delivered...
             if cond[item_code_suture_kit]:
-                logger.debug('This facility has open wound treatment available which has been used for person %d.',
-                             person_id)
-                logger.debug(f'This facility treated their {lacerationcounts} open wounds')
+                logger.debug(key='rti_general_message',
+                             data=f"This facility has open wound treatment available which has been used for person "
+                                  f"{person_id}."
+                             )
+                logger.debug(key='rti_general_message',
+                             data=f"This facility treated their {lacerationcounts} open wounds")
                 if cond[item_code_cetrimide_chlorhexidine]:
-                    logger.debug('This laceration was cleaned before stitching')
+                    logger.debug(key='rti_general_message',
+                                 data=f"This laceration was cleaned before stitching")
                     df.at[person_id, 'rt_med_int'] = True
                     columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, codes)
                     for col in columns:
@@ -3951,8 +3966,9 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
                         assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
 
                 else:
-                    logger.debug("This laceration wasn't cleaned before stitching, person %d is at risk of infection",
-                                 person_id)
+                    logger.debug(key='rti_general_message',
+                                 data=f"This laceration wasn't cleaned before stitching, person {person_id} is at risk "
+                                      f"of infection")
                     df.at[person_id, 'rt_med_int'] = True
                     columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, codes)
                     for col in columns:
@@ -3961,10 +3977,12 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
                         assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
 
             else:
-                logger.debug('This facility has no treatment for open wounds available.')
+                logger.debug(key='rti_general_message',
+                             data=f"This facility has no treatment for open wounds available.")
 
     def did_not_run(self, person_id):
-        logger.debug('Suture kits unavailable for person %d', person_id)
+        logger.debug(key='rti_general_message',
+                     data=f"Suture kits unavailable for person {person_id}")
 
 
 class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
@@ -4055,9 +4073,11 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 cons_req_as_footprint=consumables_burns,
                 to_log=True)['Item_Code']
             if all(value for value in is_cons_available.values()):
-                logger.debug('This facility has burn treatment available which has been used for person %d.',
-                             person_id)
-                logger.debug(f'This facility treated their {burncounts} burns')
+                logger.debug(key='rti_general_message',
+                             data=f"This facility has burn treatment available which has been used for person "
+                                  f"{person_id}")
+                logger.debug(key='rti_general_message',
+                             data=f"This facility treated their {burncounts} burns")
                 df.at[person_id, 'rt_med_int'] = True
                 person = df.loc[person_id]
                 non_empty_injuries = person_injuries[person_injuries != "none"]
@@ -4085,10 +4105,12 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date, \
                     'recovery date assigned to past'
             else:
-                logger.debug('This facility has no treatment for burns available.')
+                logger.debug(key='rti_general_message',
+                             data=f"This facility has no treatment for burns available.")
 
     def did_not_run(self, person_id):
-        logger.debug('Burn treatment unavailable for person %d', person_id)
+        logger.debug(key='rti_general_message',
+                     data=f"Burn treatment unavailable for person {person_id}")
 
 
 class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
@@ -4138,10 +4160,12 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
                 cons_req_as_footprint=consumables_tetanus,
                 to_log=True)
             if is_tetanus_available:
-                logger.debug("Tetanus vaccine requested for person %d and given", person_id)
+                logger.debug(key='rti_general_message',
+                             data=f"Tetanus vaccine requested for person {person_id} and given")
 
     def did_not_run(self, person_id):
-        logger.debug('Tetanus vaccine unavailable for person %d', person_id)
+        logger.debug(key='rti_general_message',
+                     data=f"Tetanus vaccine unavailable for person {person_id}")
 
 
 class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
@@ -4247,13 +4271,13 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
             if df.loc[person_id, 'age_years'] < 16:
                 # or df.iloc[person_id]['is_pregnant']
                 # If they are under 16 or pregnant only give them paracetamol
-                logger.debug(pain_management_strategy_paracetamol)
                 is_paracetamol_available = self.sim.modules['HealthSystem'].request_consumables(
                     hsi_event=self,
                     cons_req_as_footprint=pain_management_strategy_paracetamol,
                     to_log=True)['Item_Code'][item_code_paracetamol]
                 cond = is_paracetamol_available
-                logger.debug('Person %d requested paracetamol for their pain relief', person_id)
+                logger.debug(key='rti_general_message',
+                             data=f"Person {person_id} requested paracetamol for their pain relief")
             else:
                 # Multiple options, give them what's available or random pick between them (for now)
                 is_diclofenac_available = self.sim.modules['HealthSystem'].request_consumables(
@@ -4272,36 +4296,44 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                     which = self.module.rng.random_sample(size=1)
                     if which <= 0.5:
                         cond = cond1
-                        logger.debug('Person %d requested paracetamol for their pain relief', person_id)
+                        logger.debug(key='rti_general_message',
+                                     data=f"Person {person_id} requested paracetamol for their pain relief")
                     else:
                         cond = cond2
-                        logger.debug('Person %d requested diclofenac for their pain relief', person_id)
+                        logger.debug(key='rti_general_message',
+                                     data=f"Person {person_id} requested diclofenac for their pain relief")
                 elif (cond1 is True) & (cond2 is False):
                     cond = cond1
-                    logger.debug('Person %d requested paracetamol for their pain relief', person_id)
+                    logger.debug(key='rti_general_message',
+                                 data=f"Person {person_id} requested paracetamol for their pain relief")
                 elif (cond1 is False) & (cond2 is True):
                     cond = cond2
-                    logger.debug('Person %d requested diclofenac for their pain relief', person_id)
+                    logger.debug(key='rti_general_message',
+                                 data=f"Person {person_id} requested diclofenac for their pain relief")
                 else:
                     which = self.module.rng.random_sample(size=1)
                     if which <= 0.5:
                         cond = cond1
-                        logger.debug('Person %d requested paracetamol for their pain relief', person_id)
+                        logger.debug(key='rti_general_message',
+                                     data=f"Person {person_id} requested paracetamol for their pain relief")
                     else:
                         cond = cond2
-                        logger.debug('Person %d requested diclofenac for their pain relief', person_id)
+                        logger.debug(key='rti_general_message',
+                                     data=f"Person {person_id} requested diclofenac for their pain relief")
             # Availability of consumables determines if the intervention is delivered...
             if cond:
-                logger.debug('This facility has pain management available for mild pain which has been used for '
-                             'person %d.', person_id)
+                logger.debug(key='rti_general_message',
+                             data=f"This facility has pain management available for mild pain which has been used for "
+                                  f"person {person_id}.")
                 dict_to_output = {'person': person_id,
                                   'pain level': pain_level}
                 logger.info(key='Successful_Pain_Management',
                             data=dict_to_output,
                             description='Pain medicine successfully provided to the person')
             else:
-                logger.debug('This facility has no pain management available for their mild pain, person %d.',
-                             person_id)
+                logger.debug(key='rti_general_message',
+                             data=f"This facility has no pain management available for their mild pain, person "
+                                  f"{person_id}.")
 
         if pain_level == "moderate":
             dict_to_output = {'person': person_id,
@@ -4322,19 +4354,22 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                 cons_req_as_footprint=pain_management_strategy_tramadol,
                 to_log=True)['Item_Code'][item_code_tramadol]
             cond = is_cons_available
-            logger.debug('Person %d has requested tramadol for moderate pain relief', person_id)
+            logger.debug(key='rti_general_message',
+                         data=f"Person {person_id} has requested tramadol for moderate pain relief")
 
             if cond:
-                logger.debug('This facility has pain management available for moderate pain which has been used for '
-                             'person %d.', person_id)
+                logger.debug(key='rti_general_message',
+                             data=f"This facility has pain management available for moderate pain which has been used "
+                                  f"for person {person_id}.")
                 dict_to_output = {'person': person_id,
                                   'pain level': pain_level}
                 logger.info(key='Successful_Pain_Management',
                             data=dict_to_output,
                             description='Pain medicine successfully provided to the person')
             else:
-                logger.debug('This facility has no pain management available for moderate pain for person %d.',
-                             person_id)
+                logger.debug(key='rti_general_message',
+                             data=f"This facility has no pain management available for moderate pain for person "
+                                  f"{person_id}.")
 
         if pain_level == "severe":
             dict_to_output = {'person': person_id,
@@ -4356,22 +4391,27 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                 cons_req_as_footprint=pain_management_strategy,
                 to_log=True)
             cond = is_cons_available
-            logger.debug('Person %d has requested morphine for severe pain relief', person_id)
+            logger.debug(key='rti_general_message',
+                         data=f"Person {person_id} has requested morphine for severe pain relief")
 
             if cond:
-                logger.debug('This facility has pain management available for severe pain which has been used for '
-                             'person %d.', person_id)
+                logger.debug(key='rti_general_message',
+                             data=f"This facility has pain management available for severe pain which has been used for "
+                                  f"person {person_id}")
                 dict_to_output = {'person': person_id,
                                   'pain level': pain_level}
                 logger.info(key='Successful_Pain_Management',
                             data=dict_to_output,
                             description='Pain medicine successfully provided to the person')
             else:
-                logger.debug('This facility has no pain management available for severe pain for person %d.', person_id)
+                logger.debug(key='rti_general_message',
+                             data=f"This facility has no pain management available for severe pain for person "
+                                  f"{person_id}.")
 
     def did_not_run(self, person_id):
         df = self.sim.population.props
-        logger.debug('Pain relief unavailable for person %d', person_id)
+        logger.debug(key='rti_general_message',
+                     data=f"Pain relief unavailable for person {person_id}")
         injurycodes = {'First injury': df.loc[person_id, 'rt_injury_1'],
                        'Second injury': df.loc[person_id, 'rt_injury_2'],
                        'Third injury': df.loc[person_id, 'rt_injury_3'],
@@ -4380,7 +4420,8 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                        'Sixth injury': df.loc[person_id, 'rt_injury_6'],
                        'Seventh injury': df.loc[person_id, 'rt_injury_7'],
                        'Eight injury': df.loc[person_id, 'rt_injury_8']}
-        logger.debug(f'Injury profile of person %d, {injurycodes}', person_id)
+        logger.debug(key='rti_general_message',
+                     data=f"Injury profile of person {person_id}, {injurycodes}")
 
 
 class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
@@ -4561,8 +4602,9 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 df.at[person_id, 'rt_perm_disability'] = True
                 # Find the column and code where the permanent injury is stored
                 column, code = road_traffic_injuries.rti_find_injury_column(person_id=person_id, codes=codes)
-                logger.debug('@@@@@@@@@@ Person %d had intervention for TBI on %s but still disabled!!!!!!',
-                             person_id, self.sim.date)
+                logger.debug(key='rti_general_message',
+                             data=f"@@@@@@@@@@ Person {person_id} had intervention for TBI on {self.sim.date} but still "
+                                  f"disabled!!!!!!")
                 # Update the code to make the injury permanent, so it will not have the associated daly weight removed
                 # later on
                 code_to_drop_index = injuries_to_be_treated.index(self.treated_code)
@@ -4592,8 +4634,9 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 # Find the column and code where the permanent injury is stored
                 column, code = road_traffic_injuries.rti_find_injury_column(person_id=person_id,
                                                                             codes=[self.treated_code])
-                logger.debug('@@@@@@@@@@ Person %d had intervention for SCI on %s but still disabled!!!!!!',
-                             person_id, self.sim.date)
+                logger.debug(key='rti_general_message',
+                             data=f"@@@@@@@@@@ Person {person_id} had intervention for SCI on {self.sim.date} but still"
+                                  f" disabled!!!!!!")
                 code_to_drop_index = injuries_to_be_treated.index(self.treated_code)
                 injuries_to_be_treated.pop(code_to_drop_index)
                 # remove the code from 'rt_injuries_for_major_surgery'
@@ -4623,8 +4666,9 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'rt_perm_disability'] = True
             # Find the column and code where the permanent injury is stored
             column, code = road_traffic_injuries.rti_find_injury_column(person_id=person_id, codes=[self.treated_code])
-            logger.debug('@@@@@@@@@@ Person %d had intervention for an amputation on %s but still disabled!!!!!!',
-                         person_id, self.sim.date)
+            logger.debug(key='rti_general_message',
+                         data=f"@@@@@@@@@@ Person {person_id} had intervention for an amputation on {self.sim.date} but "
+                              f"still disabled!!!!!!")
             # Update the code to make the injury permanent, so it will not have the associated daly weight removed
             # later on
             code_to_drop_index = injuries_to_be_treated.index(self.treated_code)
@@ -4710,15 +4754,17 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         assert not pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]), \
             'no recovery date given for this injury'
         assert df.loc[person_id, 'rt_date_to_remove_daly'][columns] > self.sim.date
-        logger.debug('This is RTI_Major_Surgeries supplying surgery for person %d on date %s!!!!!!, removing code %s',
-                     person_id, self.sim.date)
+        logger.debug(key='rti_general_message',
+                     data=f"This is RTI_Major_Surgeries supplying surgery for person {person_id} on date {self.sim.date}"
+                          f"!!!!!!, removing code")
         # remove code from major surgeries list
         if self.treated_code in df.loc[person_id, 'rt_injuries_for_major_surgery']:
             df.loc[person_id, 'rt_injuries_for_major_surgery'].remove(self.treated_code)
 
     def did_not_run(self, person_id):
         df = self.sim.population.props
-        logger.debug('Major surgery not scheduled for person %d', person_id)
+        logger.debug(key='rti_general_message',
+                     data=f"Major surgery not scheduled for person {person_id}")
         injurycodes = {'First injury': df.loc[person_id, 'rt_injury_1'],
                        'Second injury': df.loc[person_id, 'rt_injury_2'],
                        'Third injury': df.loc[person_id, 'rt_injury_3'],
@@ -4727,7 +4773,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                        'Sixth injury': df.loc[person_id, 'rt_injury_6'],
                        'Seventh injury': df.loc[person_id, 'rt_injury_7'],
                        'Eight injury': df.loc[person_id, 'rt_injury_8']}
-        logger.debug(f'Injury profile of person %d, {injurycodes}', person_id)
+        logger.debug(key='rti_general_message',
+                     data=f"Injury profile of person {person_id}, {injurycodes}")
 
         # If the surgery was a life-saving surgery, then send them to RTI_No_Medical_Intervention_Death_Event
         life_threatening_injuries = ['133a', '133b', '133c', '133d', '134a', '134b', '135',  # TBI
@@ -4866,8 +4913,8 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 cons_req_as_footprint=consumables_external_fixation,
                 to_log=True)
             if is_external_fixator_available:
-                logger.debug('An external fixator is available for this minor surgery'
-                             'person %d.', person_id)
+                logger.debug(key='rti_general_message',
+                             data=f"An external fixator is available for this minor surgery person {person_id}.")
 
         # some injuries have a change in daly weight if they are treated, find all possible swappable codes
         swapping_codes = RTI.SWAPPING_CODES[:]
@@ -4879,8 +4926,9 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         swapping_codes = [code for code in swapping_codes if code not in treatment_plan]
         if treated_code in swapping_codes:
             road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, [treated_code])
-        logger.debug('This is RTI_Minor_Surgeries supplying minor surgeries for person %d on date %s!!!!!!',
-                     person_id, self.sim.date)
+        logger.debug(key='rti_general_message',
+                     data=f"This is RTI_Minor_Surgeries supplying minor surgeries for person {person_id} on date "
+                          f"{self.sim.date}!!!!!!")
         # update the dataframe to reflect that this person is recieving medical care
         df.at[person_id, 'rt_med_int'] = True
         # Check if the injury has been given a recovery date
@@ -4893,7 +4941,8 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
 
     def did_not_run(self, person_id):
         df = self.sim.population.props
-        logger.debug('Minor surgery not scheduled for person %d', person_id)
+        logger.debug(key='rti_general_message',
+                     data=f"Minor surgery not scheduled for person {person_id}")
         injurycodes = {'First injury': df.loc[person_id, 'rt_injury_1'],
                        'Second injury': df.loc[person_id, 'rt_injury_2'],
                        'Third injury': df.loc[person_id, 'rt_injury_3'],
@@ -4902,7 +4951,8 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
                        'Sixth injury': df.loc[person_id, 'rt_injury_6'],
                        'Seventh injury': df.loc[person_id, 'rt_injury_7'],
                        'Eight injury': df.loc[person_id, 'rt_injury_8']}
-        logger.debug(f'Injury profile of person %d, {injurycodes}', person_id)
+        logger.debug(key='rti_injury_profile_of_untreated_person',
+                     data=injurycodes)
 
 
 class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
@@ -4968,9 +5018,10 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
                     self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_with_med",
                                                             originating_module=self.module)
                     # Log the death
-                    logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d who was '
-                                 'treated for their injuries but still died on date %s',
-                                 person_id, self.sim.date)
+                    logger.debug(key='rti_general_message',
+                                 data=f"This is RTIMedicalInterventionDeathEvent scheduling a death for person "
+                                      f"{person_id} who was treated for their injuries but still died on date "
+                                      f"{self.sim.date}")
                 else:
                     mortality_checked = True
 
@@ -5044,9 +5095,9 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
             self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_unavailable_med",
                                                     originating_module=self.module)
             # Log the death
-            logger.debug(
-                'This is RTINoMedicalInterventionDeathEvent scheduling a death for person %d on date %s',
-                person_id, self.sim.date)
+            logger.debug(key='rti_general_message',
+                         data=f"This is RTINoMedicalInterventionDeathEvent scheduling a death for person {person_id} on "
+                              f"date {self.sim.date}")
 
 
 # ---------------------------------------------------------------------------------------------------------
