@@ -13,10 +13,8 @@ logger.setLevel(logging.INFO)
 
 
 class Contraception(Module):
-    """
-    Contraception module covering baseline contraception methods use, failure (pregnancy),
-    Switching contraceptive methods, and discontinuation rates by age.
-    """
+    """Contraception module covering baseline contraception methods use, failure (pregnancy),
+    Switching contraceptive methods, and discontinuation rates by age."""
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem'}
     ADDITIONAL_DEPENDENCIES = {'Labour', 'PregnancySupervisor', 'Hiv'}
@@ -74,8 +72,11 @@ class Contraception(Module):
         # From Marston et al 2017, Figure 1, Eastern Africa, closer to rural - effect in younger ages may be due
         # to more sex in HIV+ but that is ok as we don't model sexual activity separately)
         'r_hiv': Parameter(Types.REAL,
-                           'proportional change in fertility rate for HIV+ compared to HIV- by age group'),
+                           'Proportional change in fertility rate for HIV+ compared to HIV- by age group'),
         'contraception_interventions': Parameter(Types.DATA_FRAME, 'contraception interventions'),
+        'days_between_appts_for_maintenance': Parameter(Types.INT, 'The number of days between Family Planning '
+                                                                   'appointments when the woman is maintianng the use'
+                                                                   'of her current contraceptive')
     }
 
     # Declare Properties
@@ -94,7 +95,7 @@ class Contraception(Module):
                                          'withdrawal',
                                          'other_traditional'
                                      ]),
-        # These are the 11 categories of contraception ('not using' + 10 methods) from the DHS analysis of initiation,
+        # These are the 11 categories of contraception ('not_using' + 10 methods) from the DHS analysis of initiation,
         # discontinuation, failure and switching rates.
         # 'other modern' includes Male sterilization, Female Condom, Emergency contraception
         # 'other traditional' includes lactational amenohroea (LAM),  standard days method (SDM), 'other traditional
@@ -104,6 +105,16 @@ class Contraception(Module):
         'date_of_last_pregnancy': Property(Types.DATE, 'Date of the last pregnancy of this individual'),
         'co_unintended_preg': Property(Types.BOOL, 'Most recent or current pregnancy was unintended (following '
                                                    'contraception failure)'),
+        'date_of_last_appt_for_maintenance': Property(Types.DATE,
+                                                      'The date of the most recent Family Planning appointment at which'
+                                                      'the current method was provided (pd.NaT if the person is not'
+                                                      'using any contraceptive method). This is used to determine if '
+                                                      'a Family Planning appointment is needed to maintain the person'
+                                                      'on the contraceptive. If the person is to maintain use of the '
+                                                      'current contraceptive, they will have an HSI if the days elapsed'
+                                                      'since this value exceeds the parameter '
+                                                      '`days_between_appts_for_maintenance`.'
+                                                      )
     }
 
     def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True):
@@ -117,6 +128,8 @@ class Contraception(Module):
         self.use_healthsystem = use_healthsystem  # True: initiation and switches to contracption require an HSI;
         # False: initiation and switching do not occur through an HSI
         self.cons_codes = dict()  # (Will store the consumables codes for use in the HSI)
+
+        self.rng2 = None  # This will be a second random number generator, used for things to do with scheduling HSI
 
     def read_parameters(self, data_folder):
         """
@@ -157,6 +170,8 @@ class Contraception(Module):
         self.parameters['rr_fail_under25'] = 2.2
         # From Guttmacher analysis. (Nb. Is not applied to those persons with female sterilization)
 
+        self.parameters['days_between_appts_for_maintenance'] = 180
+
     def initialise_population(self, population):
         """
         * 1) Process parameters
@@ -173,6 +188,7 @@ class Contraception(Module):
         df.loc[df.is_alive, 'is_pregnant'] = False
         df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
         df.loc[df.is_alive, 'co_unintended_preg'] = False
+        df.loc[df.is_alive, 'date_of_last_appt_for_maintenance'] = pd.NaT
 
         # Assign contraception method
         # 1. select females aged 15-49 from population, for current year
@@ -194,26 +210,38 @@ class Contraception(Module):
 
         df.loc[females1549, 'co_contraception'] = df.loc[females1549, 'age_years'].apply(pick_contraceptive)
 
+        # 4. Give a notional date on which the last appointment occured for those that need them
+        needs_appts = females1549 & df['co_contraception'].isin(self.states_that_may_require_HSI_to_switch_to)
+        df.loc[needs_appts, 'date_of_last_appt_for_maintenance'] = pd.Series([
+            random_date(
+                self.sim.date - pd.DateOffset(days=self.parameters['days_between_appts_for_maintenance']),
+                self.sim.date - pd.DateOffset(days=1),
+                self.rng) for _ in range(len(needs_appts))
+        ])
+
     def initialise_simulation(self, sim):
         """
         * Schedule the recurring events: ContraceptiveSwitchingPoll, Fail, PregnancyPoll, ContraceptiveLoggingEvent
         * Retreive the consumables codes for the consumables used
         """
-        # starting contraception, switching contraception metho, and stopping contraception:
-        sim.schedule_event(ContraceptionPoll(self), sim.date)
-
         # Launch the repeating event that will store statistics about the population structure
         sim.schedule_event(ContraceptionLoggingEvent(self), sim.date)
 
-        # Retreive the consumables codes for the consumables used
+        # starting contraception, switching contraception metho, and stopping contraception:
+        sim.schedule_event(ContraceptionPoll(self), sim.date)
+
+        # Retrieve the consumables codes for the consumables used
         if self.use_healthsystem:
             self.cons_codes = self.get_item_code_for_each_contraceptive()
+
+        # Create second random number generator
+        self.rng2 = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
 
     def on_birth(self, mother_id, child_id):
         """
         * 1) Initialise our properties for a newborn individual.
         * 2) Update mother's properties
-        * 3) Update the mother's contraception
+        * 3) Update the mother's contraception following the birth
         """
         df = self.sim.population.props
 
@@ -222,12 +250,15 @@ class Contraception(Module):
             'co_contraception',
             'is_pregnant',
             'date_of_last_pregnancy',
-            'co_unintended_preg')
+            'co_unintended_preg',
+            'date_of_last_appt_for_maintenance'
+        )
         ] = (
             'not_using',
             False,
             pd.NaT,
-            False
+            False,
+            pd.NaT
         )
 
         # 2) Reset the mother's is_pregnant status showing that she is no longer pregnant
@@ -238,7 +269,6 @@ class Contraception(Module):
 
     def process_parameters(self):
         """Process parameters that have been read-in"""
-
         # =================== ARRANGE INPUTS FOR USE BY REGULAR EVENTS =============================
 
         # For ContraceptionPoll.init1 -----------------------------------------------------
@@ -276,9 +306,14 @@ class Contraception(Module):
         switching_matrix = self.parameters['switching_matrix']
         # this Excel sheet is from contraception switching matrix outputs from line 144 of
         # 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
-
+        # The switching matrix is conditonnal on there being a switch (so there is no "not_using" and no switch_from
+        # "female_sterilization"
         switching_matrix = switching_matrix.set_index('switchfrom')
         switching_matrix = switching_matrix.transpose()
+
+        assert set(switching_matrix.columns) == (self.all_contraception_states - {"not_using", "female_sterilization"})
+        assert set(switching_matrix.index) == (self.all_contraception_states - {"not_using"})
+        assert np.isclose(1.0, switching_matrix.sum()).all()
         self.parameters['contraception_switching_matrix'] = switching_matrix
 
         # For ContraceptionPoll.discontinue
@@ -352,28 +387,44 @@ class Contraception(Module):
         new: itterable giving the corresponding contraceptive state being switched to
 
         It is assumed that even with the option `self.use_healthsystem=True` that switches to traditional methods or to
-        "not_using" (i.e. discontinuation) do not require the use of HSI.
-        """
+        "not_using" (i.e. discontinuation) do not require the use of HSI."""
+
+        df = self.sim.population.props
+        date_today = self.sim.date
+        days_between_appts = self.parameters['days_between_appts_for_maintenance']
+
+        date_of_last_appt = df.loc[ids, "date_of_last_appt_for_maintenance"].to_dict()
 
         for _woman_id, _old, _new in zip(ids, old, new):
 
             # If the new method requires an HSI to be implemented, schedule the HSI:
-            if self.use_healthsystem and (_new in self.states_that_may_require_HSI_to_switch_to):
+            if (
+                self.use_healthsystem and
+                (_new in self.states_that_may_require_HSI_to_switch_to) and
+                (
+                    (_old != _new) or ((date_today - date_of_last_appt[_woman_id]).days >= days_between_appts)
+                )
+            ):
+                # If this is a change, or its maintenance and time for an appointment, schedule an appointment
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event=HSI_Contraception_StartOrSwitch(
+                    hsi_event=HSI_Contraception_FamilyPlanningAppt(
                         person_id=_woman_id,
                         module=self,
                         old_contraceptive=_old,
                         new_contraceptive=_new
                     ),
-                    topen=self.sim.date,
-                    # random_date( # scatter dates over the month self.sim.date, self.sim.date + pd.DateOffset(days=28), self.rng), but don't use own rng
+                    topen=random_date(
+                        # scatter dates over the month
+                        self.sim.date, self.sim.date + pd.DateOffset(days=28), self.rng2),
                     tclose=None,
                     priority=1
                 )
             else:
-                # Otherwise, implement the change immediately
-                self.do_and_log_individual_contraception_change(woman_id=_woman_id, old=_old, new=_new)
+                # Otherwise, implement the change immediately (ignore things which aren't changes)
+                if _old != _new:
+                    self.do_and_log_individual_contraception_change(woman_id=_woman_id, old=_old, new=_new)
+                else:
+                    pass  # no need to do anything if the old is the same as the new and no HSI needed.
 
     def do_and_log_individual_contraception_change(self, woman_id: int, old, new):
         """Implement and then log a start / stop / switch of contraception. """
@@ -389,8 +440,8 @@ class Contraception(Module):
         woman = df.loc[woman_id]
         logger.info(key='contraception_change',
                     data={
-                        'woman': woman_id,
-                        'age': woman['age_years'],
+                        'woman_id': woman_id,
+                        'age_years': woman['age_years'],
                         'switch_from': old,
                         'switch_to': new,
                     },
@@ -399,8 +450,7 @@ class Contraception(Module):
 
 
 class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
-    """
-    The regular poll (monthly) for the Contraceptive Module.
+    """The regular poll (monthly) for the Contraceptive Module.
     * Determines contraceptive use
     * Pregnancy
     """
@@ -444,12 +494,11 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         self.initiate(currently_not_using_co)
 
         # continue/discontinue/switch: using --> using/not using
-        self.continue_discontinue_or_switch(currently_using_co)
+        self.discontinue_switch_or_continue(currently_using_co)
 
     def initiate(self, individuals_not_using: pd.Index):
         """Check all females not using contraception to determine if contraception starts
-        i.e. category should change from 'not_using'
-        """
+        i.e. category should change from 'not_using'"""
         # Exit if there are no individuals currently not using a contraceptive:
         if not len(individuals_not_using):
             return
@@ -485,10 +534,9 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
                 new=now_using_co.values
             )
 
-    def continue_discontinue_or_switch(self, individuals_using: pd.Index):
+    def discontinue_switch_or_continue(self, individuals_using: pd.Index):
         """Check all females currently using contraception to determine if they discontinue it, switch to a different
-        one, or keep using the same one.
-        """
+        one, or keep using the same one."""
         # exit if there are no individuals currently using a contraceptive:
         if not len(individuals_using):
             return
@@ -549,15 +597,15 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
                 new=new_co.values
             )
 
-        # todo - For that continue, send this to batch_report in case an HSI should be scheduled
-        # Do the contraceptive "change" for those not switching (this is so that an HSI may be logged)
-        # if len(continue_idx) > 0:
-        #     current_contraception = df.loc[continue_idx, 'co_contraception'].values
-        #     self.module.schedule_batch_of_contraceptive_changes(
-        #         ids=continue_idx,
-        #         old=current_contraception,
-        #         new=current_contraception
-        #     )
+        # Do the contraceptive "change" for those not switching (this is so that an HSI may be logged and if the HSI
+        #  cannot occur the person discontinues use of the method).
+        if len(continue_idx) > 0:
+            current_contraception = df.loc[continue_idx, 'co_contraception'].values
+            self.module.schedule_batch_of_contraceptive_changes(
+                ids=continue_idx,
+                old=current_contraception,
+                new=current_contraception
+            )
 
     def update_pregnancy(self):
         """Determine who will become pregnant"""
@@ -578,7 +626,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
         prob_of_failure = p['contraception_failure']
 
-        # Get the women who are using a contracpetive that may fail and who may become pregnanct (i.e., women who
+        # Get the women who are using a contraceptive that may fail and who may become pregnant (i.e., women who
         # are not in labour, have been pregnant in the last month, have previously had a hysterectomy, cannot get
         # pregnant.)
 
@@ -680,35 +728,34 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             # Set date of labour in the Labour module:
             self.sim.modules['Labour'].set_date_of_labour(w)
 
-            # Log that a pregnancy has occured following the failure of a contraceptive:
+            # Log that a pregnancy has occurred following the failure of a contraceptive:
             logger.info(key='pregnancy',
                         data={
-                            'woman_index': w,
+                            'woman_id': w,
                             'age_years': woman['age_years'],
                             'contraception': woman['co_contraception'],
-                            'unintended_preg': unintended
+                            'unintended': unintended
                         },
                         description='pregnancy following the failure of contraceptive method')
 
 
 class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        """Logs state of contraceptive usage in the population each year."""
-        self.repeat = 12
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
+        """Logs state of contraceptive usage in the population at a point in time."""
+        super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
         df = population.props
 
-        # Log summary of usage of contracpetives
+        # Log summary of usage of contraceptives
         logger.info(key='contraception_use_yearly_summary',
                     data=df.loc[df.is_alive & (df.sex == 'F'), 'co_contraception'].value_counts().to_dict(),
                     description='Counts of women on each type of contraceptive at a point each time (yearly).')
 
 
-class HSI_Contraception_StartOrSwitch(HSI_Event, IndividualScopeEventMixin):
-    """HSI event for the starting a contraceptive method, maintaing use of a method of a contraceptive, or switching
-     between contraceptives. """
+class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin):
+    """HSI event for the starting a contraceptive method, maintaining use of a method of a contraceptive, or switching
+     between contraceptives."""
 
     def __init__(self, module, person_id, old_contraceptive, new_contraceptive):
         super().__init__(module, person_id=person_id)
@@ -721,17 +768,24 @@ class HSI_Contraception_StartOrSwitch(HSI_Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        """Enact the change in contraception and log it"""
+        """If the consumable is available, enact the change in contraception and log it"""
 
-        # If the old method is the same as the new method, do nothing (not even log it). This is an HSI appointment
-        #  that is maintaining the woman on the same method she has been using.
-        if self.old_contraceptive == self.new_contraceptive:
+        if not self.sim.population.props.at[person_id, 'is_alive']:
             return
 
-        # Default the person to "not_using" if the consumable is not available:
-        _new_contraceptive = self.new_contraceptive if self.get_all_consumables(
+        # Record the date that Family Planning Appointment happened for this person
+        self.sim.population.props.at[person_id, "date_of_last_appt_for_maintenance"] = self.sim.date
+
+        # Record use of consumables and default the person to "not_using" if the consumable is not available:
+        cons_available = self.get_all_consumables(
             pkg_codes=self.module.cons_codes[self.new_contraceptive]
-        ) else "not_using"
+        )
+        _new_contraceptive = self.new_contraceptive if cons_available else "not_using"
+
+        # If the old method is the same as the new method, do nothing else (not even logging): this is an HSI that is
+        # maintaining the woman on the same method she has been using.
+        if self.old_contraceptive == _new_contraceptive:
+            return
 
         # Do the change:
         self.module.do_and_log_individual_contraception_change(
