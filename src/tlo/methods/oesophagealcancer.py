@@ -909,4 +909,4 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'palliative_since_last_log': df.oc_date_palliative_care.between(date_lastlog, date_now).sum()
         })
 
-        logger.info('%s|summary_stats|%s', self.sim.date, out)
+        logger.info(key='summary_stats', data=out)
