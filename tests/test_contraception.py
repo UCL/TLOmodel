@@ -27,6 +27,7 @@ def run_sim(tmpdir,
             consumables_available=True,
             run=True,
             no_discontinuation=False,
+            incr_prob_of_failure=False,
             popsize=1000,
             end_date=Date(2011, 12, 31)
             ):
@@ -87,7 +88,14 @@ def run_sim(tmpdir,
         sim.modules['HealthSystem'].prob_item_codes_available.loc[:] = 0.0
 
     if no_discontinuation:
+        # Let there be no discontinuation of any method
         sim.modules['Contraception'].parameters['Discontinuation'] *= 0.0
+
+    if incr_prob_of_failure:
+        # Let the probability of failure of contraceptives be high
+        sim.modules['Contraception'].parameters['contraception_failure'] = \
+            (sim.modules['Contraception'].parameters['contraception_failure'] * 100).clip(upper=1.0)
+
 
     sim.make_initial_population(n=popsize)
     __check_dtypes(sim)
@@ -392,6 +400,22 @@ def test_occurrence_of_HSI_for_maintain_and_switch(tmpdir):
     assert not len(sim.modules['HealthSystem'].find_events_for_person(person_id))
 
 
+def test_pregnancies_occuring(tmpdir):
+    """Test that pregnancies occur for those who are on contraception and those who are not.
+    """
+    # Run simulation without use of HealthSystem stuff and with high risk of failure of contraceptive
+    sim = run_sim(tmpdir=tmpdir, use_healthsystem=False, disable=True, incr_prob_of_failure=True)
+
+    logs = parse_log_file(sim.log_filepath)
+    pregs = logs['tlo.methods.contraception']['pregnancy']
+
+    assert len(pregs) > 0
+    assert (pregs['contraception'] == "not_using").any()
+    assert (pregs['contraception'] != "not_using").any()
+
+
+
+
 # Todo Items:
 # * Refactoring - running now -- DONE
 # * Change logic to allow for "switch_to" and "maintain_on" but let these be identical lists -- DONE
@@ -399,8 +423,9 @@ def test_occurrence_of_HSI_for_maintain_and_switch(tmpdir):
 # * Put the check_logs into all the checks & Check that the check on illegal moves operational--- DONE
 # * check that adding of sterilization to maintenance causing errors --- DONE
 # * typos line 523 and 627 and in file name in tests.-- checking now..... DONE
+# * New test: __check_pregnancies_occurring --- DONE
 
-# * New test: __check_pregnancies_occurring
+# * Last check (suggest somehere "upstairs"!)
 
 
 
@@ -411,15 +436,3 @@ def test_occurrence_of_HSI_for_maintain_and_switch(tmpdir):
 # * Clean up parameters!
 # ~~~
 
-
-# def __check_pregnancies_occurring(sim):
-#     """Check that pregnancies are occurring from those on and off contraception
-#     """
-#     logs = parse_log_file(sim.log_filepath)['tlo.methods.contraception']
-#     assert set(logs.keys()) == {'contraception_use_yearly_summary', 'pregnancy', 'contraception_change'}
-#
-#     # Check that pregnancies are happening and that some of from those on a contraceptive and some from those not on
-#     # contraception
-#     assert len(logs['pregnancy'])
-#     # assert (logs['pregnancy']['contraception'] != "not_using").any()  # <-- todo: only works on big enough runs
-#     assert (logs['pregnancy']['contraception'] == "not_using").any()
