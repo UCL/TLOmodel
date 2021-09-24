@@ -183,10 +183,10 @@ def test_contraception_use_and_not_using_healthsystem(tmpdir):
 
 
 def test_contraception_using_healthsystem_but_no_capability(tmpdir):
-    """Check that if switching and initiation use the HealthSystem but that no HSI occur that there is no initiation or
-     switching of anything that requires an HSI"""
+    """Check that if switching and initiation use the HealthSystem but no HSI occur that there is no initiation or
+     switching to anything that requires an HSI."""
 
-    # Run simulation whereby contraception requires HSI but the Healthsystem prevent HSI occurring
+    # Run simulation whereby contraception requires HSI but the HealthSystem prevent HSI occurring
     sim = run_sim(tmpdir=tmpdir, use_healthsystem=True, healthsystem_disable_and_reject_all=True)
 
     log = parse_log_file(sim.log_filepath)['tlo.methods.contraception']
@@ -200,8 +200,9 @@ def test_contraception_using_healthsystem_but_no_capability(tmpdir):
             == "not_using"
             ).all()
 
+    # todo - could add that no one is maintained on it either.
 
-def test_HSI_when_consumable_not_available_leads_to_defauling_to_not_using(tmpdir):
+def test_HSI_or_consumable_not_available_leads_to_defauling_to_not_using(tmpdir):
     """Check that if someone is on a method that requires an HSI, if consumable is not available and/or the health
     system cannot do the appointment that the person defaults to not using after they become due for a `maintenance`
     appointment"""
@@ -209,7 +210,8 @@ def test_HSI_when_consumable_not_available_leads_to_defauling_to_not_using(tmpdi
     def check_that_persons_on_contraceptive_default(sim):
         """Edit parameters, run simulation and do checks; women start on a contraceptive, and those who are on a
         contraceptive that reauires HSI and consumables default by the end of the simulation."""
-        # Let there be no chance of starting, switching or discontinuing
+
+        # Let there be no chance of starting, switching or discontinuing (everyone would maintain if HSI/cons available)
         p = sim.modules['Contraception'].parameters
         p['contraception_initiation1'] *= 0.0
         p['contraception_discontinuation'] *= 0.0
@@ -253,11 +255,11 @@ def test_HSI_when_consumable_not_available_leads_to_defauling_to_not_using(tmpdi
         # Run simulation
         sim.simulate(end_date=sim.start_date+pd.DateOffset(months=3))
 
-        # Those on a contraceptive that requires HSI should have defaulted to "not_using"
+        # Those on a contraceptive that requires HSI for maintenance should have defaulted to "not_using"
         for i, _c in enumerate(contraceptives):
             # These due an appointment will have defaulted if they are on a contraceptive that requires HSI/consumables
 
-            if _c in sim.modules['Contraception'].states_that_may_require_HSI_to_switch_to:
+            if _c in sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on:
                 assert df.at[person_ids_due_appt[i], "co_contraception"] == 'not_using'
             else:
                 assert df.at[person_ids_due_appt[i], "co_contraception"] == _c
@@ -298,20 +300,23 @@ def test_no_consumables_causes_no_use_of_contracptives(tmpdir):
 
     log = parse_log_file(sim.log_filepath)['tlo.methods.contraception']
 
-    # Check that no one is on a contraceptive that requires a consumable (after six months of simulation time)
-    num_on_contraceptives = log['contraception_use_yearly_summary']
     states_that_may_require_HSI_to_switch_to = sim.modules['Contraception'].states_that_may_require_HSI_to_switch_to
+    states_that_may_require_HSI_to_maintain_on = sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on
 
+    # Check that, after six months of simulation time, no one is on a contraceptive that requires a consumable for
+    # maintenance.
+    num_on_contraceptives = log['contraception_use_yearly_summary']
     after_six_mo = pd.to_datetime(num_on_contraceptives['date']) > (sim.start_date + pd.DateOffset(months=6))
-    assert (num_on_contraceptives.loc[after_six_mo, states_that_may_require_HSI_to_switch_to] == 0).all().all()
+    assert (num_on_contraceptives.loc[after_six_mo, states_that_may_require_HSI_to_maintain_on] == 0).all().all()
 
-    # Check that people are not switching_to those contraceptives that require consumables, but are switching_from them
-    # to "not_using"
+    # Check that people are not switching to those contraceptives that require consumables to switch to.
     changes = log["contraception_change"]
     assert not changes["switch_to"].isin(states_that_may_require_HSI_to_switch_to).any()
-    assert changes["switch_from"].isin(states_that_may_require_HSI_to_switch_to).any()
+
+    # ... but are switching_from them to "not_using"
+    assert changes["switch_from"].isin(states_that_may_require_HSI_to_maintain_on).any()
     assert (
-        changes.loc[changes["switch_from"].isin(states_that_may_require_HSI_to_switch_to), "switch_to"] == "not_using"
+        changes.loc[changes["switch_from"].isin(states_that_may_require_HSI_to_maintain_on), "switch_to"] == "not_using"
     ).all()
 
 
@@ -340,7 +345,7 @@ def test_occurence_of_HSI_for_maintain_and_switch(tmpdir):
         'sex': 'F',
         'age_years': 30,
         'date_of_birth': sim.date - pd.DateOffset(years=30),
-        'co_contraception': 'pill',
+        'co_contraception': 'pill',  # <-- requires appointments for maintenance
         'is_pregnant': False,
         'date_of_last_pregnancy': pd.NaT,
         'co_unintended_preg': False,
@@ -381,9 +386,11 @@ def test_occurence_of_HSI_for_maintain_and_switch(tmpdir):
 
 
 # Todo Items:
-# * Refactoring - running now
-# * Change logic to allow for "switch_to" and "maintain_on" but let these be identical lists.
-# * Changes so that female sterilization does not need HSI to be maintained (i.e. don't default)
+# * Refactoring - running now -- DONE
+# * Change logic to allow for "switch_to" and "maintain_on" but let these be identical lists -- DONE
+# * Changes so that female sterilization and condoms does not need HSI to be maintained (i.e. don't default) and edits to test file to accomodate -- DONE
+
+
 # * Put the check_logs into all the checks.
 
 # * Check running of analysis file

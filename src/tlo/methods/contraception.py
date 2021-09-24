@@ -121,7 +121,10 @@ class Contraception(Module):
         self.all_contraception_states = set(self.PROPERTIES['co_contraception'].categories)
         self.states_that_may_require_HSI_to_switch_to = {'male_condom', 'injections', 'other_modern', 'IUD', 'pill',
                                                          'female_sterilization', 'implant'}
+        self.states_that_may_require_HSI_to_maintain_on = {'injections', 'other_modern', 'IUD', 'pill', 'implant'}
+
         assert self.states_that_may_require_HSI_to_switch_to.issubset(self.all_contraception_states)
+        assert self.states_that_may_require_HSI_to_maintain_on.issubset(self.states_that_may_require_HSI_to_switch_to)
 
         self.use_healthsystem = use_healthsystem  # True: initiation and switches to contracption require an HSI;
         # False: initiation and switching do not occur through an HSI
@@ -395,16 +398,14 @@ class Contraception(Module):
 
         for _woman_id, _old, _new in zip(ids, old, new):
 
+            # Does this change require an HSI?
+            is_a_switch = _old != _new
+            reqs_appt = _new in self.states_that_may_require_HSI_to_switch_to if is_a_switch else _new in self.states_that_may_require_HSI_to_maintain_on
+            due_appt = pd.isnull(date_of_last_appt[_woman_id]) or ((date_today - date_of_last_appt[_woman_id]).days >= days_between_appts)
+            do_appt = self.use_healthsystem and reqs_appt and (is_a_switch or due_appt)
+
             # If the new method requires an HSI to be implemented, schedule the HSI:
-            if (
-                self.use_healthsystem and
-                (_new in self.states_that_may_require_HSI_to_switch_to) and
-                (
-                    (_old != _new) or
-                    pd.isnull(date_of_last_appt[_woman_id]) or
-                    ((date_today - date_of_last_appt[_woman_id]).days >= days_between_appts)
-                )
-            ):
+            if do_appt:
                 # If this is a change, or its maintenance and time for an appointment, schedule an appointment
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_Contraception_FamilyPlanningAppt(
@@ -420,11 +421,43 @@ class Contraception(Module):
                     priority=1
                 )
             else:
-                # Otherwise, implement the change immediately (ignore things which aren't changes)
+                # Otherwise, implement the change immediately:
                 if _old != _new:
                     self.do_and_log_individual_contraception_change(woman_id=_woman_id, old=_old, new=_new)
                 else:
-                    pass  # no need to do anything if the old is the same as the new and no HSI needed.
+                    pass  # Mo need to do anything if the old is the same as the new and no HSI needed.
+
+            # OLD VERSION ********
+            # # If the new method requires an HSI to be implemented, schedule the HSI:
+            # if (
+            #     self.use_healthsystem and
+            #     (_new in self.states_that_may_require_HSI_to_switch_to) and
+            #     (
+            #         (_old != _new) or
+            #         pd.isnull(date_of_last_appt[_woman_id]) or
+            #         ((date_today - date_of_last_appt[_woman_id]).days >= days_between_appts)
+            #     )
+            # ):
+            #     # If this is a change, or its maintenance and time for an appointment, schedule an appointment
+            #     self.sim.modules['HealthSystem'].schedule_hsi_event(
+            #         hsi_event=HSI_Contraception_FamilyPlanningAppt(
+            #             person_id=_woman_id,
+            #             module=self,
+            #             old_contraceptive=_old,
+            #             new_contraceptive=_new
+            #         ),
+            #         topen=random_date(
+            #             # scatter dates over the month
+            #             self.sim.date, self.sim.date + pd.DateOffset(days=28), self.rng2),
+            #         tclose=None,
+            #         priority=1
+            #     )
+            # else:
+            #     # Otherwise, implement the change immediately (ignore things which aren't changes)
+            #     if _old != _new:
+            #         self.do_and_log_individual_contraception_change(woman_id=_woman_id, old=_old, new=_new)
+            #     else:
+            #         pass  # no need to do anything if the old is the same as the new and no HSI needed.
 
     def do_and_log_individual_contraception_change(self, woman_id: int, old, new):
         """Implement and then log a start / stop / switch of contraception. """
