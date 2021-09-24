@@ -1059,7 +1059,7 @@ class Models:
 
     def get_duration(self,
                      pathogen,
-                     age_years,
+                     age_exact_years,
                      un_HAZ_category,
                      un_clinical_acute_malnutrition,
                      untreated_hiv,
@@ -1073,7 +1073,7 @@ class Models:
 
         # Get probability of this episode being "persistent" if it is "prolonged"
         prob_persistent_if_prolonged = self.get_prob_persisent_if_prolonged(
-            age_years,
+            age_exact_years,
             un_HAZ_category,
             un_clinical_acute_malnutrition,
             untreated_hiv,
@@ -1313,7 +1313,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         # Determine the duration of the dirarrhoea, the date of outcome and the end of episode (the date when this
         # episode ends. It is the last possible data that any HSI could affect this episode.)
         duration_in_days = m.models.get_duration(pathogen=self.pathogen,
-                                                 age_years=person.age_years,
+                                                 age_exact_years=person.age_exact_years,
                                                  un_HAZ_category=person.un_HAZ_category,
                                                  un_clinical_acute_malnutrition=person.un_clinical_acute_malnutrition,
                                                  untreated_hiv=untreated_hiv,
