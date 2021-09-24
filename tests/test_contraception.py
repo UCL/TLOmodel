@@ -396,12 +396,11 @@ def test_occurrence_of_HSI_for_maintain_and_switch(tmpdir):
 # * Refactoring - running now -- DONE
 # * Change logic to allow for "switch_to" and "maintain_on" but let these be identical lists -- DONE
 # * Changes so that female sterilization and condoms does not need HSI to be maintained (i.e. don't default) and edits to test file to accomodate -- DONE
-# * Put the check_logs into all the checks & Check that the check on illegal moves operational (DONE
+# * Put the check_logs into all the checks & Check that the check on illegal moves operational--- DONE
+# * check that adding of sterilization to maintenance causing errors --- DONE
+# * typos line 523 and 627 and in file name in tests.-- checking now..... DONE
 
-# * check that adding of sterilization to maintenance causing errors
-
-# * typos line 523 and 627 and in file name in tests.
-# * New test: __check_pregnancies_occuring
+# * New test: __check_pregnancies_occurring
 
 
 

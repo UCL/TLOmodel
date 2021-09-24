@@ -75,7 +75,7 @@ class Contraception(Module):
                            'Proportional change in fertility rate for HIV+ compared to HIV- by age group'),
         'contraception_interventions': Parameter(Types.DATA_FRAME, 'contraception interventions'),
         'days_between_appts_for_maintenance': Parameter(Types.INT, 'The number of days between Family Planning '
-                                                                   'appointments when the woman is maintianng the use'
+                                                                   'appointments when the woman is maintaining the use'
                                                                    'of her current contraceptive')
     }
 
@@ -520,7 +520,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
                              ~df.is_pregnant)
 
         currently_using_co = df.index[possible_co_users &
-                                      ~df.co_contraception.isin(['not_using', 'female_steralization'])]
+                                      ~df.co_contraception.isin(['not_using', 'female_sterilization'])]
         currently_not_using_co = df.index[possible_co_users & (df.co_contraception == 'not_using')]
 
         # initiating: not using -> using
@@ -669,7 +669,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
                             ~df.la_currently_in_labour &
                             ~df.la_has_had_hysterectomy &
                             df.age_years.between(self.age_low, self.age_high) &
-                            ~df.co_contraception.isin(['not_using', 'female_steralization']) &
+                            ~df.co_contraception.isin(['not_using', 'female_sterilization']) &
                             ~df.la_is_postpartum &
                             (df.ps_ectopic_pregnancy == 'none')
                             )
