@@ -727,8 +727,9 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         assert len(females) == len_before_merge
 
         # probability of pregnancy
-        annual_risk_of_pregnancy = females.basefert_dhs
-        annual_risk_of_pregnancy.loc[females.hv_inf] *= females.frr_hiv
+        annual_risk_of_pregnancy = females.basefert_dhs.copy()
+        annual_risk_of_pregnancy.loc[females.hv_inf] = \
+            annual_risk_of_pregnancy.loc[females.hv_inf] * females.loc[females.hv_inf].frr_hiv
         monthly_risk_of_pregnancy = 1 - np.exp(-annual_risk_of_pregnancy / 12.0)
 
         # flipping the coin to determine which women become pregnant
