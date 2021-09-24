@@ -109,7 +109,7 @@ def run_sim(tmpdir,
     return sim
 
 
-def __check_some_starting_swtiching_and_stopping(sim):
+def __check_some_starting_switching_and_stopping(sim):
     """Check that there is at least some usage and some starting, switching and stopping"""
 
     logs = parse_log_file(sim.log_filepath)
@@ -156,11 +156,11 @@ def test_contraception_use_and_not_using_healthsystem(tmpdir):
     # Run basic check, for the case when the model is using the healthsystem and when not and check the logs
     sim_does_not_use_healthsystem = run_sim(tmpdir=tmpdir, use_healthsystem=False, disable=True)
     __check_no_illegal_switches(sim_does_not_use_healthsystem)
-    __check_some_starting_swtiching_and_stopping(sim_does_not_use_healthsystem)
+    __check_some_starting_switching_and_stopping(sim_does_not_use_healthsystem)
 
     sim_uses_healthsystem = run_sim(tmpdir=tmpdir, use_healthsystem=True, disable=True)
     __check_no_illegal_switches(sim_uses_healthsystem)
-    __check_some_starting_swtiching_and_stopping(sim_uses_healthsystem)
+    __check_some_starting_switching_and_stopping(sim_uses_healthsystem)
 
     # Check that the output of these two simulations are the same (apart from day of the month, which may change as
     # HSI dates are intentionally scattered over the month.)
@@ -207,7 +207,7 @@ def test_contraception_using_healthsystem_but_no_capability(tmpdir):
     # todo - could add that no one is maintained on it either.
 
 
-def test_HSI_or_consumable_not_available_leads_to_defauling_to_not_using(tmpdir):
+def test_HSI_or_consumable_not_available_leads_to_defaulting_to_not_using(tmpdir):
     """Check that if someone is on a method that requires an HSI, if consumable is not available and/or the health
     system cannot do the appointment that the person defaults to not using after they become due for a `maintenance`
     appointment"""
@@ -294,7 +294,7 @@ def test_HSI_or_consumable_not_available_leads_to_defauling_to_not_using(tmpdir)
     check_that_persons_on_contraceptive_default(sim)
 
 
-def test_no_consumables_causes_no_use_of_contracptives(tmpdir):
+def test_no_consumables_causes_no_use_of_contraceptives(tmpdir):
     """Check that if no consumables are available then after six months (period between appointments for those
     maintaining), no one is using a contraceptive that requires a consumable: bec. initiation/switching are impossible
     when consumables are not available."""
@@ -327,7 +327,7 @@ def test_no_consumables_causes_no_use_of_contracptives(tmpdir):
     ).all()
 
 
-def test_occurence_of_HSI_for_maintain_and_switch(tmpdir):
+def test_occurrence_of_HSI_for_maintain_and_switch(tmpdir):
     """Check HSI for the maintenance of a person on a contraceptive are scheduled as expected.."""
 
     # Create a simulation that has run for zero days and clear the event queue
