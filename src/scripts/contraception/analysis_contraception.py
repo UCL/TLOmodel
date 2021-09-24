@@ -3,7 +3,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-pd.set_option("mode.chained_assignment", "raise")
 from matplotlib import dates as mdates
 from matplotlib import pyplot as plt
 
@@ -48,7 +47,7 @@ log_config = {
 
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2010, 1, 31)
+end_date = Date(2049, 12, 31)
 pop_size = 5000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
@@ -219,28 +218,25 @@ plt.show()
 
 cons = log_df['tlo.methods.healthsystem']['Consumables'].copy()
 
-# Load consumables log and put the date as the index
+# Load consumables log and put the date as the index and provide
 cons['date'] = pd.to_datetime(cons['date'])
-cons = cons.set_index('date')
+cons['year'] = cons['date'].dt.year
+cons = cons.set_index('year')
+
 
 # Drop any entry that is not related to Contraception
 cons = cons.loc[cons.TREATMENT_ID.str.startswith('Contraception')]
 
-# Make counts of every type of package that is actually used (i.e. was available when requested)
-def unpack(df, column, fillna=None):
-    ret = None
-    if fillna is None:
-        ret = pd.concat([df, pd.DataFrame((d for idx, d in df[column].iteritems()))], axis=1)
-        del ret[column]
-    else:
-        ret = pd.concat([df, pd.DataFrame((d for idx, d in df[column].iteritems())).fillna(fillna)], axis=1)
-        del ret[column]
-    return ret
+# Make counts of every type of package that is actually used (i.e. was available when requested) each year.
+def unpack(in_dict_as_string):
+    in_dict = eval(in_dict_as_string)
+    l = list()
+    for k, v in in_dict.items():
+        for _v in range(v):
+            l.append(k)
+    return l
 
-
-y = unpack(cons, 'Package_Available')
-
-
+pkg_counts = cons['Package_Available'].apply(unpack).apply(pd.Series).dropna().astype(int)[0].value_counts()
 
 
 # What follows is TimC's original code for this section:
