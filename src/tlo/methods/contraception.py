@@ -44,24 +44,24 @@ class Contraception(Module):
                                                'Monthly probabilities of initiating each method of contraception after '
                                                'pregnancy'),
         # 2011-2016 rate
-        'contraception_switching': Parameter(Types.DATA_FRAME, 'Monthly probability of switching contraceptive methpd'),
+        'contraception_switching': Parameter(Types.DATA_FRAME, 'Monthly probability of switching contraceptive method'),
         'contraception_switching_matrix': Parameter(Types.DATA_FRAME,
                                                     'switching matrix containing probabilities of switching from each '
                                                     'method to each other method'),
         'contraception_discontinuation': Parameter(Types.DATA_FRAME,
                                                    'Monthly probabilities of discontinuation of each method of '
-                                                   'contaception to not using contraception'),
+                                                   'contraception to not using contraception'),
         'contraception_failure': Parameter(Types.DATA_FRAME,
                                            'Monthly probabilities of failure of each contraception method to '
                                            'pregnancy'),
         # from Fracpoly regression:
         'r_init1_age': Parameter(Types.REAL,
-                                 'Proportioniate change in probabilities of initiating each method of contraception '
+                                 'Proportionate change in probabilities of initiating each method of contraception '
                                  'from not using contraception for each age of the woman in years'),
         # from Fracpoly regression:
         'r_discont_age': Parameter(Types.REAL,
-                                   'Proportioniate change in probabilities of discontinuation of each method of '
-                                   'contaception to not using contraception for each age of the woman in years'),
+                                   'Proportionate change in probabilities of discontinuation of each method of '
+                                   'contraception to not using contraception for each age of the woman in years'),
         'rr_fail_under25': Parameter(Types.REAL, 'Increase in failure rate for under-25s'),
         'r_init_year': Parameter(Types.REAL,
                                  'proportional change in contraception initiation probabilities for each year, 2010 to'
@@ -126,7 +126,7 @@ class Contraception(Module):
         assert self.states_that_may_require_HSI_to_switch_to.issubset(self.all_contraception_states)
         assert self.states_that_may_require_HSI_to_maintain_on.issubset(self.states_that_may_require_HSI_to_switch_to)
 
-        self.use_healthsystem = use_healthsystem  # True: initiation and switches to contracption require an HSI;
+        self.use_healthsystem = use_healthsystem  # True: initiation and switches to contraception require an HSI;
         # False: initiation and switching do not occur through an HSI
         self.cons_codes = dict()  # (Will store the consumables codes for use in the HSI)
 
@@ -135,7 +135,7 @@ class Contraception(Module):
     def read_parameters(self, data_folder):
         """
         Import the relevant sheets from the ResourceFile (an excel workbook).
-        Please see documentation for description of the relationships between baseline fertility rate, intitiation
+        Please see documentation for description of the relationships between baseline fertility rate, initiation
         rates, discontinuation, failure and switching rates, and being on contraception or not and being pregnant.
         """
         workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Contraception.xlsx', sheet_name=None)
@@ -211,7 +211,7 @@ class Contraception(Module):
 
         df.loc[females1549, 'co_contraception'] = df.loc[females1549, 'age_years'].apply(pick_contraceptive)
 
-        # 4. Give a notional date on which the last appointment occured for those that need them
+        # 4. Give a notional date on which the last appointment occurred for those that need them
         needs_appts = females1549 & df['co_contraception'].isin(self.states_that_may_require_HSI_to_switch_to)
         df.loc[needs_appts, 'co_date_of_last_fp_appt'] = pd.Series([
             random_date(
@@ -223,12 +223,12 @@ class Contraception(Module):
     def initialise_simulation(self, sim):
         """
         * Schedule the recurring events: ContraceptiveSwitchingPoll, Fail, PregnancyPoll, ContraceptiveLoggingEvent
-        * Retreive the consumables codes for the consumables used
+        * Retrieve the consumables codes for the consumables used
         """
         # Launch the repeating event that will store statistics about the population structure
         sim.schedule_event(ContraceptionLoggingEvent(self), sim.date)
 
-        # starting contraception, switching contraception metho, and stopping contraception:
+        # starting contraception, switching contraception method, and stopping contraception:
         sim.schedule_event(ContraceptionPoll(self), sim.date)
 
         # Retrieve the consumables codes for the consumables used
@@ -265,7 +265,7 @@ class Contraception(Module):
         # 2) Reset the mother's is_pregnant status showing that she is no longer pregnant
         df.at[mother_id, 'is_pregnant'] = False
 
-        # 3) Initiate mother of newborn to a contracpetive
+        # 3) Initiate mother of newborn to a contraceptive
         self.select_contraceptive_following_birth(mother_id)
 
     def process_parameters(self):
@@ -307,7 +307,7 @@ class Contraception(Module):
         switching_matrix = self.parameters['switching_matrix']
         # this Excel sheet is from contraception switching matrix outputs from line 144 of
         # 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
-        # The switching matrix is conditonnal on there being a switch (so there is no "not_using" and no switch_from
+        # The switching matrix is conditional on there being a switch (so there is no "not_using" and no switch_from
         # "female_sterilization"
         switching_matrix = switching_matrix.set_index('switchfrom')
         switching_matrix = switching_matrix.transpose()
@@ -384,8 +384,8 @@ class Contraception(Module):
     def schedule_batch_of_contraceptive_changes(self, ids, old, new):
         """Enact the change in contraception, either through scheduling HSI or instantaneously.
         ids: pd.Index of the woman for whom the contraceptive state is changing
-        old: itterable giving the corresponding contraceptive state being switched from
-        new: itterable giving the corresponding contraceptive state being switched to
+        old: iterable giving the corresponding contraceptive state being switched from
+        new: iterable giving the corresponding contraceptive state being switched to
 
         It is assumed that even with the option `self.use_healthsystem=True` that switches to certain methods do not
         require the use of HSI (these are in `states_that_may_require_HSI_to_switch_to`)."""
@@ -688,7 +688,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
     def pregnancy_for_those_not_on_contraceptive(self):
         """
-        This event looks across each woman who is not using a contracpetive to determine who will become pregnant.
+        This event looks across each woman who is not using a contraceptive to determine who will become pregnant.
         """
         df = self.sim.population.props  # get the population dataframe
 
@@ -799,7 +799,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.old_contraceptive = old_contraceptive
         self.new_contraceptive = new_contraceptive
 
-        self.TREATMENT_ID = "Contracpetion_StartOrSwitch"
+        self.TREATMENT_ID = "Contraception_StartOrSwitch"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'FamPlan': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
