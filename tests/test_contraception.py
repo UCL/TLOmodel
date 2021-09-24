@@ -96,7 +96,6 @@ def run_sim(tmpdir,
         sim.modules['Contraception'].parameters['contraception_failure'] = \
             (sim.modules['Contraception'].parameters['contraception_failure'] * 100).clip(upper=1.0)
 
-
     sim.make_initial_population(n=popsize)
     __check_dtypes(sim)
     __check_properties(sim.population.props)
@@ -118,7 +117,7 @@ def run_sim(tmpdir,
 
 
 def __check_some_starting_switching_and_stopping(sim):
-    """Check that there is at least some usage and some starting, switching and stopping"""
+    """Check that there is at least some usage of contraceptives and some starting, switching and stopping."""
 
     logs = parse_log_file(sim.log_filepath)
 
@@ -157,9 +156,22 @@ def __check_no_illegal_switches(sim):
             # female_sterilization if age less than 30 (or equal to, in case they have aged since an HSI was scheduled)
 
 
+def test_pregnancies_occurring(tmpdir):
+    """Test that pregnancies occur for those who are on contraception and those who are not."""
+    # Run simulation without use of HealthSystem stuff and with high risk of failure of contraceptive
+    sim = run_sim(tmpdir=tmpdir, use_healthsystem=False, disable=True, incr_prob_of_failure=True)
+
+    logs = parse_log_file(sim.log_filepath)
+    pregs = logs['tlo.methods.contraception']['pregnancy']
+
+    assert len(pregs) > 0
+    assert (pregs['contraception'] == "not_using").any()
+    assert (pregs['contraception'] != "not_using").any()
+
+
 def test_contraception_use_and_not_using_healthsystem(tmpdir):
-    """Test that the contraception module function and that what comes out in log is as expected when initiation and
-    switching is NOT going through the HealthSystem."""
+    """Test that the contraception module functions and that exactly the same patterns of usage, switching, etc occur
+    when action do not use the HealthsSystem as when they do (and the HealthSystem allow every change to occur)."""
 
     # Run basic check, for the case when the model is using the healthsystem and when not and check the logs
     sim_does_not_use_healthsystem = run_sim(tmpdir=tmpdir, use_healthsystem=False, disable=True)
@@ -193,32 +205,75 @@ def test_contraception_use_and_not_using_healthsystem(tmpdir):
     )
 
 
-def test_contraception_using_healthsystem_but_no_capability(tmpdir):
-    """Check that if switching and initiation use the HealthSystem but no HSI occur that there is no initiation or
-     switching to anything that requires an HSI."""
+def test_occurrence_of_HSI_for_maintain_and_switch(tmpdir):
+    """Check HSI for the maintenance of a person on a contraceptive are scheduled as expected.."""
 
-    # Run simulation whereby contraception requires HSI but the HealthSystem prevent HSI occurring
-    sim = run_sim(tmpdir=tmpdir, use_healthsystem=True, healthsystem_disable_and_reject_all=True)
-    __check_no_illegal_switches(sim)
+    # Create a simulation that has run for zero days and clear the event queue
+    sim = run_sim(tmpdir,
+                  use_healthsystem=True,
+                  disable=False,
+                  consumables_available=True,
+                  end_date=Date(2010, 1, 1)
+                  )
+    sim.event_queue.queue = []
+    sim.modules['HealthSystem'].reset_queue()
 
-    log = parse_log_file(sim.log_filepath)['tlo.methods.contraception']
+    # Let there be no chance of switching or discontinuing
+    p = sim.modules['Contraception'].parameters
+    p['contraception_discontinuation'] *= 0.0
+    p['contraception_switching']['probability'] *= 0.0
 
-    # No record of starting/switching-to contraception of anything that requires an HSI
-    states_that_may_require_HSI_to_switch_to = sim.modules['Contraception'].states_that_may_require_HSI_to_switch_to
+    # Set that person_id=0 is a woman on a contraceptive for longer than six months
+    person_id = 0
+    df = sim.population.props
+    original_props = {
+        'sex': 'F',
+        'age_years': 30,
+        'date_of_birth': sim.date - pd.DateOffset(years=30),
+        'co_contraception': 'pill',  # <-- requires appointments for maintenance
+        'is_pregnant': False,
+        'date_of_last_pregnancy': pd.NaT,
+        'co_unintended_preg': False,
+        'co_date_of_last_fp_appt': sim.date - pd.DateOffset(months=7)
+    }
+    df.loc[person_id, original_props.keys()] = original_props.values()
 
-    changes = log["contraception_change"]
-    assert not changes["switch_to"].isin(states_that_may_require_HSI_to_switch_to).any()
-    assert (changes.loc[changes["switch_from"].isin(states_that_may_require_HSI_to_switch_to), "switch_to"]
-            == "not_using"
-            ).all()
+    # Run the ContraceptivePoll
+    poll = contraception.ContraceptionPoll(module=sim.modules['Contraception'])
+    poll.apply(sim.population)
 
-    # todo - could add that no one is maintained on it either.
+    # Confirm that an HSI_FamilyPlanningAppt has been made for her (within 28 days as she is due an appointment already)
+    events = sim.modules['HealthSystem'].find_events_for_person(person_id)
+    assert 1 == len(events)
+    ev = events[0]
+    assert isinstance(ev[1], contraception.HSI_Contraception_FamilyPlanningAppt)
+
+    date_of_hsi = ev[0]
+    assert date_of_hsi <= (sim.date + pd.DateOffset(days=28))
+
+    # Run that HSI_FamilyPlanningAppt and confirm there is no change in her state except that the date of last
+    # appointment has been updated.
+    sim.date = date_of_hsi
+    ev[1].apply(person_id=person_id, squeeze_factor=0.0)
+
+    df = sim.population.props  # update shortcut df
+    props_to_be_same = [k for k in original_props.keys() if k != "co_date_of_last_fp_appt"]
+    assert list(df.loc[person_id, props_to_be_same].values) == [original_props[p] for p in props_to_be_same]
+    assert sim.population.props.at[person_id, "co_date_of_last_fp_appt"] == sim.date
+
+    # CLear the HealthSystem queue and run the ContraceptivePoll again
+    sim.modules['HealthSystem'].reset_queue()
+    poll.apply(sim.population)
+
+    # Confirm that no HSI_FamilyPlanningAppt has been scheduled (now that there is less time elapsed since her last
+    # appointment)
+    assert not len(sim.modules['HealthSystem'].find_events_for_person(person_id))
 
 
-def test_HSI_or_consumable_not_available_leads_to_defaulting_to_not_using(tmpdir):
-    """Check that if someone is on a method that requires an HSI, if consumable is not available and/or the health
-    system cannot do the appointment that the person defaults to not using after they become due for a `maintenance`
-    appointment"""
+def test_if_no_healthsystem_or_consumable_leads_to_defaulting_if_due_appt_at_individual_level(tmpdir):
+    """Check that if someone is on a method that requires an HSI, and if consumable is not available and/or the health
+    system cannot do the appointment, then that the person defaults to not using after they become due for a
+    maintenance appointment."""
 
     def check_that_persons_on_contraceptive_default(sim):
         """Edit parameters, run simulation and do checks; women start on a contraceptive, and those who are on a
@@ -302,10 +357,37 @@ def test_HSI_or_consumable_not_available_leads_to_defaulting_to_not_using(tmpdir
     check_that_persons_on_contraceptive_default(sim)
 
 
-def test_no_consumables_causes_no_use_of_contraceptives(tmpdir):
-    """Check that if no consumables are available then after six months (period between appointments for those
-    maintaining), no one is using a contraceptive that requires a consumable: bec. initiation/switching are impossible
-    when consumables are not available."""
+def test_that_if_no_healthsystem_there_is_defaulting_from_some_contraceptives_at_population_level(tmpdir):
+    """Check that if switching and initiation use the HealthSystem but no HSI can occur, then all those already
+     on a contraceptive requiring an HSI to maintain use will default to not_using, and there is no initiation or
+     switching to any contraceptive that requires an HSI."""
+
+    # Run simulation whereby contraception requires HSI but the HealthSystem prevent HSI occurring
+    sim = run_sim(tmpdir=tmpdir, use_healthsystem=True, healthsystem_disable_and_reject_all=True)
+    __check_no_illegal_switches(sim)
+
+    log = parse_log_file(sim.log_filepath)['tlo.methods.contraception']
+
+    # Check there is no record of persons being maintained on contraceptives that require an HSI
+    states_that_may_require_HSI_to_maintain_on = sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on
+    ys = log['contraception_use_yearly_summary']
+    after_everyone_has_appt = pd.to_datetime(ys['date']) > (sim.start_date + pd.DateOffset(months=7))  # 7 months allow
+    # time for an appointment to become due for everyone (allowing for the monthly occurrence of the poll.)
+    assert (ys.loc[after_everyone_has_appt, states_that_may_require_HSI_to_maintain_on] == 0).all().all()
+
+    # Check there is no record of starting/switching-to contraception of anything that requires an HSI
+    states_that_may_require_HSI_to_switch_to = sim.modules['Contraception'].states_that_may_require_HSI_to_switch_to
+    changes = log["contraception_change"]
+    assert not changes["switch_to"].isin(states_that_may_require_HSI_to_switch_to).any()
+    assert (changes.loc[changes["switch_from"].isin(states_that_may_require_HSI_to_switch_to), "switch_to"]
+            == "not_using"
+            ).all()
+
+
+def test_that_if_there_are_no_consumables_there_is_defaulting_from_some_contraceptives_at_population_level(tmpdir):
+    """Check that if switching and initiation use the HealthSystem but there are no consumables, then all those already
+     on a contraceptive requiring a consumable to maintain use will default to not_using, and there is no initiation or
+      switching to any contraceptive that requires a consumable."""
 
     # Run simulation whereby contraception requires HSI, HSI run, but there are no consumables
     # Let there be no discontinuation (so that every would otherwise stay on contraception)
@@ -321,8 +403,11 @@ def test_no_consumables_causes_no_use_of_contraceptives(tmpdir):
     # Check that, after six months of simulation time, no one is on a contraceptive that requires a consumable for
     # maintenance.
     num_on_contraceptives = log['contraception_use_yearly_summary']
-    after_six_mo = pd.to_datetime(num_on_contraceptives['date']) > (sim.start_date + pd.DateOffset(months=6))
-    assert (num_on_contraceptives.loc[after_six_mo, states_that_may_require_HSI_to_maintain_on] == 0).all().all()
+    after_everyone_has_appt = pd.to_datetime(num_on_contraceptives['date']) > (sim.start_date + pd.DateOffset(months=7))
+    # (7 months allow time for an appointment to become due for everyone (allowing for the monthly occurrence of the
+    # poll.)
+    assert (num_on_contraceptives.loc[after_everyone_has_appt, states_that_may_require_HSI_to_maintain_on] == 0
+            ).all().all()
 
     # Check that people are not switching to those contraceptives that require consumables to switch to.
     changes = log["contraception_change"]
@@ -333,106 +418,3 @@ def test_no_consumables_causes_no_use_of_contraceptives(tmpdir):
     assert (
         changes.loc[changes["switch_from"].isin(states_that_may_require_HSI_to_maintain_on), "switch_to"] == "not_using"
     ).all()
-
-
-def test_occurrence_of_HSI_for_maintain_and_switch(tmpdir):
-    """Check HSI for the maintenance of a person on a contraceptive are scheduled as expected.."""
-
-    # Create a simulation that has run for zero days and clear the event queue
-    sim = run_sim(tmpdir,
-                  use_healthsystem=True,
-                  disable=False,
-                  consumables_available=True,
-                  end_date=Date(2010, 1, 1)
-                  )
-    sim.event_queue.queue = []
-    sim.modules['HealthSystem'].reset_queue()
-
-    # Let there be no chance of switching or discontinuing
-    p = sim.modules['Contraception'].parameters
-    p['contraception_discontinuation'] *= 0.0
-    p['contraception_switching']['probability'] *= 0.0
-
-    # Set that person_id=0 is a woman on a contraceptive for longer than six months
-    person_id = 0
-    df = sim.population.props
-    original_props = {
-        'sex': 'F',
-        'age_years': 30,
-        'date_of_birth': sim.date - pd.DateOffset(years=30),
-        'co_contraception': 'pill',  # <-- requires appointments for maintenance
-        'is_pregnant': False,
-        'date_of_last_pregnancy': pd.NaT,
-        'co_unintended_preg': False,
-        'co_date_of_last_fp_appt': sim.date - pd.DateOffset(months=7)
-    }
-    df.loc[person_id, original_props.keys()] = original_props.values()
-
-    # Run the ContraceptivePoll
-    poll = contraception.ContraceptionPoll(module=sim.modules['Contraception'])
-    poll.apply(sim.population)
-
-    # Confirm that an HSI_FamilyPlanningAppt has been made for her (within 28 days as she is due an appointment already)
-    events = sim.modules['HealthSystem'].find_events_for_person(person_id)
-    assert 1 == len(events)
-    ev = events[0]
-    assert isinstance(ev[1], contraception.HSI_Contraception_FamilyPlanningAppt)
-
-    date_of_hsi = ev[0]
-    assert date_of_hsi <= (sim.date + pd.DateOffset(days=28))
-
-    # Run that HSI_FamilyPlanningAppt and confirm there is no change in her state except that the date of last
-    # appointment has been updated.
-    sim.date = date_of_hsi
-    ev[1].apply(person_id=person_id, squeeze_factor=0.0)
-
-    df = sim.population.props  # update shortcut df
-    props_to_be_same = [k for k in original_props.keys() if k != "co_date_of_last_fp_appt"]
-    assert list(df.loc[person_id, props_to_be_same].values) == [original_props[p] for p in props_to_be_same]
-    assert sim.population.props.at[person_id, "co_date_of_last_fp_appt"] == sim.date
-
-    # CLear the HealthSystem queue and run the ContraceptivePoll again
-    sim.modules['HealthSystem'].reset_queue()
-    poll.apply(sim.population)
-
-    # Confirm that no HSI_FamilyPlanningAppt has been scheduled (now that there is less time elapsed since her last
-    # appointment)
-    assert not len(sim.modules['HealthSystem'].find_events_for_person(person_id))
-
-
-def test_pregnancies_occuring(tmpdir):
-    """Test that pregnancies occur for those who are on contraception and those who are not.
-    """
-    # Run simulation without use of HealthSystem stuff and with high risk of failure of contraceptive
-    sim = run_sim(tmpdir=tmpdir, use_healthsystem=False, disable=True, incr_prob_of_failure=True)
-
-    logs = parse_log_file(sim.log_filepath)
-    pregs = logs['tlo.methods.contraception']['pregnancy']
-
-    assert len(pregs) > 0
-    assert (pregs['contraception'] == "not_using").any()
-    assert (pregs['contraception'] != "not_using").any()
-
-
-
-
-# Todo Items:
-# * Refactoring - running now -- DONE
-# * Change logic to allow for "switch_to" and "maintain_on" but let these be identical lists -- DONE
-# * Changes so that female sterilization and condoms does not need HSI to be maintained (i.e. don't default) and edits to test file to accomodate -- DONE
-# * Put the check_logs into all the checks & Check that the check on illegal moves operational--- DONE
-# * check that adding of sterilization to maintenance causing errors --- DONE
-# * typos line 523 and 627 and in file name in tests.-- checking now..... DONE
-# * New test: __check_pregnancies_occurring --- DONE
-
-# * Last check (suggest somehere "upstairs"!)
-
-
-
-
-# ~~~
-# * Check running of analysis file
-# * Run long/large calibrations
-# * Clean up parameters!
-# ~~~
-

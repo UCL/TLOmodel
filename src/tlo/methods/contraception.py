@@ -106,13 +106,13 @@ class Contraception(Module):
         'co_unintended_preg': Property(Types.BOOL, 'Most recent or current pregnancy was unintended (following '
                                                    'contraception failure)'),
         'co_date_of_last_fp_appt': Property(Types.DATE,
-                                                      'The date of the most recent Family Planning appointment. This '
-                                                      'is used to determine if a Family Planning appointment is needed'
-                                                      ' to maintain the person on their current contraceptive. If the '
-                                                      'person is to maintain use of the current contraceptive, they will'
-                                                      ' have an HSI only if the days elapsed since this value exceeds '
-                                                      'the parameter `days_between_appts_for_maintenance`.'
-                                                      )
+                                            'The date of the most recent Family Planning appointment. This is used to '
+                                            'determine if a Family Planning appointment is needed to maintain the '
+                                            'person on their current contraceptive. If the person is to maintain use of'
+                                            ' the current contraceptive, they will have an HSI only if the days elapsed'
+                                            ' since this value exceeds the parameter '
+                                            '`days_between_appts_for_maintenance`.'
+                                            )
     }
 
     def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True):
@@ -400,8 +400,11 @@ class Contraception(Module):
 
             # Does this change require an HSI?
             is_a_switch = _old != _new
-            reqs_appt = _new in self.states_that_may_require_HSI_to_switch_to if is_a_switch else _new in self.states_that_may_require_HSI_to_maintain_on
-            due_appt = pd.isnull(date_of_last_appt[_woman_id]) or ((date_today - date_of_last_appt[_woman_id]).days >= days_between_appts)
+            reqs_appt = _new in self.states_that_may_require_HSI_to_switch_to if is_a_switch \
+                else _new in self.states_that_may_require_HSI_to_maintain_on
+            due_appt = pd.isnull(date_of_last_appt[_woman_id]) or (
+                (date_today - date_of_last_appt[_woman_id]).days >= days_between_appts
+            )
             do_appt = self.use_healthsystem and reqs_appt and (is_a_switch or due_appt)
 
             # If the new method requires an HSI to be implemented, schedule the HSI:
