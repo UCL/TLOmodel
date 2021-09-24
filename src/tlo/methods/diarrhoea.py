@@ -404,14 +404,6 @@ class Diarrhoea(Module):
                       ),
 
         # Parameters governing the care provided to those that present with Diarrhoea
-        'sensitivity_some_dehydration_visual_inspection':
-            Parameter(Types.REAL,
-                      'sensitivity of IMCI some dehydration algorithm for dehydration 3-<9% loss of body weight'
-                      ),
-        'specificity_some_dehydration_visual_inspection':
-            Parameter(Types.REAL,
-                      'specificity of IMCI some dehydration algorithm for dehydration 3-<9% loss of body weight'
-                      ),
         'sensitivity_severe_dehydration_visual_inspection':
             Parameter(Types.REAL,
                       'sensitivity of IMCI severe dehydration algorithm for dehydration >9% loss of body weight'
@@ -578,7 +570,7 @@ class Diarrhoea(Module):
         # The danger signs are classified collectively and are based on the result of a DxTest representing the ability
         # of the clinician to correctly determine the true value of the property 'gi_dehydration' being 'severe'.=
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            danger_signs_visual_inspection=DxTest(
+            IMCI_severe_dehydration_visual_inspection=DxTest(
                 property='gi_dehydration',
                 target_categories=['severe'],
                 sensitivity=self.parameters['sensitivity_severe_dehydration_visual_inspection'],
@@ -664,7 +656,7 @@ class Diarrhoea(Module):
 
         # 1) Assessment of danger signs
         danger_signs = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run="danger_signs_visual_inspection", hsi_event=hsi_event)
+            dx_tests_to_run="IMCI_severe_dehydration_visual_inspection", hsi_event=hsi_event)
 
         # 2) Determine which HSI to use:
         if danger_signs and (self.rng.rand() < self.parameters['prob_hospitalization_on_danger_signs']):
