@@ -105,15 +105,13 @@ class Contraception(Module):
         'date_of_last_pregnancy': Property(Types.DATE, 'Date of the last pregnancy of this individual'),
         'co_unintended_preg': Property(Types.BOOL, 'Most recent or current pregnancy was unintended (following '
                                                    'contraception failure)'),
-        'date_of_last_appt_for_maintenance': Property(Types.DATE,
-                                                      'The date of the most recent Family Planning appointment at which'
-                                                      'the current method was provided (pd.NaT if the person is not'
-                                                      'using any contraceptive method). This is used to determine if '
-                                                      'a Family Planning appointment is needed to maintain the person'
-                                                      'on the contraceptive. If the person is to maintain use of the '
-                                                      'current contraceptive, they will have an HSI if the days elapsed'
-                                                      'since this value exceeds the parameter '
-                                                      '`days_between_appts_for_maintenance`.'
+        'co_date_of_last_fp_appt': Property(Types.DATE,
+                                                      'The date of the most recent Family Planning appointment. This '
+                                                      'is used to determine if a Family Planning appointment is needed'
+                                                      ' to maintain the person on their current contraceptive. If the '
+                                                      'person is to maintain use of the current contraceptive, they will'
+                                                      ' have an HSI only if the days elapsed since this value exceeds '
+                                                      'the parameter `days_between_appts_for_maintenance`.'
                                                       )
     }
 
@@ -188,7 +186,7 @@ class Contraception(Module):
         df.loc[df.is_alive, 'is_pregnant'] = False
         df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
         df.loc[df.is_alive, 'co_unintended_preg'] = False
-        df.loc[df.is_alive, 'date_of_last_appt_for_maintenance'] = pd.NaT
+        df.loc[df.is_alive, 'co_date_of_last_fp_appt'] = pd.NaT
 
         # Assign contraception method
         # 1. select females aged 15-49 from population, for current year
@@ -212,7 +210,7 @@ class Contraception(Module):
 
         # 4. Give a notional date on which the last appointment occured for those that need them
         needs_appts = females1549 & df['co_contraception'].isin(self.states_that_may_require_HSI_to_switch_to)
-        df.loc[needs_appts, 'date_of_last_appt_for_maintenance'] = pd.Series([
+        df.loc[needs_appts, 'co_date_of_last_fp_appt'] = pd.Series([
             random_date(
                 self.sim.date - pd.DateOffset(days=self.parameters['days_between_appts_for_maintenance']),
                 self.sim.date - pd.DateOffset(days=1),
@@ -251,7 +249,7 @@ class Contraception(Module):
             'is_pregnant',
             'date_of_last_pregnancy',
             'co_unintended_preg',
-            'date_of_last_appt_for_maintenance'
+            'co_date_of_last_fp_appt'
         )
         ] = (
             'not_using',
@@ -393,7 +391,7 @@ class Contraception(Module):
         date_today = self.sim.date
         days_between_appts = self.parameters['days_between_appts_for_maintenance']
 
-        date_of_last_appt = df.loc[ids, "date_of_last_appt_for_maintenance"].to_dict()
+        date_of_last_appt = df.loc[ids, "co_date_of_last_fp_appt"].to_dict()
 
         for _woman_id, _old, _new in zip(ids, old, new):
 
@@ -780,7 +778,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
             return
 
         # Record the date that Family Planning Appointment happened for this person
-        self.sim.population.props.at[person_id, "date_of_last_appt_for_maintenance"] = self.sim.date
+        self.sim.population.props.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
 
         # Record use of consumables and default the person to "not_using" if the consumable is not available:
         cons_available = self.get_all_consumables(

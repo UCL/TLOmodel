@@ -200,8 +200,6 @@ def test_contraception_using_healthsystem_but_no_capability(tmpdir):
             == "not_using"
             ).all()
 
-    # todo - any no usage of anything that requires a maintenance appointment.
-
 
 def test_HSI_when_consumable_not_available_leads_to_defauling_to_not_using(tmpdir):
     """Check that if someone is on a method that requires an HSI, if consumable is not available and/or the health
@@ -233,17 +231,17 @@ def test_HSI_when_consumable_not_available_leads_to_defauling_to_not_using(tmpdi
             original_props = {
                 'sex': 'F',
                 'age_years': 30,
-                'date_of_birth': sim.date - pd.DateOffset(years=30),  # todo ****** use this elsewhere!
+                'date_of_birth': sim.date - pd.DateOffset(years=30),
                 'co_contraception': contraceptive,
                 'is_pregnant': False,
                 'date_of_last_pregnancy': pd.NaT,
                 'co_unintended_preg': False,
-                'date_of_last_appt_for_maintenance': sim.date - pd.DateOffset(months=5)
+                'co_date_of_last_fp_appt': sim.date - pd.DateOffset(months=5)
                 # <-- due for an appointment in 1 mo
             }
             df.loc[person_ids_due_appt[i], original_props.keys()] = original_props.values()
 
-            original_props['date_of_last_appt_for_maintenance'] = sim.date - pd.DateOffset(days=1)
+            original_props['co_date_of_last_fp_appt'] = sim.date - pd.DateOffset(days=1)
             # <--not due an appointment
             df.loc[person_ids_not_due_appt[i], original_props.keys()] = original_props.values()
 
@@ -319,7 +317,6 @@ def test_no_consumables_causes_no_use_of_contracptives(tmpdir):
 
 def test_occurence_of_HSI_for_maintain_and_switch(tmpdir):
     """Check HSI for the maintenance of a person on a contraceptive are scheduled as expected.."""
-    # todo refactor "date of last appt for maintenance" --> "co_date_of_last_appointment"
 
     # Create a simulation that has run for zero days and clear the event queue
     sim = run_sim(tmpdir,
@@ -342,11 +339,12 @@ def test_occurence_of_HSI_for_maintain_and_switch(tmpdir):
     original_props = {
         'sex': 'F',
         'age_years': 30,
+        'date_of_birth': sim.date - pd.DateOffset(years=30),
         'co_contraception': 'pill',
         'is_pregnant': False,
         'date_of_last_pregnancy': pd.NaT,
         'co_unintended_preg': False,
-        'date_of_last_appt_for_maintenance': sim.date - pd.DateOffset(months=7)
+        'co_date_of_last_fp_appt': sim.date - pd.DateOffset(months=7)
     }
     df.loc[person_id, original_props.keys()] = original_props.values()
 
@@ -369,9 +367,9 @@ def test_occurence_of_HSI_for_maintain_and_switch(tmpdir):
     ev[1].apply(person_id=person_id, squeeze_factor=0.0)
 
     df = sim.population.props  # update shortcut df
-    props_to_be_same = [k for k in original_props.keys() if k != "date_of_last_appt_for_maintenance"]
+    props_to_be_same = [k for k in original_props.keys() if k != "co_date_of_last_fp_appt"]
     assert list(df.loc[person_id, props_to_be_same].values) == [original_props[p] for p in props_to_be_same]
-    assert sim.population.props.at[person_id, "date_of_last_appt_for_maintenance"] == sim.date
+    assert sim.population.props.at[person_id, "co_date_of_last_fp_appt"] == sim.date
 
     # CLear the HealthSystem queue and run the ContraceptivePoll again
     sim.modules['HealthSystem'].reset_queue()
@@ -383,9 +381,11 @@ def test_occurence_of_HSI_for_maintain_and_switch(tmpdir):
 
 
 # Todo Items:
-# * test that can turn on/off initiation, switiching, discontinuation
+# * Refactoring - running now
+# * Change logic to allow for "switch_to" and "maintain_on" but let these be identical lists.
 # * Changes so that female sterilization does not need HSI to be maintained (i.e. don't default)
 # * Put the check_logs into all the checks.
+
 # * Check running of analysis file
 # * Run long/large calibrations
 # * Clean up parameters!

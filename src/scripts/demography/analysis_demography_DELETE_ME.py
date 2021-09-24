@@ -1,11 +1,16 @@
 """
-Plot to demonstrate correspondence between model and data outputs wrt births, population size and total deaths when
-running on a small population localling.
+DO NOT USE THIS FILE.
 
-# NB. ** For a version of this code that uses results from a run on Batch see **
- src/scripts/calibration_analyses/long_run/analysis_scripts/analysis_demography_calibrations.py
+Instead, please run the scenario
+ `scripts/calibration_analyses/scenarios/long_run_no_diseases.py`
+
+and use the analysis file:
+  `scripts/calibration_analyses/analysis_scripts/analysis_demography_calibrations.py`
 
 """
+
+# Plot to demonstrate correspondence between model and data outputs wrt births, population size and total deaths when
+# running on a small population locally.
 
 # %% Import Statements and initial declarations
 from pathlib import Path
@@ -80,7 +85,7 @@ def run():
         symptommanager.SymptomManager(resourcefilepath=resources),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
         healthburden.HealthBurden(resourcefilepath=resources),
-        contraception.Contraception(resourcefilepath=resources),
+        contraception.Contraception(resourcefilepath=resources, use_healthsystem=False),
         care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resources),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
         labour.Labour(resourcefilepath=resources),
@@ -339,4 +344,3 @@ plt.show()
 log_file_location = Path('./outputs/demography_calibrations__2021-08-07T124051.log')
 resource_file_location = Path('./resources')
 death_summary = compare_number_of_deaths(log_file_location, resource_file_location)
-# death_summary = compare_number_of_deaths(parsed_output, resourcefilepath)
