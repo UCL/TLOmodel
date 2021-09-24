@@ -2121,7 +2121,7 @@ class RTI(Module):
         logger.debug(key='rti_general_message',
                      data=f"This is RTI, being alerted about a health system interaction person %d for: %s, {person_id}"
                           f", {treatment_id}"
-        )
+                     )
 
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
@@ -3956,7 +3956,7 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
                              data=f"This facility treated their {lacerationcounts} open wounds")
                 if cond[item_code_cetrimide_chlorhexidine]:
                     logger.debug(key='rti_general_message',
-                                 data=f"This laceration was cleaned before stitching")
+                                 data="This laceration was cleaned before stitching")
                     df.at[person_id, 'rt_med_int'] = True
                     columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, codes)
                     for col in columns:
@@ -3980,7 +3980,7 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
 
             else:
                 logger.debug(key='rti_general_message',
-                             data=f"This facility has no treatment for open wounds available.")
+                             data="This facility has no treatment for open wounds available.")
 
     def did_not_run(self, person_id):
         logger.debug(key='rti_general_message',
@@ -4108,7 +4108,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                     'recovery date assigned to past'
             else:
                 logger.debug(key='rti_general_message',
-                             data=f"This facility has no treatment for burns available.")
+                             data="This facility has no treatment for burns available.")
 
     def did_not_run(self, person_id):
         logger.debug(key='rti_general_message',
