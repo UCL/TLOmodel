@@ -340,7 +340,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
                 # Perform checks on what has been returned
                 assert set(dalys_from_disease_module.columns) == set(declared_causes_of_disability_module)
                 assert set(dalys_from_disease_module.index) == idx_alive
-                assert (~pd.isnull(dalys_from_disease_module)).all().all()
+                assert not pd.isnull(dalys_from_disease_module).any().any()
                 assert ((dalys_from_disease_module >= 0) & (dalys_from_disease_module <= 1)).all().all()
                 assert (dalys_from_disease_module.sum(axis=1) <= 1).all()
 

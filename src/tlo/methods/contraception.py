@@ -251,12 +251,11 @@ class Contraception(Module):
 
         # the index of the row is the contraception type
         df.at[mother_id, 'co_contraception'] = chosen_co.index[0]
-        logger.info('%s|post_birth_contraception|%s',
-                    self.sim.date,
-                    {
+        logger.info(key='post_birth_contraception',
+                    data={
                         'woman_index': mother_id,
-                        'co_contraception': df.at[mother_id, 'co_contraception']
-                    })
+                        'co_contraception': df.at[mother_id, 'co_contraception']}
+                    )
 
 
 class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
@@ -330,9 +329,8 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
             df.loc[now_using_co, 'co_contraception'] = random_co[now_using_co]
 
             for woman in now_using_co:
-                logger.info('%s|start_contraception1|%s',
-                            self.sim.date,
-                            {
+                logger.info(key='start_contraception1',
+                            data={
                                 'woman_index': woman,
                                 'age': df.at[woman, 'age_years'],
                                 'co_contraception': df.at[woman, 'co_contraception']
@@ -364,9 +362,8 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
 
         # log old -> new contraception types
         for woman in switch_co:
-            logger.info('%s|switchto_contraception|%s',
-                        self.sim.date,
-                        {
+            logger.info(key='switchto_contraception',
+                        data={
                             'woman_index': woman,
                             'co_from': df.at[woman, 'co_contraception'],
                             'co_to': new_co[woman]
@@ -400,9 +397,8 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
             df.loc[co_discontinue, 'co_contraception'] = 'not_using'
 
             for woman in co_discontinue:
-                logger.info('%s|stop_contraception|%s',
-                            self.sim.date,
-                            {
+                logger.info(key='stop_contraception',
+                            data={
                                 'woman_index': woman,
                             })
 
@@ -419,7 +415,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
         self.age_high = 49
 
     def apply(self, population):
-        logger.debug('Checking to see if anyone becomes pregnant whilst on contraception')
+        logger.debug(key='debug', data='Checking to see if anyone becomes pregnant whilst on contraception')
 
         df = population.props
         p = self.module.parameters
@@ -459,9 +455,8 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['Labour'].set_date_of_labour(woman)
 
             # outputs some logging if any pregnancy (contraception failure)
-            logger.info('%s|fail_contraception|%s',
-                        self.sim.date,
-                        {
+            logger.info(key='fail_contraception',
+                        data={
                             'woman_index': woman,
                             'birth_booked': str(df.at[woman, 'co_date_of_childbirth'])
                         })
@@ -479,10 +474,10 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        logger.debug('Checking to see if anyone should become pregnant....')
+        logger.debug(key='debug', data='Checking to see if anyone should become pregnant....')
 
         if self.sim.date > Date(2035, 1, 1):
-            logger.debug('Now after 2035')
+            logger.debug(key='debug', data='Now after 2035')
 
         df = population.props  # get the population dataframe
 
@@ -529,9 +524,8 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         for female_id in newly_pregnant_ids:
             self.sim.modules['Labour'].set_date_of_labour(female_id)
 
-            logger.info('%s|pregnant_at_age|%s',
-                        self.sim.date,
-                        {
+            logger.info(key='pregnant_at_age',
+                        data={
                             'person_id': female_id,
                             'age_years': females.at[female_id, 'age_years']
                         })
@@ -553,9 +547,8 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         contraception_count = df[df.is_alive & df.age_years.between(self.age_low, self.age_high)].groupby(
             'co_contraception').size()
 
-        logger.info('%s|contraception|%s',
-                    self.sim.date,
-                    {
+        logger.info(key='contraception',
+                    data={
                         'total': sum(contraception_count),
                         'not_using': contraception_count['not_using'],
                         'using': sum(contraception_count) - contraception_count['not_using'],
@@ -575,8 +568,8 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         is_preg_count = (df.is_alive & df.age_years.between(self.age_low, self.age_high) & df.is_pregnant).sum()
         is_notpreg_count = (df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant).sum()
 
-        logger.info('%s|pregnancy|%s', self.sim.date,
-                    {
+        logger.info(key='pregnancy',
+                    data={
                         'total': sum(preg_counts),
                         'pregnant': is_preg_count,
                         'not_pregnant': is_notpreg_count

@@ -83,52 +83,6 @@ def log_message(message_level, logger_level, message, logger_name='tlo.test.logg
             logger.critical(message)
 
 
-class TestStdLibLogging:
-    @pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
-    def test_messages_at_same_level(self, basic_configuration, message_level):
-        # given that messages are at the same level as the logger
-        logger_level = eval(message_level)
-        log_message(message_level, logger_level, "test message")
-        lines = read_file(*basic_configuration)
-
-        # messages should be written to log
-        assert [f'{message_level.strip("logging.")}|tlo.test.logger|test message\n'] == lines
-
-    @pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
-    def test_messages_at_higher_level(self, basic_configuration, message_level):
-        # given that messages are at a higher level as the logger
-        logging_level = eval(message_level) - 1
-        log_message(message_level, logging_level, "test message")
-        lines = read_file(*basic_configuration)
-
-        # messages should be written to log
-        assert [f'{message_level.strip("logging.")}|tlo.test.logger|test message\n'] == lines
-
-    @pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
-    def test_messages_at_lower_level(self, basic_configuration, message_level):
-        # given that messages are at a lower level as the logger
-        logging_level = eval(message_level) + 1
-        log_message(message_level, logging_level, "test message")
-        lines = read_file(*basic_configuration)
-
-        # messages should not be written to log
-        assert [] == lines
-
-    @pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
-    def test_disable(self, basic_configuration, message_level):
-        # given that messages are at a higher level as the logger BUT the logger is disabled at critical
-        logging_level = eval(message_level) - 1
-        logging.disable(logging.CRITICAL)
-        log_message(message_level, logging_level, "test message")
-        lines = read_file(*basic_configuration)
-
-        # messages should not be written to log
-        assert [] == lines
-
-        # enable logging again
-        logging.disable(0)
-
-
 class TestStructuredLogging:
     @pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
     def test_messages_same_level(self, simulation_configuration, message_level):
