@@ -473,6 +473,10 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'n_antiep': n_antiep,
                     })
 
+        individual = df.loc[[4]]
+
+        logger.debug(key='individual_check', data=individual, description='following an individual through simulation')
+
 
 class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
     """
