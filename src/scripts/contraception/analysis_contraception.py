@@ -65,7 +65,8 @@ sim.register(
     enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
     symptommanager.SymptomManager(resourcefilepath=resources),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-    healthsystem.HealthSystem(resourcefilepath=resources, disable=False),  # <-- HealthSystem functioning
+    healthsystem.HealthSystem(resourcefilepath=resources, disable=False, ignore_cons_constraints=True),
+    # <-- HealthSystem functioning
 
     contraception.Contraception(resourcefilepath=resources, use_healthsystem=True),  # <-- using HealthSystem
     care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resources),
@@ -77,6 +78,29 @@ sim.register(
     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resources),
     hiv.DummyHivModule(),
 )
+"""N.B. To examine the usage of contraceptive consumables, we need to retrieve this from the HealthSystem log as in
+ the below example. But, if we don't need this, we can run the model much more quickly using the a configuration of
+```
+sim.register(
+    demography.Demography(resourcefilepath=resources),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
+    symptommanager.SymptomManager(resourcefilepath=resources),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
+    healthsystem.HealthSystem(resourcefilepath=resources, disable=True),  # <-- disable HealthSystem
+
+    contraception.Contraception(resourcefilepath=resources, use_healthsystem=False),  # <-- do not use HealthSystem
+    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resources),
+    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+    labour.Labour(resourcefilepath=resources),
+    newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
+    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
+
+    dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resources),
+    hiv.DummyHivModule(),
+)
+```
+ """
+
 # create and run the simulation
 sim.make_initial_population(n=pop_size)
 sim.simulate(end_date=end_date)
@@ -111,7 +135,7 @@ plt.xlabel("Year")
 plt.ylabel("Number of women")
 # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
 plt.legend(['Total women age 15-49 years', 'Not Using Contraception', 'Using Contraception'])
-plt.savefig(outputpath / ('Contraception Use' + datestamp + '.pdf'), format='pdf')
+plt.savefig(outputpath / ('Contraception Use' + datestamp + '.png'), format='png')
 plt.show()
 
 # %% Plot Contraception Use By Method Over time:
@@ -157,7 +181,7 @@ plt.ylabel("Number using method")
 # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
 plt.legend(['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization',
             'other_modern', 'periodic_abstinence', 'withdrawal', 'other_traditional'])
-plt.savefig(outputpath / ('Contraception Use By Method' + datestamp + '.pdf'), format='pdf')
+plt.savefig(outputpath / ('Contraception Use By Method' + datestamp + '.png'), format='png')
 plt.show()
 
 # %% Plot Pregnancies Over time:
@@ -188,56 +212,37 @@ plt.ylabel("Number of pregnancies")
 # plt.gca().set_ylim(0, 50)
 # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
 plt.legend(['total', 'pregnant', 'not_pregnant'])
-plt.savefig(outputpath / ('Pregnancies Over Time' + datestamp + '.pdf'), format='pdf')
+plt.savefig(outputpath / ('Pregnancies Over Time' + datestamp + '.png'), format='png')
 plt.show()
 
 
 # %% Plot Consumables Over time:
-"""N.B. To examine the usage of contraceptive consumables, we need to retrieve this from the HealthSystem log as in
- the below example. But, if we don't need this, we can run the model much more quickly using the a configuration of
- ```
- sim.register(
-    demography.Demography(resourcefilepath=resources),
-    enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-    symptommanager.SymptomManager(resourcefilepath=resources),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-    healthsystem.HealthSystem(resourcefilepath=resources, disable=True),  # <-- disable HealthSystem
 
-    contraception.Contraception(resourcefilepath=resources, use_healthsystem=False),  # <-- do not use HealthSystem
-    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resources),
-    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
-    labour.Labour(resourcefilepath=resources),
-    newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
-    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
+# If has run with the HealthSystem, then....
+#
+# cons = log_df['tlo.methods.healthsystem']['Consumables'].copy()
+#
+# # Load consumables log and put the date as the index and provide
+# cons['date'] = pd.to_datetime(cons['date'])
+# cons['year'] = cons['date'].dt.year
+# cons = cons.set_index('year')
+#
+#
+# # Drop any entry that is not related to Contraception
+# cons = cons.loc[cons.TREATMENT_ID.str.startswith('Contraception')]
+#
+# # Make counts of every type of package that is actually used (i.e. was available when requested) each year.
+# def unpack(in_dict_as_string):
+#     in_dict = eval(in_dict_as_string)
+#     l = list()
+#     for k, v in in_dict.items():
+#         for _v in range(v):
+#             l.append(k)
+#     return l
+#
+# pkg_counts = cons['Package_Available'].apply(unpack).apply(pd.Series).dropna().astype(int)[0].value_counts()
 
-    dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resources),
-    hiv.DummyHivModule(),
-)
- ```
- """
-
-cons = log_df['tlo.methods.healthsystem']['Consumables'].copy()
-
-# Load consumables log and put the date as the index and provide
-cons['date'] = pd.to_datetime(cons['date'])
-cons['year'] = cons['date'].dt.year
-cons = cons.set_index('year')
-
-
-# Drop any entry that is not related to Contraception
-cons = cons.loc[cons.TREATMENT_ID.str.startswith('Contraception')]
-
-# Make counts of every type of package that is actually used (i.e. was available when requested) each year.
-def unpack(in_dict_as_string):
-    in_dict = eval(in_dict_as_string)
-    l = list()
-    for k, v in in_dict.items():
-        for _v in range(v):
-            l.append(k)
-    return l
-
-pkg_counts = cons['Package_Available'].apply(unpack).apply(pd.Series).dropna().astype(int)[0].value_counts()
-
+# %%
 
 # What follows is TimC's original code for this section:
 # ...
@@ -276,7 +281,7 @@ pkg_counts = cons['Package_Available'].apply(unpack).apply(pd.Series).dropna().a
 # # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
 # plt.legend(['pills', 'IUDs', 'injections', 'implants', 'male_condoms', 'female_sterilizations',
 #             'other modern'])
-# plt.savefig(outputpath / ('Contraception Consumables By Method' + datestamp + '.pdf'), format='pdf')
+# plt.savefig(outputpath / ('Contraception Consumables By Method' + datestamp + '.png'), format='png')
 # plt.show()
 #
 # # %% Plot Consumable Costs Over time:
@@ -315,7 +320,7 @@ pkg_counts = cons['Package_Available'].apply(unpack).apply(pd.Series).dropna().a
 # # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
 # plt.legend(['pill costs', 'IUD costs', 'injection costs', 'implant costs', 'male condom costs',
 #             'female sterilization costs', 'other modern method costs'])
-# plt.savefig(outputpath / ('Contraception Consumable Costs By Method' + datestamp + '.pdf'), format='pdf')
+# plt.savefig(outputpath / ('Contraception Consumable Costs By Method' + datestamp + '.png'), format='png')
 # plt.show()
 #
 # # %% Plot Public Health Costs Over time:
@@ -343,5 +348,5 @@ pkg_counts = cons['Package_Available'].apply(unpack).apply(pd.Series).dropna().a
 # # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
 # plt.legend(['population scope campaign to increase contraception initiation',
 #             'post partum family planning (PPFP) campaign'])
-# plt.savefig(outputpath / ('Public Health Costs' + datestamp + '.pdf'), format='pdf')
+# plt.savefig(outputpath / ('Public Health Costs' + datestamp + '.png'), format='png')
 # plt.show()
