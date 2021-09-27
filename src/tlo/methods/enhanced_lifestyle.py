@@ -29,6 +29,8 @@ class Lifestyle(Module):
         super().__init__(name)
         self.resourcefilepath: Path = resourcefilepath
 
+    INIT_DEPENDENCIES = {'Demography'}
+
     # Declare Metadata
     METADATA = {}
 

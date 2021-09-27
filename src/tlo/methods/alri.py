@@ -66,6 +66,7 @@ from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
+from tlo.util import random_date, sample_outcome
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -77,6 +78,19 @@ logger.setLevel(logging.INFO)
 
 class Alri(Module):
     """This is the disease module for Acute Lower Respiratory Infections."""
+
+    INIT_DEPENDENCIES = {
+        'Demography',
+        'Lifestyle',
+        'SymptomManager',
+        # Currently need to include AlriPropertiesOfOtherModules as there is no alternative
+        # provider of un_clinical_acute_malnutrition property at the moment. As this
+        # module also provides the required properties from NewbornOutcomes, Hiv and Epi
+        # these are also not included here to avoid duplicated property definitions
+        'AlriPropertiesOfOtherModules'
+    }
+
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
     # Declare Metadata
     METADATA = {
@@ -992,10 +1006,6 @@ class Alri(Module):
         # If person is on treatment, they should have a treatment start date
         assert (df.loc[curr_inf, 'ri_on_treatment'] != df.loc[curr_inf, 'ri_ALRI_tx_start_date'].isna()).all()
 
-    def random_date(self, start, end):
-        """Generate a random date between `start` and `end` - sampling with precision of the day."""
-        return start + DateOffset(days=self.rng.randint(0, (end - start).days))
-
     def impose_symptoms_for_complication(self, complication, person_id):
         """Impose symptoms for a complication."""
         symptoms = self.models.symptoms_for_complication(complication=complication)
@@ -1041,10 +1051,15 @@ class Models:
                 return LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     intercept,
-                    Predictor('age_years').when('.between(0,0)', p[base_inc_rate][0])
-                                          .when('.between(1,1)', p[base_inc_rate][1])
-                                          .when('.between(2,4)', p[base_inc_rate][2])
-                                          .otherwise(0.0),
+                    Predictor(
+                        'age_years',
+                        conditions_are_mutually_exclusive=True,
+                        conditions_are_exhaustive=True,
+                    )
+                    .when(0, p[base_inc_rate][0])
+                    .when(1, p[base_inc_rate][1])
+                    .when('.between(2,4)', p[base_inc_rate][2])
+                    .when('> 4', 0.0),
                     Predictor('li_no_access_handwashing').when(False, p['rr_ALRI_HHhandwashing']),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
                     Predictor('hv_inf').when(True, p['rr_ALRI_HIV_untreated']),
@@ -1386,7 +1401,7 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # Sample to find outcomes:
-        outcome = self.sample_outcome(probs_of_acquiring_pathogen)
+        outcome = sample_outcome(probs=probs_of_acquiring_pathogen, rng=self.module.rng)
 
         # For persons that will become infected with a particular pathogen:
         for person_id, pathogen in outcome.items():
@@ -1397,25 +1412,8 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     person_id=person_id,
                     pathogen=pathogen,
                 ),
-                date=m.random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1))
+                date=random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1), m.rng)
             )
-
-    def sample_outcome(self, df):
-        """Helper function to randomly sample an outcome from a set of probabilities.
-        Each row in the df is a person and each column gives the probability that a particular event may happen to the
-        person. The probabilities of each event are assumed to be independent but mutually exlusive."""
-
-        assert (df.sum(axis=1) <= 1.0).all(), "Probabilities across columns cannot sum to more than 1.0"
-
-        # Compare uniform deviate to cumulative sum across columns, after including a "null" column (for no event).
-        df['_'] = 1.0 - df.sum(axis=1)  # add implied "none of these events" category
-        cumsum = df.cumsum(axis=1)
-        draws = pd.Series(self.module.rng.rand(len(cumsum)), index=cumsum.index)
-        y = cumsum.gt(draws, axis=0)
-        outcome = y.idxmax(axis=1)
-
-        # return as a dict of form {person_id: outcome} only in those cases where the outcome is one of the events.
-        return outcome.loc[~(outcome == '_')].to_dict()
 
 
 class AlriIncidentCase(Event, IndividualScopeEventMixin):
@@ -1533,7 +1531,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             m.impose_symptoms_for_complication(person_id=person_id, complication=complication)
 
         # Consider delayed-onset of complications and schedule events accordingly
-        date_of_onset_delayed_complications = m.random_date(self.sim.date, date_of_outcome)
+        date_of_onset_delayed_complications = random_date(self.sim.date, date_of_outcome, m.rng)
         delayed_complications = models.delayed_complications(person_id=person_id)
         for delayed_complication in delayed_complications:
             self.sim.schedule_event(
@@ -1847,8 +1845,11 @@ class AlriIndividualLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
 
-class PropertiesOfOtherModules(Module):
+class AlriPropertiesOfOtherModules(Module):
     """For the purpose of the testing, this module generates the properties upon which the Alri module relies"""
+
+    INIT_DEPENDENCIES = {'Demography'}
+    ALTERNATIVE_TO = {'Hiv', 'Epi', 'NewbornOutcomes'}
 
     PROPERTIES = {
         'hv_inf': Property(Types.BOOL, 'temporary property'),
@@ -1862,7 +1863,6 @@ class PropertiesOfOtherModules(Module):
         'va_hib_all_doses': Property(Types.BOOL, 'temporary property'),
         'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'temporary property',
                                                    categories=['MAM', 'SAM', 'well']),
-
     }
 
     def __init__(self, name=None):

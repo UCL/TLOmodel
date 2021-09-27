@@ -75,7 +75,9 @@ def get_sim(use_simplified_birth=True):
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                      dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
+                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
+                     # Disable check to avoid error due to lack of Contraception module
+                     check_all_dependencies=False,
                      )
 
     # Edit the efficacy of PrEP to be perfect (for the purpose of these tests)

@@ -137,15 +137,19 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                  tclose=None,
                  priority=0)
 
+        if age <= 5:
+            # ----------------------------------- CHILD <=5 -----------------------------------
+            # It's a child: Run the ICMI algorithm for this child:
+            # NB. This includes children who are aged 5
+
+            # If one of the symptoms is diarrhoea, then run the algorithm for when a child presents with diarrhoea:
+            if 'diarrhoea' in symptoms:
+                if 'Diarrhoea' in self.sim.modules:
+                    self.sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
+                        person_id=person_id, hsi_event=self)
+
         # diagnostic algorithm for child <5 yrs
         if age < 5:
-            # ----------------------------------- CHILD <5 -----------------------------------
-            # It's a child: Run the ICMI algorithm for this child:
-
-            # First, if one of the symptoms is diarrhoea, then run the diarrhoea for a child routine:
-            if 'diarrhoea' in symptoms:
-                self.sim.modules['DxAlgorithmChild'].do_when_diarrhoea(person_id=person_id, hsi_event=self)
-
             # Next, run DxAlgorithmChild to get additional diagnoses:
             diagnosis = self.sim.modules["DxAlgorithmChild"].diagnose(
                 person_id=person_id, hsi_event=self
@@ -171,7 +175,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                         topen=self.sim.date,
                         tclose=None)
 
-        if (5 <= age < 15):
+        elif age < 15:
             # ----------------------------------- CHILD 5-14 -----------------------------------
             # Run DxAlgorithmChild to get (additional) diagnoses:
             diagnosis = self.sim.modules["DxAlgorithmChild"].diagnose(
@@ -198,7 +202,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                         topen=self.sim.date,
                         tclose=None)
 
-        if age >= 15:
+        else:
             # ----------------------------------- ADULT -----------------------------------
             if 'OesophagealCancer' in self.sim.modules:
                 # If the symptoms include dysphagia, then begin investigation for Oesophageal Cancer:
