@@ -1605,8 +1605,9 @@ class PregnancySupervisor(Module):
                          index=at_risk.loc[at_risk].index)
 
         df.loc[prom.loc[prom].index, 'ps_premature_rupture_of_membranes'] = True
+
         # We allow women to seek care for PROM
-        df.loc[prom.loc[prom].index, 'ps_emergency_event'] = True
+        df.loc[prom.loc[prom].index, 'ps_emergency_event'] = True # TODO:CHANGE BACK
 
         for person in prom.loc[prom].index:
             logger.info(key='maternal_complication', data={'person': person,

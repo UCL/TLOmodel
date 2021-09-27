@@ -40,7 +40,7 @@ indirect_causes = ['AIDS', 'severe_malaria', 'Suicide', 'diabetes', 'chronic_kid
 logs_dict = dict()
 
 new_parse_log_2010 = {2010: parse_log_file(
-    filepath=f"./outputs/calibration_files/test_lbw_logging_less_eptb_calibration_77__2021-09-23T112549.log")}
+    filepath=f"./outputs/calibration_files/chorio_forced_labour_calibration_978__2021-09-27T165934.log")}
 new_parse_log_2015 = {2015: parse_log_file(
     filepath=f"./outputs/calibration_files/anc1_checker_15_calibration_2__2021-09-22T153811.log")}
 logs_dict.update(new_parse_log_2010)
@@ -70,6 +70,10 @@ update_dicts(intrapartum_comps, master_dict_la_2010, master_dict_la_2015, 'labou
 update_dicts(postnatal_comps, master_dict_pn_2010, master_dict_pn_2015, 'postnatal_supervisor', 'maternal')
 update_dicts(neonatal_comps, master_dict_nb_2010, master_dict_nb_2015, 'newborn_outcomes', 'newborn')
 
+def get_crf(dict_incidence, death_label, year):
+    comp_death = logs_dict[year]['tlo.methods.demography']['death']['cause'] == death_label
+    cfr = (len(comp_death.loc[comp_death].index) / dict_incidence) * 100
+    print(cfr)
 
 #graph_maker.get_parity_graphs(logs_dict[2010])
 

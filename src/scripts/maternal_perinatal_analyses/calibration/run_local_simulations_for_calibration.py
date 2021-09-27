@@ -227,15 +227,20 @@ def do_run_using_dummy_contraception(config_name, start_date, end_date, seed, po
     sim.simulate(end_date=end_date)
 
 
-def do_run_forcing_ectopic_pregnancy_to_look_at_cfr(config_name, start_date, end_date, seed, population, parameters):
+def do_run_forcing_complication_pregnancy_to_look_at_cfr(config_name, start_date, end_date, seed, population,
+                                                         parameters):
     log_config = set_logging(config_name, seed)
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
     register_modules(sim)
     sim.make_initial_population(n=population)
+    #make_all_women_of_reproductive_age_pregnant_from_sim_start(sim)
     make_all_women_of_reproductive_age_pregnant_and_sim_start_at_labour_onset(sim)
     allow_varying_parameter_sets_to_be_used(parameters, sim)
 
-    sim.modules['Labour'].current_parameters['prob_pph_uterine_atony'] = 1
+    sim.modules['Labour'].current_parameters['prob_sepsis_chorioamnionitis'] = 1
+    #sim.modules['PregnancySupervisor'].current_parameters['prob_chorioamnionitis'] = 1
+    #sim.modules['PregnancySupervisor'].current_parameters['prob_prom_per_month'] = 0
+
 
     sim.simulate(end_date=end_date)
 
@@ -245,11 +250,13 @@ def normal_run(config_name, start_date, end_date, seed, population, parameters):
     register_modules(sim)
     sim.make_initial_population(n=population)
     allow_varying_parameter_sets_to_be_used(parameters, sim)
-    sim.modules['PregnancySupervisor'].current_parameters['baseline_prob_early_labour_onset'] = [0.002, 0.008,
-                                                                                                 0.027, 0.063]
+
     sim.simulate(end_date=end_date)
 
-normal_run('test_lbw_logging_less_eptb', Date(2010, 1, 1), Date(2011, 1, 1), 77, 10000, 2010)
+do_run_forcing_complication_pregnancy_to_look_at_cfr('chorio_forced_labour', Date(2010, 1, 1),
+                                                     Date(2010, 3, 1), 978, 1000, 2010)
+
+#normal_run('test_lbw_logging_less_eptb', Date(2010, 1, 1), Date(2011, 1, 1), 77, 10000, 2010)
 #normal_run('anc1_checker_15', Date(2010, 1, 1), Date(2011, 1, 1), 2, 10000, 2015)
 
 

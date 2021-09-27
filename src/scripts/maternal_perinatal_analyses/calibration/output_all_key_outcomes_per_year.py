@@ -14,7 +14,7 @@ scenario_filename = 'calibration_run_all_modules.py'  # <-- update this to look 
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_10k_pop_normal_contra_calibration_run_all_modules-2021-09-22T074358Z_(22_09)'
+graph_location = 'output_graphs_10k_pop_normal_contra_calibration_run_all_modules-2021-09-23T110518Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -146,8 +146,8 @@ def simple_line_chart(model_rate, target_rate, x_title, y_title, title, file_nam
     plt.ylabel(y_title)
     plt.title(title)
     plt.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
-    #plt.show()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.show()
 
 
 def simple_bar_chart(model_rates, x_title, y_title, title, file_name):
@@ -159,7 +159,7 @@ def simple_bar_chart(model_rates, x_title, y_title, title, file_name):
     plt.ylabel(y_title)
     plt.title(title)
     #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
-    #plt.show()
+    plt.show()
 
 
 def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_rate, x_label, y_label, title, file_name):
@@ -171,7 +171,7 @@ def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_rate,
     plt.ylabel(y_label)
     plt.title(title)
     #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
-    #plt.show()
+    plt.show()
 
 
 # ============================================  DENOMINATORS... ======================================================
@@ -233,7 +233,7 @@ plt.xlabel('Year')
 plt.ylabel('Pregnancies (mean)')
 plt.title('Mean number of pregnancies')
 #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
-#plt.show()
+plt.show()
 
 # -----------------------------------------------------Total births...------------------------------------------------
 births_results = extract_results(
@@ -256,7 +256,7 @@ plt.xlabel('Year')
 plt.ylabel('Births (mean)')
 plt.title('Mean number of Births per Year')
 #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/births.png')
-#plt.show()
+plt.show()
 
 # todo: some testing looking at live births vs total births...
 
@@ -375,7 +375,7 @@ plt.ylabel('% total births')
 plt.title('Proportion of women attending ANC1, AN4, ANC8 ')
 plt.legend()
 #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_coverage.png')
-#plt.show()
+plt.show()
 
 anc_count_df = anc_count_df.drop([0])
 for year in sim_years:
@@ -412,7 +412,7 @@ ax.set_ylabel('% of total yearly visits')
 ax.set_title('Number of ANC visits at birth per year')
 ax.legend()
 #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_total_visits.png')
-#plt.show()
+plt.show()
 
 
 # Mean proportion of women who attended at least one ANC visit that attended at < 4, 4-5, 6-7 and > 8 months
@@ -428,7 +428,8 @@ anc_ga_first_visit = extract_results(
 )
 
 anc_before_four_months = list()
-early_anc_4 = list()
+early_anc_4_list = list()
+late_anc_4_list = list()
 anc_before_four_five_months = list()
 anc_before_six_seven_months = list()
 anc_before_eight_plus_months = list()
@@ -452,17 +453,20 @@ for year in sim_years:
 
     early_anc = year_series.loc[(slice(1, 8), slice(0, 13)), 0:len(year_series.columns)]
     early_anc4 = year_series.loc[(slice(4, 8), slice(0, 17)), 0:len(year_series.columns)]
+    late_anc4 = year_series.loc[(slice(4, 8), slice(18, 50)), 0:len(year_series.columns)]
     four_to_five = year_series.loc[(slice(1, 8), slice(14, 22)), 0:len(year_series.columns)]
     six_to_seven = year_series.loc[(slice(1, 8), slice(23, 31)), 0:len(year_series.columns)]
     eight_plus = year_series.loc[(slice(1, 8), slice(32, 50)), 0:len(year_series.columns)]
 
     sum_means_early = get_means(early_anc)
     sum_means_early_anc4 = get_means(early_anc4)
+    sum_means_late_anc4 = get_means(late_anc4)
     sum_four = get_means(four_to_five)
     sum_six = get_means(six_to_seven)
     sum_eight = get_means(eight_plus)
 
-    early_anc_4.append((sum_means_early_anc4 / total_women_that_year) * 100)
+    early_anc_4_list.append((sum_means_early_anc4 / total_women_anc) * 100)
+    late_anc_4_list.append((sum_means_late_anc4 / total_women_anc) * 100)
     anc_before_four_months.append((sum_means_early/total_women_anc) * 100)
     anc_before_four_five_months.append((sum_four/total_women_anc) * 100)
     anc_before_six_seven_months.append((sum_six/total_women_anc) * 100)
@@ -483,7 +487,7 @@ ax.set_ylabel('% of ANC1 visits by gestational age')
 ax.set_title('Gestational age at first ANC visit by Year')
 ax.legend()
 #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_ga_first_visit_update.png')
-#plt.show()
+plt.show()
 
 target_rate_eanc4 = list()
 for year in sim_years:
@@ -492,8 +496,27 @@ for year in sim_years:
     else:
         target_rate_eanc4.append(36.7)
 
-simple_line_chart(early_anc_4, target_rate_eanc4, 'Year', '% total deliveries',
+simple_line_chart(early_anc_4_list, target_rate_eanc4, 'Year', '% total deliveries',
                   'Proportion of women attending attending ANC4+ with first visit early', 'anc_prop_early_anc4')
+
+total_anc4 = [x + y for x, y in zip(late_anc_4_list, early_anc_4_list)]
+prop_early = [(x / y) * 100 for x, y in zip(early_anc_4_list, total_anc4)]
+prop_late = [(x / y) * 100 for x, y in zip(late_anc_4_list, total_anc4)]
+
+labels = sim_years
+width = 0.35       # the width of the bars: can also be len(x) sequence
+fig, ax = plt.subplots()
+ax.bar(labels, prop_early, width, label='Early ANC4+',
+       bottom=prop_late)
+ax.bar(labels, prop_late, width, label='Late ANC4+')
+ax.set_ylabel('% of women attending ANC4+')
+ax.set_title('Early vs Late initation of ANC4+')
+ax.legend()
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/early_late_ANC4+.png')
+plt.show()
+
+
+
 
 
 # TODO: quartiles, median month ANC1
@@ -551,7 +574,7 @@ ax.set_ylabel('% of Births by Location')
 ax.set_title('Proportion of Total Births by Location of Delivery')
 ax.legend()
 #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sba_delivery_location.png')
-#plt.show()
+plt.show()
 
 
 # 3.) Postnatal Care
@@ -624,7 +647,7 @@ plt.ylabel('Proportion of total births')
 plt.title('Yearly trends for PNC1 attendance')
 plt.legend()
 #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pnc_pnc1.png')
-#plt.show()
+plt.show()
 
 
 def get_early_late_pnc_split(module, target, file_name):
@@ -656,7 +679,7 @@ def get_early_late_pnc_split(module, target, file_name):
     ax.set_title(f'Proportion of {target} PNC1 Visits Occuring pre/post 48hrs Postnatal')
     ax.legend()
     #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
-    #plt.show()
+    plt.show()
 
 
 get_early_late_pnc_split('labour', 'Maternal', 'pnc_maternal_early')
@@ -852,7 +875,7 @@ def get_anaemia_graphs(df, timing):
     plt.title(f'Yearly trends for prevalence of anaemia by severity at {timing}')
     plt.legend()
     #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anaemia_by_severity_{timing}.png')
-    #plt.show()
+    plt.show()
 
 
 get_anaemia_graphs(anaemia_results, 'delivery')
@@ -957,6 +980,21 @@ ltl_uqs = [x + y for x, y in zip(early_ptl_data[2], late_ptl_data[2])]
 line_graph_with_ci_and_target_rate(total_ptl_rates, ptl_lqs, ltl_uqs, target_rate_ptl, 'Year',
                                    'Proportion of total births', 'Preterm birth rate', 'ptb_rate')
 
+prop_early = [(x / y) * 100 for x, y in zip(early_ptl_data[0], total_ptl_rates)]
+prop_late = [(x / y) * 100 for x, y in zip(late_ptl_data[0], total_ptl_rates)]
+
+labels = sim_years
+width = 0.35       # the width of the bars: can also be len(x) sequence
+fig, ax = plt.subplots()
+
+ax.bar(labels, prop_early, width, label='Early Preterm',
+       bottom=prop_late)
+ax.bar(labels, prop_late, width, label='Late Preterm')
+ax.set_ylabel('% of total Preterm Births')
+ax.set_title('Early vs Late Preterm Births')
+ax.legend()
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/early_late_preterm.png')
+plt.show()
 
 # todo plot early and late seperated
 
@@ -1178,9 +1216,8 @@ direct_causes = ['ectopic_pregnancy', 'spontaneous_abortion', 'induced_abortion'
                  'uterine_rupture', 'intrapartum_sepsis', 'postpartum_sepsis', 'postpartum_haemorrhage',
                  'secondary_postpartum_haemorrhage', 'antepartum_haemorrhage']
 
-
-#list_of_proportions_dicts = list()
 proportions_dicts = dict()
+crude_death_dict = dict()
 total_deaths_per_year = list()
 sum_lqs = list()
 sum_uqs = list()
@@ -1193,18 +1230,11 @@ for year in sim_years:
 
     for complication in direct_causes:
         if complication in death_results.loc[year].index:
-            if complication == 'severe_gestational_hypertension': # todo:remove
-                yearly_mean_number.append(0)
-                yearly_lq.append(0)
-                yearly_uq.append(0)
-            else:
                 mean = death_results.loc[year, complication].mean()
                 yearly_mean_number.append(mean)
                 yearly_lq.append(death_results.loc[year, complication].quantile(0.025))
                 yearly_uq.append(death_results.loc[year, complication].quantile(0.925))
                 causes.update({f'{complication}': mean})
-
-            # causes.update({f'{complication}_{year}': mean})
         else:
             yearly_mean_number.append(0)
             yearly_lq.append(0)
@@ -1217,11 +1247,13 @@ for year in sim_years:
     sum_lqs.append(total_lq)
     sum_uqs.append(total_uq)
 
+    #raw_deaths = {year: causes}
+    #crude_death_dict.update(raw_deaths)
+
     for complication in causes:
         causes[complication] = (causes[complication] / total_deaths_this_year) * 100
     new_dict = {year: causes}
     proportions_dicts.update(new_dict)
-
 
 direct_mmr_per_year = [(x/y) * 100000 for x, y in zip(total_deaths_per_year, total_births_per_year)]
 lq_mmr = [(x/y) * 100000 for x, y in zip(sum_lqs, total_births_per_year)]
@@ -1250,8 +1282,35 @@ ax1.pie(sizes, labels=labels, autopct='%1.1f%%',
 ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
 plt.title(f'Proportion of total maternal deaths by cause (mean) 2011-2020')
 #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mat_death_by_cause_total.png')
-#plt.show()
+plt.show()
 
+simplified_df = props_df.transpose()
+for column in simplified_df.columns:
+    simplified_df[column] = simplified_df[column].fillna(0)
+
+simplified_df['Abortion'] = simplified_df['induced_abortion'] + simplified_df['spontaneous_abortion']
+simplified_df['Severe PE/Eclampsia'] = simplified_df['severe_pre_eclampsia'] + simplified_df['eclampsia']
+simplified_df['PPH'] = simplified_df['postpartum_haemorrhage'] + simplified_df['secondary_postpartum_haemorrhage']
+simplified_df['Sepsis'] = simplified_df['postpartum_sepsis'] + simplified_df['intrapartum_sepsis'] + \
+                          simplified_df['antenatal_sepsis']
+
+for column in ['postpartum_haemorrhage', 'secondary_postpartum_haemorrhage', 'severe_pre_eclampsia', 'eclampsia',
+               'induced_abortion', 'spontaneous_abortion', 'intrapartum_sepsis', 'postpartum_sepsis',
+               'antenatal_sepsis']:
+    simplified_df = simplified_df.drop(columns=[column])
+
+labels = list(simplified_df.columns)
+values = list()
+for column in simplified_df.columns:
+    values.append(simplified_df[column].mean())
+sizes = values
+fig1, ax1 = plt.subplots()
+ax1.pie(sizes, labels=labels, autopct='%1.1f%%',
+            shadow=True, startangle=90)
+ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+plt.title(f'Proportion of total maternal deaths by cause (mean) 2011-2020')
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mat_death_by_cause_simplified.png')
+plt.show()
 
 death_results_labels = extract_results(
     results_folder,
@@ -1265,6 +1324,79 @@ mm = get_comp_mean_and_rate('Maternal Disorders', total_births_per_year, death_r
 
 line_graph_with_ci_and_target_rate(mm[0], mm[1], mm[2], target_rate_mmr, 'Year',
                                    'Rate per 100,000 births', 'Maternal Mortality Rate per Year (using labels)', 'mmr')
+
+
+# =========================================== CASE FATALITY PER COMPLICATION ==========================================
+tr = list()  # todo:update?
+dummy_denom = list()
+for years in sim_years:
+    tr.append(0)
+    dummy_denom.append(1)
+
+mean_ep = get_mean_and_quants_from_str_df(an_comps, 'ectopic_unruptured')[0]
+mean_sa = get_mean_and_quants_from_str_df(an_comps, 'complicated_spontaneous_abortion')[0]
+mean_ia = get_mean_and_quants_from_str_df(an_comps, 'complicated_induced_abortion')[0]
+mean_ur = get_mean_and_quants_from_str_df(la_comps, 'uterine_rupture')[0]
+mean_lsep = get_mean_and_quants_from_str_df(la_comps, 'sepsis')[0]
+mean_psep = get_mean_and_quants_from_str_df(pn_comps, 'sepsis')[0]
+mean_asep = get_mean_and_quants_from_str_df(an_comps, 'clinical_chorioamnionitis')[0]
+mean_ppph = get_mean_and_quants_from_str_df(la_comps, 'primary_postpartum_haemorrhage')[0]
+mean_spph = get_mean_and_quants_from_str_df(pn_comps, 'secondary_postpartum_haemorrhage')[0]
+
+
+mean_spe = get_comp_mean_and_rate_across_multiple_dataframes('severe_pre_eclamp', dummy_denom, 1,
+                                                             [an_comps, la_comps, pn_comps])[0]
+mean_ec = get_comp_mean_and_rate_across_multiple_dataframes('eclampsia', dummy_denom, 1,
+                                                             [an_comps, la_comps, pn_comps])[0]
+mean_sgh = get_comp_mean_and_rate_across_multiple_dataframes('severe_gest_htn', dummy_denom, 1,
+                                                             [an_comps, la_comps, pn_comps])[0]
+
+mm_aph_mean = get_comp_mean_and_rate_across_multiple_dataframes('mild_mod_antepartum_haemorrhage', dummy_denom, 1,
+                                                                [an_comps, la_comps])[0]
+s_aph_mean = get_comp_mean_and_rate_across_multiple_dataframes('severe_antepartum_haemorrhage',
+                                                               dummy_denom, 1, [an_comps, la_comps])[0]
+mean_aph = [x + y for x, y in zip(mm_aph_mean, s_aph_mean)]
+
+for inc_list in [mean_ep, mean_sa, mean_ia, mean_ur, mean_lsep,
+                mean_psep, mean_asep, mean_ppph, mean_spph, mean_spe, mean_ec, mean_sgh, mean_aph]:
+
+    for index, item in enumerate(inc_list):
+        if item == 0:
+            inc_list[index] = 0.1
+
+for inc_list, complication in \
+    zip([mean_ep, mean_sa, mean_ia, mean_ur, mean_lsep, mean_psep, mean_asep, mean_ppph, mean_spph, mean_spe, mean_ec,
+         mean_sgh, mean_aph],
+        ['ectopic_pregnancy', 'spontaneous_abortion', 'induced_abortion', 'uterine_rupture', 'intrapartum_sepsis',
+         'postpartum_sepsis', 'antenatal_sepsis', 'postpartum_haemorrhage', 'secondary_postpartum_haemorrhage',
+         'severe_pre_eclampsia', 'eclampsia', 'severe_gestational_hypertension', 'antepartum_haemorrhage']):
+
+    cfr = get_comp_mean_and_rate(complication, inc_list, death_results, 100)[0]
+    simple_line_chart(cfr, tr, 'Year', 'Total CFR', f'Yearly CFR for {complication}',
+                      f'{complication}_cfr_per_year')
+
+an = get_comp_mean_and_rate('antenatal_sepsis', mean_asep, death_results, 100)[0]
+ip = get_comp_mean_and_rate('intrapartum_sepsis', mean_lsep, death_results, 100)[0]
+pp = get_comp_mean_and_rate('postpartum_sepsis', mean_psep, death_results, 100)[0]
+mean_cfr = [(x + y + z) / 3 for x, y, z in zip(an, ip, pp)]
+simple_line_chart(mean_cfr, tr, 'Year', 'Total CFR', 'Yearly CFR for Sepsis (combined)', 'combined_sepsis_cfr_per_year')
+
+ip = get_comp_mean_and_rate('postpartum_haemorrhage', mean_ppph, death_results, 100)[0]
+pp = get_comp_mean_and_rate('secondary_postpartum_haemorrhage', mean_spph, death_results, 100)[0]
+mean_cfr = [(x + y) / 2 for x, y in zip(ip, pp)]
+simple_line_chart(mean_cfr, tr, 'Year', 'Total CFR', 'Yearly CFR for PPH (combined)', 'combined_pph_cfr_per_year')
+
+ia = get_comp_mean_and_rate('induced_abortion', mean_ia, death_results, 100)[0]
+sa = get_comp_mean_and_rate('spontaneous_abortion', mean_sa, death_results, 100)[0]
+mean_cfr = [(x + y) / 2 for x, y in zip(ia, sa)]
+simple_line_chart(mean_cfr, tr, 'Year', 'Total CFR', 'Yearly CFR for Abortion (combined)',
+                  'combined_abortion_cfr_per_year')
+
+spe = get_comp_mean_and_rate('severe_pre_eclampsia', mean_spe, death_results, 100)[0]
+ec = get_comp_mean_and_rate('eclampsia', mean_ec, death_results, 100)[0]
+mean_cfr = [(x + y) / 2 for x, y in zip(spe, ec)]
+simple_line_chart(mean_cfr, tr, 'Year', 'Total CFR', 'Yearly CFR for Severe Pre-eclampsia/Eclampsia (combined)',
+                  'combined_spe_ec_cfr_per_year')
 
 # ==================================================== NEWBORN OUTCOMES ===============================================
 #  ------------------------------------------- Neonatal sepsis (labour & postnatal) -----------------------------------
@@ -1353,7 +1485,7 @@ plt.ylabel('Rate per 1000 births')
 plt.title('Yearly trends for Congenital Birth Anomalies')
 plt.legend()
 #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_rate_of_cong_anom.png')
-#plt.show()
+plt.show()
 
 
 # Breastfeeding
@@ -1413,7 +1545,7 @@ for year, dictionary in zip(sim_years, list_of_proportions_dicts_nb):
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     plt.title(f'Proportion of total neonatal deaths by cause in {year} ')
     #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_death_by_cause_{year}.png')
-    #plt.show()
+    plt.show()
 
 
 
