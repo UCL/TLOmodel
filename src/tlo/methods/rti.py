@@ -1474,12 +1474,13 @@ class RTI(Module):
         p = self.parameters
         person = df.loc[person_id]
         if person.is_alive:
-            # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to rti
+            # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to
+            # rti
             assert person.rt_med_int, 'person sent here not been through RTI_MedInt'
             # Determine what injuries are able to be treated by surgery by checking the injury codes which are currently
             # treated in this simulation, it seems there is a limited available to treat spinal cord injuries and chest
-            # trauma in Malawi, so these are initially left out, but we will test different scenarios to see what happens
-            # when we include those treatments
+            # trauma in Malawi, so these are initially left out, but we will test different scenarios to see what
+            # happens when we include those treatments
             surgically_treated_codes = ['112', '811', '812', '813a', '813b', '813c', '133a', '133b', '133c', '133d', '134a',
                                         '134b', '135', '552', '553', '554', '342', '343', '414', '361', '363',
                                         '782', '782a', '782b', '782c', '783', '822a', '882', '883', '884',
@@ -1487,14 +1488,14 @@ class RTI(Module):
                                         'P782c', 'P783', 'P882', 'P883', 'P884'
                                         ]
 
-            # If we allow surgical treatment of spinal cord injuries, extend the surgically treated codes to include spinal
-            # cord injury codes
+            # If we allow surgical treatment of spinal cord injuries, extend the surgically treated codes to include
+            # spinal cord injury codes
             if 'include_spine_surgery' in p['allowed_interventions']:
                 additional_codes = ['673a', '673b', '674a', '674b', '675a', '675b', '676', 'P673a', 'P673b', 'P674',
                                     'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676']
                 surgically_treated_codes.extend(additional_codes)
-            # If we allow surgical treatment of chest trauma, extend the surgically treated codes to include chest trauma
-            # codes.
+            # If we allow surgical treatment of chest trauma, extend the surgically treated codes to include chest
+            # trauma codes.
             if 'include_thoroscopy' in p['allowed_interventions']:
                 additional_codes = ['441', '443', '453', '453a', '453b', '463']
                 surgically_treated_codes.extend(additional_codes)
@@ -1548,7 +1549,8 @@ class RTI(Module):
             # check that the person requesting surgery has an injury in their minor surgery treatment plan
             assert len(df.loc[person_id, 'rt_injuries_for_minor_surgery']) > 0, \
                 'this person has asked for a minor surgery but does not need it'
-            # check that for each injury due to be treated with a minor surgery, the injury hasn't previously been treated
+            # check that for each injury due to be treated with a minor surgery, the injury hasn't previously been
+            # treated
             for code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
                 column, found_code = self.rti_find_injury_column(person_id, [code])
                 index_in_rt_recovery_dates = int(column[-1]) - 1
@@ -1582,7 +1584,8 @@ class RTI(Module):
         person = df.loc[person_id]
 
         if person.is_alive:
-            # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to rti
+            # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to
+            # rti
             assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
             # Isolate the relevant injury information
             person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
@@ -1657,7 +1660,7 @@ class RTI(Module):
         df = self.sim.population.props
         person = df.loc[person_id]
 
-        if  person.is_alive:
+        if person.is_alive:
             # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to
             # rti
             assert person.rt_med_int, 'person not been through rti med int'
@@ -1695,8 +1698,8 @@ class RTI(Module):
             # Isolate the relevant injury information
             person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
             fracture_codes = ['712a', '712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
-            # check that the codes assigned for treatment by rt_injuries_to_cast and the codes treated by rti_fracture_cast
-            # coincide
+            # check that the codes assigned for treatment by rt_injuries_to_cast and the codes treated by
+            # rti_fracture_cast coincide
             assert len(set(df.loc[person_id, 'rt_injuries_to_cast']) & set(fracture_codes)) > 0, \
                 'This person has asked for a fracture cast'
             # Check they have an injury treated by HSI_RTI_Fracture_Cast
