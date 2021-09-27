@@ -129,6 +129,7 @@ class Contraception(Module):
         assert self.states_that_may_require_HSI_to_switch_to.issubset(self.all_contraception_states)
         assert self.states_that_may_require_HSI_to_maintain_on.issubset(self.states_that_may_require_HSI_to_switch_to)
 
+        self.processed_param = dict()  # (Will store the processed data for rates/probabilities of outcomes).
         self.cons_codes = dict()  # (Will store the consumables codes for use in the HSI)
         self.rng2 = None  # (Will be a second random number generator, used for things to do with scheduling HSI)
 
@@ -180,6 +181,7 @@ class Contraception(Module):
         """
 
         # 1) Process parameters
+        self.processed_params = self.process_params()
         self.process_parameters()
 
         # 2) Set initial values for properties
@@ -268,6 +270,14 @@ class Contraception(Module):
         # Initiate mother of newborn to a contraceptive
         self.select_contraceptive_following_birth(mother_id)
 
+    def process_params(self):
+        """Process parameters that have been read-in"""
+        # ** NEW VERSION **
+
+        processed_param = dict()
+
+        return processed_param
+
     def process_parameters(self):
         """Process parameters that have been read-in"""
         # =================== ARRANGE INPUTS FOR USE BY REGULAR EVENTS =============================
@@ -296,6 +306,8 @@ class Contraception(Module):
         c_adjusted = c_baseline.mul(c_multiplier.r_init1_age, axis='index')
         c_adjusted = c_baseline + c_adjusted
         self.parameters['contraception_initiation1'] = c_adjusted.set_index(c_multiplier.age)
+
+
 
         # For ContraceptionPoll.switch ----------------------------------------------------
         switching_prob = self.parameters['Switching'].transpose()
