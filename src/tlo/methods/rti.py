@@ -1473,48 +1473,49 @@ class RTI(Module):
         df = self.sim.population.props
         p = self.parameters
         person = df.loc[person_id]
-        # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to rti
-        assert person.rt_med_int, 'person sent here not been through RTI_MedInt'
-        # Determine what injuries are able to be treated by surgery by checking the injury codes which are currently
-        # treated in this simulation, it seems there is a limited available to treat spinal cord injuries and chest
-        # trauma in Malawi, so these are initially left out, but we will test different scenarios to see what happens
-        # when we include those treatments
-        surgically_treated_codes = ['112', '811', '812', '813a', '813b', '813c', '133a', '133b', '133c', '133d', '134a',
-                                    '134b', '135', '552', '553', '554', '342', '343', '414', '361', '363',
-                                    '782', '782a', '782b', '782c', '783', '822a', '882', '883', '884',
-                                    'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135', 'P782a', 'P782b',
-                                    'P782c', 'P783', 'P882', 'P883', 'P884'
-                                    ]
-
-        # If we allow surgical treatment of spinal cord injuries, extend the surgically treated codes to include spinal
-        # cord injury codes
-        if 'include_spine_surgery' in p['allowed_interventions']:
-            additional_codes = ['673a', '673b', '674a', '674b', '675a', '675b', '676', 'P673a', 'P673b', 'P674',
-                                'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676']
-            surgically_treated_codes.extend(additional_codes)
-        # If we allow surgical treatment of chest trauma, extend the surgically treated codes to include chest trauma
-        # codes.
-        if 'include_thoroscopy' in p['allowed_interventions']:
-            additional_codes = ['441', '443', '453', '453a', '453b', '463']
-            surgically_treated_codes.extend(additional_codes)
-        # check this person has an injury which should be treated here
-        assert len(set(person.rt_injuries_for_major_surgery) & set(surgically_treated_codes)) > 0, \
-            'This person has asked for surgery but does not have an appropriate injury'
-        # isolate the relevant injury information
-        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
-        # Check whether the person sent to surgery has an injury which actually requires surgery
-        _, counts = RTI.rti_find_and_count_injuries(person_injuries, surgically_treated_codes)
-        assert counts > 0, 'This person has been sent to major surgery without the right injuries'
-        assert len(person.rt_injuries_for_major_surgery) > 0
-        # for each injury which has been assigned to be treated by major surgery make sure that the injury hasn't
-        # already been treated
-        for code in person.rt_injuries_for_major_surgery:
-            column, found_code = self.rti_find_injury_column(person_id, [code])
-            index_in_rt_recovery_dates = int(column[-1]) - 1
-            if not pd.isnull(person.rt_date_to_remove_daly[index_in_rt_recovery_dates]):
-                df.loc[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates] = pd.NaT
-        # If this person is alive schedule major surgeries
         if person.is_alive:
+            # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to rti
+            assert person.rt_med_int, 'person sent here not been through RTI_MedInt'
+            # Determine what injuries are able to be treated by surgery by checking the injury codes which are currently
+            # treated in this simulation, it seems there is a limited available to treat spinal cord injuries and chest
+            # trauma in Malawi, so these are initially left out, but we will test different scenarios to see what happens
+            # when we include those treatments
+            surgically_treated_codes = ['112', '811', '812', '813a', '813b', '813c', '133a', '133b', '133c', '133d', '134a',
+                                        '134b', '135', '552', '553', '554', '342', '343', '414', '361', '363',
+                                        '782', '782a', '782b', '782c', '783', '822a', '882', '883', '884',
+                                        'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135', 'P782a', 'P782b',
+                                        'P782c', 'P783', 'P882', 'P883', 'P884'
+                                        ]
+
+            # If we allow surgical treatment of spinal cord injuries, extend the surgically treated codes to include spinal
+            # cord injury codes
+            if 'include_spine_surgery' in p['allowed_interventions']:
+                additional_codes = ['673a', '673b', '674a', '674b', '675a', '675b', '676', 'P673a', 'P673b', 'P674',
+                                    'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676']
+                surgically_treated_codes.extend(additional_codes)
+            # If we allow surgical treatment of chest trauma, extend the surgically treated codes to include chest trauma
+            # codes.
+            if 'include_thoroscopy' in p['allowed_interventions']:
+                additional_codes = ['441', '443', '453', '453a', '453b', '463']
+                surgically_treated_codes.extend(additional_codes)
+            # check this person has an injury which should be treated here
+            assert len(set(person.rt_injuries_for_major_surgery) & set(surgically_treated_codes)) > 0, \
+                'This person has asked for surgery but does not have an appropriate injury'
+            # isolate the relevant injury information
+            person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
+            # Check whether the person sent to surgery has an injury which actually requires surgery
+            _, counts = RTI.rti_find_and_count_injuries(person_injuries, surgically_treated_codes)
+            assert counts > 0, 'This person has been sent to major surgery without the right injuries'
+            assert len(person.rt_injuries_for_major_surgery) > 0
+            # for each injury which has been assigned to be treated by major surgery make sure that the injury hasn't
+            # already been treated
+            for code in person.rt_injuries_for_major_surgery:
+                column, found_code = self.rti_find_injury_column(person_id, [code])
+                index_in_rt_recovery_dates = int(column[-1]) - 1
+                if not pd.isnull(person.rt_date_to_remove_daly[index_in_rt_recovery_dates]):
+                    df.loc[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates] = pd.NaT
+            # schedule major surgeries
+
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_RTI_Major_Surgeries(module=self,
                                                   person_id=person_id),
@@ -1540,28 +1541,28 @@ class RTI(Module):
         assert df.at[person_id, 'rt_med_int'], 'Person sent for treatment did not go through rti med int'
         # Isolate the person
         person = df.loc[person_id]
-        # state the codes treated by minor surgery
-        surgically_treated_codes = ['211', '212', '291', '241', '322', '323', '722', '811', '812', '813a',
-                                    '813b', '813c']
-        # check that the person requesting surgery has an injury in their minor surgery treatment plan
-        assert len(df.loc[person_id, 'rt_injuries_for_minor_surgery']) > 0, \
-            'this person has asked for a minor surgery but does not need it'
-        # check that for each injury due to be treated with a minor surgery, the injury hasn't previously been treated
-        for code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
-            column, found_code = self.rti_find_injury_column(person_id, [code])
-            index_in_rt_recovery_dates = int(column[-1]) - 1
-            assert pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates])
-        # check that this person's injuries that were decided to be treated with a minor surgery and the injuries
-        # actually treated by minor surgeries coincide
-        assert len(set(df.loc[person_id, 'rt_injuries_for_minor_surgery']) & set(surgically_treated_codes)) > 0, \
-            'This person has asked for a minor surgery but does not need it'
-        # Isolate the relevant injury information
-        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
-        # Check whether the person requesting minor surgeries has an injury that requires minor surgery
-        _, counts = RTI.rti_find_and_count_injuries(person_injuries, surgically_treated_codes)
-        assert counts > 0
-        # if this person is alive schedule the minor surgery
         if person.is_alive:
+            # state the codes treated by minor surgery
+            surgically_treated_codes = ['211', '212', '291', '241', '322', '323', '722', '811', '812', '813a',
+                                        '813b', '813c']
+            # check that the person requesting surgery has an injury in their minor surgery treatment plan
+            assert len(df.loc[person_id, 'rt_injuries_for_minor_surgery']) > 0, \
+                'this person has asked for a minor surgery but does not need it'
+            # check that for each injury due to be treated with a minor surgery, the injury hasn't previously been treated
+            for code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
+                column, found_code = self.rti_find_injury_column(person_id, [code])
+                index_in_rt_recovery_dates = int(column[-1]) - 1
+                assert pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates])
+            # check that this person's injuries that were decided to be treated with a minor surgery and the injuries
+            # actually treated by minor surgeries coincide
+            assert len(set(df.loc[person_id, 'rt_injuries_for_minor_surgery']) & set(surgically_treated_codes)) > 0, \
+                'This person has asked for a minor surgery but does not need it'
+            # Isolate the relevant injury information
+            person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
+            # Check whether the person requesting minor surgeries has an injury that requires minor surgery
+            _, counts = RTI.rti_find_and_count_injuries(person_injuries, surgically_treated_codes)
+            assert counts > 0
+            # schedule the minor surgery
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_RTI_Minor_Surgeries(module=self,
                                                   person_id=person_id),
@@ -1578,17 +1579,18 @@ class RTI(Module):
         :return: n/a
         """
         df = self.sim.population.props
-        # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to rti
-        assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
-        # Isolate the relevant injury information
-        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
-        # check this person is injured, search they have an injury code that isn't "none".
-        idx, counts = RTI.rti_find_and_count_injuries(person_injuries,
-                                                      self.PROPERTIES.get('rt_injury_1').categories[1:])
-        assert counts > 0, 'This person has asked for pain relief despite not being injured'
         person = df.loc[person_id]
-        # if the person is alive schedule pain management
+
         if person.is_alive:
+            # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to rti
+            assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
+            # Isolate the relevant injury information
+            person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
+            # check this person is injured, search they have an injury code that isn't "none".
+            idx, counts = RTI.rti_find_and_count_injuries(person_injuries,
+                                                          self.PROPERTIES.get('rt_injury_1').categories[1:])
+            assert counts > 0, 'This person has asked for pain relief despite not being injured'
+            # schedule pain management
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_RTI_Acute_Pain_Management(module=self,
                                                         person_id=person_id),
@@ -1606,24 +1608,24 @@ class RTI(Module):
         """
         df = self.sim.population.props
         person = df.loc[person_id]
-        if not person.is_alive:
-            return
-        # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to rti
-        assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
-        # Isolate the relevant injury information
-        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
-        laceration_codes = ['1101', '2101', '3101', '4101', '5101', '6101', '7101', '8101']
-        # Check they have a laceration which needs stitches
-        _, counts = RTI.rti_find_and_count_injuries(person_injuries, laceration_codes)
-        assert counts > 0, "This person has asked for stiches, but doens't have a laceration"
-        # if the person is alive request the hsi event
-        self.sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_RTI_Suture(module=self,
-                                     person_id=person_id),
-            priority=0,
-            topen=self.sim.date,
-            tclose=self.sim.date + DateOffset(days=15)
-        )
+        if person.is_alive:
+            # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to
+            # rti
+            assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
+            # Isolate the relevant injury information
+            person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
+            laceration_codes = ['1101', '2101', '3101', '4101', '5101', '6101', '7101', '8101']
+            # Check they have a laceration which needs stitches
+            _, counts = RTI.rti_find_and_count_injuries(person_injuries, laceration_codes)
+            assert counts > 0, "This person has asked for stiches, but doens't have a laceration"
+            # request suture
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_RTI_Suture(module=self,
+                                         person_id=person_id),
+                priority=0,
+                topen=self.sim.date,
+                tclose=self.sim.date + DateOffset(days=15)
+            )
 
     def rti_ask_for_shock_treatment(self, person_id):
         """
@@ -1633,17 +1635,16 @@ class RTI(Module):
         """
         df = self.sim.population.props
         person = df.loc[person_id]
-        if not person.is_alive:
-            return
-        assert person.rt_in_shock, 'person requesting shock treatment is not in shock'
+        if person.is_alive:
+            assert person.rt_in_shock, 'person requesting shock treatment is not in shock'
 
-        self.sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_RTI_Shock_Treatment(module=self,
-                                              person_id=person_id),
-            priority=0,
-            topen=self.sim.date,
-            tclose=self.sim.date + DateOffset(days=15)
-        )
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_RTI_Shock_Treatment(module=self,
+                                                  person_id=person_id),
+                priority=0,
+                topen=self.sim.date,
+                tclose=self.sim.date + DateOffset(days=15)
+            )
 
     def rti_ask_for_burn_treatment(self, person_id):
         """
@@ -1656,26 +1657,25 @@ class RTI(Module):
         df = self.sim.population.props
         person = df.loc[person_id]
 
-        if not person.is_alive:
-            return
+        if  person.is_alive:
+            # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to
+            # rti
+            assert person.rt_med_int, 'person not been through rti med int'
+            # Isolate the relevant injury information
+            person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
+            burn_codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
+            # Check to see whether they have a burn which needs treatment
+            _, counts = RTI.rti_find_and_count_injuries(person_injuries, burn_codes)
+            assert counts > 0, "This person has asked for burn treatment, but doens't have any burns"
 
-        # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to rti
-        assert person.rt_med_int, 'person not been through rti med int'
-        # Isolate the relevant injury information
-        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
-        burn_codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
-        # Check to see whether they have a burn which needs treatment
-        _, counts = RTI.rti_find_and_count_injuries(person_injuries, burn_codes)
-        assert counts > 0, "This person has asked for burn treatment, but doens't have any burns"
-
-        # if this person is alive ask for the hsi event
-        self.sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_RTI_Burn_Management(module=self,
-                                              person_id=person_id),
-            priority=0,
-            topen=self.sim.date,
-            tclose=self.sim.date + DateOffset(days=15)
-        )
+            # if this person is alive ask for the hsi event
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_RTI_Burn_Management(module=self,
+                                                  person_id=person_id),
+                priority=0,
+                topen=self.sim.date,
+                tclose=self.sim.date + DateOffset(days=15)
+            )
 
     def rti_ask_for_fracture_casts(self, person_id):
         """
@@ -1688,28 +1688,28 @@ class RTI(Module):
         """
         df = self.sim.population.props
         person = df.loc[person_id]
-        if not person.is_alive:
-            return
-        # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to rti
-        assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
-        # Isolate the relevant injury information
-        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
-        fracture_codes = ['712a', '712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
-        # check that the codes assigned for treatment by rt_injuries_to_cast and the codes treated by rti_fracture_cast
-        # coincide
-        assert len(set(df.loc[person_id, 'rt_injuries_to_cast']) & set(fracture_codes)) > 0, \
-            'This person has asked for a fracture cast'
-        # Check they have an injury treated by HSI_RTI_Fracture_Cast
-        _, counts = RTI.rti_find_and_count_injuries(person_injuries, fracture_codes)
-        assert counts > 0, "This person has asked for fracture treatment, but doens't have appropriate fractures"
-        # if this person is alive request the hsi
-        self.sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_RTI_Fracture_Cast(module=self,
-                                            person_id=person_id),
-            priority=0,
-            topen=self.sim.date,
-            tclose=self.sim.date + DateOffset(days=15)
-        )
+        if person.is_alive:
+            # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to
+            # rti
+            assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
+            # Isolate the relevant injury information
+            person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
+            fracture_codes = ['712a', '712b', '712c', '811', '812', '813a', '813b', '813c', '822a', '822b']
+            # check that the codes assigned for treatment by rt_injuries_to_cast and the codes treated by rti_fracture_cast
+            # coincide
+            assert len(set(df.loc[person_id, 'rt_injuries_to_cast']) & set(fracture_codes)) > 0, \
+                'This person has asked for a fracture cast'
+            # Check they have an injury treated by HSI_RTI_Fracture_Cast
+            _, counts = RTI.rti_find_and_count_injuries(person_injuries, fracture_codes)
+            assert counts > 0, "This person has asked for fracture treatment, but doens't have appropriate fractures"
+            # if this person is alive request the hsi
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_RTI_Fracture_Cast(module=self,
+                                                person_id=person_id),
+                priority=0,
+                topen=self.sim.date,
+                tclose=self.sim.date + DateOffset(days=15)
+            )
 
     def rti_ask_for_open_fracture_treatment(self, person_id, counts):
         """Function called by HSI_RTI_MedicalIntervention to centralise open fracture treatment requests. This function
@@ -1722,26 +1722,25 @@ class RTI(Module):
         """
         df = self.sim.population.props
         person = df.loc[person_id]
-        if not person.is_alive:
-            return
-        # Check to see whether they have been sent here from RTI_MedicalIntervention and are haven't died due to rti
-        assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
-        # Isolate the relevant injury information
+        if person.is_alive:
+            # Check to see whether they have been sent here from RTI_MedicalIntervention and are haven't died due to rti
+            assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
+            # Isolate the relevant injury information
 
-        open_fracture_codes = ['813bo', '813co', '813do', '813eo']
-        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
-        # Check that they have an open fracture
-        _, counts = RTI.rti_find_and_count_injuries(person_injuries, open_fracture_codes)
-        assert counts > 0, "This person has requested open fracture treatment but doesn't require one"
-        # if the person is alive request the hsi
-        for i in range(0, counts):
-            # shedule the treatments, say the treatments occur a day appart for now
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_RTI_Open_Fracture_Treatment(module=self, person_id=person_id),
-                priority=0,
-                topen=self.sim.date + DateOffset(days=0 + i),
-                tclose=self.sim.date + DateOffset(days=15 + i)
-            )
+            open_fracture_codes = ['813bo', '813co', '813do', '813eo']
+            person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
+            # Check that they have an open fracture
+            _, counts = RTI.rti_find_and_count_injuries(person_injuries, open_fracture_codes)
+            assert counts > 0, "This person has requested open fracture treatment but doesn't require one"
+            # if the person is alive request the hsi
+            for i in range(0, counts):
+                # shedule the treatments, say the treatments occur a day appart for now
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_RTI_Open_Fracture_Treatment(module=self, person_id=person_id),
+                    priority=0,
+                    topen=self.sim.date + DateOffset(days=0 + i),
+                    tclose=self.sim.date + DateOffset(days=15 + i)
+                )
 
     def rti_ask_for_tetanus(self, person_id):
         """
@@ -1754,25 +1753,24 @@ class RTI(Module):
         """
         df = self.sim.population.props
         person = df.loc[person_id]
-        if not person.is_alive:
-            return
-        # Check to see whether they have been sent here from RTI_MedicalIntervention and are haven't died due to rti
-        assert person.rt_med_int, 'person sent here not been through rti med int'
-        # Isolate the relevant injury information
-        codes_for_tetanus = ['1101', '2101', '3101', '4101', '5101', '7101', '8101',
-                             '1114', '2114', '3113', '4113', '5113', '7113', '8113']
-        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
-        # Check that they have a burn/laceration
-        _, counts = RTI.rti_find_and_count_injuries(person_injuries, codes_for_tetanus)
-        assert counts > 0, "This person has requested a tetanus jab but doesn't require one"
-        # if this person is alive, ask for the hsi
-        self.sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_RTI_Tetanus_Vaccine(module=self,
-                                              person_id=person_id),
-            priority=0,
-            topen=self.sim.date,
-            tclose=self.sim.date + DateOffset(days=15)
-        )
+        if person.is_alive:
+            # Check to see whether they have been sent here from RTI_MedicalIntervention and are haven't died due to rti
+            assert person.rt_med_int, 'person sent here not been through rti med int'
+            # Isolate the relevant injury information
+            codes_for_tetanus = ['1101', '2101', '3101', '4101', '5101', '7101', '8101',
+                                 '1114', '2114', '3113', '4113', '5113', '7113', '8113']
+            person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
+            # Check that they have a burn/laceration
+            _, counts = RTI.rti_find_and_count_injuries(person_injuries, codes_for_tetanus)
+            assert counts > 0, "This person has requested a tetanus jab but doesn't require one"
+            # if this person is alive, ask for the hsi
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_RTI_Tetanus_Vaccine(module=self,
+                                                  person_id=person_id),
+                priority=0,
+                topen=self.sim.date,
+                tclose=self.sim.date + DateOffset(days=15)
+            )
 
     def rti_find_injury_column(self, person_id, codes):
         """
@@ -3294,7 +3292,6 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         road_traffic_injuries = self.sim.modules['RTI']
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-
         if not df.at[person_id, 'is_alive']:
             self.EXPECTED_APPT_FOOTPRINT = hs.get_blank_appt_footprint()
             return
