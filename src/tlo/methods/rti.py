@@ -2019,7 +2019,7 @@ class RTI(Module):
         people_with_given_injuries = injury_counts[injury_counts > 0]
         return people_with_given_injuries.index, people_with_given_injuries.sum()
 
-    def rti_treated_injuries(self, person_id, tloinjcodes):
+    def rti_treated_injuries(self, person_id, tlo_injury_codes):
         """
         A function that takes a person with treated injuries and removes the injury code from the properties rt_injury_1
         to rt_injury_8
@@ -2027,38 +2027,44 @@ class RTI(Module):
         The properties that this function alters are rt_injury_1 through rt_injury_8 and the symptoms properties
 
         :param person_id: The person who needs an injury code removed
-        :param tloinjcodes: the injury code(s) to be removed
+        :param tlo_injury_codes: the injury code(s) to be removed
         :return: n/a
         """
         df = self.sim.population.props
         # Isolate the relevant injury information
-        permanent_injuries = ['P133', 'P133a', 'P133b', 'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135', 'P673',
+        permanent_injuries = {'P133', 'P133a', 'P133b', 'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135', 'P673',
                               'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676', 'P782a',
-                              'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884']
-        person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
-        # Iterate over the codes
-        for code in tloinjcodes:
-            if code not in permanent_injuries:
-                # Find which columns have treated injuries
-                injury_cols = person_injuries.columns[(person_injuries.values == code).any(0)].tolist()
-                # Reset the treated injury code to "none"
-                df.at[person_id, injury_cols] = "none"
-                # Reset symptoms so that after being treated for an injury the person won't interact with the
-                # healthsystem again.
-                if df.at[person_id, 'sy_injury'] != 0:
-                    self.sim.modules['SymptomManager'].change_symptom(
-                        person_id=person_id,
-                        disease_module=self.sim.modules['RTI'],
-                        add_or_remove='-',
-                        symptom_string='injury',
-                    )
-                if df.at[person_id, 'sy_severe_trauma'] != 0:
-                    self.sim.modules['SymptomManager'].change_symptom(
-                        person_id=person_id,
-                        disease_module=self.sim.modules['RTI'],
-                        add_or_remove='-',
-                        symptom_string='severe_trauma',
-                    )
+                              'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884'}
+        person_injuries = df.loc[person_id, RTI.INJURY_COLUMNS]
+
+        # only remove non-permanent injuries
+        codes_to_remove = [c for c in tlo_injury_codes if c not in permanent_injuries]
+
+        # get injury columns for all codes to remove
+        injury_cols = person_injuries.index[person_injuries.isin(codes_to_remove)].tolist()
+
+        # if no injuries to reset, exit
+        if len(injury_cols) == 0:
+            return
+
+        # Reset the treated injury code to "none"
+        df.loc[person_id, injury_cols] = "none"
+
+        # Reset symptoms so that after being treated for an injury the person won't interact with the
+        # health system again.
+        if df.at[person_id, 'sy_injury'] != 0:
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=person_id,
+                disease_module=self.sim.modules['RTI'],
+                add_or_remove='-',
+                symptom_string='injury' )
+
+        if df.at[person_id, 'sy_severe_trauma'] != 0:
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=person_id,
+                disease_module=self.sim.modules['RTI'],
+                add_or_remove='-',
+                symptom_string='severe_trauma')
 
     def on_birth(self, mother_id, child_id):
         """
@@ -2811,7 +2817,6 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                             '212': 49,
                             '412': 35,
                             '612': 63,
-                            '712a': 70,
                             '712a': 70,
                             '712b': 70,
                             '712c': 70,
