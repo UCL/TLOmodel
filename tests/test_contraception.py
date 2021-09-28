@@ -82,6 +82,9 @@ def run_sim(tmpdir,
         # - Dummy HIV module (as contraception requires the property hv_inf)
         DummyHivModule()
     )
+    sim.make_initial_population(n=popsize)
+    __check_dtypes(sim)
+    __check_properties(sim.population.props)
 
     if not consumables_available:
         # Make consumables not available
@@ -89,16 +92,13 @@ def run_sim(tmpdir,
 
     if no_discontinuation:
         # Let there be no discontinuation of any method
-        sim.modules['Contraception'].parameters['Discontinuation'] *= 0.0
+        sim.modules['Contraception'].processed_params['p_stop_per_month'] *= 0.0
 
     if incr_prob_of_failure:
         # Let the probability of failure of contraceptives be high
-        sim.modules['Contraception'].parameters['contraception_failure'] = \
-            (sim.modules['Contraception'].parameters['contraception_failure'] * 100).clip(upper=1.0)
+        sim.modules['Contraception'].processed_params['p_pregnancy_with_contraception_per_month'] = \
+            (sim.modules['Contraception'].processed_params['p_pregnancy_with_contraception_per_month'] * 100).clip(upper=1.0)
 
-    sim.make_initial_population(n=popsize)
-    __check_dtypes(sim)
-    __check_properties(sim.population.props)
 
     # Make most of the population women
     df = sim.population.props
@@ -155,7 +155,11 @@ def __check_no_illegal_switches(sim):
             assert not (con.loc[con['age_years'] <= 30, 'switch_to'] == 'female_sterilization').any()  # no switching to
             # female_sterilization if age less than 30 (or equal to, in case they have aged since an HSI was scheduled)
 
+# todo: check on initialisation etc.
 
+# todo: check on contraceptivepoll with no swithcing, etc.
+
+#passing
 def test_pregnancies_occurring(tmpdir):
     """Test that pregnancies occur for those who are on contraception and those who are not."""
     # Run simulation without use of HealthSystem stuff and with high risk of failure of contraceptive
@@ -167,7 +171,6 @@ def test_pregnancies_occurring(tmpdir):
     assert len(pregs) > 0
     assert (pregs['contraception'] == "not_using").any()
     assert (pregs['contraception'] != "not_using").any()
-
 
 def test_contraception_use_and_not_using_healthsystem(tmpdir):
     """Test that the contraception module functions and that exactly the same patterns of usage, switching, etc occur
@@ -204,7 +207,7 @@ def test_contraception_use_and_not_using_healthsystem(tmpdir):
             'contraception_use_yearly_summary']
     )
 
-
+#passing
 def test_occurrence_of_HSI_for_maintain_and_switch(tmpdir):
     """Check HSI for the maintenance of a person on a contraceptive are scheduled as expected.."""
 
@@ -219,9 +222,9 @@ def test_occurrence_of_HSI_for_maintain_and_switch(tmpdir):
     sim.modules['HealthSystem'].reset_queue()
 
     # Let there be no chance of switching or discontinuing
-    p = sim.modules['Contraception'].parameters
-    p['contraception_discontinuation'] *= 0.0
-    p['contraception_switching']['probability'] *= 0.0
+    pp = sim.modules['Contraception'].processed_params
+    pp['p_stop_per_month'] *= 0.0
+    pp['p_switch_from_per_month'] *= 0.0
 
     # Set that person_id=0 is a woman on a contraceptive for longer than six months
     person_id = 0
@@ -269,7 +272,7 @@ def test_occurrence_of_HSI_for_maintain_and_switch(tmpdir):
     # appointment)
     assert not len(sim.modules['HealthSystem'].find_events_for_person(person_id))
 
-
+#passing
 def test_if_no_healthsystem_or_consumable_leads_to_defaulting_if_due_appt_at_individual_level(tmpdir):
     """Check that if someone is on a method that requires an HSI, and if consumable is not available and/or the health
     system cannot do the appointment, then that the person defaults to not using after they become due for a
@@ -280,11 +283,11 @@ def test_if_no_healthsystem_or_consumable_leads_to_defaulting_if_due_appt_at_ind
         contraceptive that requires HSI and consumables default by the end of the simulation."""
 
         # Let there be no chance of starting, switching or discontinuing (everyone would maintain if HSI/cons available)
-        p = sim.modules['Contraception'].parameters
-        p['contraception_initiation1'] *= 0.0
-        p['contraception_discontinuation'] *= 0.0
-        p['contraception_switching']['probability'] *= 0.0
-        p['contraception_initiation2'] *= 0.0
+        pp = sim.modules['Contraception'].processed_params
+        pp['p_start_per_month'] *= 0.0
+        pp['p_start_after_birth'] *= 0.0
+        pp['p_stop_per_month'] *= 0.0
+        pp['p_switch_from_per_month'] *= 0.0
 
         df = sim.population.props
         contraceptives = list(sim.modules['Contraception'].all_contraception_states)
@@ -356,7 +359,7 @@ def test_if_no_healthsystem_or_consumable_leads_to_defaulting_if_due_appt_at_ind
                   )
     check_that_persons_on_contraceptive_default(sim)
 
-
+#passing
 def test_that_if_no_healthsystem_there_is_defaulting_from_some_contraceptives_at_population_level(tmpdir):
     """Check that if switching and initiation use the HealthSystem but no HSI can occur, then all those already
      on a contraceptive requiring an HSI to maintain use will default to not_using, and there is no initiation or
@@ -383,7 +386,7 @@ def test_that_if_no_healthsystem_there_is_defaulting_from_some_contraceptives_at
             == "not_using"
             ).all()
 
-
+#passing
 def test_that_if_there_are_no_consumables_there_is_defaulting_from_some_contraceptives_at_population_level(tmpdir):
     """Check that if switching and initiation use the HealthSystem but there are no consumables, then all those already
      on a contraceptive requiring a consumable to maintain use will default to not_using, and there is no initiation or
