@@ -465,9 +465,9 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'n_antiep': n_antiep,
                     })
 
-        individual = df.loc[[4]]
+        individual = df.loc[[1]]
 
-        logger.debug(key='individual_check', data=individual, description='following an individual through simulation')
+        logger.info(key='individual_check', data=individual, description='following an individual through simulation')
 
 
 class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
@@ -520,7 +520,7 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
             )
             if outcome_of_request_for_consumables['Item_Code'][item_code_carbamazepine]:
                 anti_epileptics_available = True
-                logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+#               logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
             else:
                 item_code_phenytoin = pd.unique(
                     consumables.loc[consumables['Items'] == 'Phenytoin sodium 100mg_1000_CMST', 'Item_Code'])[0]
@@ -534,6 +534,6 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
                 )
                 if outcome_of_request_for_consumables['Item_Code'][item_code_phenytoin]:
                     anti_epileptics_available = True
-                    logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+#                   logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
         if anti_epileptics_available:
             df.at[person_id, 'ep_antiep'] = True
