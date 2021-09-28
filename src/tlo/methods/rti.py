@@ -32,6 +32,7 @@ class RTI(Module):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.ASSIGN_INJURIES_AND_DALY_CHANGES = None
 
     INIT_DEPENDENCIES = {"SymptomManager",
                          "HealthBurden"}
@@ -1121,7 +1122,6 @@ class RTI(Module):
         # remove once an injury is healed.
 
         self.ASSIGN_INJURIES_AND_DALY_CHANGES = {
-            'none': [0, 0, 0, 0],
             # injuries to the head
             '112': [[p['head_prob_112'], 1, 1, 2], p['daly_wt_unspecified_skull_fracture'], 0,
                     - p['daly_wt_unspecified_skull_fracture']],
@@ -1310,7 +1310,8 @@ class RTI(Module):
                     p['daly_wt_unilateral_lower_limb_amputation_with_treatment'], 0],
             '884': [[p['lower_ex_prob_884'], 8, 8, 4], p['daly_wt_bilateral_lower_limb_amputation_without_treatment'],
                     - p['daly_wt_bilateral_lower_limb_amputation_without_treatment'] +
-                    p['daly_wt_bilateral_lower_limb_amputation_with_treatment'], 0]
+                    p['daly_wt_bilateral_lower_limb_amputation_with_treatment'], 0],
+            'none': [0, 0, 0, 0],
         }
         # The vast majority of the injuries should have a total change of daly weights that sum to zero, meaning that
         # a person recieves an injury and has the health burden which will eventually be removed once the injury has
