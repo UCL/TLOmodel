@@ -1936,10 +1936,10 @@ class RTI(Module):
         assert df.at[person_id, 'rt_med_int']
         # Check they have an appropriate injury code to swap
         swapping_codes = RTI.SWAPPING_CODES[:]
-        relevant_codes = [c for c in codes if c in swapping_codes]
+        relevant_codes = np.intersect1d(codes, swapping_codes)
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # check this person is injured, search they have an injury code that is swappable
-        idx, counts = RTI.rti_find_and_count_injuries(person_injuries, relevant_codes)
+        idx, counts = RTI.rti_find_and_count_injuries(person_injuries, list(relevant_codes))
         assert counts > 0, 'This person has asked to swap an injury code, but it is not swap-able'
         # If there are any permanent injuries which are due to be swapped, remove the "P" writted at the start of injury
         # code in order to access the injury dictionary
