@@ -1440,7 +1440,7 @@ class RTI(Module):
         """
         df = self.sim.population.props
         # Check to see whether they have been sent here from A and E
-        assert df.loc[person_id, 'rt_diagnosed']
+        assert df.at[person_id, 'rt_diagnosed']
         # Get the relevant information about their injuries
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # check this person is injured, search they have an injury code that isn't "none"
@@ -1472,8 +1472,8 @@ class RTI(Module):
         """
         df = self.sim.population.props
         p = self.parameters
-        person = df.loc[person_id]
-        if person.is_alive:
+        if df.at[person_id, 'is_alive']:
+            person = df.loc[person_id]
             # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to
             # rti
             assert person.rt_med_int, 'person sent here not been through RTI_MedInt'
@@ -1541,23 +1541,22 @@ class RTI(Module):
         # RTI module
         assert df.at[person_id, 'rt_med_int'], 'Person sent for treatment did not go through rti med int'
         # Isolate the person
-        person = df.loc[person_id]
-        if person.is_alive:
+        if df.at[person_id, 'is_alive']:
             # state the codes treated by minor surgery
             surgically_treated_codes = ['211', '212', '291', '241', '322', '323', '722', '811', '812', '813a',
                                         '813b', '813c']
             # check that the person requesting surgery has an injury in their minor surgery treatment plan
-            assert len(df.loc[person_id, 'rt_injuries_for_minor_surgery']) > 0, \
+            assert len(df.at[person_id, 'rt_injuries_for_minor_surgery']) > 0, \
                 'this person has asked for a minor surgery but does not need it'
             # check that for each injury due to be treated with a minor surgery, the injury hasn't previously been
             # treated
-            for code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
+            for code in df.at[person_id, 'rt_injuries_for_minor_surgery']:
                 column, found_code = self.rti_find_injury_column(person_id, [code])
                 index_in_rt_recovery_dates = int(column[-1]) - 1
-                assert pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates])
+                assert pd.isnull(df.at[person_id, 'rt_date_to_remove_daly'][index_in_rt_recovery_dates])
             # check that this person's injuries that were decided to be treated with a minor surgery and the injuries
             # actually treated by minor surgeries coincide
-            assert len(set(df.loc[person_id, 'rt_injuries_for_minor_surgery']) & set(surgically_treated_codes)) > 0, \
+            assert len(set(df.at[person_id, 'rt_injuries_for_minor_surgery']) & set(surgically_treated_codes)) > 0, \
                 'This person has asked for a minor surgery but does not need it'
             # Isolate the relevant injury information
             person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
@@ -1581,9 +1580,8 @@ class RTI(Module):
         :return: n/a
         """
         df = self.sim.population.props
-        person = df.loc[person_id]
 
-        if person.is_alive:
+        if df.at[person_id, 'is_alive']:
             # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to
             # rti
             assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
@@ -1610,8 +1608,7 @@ class RTI(Module):
         :return: n/a
         """
         df = self.sim.population.props
-        person = df.loc[person_id]
-        if person.is_alive:
+        if df.at[person_id, 'is_alive']:
             # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to
             # rti
             assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
@@ -1637,9 +1634,8 @@ class RTI(Module):
         :return:
         """
         df = self.sim.population.props
-        person = df.loc[person_id]
-        if person.is_alive:
-            assert person.rt_in_shock, 'person requesting shock treatment is not in shock'
+        if df.at[person_id, 'is_alive']:
+            assert df.at[person_id, 'rt_in_shock'], 'person requesting shock treatment is not in shock'
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_RTI_Shock_Treatment(module=self,
@@ -1658,12 +1654,11 @@ class RTI(Module):
         :return: n/a
         """
         df = self.sim.population.props
-        person = df.loc[person_id]
 
-        if person.is_alive:
+        if df.at[person_id, 'is_alive']:
             # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to
             # rti
-            assert person.rt_med_int, 'person not been through rti med int'
+            assert df.at[person_id, 'rt_med_int'], 'person not been through rti med int'
             # Isolate the relevant injury information
             person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
             burn_codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
@@ -1690,8 +1685,7 @@ class RTI(Module):
         :return: n/a
         """
         df = self.sim.population.props
-        person = df.loc[person_id]
-        if person.is_alive:
+        if df.at[person_id, 'is_alive']:
             # Check to see whether they have been sent here from RTI_MedicalIntervention and they haven't died due to
             # rti
             assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
@@ -1724,12 +1718,10 @@ class RTI(Module):
         :return: n/a
         """
         df = self.sim.population.props
-        person = df.loc[person_id]
-        if person.is_alive:
+        if df.at[person_id, 'is_alive']:
             # Check to see whether they have been sent here from RTI_MedicalIntervention and are haven't died due to rti
             assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
             # Isolate the relevant injury information
-
             open_fracture_codes = ['813bo', '813co', '813do', '813eo']
             person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
             # Check that they have an open fracture
@@ -1737,7 +1729,7 @@ class RTI(Module):
             assert counts > 0, "This person has requested open fracture treatment but doesn't require one"
             # if the person is alive request the hsi
             for i in range(0, counts):
-                # shedule the treatments, say the treatments occur a day appart for now
+                # schedule the treatments, say the treatments occur a day apart for now
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_RTI_Open_Fracture_Treatment(module=self, person_id=person_id),
                     priority=0,
@@ -1755,10 +1747,9 @@ class RTI(Module):
         :return: n/a
         """
         df = self.sim.population.props
-        person = df.loc[person_id]
-        if person.is_alive:
+        if df.at[person_id, 'is_alive']:
             # Check to see whether they have been sent here from RTI_MedicalIntervention and are haven't died due to rti
-            assert person.rt_med_int, 'person sent here not been through rti med int'
+            assert df.at[person_id, 'rt_med_int'], 'person sent here not been through rti med int'
             # Isolate the relevant injury information
             codes_for_tetanus = ['1101', '2101', '3101', '4101', '5101', '7101', '8101',
                                  '1114', '2114', '3113', '4113', '5113', '7113', '8113']
@@ -1821,7 +1812,7 @@ class RTI(Module):
         for code in codes:
             for col in df.columns:
                 # Search a sub-dataframe that is non-empty if the code is present is in that column and empty if not
-                if (df[col] == code).any():
+                if df[col] == code:
                     columns_to_return.append(col)
                     codes_to_return.append(code)
 
@@ -1846,9 +1837,9 @@ class RTI(Module):
 
         # ==============================================================================================================
         # Check that those sent here have been involved in a road traffic accident
-        assert sum(df.loc[injured_index, 'rt_road_traffic_inc']) == len(injured_index)
+        assert df.loc[injured_index, 'rt_road_traffic_inc'].all()
         # Check everyone here has at least one injury to be given a daly weight to
-        assert sum(df.loc[injured_index, 'rt_injury_1'] != "none") == len(injured_index)
+        assert (df.loc[injured_index, 'rt_injury_1'] != "none").all()
         # Check everyone here is alive and hasn't died due to rti
         rti_deaths = ['RTI_death_without_med', 'RTI_death_with_med', 'RTI_unavailable_med', 'RTI_imm_death',
                       'RTI_death_shock']
@@ -1898,29 +1889,29 @@ class RTI(Module):
                                                       self.PROPERTIES.get('rt_injury_1').categories[1:])
         assert counts > 0, 'This person has asked for medical treatment despite not being injured'
         # Check everyone here is alive and hasn't died on scene
-        assert ~df.loc[person_id, 'rt_imm_death']
+        assert not df.at[person_id, 'rt_imm_death']
 
         # ------------------------------- Remove the daly weights for treated injuries ---------------------------------
         # update the total values of the daly weights
-        df.loc[person_id, 'rt_debugging_DALY_wt'] += \
+        df.at[person_id, 'rt_debugging_DALY_wt'] += \
             sum([self.ASSIGN_INJURIES_AND_DALY_CHANGES[code][3] for code in codes])
         # round off any potential floating point errors
-        df.loc[person_id, 'rt_debugging_DALY_wt'] = np.round(df.loc[person_id, 'rt_debugging_DALY_wt'], 4)
+        df.at[person_id, 'rt_debugging_DALY_wt'] = np.round(df.at[person_id, 'rt_debugging_DALY_wt'], 4)
         # if the person's true total for daly weights is greater than one, report rt_disability as one, if not
         # report the true disability burden.
-        if df.loc[person_id, 'rt_debugging_DALY_wt'] > 1:
-            df.loc[person_id, 'rt_disability'] = 1
+        if df.at[person_id, 'rt_debugging_DALY_wt'] > 1:
+            df.at[person_id, 'rt_disability'] = 1
         else:
-            df.loc[person_id, 'rt_disability'] = df.loc[person_id, 'rt_debugging_DALY_wt']
+            df.at[person_id, 'rt_disability'] = df.at[person_id, 'rt_debugging_DALY_wt']
         # if the reported daly weight is below zero add make the model report the true (and always positive) daly weight
-        if df.loc[person_id, 'rt_disability'] < 0:
-            df.loc[person_id, 'rt_disability'] = df.loc[person_id, 'rt_debugging_DALY_wt']
+        if df.at[person_id, 'rt_disability'] < 0:
+            df.at[person_id, 'rt_disability'] = df.at[person_id, 'rt_debugging_DALY_wt']
         # Make sure the true disability burden is greater or equal to zero
-        assert df.loc[person_id, 'rt_debugging_DALY_wt'] >= 0, (person_injuries.values,
-                                                                df.loc[person_id, 'rt_debugging_DALY_wt'])
+        assert df.at[person_id, 'rt_debugging_DALY_wt'] >= 0, (person_injuries.values,
+                                                                df.at[person_id, 'rt_debugging_DALY_wt'])
         # the reported disability should satisfy 0<=disability<=1, check that they do
-        assert df.loc[person_id, 'rt_disability'] >= 0, 'Negative disability burden'
-        assert df.loc[person_id, 'rt_disability'] <= 1, 'Too large disability burden'
+        assert df.at[person_id, 'rt_disability'] >= 0, 'Negative disability burden'
+        assert df.at[person_id, 'rt_disability'] <= 1, 'Too large disability burden'
         # remover the treated injury code from the person using rti_treated_injuries
         RTI.rti_treated_injuries(self, person_id, codes)
 
@@ -1943,7 +1934,7 @@ class RTI(Module):
         """
         df = self.sim.population.props
         # Check the people that are sent here have had medical treatment
-        assert df.loc[person_id, 'rt_med_int']
+        assert df.at[person_id, 'rt_med_int']
         # Check they have an appropriate injury code to swap
         swapping_codes = RTI.SWAPPING_CODES[:]
         relevant_codes = np.intersect1d(codes, swapping_codes)
@@ -1958,24 +1949,24 @@ class RTI(Module):
         # and the daly weight for the disability with treatment.
         # keep track of the changes to the daly weights
         # update the disability burdens
-        df.loc[person_id, 'rt_debugging_DALY_wt'] += \
+        df.at[person_id, 'rt_debugging_DALY_wt'] += \
             sum([self.ASSIGN_INJURIES_AND_DALY_CHANGES[code][2] for code in relevant_codes])
-        df.loc[person_id, 'rt_debugging_DALY_wt'] = np.round(df.loc[person_id, 'rt_debugging_DALY_wt'], 4)
+        df.at[person_id, 'rt_debugging_DALY_wt'] = np.round(df.at[person_id, 'rt_debugging_DALY_wt'], 4)
         # Check that the person's true disability burden is positive
-        assert df.loc[person_id, 'rt_debugging_DALY_wt'] >= 0, (person_injuries.values,
-                                                                df.loc[person_id, 'rt_debugging_DALY_wt'])
+        assert df.at[person_id, 'rt_debugging_DALY_wt'] >= 0, (person_injuries.values,
+                                                                df.at[person_id, 'rt_debugging_DALY_wt'])
         # catch rounding point errors where the disability weights should be zero but aren't
-        if df.loc[person_id, 'rt_disability'] < 0:
-            df.loc[person_id, 'rt_disability'] = df.loc[person_id, 'rt_debugging_DALY_wt']
+        if df.at[person_id, 'rt_disability'] < 0:
+            df.at[person_id, 'rt_disability'] = df.at[person_id, 'rt_debugging_DALY_wt']
         # Catch cases where the disability burden is greater than one in reality but needs to be
         # capped at one, if not report the true disability burden
-        if df.loc[person_id, 'rt_debugging_DALY_wt'] > 1:
-            df.loc[person_id, 'rt_disability'] = 1
+        if df.at[person_id, 'rt_debugging_DALY_wt'] > 1:
+            df.at[person_id, 'rt_disability'] = 1
         else:
-            df.loc[person_id, 'rt_disability'] = df.loc[person_id, 'rt_debugging_DALY_wt']
+            df.at[person_id, 'rt_disability'] = df.at[person_id, 'rt_debugging_DALY_wt']
         # Check the daly weights fall within the accepted bounds
-        assert df.loc[person_id, 'rt_disability'] >= 0, 'Negative disability burden'
-        assert df.loc[person_id, 'rt_disability'] <= 1, 'Too large disability burden'
+        assert df.at[person_id, 'rt_disability'] >= 0, 'Negative disability burden'
+        assert df.at[person_id, 'rt_disability'] <= 1, 'Too large disability burden'
 
     def rti_determine_LOS(self, person_id):
         """
@@ -1992,7 +1983,7 @@ class RTI(Module):
             return int(self.rng.normal(_mean, _sd, 1))
 
         # Create the length of stays required for each ISS score boundaries and check that they are >=0
-        rt_iss_score = df.loc[person_id, 'rt_ISS_score']
+        rt_iss_score = df.at[person_id, 'rt_ISS_score']
 
         if rt_iss_score < 4:
             days_until_treatment_end = draw_days(p["mean_los_ISS_less_than_4"], p["sd_los_ISS_less_than_4"])
@@ -2007,11 +1998,8 @@ class RTI(Module):
         else:
             days_until_treatment_end = 0
 
-        if days_until_treatment_end < 0:
-            days_until_treatment_end = 0
-
         # Return the LOS
-        return days_until_treatment_end
+        return max(days_until_treatment_end, 0)
 
     @staticmethod
     def rti_find_and_count_injuries(persons_injury_properties: pd.DataFrame, injury_codes: list):
@@ -2054,17 +2042,17 @@ class RTI(Module):
                 # Find which columns have treated injuries
                 injury_cols = person_injuries.columns[(person_injuries.values == code).any(0)].tolist()
                 # Reset the treated injury code to "none"
-                df.loc[person_id, injury_cols] = "none"
+                df.at[person_id, injury_cols] = "none"
                 # Reset symptoms so that after being treated for an injury the person won't interact with the
                 # healthsystem again.
-                if df.loc[person_id, 'sy_injury'] != 0:
+                if df.at[person_id, 'sy_injury'] != 0:
                     self.sim.modules['SymptomManager'].change_symptom(
                         person_id=person_id,
                         disease_module=self.sim.modules['RTI'],
                         add_or_remove='-',
                         symptom_string='injury',
                     )
-                if df.loc[person_id, 'sy_severe_trauma'] != 0:
+                if df.at[person_id, 'sy_severe_trauma'] != 0:
                     self.sim.modules['SymptomManager'].change_symptom(
                         person_id=person_id,
                         disease_module=self.sim.modules['RTI'],
