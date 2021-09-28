@@ -1481,12 +1481,11 @@ class RTI(Module):
             # treated in this simulation, it seems there is a limited available to treat spinal cord injuries and chest
             # trauma in Malawi, so these are initially left out, but we will test different scenarios to see what
             # happens when we include those treatments
-            surgically_treated_codes = ['112', '811', '812', '813a', '813b', '813c', '133a', '133b', '133c', '133d', '134a',
-                                        '134b', '135', '552', '553', '554', '342', '343', '414', '361', '363',
-                                        '782', '782a', '782b', '782c', '783', '822a', '882', '883', '884',
-                                        'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135', 'P782a', 'P782b',
-                                        'P782c', 'P783', 'P882', 'P883', 'P884'
-                                        ]
+            surgically_treated_codes = ['112', '811', '812', '813a', '813b', '813c', '133a', '133b', '133c', '133d',
+                                        '134a', '134b', '135', '552', '553', '554', '342', '343', '414', '361', '363',
+                                        '782', '782a', '782b', '782c', '783', '822a', '882', '883', '884', 'P133a',
+                                        'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135', 'P782a', 'P782b', 'P782c',
+                                        'P783', 'P882', 'P883', 'P884']
 
             # If we allow surgical treatment of spinal cord injuries, extend the surgically treated codes to include
             # spinal cord injury codes
@@ -1908,7 +1907,7 @@ class RTI(Module):
             df.at[person_id, 'rt_disability'] = df.at[person_id, 'rt_debugging_DALY_wt']
         # Make sure the true disability burden is greater or equal to zero
         assert df.at[person_id, 'rt_debugging_DALY_wt'] >= 0, (person_injuries.values,
-                                                                df.at[person_id, 'rt_debugging_DALY_wt'])
+                                                               df.at[person_id, 'rt_debugging_DALY_wt'])
         # the reported disability should satisfy 0<=disability<=1, check that they do
         assert df.at[person_id, 'rt_disability'] >= 0, 'Negative disability burden'
         assert df.at[person_id, 'rt_disability'] <= 1, 'Too large disability burden'
@@ -1954,7 +1953,7 @@ class RTI(Module):
         df.at[person_id, 'rt_debugging_DALY_wt'] = np.round(df.at[person_id, 'rt_debugging_DALY_wt'], 4)
         # Check that the person's true disability burden is positive
         assert df.at[person_id, 'rt_debugging_DALY_wt'] >= 0, (person_injuries.values,
-                                                                df.at[person_id, 'rt_debugging_DALY_wt'])
+                                                               df.at[person_id, 'rt_debugging_DALY_wt'])
         # catch rounding point errors where the disability weights should be zero but aren't
         if df.at[person_id, 'rt_disability'] < 0:
             df.at[person_id, 'rt_disability'] = df.at[person_id, 'rt_debugging_DALY_wt']
@@ -2057,7 +2056,7 @@ class RTI(Module):
                 person_id=person_id,
                 disease_module=self.sim.modules['RTI'],
                 add_or_remove='-',
-                symptom_string='injury' )
+                symptom_string='injury')
 
         if df.at[person_id, 'sy_severe_trauma'] != 0:
             self.sim.modules['SymptomManager'].change_symptom(
@@ -2573,9 +2572,9 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[selected_for_rti_inj.index, col] = description.loc[selected_for_rti_inj.index, col]
         # Run assert statements to make sure the model is behaving as it should
         # All those who are injured in a road traffic accident have this noted in the property 'rt_road_traffic_inc'
-        assert sum(df.loc[selected_for_rti, 'rt_road_traffic_inc']) == len(selected_for_rti)
+        assert df.loc[selected_for_rti, 'rt_road_traffic_inc'].all()
         # All those who are involved in a road traffic accident have these noted in the property 'rt_date_inj'
-        assert len(df.loc[selected_for_rti, 'rt_date_inj'] != pd.NaT) == len(selected_for_rti)
+        assert (df.loc[selected_for_rti, 'rt_date_inj'] != pd.NaT).all()
         # All those who are injures and do not die immediately have an ISS score > 0
         assert len(df.loc[df.rt_road_traffic_inc & ~df.rt_imm_death, 'rt_ISS_score'] > 0) == \
                len(df.loc[df.rt_road_traffic_inc & ~df.rt_imm_death])
@@ -3811,7 +3810,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
                                 'Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST', 'Item_Code'])[0]
             consumables_fractures['Item_Code'].update({item_code_cetrimide_chlorhexidine: 1})
             consumables_key = "Dressing, paraffin gauze 9.5cm x 9.5cm (square)_pack of 36_CMST"
-            item_code_gauze = pd.unique(consumables.loc[ consumables['Items'] == consumables_key, 'Item_Code'])[0]
+            item_code_gauze = pd.unique(consumables.loc[consumables['Items'] == consumables_key, 'Item_Code'])[0]
             consumables_fractures['Item_Code'].update({item_code_gauze: 1})
             # Ask for suture kit
             item_code_suture_kit = pd.unique(
