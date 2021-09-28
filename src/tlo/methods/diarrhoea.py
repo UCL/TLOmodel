@@ -433,7 +433,15 @@ class Diarrhoea(Module):
         'number_of_days_reduced_duration_with_zinc':
             Parameter(Types.INT, 'number of days reduced duration with zinc'),
         'days_between_treatment_and_cure':
-            Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.')
+            Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'),
+
+        # Parameters of R1 vaccine
+        'rr_reduce_severe_rotavirus_diarrhoea_with_R1_under1yo':
+            Parameter(Types.REAL,
+                      'relative risk of R1 reducing severe rotavirus diarrhoea for under 1 years old'),
+        'rr_reduce_severe_rotavirus_diarrhoea_with_R1_over1yo':
+            Parameter(Types.REAL,
+                      'relative risk of R1 reducing severe rotavirus diarrhoea for over 1 years old'),
     }
 
     PROPERTIES = {
@@ -972,6 +980,9 @@ class Models:
         # Write model for incidence of each pathogen
         self.linear_model_for_incidence_by_pathogen = self.write_linear_model_for_incidence_of_pathogens()
 
+        # # Model for progression to severe diarrhoea
+        # self.progression_to_severe_dehydration = self.
+
     def write_linear_model_for_incidence_of_pathogens(self):
         """Make a dict to hold the equations that govern the probability that a person acquires diarrhoea that is
         caused (primarily) by a pathogen"""
@@ -1084,11 +1095,23 @@ class Models:
         """For new incident case of diarrhoea, determine the type - 'watery' or 'bloody'"""
         return 'watery' if self.rng.rand() < self.p[f'proportion_AWD_in_{pathogen}'] else 'bloody'
 
-    def get_dehydration(self, pathogen):
+    def get_dehydration(self, df, va_rota_all_doses, pathogen):
         """For new incident case of diarrhoea, determine the degree of dehydration - 'none', 'some' or 'severe'"""
+
+        # Get the probabilities of severe for vaccinated with R1
+        prob_severe_under_1_vaccinated = self.p['probability_of_severe_dehydration_if_some_dehydration'] * self.p[
+            'rr_reduce_severe_rotavirus_diarrhoea_with_R1_under1yo']
+        prob_severe_over_1_vaccinated = self.p['probability_of_severe_dehydration_if_some_dehydration'] * self.p[
+            'rr_reduce_severe_rotavirus_diarrhoea_with_R1_over1yo']
+
         if self.rng.rand() < self.p[f'prob_dehydration_by_{pathogen}']:
-            if self.rng.rand() < self.p['probability_of_severe_dehydration_if_some_dehydration']:
-                return 'severe'
+            if pathogen == "rotavirus" and va_rota_all_doses:
+                if df[df.age_exact_years] < 1:
+                    if self.rng.rand() < prob_severe_under_1_vaccinated:
+                        return 'severe'
+                elif 1 <= df[df.age_exact_years] < 2:
+                    if self.rng.rand() < prob_severe_over_1_vaccinated:
+                        return 'severe'
             return 'some'
         return 'none'
 
@@ -1318,7 +1341,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             'gi_has_diarrhoea': True,
             'gi_pathogen': self.pathogen,
             'gi_type': m.models.get_type(self.pathogen),
-            'gi_dehydration': m.models.get_dehydration(self.pathogen),
+            'gi_dehydration': m.models.get_dehydration(df, va_rota_all_doses=person.va_rota_all_doses, pathogen=self.pathogen),
             'gi_duration_longer_than_13days': duration_in_days >= 13,
             'gi_date_of_onset': self.sim.date,
             'gi_date_end_of_last_episode': date_of_outcome + DateOffset(days=p['days_between_treatment_and_cure']),
@@ -1553,6 +1576,7 @@ class DiarrhoeaPropertiesOfOtherModules(Module):
                                                    categories=['MAM', 'SAM', 'well']),
         'un_HAZ_category': Property(Types.CATEGORICAL, 'temporary property',
                                     categories=['HAZ<-3', '-3<=HAZ<-2', 'HAZ>=-2']),
+        'va_rota_all_doses': Property(Types.BOOL, 'temporary property'),
 
     }
 
@@ -1570,6 +1594,7 @@ class DiarrhoeaPropertiesOfOtherModules(Module):
         df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
         df.loc[df.is_alive, 'un_HAZ_category'] = 'HAZ>=-2'
+        df.loc[df.is_alive, 'va_rota_all_doses'] = False
 
     def initialise_simulation(self, sim):
         pass
