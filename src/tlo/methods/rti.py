@@ -1804,17 +1804,17 @@ class RTI(Module):
         :param codes: The treated injury codes
         :return: All columns and codes of the successfully treated injuries
         """
-        df = self.sim.population.props.loc[[person_id], RTI.INJURY_COLUMNS]
+        df = self.sim.population.props
+        person_injuries = df.loc[person_id, RTI.INJURY_COLUMNS]
         # create empty variables to return the columns and codes of the treated injuries
         columns_to_return = []
         codes_to_return = []
         # iterate over the codes in the list codes and also the injury columns
-        for code in codes:
-            for col in df.columns:
-                # Search a sub-dataframe that is non-empty if the code is present is in that column and empty if not
-                if df[col] == code:
-                    columns_to_return.append(col)
-                    codes_to_return.append(code)
+        for col, val in person_injuries.iteritems():
+            # Search a sub-dataframe that is non-empty if the code is present is in that column and empty if not
+            if val in codes:
+                columns_to_return.append(col)
+                codes_to_return.append(val)
 
         return columns_to_return, codes_to_return
 
