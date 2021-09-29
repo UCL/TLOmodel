@@ -1065,10 +1065,10 @@ class Models:
 
         # Get probability of this episode being "persistent" if it is "prolonged"
         prob_persistent_if_prolonged = self.get_prob_persisent_if_prolonged(
-            age_exact_years,
-            un_HAZ_category,
-            un_clinical_acute_malnutrition,
-            untreated_hiv,
+            age_exact_years=age_exact_years,
+            un_HAZ_category=un_HAZ_category,
+            un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
+            untreated_hiv=untreated_hiv,
         )
 
         if self.rng.rand() < prob_prolonged:
@@ -1122,7 +1122,9 @@ class Models:
         if dehydration == 'severe':
             risk *= self.p['rr_diarr_death_severe_dehydration']
 
-        if 2.0 <= age_exact_years < 5.0:
+        if age_exact_years < 2.0:
+            pass
+        elif (2.0 <= age_exact_years < 5.0):
             risk *= self.p['rr_diarr_death_age24to59mo']
         else:
             risk *= 0.0
