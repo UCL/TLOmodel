@@ -1098,7 +1098,7 @@ class Models:
 
         if (pathogen == "rotavirus") and va_rota_all_doses:
             relative_prob_severe_dehydration_due_to_vaccine = \
-                self.p['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] if age_years <= 1 \
+                self.p['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] if age_years < 1 \
                 else self.p['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo']
         else:
             relative_prob_severe_dehydration_due_to_vaccine = 1.0
