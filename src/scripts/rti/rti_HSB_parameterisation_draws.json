@@ -1,0 +1,79 @@
+{
+  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_hsb_parameterisation.py",
+  "scenario_seed": 12,
+  "runs_per_draw": 2,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 662124363,
+      "parameters": {
+        "RTI": {
+          "rt_emergency_care_ISS_score_cut_off": 1
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 1916507803,
+      "parameters": {
+        "RTI": {
+          "rt_emergency_care_ISS_score_cut_off": 3
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1031005574,
+      "parameters": {
+        "RTI": {
+          "rt_emergency_care_ISS_score_cut_off": 5
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 1603685629,
+      "parameters": {
+        "RTI": {
+          "rt_emergency_care_ISS_score_cut_off": 7
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 1130929393,
+      "parameters": {
+        "RTI": {
+          "rt_emergency_care_ISS_score_cut_off": 9
+        }
+      }
+    },
+    {
+      "draw_number": 5,
+      "draw_seed": 371232386,
+      "parameters": {
+        "RTI": {
+          "rt_emergency_care_ISS_score_cut_off": 11
+        }
+      }
+    },
+    {
+      "draw_number": 6,
+      "draw_seed": 144909571,
+      "parameters": {
+        "RTI": {
+          "rt_emergency_care_ISS_score_cut_off": 13
+        }
+      }
+    },
+    {
+      "draw_number": 7,
+      "draw_seed": 960362435,
+      "parameters": {
+        "RTI": {
+          "rt_emergency_care_ISS_score_cut_off": 15
+        }
+      }
+    }
+  ]
+}
