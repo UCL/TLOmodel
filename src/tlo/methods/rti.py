@@ -3734,7 +3734,6 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                 columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, [code])[0])
                 assert not pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][columns]), \
                     'no recovery date given for this injury'
-                df.loc[person_id, 'rt_injuries_to_cast']
             # remove codes from fracture cast list
             df.loc[person_id, 'rt_injuries_to_cast'].clear()
         else:
