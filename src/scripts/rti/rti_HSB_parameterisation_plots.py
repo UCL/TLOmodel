@@ -16,7 +16,7 @@ from tlo.analysis.utils import (
     summarize,
 )
 
-outputspath = Path('./outputs/')
+outputspath = Path('./outputs/rmjlra2@ucl.ac.uk/')
 
 # %% Analyse results of runs when doing a sweep of a single parameter:
 
@@ -63,7 +63,7 @@ yerr = abs(lower_upper - per_param_average_hsb)
 in_accepted_range = np.where((per_param_average_hsb > expected_hsb_lower) &
                              (per_param_average_hsb < expected_hsb_upper))
 xvals = range(info['number_of_draws'])
-colors = ['lightsteelblue' if i not in in_accepted_range else 'lightsalmon' for i in xvals]
+colors = ['lightsteelblue' if i not in in_accepted_range[0] else 'lightsalmon' for i in xvals]
 xlabels = [
     round(params.loc[(params.module_param == param_name)][['value']].loc[draw].value, 3)
     for draw in range(info['number_of_draws'])

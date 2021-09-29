@@ -24,7 +24,7 @@ class TestScenario(BaseScenario):
         self.end_date = Date(2020, 1, 1)
         self.pop_size = 20000
         self.smaller_pop_size = 10000
-        self.number_of_samples_in_parameter_range = 8
+        self.number_of_samples_in_parameter_range = 12
         self.number_of_draws = self.number_of_samples_in_parameter_range
         self.runs_per_draw = 3
 
@@ -55,7 +55,7 @@ class TestScenario(BaseScenario):
 # are given out and once where we allow multiple injuries
 
     def draw_parameters(self, draw_number, rng):
-        hsb_cutoff_max = 16
+        hsb_cutoff_max = 12
         hsb_cutoff_min = 1
         parameter_range = np.arange(start=hsb_cutoff_min, stop=hsb_cutoff_max,
                                     step=hsb_cutoff_max / self.number_of_samples_in_parameter_range)

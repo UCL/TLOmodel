@@ -315,7 +315,7 @@ def extract_results(results_folder: Path,
                         idx = df[index]
                         assert idx.equals(results_index), "Indexes are not the same between runs"
 
-                except ValueError:
+                except KeyError:
                     results[draw, run] = np.nan
 
         # if 'index' is provided, set this to be the index of the results
