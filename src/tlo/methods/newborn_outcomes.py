@@ -48,6 +48,8 @@ class NewbornOutcomes(Module):
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager', }
 
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
     ADDITIONAL_DEPENDENCIES = {
         'CareOfWomenDuringPregnancy',
         'Labour',

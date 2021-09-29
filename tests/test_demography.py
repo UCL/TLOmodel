@@ -33,6 +33,7 @@ from tlo.methods import (
 )
 from tlo.methods.causes import Cause
 from tlo.methods.demography import AgeUpdateEvent
+from tlo.methods.diarrhoea import increase_risk_of_death, make_treatment_perfect
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
@@ -145,8 +146,15 @@ def test_cause_of_death_being_registered(tmpdir):
         care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=rfp),
         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=rfp),
         newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
+
+        # Supporting modules:
+        diarrhoea.DiarrhoeaPropertiesOfOtherModules()
     )
-    sim.make_initial_population(n=100)
+    # Increase risk of death of Diarrhoea to ensure that are at least some deaths
+    increase_risk_of_death(sim.modules['Diarrhoea'])
+    make_treatment_perfect(sim.modules['Diarrhoea'])
+
+    sim.make_initial_population(n=1000)
     sim.simulate(end_date=Date(2010, 5, 31))
     test_dtypes(sim)
 
@@ -181,7 +189,7 @@ def test_cause_of_death_being_registered(tmpdir):
 
     # Run the analysis file:
     results = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=rfp)
-    # Check the number of deaths in model represented in right
+    # Check the number of deaths in model represented is right
     assert (results['model'].sum() * 5.0) == approx(len(output['tlo.methods.demography']['death']))
 
 

@@ -43,6 +43,9 @@ class PregnancySupervisor(Module):
         self.abortion_complications = None
 
     INIT_DEPENDENCIES = {'Demography'}
+
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
     ADDITIONAL_DEPENDENCIES = {
         'CareOfWomenDuringPregnancy', 'Contraception', 'Labour', 'HealthSystem', 'Lifestyle', 'Hiv', 'Malaria',
         'CardioMetabolicDisorders'

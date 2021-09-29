@@ -1247,6 +1247,11 @@ class HealthSystem(Module):
         # removing bed_days from a particular individual if any
         self.bed_days.remove_beddays_footprint(person_id=person_id)
 
+    def reset_queue(self):
+        """Set the HSI event queue to be empty"""
+        self.HSI_EVENT_QUEUE = []
+        self.hsi_event_queue_counter = 0
+
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
@@ -1289,6 +1294,17 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         list_of_individual_hsi_event_tuples_due_today = list()
         list_of_population_hsi_event_tuples_due_today = list()
 
+        # To avoid repeated dataframe accesses in subsequent loop, assemble set of alive
+        # person IDs as  one-off operation, exploiting the improved efficiency of
+        # boolean-indexing of a Series compared to row-by-row access. From benchmarks
+        # converting Series to list before converting to set is ~2x more performant than
+        # direct conversion to set, while checking membership of set is ~10x quicker
+        # than checking membership of Pandas Index object and ~25x quicker than checking
+        # membership of list
+        alive_persons = set(
+            self.sim.population.props.index[self.sim.population.props.is_alive].to_list()
+        )
+
         while len(self.module.HSI_EVENT_QUEUE) > 0:
 
             next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
@@ -1300,8 +1316,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # The event has expired (after tclose) having never been run. Call the 'never_ran' function
                 event.never_ran()
 
-            elif (type(event.target) is not tlo.population.Population) \
-                    and (not self.sim.population.props.at[event.target, 'is_alive']):
+            elif not (
+                type(event.target) is tlo.population.Population
+                or event.target in alive_persons
+            ):
                 # if individual level event and the person who is the target is no longer alive, do nothing more
                 pass
 

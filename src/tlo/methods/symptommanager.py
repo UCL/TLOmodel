@@ -374,8 +374,9 @@ class SymptomManager(Module):
             the_disease_module_is_causing_the_symptom = \
                 self.bsh[symptom_string].uncompress(person_id)[disease_module.name].all()
             if not the_disease_module_is_causing_the_symptom:
-                logger.debug(f"Request from disease module '{disease_module.name}' to remove the symptom "
-                             f"'{symptom_string}', which it is not currently causing.")
+                logger.debug(key="message",
+                             data=f"Request from disease module '{disease_module.name}' to remove the symptom "
+                                  f"'{symptom_string}', which it is not currently causing.")
 
             # Do the remove:
             self.bsh[symptom_string].unset(person_id, disease_module.name)
