@@ -570,7 +570,7 @@ class Diarrhoea(Module):
         # The danger signs are classified collectively and are based on the result of a DxTest representing the ability
         # of the clinician to correctly determine the true value of the property 'gi_dehydration' being 'severe'.=
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            IMCI_severe_dehydration_visual_inspection=DxTest(
+            imci_severe_dehydration_visual_inspection=DxTest(
                 property='gi_dehydration',
                 target_categories=['severe'],
                 sensitivity=self.parameters['sensitivity_severe_dehydration_visual_inspection'],
@@ -656,7 +656,7 @@ class Diarrhoea(Module):
 
         # 1) Assessment of danger signs
         danger_signs = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run="IMCI_severe_dehydration_visual_inspection", hsi_event=hsi_event)
+            dx_tests_to_run="imci_severe_dehydration_visual_inspection", hsi_event=hsi_event)
 
         # 2) Determine which HSI to use:
         if danger_signs and (self.rng.rand() < self.parameters['prob_hospitalization_on_danger_signs']):
