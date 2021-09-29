@@ -892,3 +892,50 @@ def test_do_treatment_for_those_that_will_not_die():
 
 def test_effect_of_vaccine():
     """Check that if the vaccine is perfect, no one with the vaccine gets severe dehydration"""
+
+    # Create simulation
+    start_date = Date(2010, 1, 1)
+    popsize = 2000
+
+    sim = Simulation(start_date=start_date, seed=0,)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
+                 )
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+
+    # Examine the outcome of an incident case over many realisations....
+    get_dehydration = sim.modules['Diarrhoea'].models.get_dehydration
+
+    # 1) Make effect of vaccine perfect
+    sim.modules['Diarrhoea'].parameters['rr_severe_rotavirus_diarrhoea_with_R1_under1yo'] = 0.0
+    sim.modules['Diarrhoea'].parameters['rr_severe_rotavirus_diarrhoea_with_R1_over1yo'] = 0.0
+
+    # Check that if has vaccine and infected with rotavirus, there is never severe dehydration...
+    assert 'severe' not in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=True, age_years=1)
+                            for _ in range(100)]
+    assert 'severe' not in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=True, age_years=2)
+                            for _ in range(100)]
+
+    # ... but if no vaccine or infected with another pathogen, then sometimes it is severe dehydration.
+    assert 'severe' in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=False, age_years=1)
+                        for _ in range(100)]
+    assert 'severe' in [get_dehydration(pathogen='shigella', va_rota_all_doses=True, age_years=2)
+                        for _ in range(100)]
+
+    # 2) Make effect of vaccine imperfect
+    sim.modules['Diarrhoea'].parameters['rr_severe_rotavirus_diarrhoea_with_R1_under1yo'] = 1.0
+    sim.modules['Diarrhoea'].parameters['rr_severe_rotavirus_diarrhoea_with_R1_over1yo'] = 1.0
+
+    # Check that if has vaccine and infected with rotavirus, there is sometimes there is  severe dehydration...
+    assert 'severe' in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=True, age_years=1)
+                        for _ in range(100)]
+    assert 'severe' in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=True, age_years=2)
+                        for _ in range(100)]
