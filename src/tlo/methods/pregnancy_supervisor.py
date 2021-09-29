@@ -1426,17 +1426,18 @@ class PregnancySupervisor(Module):
                 new_onset_disease = assess_status_change[assess_status_change]
 
                 if not new_onset_disease.empty:
-                    for person in new_onset_disease.index:
-                        logger.info(key='maternal_complication', data={'person': person,
-                                                                       'type': disease,
-                                                                       'timing': 'antenatal'})
-
                     if disease == 'severe_pre_eclamp':
                         df.loc[new_onset_disease.index, 'ps_emergency_event'] = True
                     elif disease == 'eclampsia':
                         df.loc[new_onset_disease.index, 'ps_emergency_event'] = True
                         new_onset_disease.index.to_series().apply(self.store_dalys_in_mni,
                                                                   mni_variable='eclampsia_onset')
+
+                    for person in new_onset_disease.index:
+                        logger.info(key='maternal_complication', data={'person': person,
+                                                                       'type': disease,
+                                                                       'timing': 'antenatal'})
+                        self.mother_and_newborn_info[person]['new_onset_spe'] = True
 
             for disease in ['mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia', 'severe_gest_htn']:
                 log_new_progressed_cases(disease)
@@ -1607,7 +1608,7 @@ class PregnancySupervisor(Module):
         df.loc[prom.loc[prom].index, 'ps_premature_rupture_of_membranes'] = True
 
         # We allow women to seek care for PROM
-        df.loc[prom.loc[prom].index, 'ps_emergency_event'] = True # TODO:CHANGE BACK
+        df.loc[prom.loc[prom].index, 'ps_emergency_event'] = True
 
         for person in prom.loc[prom].index:
             logger.info(key='maternal_complication', data={'person': person,
@@ -1830,7 +1831,8 @@ class PregnancySupervisor(Module):
         # Create list of the potential causes of death if they are present in the mother
         if mother.ps_antepartum_haemorrhage == 'severe':
             causes.append('antepartum_haemorrhage')
-        if mother.ps_htn_disorders == 'severe_pre_eclamp':
+        if (mother.ps_htn_disorders == 'severe_pre_eclamp') and \
+           self.mother_and_newborn_info[individual_id]['new_onset_spe']:
             causes.append('severe_pre_eclampsia')
         if mother.ps_htn_disorders == 'eclampsia':
             causes.append('eclampsia')
@@ -1866,6 +1868,20 @@ class PregnancySupervisor(Module):
                                                            'year': self.sim.date.year})
 
             del self.mother_and_newborn_info[individual_id]
+
+        else:
+            if mother.ps_antepartum_haemorrhage == 'severe':
+                df.at[individual_id, 'ps_antepartum_haemorrhage'] = 'none'
+
+            if (mother.ps_htn_disorders == 'severe_pre_eclamp') and \
+                 self.mother_and_newborn_info[individual_id]['new_onset_spe']:
+                self.mother_and_newborn_info[individual_id]['new_onset_spe'] = False
+
+            if mother.ps_htn_disorders == 'eclampsia':
+                df.at[individual_id, 'ps_htn_disorders'] = 'severe_pre_eclamp'
+
+            if mother.ps_chorioamnionitis:
+                df.at[individual_id, 'ps_chorioamnionitis'] = False
 
     def DUMMYanc_scheduler(self, gestation_of_interest):
         df = self.sim.population.props
@@ -1971,7 +1987,7 @@ class PregnancySupervisor(Module):
                               'rectovaginal_fistula_resolution': pd.NaT,
                               'test_run': False,  # used by labour module when running some model tests
                               'pred_syph_infect': pd.NaT,
-
+                              'new_onset_spe': False,
                               # todo: delete and delete usage (just for checking)
                               'cs_indication': 'none'
 

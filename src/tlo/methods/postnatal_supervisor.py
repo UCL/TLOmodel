@@ -542,17 +542,15 @@ class PostnatalSupervisor(Module):
             self.rng.random_sample(len(at_sepsis_urinary.loc[at_sepsis_urinary])) <
             params['prob_late_sepsis_urinary_tract'], index=at_sepsis_urinary.loc[at_sepsis_urinary].index)
 
-        df.loc[onset_sepsis_endo.loc[onset_sepsis_endo].index, 'pn_sepsis_late_postpartum'] = True
-        df.loc[onset_sepsis_endo.loc[onset_sepsis_endo].index, 'pn_emergency_event_mother'] = True
+        for index_slice in [onset_sepsis_endo.loc[onset_sepsis_endo].index,
+                            onset_sepsis_sst.loc[onset_sepsis_sst].index,
+                            onset_sepsis_urinary.loc[onset_sepsis_urinary].index]:
+
+            df.loc[index_slice, 'pn_sepsis_late_postpartum'] = True
+            df.loc[index_slice, 'pn_emergency_event_mother'] = True
 
         for person in onset_sepsis_endo.loc[onset_sepsis_endo].index:
             mni[person]['endo_pp'] = True
-
-        df.loc[onset_sepsis_sst.loc[onset_sepsis_sst].index, 'pn_sepsis_late_postpartum'] = True
-        df.loc[onset_sepsis_sst.loc[onset_sepsis_sst].index, 'pn_emergency_event_mother'] = True
-
-        df.loc[onset_sepsis_urinary.loc[onset_sepsis_urinary].index, 'pn_sepsis_late_postpartum'] = True
-        df.loc[onset_sepsis_urinary.loc[onset_sepsis_urinary].index, 'pn_emergency_event_mother'] = True
 
         new_sepsis = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == week) & \
                      ~df.hs_is_inpatient & df.pn_sepsis_late_postpartum
@@ -691,15 +689,19 @@ class PostnatalSupervisor(Module):
                 new_onset_disease = assess_status_change[assess_status_change]
 
                 if not new_onset_disease.empty:
-                    for person in new_onset_disease.index:
-                        logger.info(key='maternal_complication', data={'person': person,
-                                                                       'type': disease,
-                                                                       'timing': 'postnatal'})
                     if disease == 'severe_pre_eclamp':
                         df.loc[new_onset_disease.index, 'pn_emergency_event_mother'] = True
                     elif disease == 'eclampsia':
                         df.loc[new_onset_disease.index, 'pn_emergency_event_mother'] = True
                         new_onset_disease.index.to_series().apply(store_dalys_in_mni, mni_variable='eclampsia_onset')
+
+                    for person in new_onset_disease.index:
+                        logger.info(key='maternal_complication', data={'person': person,
+                                                                       'type': disease,
+                                                                       'timing': 'postnatal'})
+
+                        if disease == 'severe_pre_eclamp':
+                            mni[person]['new_onset_spe'] = True
 
             for disease in ['mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia', 'severe_gest_htn']:
                 log_new_progressed_cases(disease)
@@ -899,6 +901,7 @@ class PostnatalSupervisor(Module):
         """
         df = self.sim.population.props
         params = self.current_parameters
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # Select the individuals row in the data frame to prevent repeated at based indexing
         if mother_or_child == 'mother':
@@ -913,7 +916,7 @@ class PostnatalSupervisor(Module):
                 causes.append('secondary_postpartum_haemorrhage')
             if mother.pn_sepsis_late_postpartum:
                 causes.append('postpartum_sepsis')
-            if mother.pn_htn_disorders == 'severe_pre_eclamp':
+            if mother.pn_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe']:
                 causes.append('severe_pre_eclampsia')
             if mother.pn_htn_disorders == 'eclampsia':
                 causes.append('eclampsia')
@@ -955,6 +958,8 @@ class PostnatalSupervisor(Module):
                     df.at[individual_id, 'pn_sepsis_late_postpartum'] = False
                 if mother.pn_htn_disorders == 'eclampsia':
                     df.at[individual_id, 'pn_htn_disorders'] = 'severe_pre_eclamp'
+                if mother.pn_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe']:
+                    mni[individual_id]['new_onset_spe'] = False
 
         # ================================== NEONATAL DEATH EQUATIONS ==============================================
         if mother_or_child == 'child':
@@ -1245,6 +1250,9 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                             logger.info(key='maternal_complication', data={'person': person,
                                                                            'type': disease,
                                                                            'timing': 'postnatal'})
+                            if disease == 'severe_pre_eclamp':
+                                mni[person]['new_onset_spe'] = True
+
                         if disease == 'eclampsia':
                             new_onset_disease.index.to_series().apply(store_dalys_in_mni,
                                                                       mni_variable='eclampsia_onset')
@@ -1287,15 +1295,15 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
 
             if df.at[individual_id, 'pn_sepsis_late_postpartum'] or\
                 df.at[individual_id, 'pn_postpartum_haem_secondary'] or \
-                (df.at[individual_id, 'pn_htn_disorders'] == 'severe_pre_eclamp') or \
-               (df.at[individual_id, 'pn_htn_disorders'] == 'eclampsia'):
+                ((df.at[individual_id, 'pn_htn_disorders'] == 'severe_pre_eclamp') and
+                 mni[individual_id]['new_onset_spe']) or \
+                (df.at[individual_id, 'pn_htn_disorders'] == 'eclampsia'):
 
                 if (mni[individual_id]['will_receive_pnc'] == 'late') or \
                    (self.module.rng.random_sample() < params['prob_care_seeking_postnatal_emergency']):
 
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        pnc_one_maternal, priority=0,
-                            topen=self.sim.date, tclose=None)
+                        pnc_one_maternal, priority=0, topen=self.sim.date, tclose=None)
 
                 # If she will not receive treatment for her complications we apply risk of death now
                 else:

@@ -2760,7 +2760,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
             # ============================== INITIATE TREATMENT FOR CHORIOAMNIONITIS ==================================
             if mother.ps_chorioamnionitis:
-                self.module.antibiotics_for_chorioamnionitis(person_id, self)
+                # TODO: REMOVE THIS FUNCTION AS TREATMENT IS DELIVERED ENTIRELY IN LABOUR MODULE
+                #self.module.antibiotics_for_chorioamnionitis(person_id, self)
                 df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
                 logger.debug(key='msg', data=f'{person_id} will be admitted for induction due to prom/chorio')
 

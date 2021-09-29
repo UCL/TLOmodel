@@ -125,6 +125,8 @@ def predict_sepsis_death(self, df, rng=None, **externals):
     result = params['cfr_sepsis']
 
     # todo: wont this give a treatment effect to postpartum women who develop a different kind of sepsis
+    # todo: ? remove call to ac_received_abx_for_chorioamnionitis as i've now simplified and all treatment is delivered
+    #  in the labour module
     if ((externals['chorio_in_preg'] or person['ps_chorioamnionitis']) and person['ac_received_abx_'
                                                                                   'for_chorioamnionitis'])\
        or person['la_sepsis_treatment']:
@@ -139,7 +141,7 @@ def predict_eclampsia_death(self, df, rng=None, **externals):
     params = self.parameters
     result = params['cfr_eclampsia']
 
-    if person['la_eclampsia_treatment']:
+    if person['la_eclampsia_treatment'] or person['ac_mag_sulph_treatment']:
         result *= params['eclampsia_treatment_effect_md']
     if person['la_maternal_hypertension_treatment'] or person['ac_iv_anti_htn_treatment']:
         result *= params['anti_htns_treatment_effect_md']
@@ -263,10 +265,8 @@ def predict_postpartum_haem_pp_death(self, df, rng=None, **externals):
         result *= params['pph_treatment_effect_uterotonics_md']
     if 'manual_removal_placenta' in treatment:
         result *= params['pph_treatment_effect_mrp_md']
-    if 'surgery' in treatment:
+    if ('surgery' in treatment) or ('hysterectomy' in treatment):
         result *= params['pph_treatment_effect_surg_md']
-    if 'hysterectomy' in treatment:
-        result *= params['pph_treatment_effect_hyst_md']
     if externals['received_blood_transfusion']:
         result *= params['pph_bt_treatment_effect_md']
     # if person['ps_anaemia_in_pregnancy']:
