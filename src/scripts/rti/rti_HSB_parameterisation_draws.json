@@ -1,7 +1,7 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_hsb_parameterisation.py",
+  "scenario_script_path": "src/scripts/rti/rti_hsb_parameterisation.py",
   "scenario_seed": 12,
-  "runs_per_draw": 2,
+  "runs_per_draw": 3,
   "draws": [
     {
       "draw_number": 0,
@@ -75,5 +75,7 @@
         }
       }
     }
-  ]
+  ],
+  "commit": "8253f2f2351d0134566c9c95bec95d29d2e76d1d",
+  "github": "https://github.com/UCL/TLOmodel/blob/8253f2f2351d0134566c9c95bec95d29d2e76d1d/src/scripts/rti/rti_hsb_parameterisation.py"
 }
