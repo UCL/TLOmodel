@@ -275,13 +275,11 @@ class Contraception(Module):
             using a different one."""
 
             # Get the probability per month of the woman making a switch (to anything)
-            # todo - units -- monthly?
             p_switch_from = self.parameters['Prob_Switch_From'].loc[0]
 
             # Get the probability that the woman switches to a new contraceptive (given that she will switch to
             # something different).
             # Columns = "current method"; Row = "new method"
-            # todo - units -- monthly?
             switching_matrix = self.parameters['Prob_Switch_From_And_To'].set_index('switchfrom').transpose()
 
             assert set(switching_matrix.columns) == (
