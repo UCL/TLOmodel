@@ -21,12 +21,12 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = 12
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2015, 1, 1)
-        self.pop_size = 10000
+        self.end_date = Date(2020, 1, 1)
+        self.pop_size = 20000
         self.smaller_pop_size = 10000
         self.number_of_samples_in_parameter_range = 8
         self.number_of_draws = self.number_of_samples_in_parameter_range
-        self.runs_per_draw = 2
+        self.runs_per_draw = 3
 
     def log_configuration(self):
         return {
