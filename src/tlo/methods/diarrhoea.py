@@ -435,7 +435,7 @@ class Diarrhoea(Module):
         'days_between_treatment_and_cure':
             Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'),
 
-        # Parameters of R1 vaccine
+        # Parameters of monovalent Rotavirus Vaccine (R1)
         'rr_reduce_severe_rotavirus_diarrhoea_with_R1_under1yo':
             Parameter(Types.REAL,
                       'relative risk of R1 reducing severe rotavirus diarrhoea for under 1 years old'),
@@ -1579,8 +1579,7 @@ class DiarrhoeaPropertiesOfOtherModules(Module):
                                                    categories=['MAM', 'SAM', 'well']),
         'un_HAZ_category': Property(Types.CATEGORICAL, 'temporary property',
                                     categories=['HAZ<-3', '-3<=HAZ<-2', 'HAZ>=-2']),
-        'va_rota_all_doses': Property(Types.BOOL, 'temporary property'),
-
+        'va_rota_all_doses': Property(Types.BOOL, 'temporary property')
     }
 
     def __init__(self, name=None):
@@ -1610,7 +1609,7 @@ class DiarrhoeaPropertiesOfOtherModules(Module):
         df.at[child, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.at[child, 'un_clinical_acute_malnutrition'] = 'well'
         df.at[child, 'un_HAZ_category'] = 'HAZ>=-2'
-
+        df.at[child, 'va_rota_all_doses'] = False
 
 class DiarrhoeaCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
     """This event runs daily and checks properties are in the right configuration. Only use whilst debugging!
