@@ -269,13 +269,9 @@ class Diarrhoea(Module):
         'prob_prolonged_to_persistent_diarr':
             Parameter(Types.REAL, 'probability of prolonged diarrhoea becoming persistent diarrhoea'
                       ),
-        'rr_bec_persistent_age12to23':
+        'rr_bec_persistent_age>6mo':
             Parameter(Types.REAL,
-                      'relative rate of acute diarrhoea becoming persistent diarrhoea for age 12 to 23 months'
-                      ),
-        'rr_bec_persistent_age24to59':
-            Parameter(Types.REAL,
-                      'relative rate of acute diarrhoea becoming persistent diarrhoea for age 24 to 59 months'
+                      'relative rate of acute diarrhoea becoming persistent diarrhoea for children over 6 months'
                       ),
         'rr_bec_persistent_HIV':
             Parameter(Types.REAL,
@@ -380,10 +376,6 @@ class Diarrhoea(Module):
             Parameter(Types.REAL, 'relative risk of diarrhoea death (compared to `case_fatality_rate_AWD` if the '
                                   'diarrhoea is of type "bloody" (i.e. dyssentry).'
                       ),
-        'rr_diarr_death_age12to23mo':
-            Parameter(Types.REAL,
-                      'relative risk of diarrhoea death for ages 12 to 23 months'
-                      ),
         'rr_diarr_death_age24to59mo':
             Parameter(Types.REAL,
                       'relative risk of diarrhoea death for ages 24 to 59 months'
@@ -412,13 +404,13 @@ class Diarrhoea(Module):
                       ),
 
         # Parameters governing the care provided to those that present with Diarrhoea
-        'sensitivity_danger_signs_visual_inspection':
+        'sensitivity_severe_dehydration_visual_inspection':
             Parameter(Types.REAL,
-                      'sensitivity of health care workers visual inspection of danger signs'
+                      'sensitivity of IMCI severe dehydration algorithm for dehydration >9% loss of body weight'
                       ),
-        'specificity_danger_signs_visual_inspection':
+        'specificity_severe_dehydration_visual_inspection':
             Parameter(Types.REAL,
-                      'specificity of health care workers visual inspection of danger signs'
+                      'specificity of IMCI severe dehydration algorithm for dehydration >9% loss of body weight'
                       ),
         'prob_hospitalization_on_danger_signs':
             Parameter(Types.REAL,
@@ -578,11 +570,11 @@ class Diarrhoea(Module):
         # The danger signs are classified collectively and are based on the result of a DxTest representing the ability
         # of the clinician to correctly determine the true value of the property 'gi_dehydration' being 'severe'.=
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            danger_signs_visual_inspection=DxTest(
+            imci_severe_dehydration_visual_inspection=DxTest(
                 property='gi_dehydration',
                 target_categories=['severe'],
-                sensitivity=self.parameters['sensitivity_danger_signs_visual_inspection'],
-                specificity=self.parameters['specificity_danger_signs_visual_inspection']
+                sensitivity=self.parameters['sensitivity_severe_dehydration_visual_inspection'],
+                specificity=self.parameters['specificity_severe_dehydration_visual_inspection']
             )
         )
 
@@ -664,7 +656,7 @@ class Diarrhoea(Module):
 
         # 1) Assessment of danger signs
         danger_signs = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run="danger_signs_visual_inspection", hsi_event=hsi_event)
+            dx_tests_to_run="imci_severe_dehydration_visual_inspection", hsi_event=hsi_event)
 
         # 2) Determine which HSI to use:
         if danger_signs and (self.rng.rand() < self.parameters['prob_hospitalization_on_danger_signs']):
@@ -1035,7 +1027,7 @@ class Models:
         return _incidence_equations_by_pathogen
 
     def get_prob_persisent_if_prolonged(self,
-                                        age_years,
+                                        age_exact_years,
                                         un_HAZ_category,
                                         un_clinical_acute_malnutrition,
                                         untreated_hiv,
@@ -1043,10 +1035,8 @@ class Models:
         # Baseline prob:
         prob_persistent_if_prolonged = self.p['prob_prolonged_to_persistent_diarr']
 
-        if age_years == 1:
-            prob_persistent_if_prolonged *= self.p['rr_bec_persistent_age12to23']
-        elif age_years < 5:
-            prob_persistent_if_prolonged *= self.p['rr_diarr_death_age24to59mo']
+        if age_exact_years > 0.5:
+            prob_persistent_if_prolonged *= self.p['rr_bec_persistent_age>6mo']
 
         if un_HAZ_category == 'HAZ<-3':
             prob_persistent_if_prolonged *= self.p['rr_bec_persistent_stunted']
@@ -1061,7 +1051,7 @@ class Models:
 
     def get_duration(self,
                      pathogen,
-                     age_years,
+                     age_exact_years,
                      un_HAZ_category,
                      un_clinical_acute_malnutrition,
                      untreated_hiv,
@@ -1075,10 +1065,10 @@ class Models:
 
         # Get probability of this episode being "persistent" if it is "prolonged"
         prob_persistent_if_prolonged = self.get_prob_persisent_if_prolonged(
-            age_years,
-            un_HAZ_category,
-            un_clinical_acute_malnutrition,
-            untreated_hiv,
+            age_exact_years=age_exact_years,
+            un_HAZ_category=un_HAZ_category,
+            un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
+            untreated_hiv=untreated_hiv,
         )
 
         if self.rng.rand() < prob_prolonged:
@@ -1132,9 +1122,9 @@ class Models:
         if dehydration == 'severe':
             risk *= self.p['rr_diarr_death_severe_dehydration']
 
-        if 1.0 <= age_exact_years < 2.0:
-            risk *= self.p['rr_diarr_death_age12to23mo']
-        elif age_exact_years < 5.0:
+        if age_exact_years < 2.0:
+            pass
+        elif (2.0 <= age_exact_years < 5.0):
             risk *= self.p['rr_diarr_death_age24to59mo']
         else:
             risk *= 0.0
@@ -1317,7 +1307,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         # Determine the duration of the dirarrhoea, the date of outcome and the end of episode (the date when this
         # episode ends. It is the last possible data that any HSI could affect this episode.)
         duration_in_days = m.models.get_duration(pathogen=self.pathogen,
-                                                 age_years=person.age_years,
+                                                 age_exact_years=person.age_exact_years,
                                                  un_HAZ_category=person.un_HAZ_category,
                                                  un_clinical_acute_malnutrition=person.un_clinical_acute_malnutrition,
                                                  untreated_hiv=untreated_hiv,
@@ -1640,7 +1630,6 @@ def increase_risk_of_death(diarrhoea_module):
     diarrhoea_module.parameters['case_fatality_rate_AWD'] = 0.0001
     diarrhoea_module.parameters['rr_diarr_death_bloody'] = 1000
     diarrhoea_module.parameters['rr_diarr_death_severe_dehydration'] = 1000
-    diarrhoea_module.parameters['rr_diarr_death_age12to23mo'] = 1.0
     diarrhoea_module.parameters['rr_diarr_death_age24to59mo'] = 1.0
     diarrhoea_module.parameters['rr_diarr_death_if_duration_longer_than_13_days'] = 1.0
     diarrhoea_module.parameters['rr_diarr_death_untreated_HIV'] = 1.0
@@ -1659,5 +1648,5 @@ def make_treatment_perfect(diarrhoea_module):
 
     # Apply perfect assessment and referral
     diarrhoea_module.parameters['prob_hospitalization_referral_for_severe_diarrhoea'] = 1.0
-    diarrhoea_module.parameters['sensitivity_danger_signs_visual_inspection'] = 1.0
-    diarrhoea_module.parameters['specificity_danger_signs_visual_inspection'] = 1.0
+    diarrhoea_module.parameters['sensitivity_severe_dehydration_visual_inspection'] = 1.0
+    diarrhoea_module.parameters['specificity_severe_dehydration_visual_inspection'] = 1.0
