@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -80,39 +81,46 @@ def plot(df, title=''):
     plt.ylabel('Number')
     plt.show()
 
-
 plot(results1549, 'All Ages')
 plot(results1519, '15-19')
 plot(results3034, '30-34')
 
 
 # %% Compare average rates of pregnancy with rates of birth in WPP
-
+# todo this!!! and this use this to get correct number of births in 2010 (change fertility levels) and in future years (change rates of contraceptive use)
 AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = sim.modules['Demography'].AGE_RANGE_CATEGORIES, sim.modules[
     'Demography'].AGE_RANGE_LOOKUP
 p = sim.modules['Contraception'].processed_params
 use = p['initial_method_use']
 
-# Get average fertility (prob pregnancy per year)
+# Get the "intrinsic fertility rates" by contraception status
 fert = pd.DataFrame(index=range(15, 50), columns=states)
 fert['not_using'] = 1.0 - np.exp(-p['p_pregnancy_no_contraception_per_month'] * 12)
 fert.loc[:, fert.columns.drop('not_using')] = 1.0 - np.exp(-p['p_pregnancy_with_contraception_per_month'] * 12)
 
-# Compute average fertility, grouped by age
-average_fert = (use * fert).sum(axis=1)
-agegrps = average_fert.index.map(AGE_RANGE_LOOKUP)
-average_fert_5y = average_fert.groupby(by=agegrps).mean().rename_axis('Age_Grp')
+# Compute average fertility, grouped by age, for specific comparison dates
+dates = [
+    datetime.date(2010, 1, 1),
+    datetime.date(2020, 1, 1),
+    datetime.date(2030, 1, 1)
+]
 
-# Compare to WPP ASFR (=live births, so expect to be a bit higher than model due to losses and mortality)
-wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
-wpp_fert = \
-wpp.loc[(wpp.Period == '2010-2014') & (wpp.Variant == 'WPP_Estimates'), ['Age_Grp', 'asfr']].set_index('Age_Grp')[
-    'asfr']
+for date in dates:
 
-f = pd.concat({
-    'wpp': wpp_fert,
-    'model': average_fert_5y},
-    axis=1
-)
+    average_fert = (use * fert).sum(axis=1)
+    agegrps = average_fert.index.map(AGE_RANGE_LOOKUP)
+    average_fert_5y = average_fert.groupby(by=agegrps).mean().rename_axis('Age_Grp')
 
-ratio = average_fert_5y / wpp_fert
+    # Compare to WPP ASFR (=live births, so expect to be a bit higher than model due to losses and mortality)
+    wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+    wpp_fert = \
+    wpp.loc[(wpp.Period == '2010-2014') & (wpp.Variant == 'WPP_Estimates'), ['Age_Grp', 'asfr']].set_index('Age_Grp')[
+        'asfr']
+
+    f = pd.concat({
+        'wpp': wpp_fert,
+        'model': average_fert_5y},
+        axis=1
+    )
+
+    ratio = average_fert_5y / wpp_fert
