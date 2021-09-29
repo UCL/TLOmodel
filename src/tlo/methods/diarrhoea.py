@@ -436,10 +436,10 @@ class Diarrhoea(Module):
             Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'),
 
         # Parameters of monovalent Rotavirus Vaccine (R1)
-        'rr_reduce_severe_rotavirus_diarrhoea_with_R1_under1yo':
+        'rr_severe_rotavirus_diarrhoea_with_R1_under1yo':
             Parameter(Types.REAL,
                       'relative risk of R1 reducing severe rotavirus diarrhoea for under 1 years old'),
-        'rr_reduce_severe_rotavirus_diarrhoea_with_R1_over1yo':
+        'rr_severe_rotavirus_diarrhoea_with_R1_over1yo':
             Parameter(Types.REAL,
                       'relative risk of R1 reducing severe rotavirus diarrhoea for over 1 years old'),
     }
@@ -1095,23 +1095,22 @@ class Models:
         """For new incident case of diarrhoea, determine the type - 'watery' or 'bloody'"""
         return 'watery' if self.rng.rand() < self.p[f'proportion_AWD_in_{pathogen}'] else 'bloody'
 
-    def get_dehydration(self, df, va_rota_all_doses, pathogen):
-        """For new incident case of diarrhoea, determine the degree of dehydration - 'none', 'some' or 'severe'"""
+    def get_dehydration(self, pathogen, va_rota_all_doses, age_years):
+        """For new incident case of diarrhoea, determine the degree of dehydration - 'none', 'some' or 'severe'.
+        The effect of the R1 vaccine is to reduce the probability of severe dehydration."""
 
-        # Get the probabilities of severe for vaccinated with R1
-        prob_severe_under_1_vaccinated = self.p['probability_of_severe_dehydration_if_some_dehydration'] * self.p[
-            'rr_reduce_severe_rotavirus_diarrhoea_with_R1_under1yo']
-        prob_severe_over_1_vaccinated = self.p['probability_of_severe_dehydration_if_some_dehydration'] * self.p[
-            'rr_reduce_severe_rotavirus_diarrhoea_with_R1_over1yo']
+        relative_prob_severe_dehydration_due_to_vaccine = \
+            1.0 if not va_rota_all_doses else (self.p['rr_severe_rotavirus_diarrhoea_with_R1_under1yo']
+                                               if age_years <= 1
+                                               else self.p['rr_severe_rotavirus_diarrhoea_with_R1_over1yo']
+                                               )
 
         if self.rng.rand() < self.p[f'prob_dehydration_by_{pathogen}']:
-            if pathogen == "rotavirus" and va_rota_all_doses:
-                if df[df.age_exact_years] < 1:
-                    if self.rng.rand() < prob_severe_under_1_vaccinated:
-                        return 'severe'
-                elif 1 <= df[df.age_exact_years] < 2:
-                    if self.rng.rand() < prob_severe_over_1_vaccinated:
-                        return 'severe'
+            if self.rng.rand() < (
+                self.p['probability_of_severe_dehydration_if_some_dehydration']
+                * relative_prob_severe_dehydration_due_to_vaccine
+            ):
+                return 'severe'
             return 'some'
         return 'none'
 
@@ -1343,8 +1342,9 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             'gi_has_diarrhoea': True,
             'gi_pathogen': self.pathogen,
             'gi_type': m.models.get_type(self.pathogen),
-            'gi_dehydration': m.models.get_dehydration(df, va_rota_all_doses=person.va_rota_all_doses,
-                                                       pathogen=self.pathogen),
+            'gi_dehydration': m.models.get_dehydration(pathogen=self.pathogen,
+                                                       va_rota_all_doses=person.va_rota_all_doses,
+                                                       age_years=person.age_years),
             'gi_duration_longer_than_13days': duration_in_days >= 13,
             'gi_date_of_onset': self.sim.date,
             'gi_date_end_of_last_episode': date_of_outcome + DateOffset(days=p['days_between_treatment_and_cure']),
