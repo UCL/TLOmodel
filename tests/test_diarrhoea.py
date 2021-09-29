@@ -932,8 +932,8 @@ def test_effect_of_vaccine():
                         for _ in range(100)]
 
     # 2) Make effect of vaccine imperfect
-    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] = 0.0
-    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo'] = 0.0
+    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] = 1.0
+    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo'] = 1.0
 
     # Check that if the vaccine is imperfect and the person is infected with rotavirus, then there sometimes  is severe
     # dehydration.
