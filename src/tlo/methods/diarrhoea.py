@@ -578,7 +578,7 @@ class Diarrhoea(Module):
         # The danger signs are classified collectively and are based on the result of a DxTest representing the ability
         # of the clinician to correctly determine the true value of the property 'gi_dehydration' being 'severe'.=
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            IMCI_severe_dehydration_visual_inspection=DxTest(
+            imci_severe_dehydration_visual_inspection=DxTest(
                 property='gi_dehydration',
                 target_categories=['severe'],
                 sensitivity=self.parameters['sensitivity_severe_dehydration_visual_inspection'],
@@ -664,7 +664,7 @@ class Diarrhoea(Module):
 
         # 1) Assessment of danger signs
         danger_signs = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run="IMCI_severe_dehydration_visual_inspection", hsi_event=hsi_event)
+            dx_tests_to_run="imci_severe_dehydration_visual_inspection", hsi_event=hsi_event)
 
         # 2) Determine which HSI to use:
         if danger_signs and (self.rng.rand() < self.parameters['prob_hospitalization_on_danger_signs']):
@@ -1076,10 +1076,10 @@ class Models:
 
         # Get probability of this episode being "persistent" if it is "prolonged"
         prob_persistent_if_prolonged = self.get_prob_persisent_if_prolonged(
-            age_exact_years,
-            un_HAZ_category,
-            un_clinical_acute_malnutrition,
-            untreated_hiv,
+            age_exact_years=age_exact_years,
+            un_HAZ_category=un_HAZ_category,
+            un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
+            untreated_hiv=untreated_hiv,
         )
 
         if self.rng.rand() < prob_prolonged:
@@ -1145,7 +1145,9 @@ class Models:
         if dehydration == 'severe':
             risk *= self.p['rr_diarr_death_severe_dehydration']
 
-        if 2.0 <= age_exact_years < 5.0:
+        if age_exact_years < 2.0:
+            pass
+        elif (2.0 <= age_exact_years < 5.0):
             risk *= self.p['rr_diarr_death_age24to59mo']
         else:
             risk *= 0.0
