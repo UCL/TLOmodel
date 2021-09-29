@@ -980,9 +980,6 @@ class Models:
         # Write model for incidence of each pathogen
         self.linear_model_for_incidence_by_pathogen = self.write_linear_model_for_incidence_of_pathogens()
 
-        # # Model for progression to severe diarrhoea
-        # self.progression_to_severe_dehydration = self.
-
     def write_linear_model_for_incidence_of_pathogens(self):
         """Make a dict to hold the equations that govern the probability that a person acquires diarrhoea that is
         caused (primarily) by a pathogen"""
