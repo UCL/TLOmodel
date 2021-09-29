@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "src/scripts/rti/rti_hsb_parameterisation.py",
+  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_hsb_parameterisation.py",
   "scenario_seed": 12,
   "runs_per_draw": 3,
   "draws": [
@@ -17,7 +17,7 @@
       "draw_seed": 1916507803,
       "parameters": {
         "RTI": {
-          "rt_emergency_care_ISS_score_cut_off": 3
+          "rt_emergency_care_ISS_score_cut_off": 2
         }
       }
     },
@@ -26,7 +26,7 @@
       "draw_seed": 1031005574,
       "parameters": {
         "RTI": {
-          "rt_emergency_care_ISS_score_cut_off": 5
+          "rt_emergency_care_ISS_score_cut_off": 3
         }
       }
     },
@@ -35,7 +35,7 @@
       "draw_seed": 1603685629,
       "parameters": {
         "RTI": {
-          "rt_emergency_care_ISS_score_cut_off": 7
+          "rt_emergency_care_ISS_score_cut_off": 4
         }
       }
     },
@@ -44,7 +44,7 @@
       "draw_seed": 1130929393,
       "parameters": {
         "RTI": {
-          "rt_emergency_care_ISS_score_cut_off": 9
+          "rt_emergency_care_ISS_score_cut_off": 5
         }
       }
     },
@@ -53,7 +53,7 @@
       "draw_seed": 371232386,
       "parameters": {
         "RTI": {
-          "rt_emergency_care_ISS_score_cut_off": 11
+          "rt_emergency_care_ISS_score_cut_off": 6
         }
       }
     },
@@ -62,7 +62,7 @@
       "draw_seed": 144909571,
       "parameters": {
         "RTI": {
-          "rt_emergency_care_ISS_score_cut_off": 13
+          "rt_emergency_care_ISS_score_cut_off": 7
         }
       }
     },
@@ -71,11 +71,27 @@
       "draw_seed": 960362435,
       "parameters": {
         "RTI": {
-          "rt_emergency_care_ISS_score_cut_off": 15
+          "rt_emergency_care_ISS_score_cut_off": 8
+        }
+      }
+    },
+    {
+      "draw_number": 8,
+      "draw_seed": 62598988,
+      "parameters": {
+        "RTI": {
+          "rt_emergency_care_ISS_score_cut_off": 9
+        }
+      }
+    },
+    {
+      "draw_number": 9,
+      "draw_seed": 1505292720,
+      "parameters": {
+        "RTI": {
+          "rt_emergency_care_ISS_score_cut_off": 10
         }
       }
     }
-  ],
-  "commit": "8253f2f2351d0134566c9c95bec95d29d2e76d1d",
-  "github": "https://github.com/UCL/TLOmodel/blob/8253f2f2351d0134566c9c95bec95d29d2e76d1d/src/scripts/rti/rti_hsb_parameterisation.py"
+  ]
 }

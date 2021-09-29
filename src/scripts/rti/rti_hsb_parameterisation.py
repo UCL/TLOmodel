@@ -24,7 +24,7 @@ class TestScenario(BaseScenario):
         self.end_date = Date(2020, 1, 1)
         self.pop_size = 20000
         self.smaller_pop_size = 10000
-        self.number_of_samples_in_parameter_range = 12
+        self.number_of_samples_in_parameter_range = 11
         self.number_of_draws = self.number_of_samples_in_parameter_range
         self.runs_per_draw = 3
 
@@ -57,8 +57,7 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         hsb_cutoff_max = 12
         hsb_cutoff_min = 1
-        parameter_range = np.arange(start=hsb_cutoff_min, stop=hsb_cutoff_max,
-                                    step=hsb_cutoff_max / self.number_of_samples_in_parameter_range)
+        parameter_range = range(hsb_cutoff_min, hsb_cutoff_max)
         return {
             'RTI': {'rt_emergency_care_ISS_score_cut_off': int(parameter_range[draw_number])},
             }
