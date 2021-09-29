@@ -888,3 +888,7 @@ def test_do_treatment_for_those_that_will_not_die():
     recovery_event = DiarrhoeaNaturalRecoveryEvent(module=sim.modules['Diarrhoea'], person_id=person_id)
     recovery_event.apply(person_id=person_id)
     assert not df.at[person_id, 'gi_has_diarrhoea']
+
+
+def test_effect_of_vaccine():
+    """Check that if the vaccine is perfect, no one with the vaccine gets severe dehydration"""

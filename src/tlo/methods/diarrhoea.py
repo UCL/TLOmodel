@@ -1096,11 +1096,12 @@ class Models:
         """For new incident case of diarrhoea, determine the degree of dehydration - 'none', 'some' or 'severe'.
         The effect of the R1 vaccine is to reduce the probability of severe dehydration."""
 
-        relative_prob_severe_dehydration_due_to_vaccine = \
-            1.0 if not va_rota_all_doses else (self.p['rr_severe_rotavirus_diarrhoea_with_R1_under1yo']
-                                               if age_years <= 1
-                                               else self.p['rr_severe_rotavirus_diarrhoea_with_R1_over1yo']
-                                               )
+        if (pathogen == "rotavirus") and va_rota_all_doses:
+            relative_prob_severe_dehydration_due_to_vaccine = \
+                self.p['rr_severe_rotavirus_diarrhoea_with_R1_under1yo'] if age_years <= 1 \
+                    else self.p['rr_severe_rotavirus_diarrhoea_with_R1_over1yo']
+        else:
+            relative_prob_severe_dehydration_due_to_vaccine = 1.0
 
         if self.rng.rand() < self.p[f'prob_dehydration_by_{pathogen}']:
             if self.rng.rand() < (
