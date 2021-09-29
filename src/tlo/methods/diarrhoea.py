@@ -1099,7 +1099,7 @@ class Models:
         if (pathogen == "rotavirus") and va_rota_all_doses:
             relative_prob_severe_dehydration_due_to_vaccine = \
                 self.p['rr_severe_rotavirus_diarrhoea_with_R1_under1yo'] if age_years <= 1 \
-                    else self.p['rr_severe_rotavirus_diarrhoea_with_R1_over1yo']
+                else self.p['rr_severe_rotavirus_diarrhoea_with_R1_over1yo']
         else:
             relative_prob_severe_dehydration_due_to_vaccine = 1.0
 
@@ -1608,6 +1608,7 @@ class DiarrhoeaPropertiesOfOtherModules(Module):
         df.at[child, 'un_clinical_acute_malnutrition'] = 'well'
         df.at[child, 'un_HAZ_category'] = 'HAZ>=-2'
         df.at[child, 'va_rota_all_doses'] = False
+
 
 class DiarrhoeaCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
     """This event runs daily and checks properties are in the right configuration. Only use whilst debugging!
