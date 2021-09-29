@@ -26,7 +26,7 @@ class TestScenario(BaseScenario):
         self.smaller_pop_size = 1000
         self.number_of_samples_in_parameter_range = 5
         self.number_of_draws = self.number_of_samples_in_parameter_range
-        self.runs_per_draw = 2
+        self.runs_per_draw = 3
 
     def log_configuration(self):
         return {
