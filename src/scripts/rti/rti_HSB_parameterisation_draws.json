@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_hsb_parameterisation.py",
+  "scenario_script_path": "src/scripts/rti/rti_hsb_parameterisation.py",
   "scenario_seed": 12,
   "runs_per_draw": 3,
   "draws": [
@@ -92,6 +92,17 @@
           "rt_emergency_care_ISS_score_cut_off": 10
         }
       }
+    },
+    {
+      "draw_number": 10,
+      "draw_seed": 1798504726,
+      "parameters": {
+        "RTI": {
+          "rt_emergency_care_ISS_score_cut_off": 11
+        }
+      }
     }
-  ]
+  ],
+  "commit": "efc2bc1e694af203e3c6350986c94d8573b2edfe",
+  "github": "https://github.com/UCL/TLOmodel/blob/efc2bc1e694af203e3c6350986c94d8573b2edfe/src/scripts/rti/rti_hsb_parameterisation.py"
 }
