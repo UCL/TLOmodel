@@ -435,13 +435,13 @@ class Diarrhoea(Module):
         'days_between_treatment_and_cure':
             Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'),
 
-        # Parameters of monovalent Rotavirus Vaccine (R1)
-        'rr_severe_rotavirus_diarrhoea_with_R1_under1yo':
+        # Parameters describing efficacy of the monovalent rotavirus vaccine (R1)
+        'rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo':
             Parameter(Types.REAL,
-                      'relative risk of R1 reducing severe rotavirus diarrhoea for under 1 years old'),
-        'rr_severe_rotavirus_diarrhoea_with_R1_over1yo':
+                      'relative risk of severe dehydration with rotavirus vaccine, for under 1 years old.'),
+        'rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo':
             Parameter(Types.REAL,
-                      'relative risk of R1 reducing severe rotavirus diarrhoea for over 1 years old'),
+                      'relative risk of severe dehydration with rotavirus vaccine, for those aged 1 year and older.'),
     }
 
     PROPERTIES = {
@@ -1098,8 +1098,8 @@ class Models:
 
         if (pathogen == "rotavirus") and va_rota_all_doses:
             relative_prob_severe_dehydration_due_to_vaccine = \
-                self.p['rr_severe_rotavirus_diarrhoea_with_R1_under1yo'] if age_years <= 1 \
-                else self.p['rr_severe_rotavirus_diarrhoea_with_R1_over1yo']
+                self.p['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] if age_years <= 1 \
+                else self.p['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo']
         else:
             relative_prob_severe_dehydration_due_to_vaccine = 1.0
 
