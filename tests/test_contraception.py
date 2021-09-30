@@ -101,12 +101,6 @@ def run_sim(tmpdir,
             (sim.modules['Contraception'].processed_params['p_pregnancy_with_contraception_per_month'] * 100).clip(
                 upper=1.0)
 
-    # Make most of the population women
-    df = sim.population.props
-    df.loc[df.is_alive, 'sex'] = sim.modules['Demography'].rng.choice(['M', 'F'], p=[0.5, 0.5],
-                                                                      size=df.is_alive.sum())
-    df.loc[(df.sex == 'M'), "co_contraception"] = "not_using"
-
     if not run:
         return sim
 
@@ -116,6 +110,7 @@ def run_sim(tmpdir,
 
     return sim
 
+# todo rename these test more sensically!
 
 def zero_param(p):
     return {k: 0.0 * v for k, v in p.items()}
@@ -196,7 +191,6 @@ def test_check_rates_of_switch():
 
     def sim_contraceptive_poll(sim):
         """Do a "manual" simulation of the contraceptive poll"""
-        states = sim.modules['Contraception'].all_contraception_states
         poll = contraception.ContraceptionPoll(module=sim.modules['Contraception'], run_do_pregnancy=False)
         _usage_by_age = dict()
         for date in pd.date_range(sim.date, Date(2019, 12, 31), freq=pd.DateOffset(months=1)):
@@ -477,11 +471,11 @@ def test_contraception_use_and_not_using_healthsystem(tmpdir):
     when action do not use the HealthsSystem as when they do (and the HealthSystem allow every change to occur)."""
 
     # Run basic check, for the case when the model is using the healthsystem and when not and check the logs
-    sim_does_not_use_healthsystem = run_sim(tmpdir=tmpdir, use_healthsystem=False, disable=True)
+    sim_does_not_use_healthsystem = run_sim(run=True, tmpdir=tmpdir, use_healthsystem=False, disable=True)
     __check_no_illegal_switches(sim_does_not_use_healthsystem)
     __check_some_starting_switching_and_stopping(sim_does_not_use_healthsystem)
 
-    sim_uses_healthsystem = run_sim(tmpdir=tmpdir, use_healthsystem=True, disable=True)
+    sim_uses_healthsystem = run_sim(run=True, tmpdir=tmpdir, use_healthsystem=True, disable=True)
     __check_no_illegal_switches(sim_uses_healthsystem)
     __check_some_starting_switching_and_stopping(sim_uses_healthsystem)
 
@@ -489,7 +483,7 @@ def test_contraception_use_and_not_using_healthsystem(tmpdir):
     # HSI dates are intentionally scattered over the month.)
 
     def format_log(_log):
-        """Format the log so that date is replaced with the only the month and year"""
+        """Format the log so that date is replaced with only the month and year"""
         _log["year_month"] = pd.to_datetime(_log['date']).dt.to_period('M')
         return _log.drop(columns=['date', 'age_years']).sort_values(['year_month', 'woman_id']).reset_index(drop=True)
 
@@ -499,7 +493,7 @@ def test_contraception_use_and_not_using_healthsystem(tmpdir):
             format_log(parse_log_file(sim_does_not_use_healthsystem.log_filepath)['tlo.methods.contraception'][key])
         )
 
-    # Equality of 'contraception_use_yearly_summary':
+    # Equality of 'contraception_use_yearly_summary' (which is logged at the end of each month)
     pd.testing.assert_frame_equal(
         parse_log_file(sim_uses_healthsystem.log_filepath)['tlo.methods.contraception'][
             'contraception_use_yearly_summary'],

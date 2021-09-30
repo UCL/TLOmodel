@@ -6,7 +6,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
-from tlo.util import random_date, transition_states, sample_outcome
+from tlo.util import random_date, sample_outcome, transition_states
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -25,33 +25,50 @@ class Contraception(Module):
         'Method_Use_In_2010': Parameter(Types.DATA_FRAME,
                                         'Proportion of women using each method in 2010, by age.'),
         'Pregnancy_NotUsing_In_2010': Parameter(Types.DATA_FRAME,
-                                                'Probability per year of a women not on contraceptive becoming pregnant, by age.'),
+                                                'Probability per year of a women not on contraceptive becoming '
+                                                'pregnant, by age.'),
         'r_hiv': Parameter(Types.DATA_FRAME,
-                           'The relative risk of becoming pregnancy if not on contraceptive if the women is HIV-positive, by age.'),
+                           'The relative risk of becoming pregnancy if not on contraceptive if the women is '
+                           'HIV-positive, by age.'),
         'Failure_ByMethod': Parameter(Types.DATA_FRAME,
-                                      'Probability per month of a women on a contraceptive becoming pregnant, by method'),
+                                      'Probability per month of a women on a contraceptive becoming pregnant, by '
+                                      'method'),
         'rr_fail_under25': Parameter(Types.REAL,
-                                     'The relative risk of becoming pregnant whilst using a contraceptive for woman yonunger than 25 years compared to older women.'),
+                                     'The relative risk of becoming pregnant whilst using a contraceptive for woman '
+                                     'yonunger than 25 years compared to older women.'),
         'Initiation_ByMethod': Parameter(Types.DATA_FRAME,
-                                         'Probability per month of a women who is not using any contraceptive method of starting use of a method, by method.'),
+                                         'Probability per month of a women who is not using any contraceptive method of'
+                                         ' starting use of a method, by method.'),
         'Initiation_ByAge': Parameter(Types.DATA_FRAME,
-                                      'The effect of age on the probability of starting use of contraceptive (add one for multiplicative effect).'),
+                                      'The effect of age on the probability of starting use of contraceptive (add one '
+                                      'for multiplicative effect).'),
         'Initiation_ByYear': Parameter(Types.DATA_FRAME,
-                                       'The age-specific effect of calendar year on the probability of starting use of contraceptive (multiplicative effect). Values are chosen so as to induce a trend in age-specific fertility consistent with the WPP estimates.'),
+                                       'The age-specific effect of calendar year on the probability of starting use of'
+                                       ' contraceptive (multiplicative effect). Values are chosen so as to induce a '
+                                       'trend in age-specific fertility consistent with the WPP estimates.'),
         'Initiation_AfterBirth': Parameter(Types.DATA_FRAME,
-                                           'The probability of a woman starting a contraceptive immidiately after birth, by method.'),
+                                           'The probability of a woman starting a contraceptive immidiately after birth'
+                                           ', by method.'),
         'Discontinuation_ByMethod': Parameter(Types.DATA_FRAME,
                                               'The probability per month of discontinuing use of a method, by method.'),
         'Discontinuation_ByAge': Parameter(Types.DATA_FRAME,
-                                           'The effect of age on the probability of discontinuing use of contraceptive (add one for multiplicative effect).'),
+                                           'The effect of age on the probability of discontinuing use of contraceptive '
+                                           '(add one for multiplicative effect).'),
         'Discontinuation_ByYear': Parameter(Types.DATA_FRAME,
-                                            'The age-specific effect of calendar year on the probability of discontinuing use of contraceptive (multiplicative effect). Values are chosen so as to induce a trend in age-specific fertility consistent with the WPP estimates.'),
+                                            'The age-specific effect of calendar year on the probability of '
+                                            'discontinuing use of contraceptive (multiplicative effect). Values are '
+                                            'chosen so as to induce a trend in age-specific fertility consistent with '
+                                            'the WPP estimates.'),
         'Prob_Switch_From': Parameter(Types.DATA_FRAME,
-                                      'The probability per month that a women switches from one form of contraceptive to another, conditional that she will not discontinue use of the method.'),
+                                      'The probability per month that a women switches from one form of contraceptive '
+                                      'to another, conditional that she will not discontinue use of the method.'),
         'Prob_Switch_From_And_To': Parameter(Types.DATA_FRAME,
-                                             'The probability of switching to a new method, by method, conditional that the woman will switch to a new method.'),
+                                             'The probability of switching to a new method, by method, conditional that'
+                                             ' the woman will switch to a new method.'),
         'days_between_appts_for_maintenance': Parameter(Types.INT,
-                                                        'The number of days between successive family planning appointments for women that are maintaing the use of a method.')
+                                                        'The number of days between successive family planning '
+                                                        'appointments for women that are maintaing the use of a method'
+                                                        '.')
     }
 
     PROPERTIES = {
@@ -132,7 +149,8 @@ class Contraception(Module):
             self.parameters[sheet] = workbook[sheet]
 
         # Declare values for additional parameters (hard-coded for now)
-        self.parameters['rr_fail_under25'] = 2.2  # From Guttmacher analysis. (todo *** N.B. SHOULD NOT BE applied to those persons with female sterilization)
+        self.parameters['rr_fail_under25'] = 2.2  # From Guttmacher analysis.
+        # (todo *** N.B. SHOULD NOT BE applied to those persons with female sterilization)
         self.parameters['days_between_appts_for_maintenance'] = 180
 
     def pre_initialise_population(self):
@@ -174,9 +192,11 @@ class Contraception(Module):
         * Create second random number generator
         """
 
-        # Schedule first occurrences of repeating events:
+        # Schedule first occurrences of Contraception Poll to occur at the beginning of the simulation:
         sim.schedule_event(ContraceptionPoll(self), sim.date)
-        sim.schedule_event(ContraceptionLoggingEvent(self), sim.date)
+
+        # Schedule the first occurrence of the Logging event to occur at the end of the month:
+        sim.schedule_event(ContraceptionLoggingEvent(self), sim.date + pd.DateOffset(months=1) - pd.DateOffset(days=1))
 
         # Retrieve the consumables codes for the consumables used
         if self.use_healthsystem:
@@ -385,7 +405,7 @@ class Contraception(Module):
         return processed_param
 
     def select_contraceptive_following_birth(self, mother_id):
-        """ Initiation of mother's contraception after birth."""
+        """Initiation of mother's contraception after birth."""
 
         # Allocate the woman to a contraceptive status
         probs = self.processed_params['p_start_after_birth']
@@ -721,7 +741,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         )
 
         # Determine if there will be a pregnancy for each individual
-        idx_pregnant = prob_pregnancy.index[prob_pregnancy > self.module.rng.rand(len(prob_pregnancy))]
+        idx_pregnant = prob_pregnancy.index[prob_pregnancy > rng.rand(len(prob_pregnancy))]
 
         # Effect these women to be pregnant
         self.set_new_pregnancy(women_id=idx_pregnant)

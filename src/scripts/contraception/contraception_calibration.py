@@ -1,3 +1,8 @@
+"""This file is used to do a quick check on the likely outcomes of a longer run. It simulates only the contraceptive
+poll and age-update event in order to construct an age-time trend of the usage of each contraceptive. This is combined
+with the assumption of fertility and failure rates and compared with the WPP estimates of age-specific fertility rates.
+"""
+
 from pathlib import Path
 
 import matplotlib.pyplot as plt
