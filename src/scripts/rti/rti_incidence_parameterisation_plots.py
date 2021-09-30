@@ -62,14 +62,18 @@ incidence_data = incidence_data.loc[incidence_data['metric'] == 'Rate']
 incidence_data = incidence_data.loc[incidence_data['year'] > 2009]
 expected_incidence_upper = incidence_data['upper'].mean()
 expected_incidence_lower = incidence_data['lower'].mean()
+expected_incidence = incidence_data['val'].mean()
 per_param_average_incidence = mean_incidence_overall[:, 'mean'].values
 yerr = abs(lower_upper - per_param_average_incidence)
 in_accepted_range = np.where((per_param_average_incidence > expected_incidence_lower) &
                              (per_param_average_incidence < expected_incidence_upper))
 xvals = range(info['number_of_draws'])
 colors = ['lightsteelblue' if i not in in_accepted_range[0] else 'lightsalmon' for i in xvals]
+best_fit_found = min(per_param_average_incidence, key = lambda x: abs(x - expected_incidence))
+best_fit_index = np.where(per_param_average_incidence == best_fit_found)
+colors[best_fit_index[0][0]] = 'gold'
 xlabels = [
-    round(params.loc[(params.module_param == param_name)][['value']].loc[draw].value, 3)
+    round(params.loc[(params.module_param == param_name)][['value']].loc[draw].value, 5)
     for draw in range(info['number_of_draws'])
 ]
 fig, ax = plt.subplots()

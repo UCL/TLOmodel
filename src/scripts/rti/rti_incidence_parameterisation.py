@@ -23,8 +23,8 @@ class TestScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)
         self.pop_size = 20000
-        self.smaller_pop_size = 1000
-        self.number_of_samples_in_parameter_range = 5
+        self.smaller_pop_size = 20000
+        self.number_of_samples_in_parameter_range = 10
         self.number_of_draws = self.number_of_samples_in_parameter_range
         self.runs_per_draw = 4
 
@@ -55,8 +55,8 @@ class TestScenario(BaseScenario):
 # are given out and once where we allow multiple injuries
 
     def draw_parameters(self, draw_number, rng):
-        base_rate_max = 0.0072620235369823 - 0.001
-        base_rate_min = 0.0072620235369823 + 0.001
+        base_rate_max = 0.0072620235369823 - 0.002
+        base_rate_min = 0.0072620235369823 + 0.002
         parameter_range = np.linspace(base_rate_min, base_rate_max, num=self.number_of_samples_in_parameter_range)
         return {
             'RTI': {'base_rate_injrti': parameter_range[draw_number]},
