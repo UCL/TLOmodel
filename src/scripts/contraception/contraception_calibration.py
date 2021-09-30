@@ -20,7 +20,7 @@ from tlo.methods import (
 )
 from tlo.methods.hiv import DummyHivModule
 
-#%% Create dummy simulation object
+# %% Create dummy simulation object
 resourcefilepath = Path('resources')
 start_date = Date(2010, 1, 1)
 sim = Simulation(start_date=start_date, seed=0)
@@ -55,7 +55,6 @@ age_update_event = demography.AgeUpdateEvent(sim.modules['Demography'], sim.modu
 usage_by_age = dict()
 
 for date in pd.date_range(sim.date, Date(2029, 12, 31), freq=pd.DateOffset(months=1)):
-
     sim.date = date
     age_update_event.apply(sim.population)
 
@@ -64,15 +63,16 @@ for date in pd.date_range(sim.date, Date(2029, 12, 31), freq=pd.DateOffset(month
 
     poll.apply(sim.population)
 
-
 # %% Declare useful formatting functions and load WPP data
 AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = sim.modules['Demography'].AGE_RANGE_CATEGORIES, sim.modules[
     'Demography'].AGE_RANGE_LOOKUP
 
 _, period_lookup = make_calendar_period_lookup()
 
+
 def format_usage_results(df):
-    return df.unstack().T.apply(lambda row: row/row.sum(), axis=1).dropna()
+    return df.unstack().T.apply(lambda row: row / row.sum(), axis=1).dropna()
+
 
 # %% Describe patterns of contraceptive usage over time
 
@@ -80,21 +80,21 @@ def plot(df, title=''):
     spacing = (np.arange(len(df)) % 24) == 0
 
     fig, ax = plt.subplots()
-    df.loc[spacing].apply(lambda row: row/row.sum(), axis=1).plot.bar(stacked=True, ax=ax, legend=False)
+    df.loc[spacing].apply(lambda row: row / row.sum(), axis=1).plot.bar(stacked=True, ax=ax, legend=False)
     plt.title(title)
     plt.xlabel('Date')
     plt.ylabel('Proportion')
-    fig.legend(loc=7)
 
+    fig.legend(loc=7)
     fig.tight_layout()
     fig.subplots_adjust(right=0.65)
     plt.show()
 
+
 for age_grp in ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']:
     plot(pd.DataFrame.from_dict({d: usage_by_age[d].unstack()[age_grp] for d in usage_by_age}, orient='index'), age_grp)
 
-
-#%% Check that initial usage by age matches the input assumption (initial_method_use)
+# %% Check that initial usage by age matches the input assumption (initial_method_use)
 actual_init_use = format_usage_results(usage_by_age[Date(2010, 1, 1)])
 
 assumption_init_use = sim.modules['Contraception'].processed_params['initial_method_use'].copy()
@@ -109,14 +109,13 @@ for i, agegrp in enumerate(actual_init_use.index):
     ax[i].set_title(f"{agegrp}")
 plt.show()
 
-
 # %% Get the "intrinsic fertility" rates by contraception status assumed in the TLO model
 fert = pd.DataFrame(index=range(15, 50), columns=states)
+p = sim.modules['Contraception'].processed_params
 fert['not_using'] = 1.0 - np.exp(-p['p_pregnancy_no_contraception_per_month'] * 12)
 fert.loc[:, fert.columns.drop('not_using')] = 1.0 - np.exp(-p['p_pregnancy_with_contraception_per_month'] * 12)
 fert.index = fert.index.map(AGE_RANGE_LOOKUP)
 fert = fert.groupby(by=fert.index).mean()
-
 
 # %% Compare Age-Specific Fertility Rates to 'approx average fertility' of women in the TLO model output in 2010
 # (given patterns of contraceptive use and intrinsic fertility and the assumption of the proportion of pregnancy that
@@ -129,7 +128,9 @@ wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 prop_preg_to_live_birth = 0.67
 
 fig, ax = plt.subplots()
-wpp_fert = wpp.loc[(wpp.Period == period_lookup[2010]) & (wpp.Variant == 'WPP_Estimates'), ['Age_Grp', 'asfr']].set_index('Age_Grp')
+wpp_fert = wpp.loc[
+    (wpp.Period == period_lookup[2010]) & (wpp.Variant == 'WPP_Estimates'), ['Age_Grp', 'asfr']
+].set_index('Age_Grp')
 model_fert = (format_usage_results(usage_by_age[Date(2010, 1, 1)]) * fert).sum(axis=1)
 ax.plot(model_fert.index, model_fert.values, 'b-', label='Model Pregnancy')
 ax.plot(model_fert.index, model_fert.values * prop_preg_to_live_birth, 'b--', label='Approx Model Live Births')
@@ -154,15 +155,16 @@ av_fert_by_period = pd.DataFrame(av_fert_by_period)
 fig, ax = plt.subplots(2, 4)
 ax = ax.reshape(-1)
 for i, agegrp in enumerate(av_fert_by_period.index):
-
     # Get WPP fertility:
-    wpp_fert = wpp.loc[wpp.Period.isin(av_fert_by_period.columns) & (wpp.Variant.isin(['WPP_Estimates', 'WPP_Medium variant'])) & (wpp.Age_Grp == agegrp), ['Period', 'asfr']].set_index('Period')
+    wpp_fert = wpp.loc[
+        wpp.Period.isin(av_fert_by_period.columns) & (wpp.Variant.isin(['WPP_Estimates', 'WPP_Medium variant'])) & (
+                wpp.Age_Grp == agegrp), ['Period', 'asfr']].set_index('Period')
 
     # Get average fertility in the model:
     model_fert = av_fert_by_period.loc[agegrp]
 
     # Comparative plot:
-    ax[i].plot(model_fert.index, model_fert.values / model_fert.values[0] , 'b-', label='Trend in Model Pregnancy')
+    ax[i].plot(model_fert.index, model_fert.values / model_fert.values[0], 'b-', label='Trend in Model Pregnancy')
     ax[i].plot(wpp_fert.index, wpp_fert.values / wpp_fert.values[0], 'r-', label='Trend in WPP Live Births')
 
     ax[i].set_title(f"{agegrp}")
@@ -171,5 +173,7 @@ for i, agegrp in enumerate(av_fert_by_period.index):
     plt.setp(ax[i].get_xticklabels(), rotation=90, ha='right')
 
 ax[-1].set_axis_off()
-plt.tight_layout()
+# fig.legend(loc=4)
+fig.tight_layout()
+# fig.subplots_adjust(right=0.65)
 plt.show()

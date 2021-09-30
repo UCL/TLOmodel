@@ -155,9 +155,87 @@ def __check_no_illegal_switches(sim):
             assert not (con.loc[con['age_years'] <= 30, 'switch_to'] == 'female_sterilization').any()  # no switching to
             # female_sterilization if age less than 30 (or equal to, in case they have aged since an HSI was scheduled)
 
-# todo: check on initialisation etc.
+#passing
+def test_check_rates_of_switch():
+    """Check that initiation and discontinuation rates work as expected."""
+    popsize = 10_000
 
-# todo: check on contraceptivepoll with no swithcing, etc.
+    def create_dummy_sim():
+        """Create dummy simulation"""
+        resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+        start_date = Date(2010, 1, 1)
+        sim = Simulation(start_date=start_date, seed=0)
+        sim.register(
+            # - core modules:
+            demography.Demography(resourcefilepath=resourcefilepath),
+            enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+            symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+
+            # - modules for mechanistic representation of contraception -> pregnancy -> labour -> delivery etc.
+            contraception.Contraception(resourcefilepath=resourcefilepath, use_healthsystem=False),
+            pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+            labour.Labour(resourcefilepath=resourcefilepath),
+            newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+            postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+
+            # - Dummy HIV module (as contraception requires the property hv_inf)
+            DummyHivModule()
+        )
+        return sim
+
+    def sim_contraceptive_poll(sim):
+        """Do a "manual" simulation of the contraceptive poll"""
+        states = sim.modules['Contraception'].all_contraception_states
+        poll = contraception.ContraceptionPoll(module=sim.modules['Contraception'], run_do_pregnancy=False)
+        _usage_by_age = dict()
+        for date in pd.date_range(sim.date, Date(2019, 12, 31), freq=pd.DateOffset(months=1)):
+            sim.date = date
+
+            _usage_by_age[date] = sim.population.props.loc[(sim.population.props.sex == 'F') & (
+                sim.population.props.age_years.between(15, 49))].groupby(by=['co_contraception', 'age_range']).size()
+
+            poll.apply(sim.population)
+        return _usage_by_age
+
+    def format_usage_results(_df):
+        return _df.unstack().T.apply(lambda row: row / row.sum(), axis=1).dropna()
+
+    def zero_param(p):
+        return {k: 0.0 * v for k, v in p.items()}
+
+    def incr_param(p):
+        return {k: 10.0 * v for k, v in p.items()}
+
+    # Set rates of initiation and discontinuation to zero: --> no changes in contraceptive use
+    sim = create_dummy_sim()
+    sim.make_initial_population(n=popsize)
+    sim.modules['Contraception'].processed_params['p_start_per_month'] = zero_param(sim.modules['Contraception'].processed_params['p_start_per_month'])
+    sim.modules['Contraception'].processed_params['p_stop_per_month'] = zero_param(sim.modules['Contraception'].processed_params['p_stop_per_month'])
+    sim.modules['Contraception'].processed_params['p_switch_from_per_month'] *= 0.0
+    usage = sim_contraceptive_poll(sim)
+    assert all([(usage[Date(2010, 1, 1)] == usage[d]).all() for d in usage])
+
+    # Set rates of initiation to "high" and rates of discontinuation to zero: --> all on contraception
+    sim = create_dummy_sim()
+    sim.make_initial_population(n=popsize)
+    sim.modules['Contraception'].processed_params['p_start_per_month'] = incr_param(sim.modules['Contraception'].processed_params['p_start_per_month'])
+    sim.modules['Contraception'].processed_params['p_stop_per_month'] = zero_param(sim.modules['Contraception'].processed_params['p_stop_per_month'])
+    sim.modules['Contraception'].processed_params['p_switch_from_per_month'] *= 0.0
+    usage = sim_contraceptive_poll(sim)
+    end_usage = usage[list(usage.keys())[-1]].unstack()
+    assert 0 == end_usage.loc['not_using'].sum()
+
+    # Set rates of initiation to zero and rates of discontinuation to "high": --> all off contraception
+    sim = create_dummy_sim()
+    sim.make_initial_population(n=popsize)
+    sim.modules['Contraception'].processed_params['p_start_per_month'] = zero_param(sim.modules['Contraception'].processed_params['p_start_per_month'])
+    sim.modules['Contraception'].processed_params['p_stop_per_month'] = incr_param(sim.modules['Contraception'].processed_params['p_stop_per_month'])
+    sim.modules['Contraception'].processed_params['p_switch_from_per_month'] *= 0.0
+    usage = sim_contraceptive_poll(sim)
+    end_usage = usage[list(usage.keys())[-1]].unstack()
+    assert 0 == end_usage.drop(index=['not_using', 'female_sterilization']).sum().sum()
 
 #passing
 def test_pregnancies_occurring(tmpdir):
@@ -172,6 +250,7 @@ def test_pregnancies_occurring(tmpdir):
     assert (pregs['contraception'] == "not_using").any()
     assert (pregs['contraception'] != "not_using").any()
 
+#not passing
 def test_contraception_use_and_not_using_healthsystem(tmpdir):
     """Test that the contraception module functions and that exactly the same patterns of usage, switching, etc occur
     when action do not use the HealthsSystem as when they do (and the HealthSystem allow every change to occur)."""
