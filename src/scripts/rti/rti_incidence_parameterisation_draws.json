@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_incidence_parameterisation.py",
+  "scenario_script_path": "src/scripts/rti/rti_incidence_parameterisation.py",
   "scenario_seed": 12,
   "runs_per_draw": 3,
   "draws": [
@@ -8,7 +8,7 @@
       "draw_seed": 662124363,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.0122620235369823
+          "base_rate_injrti": 0.0092620235369823
         }
       }
     },
@@ -17,7 +17,7 @@
       "draw_seed": 1916507803,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.0097620235369823
+          "base_rate_injrti": 0.0082620235369823
         }
       }
     },
@@ -35,7 +35,7 @@
       "draw_seed": 1603685629,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.0047620235369823
+          "base_rate_injrti": 0.0062620235369823
         }
       }
     },
@@ -44,9 +44,11 @@
       "draw_seed": 1130929393,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.0022620235369823
+          "base_rate_injrti": 0.0052620235369823
         }
       }
     }
-  ]
+  ],
+  "commit": "5ece07cefe1b31fbfe7cfd29aa117728c0abebc0",
+  "github": "https://github.com/UCL/TLOmodel/blob/5ece07cefe1b31fbfe7cfd29aa117728c0abebc0/src/scripts/rti/rti_incidence_parameterisation.py"
 }

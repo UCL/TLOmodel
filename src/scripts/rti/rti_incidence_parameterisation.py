@@ -26,7 +26,7 @@ class TestScenario(BaseScenario):
         self.smaller_pop_size = 1000
         self.number_of_samples_in_parameter_range = 5
         self.number_of_draws = self.number_of_samples_in_parameter_range
-        self.runs_per_draw = 3
+        self.runs_per_draw = 4
 
     def log_configuration(self):
         return {
@@ -55,8 +55,8 @@ class TestScenario(BaseScenario):
 # are given out and once where we allow multiple injuries
 
     def draw_parameters(self, draw_number, rng):
-        base_rate_max = 0.0072620235369823 - 0.002
-        base_rate_min = 0.0072620235369823 + 0.002
+        base_rate_max = 0.0072620235369823 - 0.001
+        base_rate_min = 0.0072620235369823 + 0.001
         parameter_range = np.linspace(base_rate_min, base_rate_max, num=self.number_of_samples_in_parameter_range)
         return {
             'RTI': {'base_rate_injrti': parameter_range[draw_number]},
