@@ -78,6 +78,7 @@ sim.register(
     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resources),
     hiv.DummyHivModule(),
 )
+
 """N.B. To examine the usage of contraceptive consumables, we need to retrieve this from the HealthSystem log as in
  the below example. But, if we don't need this, we can run the model much more quickly using the a configuration of
 ```

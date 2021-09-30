@@ -43,11 +43,19 @@ sim.register(
     # - Dummy HIV module (as contraception requires the property hv_inf)
     DummyHivModule()
 )
-sim.make_initial_population(n=50000)
+
+# %% Over-ride the content of the resourcefile to explore use of alternative parameter sets:
+
+# Zero-out age-effects on initiation and discontinuation
+# sim.modules['Contraception'].parameters['Initiation_ByAge']['r_init1_age'] *= 0.0
+# sim.modules['Contraception'].parameters['Discontinuation_ByAge']['r_discont_age'] *= 0.0
+
+# todo -- will have to be age-specific changes in initiation and discontinuation?? **
 
 # %% Simulate the changes in contraceptive use 'manually'
 
 # Run the ContraceptivePoll (with the option `run_do_pregnancy`=False to prevent pregnancies)
+sim.make_initial_population(n=50000)
 states = sim.modules['Contraception'].all_contraception_states
 poll = contraception.ContraceptionPoll(module=sim.modules['Contraception'], run_do_pregnancy=False)
 age_update_event = demography.AgeUpdateEvent(sim.modules['Demography'], sim.modules['Demography'].AGE_RANGE_LOOKUP)
@@ -163,17 +171,18 @@ for i, agegrp in enumerate(av_fert_by_period.index):
     # Get average fertility in the model:
     model_fert = av_fert_by_period.loc[agegrp]
 
+    assert (model_fert.index == wpp_fert.index).all()
+
     # Comparative plot:
-    ax[i].plot(model_fert.index, model_fert.values / model_fert.values[0], 'b-', label='Trend in Model Pregnancy')
-    ax[i].plot(wpp_fert.index, wpp_fert.values / wpp_fert.values[0], 'r-', label='Trend in WPP Live Births')
+    l1 = ax[i].plot(model_fert.index, model_fert.values / model_fert.values[0], 'b-', label='Trend in Model Pregnancy')
+    l2 = ax[i].plot(wpp_fert.index, wpp_fert.values / wpp_fert.values[0], 'r-', label='Trend in WPP Live Births')
 
     ax[i].set_title(f"{agegrp}")
-    ax[i].set_ylim([0.2, 5.0])
-    ax[i].set_yscale('log')
+    ax[i].set_ylim([0.2, 1.5])
     plt.setp(ax[i].get_xticklabels(), rotation=90, ha='right')
 
 ax[-1].set_axis_off()
-# fig.legend(loc=4)
+fig.legend((l1[0], l2[0]), ('Trend in Model Pregnancy', 'Trend in WPP Live Births'), 'lower right')
 fig.tight_layout()
-# fig.subplots_adjust(right=0.65)
+fig.subplots_adjust(right=0.90)
 plt.show()

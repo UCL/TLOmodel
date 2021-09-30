@@ -37,7 +37,7 @@ class Contraception(Module):
         'Initiation_ByAge': Parameter(Types.DATA_FRAME,
                                       'The effect of age on the probability of starting use of contraceptive (add one for multiplicative effect).'),
         'Initiation_ByYear': Parameter(Types.DATA_FRAME,
-                                       'The effect of calendar year on the probability of  tarting use of contraceptive (multiplicative effect).'),
+                                       'The age-specific effect of calendar year on the probability of starting use of contraceptive (multiplicative effect). Values are chosen so as to induce a trend in age-specific fertility consistent with the WPP estimates.'),
         'Initiation_AfterBirth': Parameter(Types.DATA_FRAME,
                                            'The probability of a woman starting a contraceptive immidiately after birth, by method.'),
         'Discontinuation_ByMethod': Parameter(Types.DATA_FRAME,
@@ -45,7 +45,7 @@ class Contraception(Module):
         'Discontinuation_ByAge': Parameter(Types.DATA_FRAME,
                                            'The effect of age on the probability of discontinuing use of contraceptive (add one for multiplicative effect).'),
         'Discontinuation_ByYear': Parameter(Types.DATA_FRAME,
-                                            'The effect of calendar year on the probability of discontinuing use of contraceptive (multiplicative effect)'),
+                                            'The age-specific effect of calendar year on the probability of discontinuing use of contraceptive (multiplicative effect). Values are chosen so as to induce a trend in age-specific fertility consistent with the WPP estimates.'),
         'Prob_Switch_From': Parameter(Types.DATA_FRAME,
                                       'The probability per month that a women switches from one form of contraceptive to another, conditional that she will not discontinue use of the method.'),
         'Prob_Switch_From_And_To': Parameter(Types.DATA_FRAME,
@@ -247,28 +247,29 @@ class Contraception(Module):
                 "age_years")
 
             # Year effect
-            year_effect = self.parameters['Initiation_ByYear'].set_index('year')['multiplier']
+            year_effect = self.parameters['Initiation_ByYear'].set_index('year')
+            assert set(year_effect.columns) == set(range(15, 50))
 
             # Assemble into age-specific data-frame:
             p_init = dict()
-            for a in age_effect.index:
-                p_init[a] = p_init_by_method.mul(age_effect.at[a])
-            p_init_df = pd.DataFrame.from_dict(p_init, orient='index')
+            for year in year_effect.index:
 
-            # Prevent women younger than 30 years having 'female_sterilization'
-            p_init_df.loc[p_init_df.index < 30, 'female_sterilization'] = 0.0
+                p_init_this_year = dict()
+                for a in age_effect.index:
+                    p_init_this_year[a] = p_init_by_method * age_effect.at[a] * year_effect.at[year, a]
+                p_init_this_year_df = pd.DataFrame.from_dict(p_init_this_year, orient='index')
 
-            # Check correct format of age/method data-frame
-            assert set(p_init_df.columns) == set(self.all_contraception_states - {'not_using'})
-            assert (p_init_df.index == range(15, 50)).all()
-            assert (p_init_df >= 0.0).all().all()
+                # Prevent women younger than 30 years having 'female_sterilization'
+                p_init_this_year_df.loc[p_init_this_year_df.index < 30, 'female_sterilization'] = 0.0
 
-            # Create version of dataframe for each calendar year
-            p_init_df_by_year = {
-                year: p_init_df.mul(year_effect.at[year]) for year in year_effect.index
-            }
+                # Check correct format of age/method data-frame
+                assert set(p_init_this_year_df.columns) == set(self.all_contraception_states - {'not_using'})
+                assert (p_init_this_year_df.index == range(15, 50)).all()
+                assert (p_init_this_year_df >= 0.0).all().all()
 
-            return p_init_df_by_year
+                p_init[year] = p_init_this_year_df
+
+            return p_init
 
         def contraception_switch():
             """Get the probability per month of a woman switching to contraceptive method, given that she is currently
@@ -296,25 +297,25 @@ class Contraception(Module):
             p_stop_by_method = self.parameters['Discontinuation_ByMethod'].loc[0]
             age_effect = 1.0 + self.parameters['Discontinuation_ByAge'].set_index('age')['r_discont_age'].rename_axis(
                 "age_years")
-            year_effect = self.parameters['Discontinuation_ByYear'].set_index('year')['multiplier']
+            year_effect = self.parameters['Discontinuation_ByYear'].set_index('year')
+            assert set(year_effect.columns) == set(range(15, 50))
 
             # Probability of initiation by age for each method
             p_stop = dict()
-            for a in age_effect.index:
-                p_stop[a] = p_stop_by_method.mul(age_effect.at[a])
-            p_stop_df = pd.DataFrame.from_dict(p_stop, orient='index')
+            for year in year_effect.index:
+                p_stop_this_year = dict()
+                for a in age_effect.index:
+                    p_stop_this_year[a] = p_stop_by_method * age_effect.at[a] * year_effect.at[year, a]
+                p_stop_this_year_df = pd.DataFrame.from_dict(p_stop_this_year, orient='index')
 
-            # Check correct format of age/method data-frame
-            assert set(p_stop_df.columns) == set(self.all_contraception_states - {'not_using'})
-            assert (p_stop_df.index == range(15, 50)).all()
-            assert (p_stop_df >= 0.0).all().all()
+                # Check correct format of age/method data-frame
+                assert set(p_stop_this_year_df.columns) == set(self.all_contraception_states - {'not_using'})
+                assert (p_stop_this_year_df.index == range(15, 50)).all()
+                assert (p_stop_this_year_df >= 0.0).all().all()
 
-            # Create version of dataframe for each calendar year
-            p_stop_df_by_year = {
-                year: p_stop_df.mul(year_effect.at[year]) for year in year_effect.index
-            }
+                p_stop[year] = p_stop_this_year_df
 
-            return p_stop_df_by_year
+            return p_stop
 
         def contraception_initiation_after_birth():
             """Get the probability of a woman starting a contraceptive following giving birth.
@@ -518,6 +519,8 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # Update contraception method
         if self.run_update_contraceptive:
             self.update_contraceptive()
+
+        # todo - force anyone above 'age_high' to swtich to "not_using" if not female_sterlization
 
     def update_contraceptive(self):
         """ Determine women that will start, stop or switch contraceptive method."""
