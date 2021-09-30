@@ -4,6 +4,7 @@ General utility functions for TLO analysis
 import json
 import os
 import pickle
+import gzip
 from pathlib import Path
 from typing import Dict, Optional, TextIO
 
@@ -217,6 +218,71 @@ def load_pickled_dataframes(results_folder: Path, draw=0, run=0, name=None) -> d
             output[name] = pickle.load(f)
 
     return output
+
+
+def extract_params_from_json(results_folder: Path, file_name: str, module_name: str, param_name: str):
+    """Utility function to get overridden parameters from scenario runs from the json file
+
+    returns the parameter values that change over the runs as a list
+    """
+
+    with open(str(results_folder) + '/' + file_name[:-3] + '_draws.json', 'r') as myfile:
+        data = myfile.read()
+    params_file = json.loads(data)
+    params_in_draws = []
+    for runs in params_file['draws']:
+        params_in_draws.append(params_file['draws'][runs['draw_number']]['parameters'][module_name][param_name])
+    return params_in_draws
+
+
+def get_failed_batch_run_information(results_folder: Path, file_name: str, draw_number: int, run_number: int):
+    """Utility function to recreate a particular draw from a batch run locally
+
+    You give this function the results folder, file name, and particular draw number and it will return everything
+    needed to recreate the model run locally. Specifically, the seed of the run, the parameters overwritten in a run,
+    the population size of the run and the date the simulation started
+    # todo: try and make this function a one liner:
+        1) Make function call and run simulation
+        2) Get a list of registered modules in simulation and order of module registration as this effects rng
+        3) Get an end date for the simulation
+    # todo: Find a way to make function work without unzipping the stdout.txt.gz file, I tried to do this but had a
+            permission error
+    """
+    # get the location of the failed batch run
+    file_location = str(results_folder) + '\\' + str(draw_number) + '\\' + str(run_number)
+    # get the outputted log of the failed run, note that this file will need to be manually extracted prior to this
+    std_out = file_location + '\\' + 'stdout.txt'
+    # create default value of seed incase actual seed not found
+    seed = - 1
+    # extract demographic information from simulations
+    extracted_pop_size = extract_results(results_folder,
+                                         module="tlo.methods.demography",
+                                         key="population",
+                                         column="total",
+                                         index="date")
+    # get the first logged (initial) population size of the first draw, in the first run
+    popsize = int(extracted_pop_size[0][0][0])
+    # from these results get the start date
+    start_date = extracted_pop_size.index[0]
+    # read the text file and search for simulation seed value
+    with open(std_out, 'r') as f:
+        text = f.read()
+        # search for the seed
+        if 'Simulation RNG user entropy = ' in text:
+            # find the index of txt prior to the start of the seed number
+            seed_start_index = text.find('Simulation RNG user entropy = ') + len('Simulation RNG user entropy = ')
+            # find the index of the txt file at the end of the seen number
+            seed_end_index = text.find('"', seed_start_index)
+            # from this get the seed number
+            seed = int(text[seed_start_index: seed_end_index])
+    # get the parameter value(s) used in this particular run
+    # open json file as dictionary
+    with open(str(results_folder) + '/' + file_name[:-3] + '_draws.json', 'r') as myfile:
+        data = myfile.read()
+    params_file = json.loads(data)
+    # get the parameters overwritten in this simulation
+    params_in_draw = params_file['draws'][draw_number]['parameters']
+    return seed, params_in_draw, popsize, start_date
 
 
 def extract_params(results_folder: Path) -> Optional[pd.DataFrame]:

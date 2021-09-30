@@ -7,9 +7,11 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import json
 
 from tlo.analysis.utils import (
     extract_params,
+    extract_params_from_json,
     extract_results,
     get_scenario_info,
     get_scenario_outputs,
@@ -31,8 +33,7 @@ log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 
 # 1) Extract the parameters that have varied over the set of simulations
-params = extract_params(results_folder)
-
+params = extract_params_from_json(results_folder, 'rti_incidence_parameterisation.py', 'RTI', 'base_rate_injrti')
 # 2) Extract a specific log series for all runs:
 extracted = extract_results(results_folder,
                             module="tlo.methods.rti",
@@ -72,21 +73,19 @@ colors = ['lightsteelblue' if i not in in_accepted_range[0] else 'lightsalmon' f
 best_fit_found = min(per_param_average_incidence, key = lambda x: abs(x - expected_incidence))
 best_fit_index = np.where(per_param_average_incidence == best_fit_found)
 colors[best_fit_index[0][0]] = 'gold'
-xlabels = [
-    round(params.loc[(params.module_param == param_name)][['value']].loc[draw].value, 5)
-    for draw in range(info['number_of_draws'])
-]
+print(f"best fitting parameter value = {params[best_fit_index[0][0]]}")
+xlabels = [np.round(value, 5) for value in params]
 fig, ax = plt.subplots()
 ax.bar(
     x=xvals,
     height=mean_incidence_overall[:, 'mean'].values,
     yerr=yerr,
-    color=colors
+    color=colors,
 )
 ax.set_xticks(xvals)
-ax.set_xticklabels(xlabels)
+ax.set_xticklabels(xlabels, rotation=90)
 plt.xlabel(param_name)
 plt.ylabel('Incidence of RTI per 100,000')
 plt.title('Calibration of the base rate of rti injury which determines\n the overall incidence of RTI')
 plt.savefig(f"C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Calibration/base_rate_rti_{min(xlabels)}_"
-            f"{max(xlabels)}.png")
+            f"{max(xlabels)}.png", bbox_inches='tight')

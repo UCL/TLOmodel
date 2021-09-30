@@ -8,7 +8,7 @@
       "draw_seed": 662124363,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.0082620235369823
+          "base_rate_injrti": 0.0092620235369823
         }
       }
     },
@@ -17,7 +17,7 @@
       "draw_seed": 1916507803,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.0077620235369823
+          "base_rate_injrti": 0.008817579092537855
         }
       }
     },
@@ -26,7 +26,7 @@
       "draw_seed": 1031005574,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.0072620235369823
+          "base_rate_injrti": 0.008373134648093411
         }
       }
     },
@@ -35,7 +35,7 @@
       "draw_seed": 1603685629,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.0067620235369823
+          "base_rate_injrti": 0.007928690203648966
         }
       }
     },
@@ -44,11 +44,56 @@
       "draw_seed": 1130929393,
       "parameters": {
         "RTI": {
-          "base_rate_injrti": 0.0062620235369823
+          "base_rate_injrti": 0.007484245759204523
+        }
+      }
+    },
+    {
+      "draw_number": 5,
+      "draw_seed": 371232386,
+      "parameters": {
+        "RTI": {
+          "base_rate_injrti": 0.007039801314760077
+        }
+      }
+    },
+    {
+      "draw_number": 6,
+      "draw_seed": 144909571,
+      "parameters": {
+        "RTI": {
+          "base_rate_injrti": 0.006595356870315633
+        }
+      }
+    },
+    {
+      "draw_number": 7,
+      "draw_seed": 960362435,
+      "parameters": {
+        "RTI": {
+          "base_rate_injrti": 0.006150912425871189
+        }
+      }
+    },
+    {
+      "draw_number": 8,
+      "draw_seed": 62598988,
+      "parameters": {
+        "RTI": {
+          "base_rate_injrti": 0.005706467981426744
+        }
+      }
+    },
+    {
+      "draw_number": 9,
+      "draw_seed": 1505292720,
+      "parameters": {
+        "RTI": {
+          "base_rate_injrti": 0.0052620235369823
         }
       }
     }
   ],
-  "commit": "bc81770041e73c79e5a3824381c9e113ec4d20dd",
-  "github": "https://github.com/UCL/TLOmodel/blob/bc81770041e73c79e5a3824381c9e113ec4d20dd/src/scripts/rti/rti_incidence_parameterisation.py"
+  "commit": "c3931b060a913a3f79568824285c5b69f820045c",
+  "github": "https://github.com/UCL/TLOmodel/blob/c3931b060a913a3f79568824285c5b69f820045c/src/scripts/rti/rti_incidence_parameterisation.py"
 }
