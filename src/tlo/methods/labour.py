@@ -384,6 +384,12 @@ class Labour(Module):
             Types.LIST, 'dummy probabilities of delivery care seeking used in testing'),
 
         # TREATMENT PARAMETERS...
+        'prob_delivery_modes_ec': Parameter(
+            Types.LIST, 'probabilities that a woman admitted with eclampsia will deliver normally, via caesarean or '
+                        'via assisted vaginal delivery'),
+        'prob_delivery_modes_spe': Parameter(
+            Types.LIST, 'probabilities that a woman admitted with severe pre-eclampsia will deliver normally, via '
+                        'caesarean or via assisted vaginal delivery'),
         'prob_adherent_ifa': Parameter(
             Types.LIST, 'probability that a woman started on postnatal IFA will be adherent'),
         'effect_of_ifa_for_resolving_anaemia': Parameter(
@@ -1704,6 +1710,20 @@ class Labour(Module):
                 else:
                     logger.debug(key='message', data='This facility has no steroids for women in preterm labour.')
 
+    def determine_delivery_mode_in_spe_or_ec(self, person_id, complication):
+        params = self.current_parameters
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+        delivery_modes = ['vaginal', 'avd', 'cs']
+        mode = self.rng.choice(delivery_modes, p=params[f'prob_delivery_modes_{complication}'])
+
+        if mode == 'avd':
+            mni[person_id]['mode_of_delivery'] = 'instrumental'
+
+        elif mode == 'cs':
+            mni[person_id]['referred_for_cs'] = True
+            mni[person_id]['cs_indication'] = 'spe_ec'
+
     def assessment_and_treatment_of_severe_pre_eclampsia_mgso4(self, hsi_event, facility_type, labour_stage):
         """This function represents the diagnosis and management of severe pre-eclampsia during labour. This function
         defines the required consumables, uses the dx_test to determine a woman with severe pre-eclampsia is correctly
@@ -1729,7 +1749,7 @@ class Labour(Module):
             return
 
         if ('assessment_and_treatment_of_severe_pre_eclampsia' not in params['allowed_interventions']) or \
-            df.at[person_id, 'la_severe_pre_eclampsia_treatment']:
+          (df.at[person_id, 'la_severe_pre_eclampsia_treatment'] and (labour_stage == 'pp')):
             return
 
         else:
@@ -1740,15 +1760,13 @@ class Labour(Module):
             all_available = hsi_event.get_all_consumables(
                 pkg_codes=[pkg_code_severe_pre_eclampsia])
 
-            if labour_stage == 'ip':
-                prefix = 'ps'
-            else:
-                prefix = 'pn'
-
             # Here we run a dx_test function to determine if the birth attendant will correctly identify this womans
             # severe pre-eclampsia, and therefore administer treatment
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                dx_tests_to_run=f'assess_severe_pe_{facility_type}_{labour_stage}', hsi_event=hsi_event):
+              dx_tests_to_run=f'assess_severe_pe_{facility_type}_{labour_stage}', hsi_event=hsi_event):
+
+                if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none') and (labour_stage == 'ip'):
+                    self.determine_delivery_mode_in_spe_or_ec(person_id, 'spe')
 
                 # If so, and the consumables are available - the intervention is delivered. IV magnesium reduces the
                 # probability that a woman with severe pre-eclampsia will experience eclampsia in labour
@@ -1758,9 +1776,6 @@ class Labour(Module):
                                                      f'identified during delivery. As consumables are available '
                                                      f'they will receive treatment')
 
-                elif df.at[person_id, f'{prefix}_htn_disorders'] == 'severe_pre_eclamp':
-                    logger.debug(key='message', data=f'mother {person_id} has not had their severe pre-eclampsia '
-                                                     f'identified during delivery and will not be treated')
 
     def assessment_and_treatment_of_hypertension(self, hsi_event, facility_type, labour_stage):
         """
@@ -1804,11 +1819,6 @@ class Labour(Module):
                 hsi_event=hsi_event,
                 cons_req_as_footprint=consumables_gest_htn_treatment)
 
-            if labour_stage == 'ip':
-                prefix = 'ps'
-            else:
-                prefix = 'pn'
-
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_'
                                                                                        f'hypertension_{facility_type}_'
                                                                                        f'{labour_stage}',
@@ -1827,9 +1837,6 @@ class Labour(Module):
 
             # TODO: add consumables for orals
 
-            elif df.at[person_id, f'{prefix}_htn_disorders'] != 'none':
-                logger.debug(key='message', data=f'mother {person_id} has not had their hypertension identified during '
-                                                 f'delivery and will not be treated')
 
     def assessment_and_treatment_of_eclampsia(self, hsi_event, facility_type, labour_stage):
         """
@@ -1849,8 +1856,7 @@ class Labour(Module):
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         # todo: i think I need to replicate the way i deal with treatment from ANC wherever i deal with it
-        if ('assessment_and_treatment_of_eclampsia' not in params['allowed_interventions']) or \
-           df.at[person_id, 'la_eclampsia_treatment'] or (df.at[person_id, 'ac_mag_sulph_treatment']):
+        if 'assessment_and_treatment_of_eclampsia' not in params['allowed_interventions']:
             return
 
         else:
@@ -1861,15 +1867,13 @@ class Labour(Module):
             all_available = hsi_event.get_all_consumables(
                 pkg_codes=[pkg_code_eclampsia])
 
-            if labour_stage == 'ip':
-                prefix = 'ps'
-            else:
-                prefix = 'pn'
-
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_'
                                                                                        f'eclampsia_{facility_type}_'
                                                                                        f'{labour_stage}',
                                                                        hsi_event=hsi_event):
+
+                if (labour_stage == 'ip') and (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none'):
+                    self.determine_delivery_mode_in_spe_or_ec(person_id, 'ec')
 
                 if all_available:
                     # Treatment with magnesium reduces a womans risk of death from eclampsia
@@ -1878,9 +1882,6 @@ class Labour(Module):
                                                      f' As consumables are available they will receive '
                                                      f'treatment')
 
-                elif df.at[person_id, f'{prefix}_htn_disorders'] == 'eclampsia':
-                    logger.debug(key='message', data=f'mother {person_id} has not had their eclampsia identified '
-                                                     f'and will not be treated')
 
     def assessment_and_treatment_of_obstructed_labour_via_avd(self, hsi_event, facility_type):
         """
@@ -3034,6 +3035,8 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_now') or \
                 (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_future'):
             mni[person_id]['referred_for_cs'] = True
+        elif df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'avd_now':
+            mni[person_id]['delivery_mode'] = 'instrumental'
 
         # LOG CONSUMABLES FOR DELIVERY...
         # We assume all deliveries require this basic package of consumables but we do not condition the event running

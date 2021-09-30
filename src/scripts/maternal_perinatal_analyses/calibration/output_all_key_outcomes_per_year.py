@@ -14,7 +14,7 @@ scenario_filename = 'calibration_run_all_modules.py'  # <-- update this to look 
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_30k_normal_pop_calibration_run_all_modules-2021-09-27T184934Z'
+graph_location = 'output_graphs_30k_normal_pop_calibration_run_all_modules-2021-09-29T162954Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -194,8 +194,8 @@ def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_rate,
 #plt.xlabel('Year')
 #plt.ylabel('Pregnancies (mean)')
 #plt.title('Mean number of pregnancies')
-###plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
-###plt.show()
+##plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
+##plt.show()
 
 
 pregnancy_poll_results = extract_results(
@@ -1096,6 +1096,15 @@ delivery_mode = extract_results(
     do_scaling=False
 )
 
+cs_results = extract_results(
+        results_folder,
+        module="tlo.methods.labour",
+        key="cs_indications",
+        custom_generate_series=(
+            lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'indication'])['id'].count()),
+        do_scaling=False
+    )
+
 cs_data = get_comp_mean_and_rate('caesarean_section', total_births_per_year, delivery_mode, 100)
 avd_data = get_comp_mean_and_rate('instrumental', total_births_per_year, delivery_mode, 100)
 
@@ -1108,6 +1117,51 @@ for year in sim_years:
 line_graph_with_ci_and_target_rate(cs_data[0], cs_data[1], cs_data[2], target_rate_cs, 'Year',
                                    'Proportion of total births', 'Caesarean Section Rate per Year',
                                    'caesarean_section_rate')
+
+proportions_dict_cs = dict()
+total_cs_per_year = list()
+
+for year in sim_years:
+    yearly_mean_number = list()
+    causes = dict()
+
+    for indication in ['an_aph_pa', 'an_aph_pp', 'la_aph', 'ol', 'ol_failed_avd', 'ur', 'spe_ec']:
+        if indication in cs_results.loc[year].index:
+                mean = cs_results.loc[year, indication].mean()
+                yearly_mean_number.append(mean)
+                causes.update({f'{indication}': mean})
+        else:
+            yearly_mean_number.append(0)
+
+    total_cs_this_year = sum(yearly_mean_number)
+    total_cs_per_year.append(total_cs_this_year)
+
+    for indication in ['an_aph_pa', 'an_aph_pp', 'la_aph', 'ol', 'ol_failed_avd', 'ur', 'spe_ec']:
+        if indication in cs_results.loc[year].index:
+            causes[indication] = (causes[indication] / total_cs_this_year) * 100
+        else:
+            causes[indication] = 0
+
+    new_dict = {year: causes}
+    proportions_dict_cs.update(new_dict)
+
+props_df = pd.DataFrame(data=proportions_dict_cs)
+props_df = props_df.fillna(0)
+
+labels = list(props_df.index)
+values = list()
+for index in props_df.index:
+    values.append(props_df.loc[index].mean())
+
+sizes = values
+fig1, ax1 = plt.subplots()
+ax1.pie(sizes, labels=labels, autopct='%1.1f%%',
+                shadow=True, startangle=90)
+ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+plt.title(f'Proportion of total CS deliveries by indication')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/cs_by_indication.png')
+plt.show()
+
 line_graph_with_ci_and_target_rate(avd_data[0], avd_data[1], avd_data[2], target_rate_avd, 'Year',
                                    'Proportion of total births', 'Assisted Vaginal Delivery Rate per Year', 'avd_rate')
 

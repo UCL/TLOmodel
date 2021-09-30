@@ -14,7 +14,7 @@ scenario_filename = 'calibration_run_all_modules.py'  # <-- update this to look 
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_30k_normal_pop_calibration_run_all_modules-2021-09-27T184934Z/death'
+graph_location = 'output_graphs_30k_normal_pop_calibration_run_all_modules-2021-09-29T162954Z/death'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -145,8 +145,8 @@ def simple_line_chart(model_rate, target_rate, x_title, y_title, title, file_nam
     plt.ylabel(y_title)
     plt.title(title)
     plt.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
-    #plt.show()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.show()
 
 
 def simple_line_chart_two_targets(model_rate, target_rate_one, target_rate_two, x_title, y_title, title, file_name):
@@ -157,8 +157,8 @@ def simple_line_chart_two_targets(model_rate, target_rate_one, target_rate_two, 
     plt.ylabel(y_title)
     plt.title(title)
     plt.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
-    #plt.show()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.show()
 
 
 def simple_bar_chart(model_rates, x_title, y_title, title, file_name):
@@ -169,8 +169,8 @@ def simple_bar_chart(model_rates, x_title, y_title, title, file_name):
     plt.xlabel(x_title)
     plt.ylabel(y_title)
     plt.title(title)
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
-    #plt.show()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.show()
 
 
 def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_rate, x_label, y_label, title, file_name):
@@ -181,8 +181,8 @@ def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_rate,
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(title)
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
-    #plt.show()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.show()
 
 
 def get_target_rate(first_rate, second_rate):
@@ -240,7 +240,7 @@ plt.ylabel("Rate per 100,000 births")
 plt.title('Maternal Mortality Rate per Year')
 plt.legend()
 plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mmr.png')
-#plt.show()
+plt.show()
 
 # =================================== COMPLICATION LEVEL MMR ==========================================================
 death_results = extract_results(
@@ -329,8 +329,8 @@ def pie_prop_cause_of_death(values, years, labels, title):
                 shadow=True, startangle=90)
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     plt.title(f'Proportion of total maternal deaths by cause ({title}) {years}')
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mat_death_by_cause_{title}_{years}.png')
-    #plt.show()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mat_death_by_cause_{title}_{years}.png')
+    plt.show()
 
 props_df = pd.DataFrame(data=proportions_dicts)
 props_df = props_df.fillna(0)
@@ -498,8 +498,8 @@ for year, dictionary in zip(sim_years, list_of_proportions_dicts_nb):
             shadow=True, startangle=90)
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     plt.title(f'Proportion of total neonatal deaths by cause in {year} ')
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_death_by_cause_{year}.png')
-    #plt.show()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_death_by_cause_{year}.png')
+    plt.show()
 
 
 

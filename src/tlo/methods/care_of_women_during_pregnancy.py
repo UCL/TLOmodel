@@ -117,6 +117,12 @@ class CareOfWomenDuringPregnancy(Module):
         'prob_intervention_delivered_gdm_test': Parameter(
             Types.LIST, 'probability a woman will receive the intervention "GDM screening" given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
+        'prob_delivery_modes_ec': Parameter(
+            Types.LIST, 'probabilities that a woman admitted with eclampsia will deliver normally, via caesarean or '
+                        'via assisted vaginal delivery'),
+        'prob_delivery_modes_spe': Parameter(
+            Types.LIST, 'probabilities that a woman admitted with severe pre-eclampsia will deliver normally, via '
+                        'caesarean or via assisted vaginal delivery'),
 
         # ASSESSMENT SENSITIVITIES/SPECIFICITIES...
         'sensitivity_bp_monitoring': Parameter(
@@ -187,7 +193,7 @@ class CareOfWomenDuringPregnancy(Module):
         'ac_admitted_for_immediate_delivery': Property(Types.CATEGORICAL, 'Admission type for women needing urgent '
                                                                           'delivery in the antenatal period',
                                                        categories=['none', 'induction_now', 'induction_future',
-                                                                   'caesarean_now', 'caesarean_future']),
+                                                                   'caesarean_now', 'caesarean_future', 'avd_now']),
     }
 
     def read_parameters(self, data_folder):
@@ -446,25 +452,6 @@ class CareOfWomenDuringPregnancy(Module):
         # We check that women will only be scheduled for the next ANC contact in the schedule
         assert df.at[individual_id, 'ps_gestational_age_in_weeks'] < recommended_gestation_next_anc
 
-        # This function uses a womans gestation age to determine when the next visit should occur and schedules it
-        # accordingly
-        def calculate_visit_date_and_schedule_visit(visit):
-            # We subtract this womans current gestational age from the recommended gestational age for the next
-            # contact
-            weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
-                                                                              'ps_gestational_age_in_weeks'])
-
-            # And use this value as the number of weeks until she is required to return for her next ANC
-            visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
-                                                                topen=visit_date,
-                                                                tclose=visit_date + DateOffset(days=7))
-            logger.debug(key='message', data=f'mother {individual_id} will seek ANC {visit_to_be_scheduled} '
-                                             f'contact on {visit_date}')
-
-            # We store the date of her next visit and use this date as part of a check when the ANC HSIs run
-            df.at[individual_id, 'ac_date_next_contact'] = visit_date
-
         # This function determines the correct next visit and if that visit will go ahead
         def select_visit_and_determine_if_woman_will_attend(visit_to_be_scheduled):
 
@@ -498,6 +485,27 @@ class CareOfWomenDuringPregnancy(Module):
             elif visit_to_be_scheduled == 8:
                 visit = HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(
                     self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
+
+            # This function uses a womans gestation age to determine when the next visit should occur and schedules it
+            # accordingly
+            def calculate_visit_date_and_schedule_visit(visit):
+                # We subtract this womans current gestational age from the recommended gestational age for the next
+                # contact
+                weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
+                                                                                  'ps_gestational_age_in_weeks'])
+
+                # And use this value as the number of weeks until she is required to return for her next ANC
+                visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(visit,
+                                                                    priority=0,
+                                                                    topen=visit_date,
+                                                                    tclose=visit_date + DateOffset(days=7))
+
+                logger.debug(key='message', data=f'mother {individual_id} will seek ANC {visit_to_be_scheduled} '
+                                                 f'contact on {visit_date}')
+
+                # We store the date of her next visit and use this date as part of a check when the ANC HSIs run
+                df.at[individual_id, 'ac_date_next_contact'] = visit_date
 
             # If this woman has attended less than 4 visits, and is predicted to attend > 4 (as determined via the
             # PregnancySupervisor module when ANC1 is scheduled) her subsequent ANC appointment is automatically
@@ -2547,6 +2555,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        params = self.module.current_parameters
         mother = df.loc[person_id]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
@@ -2670,12 +2679,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             # to reduce risk of death and pregnancy loss
             elif (mother.ps_htn_disorders == 'severe_pre_eclamp') or (mother.ps_htn_disorders == 'eclampsia'):
 
-                # This property stores what type of delivery this woman is being admitted for
-                df.at[person_id, 'ac_admitted_for_immediate_delivery'] = 'induction_now'
-                logger.debug(key='msg', data=f'{person_id} will be admitted for induction due to '
-                                             f'{mother.ps_htn_disorders}')
-
-                # Women are started on oral antihypertensives also
+                # Women are started on oral antihypertensives
                 if ~mother.ac_gest_htn_on_treatment:
                     self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
 
@@ -2683,8 +2687,24 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 # womans risk of progressing from severe pre-eclampsia to eclampsia during the intrapartum period
                 self.module.treatment_for_severe_pre_eclampsia_or_eclampsia(person_id,
                                                                             hsi_event=self)
-                # Finally intravenous antihypertensives are also given
+                # intravenous antihypertensives are also given
                 self.module.initiate_treatment_for_severe_hypertension(person_id, self)
+
+                # Finally This property stores what type of delivery this woman is being admitted for
+
+                delivery_mode = ['induction_now', 'avd_now', 'caesarean_now']
+
+                if mother.ps_htn_disorders == 'eclampsia':
+
+                    df.at[person_id, 'ac_admitted_for_immediate_delivery'] = self.module.rng.choice(
+                        delivery_mode,  p=params['prob_delivery_modes_ec'])
+
+                elif mother.ps_htn_disorders == 'severe_pre_eclamp':
+                    df.at[person_id, 'ac_admitted_for_immediate_delivery'] = self.module.rng.choice(
+                        delivery_mode, p=params['prob_delivery_modes_spe'])
+
+                logger.debug(key='msg', data=f'{person_id} will be admitted for delivery  due to '
+                                             f'{mother.ps_htn_disorders}')
 
             # ========================= INITIATE TREATMENT FOR ANTEPARTUM HAEMORRHAGE =================================
             # Treatment delivered to mothers due to haemorrhage in the antepartum period is dependent on the underlying
