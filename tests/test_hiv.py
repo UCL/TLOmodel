@@ -455,7 +455,9 @@ def test_test_and_refer_event_scheduled_by_main_event_poll():
     dates_of_tr_events = [
         ev[1] for ev in sim.modules['HealthSystem'].HSI_EVENT_QUEUE if isinstance(ev[4], hiv.HSI_Hiv_TestAndRefer)
     ]
-    assert num_not_diagnosed == len(dates_of_tr_events)
+    # with testing rate=1, not all adults will test due to linear model and scaling
+    # check some tests being scheduled
+    assert len(dates_of_tr_events)
     assert all([(sim.date <= d <= (sim.date + pd.DateOffset(months=12))) for d in dates_of_tr_events])
 
 

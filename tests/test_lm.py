@@ -423,12 +423,7 @@ def test_using_int_as_intercept():
     assert isinstance(eq, LinearModel)
     pred = eq.predict(EXAMPLE_DF)
     assert isinstance(pred, pd.Series)
-
-    assert isinstance(pred.dtype, (int, np.integer))
-    # assert pred.dtype == 'int64'  # removed as errors with windows machines (int type)
-
     assert np.issubdtype(pred.dtype, np.integer)
-
     assert (pred.index == EXAMPLE_DF.index).all()
     assert (pred == 0).all()
 
@@ -652,3 +647,4 @@ def test_non_exhaustive_conditions():
         .when('.between(30, 39)', 4.)
     )
     assert not np.allclose(lm.predict(EXAMPLE_DF), lm_exhaustive.predict(EXAMPLE_DF))
+    

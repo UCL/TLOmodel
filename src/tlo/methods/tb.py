@@ -37,6 +37,10 @@ class Tb(Module):
         self.symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
         self.district_list = list()
 
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'Lifestyle', 'SymptomManager'}
+
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,

@@ -54,6 +54,11 @@ from tlo.methods import (
 
 from tlo.scenario import BaseScenario
 
+# define size of parameter lists
+hiv_param_length = 10
+tb_param_length = 10
+number_of_draws = hiv_param_length * tb_param_length
+
 
 class TestScenario(BaseScenario):
     # this imports the resource filepath automatically
@@ -65,7 +70,7 @@ class TestScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2030, 1, 1)
         self.pop_size = 35000
-        self.number_of_draws = 1
+        self.number_of_draws = number_of_draws
         self.runs_per_draw = 3
 
     def log_configuration(self):
@@ -106,11 +111,22 @@ class TestScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        return {
-            'Tb': {
-                'mixing_parameter': 1.0,
+        grid = self.make_grid(
+            {
+                'beta': np.linspace(start=0.02, stop=0.06, num=hiv_param_length),
+                'transmission_rate': np.linspace(start=0.005, stop=0.2, num=tb_param_length),
             }
+        )
+
+        return {
+            'Hiv': {
+                'beta': grid['beta'][draw_number],
+            },
+            'Tb': {
+                'transmission_rate': grid['transmission_rate'][draw_number],
+            },
         }
+
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run

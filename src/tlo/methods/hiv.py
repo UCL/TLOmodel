@@ -66,8 +66,6 @@ class Hiv(Module):
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
-    ADDITIONAL_DEPENDENCIES = {'NewbornOutcomes'}
-
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
@@ -218,7 +216,7 @@ class Hiv(Module):
 
         # Uptake of Interventions
         "hiv_testing_rates": Parameter(
-            Types.REAL, "annual rates of testing for children and adults"),
+            Types.DATA_FRAME, "annual rates of testing for children and adults"),
         "rr_hiv_test_female": Parameter(
             Types.REAL, "relative likelihood of having HIV test for females compared with males"),
         "rr_hiv_test_sexworker": Parameter(
@@ -394,7 +392,7 @@ class Hiv(Module):
                 .when('<35', p["rr_hiv_test_age_30_34"])
                 .when('<40', p["rr_hiv_test_age_35_39"])
                 .when('<45', p["rr_hiv_test_age_40_44"])
-                .when('<50', p["rr_hiv_test_age_45_49"]),
+                .when('>=45', p["rr_hiv_test_age_45_49"]),
             Predictor('li_is_sexworker').when(True, p['rr_hiv_test_sexworker']),
             Predictor('li_ed_lev').when(2, p["rr_hiv_test_primary_education"])
                 .when(3, p["rr_hiv_test_secondary_education"]),
@@ -1253,9 +1251,12 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # adult testing trends also informed by demographic characteristics
         # relative probability of testing - this may skew testing rates higher or lower than moh reports
         rr_of_test = self.module.lm['lm_spontaneous_test_12m'].predict(df[df.is_alive])
+        mean_prob_test = (rr_of_test * testing_rate_adults).mean()
+        scaled_prob_test = (rr_of_test * testing_rate_adults) / mean_prob_test
+
         random_draw = rng.random_sample(size=len(df[df.is_alive]))
         adult_tests_idx = df.loc[df.is_alive &
-                                 (random_draw < (testing_rate_adults * rr_of_test))].index
+                                 (random_draw < scaled_prob_test)].index
 
         idx_will_test = child_tests_idx.union(adult_tests_idx)
 
