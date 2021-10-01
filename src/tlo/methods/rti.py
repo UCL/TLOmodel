@@ -4604,7 +4604,6 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 # remove the old code from rt_injuries_for_major_surgery
                 self.treated_code = "P" + self.treated_code
                 df.loc[person_id, column] = self.treated_code
-                injuries_to_be_treated.append(self.treated_code)
                 # include the new code in rt_injuries_for_major_surgery
                 df.loc[person_id, 'rt_injuries_for_major_surgery'].append(self.treated_code)
                 assert len(injuries_to_be_treated) == len(df.loc[person_id, 'rt_injuries_for_major_surgery'])
@@ -4637,7 +4636,6 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 # update the code for 'rt_injuries_for_major_surgery'
                 df.loc[person_id, 'rt_injuries_for_major_surgery'].append(self.treated_code)
                 df.loc[person_id, column] = self.treated_code
-                injuries_to_be_treated.append(self.treated_code)
                 for injury in injuries_to_be_treated:
                     if injury not in df.loc[person_id, 'rt_injuries_for_major_surgery']:
                         df.loc[person_id, 'rt_injuries_for_major_surgery'].append(injury)
@@ -4670,7 +4668,6 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             # add the new code to rt_injuries_for_major_surgery
             df.loc[person_id, 'rt_injuries_for_major_surgery'].append(self.treated_code)
             df.loc[person_id, column] = self.treated_code
-            injuries_to_be_treated.append(self.treated_code)
             for injury in injuries_to_be_treated:
                 if injury not in df.loc[person_id, 'rt_injuries_for_major_surgery']:
                     df.loc[person_id, 'rt_injuries_for_major_surgery'].append(injury)
@@ -4752,6 +4749,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # remove code from major surgeries list
         if self.treated_code in df.loc[person_id, 'rt_injuries_for_major_surgery']:
             df.loc[person_id, 'rt_injuries_for_major_surgery'].remove(self.treated_code)
+        assert self.treated_code not in df.loc[person_id, 'rt_injuries_for_major_surgery'], \
+            ['Treated injury code not removed', self.treated_code]
 
     def did_not_run(self, person_id):
         df = self.sim.population.props
@@ -4930,6 +4929,8 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # remove code from minor surgeries list as it has now been treated
         if treated_code in df.loc[person_id, 'rt_injuries_for_minor_surgery']:
             df.loc[person_id, 'rt_injuries_for_minor_surgery'].remove(treated_code)
+        assert treated_code not in df.loc[person_id, 'rt_injuries_for_minor_surgery'], ['Injury treated not removed',
+                                                                                        treated_code]
 
     def did_not_run(self, person_id):
         df = self.sim.population.props
