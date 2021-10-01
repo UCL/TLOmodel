@@ -434,6 +434,7 @@ def test_mtct_during_breastfeeding_if_mother_infected_during_breastfeeding():
         ev for ev in sim.find_events_for_person(child_id) if isinstance(ev[1], hiv.HivInfectionDuringBreastFeedingEvent)
     ])
 
+
 def test_test_and_refer_event_scheduled_by_main_event_poll():
     """Check that the main event poll causes there to be event of the HSI_TestAndRefer"""
 
@@ -554,8 +555,8 @@ def test_art_is_initiated_for_infants():
 
     # Populate the minimum set of keys within the mni dict so the on_birth function will run
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {
-        'twin_count': 0,  'single_twin_still_birth': False, 'labour_state': 'term_labour',
-        'stillbirth_in_labour': False, 'abx_for_prom_given': False,  'corticosteroids_given': False,
+        'twin_count': 0, 'single_twin_still_birth': False, 'labour_state': 'term_labour',
+        'stillbirth_in_labour': False, 'abx_for_prom_given': False, 'corticosteroids_given': False,
         'delivery_setting': 'health_centre', 'clean_birth_practices': False}
 
     # Do birth

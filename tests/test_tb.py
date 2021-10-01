@@ -488,7 +488,7 @@ def test_latent_prevalence():
     overall lifetime risk 5-10%
     """
 
-    #set up population
+    # set up population
     popsize = 100
 
     # allow HS to run and queue events
@@ -639,7 +639,7 @@ def test_ipt_to_child_of_tb_mother():
 
     # give IPT to child
     ipt_appt = tb.HSI_Tb_Start_or_Continue_Ipt(person_id=child_id,
-                                                 module=sim.modules['Tb'])
+                                               module=sim.modules['Tb'])
     ipt_appt.apply(person_id=child_id, squeeze_factor=0.0)
 
     assert df.at[child_id, 'tb_on_ipt']
@@ -831,4 +831,3 @@ def test_cause_of_death():
     assert False is bool(df.at[person_id1, "is_alive"])
     assert sim.date == df.at[person_id1, "date_of_death"]
     assert "AIDS_TB" == df.at[person_id1, "cause_of_death"]
-

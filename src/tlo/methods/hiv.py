@@ -234,10 +234,12 @@ class Hiv(Module):
         "rr_hiv_test_age_45_49": Parameter(
             Types.REAL, "relative likelihood of having HIV test for ages 45-49 compared with ages 15-19"),
         "rr_hiv_test_primary_education": Parameter(
-            Types.REAL, "relative likelihood of having HIV test for people with primary education compared with no education"),
+            Types.REAL,
+            "relative likelihood of having HIV test for people with primary education compared with no education"),
         "rr_hiv_test_secondary_education": Parameter(
-            Types.REAL, "relative likelihood of having HIV test for people with secondary or higher education compared with no education"),
-       "prob_start_art_after_hiv_test": Parameter(
+            Types.REAL,
+            "relative likelihood of having HIV test for people with secondary or higher education compared with no education"),
+        "prob_start_art_after_hiv_test": Parameter(
             Types.REAL, "Probability that a person will start treatment, if HIV-positive, following testing"),
         "rr_start_art_if_aids_symptoms": Parameter(
             Types.REAL, "Relative probability of a person starting treatment if they have aids_symptoms compared to if"
@@ -337,13 +339,13 @@ class Hiv(Module):
             Predictor('hv_is_on_prep').when(True, 1.0 - p['proportion_reduction_in_risk_of_hiv_aq_if_on_prep']),
             Predictor('li_urban').when(False, p["rr_rural"]),
             Predictor('li_wealth', conditions_are_mutually_exclusive=True)
-            .when(2, p["rr_windex_poorer"])
-            .when(3, p["rr_windex_middle"])
-            .when(4, p["rr_windex_richer"])
-            .when(5, p["rr_windex_richest"]),
+                .when(2, p["rr_windex_poorer"])
+                .when(3, p["rr_windex_middle"])
+                .when(4, p["rr_windex_richer"])
+                .when(5, p["rr_windex_richest"]),
             Predictor('li_ed_lev', conditions_are_mutually_exclusive=True)
-            .when(2, p["rr_edlevel_primary"])
-            .when(3, p["rr_edlevel_secondary"]),
+                .when(2, p["rr_edlevel_primary"])
+                .when(3, p["rr_edlevel_secondary"]),
             Predictor('hv_behaviour_change').when(True, p["rr_behaviour_change"])
         )
 
@@ -354,14 +356,14 @@ class Hiv(Module):
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True,
             )
-            .when('<20', p["infection_to_death_weibull_scale_1519"])
-            .when('.between(20, 24)', p["infection_to_death_weibull_scale_2024"])
-            .when('.between(25, 29)', p["infection_to_death_weibull_scale_2529"])
-            .when('.between(30, 34)', p["infection_to_death_weibull_scale_3034"])
-            .when('.between(35, 39)', p["infection_to_death_weibull_scale_3539"])
-            .when('.between(40, 44)', p["infection_to_death_weibull_scale_4044"])
-            .when('.between(45, 49)', p["infection_to_death_weibull_scale_4549"])
-            .when('>= 50', p["infection_to_death_weibull_scale_4549"])
+                .when('<20', p["infection_to_death_weibull_scale_1519"])
+                .when('.between(20, 24)', p["infection_to_death_weibull_scale_2024"])
+                .when('.between(25, 29)', p["infection_to_death_weibull_scale_2529"])
+                .when('.between(30, 34)', p["infection_to_death_weibull_scale_3034"])
+                .when('.between(35, 39)', p["infection_to_death_weibull_scale_3539"])
+                .when('.between(40, 44)', p["infection_to_death_weibull_scale_4044"])
+                .when('.between(45, 49)', p["infection_to_death_weibull_scale_4549"])
+                .when('>= 50', p["infection_to_death_weibull_scale_4549"])
         )
 
         self.lm['shape_parameter_for_infection_to_death'] = LinearModel.multiplicative(
@@ -370,14 +372,14 @@ class Hiv(Module):
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True,
             )
-            .when('<20', p["infection_to_death_weibull_shape_1519"])
-            .when('.between(20, 24)', p["infection_to_death_weibull_shape_2024"])
-            .when('.between(25, 29)', p["infection_to_death_weibull_shape_2529"])
-            .when('.between(30, 34)', p["infection_to_death_weibull_shape_3034"])
-            .when('.between(35, 39)', p["infection_to_death_weibull_shape_3539"])
-            .when('.between(40, 44)', p["infection_to_death_weibull_shape_4044"])
-            .when('.between(45, 49)', p["infection_to_death_weibull_shape_4549"])
-            .when('>= 50', p["infection_to_death_weibull_shape_4549"])
+                .when('<20', p["infection_to_death_weibull_shape_1519"])
+                .when('.between(20, 24)', p["infection_to_death_weibull_shape_2024"])
+                .when('.between(25, 29)', p["infection_to_death_weibull_shape_2529"])
+                .when('.between(30, 34)', p["infection_to_death_weibull_shape_3034"])
+                .when('.between(35, 39)', p["infection_to_death_weibull_shape_3539"])
+                .when('.between(40, 44)', p["infection_to_death_weibull_shape_4044"])
+                .when('.between(45, 49)', p["infection_to_death_weibull_shape_4549"])
+                .when('>= 50', p["infection_to_death_weibull_shape_4549"])
         )
 
         # -- Linear Models for the Uptake of Services
@@ -474,13 +476,13 @@ class Hiv(Module):
             Predictor("li_is_sexworker").when(True, params["rr_fsw"]),
             Predictor("li_is_circ").when(True, params["rr_circumcision"]),
             Predictor("li_wealth", conditions_are_mutually_exclusive=True)
-            .when(2, params["rr_windex_poorer"])
-            .when(3, params["rr_windex_middle"])
-            .when(4, params["rr_windex_richer"])
-            .when(5, params["rr_windex_richest"]),
+                .when(2, params["rr_windex_poorer"])
+                .when(3, params["rr_windex_middle"])
+                .when(4, params["rr_windex_richer"])
+                .when(5, params["rr_windex_richest"]),
             Predictor("li_ed_lev", conditions_are_mutually_exclusive=True)
-            .when(2, params["rr_edlevel_primary"])
-            .when(3, params["rr_edlevel_secondary"])
+                .when(2, params["rr_edlevel_primary"])
+                .when(3, params["rr_edlevel_secondary"])
         ).predict(df.loc[df.is_alive])
 
         # Rescale relative probability of infection so that its average is 1.0 within each age/sex group
@@ -537,7 +539,8 @@ class Hiv(Module):
         # make a series with relative risks of art which depends on >10 years infected
         rr_art = pd.Series(1, index=df.index)
         rr_art.loc[df.is_alive &
-                   (df.hv_date_inf < (self.sim.date - pd.DateOffset(years=10)))] = params["rel_probability_art_baseline_aids"]
+                   (df.hv_date_inf < (self.sim.date - pd.DateOffset(years=10)))] = params[
+            "rel_probability_art_baseline_aids"]
 
         # Rescale relative probability of infection so that its average is 1.0 within each age/sex group
         p = pd.DataFrame({
@@ -549,7 +552,8 @@ class Hiv(Module):
 
         p['mean_of_rel_prob_within_age_sex_group'] = p.groupby(['age_years', 'sex'])[
             'rel_prob_art_by_time_infected'].transform('mean')
-        p['scaled_rel_prob_by_time_infected'] = p['rel_prob_art_by_time_infected'] / p['mean_of_rel_prob_within_age_sex_group']
+        p['scaled_rel_prob_by_time_infected'] = p['rel_prob_art_by_time_infected'] / p[
+            'mean_of_rel_prob_within_age_sex_group']
         p['overall_prob_of_art'] = p['scaled_rel_prob_by_time_infected'] * p['prob_art']
         random_draw = self.rng.random_sample(size=len(df))
 
@@ -698,7 +702,6 @@ class Hiv(Module):
 
         # Schedule the AIDS death events for those who have got AIDS already
         for person_id in has_aids_idx:
-
             # schedule a HSI_Test_and_Refer otherwise initial AIDS rates and deaths are far too high
             date_test = self.sim.date + \
                         pd.DateOffset(days=self.rng.randint(0, 365))
