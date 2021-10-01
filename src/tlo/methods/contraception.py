@@ -540,7 +540,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         if self.run_update_contraceptive:
             self.update_contraceptive()
 
-        # todo - force anyone above 'age_high' to swtich to "not_using" if not female_sterlization
+        # todo - force anyone above 'age_high' to switch to "not_using" if not female_sterlization
 
     def update_contraceptive(self):
         """ Determine women that will start, stop or switch contraceptive method."""
@@ -758,6 +758,8 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             unintended = (woman['co_contraception'] != 'not_using')
 
             # Update properties (including that she is no longer on any contraception)
+            # todo - this change should come through the "do_change" thing!!!!! (reason for failing test!?!)
+            # todo - block the change in the HSI
             df.loc[w, (
                 'co_contraception',
                 'is_pregnant',
@@ -766,7 +768,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             )] = (
                 'not_using',
                 True,
-                self.sim.date,
+                self.sim.date,  # <-- todo should this be a random_date in the next month?
                 unintended
             )
 
@@ -819,7 +821,9 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
     def apply(self, person_id, squeeze_factor):
         """If the relevant consumable is available, do change in contraception and log it"""
 
-        if not self.sim.population.props.at[person_id, 'is_alive']:
+        person = self.sim.population.props.loc[person_id]
+
+        if not (person.is_alive and not person.is_pregnant):
             return
 
         # Record the date that Family Planning Appointment happened for this person
