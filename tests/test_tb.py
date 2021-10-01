@@ -158,7 +158,7 @@ def test_natural_history():
 
     # Make the population
     sim.make_initial_population(n=popsize)
-    # simulate for 0 days, just get everthing set up (dxtests etc)
+    # simulate for 0 days, just get everything set up (dxtests etc)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     df = sim.population.props
@@ -178,13 +178,13 @@ def test_natural_history():
     progression_event.apply(population=sim.population)
 
     # check if TbActiveEvent was scheduled
-    date_active_event, active_event = \
-        [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], tb.TbActiveEvent)][0]
+    date_active_event = df.at[person_id, 'tb_scheduled_date_active']
+
     assert date_active_event >= sim.date
 
     # run TbActiveEvent
-    active_event_run = tb.TbActiveEvent(module=sim.modules['Tb'], person_id=person_id)
-    active_event_run.apply(person_id)
+    active_event_run = tb.TbActiveEvent(module=sim.modules['Tb'])
+    active_event_run.apply(population=sim.population)
 
     # check properties set
     assert df.at[person_id, 'tb_inf'] == 'active'
@@ -241,7 +241,7 @@ def test_treatment_schedule():
 
     # disable HS, all HSI events will run, but won't be in the HSI queue
     # they will enter the sim.event_queue
-    sim = get_sim(use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
+    sim = get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -284,7 +284,7 @@ def test_treatment_schedule():
     assert not df.at[person_id, 'tb_diagnosed_mdr']
 
     # schedule treatment start
-    # this calls clinical_monitoring which should schedule all follow-up appts
+    # this schedules HSI_Tb_FollowUp
     tx_start = tb.HSI_Tb_StartTreatment(person_id=person_id,
                                         module=sim.modules['Tb'])
     tx_start.apply(person_id=person_id, squeeze_factor=0.0)
@@ -302,13 +302,6 @@ def test_treatment_schedule():
 
     tx_end_event.apply(sim.population)
 
-    # check no follow-up appointments are scheduled after treatment end
-    date_event, event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-        isinstance(ev[1], tb.HSI_Tb_FollowUp)
-    ][0]
-    assert date_event is None
-
     # check individual properties consistent with treatment end
     assert not df.at[person_id, 'tb_on_treatment']
     assert not df.at[person_id, 'tb_treated_mdr']
@@ -320,7 +313,7 @@ def test_treatment_schedule():
 def test_treatment_failure():
     """
     test treatment failure occurs and
-    retreatment proerties / follow-up occurs correctly
+    retreatment properties / follow-up occurs correctly
     """
 
     popsize = 10
@@ -407,23 +400,13 @@ def test_treatment_failure():
     tx_start.apply(person_id=person_id, squeeze_factor=0.0)
 
     # clinical monitoring
-    # default clinical monitoring schedule for first infection ds-tb and retreatment
-    follow_up_times = sim.modules['Tb'].parameters['followup_times']
-    clinical_fup = follow_up_times['ds_clinical_monitor'].dropna()
-    clinical_fup_retx = follow_up_times['ds_retreatment_clinical'].dropna()
-    number_fup_appts = len(clinical_fup) + len(clinical_fup_retx)
+    # check tb.HSI_Tb_FollowUp scheduled
+    followup_event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], tb.HSI_Tb_FollowUp)
+    ][-1]
 
-    # count how many events are tb.HSI_Tb_FollowUp
-    count = 0
-    all_future_events = sim.modules['HealthSystem'].find_events_for_person(person_id)
-    for idx in range(len(all_future_events)):
-        if isinstance(all_future_events[idx][1], tb.HSI_Tb_FollowUp):
-            count += 1
-
-    assert count == number_fup_appts
-    # check final scheduled event is at least 8 months after sim.date (might be 8 months + 1day)
-    last_event_date, last_event_obj = all_future_events[-1]
-    assert last_event_date >= (sim.date + pd.DateOffset(months=8))
+    assert followup_event[0] > sim.date
 
 
 def test_children_referrals():
@@ -527,26 +510,20 @@ def test_latent_prevalence():
     df.loc[df.is_alive, 'hv_inf'] = False
     df.loc[df.is_alive, 'age_years'] = 25
 
+    # progression_to_active will add a scheduled date of active disease
     sim.modules['Tb'].progression_to_active(sim.population)
-    # get all events
-    test = sim.event_queue.queue
-    # count how many scheduled to progress to active disease
-    count = 0
-    for tmp in range(len(test)):
-        if isinstance(test[tmp][2], tb.TbActiveEvent):
-            count += 1
+
+    # check how many have scheduled date of progression to active
+    count = len(df[~df.tb_scheduled_date_active.isnull()].index)
 
     # check proportion HIV- adults who have active scheduled
     assert (count / len(df.loc[df.is_alive])) < 0.25
 
     # how many are progressing fast  (~14% fast)
-    count2 = 0
-    for tmp in range(len(test)):
-        if test[tmp][0] == sim.date:
-            count2 += 1
+    count2 = len(df.loc[(df.tb_scheduled_date_active == sim.date)].index)
 
     prop_fast = count2 / len(df.loc[df.is_alive])
-    assert 0.1 <= prop_fast <= 0.3
+    assert 0.05 <= prop_fast <= 0.3
 
     # ------------------ HIV-positive progression risk ---------------- #
     sim = get_sim(use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
@@ -567,22 +544,15 @@ def test_latent_prevalence():
     df.loc[df.is_alive, 'age_years'] = 25
 
     sim.modules['Tb'].progression_to_active(sim.population)
-    # get all events
-    test = sim.event_queue.queue
+
     # count how many scheduled to progress to active disease
-    count = 0
-    for tmp in range(len(test)):
-        if isinstance(test[tmp][2], tb.TbActiveEvent):
-            count += 1
+    count = len(df[~df.tb_scheduled_date_active.isnull()].index)
 
     # check proportion HIV+ adults who have active scheduled
     assert (count / len(df.loc[df.is_alive])) > 0.5
 
     # how many are progressing fast  (~67% fast)
-    count2 = 0
-    for tmp in range(len(test)):
-        if test[tmp][0] == sim.date:
-            count2 += 1
+    count2 = len(df.loc[(df.tb_scheduled_date_active == sim.date)].index)
 
     prop_fast = count2 / len(df.loc[df.is_alive])
     assert 0.5 <= prop_fast <= 1.0
@@ -599,7 +569,7 @@ def test_relapse_risk():
     popsize = 10
 
     # allow HS to run and queue events
-    sim = get_sim(use_simplified_birth=True, disable_HS=True, ignore_con_constraints=True)
+    sim = get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
     sim.modules['Tb'].parameters['monthly_prob_relapse_tx_incomplete'] = 1.0
 
     # Make the population
@@ -625,8 +595,7 @@ def test_relapse_risk():
     relapse_event.apply(population=sim.population)
 
     # check relapse to active tb is scheduled to occur
-    next_event_for_person0 = sim.find_events_for_person(0)[0][1]
-    assert isinstance(next_event_for_person0, tb.TbActiveEvent)
+    assert not df.at[person_id, 'tb_scheduled_date_active'] == pd.NaT
 
 
 def test_ipt_to_child_of_tb_mother():
@@ -828,13 +797,13 @@ def test_cause_of_death():
     person_id1 = 1
     df.at[person_id1, 'tb_inf'] = 'latent'
     df.at[person_id1, 'tb_strain'] = 'ds'
-    df.at[person_id1, 'tb_date_active'] = sim.date
+    df.at[person_id1, 'tb_scheduled_date_active'] = sim.date
     df.at[person_id1, 'tb_smear'] = True
     df.at[person_id1, 'hv_inf'] = True
 
     # check AIDS onset scheduled through TbActiveEvent
-    active_event_run = tb.TbActiveEvent(module=sim.modules['Tb'], person_id=person_id1)
-    active_event_run.apply(person_id1)
+    active_event_run = tb.TbActiveEvent(module=sim.modules['Tb'])
+    active_event_run.apply(sim.population)
 
     # check properties set
     assert df.at[person_id1, 'tb_inf'] == 'active'

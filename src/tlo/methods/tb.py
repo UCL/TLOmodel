@@ -1213,19 +1213,16 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         # join both indices
         idx_will_relapse = idx_will_relapse_early.union(idx_will_relapse_late2).drop_duplicates()
 
-        # # schedule progression to active
-        # for person in idx_will_relapse:
-        #     self.sim.schedule_event(TbActiveEvent(self.module, person), now)
-
-        # set date of active tb - properties will be updated at TbActiveEvent every month
-        df.loc[idx_will_relapse, 'tb_date_active'] = now
+        # set date of scheduled active tb
+        # properties will be updated at TbActiveEvent every month
+        df.loc[idx_will_relapse, 'tb_scheduled_date_active'] = now
 
 
 class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
     """
     * check for those with dates of active tb onset within last time-period
     *1 change individual properties for active disease
-    *2 assign symptoms
+    *2 assign symptomsg
     *3 if HIV+, assign smear status and schedule AIDS onset
     *4 if HIV-, assign smear status and schedule death
     """
@@ -1760,7 +1757,6 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if not person["is_alive"]:
             return
 
-        # todo check tb_diagnosed
         treatment_available = self.select_treatment(person_id)
 
         if treatment_available:
@@ -1772,18 +1768,18 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 df.at[person_id, 'tb_treated_mdr'] = True
                 df.at[person_id, 'tb_date_treated_mdr'] = now
 
-            # schedule first follow-up appointment
-            follow_up_date = self.sim.date + DateOffset(months=1)
-            logger.debug(key='message',
-                         data=f'HSI_Tb_StartTreatment: scheduling first follow-up '
-                              f'for person {person_id} on {follow_up_date}')
+        # schedule first follow-up appointment
+        follow_up_date = self.sim.date + DateOffset(months=1)
+        logger.debug(key='message',
+                     data=f'HSI_Tb_StartTreatment: scheduling first follow-up '
+                          f'for person {person_id} on {follow_up_date}')
 
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Tb_FollowUp(person_id=person_id, module=self.module),
-                topen=follow_up_date,
-                tclose=None,
-                priority=0
-            )
+        self.sim.modules['HealthSystem'].schedule_hsi_event(
+            HSI_Tb_FollowUp(person_id=person_id, module=self.module),
+            topen=follow_up_date,
+            tclose=None,
+            priority=0
+        )
 
     def select_treatment(self, person_id):
         """
