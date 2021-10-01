@@ -125,7 +125,7 @@ plt.show()
 # %% Get the "intrinsic fertility" rates by contraception status assumed in the TLO model
 fert = pd.DataFrame(index=range(15, 50), columns=states)
 p = sim.modules['Contraception'].processed_params
-fert['not_using'] = 1.0 - np.exp(-p['p_pregnancy_no_contraception_per_month'] * 12)
+fert['not_using'] = 1.0 - np.exp(-p['p_pregnancy_no_contraception_per_month']['hv_inf_False'] * 12)
 fert.loc[:, fert.columns.drop('not_using')] = 1.0 - np.exp(-p['p_pregnancy_with_contraception_per_month'] * 12)
 fert.index = fert.index.map(AGE_RANGE_LOOKUP)
 fert = fert.groupby(by=fert.index).mean()

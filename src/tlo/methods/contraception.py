@@ -92,9 +92,9 @@ class Contraception(Module):
                                      ]),
         # These are the 11 categories of contraception ('not_using' + 10 methods) from the DHS analysis of initiation,
         # discontinuation, failure and switching rates.
-        # 'other modern' includes Male sterilization, Female Condom, Emergency contraception
+        # 'other modern' includes Male sterilization, Female Condom, Emergency contraception;
         # 'other traditional' includes lactational amenohroea (LAM),  standard days method (SDM), 'other traditional
-        #  method'),
+        #  method').
 
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
         'date_of_last_pregnancy': Property(Types.DATE, 'Date of the that most recent or current pregnancy began.'),
@@ -363,8 +363,8 @@ class Contraception(Module):
                 return 1 - np.exp(np.log(1 - p_annual) / 12)
 
             # Get the probability of being pregnant if not HIV-positive
-            p_pregnancy_no_contraception_per_month_nohiv = self.parameters['Pregnancy_NotUsing_In_2010'].set_index('age')[
-                'AnnualProb'].rename_axis('age_years').apply(convert_annual_prob_to_monthly_prob)
+            p_pregnancy_no_contraception_per_month_nohiv = self.parameters['Pregnancy_NotUsing_In_2010']\
+                .set_index('age')['AnnualProb'].rename_axis('age_years').apply(convert_annual_prob_to_monthly_prob)
 
             # Compute the probability of being pregnant if HIV-positive
             p_pregnancy_no_contraception_per_month_hiv = (
@@ -379,6 +379,10 @@ class Contraception(Module):
 
             assert (p_pregnancy_no_contraception_per_month.index == range(15, 50)).all()
             assert set(p_pregnancy_no_contraception_per_month.columns) == {'hv_inf_True', 'hv_inf_False'}
+            assert np.isclose(
+                self.parameters['Pregnancy_NotUsing_In_2010']['AnnualProb'].values,
+                1.0 - np.power(1.0 - p_pregnancy_no_contraception_per_month['hv_inf_False'], 12)
+            ).all()
 
             return p_pregnancy_no_contraception_per_month
 
