@@ -40,6 +40,8 @@ class Malaria(Module):
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
+    ADDITIONAL_DEPENDENCIES = {'DxAlgorithmAdult'}
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,
