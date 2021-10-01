@@ -716,17 +716,18 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
                             (df.ps_ectopic_pregnancy == 'none')
                             )
 
-        # Get probability of method failure for each individual
-        prob_of_failure = df.loc[possible_to_fail, ['age_years', 'co_contraception']].apply(
-            lambda row: prob_failure_per_month.at[row.age_years, row.co_contraception],
-            axis=1
-        )
+        if possible_to_fail.sum():
+            # Get probability of method failure for each individual
+            prob_of_failure = df.loc[possible_to_fail, ['age_years', 'co_contraception']].apply(
+                lambda row: prob_failure_per_month.at[row.age_years, row.co_contraception],
+                axis=1
+            )
 
-        # Determine if there will be a contraceptive failure for each individual
-        idx_failure = prob_of_failure.index[prob_of_failure > rng.random_sample(size=len(prob_of_failure))]
+            # Determine if there will be a contraceptive failure for each individual
+            idx_failure = prob_of_failure.index[prob_of_failure > rng.random_sample(size=len(prob_of_failure))]
 
-        # Effect these women to be pregnant
-        self.set_new_pregnancy(women_id=idx_failure)
+            # Effect these women to be pregnant
+            self.set_new_pregnancy(women_id=idx_failure)
 
     def pregnancy_for_those_not_on_contraceptive(self):
         """Look across all woman who are not using a contraceptive to determine who will become pregnant."""
@@ -749,19 +750,19 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             (df.ps_ectopic_pregnancy == 'none')
         )
 
-        # Load the fertility schedule (imported datasheet from excel workbook)
-        prob_pregnancy_per_month = pp['p_pregnancy_no_contraception_per_month']
+        if subset.sum():
+            # Get the probability of pregnancy for each individual
+            prob_pregnancy = df.loc[subset, ['age_years', 'hv_inf']].apply(
+                lambda row: pp['p_pregnancy_no_contraception_per_month'].at[
+                    row.age_years, 'hv_inf_True' if row.hv_inf else 'hv_inf_False'
+                ],
+                axis=1)
 
-        # Get the probability of pregnancy for each individual
-        prob_pregnancy = df.loc[subset, ['age_years', 'hv_inf']].apply(
-            lambda row: prob_pregnancy_per_month.at[row.age_years, 'hv_inf_True' if row.hv_inf else 'hv_inf_False'],
-            axis=1)
+            # Determine if there will be a pregnancy for each individual
+            idx_pregnant = prob_pregnancy.index[prob_pregnancy > rng.rand(len(prob_pregnancy))]
 
-        # Determine if there will be a pregnancy for each individual
-        idx_pregnant = prob_pregnancy.index[prob_pregnancy > rng.rand(len(prob_pregnancy))]
-
-        # Effect these women to be pregnant
-        self.set_new_pregnancy(women_id=idx_pregnant)
+            # Effect these women to be pregnant
+            self.set_new_pregnancy(women_id=idx_pregnant)
 
     def set_new_pregnancy(self, women_id: list):
         """Effect that these women are now pregnancy and enter to the log"""

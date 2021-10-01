@@ -19,6 +19,8 @@ from tlo.methods import (
     demography,
     depression,
     diarrhoea,
+    dx_algorithm_adult,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthsystem,
     hiv,
@@ -128,6 +130,8 @@ def test_cause_of_death_being_registered(tmpdir):
     })
     sim.register(
         demography.Demography(resourcefilepath=rfp),
+        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=rfp),
+        dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=rfp),
         symptommanager.SymptomManager(resourcefilepath=rfp),
         breast_cancer.BreastCancer(resourcefilepath=rfp),
         enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
