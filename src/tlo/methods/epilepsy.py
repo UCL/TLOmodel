@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -145,6 +146,35 @@ class Epilepsy(Module):
         self.load_parameters_from_dataframe(dfd)
 
         p = self.parameters
+"""
+        self.linearModels = dict()
+
+        self.linearModels['trans_seiz_stat_infreq_none'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['base_prob_3m_seiz_stat_infreq_none'],
+            Predictor('ep_antiep').when(True, 1/p['rr_effectiveness_antiepileptics']))
+
+        self.linearModels['trans_seiz_stat_freq_infreq'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['base_prob_3m_seiz_stat_freq_infreq'],
+            Predictor('ep_antiep').when(True, 1/p['rr_effectiveness_antiepileptics']))
+
+        self.linearModels['trans_seiz_stat_infreq_none'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['base_prob_3m_seiz_stat_infreq_none'],
+            Predictor('ep_antiep').when(True, p['rr_effectiveness_antiepileptics']))
+
+        self.linearModels['trans_seiz_stat_none_infreq'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['base_prob_3m_seiz_stat_none_infreq'],
+            Predictor('ep_antiep').when(True, p['rr_effectiveness_antiepileptics']))
+
+        self.linearModels['trans_seiz_stat_infreq_freq'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['base_prob_3m_seiz_stat_infreq_freq'],
+            Predictor('ep_antiep').when(True, p['rr_effectiveness_antiepileptics']))
+
+"""
 
         if 'HealthBurden' in self.sim.modules.keys():
             # get the DALY weight - 860-862 are the sequale codes for epilepsy
@@ -338,17 +368,28 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
             }
         )
 
-        def transition_seiz_stat(current_state, new_state, transition_probability):
-            in_current_state = df.index[df.is_alive & (df.ep_seiz_stat == current_state)]
+        def transition_seiz_stat(current_state, new_state, onantiep, transition_probability):
+
+            in_current_state = df.index[df.is_alive & (df.ep_seiz_stat == current_state) & df.ep_antiep == onantiep]
             random_draw = self.module.rng.random_sample(size=len(in_current_state))
             changing_state = in_current_state[transition_probability > random_draw]
             df.loc[changing_state, 'ep_seiz_stat'] = new_state
 
-        transition_seiz_stat('1', '2', self.base_prob_3m_seiz_stat_infreq_none)
-        transition_seiz_stat('2', '1', self.base_prob_3m_seiz_stat_infreq_none)
-        transition_seiz_stat('2', '3', self.base_prob_3m_seiz_stat_freq_infreq)
-        transition_seiz_stat('3', '1', self.base_prob_3m_seiz_stat_none_freq)
-        transition_seiz_stat('3', '2', self.base_prob_3m_seiz_stat_infreq_freq)
+        transition_seiz_stat('1', '2', False, self.base_prob_3m_seiz_stat_infreq_none)
+        transition_seiz_stat('1', '2', True, self.base_prob_3m_seiz_stat_infreq_none/self.rr_effectiveness_antiepileptics)
+
+        transition_seiz_stat('2', '3', False, self.base_prob_3m_seiz_stat_freq_infreq)
+        transition_seiz_stat('2', '3', True, self.base_prob_3m_seiz_stat_freq_infreq / self.rr_effectiveness_antiepileptics)
+
+        transition_seiz_stat('3', '1', False, self.base_prob_3m_seiz_stat_none_freq)
+        transition_seiz_stat('3', '1', True, self.base_prob_3m_seiz_stat_none_infreq * self.rr_effectiveness_antiepileptics)
+
+        transition_seiz_stat('2', '1', False, self.base_prob_3m_seiz_stat_none_infreq)
+        transition_seiz_stat('2', '1', True, self.base_prob_3m_seiz_stat_none_infreq * self.rr_effectiveness_antiepileptics)
+
+        transition_seiz_stat('3', '2', False, self.base_prob_3m_seiz_stat_infreq_freq)
+        transition_seiz_stat('3', '2', True, self.base_prob_3m_seiz_stat_infreq_freq * self.rr_effectiveness_antiepileptics)
+
 
         # save all individuals that are currently on anti-epileptics (seizure status: 2 & 3 or 1)
         alive_seiz_stat_1_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
@@ -492,7 +533,8 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         # Define the consumables
-        anti_epileptics_available = False
+        # todo: set back below to False
+        anti_epileptics_available = True
         # first choice is phenobarbitone
         item_code_phenobarbitone = pd.unique(
             consumables.loc[consumables['Items'] == 'Phenobarbitone  30mg_1000_CMST', 'Item_Code'])[0]
