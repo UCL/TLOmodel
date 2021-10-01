@@ -37,7 +37,7 @@ class LongRun(BaseScenario):
         self.end_date = Date(2099, 12, 31)
         self.pop_size = 20_000  # <- recommended population size for the runs
         self.number_of_draws = 1  # <- one scenario
-        self.runs_per_draw = 10  # <- repeated this many times
+        self.runs_per_draw = 5  # <- repeated this many times
 
     def log_configuration(self):
         return {
