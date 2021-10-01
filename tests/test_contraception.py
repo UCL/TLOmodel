@@ -110,7 +110,6 @@ def run_sim(tmpdir,
 
     return sim
 
-# todo rename these test more sensically!
 
 def zero_param(p):
     return {k: 0.0 * v for k, v in p.items()}
@@ -160,7 +159,7 @@ def __check_no_illegal_switches(sim):
             # female_sterilization if age less than 30 (or equal to, in case they have aged since an HSI was scheduled)
 
 
-def test_check_rates_of_switch():
+def test_starting_and_stopping_contraceptive_use():
     """Check that initiation and discontinuation rates work as expected."""
     popsize = 10_000
 
@@ -251,7 +250,7 @@ def test_pregnancies_occurring(tmpdir):
     assert (pregs['contraception'] != "not_using").any()
 
 
-def test_occurrence_of_HSI_for_maintain_and_switch(tmpdir):
+def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir):
     """Check HSI for the maintenance of a person on a contraceptive are scheduled as expected.."""
 
     # Create a simulation that has run for zero days and clear the event queue
@@ -316,7 +315,7 @@ def test_occurrence_of_HSI_for_maintain_and_switch(tmpdir):
     assert not len(sim.modules['HealthSystem'].find_events_for_person(person_id))
 
 
-def test_if_no_healthsystem_or_consumable_leads_to_defaulting_if_due_appt_at_individual_level(tmpdir):
+def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_level(tmpdir):
     """Check that if someone is on a method that requires an HSI, and if consumable is not available and/or the health
     system cannot do the appointment, then that the person defaults to not using after they become due for a
     maintenance appointment."""
@@ -403,7 +402,7 @@ def test_if_no_healthsystem_or_consumable_leads_to_defaulting_if_due_appt_at_ind
     check_that_persons_on_contraceptive_default(sim)
 
 
-def test_that_if_no_healthsystem_there_is_defaulting_from_some_contraceptives_at_population_level(tmpdir):
+def test_defaulting_off_method_if_no_healthsystem_at_population_level(tmpdir):
     """Check that if switching and initiation use the HealthSystem but no HSI can occur, then all those already
      on a contraceptive requiring an HSI to maintain use will default to not_using, and there is no initiation or
      switching to any contraceptive that requires an HSI."""
@@ -430,7 +429,7 @@ def test_that_if_no_healthsystem_there_is_defaulting_from_some_contraceptives_at
             ).all()
 
 
-def test_that_if_there_are_no_consumables_there_is_defaulting_from_some_contraceptives_at_population_level(tmpdir):
+def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir):
     """Check that if switching and initiation use the HealthSystem but there are no consumables, then all those already
      on a contraceptive requiring a consumable to maintain use will default to not_using, and there is no initiation or
       switching to any contraceptive that requires a consumable."""
@@ -466,7 +465,7 @@ def test_that_if_there_are_no_consumables_there_is_defaulting_from_some_contrace
     ).all()
 
 
-def test_contraception_use_and_not_using_healthsystem(tmpdir):
+def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir):
     """Test that the contraception module functions and that exactly the same patterns of usage, switching, etc occur
     when action do not use the HealthsSystem as when they do (and the HealthSystem allow every change to occur)."""
 

@@ -27,6 +27,10 @@ class Contraception(Module):
         'Pregnancy_NotUsing_In_2010': Parameter(Types.DATA_FRAME,
                                                 'Probability per year of a women not on contraceptive becoming '
                                                 'pregnant, by age.'),
+        'Pregnancy_NotUsing_HIVeffect': Parameter(Types.DATA_FRAME,
+                                                  'Relative probability of becoming pregnant whilst not using a '
+                                                  'a contraceptive for HIV-positive women compared to HIV-negative '
+                                                  'women.'),
         'r_hiv': Parameter(Types.DATA_FRAME,
                            'The relative risk of becoming pregnancy if not on contraceptive if the women is '
                            'HIV-positive, by age.'),
@@ -133,6 +137,7 @@ class Contraception(Module):
         sheet_names = [
             'Method_Use_In_2010',
             'Pregnancy_NotUsing_In_2010',
+            'Pregnancy_NotUsing_HIVeffect',
             'Failure_ByMethod',
             'Initiation_ByAge',
             'Initiation_ByMethod',
@@ -150,7 +155,6 @@ class Contraception(Module):
 
         # Declare values for additional parameters (hard-coded for now)
         self.parameters['rr_fail_under25'] = 2.2  # From Guttmacher analysis.
-        # (todo *** N.B. SHOULD NOT BE applied to those persons with female sterilization)
         self.parameters['days_between_appts_for_maintenance'] = 180
 
     def pre_initialise_population(self):
@@ -338,9 +342,7 @@ class Contraception(Module):
             return p_stop
 
         def contraception_initiation_after_birth():
-            """Get the probability of a woman starting a contraceptive following giving birth.
-            # todo should this be used following abortions?
-            """
+            """Get the probability of a woman starting a contraceptive following giving birth."""
 
             # Get data from read-in excel sheets
             probs = self.parameters['Initiation_AfterBirth'].loc[0]
@@ -361,15 +363,23 @@ class Contraception(Module):
                 return 1 - np.exp(np.log(1 - p_annual) / 12)
 
             # Get the probability of being pregnant if not HIV-positive
-            p_pregnancy_no_contraception_per_month = self.parameters['Pregnancy_NotUsing_In_2010'].set_index('age')[
+            p_pregnancy_no_contraception_per_month_nohiv = self.parameters['Pregnancy_NotUsing_In_2010'].set_index('age')[
                 'AnnualProb'].rename_axis('age_years').apply(convert_annual_prob_to_monthly_prob)
 
-            # # Get the effect of HIV on the probability of becoming pregnant
-            # frr_hiv = self.parameters['r_hiv'].set_index('age_').rename_axis('age_years')['frr_hiv']
-            # x = pd.DataFrame(index=range(15, 50), columns=['hv_inf_True', 'hv_inf_False'])
-            # x['hv_inf_False'] = p_pregnancy_no_contraception_per_month
+            # Compute the probability of being pregnant if HIV-positive
+            p_pregnancy_no_contraception_per_month_hiv = (
+                p_pregnancy_no_contraception_per_month_nohiv *
+                self.parameters['Pregnancy_NotUsing_HIVeffect'].set_index('age_')['RR_pregnancy']
+            )
+
+            # Create combined dataframe
+            p_pregnancy_no_contraception_per_month = pd.concat({
+                'hv_inf_False': p_pregnancy_no_contraception_per_month_nohiv,
+                'hv_inf_True': p_pregnancy_no_contraception_per_month_hiv}, axis=1)
 
             assert (p_pregnancy_no_contraception_per_month.index == range(15, 50)).all()
+            assert set(p_pregnancy_no_contraception_per_month.columns) == {'hv_inf_True', 'hv_inf_False'}
+
             return p_pregnancy_no_contraception_per_month
 
         def pregnancy_with_contraception():
@@ -389,8 +399,8 @@ class Contraception(Module):
 
             assert (p_pregnancy_with_contraception_per_month.index == range(15, 50)).all()
             assert set(p_pregnancy_with_contraception_per_month.columns) == set(
-                self.all_contraception_states - {"not_using"}
-            )
+                self.all_contraception_states - {"not_using"})
+            assert (0.0 == p_pregnancy_with_contraception_per_month['female_sterilization']).all()
 
             return p_pregnancy_with_contraception_per_month
 
@@ -540,8 +550,6 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         if self.run_update_contraceptive:
             self.update_contraceptive()
 
-        # todo - force anyone above 'age_high' to switch to "not_using" if not female_sterlization
-
     def update_contraceptive(self):
         """ Determine women that will start, stop or switch contraceptive method."""
 
@@ -561,6 +569,14 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
         # continue/discontinue/switch: using --> using/not using
         self.discontinue_switch_or_continue(currently_using_co)
+
+        # put everyone older than `age_high` onto not_using:
+        df.loc[
+            (df.sex == 'F') &
+            df.is_alive &
+            (df.age_years > self.age_high) &
+            (df.co_contraception != 'not_using'),
+            'co_contraception'] = 'not_using'
 
     def initiate(self, individuals_not_using: pd.Index):
         """Check all females not using contraception to determine if contraception starts
@@ -732,13 +748,10 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # Load the fertility schedule (imported datasheet from excel workbook)
         prob_pregnancy_per_month = pp['p_pregnancy_no_contraception_per_month']
 
-        # # todo - Load the age-specific effects of HIV
-        # frr_hiv = self.module.parameters['r_hiv']
-
         # Get the probability of pregnancy for each individual
-        prob_pregnancy = df.loc[subset, 'age_years'].apply(
-            lambda _age_years: prob_pregnancy_per_month.at[_age_years]
-        )
+        prob_pregnancy = df.loc[subset, ['age_years', 'hv_inf']].apply(
+            lambda row: prob_pregnancy_per_month.at[row.age_years, 'hv_inf_True' if row.hv_inf else 'hv_inf_False'],
+            axis=1)
 
         # Determine if there will be a pregnancy for each individual
         idx_pregnant = prob_pregnancy.index[prob_pregnancy > rng.rand(len(prob_pregnancy))]
@@ -758,8 +771,6 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             unintended = (woman['co_contraception'] != 'not_using')
 
             # Update properties (including that she is no longer on any contraception)
-            # todo - this change should come through the "do_change" thing!!!!! (reason for failing test!?!)
-            # todo - block the change in the HSI
             df.loc[w, (
                 'co_contraception',
                 'is_pregnant',
@@ -768,7 +779,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             )] = (
                 'not_using',
                 True,
-                self.sim.date,  # <-- todo should this be a random_date in the next month?
+                self.sim.date,
                 unintended
             )
 

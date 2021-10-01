@@ -218,32 +218,31 @@ plt.show()
 
 
 # %% Plot Consumables Over time:
+"""
+If has the simulation has been with Contraception module using the HealthSystem and the HealthSystem not disabled, then
+ use ...
 
-# If has run with the HealthSystem, then....
-#
-# cons = log_df['tlo.methods.healthsystem']['Consumables'].copy()
-#
-# # Load consumables log and put the date as the index and provide
-# cons['date'] = pd.to_datetime(cons['date'])
-# cons['year'] = cons['date'].dt.year
-# cons = cons.set_index('year')
-#
-#
-# # Drop any entry that is not related to Contraception
-# cons = cons.loc[cons.TREATMENT_ID.str.startswith('Contraception')]
-#
-# # Make counts of every type of package that is actually used (i.e. was available when requested) each year.
-# def unpack(in_dict_as_string):
-#     in_dict = eval(in_dict_as_string)
-#     l = list()
-#     for k, v in in_dict.items():
-#         for _v in range(v):
-#             l.append(k)
-#     return l
-#
-# pkg_counts = cons['Package_Available'].apply(unpack).apply(pd.Series).dropna().astype(int)[0].value_counts()
+cons = log_df['tlo.methods.healthsystem']['Consumables'].copy()
 
-# %%
+# Load consumables log and put the date as the index and provide
+cons['date'] = pd.to_datetime(cons['date'])
+cons['year'] = cons['date'].dt.year
+cons = cons.set_index('year')
+
+# Drop any entry that is not related to Contraception
+cons = cons.loc[cons.TREATMENT_ID.str.startswith('Contraception')]
+
+# Make counts of every type of package that is actually used (i.e. was available when requested) each year.
+def unpack(in_dict_as_string):
+    in_dict = eval(in_dict_as_string)
+    l = list()
+    for k, v in in_dict.items():
+        for _v in range(v):
+            l.append(k)
+    return l
+
+pkg_counts = cons['Package_Available'].apply(unpack).apply(pd.Series).dropna().astype(int)[0].value_counts()
+"""
 
 # What follows is TimC's original code for this section:
 # ...
