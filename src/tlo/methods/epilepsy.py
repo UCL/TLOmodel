@@ -146,35 +146,6 @@ class Epilepsy(Module):
         self.load_parameters_from_dataframe(dfd)
 
         p = self.parameters
-"""
-        self.linearModels = dict()
-
-        self.linearModels['trans_seiz_stat_infreq_none'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['base_prob_3m_seiz_stat_infreq_none'],
-            Predictor('ep_antiep').when(True, 1/p['rr_effectiveness_antiepileptics']))
-
-        self.linearModels['trans_seiz_stat_freq_infreq'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['base_prob_3m_seiz_stat_freq_infreq'],
-            Predictor('ep_antiep').when(True, 1/p['rr_effectiveness_antiepileptics']))
-
-        self.linearModels['trans_seiz_stat_infreq_none'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['base_prob_3m_seiz_stat_infreq_none'],
-            Predictor('ep_antiep').when(True, p['rr_effectiveness_antiepileptics']))
-
-        self.linearModels['trans_seiz_stat_none_infreq'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['base_prob_3m_seiz_stat_none_infreq'],
-            Predictor('ep_antiep').when(True, p['rr_effectiveness_antiepileptics']))
-
-        self.linearModels['trans_seiz_stat_infreq_freq'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['base_prob_3m_seiz_stat_infreq_freq'],
-            Predictor('ep_antiep').when(True, p['rr_effectiveness_antiepileptics']))
-
-"""
 
         if 'HealthBurden' in self.sim.modules.keys():
             # get the DALY weight - 860-862 are the sequale codes for epilepsy
@@ -417,11 +388,11 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         def stop_antiep(indices, probability):
             """stop individuals on antiep with given probability"""
-            df.loc[indices, 'ep_antiep'] = probability > self.module.rng.random_sample(size=len(indices))
+            df.loc[indices, 'ep_antiep'] = probability < self.module.rng.random_sample(size=len(indices))
 
         # rate of stop ep_antiep if ep_seiz_stat = 1
         stop_antiep(alive_seiz_stat_1_antiep_idx,
-                    self.base_prob_3m_antiepileptic * self.rr_stop_antiepileptic_seiz_infreq_or_freq)
+                    self.base_prob_3m_antiepileptic)
 
         # rate of stop ep_antiep if ep_seiz_stat = 2 or 3
         stop_antiep(alive_seiz_stat_2_or_3_antiep_idx,
@@ -576,6 +547,7 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
                 )
                 if outcome_of_request_for_consumables['Item_Code'][item_code_phenytoin]:
                     anti_epileptics_available = True
-#                   logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+                    logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+
         if anti_epileptics_available:
             df.at[person_id, 'ep_antiep'] = True
