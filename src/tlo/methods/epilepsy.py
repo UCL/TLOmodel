@@ -382,9 +382,9 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         # managed to get query access to service code to work properly here (should be possible to remove
         # relevant rows from dfx rather than create dfxx
         for person_id_to_start_treatment in now_on_antiep1.append(now_on_antiep2):
-            event = HSI_Epilepsy_Start_Anti_Epilpetic(self.module, person_id=person_id_to_start_treatment)
+            event = HSI_Epilepsy_Start_Anti_Epileptic(self.module, person_id=person_id_to_start_treatment)
             target_date = self.sim.date + DateOffset(days=int(self.module.rng.rand() * 30))
-            self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=2, topen=target_date, tclose=None)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=target_date, tclose=None)
 
         def stop_antiep(indices, probability):
             """stop individuals on antiep with given probability"""
@@ -392,11 +392,11 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         # rate of stop ep_antiep if ep_seiz_stat = 1
         stop_antiep(alive_seiz_stat_1_antiep_idx,
-                    self.base_prob_3m_antiepileptic)
+                    self.base_prob_3m_stop_antiepileptic)
 
         # rate of stop ep_antiep if ep_seiz_stat = 2 or 3
         stop_antiep(alive_seiz_stat_2_or_3_antiep_idx,
-                    self.base_prob_3m_antiepileptic * self.rr_stop_antiepileptic_seiz_infreq_or_freq)
+                    self.base_prob_3m_stop_antiepileptic * self.rr_stop_antiepileptic_seiz_infreq_or_freq)
 
         # disability
 
@@ -477,12 +477,12 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'n_antiep': n_antiep,
                     })
 
-        individual = df.loc[[1]]
+        individual = df.loc[[2]]
 
         logger.info(key='individual_check', data=individual, description='following an individual through simulation')
 
 
-class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
+class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     It is first appointment that someone has when they present to the healthcare system with the severe
@@ -548,6 +548,6 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
                 if outcome_of_request_for_consumables['Item_Code'][item_code_phenytoin]:
                     anti_epileptics_available = True
                     logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
-
-        if anti_epileptics_available:
-            df.at[person_id, 'ep_antiep'] = True
+# todo: add line back in
+#       if anti_epileptics_available:
+        df.at[person_id, 'ep_antiep'] = True
