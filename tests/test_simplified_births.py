@@ -11,6 +11,8 @@ from tlo.methods import (
     bladder_cancer,
     demography,
     diarrhoea,
+    dx_algorithm_adult,
+    dx_algorithm_child,
     enhanced_lifestyle,
     epilepsy,
     healthburden,
@@ -259,6 +261,8 @@ def test_other_modules_running_with_simplified_births_module():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
