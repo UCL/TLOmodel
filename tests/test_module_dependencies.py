@@ -183,7 +183,7 @@ def test_module_dependencies_complete(sim, module_class):
             check_all_dependencies=True
         )
     except Exception:
-        all_dependencies = get_all_dependencies(module_class)
+        all_dependencies = get_all_required_dependencies(module_class)
         pytest.fail(
             f"Module {module_class.__name__} appears to be missing dependencies "
             f"required to run simulation in the union of the INIT_DEPENDENCIES and "
