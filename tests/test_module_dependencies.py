@@ -172,12 +172,17 @@ def test_module_dependencies_complete(sim, module_class):
     ADDITIONAL_DEPENDENCIES.
     """
     try:
+        # modules from being selected to avoid clashes with this module
+        excluded_module_classes = {
+            module_class_map[module_name] for module_name in module_class.ALTERNATIVE_TO
+        }
         register_modules_and_simulate(
             sim,
             get_dependencies_and_initialise(
                 module_class,
                 module_class_map=module_class_map,
                 get_dependencies=get_all_dependencies,
+                excluded_module_classes=excluded_module_classes,
                 resourcefilepath=resourcefilepath
             ),
             check_all_dependencies=True
