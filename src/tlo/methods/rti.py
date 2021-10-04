@@ -3809,7 +3809,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
                 consumables.loc[consumables['Items'] ==
                                 'Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST', 'Item_Code'])[0]
             consumables_fractures['Item_Code'].update({item_code_cetrimide_chlorhexidine: 1})
-            consumables_key = "Dressing, paraffin gauze 9.5cm x 9.5cm (square)_pack of 36_CMST"
+            consumables_key = "Gauze, absorbent 90cm x 40m_each_CMST"
             item_code_gauze = pd.unique(consumables.loc[consumables['Items'] == consumables_key, 'Item_Code'])[0]
             consumables_fractures['Item_Code'].update({item_code_gauze: 1})
             # Ask for suture kit
@@ -4036,7 +4036,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                                 'Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST', 'Item_Code'])[0]
             item_code_gauze = pd.unique(
                 consumables.loc[
-                    consumables['Items'] == "Dressing, paraffin gauze 9.5cm x 9.5cm (square)_pack of 36_CMST",
+                    consumables['Items'] == "Gauze, absorbent 90cm x 40m_each_CMST",
                     'Item_Code'])[0]
             possible_large_TBSA_burn_codes = ['7113', '8113', '4113', '5113']
             idx2, bigburncounts = \
