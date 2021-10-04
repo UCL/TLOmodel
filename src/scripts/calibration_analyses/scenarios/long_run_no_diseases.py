@@ -1,9 +1,8 @@
 """
-This file defines a batch run of a large population for a long time with *NO* disease modules and no tracking of
-HealthSystem usage.
+This file defines a batch run of a large population for a long time with *NO* disease modules and no HealthSystem.
 It's used for calibrations of the demographic components of the model only.
 
-Run on the batch system using:
+Run on the remote batch system using:
 ```tlo batch-submit src/scripts/calibration_analyses/scenarios/long_run_no_diseases.py```
 
 or locally using:
@@ -19,16 +18,16 @@ from tlo.scenario import BaseScenario
 class LongRun(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 123
+        self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2049, 12, 31)
+        self.end_date = Date(2099, 12, 31)
         self.pop_size = 20_000  # <- recommended population size for the runs
         self.number_of_draws = 1  # <- one scenario
         self.runs_per_draw = 1  # <- repeated this many times
 
     def log_configuration(self):
         return {
-            'filename': 'long_run',  # <- (specified only for local running)
+            'filename': 'long_run_no_diseases',  # <- (specified only for local running)
             'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.INFO,
