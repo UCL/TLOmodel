@@ -20,11 +20,11 @@ class LongRun(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 123
-        self.start_date = Date(2000, 1, 1)
-        self.end_date = Date(2030, 12, 31)
+        self.start_date = Date(2010, 1, 1)
+        self.end_date = Date(2049, 12, 31)
         self.pop_size = 20_000  # <- recommended population size for the runs
         self.number_of_draws = 1  # <- one scenario
-        self.runs_per_draw = 5  # <- repeated this many times
+        self.runs_per_draw = 1  # <- repeated this many times
 
     def log_configuration(self):
         return {
