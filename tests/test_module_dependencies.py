@@ -26,7 +26,9 @@ simulation_seed = 645407762
 simulation_initial_population = 1000
 
 
-module_class_map = get_module_class_map(excluded_modules={'Module', 'Skeleton', 'Tb'})
+module_class_map = get_module_class_map(
+    excluded_modules={'Module', 'Skeleton', 'Tb', 'SimplifiedPregnancyAndLabour'}
+)
 
 
 def parameterize_module_class(test_function):
@@ -172,6 +174,7 @@ def test_module_dependencies_complete(sim, module_class):
     ADDITIONAL_DEPENDENCIES.
     """
     try:
+        # If this module is an 'alternative' to one or more other modules, exclude these
         # modules from being selected to avoid clashes with this module
         excluded_module_classes = {
             module_class_map[module_name] for module_name in module_class.ALTERNATIVE_TO
