@@ -424,8 +424,8 @@ class Contraception(Module):
         processed_params['p_stop_per_month'] = contraception_stop()
         processed_params['p_start_after_birth'] = contraception_initiation_after_birth()
 
-        processed_params['p_pregnancy_no_contraception_per_month'] = 1.5 * pregnancy_no_contraception()
-        processed_params['p_pregnancy_with_contraception_per_month'] = 1.5 *pregnancy_with_contraception()
+        processed_params['p_pregnancy_no_contraception_per_month'] = 1.75 * pregnancy_no_contraception()
+        processed_params['p_pregnancy_with_contraception_per_month'] = 1.75 *pregnancy_with_contraception()
 
         return processed_params
 
