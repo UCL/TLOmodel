@@ -2,11 +2,14 @@
 
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
+import numpy as np
+import matplotlib.patches as mpatches
 
 import pandas as pd
 import datetime
 import pickle
 from pathlib import Path
+from tlo.analysis.utils import compare_number_of_deaths
 
 resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -407,6 +410,46 @@ make_plot(
 )
 
 plt.show()
+
+
+# ---------------------------------------------------------------------- #
+# %%: DEATHS - GBD COMPARISON
+# ---------------------------------------------------------------------- #
+
+
+death_compare = compare_number_of_deaths(sim.log_filepath, resourcefilepath)
+# sim.log_filepath example: 'outputs/Logfile__2021-10-04T155631.log'
+
+# include all ages and both sexes
+deaths2010 = death_compare.loc[('2010-2014', slice(None), slice(None), 'AIDS')].sum()
+deaths2015 = death_compare.loc[('2015-2019', slice(None), slice(None), 'AIDS')].sum()
+
+import numpy as np
+
+x_vals = [1, 2, 3, 4]
+labels = ['2010-2014', '2010-2014', '2015-2019', '2015-2019']
+y_vals = [deaths2010['GBD_mean'], deaths2010['model'], deaths2015['GBD_mean'], deaths2015['model']]
+y_lower = [abs(deaths2010['GBD_lower'] - deaths2010['GBD_mean']), np.NAN,
+            abs(deaths2015['GBD_lower'] - deaths2015['GBD_mean']), np.NAN]
+y_upper = [abs(deaths2010['GBD_upper'] - deaths2010['GBD_mean']), np.NAN,
+            abs(deaths2015['GBD_upper'] - deaths2015['GBD_mean']), np.NAN]
+
+col = ['mediumblue', 'mediumseagreen','mediumblue', 'mediumseagreen']
+# handles for legend
+blue_patch = mpatches.Patch(color='mediumblue', label='GBD')
+green_patch = mpatches.Patch(color='mediumseagreen', label='TLO')
+
+plt.bar(x_vals, y_vals, color=col)
+plt.errorbar(x_vals, [y_vals[0], np.NAN, y_vals[2], np.NAN], yerr=[y_lower, y_upper], ls='none',
+             marker='o', markeredgecolor='red', markerfacecolor='red', ecolor="red")
+plt.xticks(ticks=x_vals, labels=labels)
+
+plt.title('Deaths per year due to AIDS, 2010-2014')
+plt.legend(handles=[blue_patch, green_patch])
+plt.tight_layout()
+# plt.savefig(outputpath / ("HIV_TB_deaths_with_GBD" + datestamp + ".png"), format='png')
+plt.show()
+
 
 # ---------------------------------------------------------------------- #
 # %%: PROGRAM OUTPUTS
