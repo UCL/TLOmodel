@@ -127,7 +127,7 @@ class Contraception(Module):
         assert self.states_that_may_require_HSI_to_switch_to.issubset(self.all_contraception_states)
         assert self.states_that_may_require_HSI_to_maintain_on.issubset(self.states_that_may_require_HSI_to_switch_to)
 
-        self.processed_param = dict()  # (Will store the processed data for rates/probabilities of outcomes).
+        self.processed_params = dict()  # (Will store the processed data for rates/probabilities of outcomes).
         self.cons_codes = dict()  # (Will store the consumables codes for use in the HSI)
         self.rng2 = None  # (Will be a second random number generator, used for things to do with scheduling HSI)
 
@@ -252,7 +252,7 @@ class Contraception(Module):
     def process_params(self):
         """Process parameters that have been read-in."""
 
-        processed_param = dict()
+        processed_params = dict()
 
         def initial_method_use():
             """Generate the distribution of method use by age for the start of the simulation."""
@@ -418,15 +418,16 @@ class Contraception(Module):
 
             return p_pregnancy_with_contraception_per_month
 
-        processed_param['initial_method_use'] = initial_method_use()
-        processed_param['p_start_per_month'] = contraception_initiation()
-        processed_param['p_switch_from_per_month'], processed_param['p_switching_to'] = contraception_switch()
-        processed_param['p_stop_per_month'] = contraception_stop()
-        processed_param['p_start_after_birth'] = contraception_initiation_after_birth()
-        processed_param['p_pregnancy_no_contraception_per_month'] = pregnancy_no_contraception()
-        processed_param['p_pregnancy_with_contraception_per_month'] = pregnancy_with_contraception()
+        processed_params['initial_method_use'] = initial_method_use()
+        processed_params['p_start_per_month'] = contraception_initiation()
+        processed_params['p_switch_from_per_month'], processed_params['p_switching_to'] = contraception_switch()
+        processed_params['p_stop_per_month'] = contraception_stop()
+        processed_params['p_start_after_birth'] = contraception_initiation_after_birth()
 
-        return processed_param
+        processed_params['p_pregnancy_no_contraception_per_month'] = 1.5 * pregnancy_no_contraception()
+        processed_params['p_pregnancy_with_contraception_per_month'] = 1.5 *pregnancy_with_contraception()
+
+        return processed_params
 
     def select_contraceptive_following_birth(self, mother_id):
         """Initiation of mother's contraception after birth."""
