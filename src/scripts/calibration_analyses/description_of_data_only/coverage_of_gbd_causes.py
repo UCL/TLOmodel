@@ -17,8 +17,6 @@ from tlo.methods import (
     demography,
     depression,
     diarrhoea,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     epi,
     epilepsy,
@@ -65,8 +63,6 @@ complete = [
     # Representations of the Healthcare System
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
     epi.Epi(resourcefilepath=resourcefilepath),
-    dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-    dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
 
     # - Contraception, Pregnancy and Labour
     contraception.Contraception(resourcefilepath=resourcefilepath),

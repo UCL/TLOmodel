@@ -14,7 +14,6 @@ from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     alri,
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -62,7 +61,6 @@ for label, service_avail in scenarios.items():
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
 
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
 
         alri.Alri(resourcefilepath=resourcefilepath),
         alri.AlriPropertiesOfOtherModules()

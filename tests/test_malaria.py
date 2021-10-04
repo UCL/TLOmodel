@@ -8,8 +8,6 @@ from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
     demography,
     diarrhoea,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -52,8 +50,6 @@ def register_sim():
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        dx_algorithm_child.DxAlgorithmChild(),
-        dx_algorithm_adult.DxAlgorithmAdult(),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         malaria.Malaria(resourcefilepath=resourcefilepath)
@@ -131,8 +127,6 @@ def test_remove_malaria_test(tmpdir):
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        dx_algorithm_child.DxAlgorithmChild(),
-        dx_algorithm_adult.DxAlgorithmAdult(),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         malaria.Malaria(resourcefilepath=resourcefilepath)
@@ -320,8 +314,6 @@ def test_dx_algorithm_for_non_malaria_outcomes():
                          # every symptom leads to health-care seeking
                      ),
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                     dx_algorithm_adult.DxAlgorithmAdult(),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
 
                      # Supporting modules:

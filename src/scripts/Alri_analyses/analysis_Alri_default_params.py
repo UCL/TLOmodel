@@ -17,7 +17,6 @@ from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import (
     alri,
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -62,7 +61,6 @@ sim.register(
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
 
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-    dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
 
     alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=22),  # choose to log an individual
     alri.AlriPropertiesOfOtherModules()
