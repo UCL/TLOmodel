@@ -919,7 +919,7 @@ class SimplifiedPregnancyAndLabour(Module):
     }
 
     def __init__(self, *args):
-        self.name = 'Labour'
+        super().__init__(name='Labour')
 
     def read_parameters(self, *args):
         pass
