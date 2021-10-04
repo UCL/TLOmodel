@@ -5,18 +5,7 @@ import pandas as pd
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import (
-    care_of_women_during_pregnancy,
-    contraception,
-    demography,
-    enhanced_lifestyle,
-    healthsystem,
-    labour,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
-    symptommanager,
-)
+from tlo.methods import contraception, demography, enhanced_lifestyle, healthsystem, symptommanager
 from tlo.methods.hiv import DummyHivModule
 
 
@@ -54,7 +43,8 @@ def run_sim(tmpdir,
         'directory': tmpdir,
         'custom_levels': {
             "*": logging.WARNING,
-            'tlo.methods.contraception': logging.INFO
+            "tlo.methods.contraception": logging.INFO,
+            "tlo.methods.demography": logging.INFO
         }
     }
 
@@ -73,11 +63,7 @@ def run_sim(tmpdir,
 
         # - modules for mechanistic representation of contraception -> pregnancy -> labour -> delivery etc.
         contraception.Contraception(resourcefilepath=resourcefilepath, use_healthsystem=use_healthsystem),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-        labour.Labour(resourcefilepath=resourcefilepath),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        contraception.SimplifiedPregnancyAndLabour(),
 
         # - Dummy HIV module (as contraception requires the property hv_inf)
         DummyHivModule()
@@ -175,13 +161,8 @@ def test_starting_and_stopping_contraceptive_use():
             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
 
-            # - modules for mechanistic representation of contraception -> pregnancy -> labour -> delivery etc.
             contraception.Contraception(resourcefilepath=resourcefilepath, use_healthsystem=False),
-            pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-            labour.Labour(resourcefilepath=resourcefilepath),
-            newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-            postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+            contraception.SimplifiedPregnancyAndLabour(),
 
             # - Dummy HIV module (as contraception requires the property hv_inf)
             DummyHivModule()
@@ -237,17 +218,55 @@ def test_starting_and_stopping_contraceptive_use():
     assert 0 == end_usage.drop(index=['not_using', 'female_sterilization']).sum().sum()
 
 
-def test_pregnancies_occurring(tmpdir):
+def test_pregnancies_and_births_occurring(tmpdir):
     """Test that pregnancies occur for those who are on contraception and those who are not."""
     # Run simulation without use of HealthSystem stuff and with high risk of failure of contraceptive
     sim = run_sim(tmpdir=tmpdir, use_healthsystem=False, disable=True, incr_prob_of_failure=True)
 
+    # Check pregnancies
     logs = parse_log_file(sim.log_filepath)
     pregs = logs['tlo.methods.contraception']['pregnancy']
 
     assert len(pregs) > 0
     assert (pregs['contraception'] == "not_using").any()
     assert (pregs['contraception'] != "not_using").any()
+
+    # Check births
+    births = logs['tlo.methods.demography']['on_birth']
+    assert len(births) > 0
+    assert set(births['mother']).issubset(set(pregs['woman_id']))
+
+
+def test_woman_starting_contraceptive_after_birth(tmpdir):
+    """Check that woman can start a contraceptive after birth."""
+    sim = run_sim(tmpdir=tmpdir, run=False)
+
+    # Select a woman to be a mother
+    person_id = 0
+    sim.population.props.loc[person_id, [
+        "is_alive",
+        "sex",
+        "age_years"]
+    ] = (
+        True,
+        "F",
+        30
+    )
+
+    # Run `select_contraceptive_following_birth` for the woman many times
+    co_after_birth = list()
+    for _ in range(1000):
+        # Reset woman to be "not_using"
+        sim.population.props.at[person_id, 'co_contraception'] = "not_using"
+
+        # Run `select_contraceptive_following_birth`
+        sim.modules['Contraception'].select_contraceptive_following_birth(person_id)
+
+        # Get new status
+        co_after_birth.append(sim.population.props.at[person_id, 'co_contraception'])
+
+    # Check that updated contraceptive status is not "not_using" on at least some occasions
+    assert any([x != "not_using" for x in co_after_birth])
 
 
 def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir):

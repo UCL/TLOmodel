@@ -9,18 +9,12 @@ from matplotlib import pyplot as plt
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    care_of_women_during_pregnancy,
     contraception,
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
     hiv,
-    labour,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
     symptommanager,
 )
 
@@ -69,13 +63,8 @@ sim.register(
     # <-- HealthSystem functioning
 
     contraception.Contraception(resourcefilepath=resources, use_healthsystem=True),  # <-- using HealthSystem
-    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resources),
-    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
-    labour.Labour(resourcefilepath=resources),
-    newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
-    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
+    contraception.SimplifiedPregnancyAndLabour(),
 
-    dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resources),
     hiv.DummyHivModule(),
 )
 

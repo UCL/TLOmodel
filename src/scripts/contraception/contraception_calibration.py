@@ -11,18 +11,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import make_calendar_period_lookup
-from tlo.methods import (
-    care_of_women_during_pregnancy,
-    contraception,
-    demography,
-    enhanced_lifestyle,
-    healthsystem,
-    labour,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
-    symptommanager,
-)
+from tlo.methods import contraception, demography, enhanced_lifestyle, healthsystem, symptommanager
 from tlo.methods.hiv import DummyHivModule
 
 # %% Create dummy simulation object
@@ -37,13 +26,8 @@ sim.register(
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
 
-    # - modules for mechanistic representation of contraception -> pregnancy -> labour -> delivery etc.
     contraception.Contraception(resourcefilepath=resourcefilepath, use_healthsystem=False),
-    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-    labour.Labour(resourcefilepath=resourcefilepath),
-    newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+    contraception.SimplifiedPregnancyAndLabour(),
 
     # - Dummy HIV module (as contraception requires the property hv_inf)
     DummyHivModule()

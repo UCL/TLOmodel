@@ -12,20 +12,7 @@ or locally using:
 """
 
 from tlo import Date, logging
-from tlo.methods import (
-    care_of_women_during_pregnancy,
-    contraception,
-    demography,
-    enhanced_lifestyle,
-    healthseekingbehaviour,
-    healthsystem,
-    hiv,
-    labour,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
-    symptommanager,
-)
+from tlo.methods import contraception, demography, hiv
 from tlo.scenario import BaseScenario
 
 
@@ -52,22 +39,12 @@ class LongRun(BaseScenario):
         return [
             # Core Modules
             demography.Demography(resourcefilepath=self.resources),
-            enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            symptommanager.SymptomManager(resourcefilepath=self.resources, spurious_symptoms=False),
-            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
 
-            # Representations of the Healthcare System
-            healthsystem.HealthSystem(resourcefilepath=self.resources, disable=True),
-
-            # - Contraception, Pregnancy and Labour
+            # - Contraception and replacement for Labour etc.
             contraception.Contraception(resourcefilepath=self.resources, use_healthsystem=False),
-            pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
-            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
-            labour.Labour(resourcefilepath=self.resources),
-            newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
-            postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
+            contraception.SimplifiedPregnancyAndLabour(),
 
-            # - Supportiving Modules
+            # - Supporting Modules required by Contraception
             hiv.DummyHivModule(),
         ]
 

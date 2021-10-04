@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
 from tlo.util import random_date, sample_outcome, transition_states
 
@@ -16,8 +16,11 @@ class Contraception(Module):
     """Contraception module covering baseline contraception methods use, failure (i.e., pregnancy),
     Switching contraceptive methods, and discontinuation rates by age."""
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem'}
-    ADDITIONAL_DEPENDENCIES = {'Labour', 'PregnancySupervisor', 'Hiv'}
+    INIT_DEPENDENCIES = {'Demography'}
+
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthSystem'}
+
+    ADDITIONAL_DEPENDENCIES = {'Labour', 'Hiv'}
 
     METADATA = {}
 
@@ -238,6 +241,13 @@ class Contraception(Module):
 
         # Initiate mother of newborn to a contraceptive
         self.select_contraceptive_following_birth(mother_id)
+
+    def end_pregnancy_without_live_birth(self, person_id):
+        """End the pregnancy without a live birth. [Called by the Labour/Pregnancy modules]. Resets pregnancy status and
+         may initiate a contraceptive method."""
+
+        self.sim.population.props.at[person_id, 'is_pregnant'] = False
+        self.select_contraceptive_following_birth(person_id)
 
     def process_params(self):
         """Process parameters that have been read-in."""
@@ -713,7 +723,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
                             df.age_years.between(self.age_low, self.age_high) &
                             ~df.co_contraception.isin(['not_using', 'female_sterilization']) &
                             ~df.la_is_postpartum &
-                            (df.ps_ectopic_pregnancy == 'none')
+                            ~df.ps_ectopic_pregnancy.isin(['not_ruptured', 'ruptured'])
                             )
 
         if possible_to_fail.sum():
@@ -731,7 +741,6 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
     def pregnancy_for_those_not_on_contraceptive(self):
         """Look across all woman who are not using a contraceptive to determine who will become pregnant."""
-        # todo hiv effect
 
         df = self.module.sim.population.props
         pp = self.module.processed_params
@@ -747,7 +756,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             ~df.la_currently_in_labour &
             ~df.la_has_had_hysterectomy &
             ~df.la_is_postpartum &
-            (df.ps_ectopic_pregnancy == 'none')
+            ~df.ps_ectopic_pregnancy.isin(['not_ruptured', 'ruptured'])
         )
 
         if subset.sum():
@@ -872,3 +881,94 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
             old=self.old_contraceptive,
             new="not_using"
         )
+
+
+# -----------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------
+#
+# Accessory modules for testing / debugging
+#
+# -----------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------
+
+class SimplifiedPregnancyAndLabour(Module):
+    """Simplified module to replace `Labour`, 'PregnancySupervisor` and other associated module, for use in
+    testing/calibrating the Contraception Module. The module calls itself Labour and provides the method
+    `set_date_of_labour`, which is called by the Contraception Module at the onset of pregnancy. It schedules an event
+    for the end of the pregnancy (approximately 9 months later) which may or may not result in a live birth."""
+
+    INIT_DEPENDENCIES = {'Contraception'}
+
+    ALTERNATIVE_TO = {'Labour'}
+
+    METADATA = {}
+
+    PARAMETERS = {}
+
+    PROPERTIES = {
+        'la_currently_in_labour': Property(Types.BOOL, 'whether this woman is currently in labour'),
+        'la_has_had_hysterectomy': Property(Types.BOOL, 'whether this woman has had a hysterectomy as treatment for a '
+                                                        'complication of labour, and therefore is unable to conceive'),
+        'la_is_postpartum': Property(Types.BOOL, 'Whether a woman is in the postpartum period, from delivery until '
+                                                 'day +42 (6 weeks)'),
+        'ps_ectopic_pregnancy': Property(Types.CATEGORICAL, 'Whether a woman is experiencing ectopic pregnancy and'
+                                                            ' its current state',
+                                         categories=['none', 'not_ruptured', 'ruptured']
+                                         )
+    }
+
+    def __init__(self, *args):
+        self.name = 'Labour'
+
+    def read_parameters(self, *args):
+        pass
+
+    def initialise_population(self, population):
+        df = population.props
+        df.loc[df.is_alive, 'la_currently_in_labour'] = False
+        df.loc[df.is_alive, 'la_has_had_hysterectomy'] = False
+        df.loc[df.is_alive, 'la_is_postpartum'] = False
+        df.loc[df.is_alive, 'ps_ectopic_pregnancy'] = np.NAN
+
+    def initialise_simulation(self,  *args):
+        pass
+
+    def on_birth(self, mother_id, child_id):
+        df = self.sim.population.props
+        df.at[child_id, 'la_currently_in_labour'] = False
+        df.at[child_id, 'la_has_had_hysterectomy'] = False
+        df.at[child_id, 'la_is_postpartum'] = False
+        df.at[child_id, 'ps_ectopic_pregnancy'] = np.NAN
+
+    def set_date_of_labour(self, person_id):
+        """This is a drop-in replacement for the method in Labour that triggers the processes that determine the outcome
+        of a pregnancy. The probability of a live birth is hard-coded at 67%, which is a reasonable estimate for the
+        current versions of the Labour and other modules."""
+
+        prob_live_birth = 0.67
+
+        self.sim.schedule_event(EndOfPregnancyEvent(module=self,
+                                                    person_id=person_id,
+                                                    live_birth=(self.rng.rand() > prob_live_birth)
+                                                    ),
+                                random_date(
+                                    self.sim.date + pd.DateOffset(months=8, days=14),
+                                    self.sim.date + pd.DateOffset(months=8, days=44),
+                                    self.rng)
+                                )
+
+
+class EndOfPregnancyEvent(Event, IndividualScopeEventMixin):
+    """This event signals the end of the pregnancy, which may or may not result in a live-birth"""
+
+    def __init__(self, module, person_id, live_birth):
+        super().__init__(module, person_id=person_id)
+        self.live_birth = live_birth
+
+    def apply(self, person_id):
+        """End pregnancy and do live birth if needed"""
+
+        if self.live_birth:
+            self.sim.do_birth(person_id)
+        else:
+            self.sim.modules['Contraception'].end_pregnancy_without_live_birth(person_id)
