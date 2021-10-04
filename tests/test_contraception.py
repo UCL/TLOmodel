@@ -110,8 +110,8 @@ def __check_some_starting_switching_and_stopping(sim):
 
     logs = parse_log_file(sim.log_filepath)
 
-    # Check that yearly-summary logs are as expected and that some use of contraception is happening:
-    ys = logs['tlo.methods.contraception']['contraception_use_yearly_summary']
+    # Check that summary logs are as expected and that some use of contraception is happening:
+    ys = logs['tlo.methods.contraception']['contraception_use_summary']
     ys = ys.set_index('date')
     assert set(ys.columns) == sim.modules['Contraception'].all_contraception_states
     assert (ys.drop(columns=['not_using']).sum(axis=1) > 0).all()
@@ -434,7 +434,7 @@ def test_defaulting_off_method_if_no_healthsystem_at_population_level(tmpdir):
 
     # Check there is no record of persons being maintained on contraceptives that require an HSI
     states_that_may_require_HSI_to_maintain_on = sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on
-    ys = log['contraception_use_yearly_summary']
+    ys = log['contraception_use_summary']
     after_everyone_has_appt = pd.to_datetime(ys['date']) > (sim.start_date + pd.DateOffset(months=7))  # 7 months allow
     # time for an appointment to become due for everyone (allowing for the monthly occurrence of the poll.)
     assert (ys.loc[after_everyone_has_appt, states_that_may_require_HSI_to_maintain_on] == 0).all().all()
@@ -466,7 +466,7 @@ def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir):
 
     # Check that, after six months of simulation time, no one is on a contraceptive that requires a consumable for
     # maintenance.
-    num_on_contraceptives = log['contraception_use_yearly_summary']
+    num_on_contraceptives = log['contraception_use_summary']
     after_everyone_has_appt = pd.to_datetime(num_on_contraceptives['date']) > (sim.start_date + pd.DateOffset(months=7))
     # (7 months allow time for an appointment to become due for everyone (allowing for the monthly occurrence of the
     # poll.)
@@ -510,11 +510,3 @@ def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir):
             format_log(parse_log_file(sim_uses_healthsystem.log_filepath)['tlo.methods.contraception'][key]),
             format_log(parse_log_file(sim_does_not_use_healthsystem.log_filepath)['tlo.methods.contraception'][key])
         )
-
-    # Equality of 'contraception_use_yearly_summary' (which is logged at the end of each month)
-    pd.testing.assert_frame_equal(
-        parse_log_file(sim_uses_healthsystem.log_filepath)['tlo.methods.contraception'][
-            'contraception_use_yearly_summary'],
-        parse_log_file(sim_does_not_use_healthsystem.log_filepath)['tlo.methods.contraception'][
-            'contraception_use_yearly_summary']
-    )

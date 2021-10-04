@@ -199,11 +199,11 @@ class Contraception(Module):
         * Create second random number generator
         """
 
-        # Schedule first occurrences of Contraception Poll to occur at the beginning of the simulation:
+        # Schedule first occurrences of Contraception Poll to occur at the beginning of the simulation
         sim.schedule_event(ContraceptionPoll(self), sim.date)
 
-        # Schedule the first occurrence of the Logging event to occur at the end of the month:
-        sim.schedule_event(ContraceptionLoggingEvent(self), sim.date + pd.DateOffset(months=1) - pd.DateOffset(days=1))
+        # Schedule the first occurrence of the Logging event to occur at the beginning of the simulation
+        sim.schedule_event(ContraceptionLoggingEvent(self), sim.date)
 
         # Retrieve the consumables codes for the consumables used
         if self.use_healthsystem:
@@ -825,7 +825,7 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         value_counts = df.loc[df.is_alive & (df.sex == 'F'), 'co_contraception'].value_counts().sort_index().to_dict()
 
         # Log summary of usage of contraceptives
-        logger.info(key='contraception_use_yearly_summary',
+        logger.info(key='contraception_use_summary',
                     data=value_counts,
                     description='Counts of women on each type of contraceptive at a point each time (yearly).')
 
