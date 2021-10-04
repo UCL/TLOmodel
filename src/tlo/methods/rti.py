@@ -3547,7 +3547,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         if self.is_child:
             item_code_fluid_replacement = pd.unique(
                 consumables.loc[consumables['Items'] ==
-                                "Sodium lactate injection (Ringer's), 500 ml, with giving set", 'Item_Code'])[0]
+                                "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA", 'Item_Code'])[0]
             item_code_dextrose = pd.unique(consumables.loc[consumables['Items'] ==
                                                            "Dextrose (glucose) 5%, 1000ml_each_CMST", 'Item_Code'])[0]
             item_code_cannula = pd.unique(consumables.loc[consumables['Items'] ==
@@ -3562,7 +3562,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         else:
             item_code_fluid_replacement = pd.unique(
                 consumables.loc[consumables['Items'] ==
-                                "Sodium lactate injection (Ringer's), 500 ml, with giving set", 'Item_Code'])[0]
+                                "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA", 'Item_Code'])[0]
             item_code_oxygen = pd.unique(consumables.loc[consumables['Items'] ==
                                                          "Oxygen, 1000 liters, primarily with oxygen cylinders",
                                                          'Item_Code'])[0]
@@ -4049,7 +4049,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
 
                 item_code_fluid_replacement = pd.unique(
                     consumables.loc[consumables['Items'] ==
-                                    "Sodium lactate injection (Ringer's), 500 ml, with giving set", 'Item_Code'])[0]
+                                    "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA", 'Item_Code'])[0]
                 consumables_burns = {
                     'Intervention_Package_Code': dict(),
                     'Item_Code': {item_code_cetrimide_chlorhexidine: burncounts,
