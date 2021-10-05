@@ -918,7 +918,7 @@ class Hiv(Module):
         )[0]
         item2 = pd.unique(
             consumables.loc[
-                consumables["Items"] == "Gloves, exam, latex, disposable, pair",
+                consumables["Items"] == "Disposables gloves, powder free, 100 pieces per box",
                 "Item_Code",
             ]
         )[0]
