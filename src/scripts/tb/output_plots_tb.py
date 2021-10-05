@@ -474,6 +474,11 @@ death_compare = compare_number_of_deaths(sim.log_filepath, resourcefilepath)
 deaths2010 = death_compare.loc[("2010-2014", slice(None), slice(None), "AIDS")].sum()
 deaths2015 = death_compare.loc[("2015-2019", slice(None), slice(None), "AIDS")].sum()
 
+# include all ages and both sexes
+deaths2010_TB = death_compare.loc[("2010-2014", slice(None), slice(None), "non_AIDS_TB")].sum()
+deaths2015_TB = death_compare.loc[("2015-2019", slice(None), slice(None), "non_AIDS_TB")].sum()
+
+
 x_vals = [1, 2, 3, 4]
 labels = ["2010-2014", "2010-2014", "2015-2019", "2015-2019"]
 y_vals = [
