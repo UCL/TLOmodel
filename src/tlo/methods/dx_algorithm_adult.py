@@ -18,6 +18,8 @@ class DxAlgorithmAdult(Module):
     and returns a 'diagnosis'.
     """
 
+    ADDITIONAL_DEPENDENCIES = {'HealthSystem', 'SymptomManager'}
+
     # Define parameters
     PARAMETERS = {}
 

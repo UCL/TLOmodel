@@ -17,6 +17,15 @@ class SimplifiedBirths(Module):
     """
     A simplified births module responsible for generating births in a simplified way and assign mother ids to newborns.
     """
+    INIT_DEPENDENCIES = {'Demography'}
+
+    ALTERNATIVE_TO = {
+        'Contraception',
+        'Labour',
+        'NewbornOutcomes',
+        'PostnatalSupervisor',
+        'PregnancySupervisor'
+    }
 
     METADATA = {}
 

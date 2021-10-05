@@ -13,11 +13,6 @@ from tlo.methods.bladder_cancer import (
 from tlo.methods.breast_cancer import (
     HSI_BreastCancer_Investigation_Following_breast_lump_discernible,
 )
-from tlo.methods.cardio_metabolic_disorders import (
-    HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms,
-    HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms,
-    HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment,
-)
 from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
@@ -142,15 +137,19 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                  tclose=None,
                  priority=0)
 
+        if age <= 5:
+            # ----------------------------------- CHILD <=5 -----------------------------------
+            # It's a child: Run the ICMI algorithm for this child:
+            # NB. This includes children who are aged 5
+
+            # If one of the symptoms is diarrhoea, then run the algorithm for when a child presents with diarrhoea:
+            if 'diarrhoea' in symptoms:
+                if 'Diarrhoea' in self.sim.modules:
+                    self.sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
+                        person_id=person_id, hsi_event=self)
+
         # diagnostic algorithm for child <5 yrs
         if age < 5:
-            # ----------------------------------- CHILD <5 -----------------------------------
-            # It's a child: Run the ICMI algorithm for this child:
-
-            # First, if one of the symptoms is diarrhoea, then run the diarrhoea for a child routine:
-            if 'diarrhoea' in symptoms:
-                self.sim.modules['DxAlgorithmChild'].do_when_diarrhoea(person_id=person_id, hsi_event=self)
-
             # Next, run DxAlgorithmChild to get additional diagnoses:
             diagnosis = self.sim.modules["DxAlgorithmChild"].diagnose(
                 person_id=person_id, hsi_event=self
@@ -176,7 +175,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                         topen=self.sim.date,
                         tclose=None)
 
-        if (5 <= age < 15):
+        elif age < 15:
             # ----------------------------------- CHILD 5-14 -----------------------------------
             # Run DxAlgorithmChild to get (additional) diagnoses:
             diagnosis = self.sim.modules["DxAlgorithmChild"].diagnose(
@@ -203,7 +202,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                         topen=self.sim.date,
                         tclose=None)
 
-        if age >= 15:
+        else:
             # ----------------------------------- ADULT -----------------------------------
             if 'OesophagealCancer' in self.sim.modules:
                 # If the symptoms include dysphagia, then begin investigation for Oesophageal Cancer:
@@ -324,67 +323,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                 # take a blood pressure measurement for proportion of individuals who have not been diagnosed and
                 # are either over 50 or younger than 50 but are selected to get tested
                 cmd = self.sim.modules['CardioMetabolicDisorders']
-
-                def get_time_since_last_test(current_date, date_of_last_test):
-                    return (current_date.year - date_of_last_test.year) * 12 + \
-                            (current_date.month - date_of_last_test.month)
-
-                for condition in cmd.conditions:
-                    # if the person hasn't been diagnosed and they don't have symptoms of the condition...
-                    if (~df.at[person_id, f'nc_{condition}_ever_diagnosed']) and \
-                            (f'{condition}_symptoms' not in symptoms):
-                        # if they haven't been tested within the last 6 months...
-                        if df.at[person_id, f'nc_{condition}_ever_tested']:
-                            num_months_since_last_test = get_time_since_last_test(
-                                self.sim.date, df.at[person_id, f'nc_{condition}_date_last_test'])
-                            if num_months_since_last_test >= 6 and condition != 'chronic_ischemic_hd':
-                                # and if they're over 50 or are chosen to be tested with some probability...
-                                if df.at[person_id, 'age_years'] >= 50 or self.module.rng.rand() < cmd.parameters[
-                                        f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
-                                    # initiate HSI event
-                                    hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
-                                        module=cmd,
-                                        person_id=person_id,
-                                        condition=f'{condition}'
-                                    )
-                                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                                        hsi_event,
-                                        priority=0,
-                                        topen=self.sim.date,
-                                        tclose=None
-                                    )
-                            # else if never tested, test if over 50 or chosen to be tested with some probability
-                        else:
-                            if condition != 'chronic_ischemic_hd':
-                                if df.at[person_id, 'age_years'] >= 50 or self.module.rng.rand() < cmd.parameters[
-                                        f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
-                                    # initiate HSI event
-                                    hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
-                                        module=cmd,
-                                        person_id=person_id,
-                                        condition=f'{condition}'
-                                    )
-                                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                                        hsi_event,
-                                        priority=0,
-                                        topen=self.sim.date,
-                                        tclose=None
-                                    )
-
-                        # If the symptoms include those for an CMD condition, then begin investigation for condition
-                    elif ~df.at[person_id, f'nc_{condition}_ever_diagnosed'] and f'{condition}_symptoms' in \
-                            symptoms:
-                        hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
-                            module=cmd,
-                            person_id=person_id,
-                            condition=f'{condition}'
-                        )
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(
-                            hsi_event,
-                            priority=0,
-                            topen=self.sim.date,
-                            tclose=None
-                        )
+                cmd.schedule_hsi_events_for_cmd(person_id=person_id)
 
     def did_not_run(self):
         logger.debug(key='message',
@@ -576,14 +515,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         # ------ CARDIO-METABOLIC DISORDERS ------
         if 'CardioMetabolicDisorders' in self.sim.modules:
             cmd = self.sim.modules['CardioMetabolicDisorders']
-            for ev in self.sim.modules['CardioMetabolicDisorders'].events:
-                if f'{ev}_damage' in symptoms:
-                    event = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
-                        module=cmd,
-                        person_id=person_id,
-                        ev=ev,
-                    )
-                    health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
+            cmd.schedule_hsi_events_for_cmd_events(person_id=person_id)
 
         # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
         if 'craving_sandwiches' in symptoms:

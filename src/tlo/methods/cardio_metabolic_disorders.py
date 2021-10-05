@@ -45,6 +45,12 @@ class CardioMetabolicDisorders(Module):
     events = ['ever_stroke',
               'ever_heart_attack']
 
+    INIT_DEPENDENCIES = {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
+
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
+    ADDITIONAL_DEPENDENCIES = {'Depression'}
+
     # Declare Metadata (this is for a typical 'Disease Module')
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -77,7 +83,7 @@ class CardioMetabolicDisorders(Module):
                 'Stroke',
                 'Chronic kidney disease'
             ],
-                  label='NCD')
+                label='NCD')
     }
 
     # create separate dicts for params for conditions and events
@@ -132,10 +138,6 @@ class CardioMetabolicDisorders(Module):
         f"nc_{p}_date_diagnosis": Property(Types.DATE, f"When someone has  been diagnosed with {p}") for p
         in conditions
     }
-    condition_ever_tested_list = {
-        f"nc_{p}_ever_tested": Property(Types.BOOL, f"Whether someone has  been tested for {p}") for p
-        in conditions
-    }
     condition_date_of_last_test_list = {
         f"nc_{p}_date_last_test": Property(Types.DATE, f"When someone has  last been tested for {p}") for p
         in conditions
@@ -157,10 +159,14 @@ class CardioMetabolicDisorders(Module):
         f"nc_{p}_on_medication": Property(Types.BOOL, f"Whether or not someone has ever been diagnosed with {p}") for p
         in events
     }
+    event_scheduled_date_death_list = {
+        f"nc_{p}_scheduled_date_death": Property(Types.DATE, f"Scheduled date of death from {p}") for p
+        in events
+    }
 
     PROPERTIES = {**condition_list, **event_list, **condition_diagnosis_list, **condition_date_diagnosis_list,
-                  **condition_ever_tested_list, **condition_date_of_last_test_list, **condition_medication_list,
-                  **event_diagnosis_list, **event_date_diagnosis_list, **event_medication_list,
+                  **condition_date_of_last_test_list, **condition_medication_list, **event_diagnosis_list,
+                  **event_date_diagnosis_list, **event_medication_list, **event_scheduled_date_death_list,
                   'nc_ever_weight_loss_treatment': Property(Types.BOOL,
                                                             'whether or not the person has ever had weight loss '
                                                             'treatment'),
@@ -190,12 +196,10 @@ class CardioMetabolicDisorders(Module):
         self.condition_list = ['nc_' + cond for cond in CardioMetabolicDisorders.conditions] + ['de_depr']
 
         # Store the symptoms that this module will use (for conditions only):
-        self.symptoms = {
-            'diabetes_symptoms',
-            'chronic_lower_back_pain_symptoms',
-            'chronic_ischemic_hd_symptoms',
-            'chronic_kidney_disease_symptoms'  # was vomiting for CKD
-        }
+        self.symptoms = {f"{s}_symptoms" for s in self.conditions}
+        # Remove hypertension because there are no symptoms
+        self.symptoms.remove("hypertension_symptoms")
+
         # dict to hold the probability of onset of different types of symptom given a condition
         self.prob_symptoms = dict()
 
@@ -271,8 +275,8 @@ class CardioMetabolicDisorders(Module):
                 self.prob_symptoms[event] = self.parameters[f'{event}_symptoms']
             else:
                 self.prob_symptoms[event] = {}
-            # -------------------- SYMPTOMS ---------------------------------------------------------------
-            # Declare symptoms that this module will cause and which are not included in the generic symptoms:
+        # -------------------- SYMPTOMS ---------------------------------------------------------------
+        # Declare symptoms that this module will cause and which are not included in the generic symptoms:
         generic_symptoms = self.sim.modules['SymptomManager'].generic_symptoms
         for symptom_name in self.symptoms:
             if symptom_name not in generic_symptoms:
@@ -325,13 +329,13 @@ class CardioMetabolicDisorders(Module):
                     age_max = age_max + 20
             # ----- Set ever tested, date of last test, ever_diagnosed, date of diagnosis, and on_medication to false
             # / NaT for everyone
-            df.loc[df.is_alive, f'nc_{condition}_ever_tested'] = False
             df.loc[df.is_alive, f'nc_{condition}_date_last_test'] = pd.NaT
             df.loc[df.is_alive, f'nc_{condition}_ever_diagnosed'] = False
             df.loc[df.is_alive, f'nc_{condition}_date_diagnosis'] = pd.NaT
             df.loc[df.is_alive, f'nc_{condition}_on_medication'] = False
 
             # ----- Impose the symptom on random sample of those with each condition to have:
+            # TODO: @britta make linear model data-specific and add in needed complexity
             for symptom in self.prob_symptoms[condition].keys():
                 lm_init_symptoms = LinearModel(
                     LinearModelType.MULTIPLICATIVE,
@@ -351,11 +355,10 @@ class CardioMetabolicDisorders(Module):
             df.loc[df.is_alive, f'nc_{event}_ever_diagnosed'] = False
             df.loc[df.is_alive, f'nc_{event}_date_diagnosis'] = pd.NaT
             df.loc[df.is_alive, f'nc_{event}_on_medication'] = False
+            df.loc[df.is_alive, f'nc_{event}_scheduled_date_death'] = pd.NaT
 
         # ----- Generate the initial "risk score" for the population based on exercise, diet, tobacco, alcohol, BMI:
-        df.loc[df.is_alive, 'nc_risk_score'] = (df[[
-            'li_low_ex', 'li_high_salt', 'li_high_sugar', 'li_tob', 'li_ex_alc']] > 0).sum(1)
-        df.loc[df['li_bmi'] >= 3, ['nc_risk_score']] += 1
+        self.generate_risk_score()
 
         # ----- Set all other parameters to False / NaT
         df.loc[df.is_alive, 'nc_ever_weight_loss_treatment'] = False
@@ -416,7 +419,8 @@ class CardioMetabolicDisorders(Module):
         # NB. Specificity is assumed to be 100%
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             assess_diabetes=DxTest(
-                property='nc_diabetes'
+                property='nc_diabetes',
+                cons_req_as_item_code=self.parameters['diabetes_hsi']['test_item_code']
             )
         )
         # Create the diagnostic representing the assessment for whether a person is diagnosed with hypertension:
@@ -436,7 +440,8 @@ class CardioMetabolicDisorders(Module):
         # Create the diagnostic representing the assessment for whether a person is diagnosed with CKD
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             assess_chronic_kidney_disease=DxTest(
-                property='nc_chronic_kidney_disease'
+                property='nc_chronic_kidney_disease',
+                cons_req_as_item_code=self.parameters['chronic_kidney_disease_hsi']['test_item_code']
             )
         )
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
@@ -467,9 +472,6 @@ class CardioMetabolicDisorders(Module):
         :return: a linear model
         """
 
-        # use temporary empty dict to save results
-        lms_dict = dict()
-
         # load parameters for correct condition/event
         p = self.parameters[f'{condition}_{lm_type}']
 
@@ -477,11 +479,16 @@ class CardioMetabolicDisorders(Module):
         # LinearModel expects native python types - if it's numpy type, convert it
         baseline_annual_probability = float(baseline_annual_probability)
 
-        lms_dict[condition] = LinearModel(
+        linearmodel = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             baseline_annual_probability,
             Predictor('sex').when('M', p['rr_male']),
-            Predictor('age_years').when('.between(0, 4)', p['rr_0_4'])
+            Predictor(
+                'age_years',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True
+            )
+            .when('.between(0, 4)', p['rr_0_4'])
             .when('.between(5, 9)', p['rr_5_9'])
             .when('.between(10, 14)', p['rr_10_14'])
             .when('.between(15, 19)', p['rr_15_19'])
@@ -501,14 +508,25 @@ class CardioMetabolicDisorders(Module):
             .when('.between(85, 89)', p['rr_85_89'])
             .when('.between(90, 94)', p['rr_90_94'])
             .when('.between(95, 99)', p['rr_95_99'])
-            .otherwise(p['rr_100']),
+            .when('>= 100', p['rr_100']),
             Predictor('li_urban').when(True, p['rr_urban']),
-            Predictor('li_wealth').when('1', p['rr_wealth_1'])
+            Predictor(
+                'li_wealth',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True,
+            )
+            .when('1', p['rr_wealth_1'])
+            .when('1', p['rr_wealth_1'])
             .when('2', p['rr_wealth_2'])
             .when('3', p['rr_wealth_3'])
             .when('4', p['rr_wealth_4'])
             .when('5', p['rr_wealth_5']),
-            Predictor('li_bmi').when('1', p['rr_bmi_1'])
+            Predictor(
+                'li_bmi',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True
+            )
+            .when('1', p['rr_bmi_1'])
             .when('2', p['rr_bmi_2'])
             .when('3', p['rr_bmi_3'])
             .when('4', p['rr_bmi_4'])
@@ -518,11 +536,21 @@ class CardioMetabolicDisorders(Module):
             Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
             Predictor('li_tob').when(True, p['rr_tobacco']),
             Predictor('li_ex_alc').when(True, p['rr_alcohol']),
-            Predictor('li_mar_stat').when('1', p['rr_marital_status_1'])
+            Predictor(
+                'li_mar_stat',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True
+            )
+            .when('1', p['rr_marital_status_1'])
             .when('2', p['rr_marital_status_2'])
             .when('3', p['rr_marital_status_3']),
             Predictor('li_in_ed').when(True, p['rr_in_education']),
-            Predictor('li_ed_lev').when('1', p['rr_current_education_level_1'])
+            Predictor(
+                'li_ed_lev',
+                conditions_are_mutually_exclusive=True,
+                conditions_are_exhaustive=True
+            )
+            .when('1', p['rr_current_education_level_1'])
             .when('2', p['rr_current_education_level_2'])
             .when('3', p['rr_current_education_level_3']),
             Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
@@ -538,7 +566,7 @@ class CardioMetabolicDisorders(Module):
             # Predictor('nc_cancers').when(True, p['rr_cancers'])
         )
 
-        return lms_dict[condition]
+        return linearmodel
 
     def build_linear_model_symptoms(self, condition, interval_between_polls):
         """
@@ -570,7 +598,6 @@ class CardioMetabolicDisorders(Module):
             df.at[child_id, f'nc_{condition}'] = False
             df.at[child_id, f'nc_{condition}_ever_diagnosed'] = False
             df.at[child_id, f'nc_{condition}_date_diagnosis'] = pd.NaT
-            df.at[child_id, f'nc_{condition}_ever_tested'] = False
             df.at[child_id, f'nc_{condition}_date_last_test'] = pd.NaT
             df.at[child_id, f'nc_{condition}_on_medication'] = False
         for event in self.events:
@@ -578,42 +605,20 @@ class CardioMetabolicDisorders(Module):
             df.at[child_id, f'nc_{event}_ever_diagnosed'] = False
             df.at[child_id, f'nc_{event}_on_medication'] = False
             df.at[child_id, f'nc_{event}_date_diagnosis'] = pd.NaT
+            df.loc[child_id, f'nc_{event}_scheduled_date_death'] = pd.NaT
         # df.at[child_id, 'nc_cancers'] = False
         df.at[child_id, 'nc_risk_score'] = 0
         df.at[child_id, 'nc_n_conditions'] = 0
         df.at[child_id, 'nc_condition_combos'] = False
 
-    def get_all_consumables(self, hsi_event, condition, type_of_consumable):
+    def generate_risk_score(self):
         """
-        This function defines all consumables and determines the outcome of the request for consumables from the
-        health system.
-        :param hsi_event: HSI event in which the function has been called
+        Generates or updates the risk score for individuals at initialisation of population
         """
-
-        # Define the consumables to get
-        if type_of_consumable == 'test':
-            consumables_to_get = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {self.parameters[f'{condition}_hsi'].test_item_code: 1}}
-        elif type_of_consumable == 'medication':
-            consumables_to_get = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {self.parameters[f'{condition}_hsi'].medication_item_code: 1}}
-        elif type_of_consumable == 'emergency_medication':
-            consumables_to_get = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {self.parameters[f'{condition}_hsi'].emergency_medication_item_code: 1}}
-
-        # Confirm availability of consumables
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_to_get)
-
-        # As with previous interventions - condition on consumables and probability intervention is delivered
-        if outcome_of_request_for_consumables['Item_Code'][f'item_code_{condition}_{type_of_consumable}']:
-            return True
-        else:
-            return False
+        df = self.sim.population.props
+        df.loc[df.is_alive, 'nc_risk_score'] = (df[[
+            'li_low_ex', 'li_high_salt', 'li_high_sugar', 'li_tob', 'li_ex_alc']] > 0).sum(1)
+        df.loc[df['li_bmi'] >= 3, ['nc_risk_score']] += 1
 
     def report_daly_values(self):
         """Report DALY values to the HealthBurden module"""
@@ -639,6 +644,75 @@ class CardioMetabolicDisorders(Module):
         """
         pass
 
+    def schedule_hsi_events_for_cmd(self, person_id):
+        """
+        This is called by the HSI generic first appts module whenever a person attends an appointment.
+        """
+
+        def get_time_since_last_test(current_date, date_of_last_test):
+            return (current_date - date_of_last_test).days > 365.25 / 2
+
+        df = self.sim.population.props
+        symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
+
+        for condition in self.conditions:
+            # if the person hasn't been diagnosed and they don't have symptoms of the condition...
+            if (~df.at[person_id, f'nc_{condition}_ever_diagnosed']) and (f'{condition}_symptoms' not in symptoms):
+                # if the person hasn't ever been tested for the condition, test if over 50 or with some probability
+                if pd.isnull(df.at[person_id, f'nc_{condition}_date_last_test']):
+                    if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
+                                f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
+                        # initiate HSI event
+                        hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
+                            module=self,
+                            person_id=person_id,
+                            condition=f'{condition}'
+                        )
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(
+                            hsi_event,
+                            priority=0,
+                            topen=self.sim.date,
+                            tclose=None
+                        )
+                    # else if tested in the past, determine date of last test
+                else:
+                    if get_time_since_last_test(
+                        current_date=self.sim.date, date_of_last_test=df.at[
+                            person_id, f'nc_{condition}_date_last_test']):
+                        # and if they're over 50 or are chosen to be tested with some probability...
+                        # TODO: @britta make these not arbitrary
+                        if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
+                                    f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
+                            # initiate HSI event
+                            hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
+                                module=self,
+                                person_id=person_id,
+                                condition=f'{condition}'
+                            )
+                            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                                hsi_event,
+                                priority=0,
+                                topen=self.sim.date,
+                                tclose=None
+                            )
+
+    def schedule_hsi_events_for_cmd_events(self, person_id):
+        """
+        This is called by the HSI generic first appts module whenever a person attends an emergency appointment.
+        """
+
+        health_system = self.sim.modules["HealthSystem"]
+        symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
+
+        for ev in self.events:
+            if f'{ev}_damage' in symptoms:
+                event = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
+                    module=self,
+                    person_id=person_id,
+                    ev=ev,
+                )
+                health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
@@ -647,6 +721,7 @@ class CardioMetabolicDisorders(Module):
 #   and synchronously for all persons.
 #   Individual level events (HSI, death or cardio-metabolic events) may occur at other times.
 # ---------------------------------------------------------------------------------------------------------
+
 
 class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """The Main Polling Event.
@@ -680,15 +755,6 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                 self.sim.date + DateOffset(days=self.module.rng.randint(ndays))
             )
 
-        def lmpredict_rtn_a_series(lm, df):
-            """wrapper to call predict on a linear model, guranteeing that a pd.Series is returned even if the length
-            of the df is 1."""
-            res = lm.predict(df, rng)
-            if type(res) == pd.Series:
-                return res
-            else:
-                return pd.Series(index=df.index, data=[res])
-
         current_incidence_df = pd.DataFrame(index=self.module.age_index, columns=self.module.conditions)
 
         # Determine onset/removal of conditions
@@ -696,40 +762,40 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
 
             # onset:
             eligible_population = df.is_alive & ~df[f'nc_{condition}']
-            acquires_condition = lmpredict_rtn_a_series(self.module.lms_onset[condition], df.loc[eligible_population])
+            acquires_condition = self.module.lms_onset[condition].predict(
+                df.loc[eligible_population], rng, squeeze_single_row_output=False)
             idx_acquires_condition = acquires_condition[acquires_condition].index
             df.loc[idx_acquires_condition, f'nc_{condition}'] = True
 
             # Add incident cases to the tracker
             current_incidence_df[condition] = df.loc[idx_acquires_condition].groupby('age_range').size()
 
-            # Schedule symptom onset
+            # Schedule symptom onset for both those with new onset of condition and those who already have condition
             if len(self.module.lms_symptoms[condition]) > 0:
                 symptom_eligible_population = df.is_alive & df[f'nc_{condition}']
-                symptom_onset = lmpredict_rtn_a_series(self.module.lms_symptoms[condition][f'{condition}_symptoms'],
-                                                       df.loc[symptom_eligible_population])
+                symptom_onset = self.module.lms_symptoms[condition][f'{condition}_symptoms'].predict(
+                    df.loc[symptom_eligible_population], rng, squeeze_single_row_output=False
+                )
                 idx_symptom_onset = symptom_onset[symptom_onset].index
                 if idx_symptom_onset.any():
-                    # schedule symptom onset some time in next 12 months
+                    # schedule symptom onset some time before next polling event
+                    days_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) \
+                                                    / np.timedelta64(1, 'D')
                     for symptom in self.module.prob_symptoms[condition].keys():
-                        lm_init_symptoms = LinearModel(
-                            LinearModelType.MULTIPLICATIVE,
-                            self.module.prob_symptoms[condition].get(f'{symptom}'),
-                            Predictor(f'nc_{condition}').when(True, 1.0)
-                                .otherwise(0.0))
-                        has_symptom_at_init = lm_init_symptoms.predict(df.loc[df.is_alive], self.module.rng)
+                        date_onset = self.sim.date + DateOffset(days=rng.randint(0, days_until_next_polling_event))
                         self.sim.modules['SymptomManager'].change_symptom(
-                            person_id=has_symptom_at_init.index[has_symptom_at_init].tolist(),
+                            person_id=idx_symptom_onset.tolist(),
                             symptom_string=f'{symptom}',
                             add_or_remove='+',
-                            date_of_onset=self.sim.date + DateOffset(days=rng.randint(7, 365)),
-                            disease_module=self.sim.modules['CardioMetabolicDisorders'])
+                            date_of_onset=date_onset,
+                            disease_module=self.module)
 
             # -------------------------------------------------------------------------------------------
 
             # removal:
             eligible_population = df.is_alive & df[f'nc_{condition}']
-            loses_condition = lmpredict_rtn_a_series(self.module.lms_removal[condition], df.loc[eligible_population])
+            loses_condition = self.module.lms_removal[condition].predict(
+                df.loc[eligible_population], rng, squeeze_single_row_output=False)
             idx_loses_condition = loses_condition[loses_condition].index
             df.loc[idx_loses_condition, f'nc_{condition}'] = False
 
@@ -748,8 +814,15 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                     idx_selected_to_die = eligible_population[eligible_population].index
 
                 for person_id in idx_selected_to_die:
-                    schedule_death_to_occur_before_next_poll(person_id, condition,
-                                                             m.parameters['interval_between_polls'])
+                    if df.at[person_id, f'nc_{condition}_on_medication']:
+                        treatmentworks = self.module.rng.rand() < self.module.parameters[
+                            f'{condition}_hsi'].pr_treatment_works
+                        if not treatmentworks:
+                            schedule_death_to_occur_before_next_poll(person_id, condition,
+                                                                     m.parameters['interval_between_polls'])
+                    else:
+                        schedule_death_to_occur_before_next_poll(person_id, condition,
+                                                                 m.parameters['interval_between_polls'])
 
         # add the new incidence numbers to tracker
         self.module.df_incidence_tracker = self.module.df_incidence_tracker.add(current_incidence_df)
@@ -769,24 +842,6 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                     self.sim.schedule_event(CardioMetabolicDisordersEvent(self.module, person_id, event),
                                             self.sim.date + DateOffset(days=self.module.rng.randint(ndays)))
 
-            # -------------------- DEATH FROM CARDIO-METABOLIC EVENT ---------------------------------------
-            # There is a risk of death for those who have had an CardioMetabolicDisorders event.
-            # Death is assumed to happen before the next polling event.
-
-            eligible_population = df.is_alive & df[f'nc_{event}']
-            selected_to_die = self.module.lms_event_death[event].predict(df.loc[eligible_population], rng)
-            if selected_to_die.any():  # catch in case no one dies
-                if len(eligible_population) > 1:
-                    idx_selected_to_die = selected_to_die[selected_to_die].index
-                else:
-                    # if there is only one eligible person, the predict method of linear model will return just a bool
-                    #  instead of a pd.Series. Handle this special case:
-                    idx_selected_to_die = eligible_population.index
-
-                for person_id in idx_selected_to_die:
-                    schedule_death_to_occur_before_next_poll(person_id, event,
-                                                             m.parameters['interval_between_polls'])
-
 
 class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
     """
@@ -799,11 +854,12 @@ class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
         self.event = event
 
     def apply(self, person_id):
-        if not self.sim.population.props.at[person_id, 'is_alive']:
+        df = self.sim.population.props
+        if not df.at[person_id, 'is_alive']:
             return
 
         self.module.events_tracker[f'{self.event}_events'] += 1
-        self.sim.population.props.at[person_id, f'nc_{self.event}'] = True
+        df.at[person_id, f'nc_{self.event}'] = True
 
         # Add the outward symptom to the SymptomManager. This will result in emergency care being sought for any
         # event that takes place
@@ -813,6 +869,15 @@ class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
             add_or_remove='+',
             symptom_string=f'{self.event}_damage'
         )
+
+        # --------- DETERMINE OUTCOME OF THIS EVENT ---------------
+        prob_death = self.module.parameters[f'{self.event}_death'].get('baseline_annual_probability')
+        # Schedule a future death event for 2 days' time
+        date_of_outcome = self.sim.date + DateOffset(days=7)
+        if self.module.rng.random_sample() < prob_death:
+            df.at[person_id, f'nc_{self.event}_scheduled_date_death'] = date_of_outcome
+            self.sim.schedule_event(CardioMetabolicDisordersDeathEvent(self.module, person_id, condition=self.event),
+                                    date_of_outcome)
 
 
 class CardioMetabolicDisordersDeathEvent(Event, IndividualScopeEventMixin):
@@ -830,30 +895,59 @@ class CardioMetabolicDisordersDeathEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"]:
             return
 
-        # reduction in risk of death if being treated for condition
+        # reduction in risk of death if being treated with regular medication for condition
         # check still have condition (has not resolved)
         if df.at[person_id, f'nc_{self.condition}']:
 
             if df.at[person_id, f'nc_{self.condition}_on_medication']:
-                reduction_in_death_risk = self.module.rng.uniform(low=0.2, high=0.6, size=1)  # not data for now
-
-                if self.module.rng.rand() < reduction_in_death_risk:
-                    logger.debug(key="CardioMetabolicDisordersDeathEvent",
-                                 data=f"CardioMetabolicDisordersDeathEvent: scheduling death for treated "
-                                      f"{person_id} on {self.sim.date}")
-
-                    self.sim.modules['Demography'].do_death(individual_id=person_id,
-                                                            cause=f'{self.condition}',
-                                                            originating_module=self.module)
+                # TODO: @britta replace with data specific for each condition/event
+                treatmentworks = self.module.parameters[f'{self.condition}_hsi'].pr_treatment_works
+                if self.module.rng.rand() < treatmentworks:
+                    self.check_if_event_and_do_death(person_id)
 
             else:
-                logger.debug(key="CardioMetabolicDisordersDeathEvent",
-                             data=f"CardioMetabolicDisordersDeathEvent: scheduling death for untreated "
-                                  f"{person_id} on {self.sim.date}")
+                self.check_if_event_and_do_death(person_id)
 
+    def check_if_event_and_do_death(self, person_id):
+        """
+        Helper function to perform do_death if condition is a condition and for an event only if the scheduled
+        date of death matches the current date.
+        """
+        df = self.sim.population.props
+        # check if it's a death event for an event (e.g. stroke) in order to execute death only if the date equals
+        # scheduled date of death
+        if f'{self.condition}' in self.module.events:
+            if self.sim.date == df.at[person_id, f'nc_{self.condition}_scheduled_date_death']:
                 self.sim.modules['Demography'].do_death(individual_id=person_id,
                                                         cause=f'{self.condition}',
                                                         originating_module=self.module)
+        else:
+            # condition is a condition (not an event) with no scheduled date of death, so proceed with death
+            self.sim.modules['Demography'].do_death(individual_id=person_id,
+                                                    cause=f'{self.condition}',
+                                                    originating_module=self.module)
+
+
+class CardioMetabolicDisordersWeightLossEvent(Event, IndividualScopeEventMixin):
+    """
+    Gives an individual a probability of losing weight and logs it.
+    """
+
+    def __init__(self, module, person_id, condition):
+        super().__init__(module, person_id=person_id)
+        self.condition = condition
+
+    def apply(self, person_id):
+        df = self.sim.population.props
+
+        if not df.at[person_id, "is_alive"]:
+            return
+        else:
+            p_bmi_reduction = 0.2  # TODO: @britta change to actual data
+            if df.at[person_id, 'li_bmi'] > 2:
+                if self.module.rng.rand() < p_bmi_reduction:
+                    df.at[person_id, 'li_bmi'] = df.at[person_id, 'li_bmi'] - 1
+                    df.at[person_id, 'nc_weight_loss_worked'] = True
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -998,9 +1092,7 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
         # df.to_csv('df_for_regression.csv')
 
         # Update risk score
-        df['nc_risk_score'] = (df[[
-            'li_low_ex', 'li_high_salt', 'li_high_sugar', 'li_tob', 'li_ex_alc']] > 0).sum(1)
-        df.loc[df['li_bmi'] >= 3, ['nc_risk_score']] += 1
+        self.module.generate_risk_score()
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1010,7 +1102,7 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
     """
     This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with any symptoms.
     This event results in a blood pressure measurement being taken that may result in diagnosis and the scheduling of
-    treatment for hypertension.
+    treatment for a condition.
     """
 
     def __init__(self, module, person_id, condition):
@@ -1025,53 +1117,41 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        m = self.module
         # Ignore this event if the person is no longer alive:
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
-        # Figure out availability of any consumables needed for the test:
-        if 'test_item_code' in self.module.parameters[f'{self.condition}_hsi']:
-            # check if consumables are available
-            all_available = self.get_all_consumables(item_codes=[self.module.parameters[
-                                                                     f'{self.condition}_hsi'].test_item_code])
-        else:
-            all_available = True
 
-        if all_available:
-            # Run a test to diagnose whether the person has condition:
-            dx_result = hs.dx_manager.run_dx_test(
-                dx_tests_to_run=f'assess_{self.condition}',
-                hsi_event=self
+        # Run a test to diagnose whether the person has condition:
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run=f'assess_{self.condition}',
+            hsi_event=self
+        )
+        df.at[person_id, f'nc_{self.condition}_date_last_test'] = self.sim.date
+        if dx_result:
+            # record date of diagnosis:
+            df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
+            df.at[person_id, f'nc_{self.condition}_ever_diagnosed'] = True
+            # start weight loss recommendation:
+            hs.schedule_hsi_event(
+                hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                    module=self.module,
+                    person_id=person_id,
+                    condition=f'{self.condition}'
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
             )
-            df.at[person_id, f'nc_{self.condition}_date_last_test'] = self.sim.date
-            df.at[person_id, f'nc_{self.condition}_ever_tested'] = True
-            if dx_result:
-                # record date of diagnosis:
-                df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
-                df.at[person_id, f'nc_{self.condition}_ever_diagnosed'] = True
-                # start weight loss recommendation:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
-                        module=self.module,
-                        person_id=person_id,
-                        condition=f'{self.condition}'
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
-            elif df.at[person_id, 'li_bmi'] >= 3:  # change to be if individual has >2 risk factors
+        elif df.at[person_id, 'nc_risk_score'] >= 2:
+            if df.at[person_id, 'is_alive'] & ~df.at[person_id, 'nc_ever_weight_loss_treatment']:
                 self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
                 # Schedule a post-weight loss event for 6-9 months for individual to potentially lose weight:
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event=HSI_CardioMetabolicDisorders_WeightLossCheck(
-                        module=self.module,
-                        person_id=person_id,
-                        condition=self.condition
-                    ),
-                    topen=self.sim.date + DateOffset(months=6),
-                    tclose=self.sim.date + DateOffset(months=9),
-                    priority=0
-                )
+                start = self.sim.date
+                end = self.sim.date + DateOffset(months=m.parameters['interval_between_polls'], days=-1)
+                ndays = (end - start).days
+                self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(self.module, person_id, self.condition),
+                                        self.sim.date + DateOffset(days=self.module.rng.randint(ndays)))
 
     def did_not_run(self):
         pass
@@ -1110,47 +1190,37 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
         # Figure out availability of any consumables needed for the test:
         if 'test_item_code' in self.module.parameters[f'{self.condition}_hsi']:
             # check if consumables are available
-            all_available = self.get_all_consumables(item_codes=[self.module.parameters[
-                                                                         f'{self.condition}_hsi'].test_item_code])
+            item_code = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
+            result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self,
+                cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
+            )['Item_Code'][item_code]
         else:
-            all_available = True
+            result_of_cons_request = True
 
-        if all_available:
+        if result_of_cons_request:
             # Run a test to diagnose whether the person has condition:
             dx_result = hs.dx_manager.run_dx_test(
                 dx_tests_to_run=f'assess_{self.condition}',
                 hsi_event=self
             )
             df.at[person_id, f'nc_{self.condition}_date_last_test'] = self.sim.date
-            df.at[person_id, f'nc_{self.condition}_ever_tested'] = True
             if dx_result:
                 # record date of diagnosis:
                 df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
                 df.at[person_id, f'nc_{self.condition}_ever_diagnosed'] = True
 
-                if self.condition != 'chronic_kidney_disease':
-                    # start weight loss recommendation and medication for all other conditions
-                    hs.schedule_hsi_event(
-                        hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
-                            module=self.module,
-                            person_id=person_id,
-                            condition=self.condition
-                        ),
-                        priority=0,
-                        topen=self.sim.date,
-                        tclose=None
-                    )
-                else:
-                    hs.schedule_hsi_event(
-                        hsi_event=HSI_CardioMetabolicDisorders_StartCKDMedication(
-                            module=self.module,
-                            person_id=person_id,
-                            condition=self.condition
-                        ),
-                        priority=0,
-                        topen=self.sim.date,
-                        tclose=None
-                    )
+                # start weight loss recommendation (except for CKD) and medication for all conditions
+                hs.schedule_hsi_event(
+                    hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                        module=self.module,
+                        person_id=person_id,
+                        condition=self.condition
+                    ),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+                )
 
     def did_not_run(self):
         pass
@@ -1172,18 +1242,15 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         self.condition = condition
 
     def apply(self, person_id, squeeze_factor):
-        self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
-        # Schedule a post-weight loss event for 6-9 months for individual to potentially lose weight:
-        self.sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_CardioMetabolicDisorders_WeightLossCheck(
-                module=self.module,
-                person_id=person_id,
-                condition=self.condition
-            ),
-            topen=self.sim.date + DateOffset(months=6),
-            tclose=self.sim.date + DateOffset(months=9),
-            priority=0
-        )
+        # don't advise those with CKD to lose weight, but do so for all other conditions
+        if self.condition != 'chronic_kidney_disease':
+            self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
+            # Schedule a post-weight loss event for individual to potentially lose weight:
+            start = self.sim.date
+            end = self.sim.date + DateOffset(months=self.module.parameters['interval_between_polls'], days=-1)
+            ndays = (end - start).days
+            self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(self.module, person_id, self.condition),
+                                    self.sim.date + DateOffset(days=self.module.rng.randint(ndays)))
 
         # start medication
         df = self.sim.population.props
@@ -1211,72 +1278,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
             )
 
-
-class HSI_CardioMetabolicDisorders_WeightLossCheck(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event in which a person receives a check-up following a recommendation of weight
-    loss.
-    This results in an individual having a probability of reducing their BMI by one category by the 6-month check.
-    """
-
-    def __init__(self, module, person_id, condition):
-        super().__init__(module, person_id=person_id)
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_WeightLoss'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-        self.condition = condition
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        p_bmi_reduction = 0.2  # arbitrarily assign 20% probability of losing weight but should import param
-        if df.at[person_id, 'li_bmi'] > 2:
-            if self.module.rng.rand() < p_bmi_reduction:
-                df.at[person_id, 'li_bmi'] = df.at[person_id, 'li_bmi'] - 1
-                self.sim.population.props.at[person_id, 'nc_weight_loss_worked'] = True
-
-
-class HSI_CardioMetabolicDisorders_StartCKDMedication(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event in which a person is started on treatment.
-    The facility_level is modified as a input parameter.
-    """
-
-    def __init__(self, module, person_id, condition):
-        super().__init__(module, person_id=person_id)
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_Medication_Start'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-        self.condition = condition
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        # If person is already on medication, do not do anything
-        if df.at[person_id, f'nc_{self.condition}_on_medication']:
-            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        assert df.at[
-            person_id, f'nc_{self.condition}_ever_diagnosed'], "The person is not diagnosed and so should not be " \
-                                                               "receiving an HSI. "
-        # Check availability of medication for condition
-        item_code = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
-        result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
-        )['Item_Code'][item_code]
-        if result_of_cons_request:
-            # If medication is available, flag as being on medication
-            df.at[person_id, f'nc_{self.condition}_on_medication'] = True
-            # Schedule their next HSI for a refill of medication in one month
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_Refill_Medication(person_id=person_id, module=self.module,
-                                                                         condition=self.condition),
-                priority=1,
-                topen=self.sim.date + DateOffset(months=1),
-                tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
-            )
+        #  TODO: @britta put in functionality for individuals to seek medication again if consumables not available?
 
 
 class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeEventMixin):
@@ -1371,15 +1373,24 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             df.at[person_id, f'nc_{self.event}_ever_diagnosed'] = True
             if squeeze_factor < 0.5:
                 # If squeeze factor is not too large:
-                all_available = self.get_all_consumables(item_codes=[
-                    self.module.parameters[f'{self.event}_hsi'].emergency_medication_item_code])
-                if all_available:
+                item_code = self.module.parameters[f'{self.event}_hsi'].get('emergency_medication_item_code')
+                result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=self,
+                    cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
+                )['Item_Code'][item_code]
+                if result_of_cons_request:
                     logger.debug(key='debug', data='Treatment will be provided.')
-                    treatmentworks = self.module.rng.rand() < 0.5  # made up number for now
+                    df.at[person_id, f'nc_{self.event}_on_medication'] = True
+                    treatmentworks = self.module.rng.rand() < self.module.parameters[
+                        f'{self.event}_hsi'].pr_treatment_works  # TODO: @britta change to data
                     if treatmentworks:
+                        # cancel the scheduled death data
+                        df.at[person_id, f'nc_{self.event}_scheduled_date_death'] = pd.NaT
                         # remove all symptoms of event instantly
-                        self.sim.modules['SymptomManager'].clear_symptoms(
+                        self.sim.modules['SymptomManager'].change_symptom(
                             person_id=person_id,
+                            symptom_string=f'{self.event}_damage',
+                            add_or_remove='-',
                             disease_module=self.module)
                         # start the person on regular medication
                         self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1392,54 +1403,13 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                             topen=self.sim.date,
                             tclose=None
                         )
-                    else:
-                        # Consumables not available
-                        logger.debug(key='debug', data='Treatment will not be provided due to no available consumables')
-                        # probability of death
-                        if self.module.rng.rand() < 0.9:  # probability of death, just a made up number for now
-                            logger.debug(key="CardioMetabolicDisordersDeathEvent",
-                                         data=f"CardioMetabolicDisordersDeathEvent: scheduling death for untreated "
-                                              f"{person_id} on {self.sim.date}")
-
-                            self.sim.modules['Demography'].do_death(individual_id=person_id,
-                                                                    cause=f'{self.event}',
-                                                                    originating_module=self.module)
-                        else:
-                            # start the person on regular medication
-                            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                                hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
-                                    module=self.module,
-                                    person_id=person_id,
-                                    condition=self.event
-                                ),
-                                priority=0,
-                                topen=self.sim.date,
-                                tclose=None
-                            )
+                else:
+                    # Consumables not available
+                    logger.debug(key='debug', data='Treatment will not be provided due to no available consumables')
 
             else:
                 # Squeeze factor is too large
                 logger.debug(key='debug', data='Treatment will not be provided due to squeeze factor.')
-                if self.module.rng.rand() < 0.5:  # probability of death, just a made up number for now
-                    logger.debug(key="CardioMetabolicDisordersDeathEvent",
-                                 data=f"CardioMetabolicDisordersDeathEvent: scheduling death for untreated "
-                                      f"{person_id} on {self.sim.date}")
-
-                    self.sim.modules['Demography'].do_death(individual_id=person_id,
-                                                            cause=f'{self.event}',
-                                                            originating_module=self.module)
-                else:
-                    # start the person on regular medication
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
-                            module=self.module,
-                            person_id=person_id,
-                            condition=self.event
-                        ),
-                        priority=0,
-                        topen=self.sim.date,
-                        tclose=None
-                    )
 
     def did_not_run(self):
         logger.debug(key='debug', data='HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: did not run')

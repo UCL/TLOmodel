@@ -3,6 +3,7 @@ Classes and functions that support declarations of causes of death and disabilit
 """
 
 from collections import defaultdict
+from typing import Union
 
 import pandas as pd
 
@@ -14,7 +15,7 @@ class Cause:
     'gbd_causes': set of strings for causes in the GBD datasets to which this cause is equivalent.
     'cause_of_death': the (single) category to which this cause belongs and should be labelled in output statistics.
     """
-    def __init__(self, label: str, gbd_causes: set = None):
+    def __init__(self, label: str, gbd_causes: Union[set, str] = None):
         """Do basic type checking."""
         assert (type(label) is str) and (label != '')
         self.label = label
@@ -111,6 +112,9 @@ def create_mappers_from_causes_to_label(causes: dict, all_gbd_causes: set = None
 
     # 2) Create dicts for mapping (gbd_cause --> label) and (tlo_cause --> label)
     lookup_df = pd.DataFrame.from_dict(lookup, orient='index').applymap(lambda x: list(x))
+
+    # Sort the lists and sort the index to provide reliable structure
+    lookup_df = lookup_df.applymap(sorted).sort_index()
 
     #  - from tlo_cause --> label (key=tlo_cause, value=label)
     mapper_from_tlo_causes = dict((v, k) for k, v in (
