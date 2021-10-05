@@ -1032,17 +1032,35 @@ class HSI_Malaria_complicated_treatment_child(HSI_Event, IndividualScopeEventMix
                               f'child {person_id}')
 
             consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-            pkg_code1 = pd.unique(
+            # pkg_code1 = pd.unique(
+            #     consumables.loc[
+            #         consumables["Intervention_Pkg"]
+            #         == "Complicated (children, injectable artesunate)",
+            #         "Intervention_Pkg_Code",
+            #     ]
+            # )[0]
+
+            item_code1 = pd.unique(
+                consumables.loc[consumables["Items"] == "Injectable artesunate", "Item_Code"])[0]
+            item_code2 = pd.unique(
+                consumables.loc[consumables["Items"] == "Cannula iv  (winged with injection pot) 18_each_CMST", "Item_Code"])[0]
+            item_code3 = pd.unique(
                 consumables.loc[
-                    consumables["Intervention_Pkg"]
-                    == "Complicated (children, injectable artesunate)",
-                    "Intervention_Pkg_Code",
-                ]
-            )[0]
+                    consumables["Items"] == "Disposables gloves, powder free, 100 pieces per box", "Item_Code"])[0]
+            item_code4 = pd.unique(
+                consumables.loc[
+                    consumables["Items"] == "Gauze, absorbent 90cm x 40m_each_CMST", "Item_Code"])[0]
+            item_code5 = pd.unique(
+                consumables.loc[
+                    consumables["Items"] == "Water for injection, 10ml_Each_CMST", "Item_Code"])[0]
 
             the_cons_footprint = {
-                "Intervention_Package_Code": {pkg_code1: 1},
-                "Item_Code": {},
+                "Intervention_Package_Code": {},
+                "Item_Code": {item_code1: (1/4),
+                              item_code2: 1,
+                              item_code3: 1,
+                              item_code4: 1,
+                              item_code5: (1/100)},
             }
 
             # request the treatment
@@ -1098,17 +1116,35 @@ class HSI_Malaria_complicated_treatment_adult(HSI_Event, IndividualScopeEventMix
                               f'for person {person_id}')
 
             consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-            pkg_code1 = pd.unique(
+            # pkg_code1 = pd.unique(
+            #     consumables.loc[
+            #         consumables["Intervention_Pkg"]
+            #         == "Complicated (adults, injectable artesunate)",
+            #         "Intervention_Pkg_Code",
+            #     ]
+            # )[0]
+
+            item_code1 = pd.unique(
+                consumables.loc[consumables["Items"] == "Injectable artesunate", "Item_Code"])[0]
+            item_code2 = pd.unique(
+                consumables.loc[consumables["Items"] == "Cannula iv  (winged with injection pot) 18_each_CMST", "Item_Code"])[0]
+            item_code3 = pd.unique(
                 consumables.loc[
-                    consumables["Intervention_Pkg"]
-                    == "Complicated (adults, injectable artesunate)",
-                    "Intervention_Pkg_Code",
-                ]
-            )[0]
+                    consumables["Items"] == "Disposables gloves, powder free, 100 pieces per box", "Item_Code"])[0]
+            item_code4 = pd.unique(
+                consumables.loc[
+                    consumables["Items"] == "Gauze, absorbent 90cm x 40m_each_CMST", "Item_Code"])[0]
+            item_code5 = pd.unique(
+                consumables.loc[
+                    consumables["Items"] == "Water for injection, 10ml_Each_CMST", "Item_Code"])[0]
 
             the_cons_footprint = {
-                "Intervention_Package_Code": {pkg_code1: 1},
-                "Item_Code": {},
+                "Intervention_Package_Code": {},
+                "Item_Code": {item_code1:1,
+                              item_code2: 1,
+                              item_code3: 1,
+                              item_code4: 1,
+                              item_code5: (1/100)},
             }
 
             # request the treatment

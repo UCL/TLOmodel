@@ -17,7 +17,7 @@ class Epi(Module):
     it sets up the vaccination schedule for all children from birth
     """
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem'}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
     # Declare Metadata
     METADATA = {Metadata.USES_HEALTHSYSTEM}
@@ -599,7 +599,7 @@ class HSI_DtpHibHepVaccine(HsiBaseVaccine):
         outcome = self.request_vax_consumables(
             items=[
                 ("Pentavalent vaccine (DPT, Hep B, Hib)", 1),
-                ("Syringe, needle + swab", 2),
+                ("Syringe, Autodisable SoloShot IX ", 1),
                 ("Safety box for used syringes/needles, 5 liter", 1)
             ]
         )
@@ -648,7 +648,7 @@ class HSI_PneumoVaccine(HsiBaseVaccine):
         outcome = self.request_vax_consumables(
             items=[
                 ("Pneumococcal vaccine", 1),
-                ("Syringe, needle + swab", 2),
+                ("Syringe, Autodisable SoloShot IX ", 1),
                 ("Safety box for used syringes/needles, 5 liter", 1)
             ]
         )
