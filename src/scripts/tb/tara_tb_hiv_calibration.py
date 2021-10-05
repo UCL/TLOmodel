@@ -1,4 +1,3 @@
-
 """
 This file defines a batch run through which the hiv and tb modules are run across a grid of parameter values
 
@@ -49,7 +48,7 @@ from tlo.methods import (
     symptommanager,
     epi,
     hiv,
-    tb
+    tb,
 )
 
 from tlo.scenario import BaseScenario
@@ -75,14 +74,14 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'baseline_scenario',
-            'directory': './outputs',
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.hiv': logging.INFO,
-                'tlo.methods.tb': logging.INFO,
-                'tlo.methods.demography': logging.INFO
-            }
+            "filename": "baseline_scenario",
+            "directory": "./outputs",
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.hiv": logging.INFO,
+                "tlo.methods.tb": logging.INFO,
+                "tlo.methods.demography": logging.INFO,
+            },
         }
 
     def modules(self):
@@ -92,7 +91,7 @@ class TestScenario(BaseScenario):
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             healthsystem.HealthSystem(
                 resourcefilepath=self.resources,
-                service_availability=['*'],  # all treatment allowed
+                service_availability=["*"],  # all treatment allowed
                 mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
                 ignore_cons_constraints=False,
                 # mode for consumable constraints (if ignored, all consumables available)
@@ -100,9 +99,12 @@ class TestScenario(BaseScenario):
                 capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
                 disable=True,  # disables the healthsystem (no constraints and no logging) and every HSI runs
                 disable_and_reject_all=False,  # disable healthsystem and no HSI runs
-                store_hsi_events_that_have_run=False),  # convenience function for debugging
+                store_hsi_events_that_have_run=False,
+            ),  # convenience function for debugging
             symptommanager.SymptomManager(resourcefilepath=self.resources),
-            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
+            healthseekingbehaviour.HealthSeekingBehaviour(
+                resourcefilepath=self.resources
+            ),
             healthburden.HealthBurden(resourcefilepath=self.resources),
             dx_algorithm_child.DxAlgorithmChild(resourcefilepath=self.resources),
             epi.Epi(resourcefilepath=self.resources),
@@ -113,22 +115,24 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         grid = self.make_grid(
             {
-                'beta': np.linspace(start=0.02, stop=0.06, num=hiv_param_length),
-                'transmission_rate': np.linspace(start=0.005, stop=0.2, num=tb_param_length),
+                "beta": np.linspace(start=0.02, stop=0.06, num=hiv_param_length),
+                "transmission_rate": np.linspace(
+                    start=0.005, stop=0.2, num=tb_param_length
+                ),
             }
         )
 
         return {
-            'Hiv': {
-                'beta': grid['beta'][draw_number],
+            "Hiv": {
+                "beta": grid["beta"][draw_number],
             },
-            'Tb': {
-                'transmission_rate': grid['transmission_rate'][draw_number],
+            "Tb": {
+                "transmission_rate": grid["transmission_rate"][draw_number],
             },
         }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
-    scenario_run([__file__])
 
+    scenario_run([__file__])

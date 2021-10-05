@@ -17,12 +17,12 @@ from tlo.analysis.utils import (
     summarize,
 )
 
-outputspath = Path('./outputs/t.mangal@imperial.ac.uk')
+outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # %% Analyse results of runs when doing a sweep of a single parameter:
 
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs('baseline_scenario.py', outputspath)[-1]
+results_folder = get_scenario_outputs("baseline_scenario.py", outputspath)[-1]
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -35,57 +35,55 @@ params = extract_params(results_folder)
 
 # ---------------------- EXTRACT HIV PREVALENCE ---------------------- #
 # 2) Extract a specific logged output for all runs, e.g. prevalence:
-extracted = extract_results(results_folder,
-                            module="tlo.methods.hiv",
-                            key="summary_inc_and_prev_for_adults_and_children_and_fsw",
-                            column="hiv_prev_adult_1549",
-                            index="date")
+extracted = extract_results(
+    results_folder,
+    module="tlo.methods.hiv",
+    key="summary_inc_and_prev_for_adults_and_children_and_fsw",
+    column="hiv_prev_adult_1549",
+    index="date",
+)
 
 # 3) Get summary of the results for that log-element (only mean and the value at then of the simulation)
 res = summarize(extracted, only_mean=True).iloc[-1]
-res.name = 'z'
+res.name = "z"
 
 # 4) Create a heatmap:
 
 grid = get_grid(params, res)
 fig, ax = plt.subplots()
 c = ax.pcolormesh(
-    grid['Hiv:beta'],
-    grid['Tb:transmission_rate'],
-    grid['z'],
-    shading='nearest'
+    grid["Hiv:beta"], grid["Tb:transmission_rate"], grid["z"], shading="nearest"
 )
-ax.set_title('HIV prevalence 2019')
-plt.xlabel('Hiv: transmission rate')
-plt.ylabel('Tb: transmission rate')
+ax.set_title("HIV prevalence 2019")
+plt.xlabel("Hiv: transmission rate")
+plt.ylabel("Tb: transmission rate")
 fig.colorbar(c, ax=ax)
 plt.show()
 
 # ---------------------- EXTRACT TB PREVALENCE ---------------------- #
 # Extract a specific logged output for all runs
-extracted_tb = extract_results(results_folder,
-                               module="tlo.methods.tb",
-                               key="tb_prevalence",
-                               column="tbPrevActive",
-                               index="date")
+extracted_tb = extract_results(
+    results_folder,
+    module="tlo.methods.tb",
+    key="tb_prevalence",
+    column="tbPrevActive",
+    index="date",
+)
 
 # Get summary of the results for that log-element (only mean and the value at then of the simulation)
 tb_prev = summarize(extracted_tb, only_mean=True).iloc[-1]
-tb_prev.name = 'z'
+tb_prev.name = "z"
 
 # 4) Create a heatmap:
 
 grid = get_grid(params, res)
 fig, ax = plt.subplots()
 c = ax.pcolormesh(
-    grid['Hiv:beta'],
-    grid['Tb:transmission_rate'],
-    grid['z'],
-    shading='nearest'
+    grid["Hiv:beta"], grid["Tb:transmission_rate"], grid["z"], shading="nearest"
 )
-ax.set_title('TB prevalence 2019')
-plt.xlabel('Hiv: transmission rate')
-plt.ylabel('Tb: transmission rate')
+ax.set_title("TB prevalence 2019")
+plt.xlabel("Hiv: transmission rate")
+plt.ylabel("Tb: transmission rate")
 fig.colorbar(c, ax=ax)
 plt.show()
 

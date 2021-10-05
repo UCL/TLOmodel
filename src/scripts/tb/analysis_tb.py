@@ -18,7 +18,7 @@ from tlo.methods import (
     symptommanager,
     epi,
     hiv,
-    tb
+    tb,
 )
 
 # Where will outputs go
@@ -38,40 +38,42 @@ popsize = 5000
 
 # set up the log config
 log_config = {
-    'filename': 'Logfile',
-    'directory': outputpath,
-    'custom_levels': {
-        '*': logging.WARNING,
-        'tlo.methods.hiv': logging.INFO,
-        'tlo.methods.tb': logging.INFO,
-        'tlo.methods.demography': logging.INFO
-    }
+    "filename": "Logfile",
+    "directory": outputpath,
+    "custom_levels": {
+        "*": logging.WARNING,
+        "tlo.methods.hiv": logging.INFO,
+        "tlo.methods.tb": logging.INFO,
+        "tlo.methods.demography": logging.INFO,
+    },
 }
 
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 sim = Simulation(start_date=start_date, seed=100, log_config=log_config)
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(
-                 resourcefilepath=resourcefilepath,
-                 service_availability=['*'],  # all treatment allowed
-                 mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
-                 ignore_cons_constraints=False,  # mode for consumable constraints (if ignored, all consumables available)
-                 ignore_priority=False,  # do not use the priority information in HSI event to schedule
-                 capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
-                 disable=True,  # disables the healthsystem (no constraints and no logging) and every HSI runs
-                 disable_and_reject_all=False,  # disable healthsystem and no HSI runs
-                 store_hsi_events_that_have_run=False),  # convenience function for debugging
-             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-             epi.Epi(resourcefilepath=resourcefilepath),
-             hiv.Hiv(resourcefilepath=resourcefilepath),
-             tb.Tb(resourcefilepath=resourcefilepath),
-             )
+sim.register(
+    demography.Demography(resourcefilepath=resourcefilepath),
+    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    healthsystem.HealthSystem(
+        resourcefilepath=resourcefilepath,
+        service_availability=["*"],  # all treatment allowed
+        mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
+        ignore_cons_constraints=False,  # mode for consumable constraints (if ignored, all consumables available)
+        ignore_priority=False,  # do not use the priority information in HSI event to schedule
+        capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
+        disable=True,  # disables the healthsystem (no constraints and no logging) and every HSI runs
+        disable_and_reject_all=False,  # disable healthsystem and no HSI runs
+        store_hsi_events_that_have_run=False,
+    ),  # convenience function for debugging
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+    dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+    epi.Epi(resourcefilepath=resourcefilepath),
+    hiv.Hiv(resourcefilepath=resourcefilepath),
+    tb.Tb(resourcefilepath=resourcefilepath),
+)
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
@@ -81,7 +83,7 @@ sim.simulate(end_date=end_date)
 output = parse_log_file(sim.log_filepath)
 
 # save the results
-with open(outputpath / 'default_run.pickle', 'wb') as f:
+with open(outputpath / "default_run.pickle", "wb") as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(output, f, pickle.HIGHEST_PROTOCOL)
 
@@ -91,29 +93,20 @@ with open(outputpath / 'default_run.pickle', 'wb') as f:
 # ---------------------------------------------------------------------- #
 
 # %% Function to make standard plot to compare model and data
-def make_plot(
-    model=None,
-    data_mid=None,
-    data_low=None,
-    data_high=None,
-    title_str=None
-):
+def make_plot(model=None, data_mid=None, data_low=None, data_high=None, title_str=None):
     assert model is not None
     assert title_str is not None
 
     # Make plot
     fig, ax = plt.subplots()
-    ax.plot(model.index, model.values, '-', color='r')
+    ax.plot(model.index, model.values, "-", color="r")
 
     if data_mid is not None:
-        ax.plot(data_mid.index, data_mid.values, '-')
+        ax.plot(data_mid.index, data_mid.values, "-")
     if (data_low is not None) and (data_high is not None):
-        ax.fill_between(data_low.index,
-                        data_low,
-                        data_high,
-                        alpha=0.2)
+        ax.fill_between(data_low.index, data_low, data_high, alpha=0.2)
     plt.title(title_str)
-    plt.legend(['Model', 'Data'])
+    plt.legend(["Model", "Data"])
     plt.gca().set_ylim(bottom=0)
     # plt.savefig(outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
     plt.show()
