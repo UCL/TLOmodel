@@ -456,6 +456,7 @@ class Tb(Module):
             Predictor("age_years")
             .when("<15", p["prob_latent_tb_0_14"])
             .otherwise(p["prob_latent_tb_15plus"]),
+            # Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
         )
 
         # adults progressing to active disease
@@ -466,7 +467,7 @@ class Tb(Module):
             Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
             Predictor("sy_aids_symptoms").when(True, p["rr_tb_aids"]),
             Predictor("hv_art").when(
-                "on_VL_suppressed", (p["rr_tb_aids"] * p["rr_tb_art_adult"])
+                "on_VL_suppressed", (p["rr_tb_hiv"] * p["rr_tb_art_adult"])
             ),
             Predictor("li_bmi").when(">=4", p["rr_tb_obese"]),
             # Predictor('diabetes').when(True, p['rr_tb_diabetes1']),
@@ -477,11 +478,11 @@ class Tb(Module):
             ),  # ipt, hiv-
             Predictor().when(
                 '(tb_on_ipt == True) & (hv_inf == True) & (hv_art == "on_VL_suppressed")',
-                p["rr_ipt_art_adult"],
+                (p["rr_tb_hiv"] * p["rr_ipt_art_adult"]),
             ),  # ipt, hiv+ on ART (suppressed)
             Predictor().when(
                 '(tb_on_ipt == True) & (hv_inf == True) & (hv_art != "on_VL_suppressed")',
-                p["rr_ipt_adult_hiv"],
+                (p["rr_tb_hiv"] * p["rr_ipt_adult_hiv"]),
             ),  # ipt, hiv+ not on ART (or on ART and not suppressed)
         )
 
@@ -634,10 +635,10 @@ class Tb(Module):
         df.loc[all_new_active, "tb_inf"] = "latent"
         df.loc[all_new_active, "tb_date_latent"] = now
 
-        # schedule active onset for time now up to 1 yr
+        # schedule active onset for time now up to 2 yrs
         # date active is picked up by regular event TbActiveEvent and properties updated at that point
         for person_id in all_new_active:
-            date_active = now + pd.DateOffset(days=self.rng.randint(0, 365))
+            date_active = now + pd.DateOffset(days=self.rng.randint(0, 732))
             df.at[person_id, "tb_scheduled_date_active"] = date_active
 
     def progression_to_active(self, population):
@@ -675,9 +676,6 @@ class Tb(Module):
         # set date of active tb - properties will be updated at TbActiveEvent every month
         df.loc[fast, "tb_scheduled_date_active"] = now
 
-        # for person in fast:
-        #     self.sim.schedule_event(TbActiveEvent(self, person), now)
-
         # ------------------ slow progressors ------------------ #
 
         # slow progressors, based on risk factors (via a linear model)
@@ -705,9 +703,7 @@ class Tb(Module):
             date_progression = self.sim.date + pd.DateOffset(
                 days=self.rng.randint(0, 732)
             )
-            # self.sim.schedule_event(
-            #     TbActiveEvent(self, person_id), date_progression
-            # )
+
             # set date of active tb - properties will be updated at TbActiveEvent every month
             df.at[person_id, "tb_scheduled_date_active"] = date_progression
 
@@ -731,9 +727,7 @@ class Tb(Module):
             date_progression = self.sim.date + pd.DateOffset(
                 days=self.rng.randint(0, 365)
             )
-            # self.sim.schedule_event(
-            #     TbActiveEvent(self, person_id), date_progression
-            # )
+
             # set date of active tb - properties will be updated at TbActiveEvent every month
             df.at[person_id, "tb_scheduled_date_active"] = date_progression
 
@@ -1263,29 +1257,6 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[tb_idx, "tb_date_latent"] = now
         df.loc[tb_idx, "tb_strain"] = strain
 
-    # def send_for_screening(self, population):
-    #     # randomly select some individuals for screening and testing
-    #
-    #     df = population.props
-    #     p = self.module.parameters
-    #     rng = self.module.rng
-    #
-    #     # get a list of random numbers between 0 and 1 for each individual
-    #     random_draw = rng.random_sample(size=len(df))
-    #     screen_idx = df.index[
-    #         df.is_alive &
-    #         ~df.tb_diagnosed &
-    #         (random_draw < p['rate_testing_general_pop'])
-    #         ]
-    #
-    #     for person in screen_idx:
-    #         self.sim.modules['HealthSystem'].schedule_hsi_event(
-    #             HSI_Tb_ScreeningAndRefer(person_id=person, module=self.module),
-    #             topen=self.sim.date,
-    #             tclose=None,
-    #             priority=0
-    #         )
-
 
 class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Relapse Event
@@ -1351,7 +1322,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
     """
     * check for those with dates of active tb onset within last time-period
     *1 change individual properties for active disease
-    *2 assign symptomsg
+    *2 assign symptoms
     *3 if HIV+, assign smear status and schedule AIDS onset
     *4 if HIV-, assign smear status and schedule death
     """

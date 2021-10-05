@@ -384,15 +384,14 @@ deaths = deaths.set_index("date")
 
 # TB deaths will exclude TB/HIV
 # keep if cause = TB
-keep = deaths.cause == "TB"
+keep = (deaths.cause == "TB")
 deaths_TB = deaths.loc[keep].copy()
 deaths_TB["year"] = deaths_TB.index.year  # count by year
 tot_tb_non_hiv_deaths = deaths_TB.groupby(by=["year"]).size()
 tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format="%Y")
 
-
 # TB/HIV deaths
-keep = deaths.cause == "AIDS_TB"
+keep = (deaths.cause == "AIDS_TB")
 deaths_TB_HIV = deaths.loc[keep].copy()
 deaths_TB_HIV["year"] = deaths_TB_HIV.index.year  # count by year
 tot_tb_hiv_deaths = deaths_TB_HIV.groupby(by=["year"]).size()
@@ -453,7 +452,7 @@ plt.show()
 # HIV/TB deaths only
 make_plot(
     title_str="TB_HIV mortality rate per 100,000 population",
-    model=tot_tb_hiv_deaths,
+    model=tot_tb_hiv_deaths_rate_100kpy,
     data_mid=data_tb_who["mortality_tb_hiv_per_100k"],
     data_low=data_tb_who["mortality_tb_hiv_per_100k_low"],
     data_high=data_tb_who["mortality_tb_hiv_per_100k_high"],
@@ -478,9 +477,14 @@ deaths2015 = death_compare.loc[("2015-2019", slice(None), slice(None), "AIDS")].
 deaths2010_TB = death_compare.loc[("2010-2014", slice(None), slice(None), "non_AIDS_TB")].sum()
 deaths2015_TB = death_compare.loc[("2015-2019", slice(None), slice(None), "non_AIDS_TB")].sum()
 
-
 x_vals = [1, 2, 3, 4]
 labels = ["2010-2014", "2010-2014", "2015-2019", "2015-2019"]
+col = ["mediumblue", "mediumseagreen", "mediumblue", "mediumseagreen"]
+# handles for legend
+blue_patch = mpatches.Patch(color="mediumblue", label="GBD")
+green_patch = mpatches.Patch(color="mediumseagreen", label="TLO")
+
+# plot AIDS deaths
 y_vals = [
     deaths2010["GBD_mean"],
     deaths2010["model"],
@@ -499,12 +503,45 @@ y_upper = [
     abs(deaths2015["GBD_upper"] - deaths2015["GBD_mean"]),
     np.NAN,
 ]
+plt.bar(x_vals, y_vals, color=col)
+plt.errorbar(
+    x_vals,
+    [y_vals[0], np.NAN, y_vals[2], np.NAN],
+    yerr=[y_lower, y_upper],
+    ls="none",
+    marker="o",
+    markeredgecolor="red",
+    markerfacecolor="red",
+    ecolor="red",
+)
+plt.xticks(ticks=x_vals, labels=labels)
+plt.title("Deaths per year due to AIDS")
+plt.legend(handles=[blue_patch, green_patch])
+plt.tight_layout()
+# plt.savefig(outputpath / ("HIV_TB_deaths_with_GBD" + datestamp + ".png"), format='png')
+plt.show()
 
-col = ["mediumblue", "mediumseagreen", "mediumblue", "mediumseagreen"]
-# handles for legend
-blue_patch = mpatches.Patch(color="mediumblue", label="GBD")
-green_patch = mpatches.Patch(color="mediumseagreen", label="TLO")
 
+
+# plot TB deaths
+y_vals = [
+    deaths2010_TB["GBD_mean"],
+    deaths2010_TB["model"],
+    deaths2015_TB["GBD_mean"],
+    deaths2015_TB["model"],
+]
+y_lower = [
+    abs(deaths2010_TB["GBD_lower"] - deaths2010_TB["GBD_mean"]),
+    np.NAN,
+    abs(deaths2015_TB["GBD_lower"] - deaths2015_TB["GBD_mean"]),
+    np.NAN,
+]
+y_upper = [
+    abs(deaths2010_TB["GBD_upper"] - deaths2010_TB["GBD_mean"]),
+    np.NAN,
+    abs(deaths2015_TB["GBD_upper"] - deaths2015_TB["GBD_mean"]),
+    np.NAN,
+]
 plt.bar(x_vals, y_vals, color=col)
 plt.errorbar(
     x_vals,
@@ -518,12 +555,11 @@ plt.errorbar(
 )
 plt.xticks(ticks=x_vals, labels=labels)
 
-plt.title("Deaths per year due to AIDS, 2010-2014")
+plt.title("Deaths per year due to non-AIDS TB")
 plt.legend(handles=[blue_patch, green_patch])
 plt.tight_layout()
-# plt.savefig(outputpath / ("HIV_TB_deaths_with_GBD" + datestamp + ".png"), format='png')
+# plt.savefig(outputpath / ("TB_deaths_with_GBD" + datestamp + ".png"), format='png')
 plt.show()
-
 
 # ---------------------------------------------------------------------- #
 # %%: PROGRAM OUTPUTS
