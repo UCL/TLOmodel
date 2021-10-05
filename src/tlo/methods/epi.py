@@ -561,7 +561,6 @@ class HSI_BcgVaccine(HsiBaseVaccine):
         if df.at[person_id, "va_bcg"] < self.module.all_doses["bcg"]:
             outcome = self.request_vax_consumables(
                 items=[
-                    ("BCG vaccine", 1),
                     ("Syringe, autodisposable, BCG, 0.1 ml, with needle", 1),
                     ("Safety box for used syringes/needles, 5 liter", 1)
                 ]
