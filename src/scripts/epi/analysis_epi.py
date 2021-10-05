@@ -13,10 +13,10 @@ from tlo.methods import (
     dx_algorithm_adult,
     dx_algorithm_child,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    epi,
     simplified_births,
     symptommanager,
 )

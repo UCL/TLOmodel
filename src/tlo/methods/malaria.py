@@ -1043,7 +1043,9 @@ class HSI_Malaria_complicated_treatment_child(HSI_Event, IndividualScopeEventMix
             item_code1 = pd.unique(
                 consumables.loc[consumables["Items"] == "Injectable artesunate", "Item_Code"])[0]
             item_code2 = pd.unique(
-                consumables.loc[consumables["Items"] == "Cannula iv  (winged with injection pot) 18_each_CMST", "Item_Code"])[0]
+                consumables.loc[
+                    consumables["Items"] == "Cannula iv  (winged with injection pot) 18_each_CMST",
+                    "Item_Code"])[0]
             item_code3 = pd.unique(
                 consumables.loc[
                     consumables["Items"] == "Disposables gloves, powder free, 100 pieces per box", "Item_Code"])[0]
@@ -1127,7 +1129,9 @@ class HSI_Malaria_complicated_treatment_adult(HSI_Event, IndividualScopeEventMix
             item_code1 = pd.unique(
                 consumables.loc[consumables["Items"] == "Injectable artesunate", "Item_Code"])[0]
             item_code2 = pd.unique(
-                consumables.loc[consumables["Items"] == "Cannula iv  (winged with injection pot) 18_each_CMST", "Item_Code"])[0]
+                consumables.loc[
+                    consumables["Items"] == "Cannula iv  (winged with injection pot) 18_each_CMST",
+                    "Item_Code"])[0]
             item_code3 = pd.unique(
                 consumables.loc[
                     consumables["Items"] == "Disposables gloves, powder free, 100 pieces per box", "Item_Code"])[0]
@@ -1140,7 +1144,7 @@ class HSI_Malaria_complicated_treatment_adult(HSI_Event, IndividualScopeEventMix
 
             the_cons_footprint = {
                 "Intervention_Package_Code": {},
-                "Item_Code": {item_code1:1,
+                "Item_Code": {item_code1: 1,
                               item_code2: 1,
                               item_code3: 1,
                               item_code4: 1,
