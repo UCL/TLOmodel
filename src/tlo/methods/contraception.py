@@ -214,11 +214,12 @@ class Contraception(Module):
 
     def on_birth(self, mother_id, child_id):
         """
-        * 1) Initialise properties for the newborn
-        * 2) Update mother's properties
-        * 3) Update the mother's contraception following the birth
+        * 1) Formally end the pregnancy
+        * 2) Initialise properties for the newborn
         """
         df = self.sim.population.props
+
+        self.end_pregnancy()
 
         # Initialise child's properties:
         df.loc[child_id, (
@@ -236,15 +237,10 @@ class Contraception(Module):
             pd.NaT
         )
 
-        # Reset the mother's is_pregnant status showing that she is no longer pregnant
-        df.at[mother_id, 'is_pregnant'] = False
-
-        # Initiate mother of newborn to a contraceptive
-        self.select_contraceptive_following_birth(mother_id)
-
-    def end_pregnancy_without_live_birth(self, person_id):
-        """End the pregnancy without a live birth. [Called by the Labour/Pregnancy modules]. Resets pregnancy status and
-         may initiate a contraceptive method."""
+    def end_pregnancy(self, person_id):
+        """End the pregnancy. Reset pregnancy status and may initiate a contraceptive method.
+        This is called by `on_birth` in this module and by Labour/Pregnancy modules for births that do result in live
+        birth."""
 
         self.sim.population.props.at[person_id, 'is_pregnant'] = False
         self.select_contraceptive_following_birth(person_id)
@@ -972,4 +968,4 @@ class EndOfPregnancyEvent(Event, IndividualScopeEventMixin):
         if self.live_birth:
             self.sim.do_birth(person_id)
         else:
-            self.sim.modules['Contraception'].end_pregnancy_without_live_birth(person_id)
+            self.sim.modules['Contraception'].end_pregnancy(person_id)

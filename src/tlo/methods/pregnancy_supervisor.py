@@ -891,7 +891,7 @@ class PregnancySupervisor(Module):
         params = self.parameters
 
         # Women who have an abortion have key pregnancy variables reset
-        self.sim.modules['Contraception'].end_pregnancy_without_live_birth(individual_id)
+        self.sim.modules['Contraception'].end_pregnancy(individual_id)
 
         self.sim.modules['Labour'].reset_due_date(ind_or_df='individual', id_or_index=individual_id,
                                                   new_due_date=pd.NaT)
@@ -1433,7 +1433,7 @@ class PregnancySupervisor(Module):
         # We turn the 'delete_mni' key to true- so after the next daly poll this womans entry is deleted, and reset
         # pregnancy status and update contraceptive status
         for person in women.index:
-            self.sim.modules['Contraception'].end_pregnancy_without_live_birth(person)
+            self.sim.modules['Contraception'].end_pregnancy(person)
             mni[person]['delete_mni'] = True
 
         # Call functions across the modules to ensure properties are rest
@@ -1468,7 +1468,7 @@ class PregnancySupervisor(Module):
         mni[individual_id]['delete_mni'] = True
 
         # Reset pregnancy and schedule possible update of contraception
-        self.sim.modules['Contraception'].end_pregnancy_without_live_birth(individual_id)
+        self.sim.modules['Contraception'].end_pregnancy(individual_id)
 
         self.sim.modules['Labour'].reset_due_date(
             ind_or_df='individual', id_or_index=individual_id, new_due_date=pd.NaT)
@@ -1934,7 +1934,7 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
             return
 
         # reset pregnancy variables and store onset for daly calculation
-        self.sim.modules['Contraception'].end_pregnancy_without_live_birth(individual_id)
+        self.sim.modules['Contraception'].end_pregnancy(individual_id)
         self.module.store_dalys_in_mni(individual_id, 'ectopic_onset')
 
         self.sim.modules['Labour'].reset_due_date(

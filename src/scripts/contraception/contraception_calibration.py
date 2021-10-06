@@ -56,7 +56,6 @@ for date in pd.date_range(sim.date, Date(2099, 12, 1), freq=pd.DateOffset(months
 
     age_update_event.apply(sim.population)
 
-
     usage_by_age[date] = sim.population.props.loc[(sim.population.props.sex == 'F') & (
         sim.population.props.age_years.between(15, 49))].groupby(by=['co_contraception', 'age_range']).size()
 
