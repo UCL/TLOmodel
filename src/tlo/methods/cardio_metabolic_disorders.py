@@ -882,15 +882,16 @@ class CardioMetabolicDisordersDeathEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
+        person = df.loc[person_id]
 
-        if not df.at[person_id, "is_alive"]:
+        if not person.is_alive:
             return
 
         # reduction in risk of death if being treated with regular medication for condition
         # check still have condition (has not resolved)
-        if df.at[person_id, f'nc_{self.condition}']:
+        if person[f'nc_{self.condition}']:
 
-            if df.at[person_id, f'nc_{self.condition}_on_medication']:
+            if person[f'nc_{self.condition}_on_medication']:
                 # TODO: @britta replace with data specific for each condition/event
                 treatmentworks = self.module.parameters[f'{self.condition}_hsi'].pr_treatment_works
                 if self.module.rng.rand() < treatmentworks:
@@ -905,10 +906,12 @@ class CardioMetabolicDisordersDeathEvent(Event, IndividualScopeEventMixin):
         date of death matches the current date.
         """
         df = self.sim.population.props
+        person = df.loc[person_id]
+
         # check if it's a death event for an event (e.g. stroke) in order to execute death only if the date equals
         # scheduled date of death
         if f'{self.condition}' in self.module.events:
-            if self.sim.date == df.at[person_id, f'nc_{self.condition}_scheduled_date_death']:
+            if self.sim.date == person[f'nc_{self.condition}_scheduled_date_death']:
                 self.sim.modules['Demography'].do_death(individual_id=person_id,
                                                         cause=f'{self.condition}',
                                                         originating_module=self.module)
@@ -930,14 +933,15 @@ class CardioMetabolicDisordersWeightLossEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
+        person = df.loc[person_id]
 
-        if not df.at[person_id, "is_alive"]:
+        if not person.is_alive:
             return
         else:
             p_bmi_reduction = 0.2  # TODO: @britta change to actual data
-            if df.at[person_id, 'li_bmi'] > 2:
+            if person['li_bmi'] > 2:
                 if self.module.rng.rand() < p_bmi_reduction:
-                    df.at[person_id, 'li_bmi'] = df.at[person_id, 'li_bmi'] - 1
+                    df.at[person_id, 'li_bmi'] -= 1
                     df.at[person_id, 'nc_weight_loss_worked'] = True
 
 
