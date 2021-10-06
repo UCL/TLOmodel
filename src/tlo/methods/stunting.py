@@ -24,8 +24,9 @@ class Stunting(Module):
         ),
     }
 
-    def __init__(self, name=None):
-        super().__init__(name)
+    def __init__(self, name=None, resourcefilepath=None):
+        super().__init__(name=name)
+        self.resourcefilepath = resourcefilepath
 
     def read_parameters(self, data_folder):
         pass
