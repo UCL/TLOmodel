@@ -795,25 +795,20 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             # Death is assumed to happen in the time before the next polling event.
 
             eligible_population = df.is_alive & df[f'nc_{condition}']
-            selected_to_die = self.module.lms_death[condition].predict(df.loc[eligible_population], rng)
-            if selected_to_die.any():  # catch in case no one dies
-                if sum(eligible_population) > 1:
-                    idx_selected_to_die = selected_to_die[selected_to_die].index
-                else:
-                    # if there is only one eligible person, the predict method of linear model will return just a bool
-                    #  instead of a pd.Series. Handle this special case:
-                    idx_selected_to_die = eligible_population[eligible_population].index
+            selected_to_die = self.module.lms_death[condition].predict(df.loc[eligible_population], rng,
+                                                                       squeeze_single_row_output=False)
+            idx_selected_to_die = selected_to_die[selected_to_die].index
 
-                for person_id in idx_selected_to_die:
-                    if df.at[person_id, f'nc_{condition}_on_medication']:
-                        treatmentworks = self.module.rng.rand() < self.module.parameters[
-                            f'{condition}_hsi'].pr_treatment_works
-                        if not treatmentworks:
-                            schedule_death_to_occur_before_next_poll(person_id, condition,
-                                                                     m.parameters['interval_between_polls'])
-                    else:
+            for person_id in idx_selected_to_die:
+                if df.at[person_id, f'nc_{condition}_on_medication']:
+                    treatmentworks = self.module.rng.rand() < self.module.parameters[
+                        f'{condition}_hsi'].pr_treatment_works
+                    if not treatmentworks:
                         schedule_death_to_occur_before_next_poll(person_id, condition,
                                                                  m.parameters['interval_between_polls'])
+                else:
+                    schedule_death_to_occur_before_next_poll(person_id, condition,
+                                                             m.parameters['interval_between_polls'])
 
         # add the new incidence numbers to tracker
         self.module.df_incidence_tracker = self.module.df_incidence_tracker.add(current_incidence_df)
