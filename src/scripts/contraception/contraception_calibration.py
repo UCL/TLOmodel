@@ -44,21 +44,28 @@ sim.register(
 # %% Simulate the changes in contraceptive use 'manually'
 
 # Run the ContraceptivePoll (with the option `run_do_pregnancy`=False to prevent pregnancies)
-sim.make_initial_population(n=50000)
+sim.make_initial_population(n=5000)
 states = sim.modules['Contraception'].all_contraception_states
 poll = contraception.ContraceptionPoll(module=sim.modules['Contraception'], run_do_pregnancy=False)
 age_update_event = demography.AgeUpdateEvent(sim.modules['Demography'], sim.modules['Demography'].AGE_RANGE_LOOKUP)
 
 usage_by_age = dict()
 
-for date in pd.date_range(sim.date, Date(2029, 12, 31), freq=pd.DateOffset(months=1)):
+for date in pd.date_range(sim.date, Date(2099, 12, 1), freq=pd.DateOffset(months=1)):
     sim.date = date
+
     age_update_event.apply(sim.population)
 
     usage_by_age[date] = sim.population.props.loc[(sim.population.props.sex == 'F') & (
         sim.population.props.age_years.between(15, 49))].groupby(by=['co_contraception', 'age_range']).size()
 
     poll.apply(sim.population)
+
+    # recycle 50-years to become 15-year-olds
+    df = sim.population.props
+    df.loc[(df.age_exact_years > 50.0), 'date_of_birth'] = sim.date - pd.DateOffset(years=15)
+    df.loc[(df.age_exact_years > 50.0), 'co_contraception'] = "not_using"
+
 
 # %% Declare useful formatting functions and load WPP data
 AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = sim.modules['Demography'].AGE_RANGE_CATEGORIES, sim.modules[
@@ -167,7 +174,7 @@ for i, agegrp in enumerate(av_fert_by_period.index):
     l2 = ax[i].plot(wpp_fert.index, wpp_fert.values / wpp_fert.values[0], 'r-', label='Trend in WPP Live Births')
 
     ax[i].set_title(f"{agegrp}")
-    ax[i].set_ylim([0.2, 1.5])
+    ax[i].set_ylim([0.0, 1.5])
     plt.setp(ax[i].get_xticklabels(), rotation=90, ha='right')
 
 ax[-1].set_axis_off()

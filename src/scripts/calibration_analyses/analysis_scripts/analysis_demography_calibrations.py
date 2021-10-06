@@ -342,6 +342,43 @@ for tp in time_period:
     plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}"))
     plt.show()
 
+
+# %% Describe patterns of contraceptive usage over time
+
+def get_annual_mean_usage(_df):
+    _x = _df \
+        .assign(year=df['date'].dt.year) \
+        .set_index('year') \
+        .drop(columns=['date']) \
+        .apply(lambda row: row / row.sum(),
+               axis=1
+               )
+    return _x.groupby(_x.index).mean().stack()
+
+
+mean_usage = summarize(extract_results(results_folder,
+                                       module="tlo.methods.contraception",
+                                       key="contraception_use_summary",
+                                       custom_generate_series=get_annual_mean_usage,
+                                       do_scaling=False),
+                       collapse_columns=True
+                       )
+
+# Plot just the means:
+mean_usage_mean = mean_usage['mean'].unstack()
+fig, ax = plt.subplots()
+spacing = (np.arange(len(mean_usage_mean)) % 5) == 0
+mean_usage_mean.loc[spacing].plot.bar(stacked=True, ax=ax, legend=False)
+plt.title('Proportion Females 15-49 Using Contraceptive Methods')
+plt.xlabel('Date')
+plt.ylabel('Proportion')
+
+fig.legend(loc=7)
+fig.tight_layout()
+fig.subplots_adjust(right=0.65)
+plt.savefig(make_graph_file_name("Contraception"))
+plt.show()
+
 # %% All-Cause Deaths
 #  todo - fix this ;only do summarize after the groupbys
 #  Get Model ouput (aggregating by year before doing the summarize)
