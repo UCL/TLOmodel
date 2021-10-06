@@ -971,11 +971,11 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
             AGE_RANGE_CATEGORIES = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
             AGE_RANGE_LOOKUP = self.sim.modules['Demography'].AGE_RANGE_LOOKUP
 
-            age_cats = pd.Series(
+            _age_cats = pd.Series(
                 pd.Categorical(ages_in_years.map(AGE_RANGE_LOOKUP),
                                categories=AGE_RANGE_CATEGORIES, ordered=True)
             )
-            return age_cats
+            return _age_cats
 
         # Function to prepare a groupby for logging
         def proportion_of_something_in_a_groupby_ready_for_logging(df, something, groupbylist):
@@ -1106,10 +1106,12 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
         m = self.module
+
         # Ignore this event if the person is no longer alive:
-        if not df.at[person_id, 'is_alive']:
+        if not person.is_alive:
             return hs.get_blank_appt_footprint()
 
         # Run a test to diagnose whether the person has condition:
@@ -1133,9 +1135,9 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
                 topen=self.sim.date,
                 tclose=None
             )
-        elif df.at[person_id, 'nc_risk_score'] >= 2:
-            if df.at[person_id, 'is_alive'] & ~df.at[person_id, 'nc_ever_weight_loss_treatment']:
-                self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
+        elif person['nc_risk_score'] >= 2:
+            if not person['nc_ever_weight_loss_treatment']:
+                df.at[person_id, 'nc_ever_weight_loss_treatment'] = True
                 # Schedule a post-weight loss event for 6-9 months for individual to potentially lose weight:
                 start = self.sim.date
                 end = self.sim.date + DateOffset(months=m.parameters['interval_between_polls'], days=-1)
@@ -1244,11 +1246,12 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
 
         # start medication
         df = self.sim.population.props
+        person = df[person_id]
+
         # If person is already on medication, do not do anything
-        if df.at[person_id, f'nc_{self.condition}_on_medication']:
+        if person[f'nc_{self.condition}_on_medication']:
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        assert df.at[
-            person_id, f'nc_{self.condition}_ever_diagnosed'], "The person is not diagnosed and so should not be " \
+        assert person[f'nc_{self.condition}_ever_diagnosed'], "The person is not diagnosed and so should not be " \
                                                                "receiving an HSI. "
         # Check availability of medication for condition
         item_code = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
@@ -1256,6 +1259,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             hsi_event=self,
             cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
         )['Item_Code'][item_code]
+
         if result_of_cons_request:
             # If medication is available, flag as being on medication
             df.at[person_id, f'nc_{self.condition}_on_medication'] = True
@@ -1290,14 +1294,16 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        assert df.at[
-            person_id, f'nc_{self.condition}_ever_diagnosed'], "The person is not diagnosed and so should not be " \
+        person = df.loc[person_id]
+
+        assert person[f'nc_{self.condition}_ever_diagnosed'], "The person is not diagnosed and so should not be " \
                                                                "receiving an HSI. "
         # Check that the person is on medication
-        if not df.at[person_id, f'nc_{self.condition}']:
+        if not person[f'nc_{self.condition}']:
             # This person is not on medication so will not have this HSI
             # Return the blank_appt_footprint() so that this HSI does not occupy any time resources
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+
         # Check availability of medication for condition
         item_code = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
         result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
