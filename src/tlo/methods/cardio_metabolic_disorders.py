@@ -327,7 +327,7 @@ class CardioMetabolicDisorders(Module):
 
             # ----- Impose the symptom on random sample of those with each condition to have:
             # TODO: @britta make linear model data-specific and add in needed complexity
-            for symptom in self.prob_symptoms[condition].keys():
+            for symptom in self.prob_symptoms[condition]:
                 lm_init_symptoms = LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     self.prob_symptoms[condition].get(f'{symptom}'),
@@ -571,7 +571,7 @@ class CardioMetabolicDisorders(Module):
         lms_symptoms_dict[condition] = {}
         # load parameters for correct condition/event
         p = self.prob_symptoms[condition]
-        for symptom in p.keys():
+        for symptom in p:
             symptom_3mo = 1 - math.exp(-interval_between_polls / 12 * p.get(f'{symptom}'))
             lms_symptoms_dict[condition][f'{symptom}'] = LinearModel(LinearModelType.MULTIPLICATIVE,
                                                                      symptom_3mo, Predictor(f'nc_{condition}')
@@ -772,7 +772,7 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                     # schedule symptom onset some time before next polling event
                     days_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) \
                                                     / np.timedelta64(1, 'D')
-                    for symptom in self.module.prob_symptoms[condition].keys():
+                    for symptom in self.module.prob_symptoms[condition]:
                         date_onset = self.sim.date + DateOffset(days=rng.randint(0, days_until_next_polling_event))
                         self.sim.modules['SymptomManager'].change_symptom(
                             person_id=idx_symptom_onset.tolist(),
