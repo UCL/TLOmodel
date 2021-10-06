@@ -767,8 +767,8 @@ def test_do_treatment_for_those_that_will_die_if_consumables_not_available():
     df = sim.population.props
 
     # Make availability of consumables zero
-    sim.modules['HealthSystem'].cons_available_today['Item_Code'] *= False
-    sim.modules['HealthSystem'].cons_available_today['Intervention_Package_Code'] *= False
+    sim.modules['HealthSystem'].cons_available_today['Item_Code'][:] = False
+    sim.modules['HealthSystem'].cons_available_today['Intervention_Package_Code'][:] = False
 
     # Set that person_id=0 is a child with bloody diarrhoea and severe dehydration:
     person_id = 0
