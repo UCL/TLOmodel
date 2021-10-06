@@ -56,15 +56,15 @@ class Diarrhoea(Module):
 
     INIT_DEPENDENCIES = {
         'Demography',
-        'Lifestyle',
         'HealthSystem',
+        'Hiv',
+        'Lifestyle',
+        'NewbornOutcomes',
         'SymptomManager',
-        # Currently need to include DiarrhoeaPropertiesOfOtherModules as there is no alternative
-        # provider of un_clinical_acute_malnutrition property at the moment. As this
-        # module also provides the required properties from NewbornOutcomes, Hiv and Epi
-        # these are also not included here to avoid duplicated property definitions
-        'DiarrhoeaPropertiesOfOtherModules'
+        'Wasting',
     }
+
+    ADDITIONAL_DEPENDENCIES = {'Alri', 'Epi', 'Stunting'}
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
@@ -1564,7 +1564,11 @@ class DiarrhoeaPropertiesOfOtherModules(Module):
     """For the purpose of the testing, this module generates the properties upon which the Alri module relies"""
 
     INIT_DEPENDENCIES = {'Demography'}
-    ALTERNATIVE_TO = {'Hiv', 'Alri', 'NewbornOutcomes'}
+
+    # Though this module provides some properties from NewbornOutcomes we do not list
+    # NewbornOutcomes in the ALTERNATIVE_TO set to allow using in conjunction with
+    # SimplifiedBirths which can also be used as an alternative to NewbornOutcomes
+    ALTERNATIVE_TO = {'Alri', 'Epi', 'Hiv', 'Stunting', 'Wasting'}
 
     PROPERTIES = {
         'hv_inf': Property(Types.BOOL, 'temporary property for HIV infection status'),
