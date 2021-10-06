@@ -34,15 +34,12 @@ class Contraception(Module):
                                                   'Relative probability of becoming pregnant whilst not using a '
                                                   'a contraceptive for HIV-positive women compared to HIV-negative '
                                                   'women.'),
-        'r_hiv': Parameter(Types.DATA_FRAME,
-                           'The relative risk of becoming pregnancy if not on contraceptive if the women is '
-                           'HIV-positive, by age.'),
         'Failure_ByMethod': Parameter(Types.DATA_FRAME,
                                       'Probability per month of a women on a contraceptive becoming pregnant, by '
                                       'method'),
         'rr_fail_under25': Parameter(Types.REAL,
                                      'The relative risk of becoming pregnant whilst using a contraceptive for woman '
-                                     'yonunger than 25 years compared to older women.'),
+                                     'younger than 25 years compared to older women.'),
         'Initiation_ByMethod': Parameter(Types.DATA_FRAME,
                                          'Probability per month of a women who is not using any contraceptive method of'
                                          ' starting use of a method, by method.'),
@@ -74,8 +71,8 @@ class Contraception(Module):
                                              ' the woman will switch to a new method.'),
         'days_between_appts_for_maintenance': Parameter(Types.INT,
                                                         'The number of days between successive family planning '
-                                                        'appointments for women that are maintaing the use of a method'
-                                                        '.')
+                                                        'appointments for women that are maintaining the use of a '
+                                                        'method.')
     }
 
     PROPERTIES = {
@@ -100,8 +97,8 @@ class Contraception(Module):
         #  method').
 
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
-        'date_of_last_pregnancy': Property(Types.DATE, 'Date of the that most recent or current pregnancy began.'),
-        'co_unintended_preg': Property(Types.BOOL, 'Wheher the most recent or current pregnancy was unintended.'),
+        'date_of_last_pregnancy': Property(Types.DATE, 'Date that the most recent or current pregnancy began.'),
+        'co_unintended_preg': Property(Types.BOOL, 'Whether the most recent or current pregnancy was unintended.'),
         'co_date_of_last_fp_appt': Property(Types.DATE,
                                             'The date of the most recent Family Planning appointment. This is used to '
                                             'determine if a Family Planning appointment is needed to maintain the '
@@ -475,7 +472,7 @@ class Contraception(Module):
         new: iterable giving the corresponding contraceptive state being switched to
 
         It is assumed that even with the option `self.use_healthsystem=True` that switches to certain methods do not
-        require the use of HSI (these are in `states_that_may_require_HSI_to_switch_to`)."""
+        require the use of HSI (these are not in `states_that_may_require_HSI_to_switch_to`)."""
 
         df = self.sim.population.props
         date_today = self.sim.date
@@ -515,7 +512,7 @@ class Contraception(Module):
                 if _old != _new:
                     self.do_and_log_individual_contraception_change(woman_id=_woman_id, old=_old, new=_new)
                 else:
-                    pass  # Mo need to do anything if the old is the same as the new and no HSI needed.
+                    pass  # No need to do anything if the old is the same as the new and no HSI needed.
 
     def do_and_log_individual_contraception_change(self, woman_id: int, old, new):
         """Implement and then log a start / stop / switch of contraception. """
@@ -782,7 +779,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             woman = df.loc[w]
 
             # Determine if this is unintended or not. (We say that it is 'unintended' if the women is using a
-            # contraceptive at the when she becomes pregnant.)
+            # contraceptive when she becomes pregnant.)
             unintended = (woman['co_contraception'] != 'not_using')
 
             # Update properties (including that she is no longer on any contraception)
@@ -820,7 +817,7 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = population.props
 
-        # Make value_counts (NB. sort_index ensures the resulting dict has keys of the resulting dict in the same order,
+        # Make value_counts (NB. sort_index ensures the resulting dict has keys in the same order,
         # which is requirement of the logging.)
         value_counts = df.loc[df.is_alive & (df.sex == 'F'), 'co_contraception'].value_counts().sort_index().to_dict()
 

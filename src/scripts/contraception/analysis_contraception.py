@@ -104,7 +104,7 @@ months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results
-co_df = log_df['tlo.methods.contraception']['contraception_use_yearly_summary'].set_index('date')
+co_df = log_df['tlo.methods.contraception']['contraception_use_summary'].set_index('date')
 Model_Years = pd.to_datetime(co_df.index)
 Model_total = co_df.sum(axis=1)
 Model_not_using = co_df.not_using
@@ -135,7 +135,7 @@ months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results
-com_df = log_df['tlo.methods.contraception']['contraception_use_yearly_summary']
+com_df = log_df['tlo.methods.contraception']['contraception_use_summary']
 Model_Years = pd.to_datetime(com_df.date)
 Model_pill = com_df.pill
 Model_IUD = com_df.IUD
