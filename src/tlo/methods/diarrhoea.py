@@ -16,7 +16,7 @@ Health care seeking is prompted by the onset of the symptom diarrhoea. The indiv
  * See todo
 
 """
-from collections import Iterable
+from collections.abc import Iterable
 from pathlib import Path
 
 import numpy as np
