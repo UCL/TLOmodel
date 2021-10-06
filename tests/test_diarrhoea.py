@@ -115,7 +115,6 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 hiv.DummyHivModule(),
                  )
 
     # **Zero-out incidence**:
@@ -604,7 +603,6 @@ def test_does_treatment_prevent_death():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 hiv.DummyHivModule(),
                  )
 
     # Increase incidence and risk of death in Diarrhoea episodes
