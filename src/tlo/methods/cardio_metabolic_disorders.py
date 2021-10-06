@@ -310,23 +310,14 @@ class CardioMetabolicDisorders(Module):
 
         for condition in self.conditions:
             p = self.parameters[f'{condition}_initial_prev']
-            # Set age min and max to get correct age group later
-            age_min = 0
-            age_max = 4
             # men & women without condition
             men_wo_cond = men & ~df[f'nc_{condition}']
             women_wo_cond = women & ~df[f'nc_{condition}']
-            for age_grp in self.age_index:
+            for _age_range in self.age_index:
                 # Select all eligible individuals (men & women w/o condition and in age range)
-                sample_eligible(men_wo_cond & df.age_years.between(age_min, age_max), p[f'm_{age_grp}'], condition)
-                sample_eligible(women_wo_cond & df.age_years.between(age_min, age_max), p[f'f_{age_grp}'], condition)
+                sample_eligible(men_wo_cond & (df.age_range == _age_range), p[f'm_{_age_range}'], condition)
+                sample_eligible(women_wo_cond & (df.age_range == _age_range), p[f'f_{_age_range}'], condition)
 
-                if age_grp != '100+':
-                    age_min = age_min + 5
-                    age_max = age_max + 5
-                else:
-                    age_min = age_min + 5
-                    age_max = age_max + 20
             # ----- Set ever tested, date of last test, ever_diagnosed, date of diagnosis, and on_medication to false
             # / NaT for everyone
             df.loc[df.is_alive, f'nc_{condition}_date_last_test'] = pd.NaT
