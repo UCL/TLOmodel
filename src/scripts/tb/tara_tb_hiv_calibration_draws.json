@@ -1,18 +1,12 @@
 {
   "scenario_script_path": "src/scripts/tb/tara_tb_hiv_calibration.py",
-  "scenario_seed": 5,
-  "runs_per_draw": 3,
+  "scenario_seed": 1336,
+  "runs_per_draw": 5,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 953453411,
-      "parameters": {
-        "Tb": {
-          "mixing_parameter": 1.0
-        }
-      }
+      "draw_seed": 1166806948,
+      "parameters": null
     }
-  ],
-  "commit": "fdad70a638bbfce1da8ce952717e78fa627ccc58",
-  "github": "https://github.com/UCL/TLOmodel/blob/fdad70a638bbfce1da8ce952717e78fa627ccc58/src/scripts/tb/tara_tb_hiv_calibration.py"
+  ]
 }
