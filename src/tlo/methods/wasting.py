@@ -2,7 +2,6 @@
 
 from tlo import Module, Property, Types, logging
 
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
