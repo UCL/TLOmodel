@@ -102,7 +102,7 @@ def zero_param(p):
 
 
 def incr_param(p):
-    return {k: 10.0 * v for k, v in p.items()}
+    return {k: 100.0 * v for k, v in p.items()}
 
 
 def __check_some_starting_switching_and_stopping(sim):
@@ -153,8 +153,8 @@ def test_starting_and_stopping_contraceptive_use():
         """Create dummy simulation"""
         resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
         start_date = Date(2010, 1, 1)
-        sim = Simulation(start_date=start_date, seed=0)
-        sim.register(
+        _sim = Simulation(start_date=start_date, seed=0)
+        _sim.register(
             # - core modules:
             demography.Demography(resourcefilepath=resourcefilepath),
             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
@@ -167,7 +167,7 @@ def test_starting_and_stopping_contraceptive_use():
             # - Dummy HIV module (as contraception requires the property hv_inf)
             DummyHivModule()
         )
-        return sim
+        return _sim
 
     def sim_contraceptive_poll(sim):
         """Do a "manual" simulation of the contraceptive poll"""

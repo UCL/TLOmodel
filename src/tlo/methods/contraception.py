@@ -219,7 +219,7 @@ class Contraception(Module):
         """
         df = self.sim.population.props
 
-        self.end_pregnancy()
+        self.end_pregnancy(person_id=mother_id)
 
         # Initialise child's properties:
         df.loc[child_id, (
