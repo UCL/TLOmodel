@@ -1252,7 +1252,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         if person[f'nc_{self.condition}_on_medication']:
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         assert person[f'nc_{self.condition}_ever_diagnosed'], "The person is not diagnosed and so should not be " \
-                                                               "receiving an HSI. "
+                                                              "receiving an HSI."
         # Check availability of medication for condition
         item_code = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
         result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
@@ -1297,7 +1297,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         person = df.loc[person_id]
 
         assert person[f'nc_{self.condition}_ever_diagnosed'], "The person is not diagnosed and so should not be " \
-                                                               "receiving an HSI. "
+                                                              "receiving an HSI."
         # Check that the person is on medication
         if not person[f'nc_{self.condition}']:
             # This person is not on medication so will not have this HSI
