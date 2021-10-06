@@ -1246,7 +1246,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
 
         # start medication
         df = self.sim.population.props
-        person = df[person_id]
+        person = df.loc[person_id]
 
         # If person is already on medication, do not do anything
         if person[f'nc_{self.condition}_on_medication']:
