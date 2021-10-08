@@ -31,6 +31,7 @@ class HealthBurden(Module):
         # instance variables
         self.multi_index = None
         self.YearsLifeLost = None
+        self.YearsLifeLostStacked = None
         self.YearsLivedWithDisability = None
         self.recognised_modules_names = None
         self.causes_of_disability = None
@@ -79,6 +80,7 @@ class HealthBurden(Module):
 
         # Create the YLL and YLD storage data-frame (using sex/age_range/year multi-index)
         self.YearsLifeLost = pd.DataFrame(index=multi_index)
+        self.YearsLifeLostStacked = pd.DataFrame(index=multi_index)
         self.YearsLivedWithDisability = pd.DataFrame(index=multi_index)
 
         # 2) Collect the module that will use this HealthBurden module
@@ -162,13 +164,27 @@ class HealthBurden(Module):
                 description='Years of live lost by the declared cause_of_death, '
                             'broken down by year, sex, age-group'
             )
+        for index, row in self.YearsLifeLostStacked.reset_index().iterrows():
+            logger.info(
+                key='yll_by_causes_of_death_stacked',
+                data=row.to_dict(),
+                description='Years of live lost by the declared cause_of_death, '
+                            'broken down by year, sex, age-group'
+            )
 
         # 3) Log total DALYS recorded (YLD + LYL) (by the labels declared)
-        dalys = self.compute_dalys()
+        dalys, dalys_stacked = self.compute_dalys()
         # - dump to log, line-by-line
         for index, row in dalys.reset_index().iterrows():
             logger.info(
                 key='dalys',
+                data=row.to_dict(),
+                description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
+                            ', broken down by year, sex, age-group'
+            )
+        for index, row in dalys_stacked.reset_index().iterrows():
+            logger.info(
+                key='dalys_stacked',
                 data=row.to_dict(),
                 description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
                             ', broken down by year, sex, age-group'
@@ -186,7 +202,11 @@ class HealthBurden(Module):
             columns={c: self.sim.modules['Demography'].causes_of_death[c].label for c in self.YearsLifeLost.columns}
         )
 
-        return yld.add(yll, fill_value=0)
+        yll_stacked = self.YearsLifeLostStacked.rename(
+            columns={c: self.sim.modules['Demography'].causes_of_death[c].label for c in self.YearsLifeLost.columns}
+        )
+
+        return yld.add(yll, fill_value=0), yll_stacked.add(yll, fill_value=0)
 
     def get_daly_weight(self, sequlae_code):
         """
@@ -218,7 +238,7 @@ class HealthBurden(Module):
         assert self.YearsLifeLost.index.equals(self.multi_index)
 
         # date from which years of life are lost
-        start_date = self.sim.date
+        start_date = self.sim.date  # todo - refactor this to be called date of death
 
         # data to count up to for years of life lost (the earliest of the age_limit or end of simulation)
         end_date = min(self.sim.end_date, (date_of_birth + pd.DateOffset(years=self.parameters['Age_Limit_For_YLL'])))
@@ -228,22 +248,35 @@ class HealthBurden(Module):
 
         # augment the multi-index of yll with sex so that it is sex/age_range/year
         yll['sex'] = sex
-        yll.set_index('sex', append=True, inplace=True)
-        yll = yll.reorder_levels(['sex', 'age_range', 'year'])
+        yll = yll.set_index('sex', append=True).reorder_levels(['sex', 'age_range', 'year']) # todo refactor this to go inside func
+
+        # Compute yll_stacked (where all the life-years lost are ascribed to the year of the simulation)
+        # refactor for neatness
+        yll_stacked = self.decompose_yll_by_age_and_time(
+            start_date=start_date,
+            end_date=date_of_birth + pd.DateOffset(years=self.parameters['Age_Limit_For_YLL']),
+            date_of_birth=date_of_birth
+        )
+        x = yll_stacked.sum(level=1)
+        x['year'] = start_date.year
+        x['sex'] = sex
+        yll_st = x.set_index(['sex', 'year'], append=True).reorder_levels(['sex', 'age_range', 'year'])
 
         # Add the years-of-life-lost from this death to the overall YLL dataframe keeping track
         if cause_of_death not in self.YearsLifeLost.columns:
             # cause has not been added to the LifeYearsLost dataframe, so make a new columns
             self.YearsLifeLost[cause_of_death] = 0.0
+            self.YearsLifeLostStacked[cause_of_death] = 0.0
 
         # Add the life-years-lost from this death to the running total in LifeYearsLost dataframe
-        indx_before = self.YearsLifeLost.index
-        self.YearsLifeLost[cause_of_death] = self.YearsLifeLost[cause_of_death].add(yll['person_years'], fill_value=0)
-        indx_after = self.YearsLifeLost.index
+        self.YearsLifeLost[cause_of_death] = self.YearsLifeLost[cause_of_death].add(
+            yll['person_years'], fill_value=0)
+        self.YearsLifeLostStacked[cause_of_death] = self.YearsLifeLostStacked[cause_of_death].add(
+            yll_st['person_years'], fill_value=0)
 
         # check that the index of the YLL dataframe is not changed
-        assert indx_after.equals(indx_before)
-        assert indx_after.equals(self.multi_index)
+        assert self.YearsLifeLost.index.equals(self.multi_index)
+        assert self.YearsLifeLostStacked.index.equals(self.multi_index)
 
     def decompose_yll_by_age_and_time(self, start_date, end_date, date_of_birth):
         """
