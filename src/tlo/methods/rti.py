@@ -2156,43 +2156,26 @@ class RTI(Module):
         # Get the probability distribution for the likelihood of a certain body region being injured.
         injlocdist = p['injury_location_distribution']
         # create a dataframe to store the injury persons information in
-        test_inj_df = pd.DataFrame(columns = ['Injury_codes', 'AIS_scores', 'ISS_score', 'Polytrauma', 'MAIS_score',
+        inj_df = pd.DataFrame(columns = ['Injury_codes', 'AIS_scores', 'ISS', 'Polytrauma', 'MAIS',
                                               'Number_of_injuries'])
-        # Create empty lists to store information of each person's injuries:
-        # predicted injury code
-        predinj = []
+        # Create empty lists to store information of each person's injuries to be used in logging:
         # predicted injury location
         predinjlocs = []
         # predicted injury severity
         predinjsev = []
         # predicted injury category
         predinjcat = []
-        # predicted injury ISS score
-        predinjiss = []
-        # predicted MAIS score
-        predmais = []
-        # whether each person's prediction injuries would be classed as polytrauma
-        predpolytrauma = []
         # create empty lists to store the qualitative description of injury severity and the number of injuries
         # each person has
         severity_category = []
-        number_of_injuries = []
         # ============================= Begin assigning injuries to people =====================================
         # Iterate over the total number of injured people
         for n in range(0, number):
             # Generate a random number which will decide how many injuries the person will have,
             ninj = self.rng.choice(number_of_injured_body_regions_distribution[0],
                                    p=number_of_injured_body_regions_distribution[1])
-            # store the number of injuries this person recieves
-            number_of_injuries.append(ninj)
-            # create an empty list which stores the injury chosen
+            # create an empty list which stores the injury chosen for this person
             injuries_chosen = []
-            # Create an empty vector which will store the injury locations (numerically coded using the
-            # abbreviated injury scale coding system, where 1 corresponds to head, 2 to face, 3 to neck, 4 to
-            # thorax, 5 to abdomen, 6 to spine, 7 to upper extremity and 8 to lower extremity
-            allinjlocs = []
-            # Create an empty vector to store the type of injury
-            injcat = []
             # Create an empty vector which will store the severity of the injuries
             injais = []
             # Create an empty vector to store injury MAIS scores in
@@ -2217,88 +2200,55 @@ class RTI(Module):
                 # store this persons chosen injury at this location
                 injuries_chosen.append(injury_chosen)
                 # Store this person's injury location (used in logging)
-                allinjlocs.append(self.ASSIGN_INJURIES_AND_DALY_CHANGES[injury_chosen][0][1])
+                predinjlocs.append(self.ASSIGN_INJURIES_AND_DALY_CHANGES[injury_chosen][0][1])
                 # store the injury category chosen (used in logging)
-                injcat.append(self.ASSIGN_INJURIES_AND_DALY_CHANGES[injury_chosen][0][2])
-                # store the severity of the injury chosen (used in logging)
+                predinjcat.append(self.ASSIGN_INJURIES_AND_DALY_CHANGES[injury_chosen][0][2])
+                # store the severity of the injury chosen
                 injais.append(self.ASSIGN_INJURIES_AND_DALY_CHANGES[injury_chosen][0][3])
                 # store the MAIS score
                 injmais.append(self.ASSIGN_INJURIES_AND_DALY_CHANGES[injury_chosen][0][4])
-
-
-            # Check that all the relevant injury information has been decided by checking there is a injury category,
-            # AIS score, injury location for all injuries for this person
-            assert len(injcat) == ninj
-            assert len(injais) == ninj
-            assert len(allinjlocs) == ninj
-            # Create a dataframe that stores the injury location and severity for each person, the point of this
-            # dataframe is to use some of the pandas tools to manipulate the generated injury data to calculate
-            # the ISS score and from this.
-            injdata = {'AIS location': allinjlocs, 'AIS severity': injais}
-            df = pd.DataFrame(injdata, columns=['AIS location', 'AIS severity'])
-            # Need to determine whether the persons injuries qualify as polytrauma as such injuries have a different
-            # prognosis. Polytrauma is defined via the new Berlin definition, 'when two or more
-            # injuries have an AIS severity score of 3 or higher'.
-            # set polytrauma as False by default
-            polytrauma = False
-            # Determine if this person has more than one injured body region with an AIS score greater than 2, if so
-            # they have polytrauma
-            if len(df.loc[df['AIS severity'] > 2]):
-                polytrauma = True
-            # Calculate this person's ISS score, the sum of the three greatest AIS scores squared
-            ISSscore = int(sum((df.nlargest(3, 'AIS severity', 'first')['AIS severity']) ** 2))
-            if ISSscore < 15:
+            # create the data needed for an additional row, the injuries chosen for this person, their corresponding
+            # AIS scores, their ISS score (calculated as the summed square of their three most severly injured body
+            # regions, whether or not they have polytrauma (calculated if they have two or more body regions with an ISS
+            # score greater than 2), their MAIS score and the number of injuries they have
+            new_row = [injuries_chosen, injais, sum(sorted(np.square(injais))[-3:]), sum(i > 2 for i in injais) > 1,
+                       max(injmais), ninj]
+            inj_df.loc[len(inj_df.index)] = new_row
+            # If person has an ISS score less than 15 they have a mild injury, otherwise severe
+            if new_row[2] < 15:
                 severity_category.append('mild')
             else:
                 severity_category.append('severe')
             # Store this person's injury information into the lists which house each individual person's injury
             # information
-            predinj.append(injuries_chosen)
-            predinjlocs.append(allinjlocs)
             predinjsev.append(injais)
-            predinjcat.append(injcat)
-            predinjiss.append(ISSscore)
-            predmais.append(max(injmais))
-            predpolytrauma.append(polytrauma)
-        # create a new data frame that the function will return
-        injdf = pd.DataFrame()
-        # store the predicted injury codes for each person in this dataframe
-        injdf['Injury codes'] = predinj
-        # As each person's injuries were stored as a list, expand the lists so that each injury exists in it's own
-        # column
-        if len(predinj) > 0:
-            injdf = injdf['Injury codes'].apply(pd.Series)
-            # rename each variable in injdf if people have actually been injured
-            injdf = injdf.rename(columns=lambda x: 'rt_injury_' + str(x + 1))
-        # store the predicted injury severity scores
-        injdf['Injury AIS'] = predinjsev
-        injdf['ISS'] = predinjiss
-        injdf['MAIS_M'] = predmais
-        # Store the predicted occurence of polytrauma
-        injdf['Polytrauma'] = predpolytrauma
-        # store the number of injuries this person received
-        injdf['ninj'] = number_of_injuries
+        # If there is at least one injured person, expand the returned dataframe so that each injury has it's own column
+        if len(inj_df) > 0:
+            # create a copy of the injury codes
+            listed_injuries = inj_df.copy()
+            # expand the injury codes into their own columns
+            listed_injuries = listed_injuries['Injury_codes'].apply(pd.Series)
+            # rename the columns
+            listed_injuries = listed_injuries.rename(columns=lambda x: 'rt_injury_' + str(x + 1))
+            # join the expanded injuries to the injury df
+            inj_df = inj_df.join(listed_injuries)
         # Fill dataframe entries where a person has not had an injury assigned with 'none'
-        injdf = injdf.fillna("none")
-        # Get injury information in an easily interpreted form to be logged.
-        # create a list of the predicted injury locations
-        flattened_injury_locations = [str(item) for sublist in predinjlocs for item in sublist]
-        # create a list of the predicted injury categories
-        flattened_injury_category = [str(item) for sublist in predinjcat for item in sublist]
-        # create a list of the predicted injury severity scores
-        flattened_injury_ais = [str(item) for sublist in predinjsev for item in sublist]
+        inj_df = inj_df.fillna("none")
 
+        # Begin logging injury information
         # ============================ Injury category incidence ======================================================
         df = self.sim.population.props
         # log the incidence of each injury category
+        # count the number of injuries that fall in each category
+        amputationcounts = sum(1 for i in predinjcat if i == '8')
+        burncounts = sum(1 for i in predinjcat if i == '11')
+        fraccounts = sum(1 for i in predinjcat if i == '1')
+        tbicounts = sum(1 for i in predinjcat if i == '3')
+        minorinjurycounts = sum(1 for i in predinjcat if i == '10')
+        spinalcordinjurycounts = sum(1 for i in predinjcat if i == '7')
+        other_counts = sum(1 for i in predinjcat if i in ['2', '4', '5', '6', '9'])
+        # calculate the incidence of this injury in the population
         n_alive = len(df.is_alive)
-        amputationcounts = sum(1 for i in flattened_injury_category if i == '8')
-        burncounts = sum(1 for i in flattened_injury_category if i == '11')
-        fraccounts = sum(1 for i in flattened_injury_category if i == '1')
-        tbicounts = sum(1 for i in flattened_injury_category if i == '3')
-        minorinjurycounts = sum(1 for i in flattened_injury_category if i == '10')
-        spinalcordinjurycounts = sum(1 for i in flattened_injury_category if i == '7')
-        other_counts = sum(1 for i in flattened_injury_category if i in ['2', '4', '5', '6', '9'])
         inc_amputations = amputationcounts / ((n_alive - amputationcounts) * 1 / 12) * 100000
         inc_burns = burncounts / ((n_alive - burncounts) * 1 / 12) * 100000
         inc_fractures = fraccounts / ((n_alive - fraccounts) * 1 / 12) * 100000
@@ -2308,7 +2258,7 @@ class RTI(Module):
         inc_other = other_counts / ((n_alive - other_counts) * 1 / 12) * 100000
         tot_inc_all_inj = inc_amputations + inc_burns + inc_fractures + inc_tbi + inc_sci + inc_minor + inc_other
         if number > 0:
-            number_of_injuries = injdf['ninj'].tolist()
+            number_of_injuries = inj_df['Number_of_injuries'].tolist()
         else:
             number_of_injuries = 0
         dict_to_output = {'inc_amputations': inc_amputations,
@@ -2325,12 +2275,16 @@ class RTI(Module):
                     data=dict_to_output,
                     description='Incidence of each injury grouped as per the GBD definition')
         # Log injury information
+        # Get injury severity information in an easily interpreted form to be logged.
+        # create a list of the predicted injury severity scores
+        flattened_injury_ais = [str(item) for sublist in predinjsev for item in sublist]
+
         injury_info = {'Number_of_injuries': number_of_injuries,
-                       'Location_of_injuries': flattened_injury_locations,
-                       'Injury_category': flattened_injury_category,
+                       'Location_of_injuries': predinjlocs,
+                       'Injury_category': predinjcat,
                        'Per_injury_severity': flattened_injury_ais,
-                       'Per_person_injury_severity': predinjiss,
-                       'Per_person_MAIS_score': MAIS,
+                       'Per_person_injury_severity': inj_df['ISS'].to_list(),
+                       'Per_person_MAIS_score': inj_df['MAIS'].to_list(),
                        'Per_person_severity_category': severity_category
                        }
         logger.info(key='Injury_information',
@@ -2338,7 +2292,7 @@ class RTI(Module):
                     description='Relevant information on the injuries from road traffic accidents when they are '
                                 'assigned')
         # log the fraction of lower extremity fractions that are open
-        flattened_injuries = [str(item) for sublist in predinj for item in sublist]
+        flattened_injuries = [str(item) for sublist in inj_df['Injury_codes'].to_list() for item in sublist]
         lx_frac_codes = ['811', '813do', '812', '813eo', '813', '813a', '813b', '813bo', '813c', '813co']
         lx_open_frac_codes = ['813do', '813eo', '813bo', '813co']
         n_lx_fracs = len([inj for inj in flattened_injuries if inj in lx_frac_codes])
@@ -2352,7 +2306,7 @@ class RTI(Module):
                     data=injury_info,
                     description='The proportion of fractures that are open in specific body regions')
         # Finally return the injury description information
-        return injdf
+        return inj_df
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -2535,7 +2489,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[selected_for_rti_inj.index, 'rt_ISS_score'] = \
             description.loc[selected_for_rti_inj.index, 'ISS'].astype(int)
         df.loc[selected_for_rti_inj.index, 'rt_MAIS_military_score'] = \
-            description.loc[selected_for_rti_inj.index, 'MAIS_M'].astype(int)
+            description.loc[selected_for_rti_inj.index, 'MAIS'].astype(int)
         # ======================== Apply the injuries to the population dataframe ======================================
         # Find the corresponding column names
         injury_columns = pd.Index(RTI.INJURY_COLUMNS)
