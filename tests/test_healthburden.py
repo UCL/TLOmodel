@@ -363,7 +363,7 @@ def test_arithmetic_of_dalys_calcs():
     hb = sim.modules['HealthBurden']
     yld = hb.YearsLivedWithDisability.sum()
     yll = hb.YearsLifeLost.sum()
-    dalys = hb.compute_dalys().sum()
+    dalys = hb.compute_dalys()[0].sum()
 
     daly_wt = sim.modules['DiseaseThatCausesA'].daly_wt
 
