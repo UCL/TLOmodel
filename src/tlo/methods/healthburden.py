@@ -238,29 +238,33 @@ class HealthBurden(Module):
         assert self.YearsLifeLost.index.equals(self.multi_index)
 
         # date from which years of life are lost
-        start_date = self.sim.date  # todo - refactor this to be called date of death
+        date_of_death = self.sim.date
 
-        # data to count up to for years of life lost (the earliest of the age_limit or end of simulation)
-        end_date = min(self.sim.end_date, (date_of_birth + pd.DateOffset(years=self.parameters['Age_Limit_For_YLL'])))
-
-        # get the years of life lost split out by year and age-group
-        yll = self.decompose_yll_by_age_and_time(start_date=start_date, end_date=end_date, date_of_birth=date_of_birth)
-
+        # Get the years of life lost split out by year and age-group (counting years of life lost up to the earliest of
+        # the age_limit or end of simulation)
+        yll = self.decompose_yll_by_age_and_time(start_date=date_of_death,
+                                                 end_date=min(
+                                                     self.sim.end_date,
+                                                     (date_of_birth +
+                                                      pd.DateOffset(years=self.parameters['Age_Limit_For_YLL']))
+                                                 ),
+                                                 date_of_birth=date_of_birth
+                                                 )
         # augment the multi-index of yll with sex so that it is sex/age_range/year
         yll['sex'] = sex
-        yll = yll.set_index('sex', append=True).reorder_levels(['sex', 'age_range', 'year']) # todo refactor this to go inside func
+        yll = yll.set_index('sex', append=True).reorder_levels(['sex', 'age_range', 'year'])
 
-        # Compute yll_stacked (where all the life-years lost are ascribed to the year of the simulation)
-        # refactor for neatness
+        # Get the years of live lost "stacked" (where all the life-years lost up to the age_limit are ascribed to the
+        # year of death)
         yll_stacked = self.decompose_yll_by_age_and_time(
-            start_date=start_date,
+            start_date=date_of_death,
             end_date=date_of_birth + pd.DateOffset(years=self.parameters['Age_Limit_For_YLL']),
             date_of_birth=date_of_birth
         )
-        x = yll_stacked.sum(level=1)
-        x['year'] = start_date.year
-        x['sex'] = sex
-        yll_st = x.set_index(['sex', 'year'], append=True).reorder_levels(['sex', 'age_range', 'year'])
+        yll_stacked = yll_stacked.sum(level=1)
+        yll_stacked['year'] = date_of_death.year
+        yll_stacked['sex'] = sex
+        yll_stacked = yll_stacked.set_index(['sex', 'year'], append=True).reorder_levels(['sex', 'age_range', 'year'])
 
         # Add the years-of-life-lost from this death to the overall YLL dataframe keeping track
         if cause_of_death not in self.YearsLifeLost.columns:
@@ -272,9 +276,9 @@ class HealthBurden(Module):
         self.YearsLifeLost[cause_of_death] = self.YearsLifeLost[cause_of_death].add(
             yll['person_years'], fill_value=0)
         self.YearsLifeLostStacked[cause_of_death] = self.YearsLifeLostStacked[cause_of_death].add(
-            yll_st['person_years'], fill_value=0)
+            yll_stacked['person_years'], fill_value=0)
 
-        # check that the index of the YLL dataframe is not changed
+        # Check that the index of the YLL dataframe is not changed
         assert self.YearsLifeLost.index.equals(self.multi_index)
         assert self.YearsLifeLostStacked.index.equals(self.multi_index)
 

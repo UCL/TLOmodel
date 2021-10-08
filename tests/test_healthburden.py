@@ -439,7 +439,7 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir):
             death_date = Date(2012, 1, 1)
 
             self.has_disease = False
-            sim.schedule_event(StartOfDiseaseEvent(self, 0), disability_onset_date )
+            sim.schedule_event(StartOfDiseaseEvent(self, 0), disability_onset_date)
             sim.schedule_event(InstantaneousDeath(self, individual_id=0, cause='cause_of_death_A'), death_date)
 
         def report_daly_values(self):
