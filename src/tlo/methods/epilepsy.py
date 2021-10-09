@@ -170,10 +170,6 @@ class Epilepsy(Module):
         df.loc[df.is_alive, 'ep_epi_death'] = False
         df.loc[df.is_alive, 'ep_disability'] = 0
 
-        # allocate initial ep_seiz_stat
-        df.loc[df.is_alive, 'ep_seiz_stat'] = rng.choice(
-            ['0', '1', '2', '3'], size=df.is_alive.sum(), p=p['init_epil_seiz_status']
-        )
 
         def allocate_antiepileptic(status, probability):
             mask = (df.is_alive & (df.ep_seiz_stat == status))
@@ -341,7 +337,8 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         def transition_seiz_stat(current_state, new_state, onantiep, transition_probability):
 
-            in_current_state = df.index[df.is_alive & (df.ep_seiz_stat == current_state) & df.ep_antiep == onantiep]
+            in_current_state = df.index[df.is_alive & (df.ep_seiz_stat == current_state)
+                                         & df.ep_antiep == onantiep]
             random_draw = self.module.rng.random_sample(size=len(in_current_state))
             changing_state = in_current_state[transition_probability > random_draw]
             df.loc[changing_state, 'ep_seiz_stat'] = new_state
@@ -353,7 +350,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         transition_seiz_stat('2', '3', True, self.base_prob_3m_seiz_stat_freq_infreq / self.rr_effectiveness_antiepileptics)
 
         transition_seiz_stat('3', '1', False, self.base_prob_3m_seiz_stat_none_freq)
-        transition_seiz_stat('3', '1', True, self.base_prob_3m_seiz_stat_none_infreq * self.rr_effectiveness_antiepileptics)
+        transition_seiz_stat('3', '1', True, self.base_prob_3m_seiz_stat_none_freq * self.rr_effectiveness_antiepileptics)
 
         transition_seiz_stat('2', '1', False, self.base_prob_3m_seiz_stat_none_infreq)
         transition_seiz_stat('2', '1', True, self.base_prob_3m_seiz_stat_none_infreq * self.rr_effectiveness_antiepileptics)
@@ -361,6 +358,8 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         transition_seiz_stat('3', '2', False, self.base_prob_3m_seiz_stat_infreq_freq)
         transition_seiz_stat('3', '2', True, self.base_prob_3m_seiz_stat_infreq_freq * self.rr_effectiveness_antiepileptics)
 
+#       transition_seiz_stat('*', '0', False, 1)
+#       transition_seiz_stat('*', '0', True, 1)
 
         # save all individuals that are currently on anti-epileptics (seizure status: 2 & 3 or 1)
         alive_seiz_stat_1_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
@@ -479,7 +478,7 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         individual = df.loc[[2]]
 
-        logger.info(key='individual_check', data=individual, description='following an individual through simulation')
+#       logger.info(key='individual_check', data=individual, description='following an individual through simulation')
 
 
 class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
@@ -519,7 +518,7 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
         )
         if outcome_of_request_for_consumables['Item_Code'][item_code_phenobarbitone]:
             anti_epileptics_available = True
-            logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+ #          logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
         else:
             item_code_carbamazepine = pd.unique(
                 consumables.loc[consumables['Items'] == 'Carbamazepine 200mg_1000_CMST', 'Item_Code'])[0]
@@ -547,7 +546,7 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
                 )
                 if outcome_of_request_for_consumables['Item_Code'][item_code_phenytoin]:
                     anti_epileptics_available = True
-                    logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+#                   logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
 # todo: add line back in
 #       if anti_epileptics_available:
         df.at[person_id, 'ep_antiep'] = True
