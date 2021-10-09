@@ -26,20 +26,20 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2021,  1, 1)
-popsize = 1900000
+end_date = Date(2010,  4, 1)
+popsize = 1000
 
 # Establish the simulation object
 log_config = {
     'filename': 'LogFile',
     'directory': outputpath,
     'custom_levels': {
-        'tlo.methods.demography': logging.CRITICAL,
-        'tlo.methods.epilepsy': logging.DEBUG
+        '*': logging.CRITICAL,
+        'tlo.methods.epilepsy': logging.INFO
     }
 }
 
-sim = Simulation(start_date=start_date, seed=11, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=20, log_config=log_config)
 
 # make a dataframe that contains the switches for which interventions are allowed or not allowed
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
@@ -63,7 +63,7 @@ sim.simulate(end_date=end_date)
 # %% read the results
 output = parse_log_file(sim.log_filepath)
 
-# xyz = pd.Series(output['tlo.methods.epilepsy']['individual_check'].values)
+xyz = pd.Series(output['tlo.methods.epilepsy']['epilepsy_logging'].values)
 
 # prop_seiz_stat_0 = pd.Series(
 # output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_0'].values,
