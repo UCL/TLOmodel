@@ -44,6 +44,17 @@ class NewbornOutcomes(Module):
         # in the LoggingEvent to calculate key outcomes (i.e. incidence rates, neonatal mortality rate etc)
         self.newborn_complication_tracker = dict()
 
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
+    ADDITIONAL_DEPENDENCIES = {
+        'CareOfWomenDuringPregnancy',
+        'Labour',
+        'PostnatalSupervisor',
+        'PregnancySupervisor'
+    }
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,

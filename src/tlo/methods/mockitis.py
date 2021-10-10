@@ -25,6 +25,11 @@ class Mockitis(Module):
         - Restrictive requirements on the facility_level for the HSI_event
         - Use of the SymptomManager
     """
+
+    INIT_DEPENDENCIES = {'Demography', 'SymptomManager'}
+
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+
     # Declare Metadata
     METADATA = {
         Metadata.DISEASE_MODULE,

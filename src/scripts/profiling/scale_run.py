@@ -21,6 +21,7 @@ import shared
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    bladder_cancer,
     cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
@@ -38,6 +39,7 @@ from tlo.methods import (
     hiv,
     labour,
     malaria,
+    measles,
     newborn_outcomes,
     oesophagealcancer,
     other_adult_cancers,
@@ -64,7 +66,7 @@ parser.add_argument(
     "--initial-population",
     type=int,
     help="Initial population size",
-    default=20000
+    default=50000
 )
 parser.add_argument(
     "--tlo-dir",
@@ -122,9 +124,12 @@ parser.add_argument(
 )
 parser.add_argument(
     "--capabilities-coefficient",
-    help="Capabilities coefficient to use in HealthSystem",
+    help=(
+        "Capabilities coefficient to use in HealthSystem. If not specified the ratio of"
+        " the initial population to the estimated 2010 population will be used."
+    ),
     type=float,
-    default=0.01,
+    default=None,
 )
 parser.add_argument(
     "--mode-appt-constraints",
@@ -153,6 +158,14 @@ parser.add_argument(
 parser.add_argument(
     "--save-final-population",
     help="Save the final population dataframe to a pickle file",
+    action="store_true"
+)
+parser.add_argument(
+    "--record-hsi-event-details",
+    help=(
+        "Keep a record of set of non-target specific details of HSI events that are "
+        "run and output to a JSON file 'hsi_event_details.json' in output directory."
+    ),
     action="store_true"
 )
 args = parser.parse_args()
@@ -209,6 +222,7 @@ sim.register(
         disable=args.disable_health_system,
         mode_appt_constraints=args.mode_appt_constraints,
         capabilities_coefficient=args.capabilities_coefficient,
+        record_hsi_event_details=args.record_hsi_event_details
     ),
     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
     dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
@@ -232,7 +246,9 @@ sim.register(
     hiv.Hiv(resourcefilepath=resourcefilepath),
     malaria.Malaria(resourcefilepath=resourcefilepath),
     oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath)
+    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
+    bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
+    measles.Measles(resourcefilepath=resourcefilepath),
 )
 
 # Run the simulation
@@ -246,3 +262,7 @@ if args.save_final_population:
 
 if args.parse_log_file:
     log_df = parse_log_file(sim.log_filepath)
+
+if args.record_hsi_event_details:
+    with open(args.output_dir / "hsi_event_details.json", "w") as f:
+        json.dump(list(sim.modules['HealthSystem'].hsi_event_details), f)
