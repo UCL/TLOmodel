@@ -170,6 +170,10 @@ class Epilepsy(Module):
         df.loc[df.is_alive, 'ep_epi_death'] = False
         df.loc[df.is_alive, 'ep_disability'] = 0
 
+        # allocate initial ep_seiz_stat
+        alive_idx = df.index[df.is_alive]
+        df.loc[alive_idx, 'ep_seiz_stat'] = self.rng.choice(['0', '1', '2', '3'], size=len(alive_idx),
+                                                                   p=self.parameters['init_epil_seiz_status'])
 
         def allocate_antiepileptic(status, probability):
             mask = (df.is_alive & (df.ep_seiz_stat == status))
@@ -192,7 +196,7 @@ class Epilepsy(Module):
         or stopping.
         """
         epilepsy_poll = EpilepsyEvent(self)
-        sim.schedule_event(epilepsy_poll, sim.date + DateOffset(months=0))
+        sim.schedule_event(epilepsy_poll, sim.date + DateOffset(months=1))
 
         event = EpilepsyLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
@@ -334,11 +338,11 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
                 'n_alive': n_alive
             }
         )
-
+        # transition within epilepsy states - cant currently be used for transition from 0
         def transition_seiz_stat(current_state, new_state, onantiep, transition_probability):
 
             in_current_state = df.index[df.is_alive & (df.ep_seiz_stat == current_state)
-                                         & df.ep_antiep == onantiep]
+                                        & (df.ep_seiz_stat != '0') & df.ep_antiep == onantiep]
             random_draw = self.module.rng.random_sample(size=len(in_current_state))
             changing_state = in_current_state[transition_probability > random_draw]
             df.loc[changing_state, 'ep_seiz_stat'] = new_state
@@ -346,17 +350,17 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         transition_seiz_stat('1', '2', False, self.base_prob_3m_seiz_stat_infreq_none)
         transition_seiz_stat('1', '2', True, self.base_prob_3m_seiz_stat_infreq_none/self.rr_effectiveness_antiepileptics)
 
-        transition_seiz_stat('2', '3', False, self.base_prob_3m_seiz_stat_freq_infreq)
-        transition_seiz_stat('2', '3', True, self.base_prob_3m_seiz_stat_freq_infreq / self.rr_effectiveness_antiepileptics)
+#       transition_seiz_stat('2', '3', False, self.base_prob_3m_seiz_stat_freq_infreq)
+#       transition_seiz_stat('2', '3', True, self.base_prob_3m_seiz_stat_freq_infreq / self.rr_effectiveness_antiepileptics)
 
-        transition_seiz_stat('3', '1', False, self.base_prob_3m_seiz_stat_none_freq)
-        transition_seiz_stat('3', '1', True, self.base_prob_3m_seiz_stat_none_freq * self.rr_effectiveness_antiepileptics)
+#       transition_seiz_stat('3', '1', False, self.base_prob_3m_seiz_stat_none_freq)
+#       transition_seiz_stat('3', '1', True, self.base_prob_3m_seiz_stat_none_freq * self.rr_effectiveness_antiepileptics)
 
-        transition_seiz_stat('2', '1', False, self.base_prob_3m_seiz_stat_none_infreq)
-        transition_seiz_stat('2', '1', True, self.base_prob_3m_seiz_stat_none_infreq * self.rr_effectiveness_antiepileptics)
+#       transition_seiz_stat('2', '1', False, self.base_prob_3m_seiz_stat_none_infreq)
+#       transition_seiz_stat('2', '1', True, self.base_prob_3m_seiz_stat_none_infreq * self.rr_effectiveness_antiepileptics)
 
-        transition_seiz_stat('3', '2', False, self.base_prob_3m_seiz_stat_infreq_freq)
-        transition_seiz_stat('3', '2', True, self.base_prob_3m_seiz_stat_infreq_freq * self.rr_effectiveness_antiepileptics)
+#       transition_seiz_stat('3', '2', False, self.base_prob_3m_seiz_stat_infreq_freq)
+#       transition_seiz_stat('3', '2', True, self.base_prob_3m_seiz_stat_infreq_freq * self.rr_effectiveness_antiepileptics)
 
 #       transition_seiz_stat('*', '0', False, 1)
 #       transition_seiz_stat('*', '0', True, 1)
