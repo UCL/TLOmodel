@@ -341,7 +341,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         def transition_seiz_stat_not_on_antiep(current_state, new_state, transition_probability):
 
-            in_current_state = df.index[df.is_alive & (df.ep_seiz_stat == current_state)]
+            in_current_state = df.index[df.is_alive & (df.ep_seiz_stat == current_state) & ~df.ep_antiep]
             random_draw = self.module.rng.random_sample(size=len(in_current_state))
             changing_state = in_current_state[transition_probability > random_draw]
             df.loc[changing_state, 'ep_seiz_stat'] = new_state
@@ -354,7 +354,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         def transition_seiz_stat_on_antiep(current_state, new_state, transition_probability):
 
-            in_current_state = df.index[df.is_alive & (df.ep_seiz_stat == current_state)]
+            in_current_state = df.index[df.is_alive & (df.ep_seiz_stat == current_state) & df.ep_antiep]
             random_draw = self.module.rng.random_sample(size=len(in_current_state))
             changing_state = in_current_state[transition_probability > random_draw]
             df.loc[changing_state, 'ep_seiz_stat'] = new_state
