@@ -26,7 +26,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2021,  1, 1)
+end_date = Date(2011,  1, 1)
 popsize = 190000
 
 # Establish the simulation object
@@ -63,11 +63,11 @@ sim.simulate(end_date=end_date)
 # %% read the results
 output = parse_log_file(sim.log_filepath)
 
-xyz = pd.Series(output['tlo.methods.epilepsy']['epilepsy_logging'].values)
+prop_seiz_stat_0 = pd.Series(
+ output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_0'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
 
-# prop_seiz_stat_0 = pd.Series(
-# output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_0'].values,
-#    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
+prop_seiz_stat_0.plot()
+plt.ylim(0, 1)
+plt.show()
 
-# prop_seiz_stat_0.plot()
-# plt.show()
