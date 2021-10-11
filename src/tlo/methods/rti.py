@@ -3449,13 +3449,12 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         # Request accident and emergency staff time
         the_appt_footprint['AccidentsandEmerg'] = 1
+        df = self.sim.population.props
+        # determine if this is a child
         if df.loc[person_id, 'age_years'] < 15:
             self.is_child = True
         else:
             self.is_child = False
-        # create placeholder footprint requirements
-        df = self.sim.population.props
-        # determine if this is a child
         the_accepted_facility_level = 1
         self.TREATMENT_ID = 'RTI_Shock_Treatment'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
@@ -3818,6 +3817,7 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        df = self.sim.population.props
         if df.loc[person_id, 'age_years'] < 5:
             the_appt_footprint['Under5OPD'] = 1
         else:
@@ -4045,6 +4045,7 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        df = self.sim.population.props
         if df.loc[person_id, 'age_years'] < 5:
             the_appt_footprint['Under5OPD'] = 1
         else:
@@ -4110,6 +4111,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
         #   - get an 'empty' footprint:
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         #   - update to reflect the appointments that are required
+        df = self.sim.population.props
         if df.loc[person_id, 'age_years'] < 5:
             the_appt_footprint['Under5OPD'] = 1
         else:
