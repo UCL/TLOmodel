@@ -817,9 +817,8 @@ class Alri(Module):
 
         # Get DALY weights
         if 'HealthBurden' in self.sim.modules.keys():
-            self.daly_wts['daly_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
-            self.daly_wts['daly_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
-            self.daly_wts['daly_very_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=46)
+            self.daly_wts['daly_non_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
+            self.daly_wts['daly_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=46)
 
         # Define the max episode duration
         self.max_duration_of_episode = DateOffset(days=self.parameters['days_between_treatment_and_cure'])
@@ -852,7 +851,7 @@ class Alri(Module):
 
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
         total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has('fast_breathing')] = self.daly_wts['daly_ALRI']
+            self.sim.modules['SymptomManager'].who_has('fast_breathing')] = self.daly_wts['daly_non_severe_ALRI']
         total_daly_values.loc[
             self.sim.modules['SymptomManager'].who_has('danger_signs')] = self.daly_wts['daly_severe_ALRI']
 
