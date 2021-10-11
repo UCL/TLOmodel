@@ -196,7 +196,7 @@ class Epilepsy(Module):
         or stopping.
         """
         epilepsy_poll = EpilepsyEvent(self)
-        sim.schedule_event(epilepsy_poll, sim.date + DateOffset(months=1))
+        sim.schedule_event(epilepsy_poll, sim.date + DateOffset(months=3))
 
         event = EpilepsyLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
@@ -271,19 +271,19 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=3))
         p = module.parameters
 
-        self.base_3m_prob_epilepsy = p['base_3m_prob_epilepsy'] / 3
+        self.base_3m_prob_epilepsy = p['base_3m_prob_epilepsy']
         self.rr_epilepsy_age_ge20 = p['rr_epilepsy_age_ge20']
         self.prop_inc_epilepsy_seiz_freq = p['prop_inc_epilepsy_seiz_freq']
         self.base_prob_3m_seiz_stat_freq_infreq = p['base_prob_3m_seiz_stat_freq_infreq']
         self.rr_effectiveness_antiepileptics = p['rr_effectiveness_antiepileptics']
-        self.base_prob_3m_seiz_stat_infreq_freq = p['base_prob_3m_seiz_stat_infreq_freq'] / 3
-        self.base_prob_3m_seiz_stat_none_freq = p['base_prob_3m_seiz_stat_none_freq'] / 3
-        self.base_prob_3m_seiz_stat_none_infreq = p['base_prob_3m_seiz_stat_none_infreq'] / 3
-        self.base_prob_3m_seiz_stat_infreq_none = p['base_prob_3m_seiz_stat_infreq_none'] / 3
-        self.base_prob_3m_antiepileptic = p['base_prob_3m_antiepileptic'] / 3
+        self.base_prob_3m_seiz_stat_infreq_freq = p['base_prob_3m_seiz_stat_infreq_freq']
+        self.base_prob_3m_seiz_stat_none_freq = p['base_prob_3m_seiz_stat_none_freq']
+        self.base_prob_3m_seiz_stat_none_infreq = p['base_prob_3m_seiz_stat_none_infreq']
+        self.base_prob_3m_seiz_stat_infreq_none = p['base_prob_3m_seiz_stat_infreq_none']
+        self.base_prob_3m_antiepileptic = p['base_prob_3m_antiepileptic']
         self.rr_antiepileptic_seiz_infreq = p['rr_antiepileptic_seiz_infreq']
         self.base_prob_3m_stop_antiepileptic = p['base_prob_3m_stop_antiepileptic']
         self.rr_stop_antiepileptic_seiz_infreq_or_freq = p['rr_stop_antiepileptic_seiz_infreq_or_freq']
