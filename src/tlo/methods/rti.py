@@ -1130,7 +1130,8 @@ class RTI(Module):
                     - p['daly_wt_basilar_skull_fracture']],
             '133a': [[p['head_prob_133a'], 1, 3, 3, 4], p['daly_wt_subarachnoid_hematoma'], 0,
                      - p['daly_wt_subarachnoid_hematoma']],
-            '133b': [[p['head_prob_133b'], 1, 3, 3, 4], p['daly_wt_brain_contusion'], 0, - p['daly_wt_brain_contusion']],
+            '133b': [[p['head_prob_133b'], 1, 3, 3, 4], p['daly_wt_brain_contusion'], 0,
+                     - p['daly_wt_brain_contusion']],
             '133c': [[p['head_prob_133c'], 1, 3, 3, 4], p['daly_wt_intraventricular_haemorrhage'], 0,
                      - p['daly_wt_intraventricular_haemorrhage']],
             '133d': [[p['head_prob_133d'], 1, 3, 3, 4], p['daly_wt_subgaleal_hematoma'], 0,
@@ -1171,8 +1172,10 @@ class RTI(Module):
                     - p['daly_wt_neck_internal_bleeding']],
             '363': [[p['neck_prob_363'], 3, 6, 3, 4], p['daly_wt_neck_internal_bleeding'], 0,
                     - p['daly_wt_neck_internal_bleeding']],
-            '322': [[p['neck_prob_322'], 3, 2, 2, 3], p['daly_wt_neck_dislocation'], 0, - p['daly_wt_neck_dislocation']],
-            '323': [[p['neck_prob_323'], 3, 2, 3, 4], p['daly_wt_neck_dislocation'], 0, - p['daly_wt_neck_dislocation']],
+            '322': [[p['neck_prob_322'], 3, 2, 2, 3], p['daly_wt_neck_dislocation'], 0,
+                    - p['daly_wt_neck_dislocation']],
+            '323': [[p['neck_prob_323'], 3, 2, 3, 4], p['daly_wt_neck_dislocation'], 0,
+                    - p['daly_wt_neck_dislocation']],
             # injuries to the chest
             '4101': [[p['thorax_prob_4101'], 4, 10, 1, 2], p['daly_wt_facial_soft_tissue_injury'], 0,
                      - p['daly_wt_facial_soft_tissue_injury']],
@@ -1186,7 +1189,8 @@ class RTI(Module):
             '463': [[p['thorax_prob_463'], 4, 6, 3, 4], p['daly_wt_hemothorax'], 0, - p['daly_wt_hemothorax']],
             '453a': [[p['thorax_prob_453a'], 4, 5, 3, 4], p['daly_wt_diaphragm_rupture'], 0,
                      - p['daly_wt_diaphragm_rupture']],
-            '453b': [[p['thorax_prob_453b'], 4, 5, 3, 4], p['daly_wt_lung_contusion'], 0, - p['daly_wt_lung_contusion']],
+            '453b': [[p['thorax_prob_453b'], 4, 5, 3, 4], p['daly_wt_lung_contusion'], 0,
+                     - p['daly_wt_lung_contusion']],
             '412': [[p['thorax_prob_412'], 4, 1, 2, 3], p['daly_wt_rib_fracture'], 0, - p['daly_wt_rib_fracture']],
             '414': [[p['thorax_prob_414'], 4, 1, 4, 5], p['daly_wt_flail_chest'], 0, - p['daly_wt_flail_chest']],
             '441': [[p['thorax_prob_441'], 4, 4, 1, 2], p['daly_wt_closed_pneumothorax'], 0,
@@ -1269,9 +1273,10 @@ class RTI(Module):
                      p['daly_wt_burns_less_than_20_percent_body_area_with_treatment'],
                      - p['daly_wt_burns_less_than_20_percent_body_area_with_treatment']],
             # foot fracture, can be open or not, open is more severe
-            '811': [[p['lower_ex_prob_811'], 8, 1, 1, 2], p['daly_wt_foot_fracture_short_term_with_without_treatment'], 0,
-                    - p['daly_wt_foot_fracture_short_term_with_without_treatment']],
-            '813do': [[p['lower_ex_prob_813do'], 8, 1, 3, 4], p['daly_wt_foot_fracture_short_term_with_without_treatment']
+            '811': [[p['lower_ex_prob_811'], 8, 1, 1, 2], p['daly_wt_foot_fracture_short_term_with_without_treatment'],
+                    0, - p['daly_wt_foot_fracture_short_term_with_without_treatment']],
+            '813do': [[p['lower_ex_prob_813do'], 8, 1, 3, 4],
+                      p['daly_wt_foot_fracture_short_term_with_without_treatment']
                       + p['daly_wt_facial_soft_tissue_injury'], 0,
                       - p['daly_wt_foot_fracture_short_term_with_without_treatment'] -
                       p['daly_wt_facial_soft_tissue_injury']],
@@ -1280,7 +1285,8 @@ class RTI(Module):
                     - p['daly_wt_patella_tibia_fibula_fracture_without_treatment'] +
                     p['daly_wt_patella_tibia_fibula_fracture_with_treatment'],
                     - p['daly_wt_patella_tibia_fibula_fracture_with_treatment']],
-            '813eo': [[p['lower_ex_prob_813eo'], 8, 1, 3, 4], p['daly_wt_patella_tibia_fibula_fracture_without_treatment']
+            '813eo': [[p['lower_ex_prob_813eo'], 8, 1, 3, 4],
+                      p['daly_wt_patella_tibia_fibula_fracture_without_treatment']
                       + p['daly_wt_facial_soft_tissue_injury'], 0,
                       - p['daly_wt_patella_tibia_fibula_fracture_without_treatment'] -
                       p['daly_wt_facial_soft_tissue_injury']],
@@ -1302,14 +1308,17 @@ class RTI(Module):
             '813co': [[p['lower_ex_prob_813co'], 8, 1, 3, 4], p['daly_wt_femur_fracture_short_term'] +
                       p['daly_wt_facial_soft_tissue_injury'], 0, - p['daly_wt_femur_fracture_short_term'] -
                       p['daly_wt_facial_soft_tissue_injury']],
-            '822a': [[p['lower_ex_prob_822a'], 8, 2, 2, 3], p['daly_wt_dislocated_hip'], 0, - p['daly_wt_dislocated_hip']],
+            '822a': [[p['lower_ex_prob_822a'], 8, 2, 2, 3], p['daly_wt_dislocated_hip'], 0,
+                     - p['daly_wt_dislocated_hip']],
             '822b': [[p['lower_ex_prob_822b'], 8, 2, 2, 3], p['daly_wt_dislocated_knee'], 0,
                      - p['daly_wt_dislocated_knee']],
             '882': [[p['lower_ex_prob_882'], 8, 8, 2, 3], p['daly_wt_amputated_toes'], 0, 0],
-            '883': [[p['lower_ex_prob_883'], 8, 8, 3, 4], p['daly_wt_unilateral_lower_limb_amputation_without_treatment'],
+            '883': [[p['lower_ex_prob_883'], 8, 8, 3, 4],
+                    p['daly_wt_unilateral_lower_limb_amputation_without_treatment'],
                     - p['daly_wt_unilateral_lower_limb_amputation_without_treatment'] +
                     p['daly_wt_unilateral_lower_limb_amputation_with_treatment'], 0],
-            '884': [[p['lower_ex_prob_884'], 8, 8, 4, 5], p['daly_wt_bilateral_lower_limb_amputation_without_treatment'],
+            '884': [[p['lower_ex_prob_884'], 8, 8, 4, 5],
+                    p['daly_wt_bilateral_lower_limb_amputation_without_treatment'],
                     - p['daly_wt_bilateral_lower_limb_amputation_without_treatment'] +
                     p['daly_wt_bilateral_lower_limb_amputation_with_treatment'], 0]
         }
@@ -2156,8 +2165,7 @@ class RTI(Module):
         # Get the probability distribution for the likelihood of a certain body region being injured.
         injlocdist = p['injury_location_distribution']
         # create a dataframe to store the injury persons information in
-        inj_df = pd.DataFrame(columns = ['Injury_codes', 'AIS_scores', 'ISS', 'Polytrauma', 'MAIS',
-                                              'Number_of_injuries'])
+        inj_df = pd.DataFrame(columns=['Injury_codes', 'AIS_scores', 'ISS', 'Polytrauma', 'MAIS', 'Number_of_injuries'])
         # Create empty lists to store information of each person's injuries to be used in logging:
         # predicted injury location
         predinjlocs = []
