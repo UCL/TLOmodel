@@ -2245,7 +2245,6 @@ class RTI(Module):
 
         # Begin logging injury information
         # ============================ Injury category incidence ======================================================
-        df = self.sim.population.props
         # log the incidence of each injury category
         # count the number of injuries that fall in each category
         amputationcounts = sum(1 for i in predinjcat if i == '8')
@@ -2256,6 +2255,7 @@ class RTI(Module):
         spinalcordinjurycounts = sum(1 for i in predinjcat if i == '7')
         other_counts = sum(1 for i in predinjcat if i in ['2', '4', '5', '6', '9'])
         # calculate the incidence of this injury in the population
+        df = self.sim.population.props
         n_alive = len(df.is_alive)
         inc_amputations = amputationcounts / ((n_alive - amputationcounts) * 1 / 12) * 100000
         inc_burns = burncounts / ((n_alive - burncounts) * 1 / 12) * 100000
@@ -2943,12 +2943,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         #   - get an 'empty' foot
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_accepted_facility_level = 1
-        # Place holder appointment footprints to ensure there is at least one
-        is_child = self.sim.population.props.at[person_id, 'age_years'] < 5.0
-        if is_child:
-            the_appt_footprint['Under5OPD'] = 1.0  # Child out-patient appointment
-        else:
-            the_appt_footprint['Over5OPD'] = 1.0  # Adult out-patient appointment
+        the_appt_footprint['AccidentsandEmerg'] = 1
 
         # ======================= Design treatment plan, appointment type =============================================
         """ Here, RTI_MedInt designs the treatment plan of the person's injuries, the following determines what the
@@ -3452,16 +3447,15 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        self.is_child = False
-        # create placeholder footprint requirements
-        df = self.sim.population.props
-        if df.loc[person_id, 'age_years'] < 5:
-            the_appt_footprint['Under5OPD'] = 1  # Placeholder requirement
-        else:
-            the_appt_footprint['Over5OPD'] = 1  # Placeholder requirement
-        # determine if this is a child
+        # Request accident and emergency staff time
+        the_appt_footprint['AccidentsandEmerg'] = 1
         if df.loc[person_id, 'age_years'] < 15:
             self.is_child = True
+        else:
+            self.is_child = False
+        # create placeholder footprint requirements
+        df = self.sim.population.props
+        # determine if this is a child
         the_accepted_facility_level = 1
         self.TREATMENT_ID = 'RTI_Shock_Treatment'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
@@ -3559,7 +3553,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # Placeholder requirement
+        the_appt_footprint['AccidentsandEmerg'] = 1
         the_accepted_facility_level = 1
         self.TREATMENT_ID = 'RTI_Fracture_Cast'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
@@ -3701,7 +3695,6 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # Placeholder requirement
         the_appt_footprint['MinorSurg'] = 1  # wound debridement requires minor surgery
         the_accepted_facility_level = 1
         self.TREATMENT_ID = 'RTI_Open_Fracture_Treatment'  # This must begin with the module name
@@ -3825,7 +3818,10 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # Placeholder requirement
+        if df.loc[person_id, 'age_years'] < 5:
+            the_appt_footprint['Under5OPD'] = 1
+        else:
+            the_appt_footprint['Over5OPD'] = 1
         the_accepted_facility_level = 1
         self.TREATMENT_ID = 'RTI_Suture'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
@@ -4049,7 +4045,10 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # Placeholder requirement
+        if df.loc[person_id, 'age_years'] < 5:
+            the_appt_footprint['Under5OPD'] = 1
+        else:
+            the_appt_footprint['Over5OPD'] = 1
         the_accepted_facility_level = 1
         self.TREATMENT_ID = 'RTI_Tetanus_Vaccine'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
@@ -4111,8 +4110,10 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
         #   - get an 'empty' footprint:
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         #   - update to reflect the appointments that are required
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
-
+        if df.loc[person_id, 'age_years'] < 5:
+            the_appt_footprint['Under5OPD'] = 1
+        else:
+            the_appt_footprint['Over5OPD'] = 1
         # Define the facilities at which this event can occur (only one is allowed)
         # Choose from: list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
         #                            ['Facility_Level']))
