@@ -1094,8 +1094,6 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=individual_id)
 
     def apply(self, individual_id):
-        if individual_id == 3160:
-            x='y'
         df = self.sim.population.props
         params = self.module.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -1340,7 +1338,6 @@ class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
 
         # run check
         assert child.age_days < 7
-        print(individual_id)
         assert not nci[individual_id]['passed_through_week_one']
 
         logger.debug(key='message', data=f'Newborn {individual_id} has arrived at PostnatalWeekOneEvent')

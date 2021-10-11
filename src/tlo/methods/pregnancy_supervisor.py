@@ -992,7 +992,9 @@ class PregnancySupervisor(Module):
         """
         mni = self.mother_and_newborn_info
 
-        assert individual_id in mni
+        if individual_id not in mni:
+            logger.debug(key='msg', data='request to store dalys for woman not in MNI')
+            return
 
         logger.debug(key='msg', data=f'{mni_variable} is being stored for mother {individual_id} on {self.sim.date}')
         mni[individual_id][f'{mni_variable}'] = self.sim.date
@@ -1929,7 +1931,6 @@ class PregnancySupervisor(Module):
                       early_initiation_anc_below_4.loc[~early_initiation_anc_below_4]]:
             schedulde_late_visit(slice)
 
-
     def generate_mother_and_newborn_dictionary_for_individual(self, individual_id):
         """ This function generates variables within the mni dictionary for women. It is abstracted to a function for
         testing purposes"""
@@ -2255,14 +2256,12 @@ class EctopicPregnancyRuptureEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        # Check the right woman has arrived at this event
-        assert df.at[individual_id, 'ps_ectopic_pregnancy'] == 'not_ruptured'
-
         if not df.at[individual_id, 'is_alive']:
             return
 
-        logger.debug(key='message', data=f'persons {individual_id} untreated ectopic pregnancy has now ruptured on '
-                                         f'date {self.sim.date}')
+        # Check the right woman has arrived at this event
+        assert df.at[individual_id, 'ps_ectopic_pregnancy'] == 'not_ruptured'
+
         logger.info(key='maternal_complication', data={'person': individual_id,
                                                        'type': 'ectopic_ruptured',
                                                        'timing': 'antenatal'})
@@ -2350,16 +2349,18 @@ class GestationalDiabetesGlycaemicControlEvent(Event, IndividualScopeEventMixin)
 
         if mother.ps_gest_diab != 'none':
             # Check only the right women are sent here
-            assert mother.ac_gest_diab_on_treatment != 'none'
+            if mother.ac_gest_diab_on_treatment != 'none':
+                return
+            else:
+                # We apply a probability that the treatment this woman is receiving for her GDM (diet and exercise/
+                # oral anti-diabetics/ insulin) will not control this womans hyperglycaemia
+                if self.module.rng.random_sample() > params[f'prob_glycaemic_' \
+                                                            f'control_{mother.ac_gest_diab_on_treatment }']:
 
-            # We apply a probability that the treatment this woman is receiving for her GDM (diet and exercise/
-            # oral anti-diabetics/ insulin) will not control this womans hyperglycaemia
-            if self.module.rng.random_sample() > params[
-                    f'prob_glycaemic_control_{mother.ac_gest_diab_on_treatment }']:
-
-                # If so we reset her diabetes status as uncontrolled, her treatment is ineffective at reducing risk of
-                # still birth, and when she returns for follow up she should be started on the next treatment available
-                df.at[individual_id, 'ps_gest_diab'] = 'uncontrolled'
+                    # If so we reset her diabetes status as uncontrolled, her treatment is ineffective at reducing
+                    # risk of still birth, and when she returns for follow up she should be started on the next
+                    # treatment available
+                    df.at[individual_id, 'ps_gest_diab'] = 'uncontrolled'
 
 
 class SyphilisInPregnancyEvent(Event, IndividualScopeEventMixin):

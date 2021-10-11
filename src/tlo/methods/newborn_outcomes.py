@@ -616,11 +616,11 @@ class NewbornOutcomes(Module):
         :param child_id: child_id
         """
         df = self.sim.population.props
-        params = self.current_parameters
         child = df.loc[child_id]
 
         # Ensure only preterm infants have risk of RDS applied
-        assert child.nb_early_preterm or child.nb_late_preterm
+        if not child.nb_early_preterm or not child.nb_late_preterm:
+            return
 
         # Use the linear model to calculate individual risk and make changes
         if self.eval(self.nb_linear_models['rds_preterm'], child_id):
@@ -1326,16 +1326,15 @@ class NewbornOutcomes(Module):
 
             # Neonates who were delivered in a facility are automatically scheduled to receive care at birth at the
             # same level of facility that they were delivered in
-            if m['delivery_setting'] == 'health_centre':
-                event = HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(
-                    self, person_id=child_id, facility_level_of_this_hsi=1)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=1))
 
-            if m['delivery_setting'] == 'hospital':
+            if m['delivery_setting'] != 'home_birth':
+                if m['delivery_setting'] == 'health_centre':
+                    f_level = 1
+                elif m['delivery_setting'] == 'hospital':
+                    f_level = int(self.rng.choice([1, 2]))
+
                 event = HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(
-                    self, person_id=child_id, facility_level_of_this_hsi=int(self.rng.choice([1, 2])))
+                    self, person_id=child_id, facility_level_of_this_hsi=f_level)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
@@ -1508,7 +1507,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
             return
 
         if (nci[person_id]['will_receive_pnc'] == 'early') and not nci[person_id]['passed_through_week_one']:
-            assert self.sim.date <= (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=1))
+            assert self.sim.date < (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2))
             assert df.at[person_id, 'nb_pnc_check'] == 0
 
         elif nci[person_id]['will_receive_pnc'] == 'late' and not nci[person_id]['passed_through_week_one']:

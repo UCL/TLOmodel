@@ -418,14 +418,14 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             if df.at[person_id, 'ps_ectopic_pregnancy'] != 'none':
                 event = HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
                     module=self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-                health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
+                health_system.schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
             # -----  COMPLICATIONS OF ABORTION  -----
             abortion_complications = self.sim.modules['PregnancySupervisor'].abortion_complications
             if abortion_complications.has_any([person_id], 'sepsis', 'injury', 'haemorrhage', 'other', first=True):
                 event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
                     module=self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-                health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
+                health_system.schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
         if 'Labour' in self.sim.modules:
             mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -438,7 +438,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                     event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
-                    health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
+                    health_system.schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
             # -----  COMPLICATION AFTER BIRTH  -----
                 if df.at[person_id, 'la_currently_in_labour'] and (mni[person_id]['sought_care_for_complication']) \
@@ -446,7 +446,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                     event = HSI_Labour_ReceivesPostnatalCheck(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
-                    health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
+                    health_system.schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
         # -----  SUSPECTED DEPRESSION  -----
         if "Depression" in self.sim.modules:

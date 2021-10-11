@@ -10,11 +10,11 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'calibration_run_all_modules.py'  # <-- update this to look at other results
+scenario_filename = 'mph_long_run_calibration_check.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_30k_normal_pop_calibration_run_all_modules-2021-09-29T162954Z/death'
+graph_location = 'output_graphs_30k_long_run_mph_long_run_calibration_check-2021-10-06T102122Z/2010-2020/death'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -22,7 +22,8 @@ results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 #create_pickles_locally(results_folder)  # if not created via batch
 
 # Enter the years the simulation has ran for here?
-sim_years = [2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
+sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]# 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028,
+             #2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040]
 # todo: replace with something more clever at some point
 
 # ============================================HELPER FUNCTIONS... =====================================================
@@ -139,49 +140,50 @@ def get_comp_mean_and_rate_across_multiple_dataframes(complication, denominators
 
 
 def simple_line_chart(model_rate, target_rate, x_title, y_title, title, file_name):
-    plt.plot(sim_years, model_rate, 'o-g', label="Model rate", color='steelblue')
-    plt.plot(sim_years, target_rate, 'o-g', label="Target rate", color='darkseagreen')
+    plt.plot(sim_years, model_rate, 'o-g', label="Model", color='deepskyblue')
+    plt.plot(sim_years, target_rate, 'o-g', label="Target", color='darkseagreen')
     plt.xlabel(x_title)
     plt.ylabel(y_title)
     plt.title(title)
     plt.legend()
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
 def simple_line_chart_two_targets(model_rate, target_rate_one, target_rate_two, x_title, y_title, title, file_name):
-    plt.plot(sim_years, model_rate, 'o-g', label="Model rate", color='steelblue')
-    plt.plot(sim_years, target_rate_one, 'o-g', label="Target rate", color='darkseagreen')
-    plt.plot(sim_years, target_rate_two, 'o-g', label="Target rate (adj.)", color='powderblue')
+    plt.plot(sim_years, model_rate, 'o-g', label="Model", color='deepskyblue')
+    plt.plot(sim_years, target_rate_one, 'o-g', label="Target", color='darkseagreen')
+    plt.plot(sim_years, target_rate_two, 'o-g', label="Target (adj.)", color='powderblue')
     plt.xlabel(x_title)
     plt.ylabel(y_title)
     plt.title(title)
     plt.legend()
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
 def simple_bar_chart(model_rates, x_title, y_title, title, file_name):
     bars = sim_years
     x_pos = np.arange(len(bars))
-    plt.bar(x_pos, model_rates)
+    plt.bar(x_pos, model_rates, color='thistle')
     plt.xticks(x_pos, bars)
     plt.xlabel(x_title)
     plt.ylabel(y_title)
     plt.title(title)
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.legend()
+    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
-
 
 def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_rate, x_label, y_label, title, file_name):
     fig, ax = plt.subplots()
-    ax.plot(sim_years, mean_list)
-    ax.fill_between(sim_years, lq_list, uq_list, color='b', alpha=.1)
-    plt.plot(sim_years, target_rate, 'o-g', label="Target rate", color='darkseagreen')
+    ax.plot(sim_years, mean_list, 'o-g', label="Model", color='deepskyblue')
+    ax.fill_between(sim_years, lq_list, uq_list, color='b', alpha=.1, label="UI (2.5-92.5)")
+    plt.plot(sim_years, target_rate, 'o-g', label="Target", color='darkseagreen')
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(title)
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.legend()
+    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -228,19 +230,73 @@ death_results_labels = extract_results(
 )
 mm = get_comp_mean_and_rate('Maternal Disorders', total_births_per_year, death_results_labels, 100000)
 
-mmr_rates = get_target_rate(675, 439)
+# mmr_rates = get_target_rate(675, 439)
 
 fig, ax = plt.subplots()
-ax.plot(sim_years, mm[0])
-ax.fill_between(sim_years, mm[1], mm[2], label="Model Output", color='b', alpha=.1)
-plt.plot(sim_years, mmr_rates[0], 'o-g', label="Target rate", color='darkseagreen')
-plt.plot(sim_years, mmr_rates[1], 'o-g', label="Target rate (Adj.)", color='darkslategrey')
+ax.plot(sim_years, mm[0], label="Model (mean)", color='deepskyblue')
+ax.fill_between(sim_years, mm[1], mm[2], color='b', alpha=.1)
+plt.errorbar(2010, 675, yerr=(780-570)/2, label='DHS 2010', fmt='o', color='green', ecolor='mediumseagreen',
+             elinewidth=3, capsize=0)
+plt.errorbar(2015, 439, yerr=(531-348)/2, label='DHS 2015', fmt='o', color='green', ecolor='mediumseagreen',
+             elinewidth=3, capsize=0)
+ax.plot([2011, 2015, 2017], [444, 370, 349], label="WHO MMEIG", color='red')
+ax.fill_between([2011, 2015, 2017], [347, 269, 244], [569, 517, 507], color='pink', alpha=.1)
+ax.plot([2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019], [242, 235, 229, 223, 219, 219, 217, 214, 209],
+        label="GBD (2019)", color='black')
+ax.fill_between([2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
+                [168, 165, 158, 151, 150, 146, 141, 141, 134],
+                [324, 313, 310, 307, 304, 307, 304, 300, 294], color='grey', alpha=.1)
 plt.xlabel('Year')
-plt.ylabel("Rate per 100,000 births")
-plt.title('Maternal Mortality Rate per Year')
+plt.ylabel("Deaths per 100,000 live births")
+plt.title('Maternal Mortality Ratio per Year')
 plt.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mmr.png')
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mmr.png')
 plt.show()
+
+# ==============================================  DEATHS... ======================================================
+scaled_deaths = extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="death",
+    custom_generate_series=(
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'label'])['year'].count()),
+    do_scaling=True
+)
+
+deaths = get_mean_and_quants_from_str_df(scaled_deaths, 'Maternal Disorders')
+
+gbd_deaths_2010_2019_data = [
+    [1308.234973, 1276.183582,1236.480898, 1203.78822,1173.894982, 1147.804779, 1149.500937,1134.968587, 1127.841623,
+     1129.940058],[908.8606818, 886.6127208, 869.109778, 833.9787632, 795.7024331, 785.9900535, 766.3767863,
+                   738.2473034, 741.6140021, 728.0930259],
+    [1738.37933, 1714.101592, 1650.485182, 1629.394539, 1614.174427, 1596.760928, 1608.548815, 1589.998955,
+     1585.286372,1591.604143]]
+
+mean_deaths = list()
+death_lq = list()
+death_uq = list()
+years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
+for year in years:
+    mean_deaths.append(scaled_deaths.loc[year, 'Maternal Disorders'].mean())
+    death_lq.append(scaled_deaths.loc[year, 'Maternal Disorders'].quantile(0.025))
+    death_uq.append(scaled_deaths.loc[year, 'Maternal Disorders'].quantile(0.925))
+
+model_ci = [(x - y) / 2 for x, y in zip(death_uq, death_lq)]
+gbd_ci = [(x - y) / 2 for x, y in zip(gbd_deaths_2010_2019_data[2], gbd_deaths_2010_2019_data[1])]
+
+N = len(mean_deaths)
+ind = np.arange(N)
+width = 0.35
+plt.bar(ind, mean_deaths, width, label='Model', yerr=model_ci, color='teal')
+plt.bar(ind + width, gbd_deaths_2010_2019_data[0], width, label='GBD', yerr=gbd_ci, color='olivedrab')
+plt.ylabel('Total Deaths Maternal Deaths (scaled)')
+plt.title('Yearly Modelled Maternal Deaths Compared to GBD')
+plt.xticks(ind + width / 2, (years))
+plt.legend(loc='best')
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/deaths_gbd_comparison.png')
+plt.show()
+
+# do WHO estiamte also
 
 # =================================== COMPLICATION LEVEL MMR ==========================================================
 death_results = extract_results(
@@ -325,26 +381,34 @@ for year in sim_years:
 def pie_prop_cause_of_death(values, years, labels, title):
     sizes = values
     fig1, ax1 = plt.subplots()
-    ax1.pie(sizes, labels=labels, autopct='%1.1f%%',
-                shadow=True, startangle=90)
-    ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    ax1.pie(sizes, shadow=True, startangle=90)
+    ax1.axis('equal')
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.5, box.height])
+    plt.legend(labels, loc='center left', bbox_to_anchor=(1, 0.5))
+    # Equal aspect ratio ensures that pie is drawn as a circle.
     plt.title(f'Proportion of total maternal deaths by cause ({title}) {years}')
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mat_death_by_cause_{title}_{years}.png')
+    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mat_death_by_cause_{title}_{years}.png',
+    #            bbox_inches="tight")
     plt.show()
 
 props_df = pd.DataFrame(data=proportions_dicts)
 props_df = props_df.fillna(0)
 
-labels = list(props_df.index)
+#labels = list(props_df.index)
+labels_10 = list()
+labels_15 = list()
 values_10 = list()
 values_15 = list()
 
 for index in props_df.index:
     values_10.append(props_df.loc[index, slice(2010, 2014)].mean())
+    labels_10.append(f'{index} ({round(props_df.loc[index, slice(2010, 2014)].mean(), 2)} %)')
     values_15.append(props_df.loc[index, slice(2015, 2020)].mean())
+    labels_15.append(f'{index} ({round(props_df.loc[index, slice(2015, 2020)].mean(), 2)} %)')
 
-pie_prop_cause_of_death(values_10, '2010_2014', list(props_df.index), 'all')
-pie_prop_cause_of_death(values_15, '2015-2020', list(props_df.index), 'all')
+pie_prop_cause_of_death(values_10, '2010_2014', labels_10, 'all')
+pie_prop_cause_of_death(values_15, '2015-2020', labels_15, 'all')
 
 simplified_df = props_df.transpose()
 
@@ -359,17 +423,23 @@ for column in ['postpartum_haemorrhage', 'secondary_postpartum_haemorrhage', 'se
                'antenatal_sepsis']:
     simplified_df = simplified_df.drop(columns=[column])
 
+all_labels = list()
+labels_10 = list()
+labels_15 = list()
 all_values = list()
 values_10 = list()
 values_15 = list()
 for column in simplified_df.columns:
     all_values.append(simplified_df[column].mean())
+    all_labels.append(f'{column} ({round(simplified_df[column].mean(), 2)} %)')
     values_10.append(simplified_df.loc[slice(2010, 2014), column].mean())
+    labels_10.append(f'{column} ({round(simplified_df.loc[slice(2010, 2014), column].mean(), 2)} %)')
     values_15.append(simplified_df.loc[slice(2015, 2020), column].mean())
+    labels_15.append(f'{column} ({round(simplified_df.loc[slice(2015, 2020), column].mean(), 2)} %)')
 
-pie_prop_cause_of_death(values_10, '2010_2014', list(simplified_df.columns), 'combined')
-pie_prop_cause_of_death(values_15, '2015-2020', list(simplified_df.columns), 'combined')
-pie_prop_cause_of_death(all_values, '2010-2020', list(simplified_df.columns), 'total')
+pie_prop_cause_of_death(values_10, '2010_2014', labels_10, 'combined')
+pie_prop_cause_of_death(values_15, '2015-2020', labels_15, 'combined')
+pie_prop_cause_of_death(all_values, '2010-2020', all_labels, 'total')
 
 
 # =========================================== CASE FATALITY PER COMPLICATION ==========================================
@@ -477,28 +547,80 @@ for year in sim_years:
 
 
 direct_nmr_per_year = [(x/y) * 1000 for x, y in zip(total_deaths_per_year_nb, total_births_per_year)]
-target_rate_nmr = list()
-for year in sim_years:
-    if year < 2015:
-        target_rate_nmr.append(25)
-    else:
-        target_rate_nmr.append(22)
 
 nm = get_comp_mean_and_rate('Neonatal Disorders', total_births_per_year, death_results_labels, 1000)
 
-line_graph_with_ci_and_target_rate(nm[0], nm[1], nm[2], target_rate_nmr, 'Year',
-                                   'Rate per 1000 births', 'Neonatal Mortality Rate per Year (using labels)', 'nmr')
+fig, ax = plt.subplots()
+ax.plot(sim_years, nm[0], label="Model (mean)", color='deepskyblue')
+ax.fill_between(sim_years, nm[1], nm[2], color='b', alpha=.1)
+
+plt.errorbar(2010, 25, label='DHS 2010 (adj)', yerr=(28-22)/2,  fmt='o', color='green', ecolor='mediumseagreen',
+             elinewidth=3, capsize=0)
+plt.errorbar(2015, 22, label='DHS 2015 (adj)', yerr=(24-18)/2, fmt='o', color='black',  ecolor='grey',
+             elinewidth=3, capsize=0)
+plt.errorbar(2017, 18.6, label='Hug 2017 (adj.)', yerr=(24-13)/2, fmt='o', color='purple',  ecolor='pink',
+             elinewidth=3, capsize=0)
+ax.plot([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
+        [28, 27, 26, 25, 24, 23, 22, 22, 20, 20],  label="UN IGCME (unadj.)", color='purple')
+ax.fill_between([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
+               [25, 24, 23, 22, 20, 18, 16, 15, 14, 13],
+                [32, 31, 30, 29, 29, 28, 28, 29, 29, 30], color='grey', alpha=.1)
+plt.xlabel('Year')
+plt.ylabel("Rate per 1000 births")
+plt.title('Neonatal Mortality Rate per Year')
+plt.legend()
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/nmr.png')
+plt.show()
+
+# TOTAL DEATHS
+deaths = get_mean_and_quants_from_str_df(scaled_deaths, 'Neonatal Disorders')
+
+gbd_deaths_2010_2019_data_neo = [
+    [12179.90, 11997.06, 11721.38, 11112.63, 10796.11, 11454.39, 10097.89, 10589.62, 9927.72,
+     9837.758],
+    [10192.87, 9966.29, 9653.34, 9071.51, 8732.92, 9408.53, 7857.45, 8413.62, 7661.01, 7523.02],
+    [14459.23, 14243.08, 14022.25, 13431.77, 13402.91, 13801.05, 12797.50, 13162.74, 12858.11, 12876.41]]
+
+mean_deaths_n = list()
+death_lq_n = list()
+death_uq_n = list()
+years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
+for year in years:
+    mean_deaths_n.append(scaled_deaths.loc[year, 'Neonatal Disorders'].mean())
+    death_lq_n.append(scaled_deaths.loc[year, 'Neonatal Disorders'].quantile(0.025))
+    death_uq_n.append(scaled_deaths.loc[year, 'Neonatal Disorders'].quantile(0.925))
+
+model_ci_neo = [(x - y) / 2 for x, y in zip(death_uq_n, death_lq_n)]
+gbd_ci_neo = [(x - y) / 2 for x, y in zip(gbd_deaths_2010_2019_data_neo[2], gbd_deaths_2010_2019_data_neo[1])]
+
+N = len(mean_deaths_n)
+ind = np.arange(N)
+width = 0.35
+plt.bar(ind, mean_deaths_n, width, label='Model', yerr=model_ci_neo, color='teal')
+plt.bar(ind + width, gbd_deaths_2010_2019_data_neo[0], width, label='GBD', yerr=gbd_ci_neo, color='olivedrab')
+plt.ylabel('Total Deaths Neonatal Deaths (scaled)')
+plt.title('Yearly Modelled Neonatal Deaths Compared to GBD')
+plt.xticks(ind + width / 2, (years))
+plt.legend(loc='best')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/deaths_gbd_comparison_neo.png')
+plt.show()
 
 # todo: force colours for each complication in each year to be the same
 for year, dictionary in zip(sim_years, list_of_proportions_dicts_nb):
-    labels = list(dictionary.keys())
+    labels = list()
     sizes = list(dictionary.values())
+
+    for key, value in zip(dictionary.keys(), sizes):
+        labels.append(key.replace(f"_{year}", f" ({round(value, 2)} %)"))
+
     fig1, ax1 = plt.subplots()
-    ax1.pie(sizes, labels=labels, autopct='%1.1f%%',
-            shadow=True, startangle=90)
-    ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-    plt.title(f'Proportion of total neonatal deaths by cause in {year} ')
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_death_by_cause_{year}.png')
+    ax1.pie(sizes, shadow=True, startangle=90)
+    ax1.axis('equal')
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.5, box.height])
+    plt.legend(labels, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.title(f'Proportion of total neonatal deaths by cause in {year}')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_death_by_cause_{year}.png', bbox_inches="tight")
     plt.show()
 
 

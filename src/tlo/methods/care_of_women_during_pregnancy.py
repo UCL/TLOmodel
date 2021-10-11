@@ -3064,11 +3064,9 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
 
         # todo: i think this needs to just be simplified for now (i.e. remove the treatment proporty as a bitset)
 
-        if not mother.is_alive:
+        if not mother.is_alive or not abortion_complications.has_any([person_id], 'sepsis', 'haemorrhage', 'injury',
+                                                                     'other', first=True):
             return
-
-        # We check only women with complications post abortion are sent to this event
-        assert abortion_complications.has_any([person_id], 'sepsis', 'haemorrhage', 'injury', 'other', first=True)
 
         # Define the consumables and check their availability
         item_code_metro = pd.unique(
@@ -3145,11 +3143,8 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         mother = df.loc[person_id]
 
-        if not mother.is_alive:
+        if not mother.is_alive or (mother.ps_ectopic_pregnancy == 'none'):
             return
-
-        # Check only the correct women are sent to this event
-        assert mother.ps_ectopic_pregnancy != 'none'
 
         logger.debug(key='message', data='This is HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy, '
                                          f'person {person_id} has been diagnosed with ectopic pregnancy after '
