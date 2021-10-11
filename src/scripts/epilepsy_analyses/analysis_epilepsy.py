@@ -26,7 +26,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2011,  1, 1)
+end_date = Date(2015,  1, 1)
 popsize = 190000
 
 # Establish the simulation object
@@ -66,8 +66,32 @@ output = parse_log_file(sim.log_filepath)
 prop_seiz_stat_0 = pd.Series(
  output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_0'].values,
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
-
 prop_seiz_stat_0.plot()
-plt.ylim(0, 1)
+plt.title('Proportion of people with epilepsy seizure status 0')
+plt.ylim(0.95, 1)
+plt.show()
+
+prop_seiz_stat_1 = pd.Series(
+ output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_1'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
+prop_seiz_stat_1.plot()
+plt.title('Proportion of people with epilepsy seizure status 1')
+plt.ylim(0, 0.02)
+plt.show()
+
+prop_seiz_stat_2 = pd.Series(
+ output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_2'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
+prop_seiz_stat_2.plot()
+plt.title('Proportion of people with epilepsy seizure status 2')
+plt.ylim(0, 0.02)
+plt.show()
+
+prop_seiz_stat_3 = pd.Series(
+ output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_3'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
+prop_seiz_stat_3.plot()
+plt.title('Proportion of people with epilepsy seizure status 3')
+plt.ylim(0, 0.005)
 plt.show()
 
