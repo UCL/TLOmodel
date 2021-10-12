@@ -10,11 +10,11 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'mph_long_run_calibration_check.py'  # <-- update this to look at other results
+scenario_filename = 'run_without_healthsystem.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_30k_long_run_mph_long_run_calibration_check-2021-10-06T102122Z/2010-2020'
+graph_location = 'output_graphs_no_healthsystem_run_without_healthsystem-2021-10-11T153709Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -318,11 +318,14 @@ anc_count_df = pd.DataFrame(columns=sim_years, index=[0, 1, 2, 3, 4, 5, 6, 7, 8]
 # get yearly outputs
 for year in sim_years:
     for row in anc_count_df.index:
-        x = results.loc[year, row]
-        mean = x.mean()
-        lq = x.quantile(0.025)
-        uq = x.quantile(0.925)
-        anc_count_df.at[row, year] = [mean, lq, uq]
+        if row in results.loc[year].index:
+            x = results.loc[year, row]
+            mean = x.mean()
+            lq = x.quantile(0.025)
+            uq = x.quantile(0.925)
+            anc_count_df.at[row, year] = [mean, lq, uq]
+        else:
+            anc_count_df.at[row, year] = [0, 0, 0]
 
 yearly_anc1_rates = list()
 anc1_lqs = list()
@@ -400,9 +403,11 @@ for year in sim_years:
     for row in anc_count_df[year]:
         total_per_year += row[0]
 
-    for index in anc_count_df.index:
-        anc_count_df.at[index, year] = (anc_count_df.at[index, year][0]/total_per_year) * 100
+    if total_per_year != 0:
+        for index in anc_count_df.index:
+            anc_count_df.at[index, year] = (anc_count_df.at[index, year][0]/total_per_year) * 100
 
+"""
 labels = sim_years
 width = 0.35       # the width of the bars: can also be len(x) sequence
 fig, ax = plt.subplots()
@@ -431,7 +436,7 @@ ax.legend()
 plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_total_visits.png')
 plt.show()
 
-
+"""
 # Mean proportion of women who attended at least one ANC visit that attended at < 4, 4-5, 6-7 and > 8 months
 # gestation...
 
@@ -647,7 +652,7 @@ line_graph_with_ci_and_target_rate(pnc1_plus_rate_neo, pnc_neo_lqs, pnc_neo_uqs,
                                    '% of total births', 'Proportion of Neonates per year attending PNC',
                                    'pnc_neo')
 
-
+"""
 def get_early_late_pnc_split(module, target, file_name):
     pnc = extract_results(
         results_folder,
@@ -682,7 +687,7 @@ def get_early_late_pnc_split(module, target, file_name):
 
 get_early_late_pnc_split('labour', 'Maternal', 'pnc_maternal_early')
 get_early_late_pnc_split('newborn_outcomes', 'Neonatal', 'pnc_neonatal_early')
-
+"""
 # ========================================== COMPLICATION/DISEASE RATES.... ===========================================
 # ---------------------------------------- Twinning Rate... -----------------------------------------------------------
 # % Twin births/Total Births per year
@@ -964,7 +969,7 @@ early_ptl_data = get_comp_mean_and_rate('early_preterm_labour', total_births_per
 late_ptl_data = get_comp_mean_and_rate('late_preterm_labour', total_births_per_year, la_comps, 100)
 
 target_ptl_dict = {'double': False,
-                   'first': {'year': 2020, 'value': 6.4, 'label': 'Antony et al.', 'ci': 0},
+                   'first': {'year': 2020, 'value': 19.8, 'label': 'Antony et al.', 'ci': 0},
                    }
 
 total_ptl_rates = [x + y for x, y in zip(early_ptl_data[0], late_ptl_data[0])]
@@ -1099,6 +1104,7 @@ delivery_mode = extract_results(
     do_scaling=False
 )
 
+"""
 cs_results = extract_results(
         results_folder,
         module="tlo.methods.labour",
@@ -1170,7 +1176,7 @@ plt.legend(labels, loc="best")
 plt.title(f'Proportion of total CS deliveries by indication')
 plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/cs_by_indication.png')
 plt.show()
-
+"""
 
 # ------------------------------------------ Maternal Sepsis Rate... --------------------------------------------------
 an_sep_data = get_comp_mean_and_rate('clinical_chorioamnionitis', total_births_per_year, an_comps, 1000)

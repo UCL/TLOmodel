@@ -10,11 +10,11 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'mph_long_run_calibration_check.py'  # <-- update this to look at other results
+scenario_filename = 'run_without_healthsystem.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_30k_long_run_mph_long_run_calibration_check-2021-10-06T102122Z/2010-2020/death'
+graph_location = 'output_graphs_no_healthsystem_run_without_healthsystem-2021-10-11T153709Z/death'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -146,7 +146,7 @@ def simple_line_chart(model_rate, target_rate, x_title, y_title, title, file_nam
     plt.ylabel(y_title)
     plt.title(title)
     plt.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -158,7 +158,7 @@ def simple_line_chart_two_targets(model_rate, target_rate_one, target_rate_two, 
     plt.ylabel(y_title)
     plt.title(title)
     plt.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -171,7 +171,7 @@ def simple_bar_chart(model_rates, x_title, y_title, title, file_name):
     plt.ylabel(y_title)
     plt.title(title)
     plt.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_rate, x_label, y_label, title, file_name):
@@ -183,7 +183,7 @@ def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_rate,
     plt.ylabel(y_label)
     plt.title(title)
     plt.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -250,7 +250,7 @@ plt.xlabel('Year')
 plt.ylabel("Deaths per 100,000 live births")
 plt.title('Maternal Mortality Ratio per Year')
 plt.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mmr.png')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mmr.png')
 plt.show()
 
 # ==============================================  DEATHS... ======================================================
@@ -293,7 +293,7 @@ plt.ylabel('Total Deaths Maternal Deaths (scaled)')
 plt.title('Yearly Modelled Maternal Deaths Compared to GBD')
 plt.xticks(ind + width / 2, (years))
 plt.legend(loc='best')
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/deaths_gbd_comparison.png')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/deaths_gbd_comparison.png')
 plt.show()
 
 # do WHO estiamte also
@@ -388,8 +388,8 @@ def pie_prop_cause_of_death(values, years, labels, title):
     plt.legend(labels, loc='center left', bbox_to_anchor=(1, 0.5))
     # Equal aspect ratio ensures that pie is drawn as a circle.
     plt.title(f'Proportion of total maternal deaths by cause ({title}) {years}')
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mat_death_by_cause_{title}_{years}.png',
-    #            bbox_inches="tight")
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mat_death_by_cause_{title}_{years}.png',
+                bbox_inches="tight")
     plt.show()
 
 props_df = pd.DataFrame(data=proportions_dicts)
@@ -411,7 +411,7 @@ pie_prop_cause_of_death(values_10, '2010_2014', labels_10, 'all')
 pie_prop_cause_of_death(values_15, '2015-2020', labels_15, 'all')
 
 simplified_df = props_df.transpose()
-
+"""
 simplified_df['Abortion'] = simplified_df['induced_abortion'] + simplified_df['spontaneous_abortion']
 simplified_df['Severe PE/Eclampsia'] = simplified_df['severe_pre_eclampsia'] + simplified_df['eclampsia']
 simplified_df['PPH'] = simplified_df['postpartum_haemorrhage'] + simplified_df['secondary_postpartum_haemorrhage']
@@ -441,7 +441,7 @@ pie_prop_cause_of_death(values_10, '2010_2014', labels_10, 'combined')
 pie_prop_cause_of_death(values_15, '2015-2020', labels_15, 'combined')
 pie_prop_cause_of_death(all_values, '2010-2020', all_labels, 'total')
 
-
+"""
 # =========================================== CASE FATALITY PER COMPLICATION ==========================================
 tr = list()  # todo:update?
 dummy_denom = list()
@@ -586,9 +586,14 @@ death_lq_n = list()
 death_uq_n = list()
 years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
 for year in years:
-    mean_deaths_n.append(scaled_deaths.loc[year, 'Neonatal Disorders'].mean())
-    death_lq_n.append(scaled_deaths.loc[year, 'Neonatal Disorders'].quantile(0.025))
-    death_uq_n.append(scaled_deaths.loc[year, 'Neonatal Disorders'].quantile(0.925))
+   if 'Neonatal Disorders' in scaled_deaths.loc[year].index:
+        mean_deaths_n.append(scaled_deaths.loc[year, 'Neonatal Disorders'].mean())
+        death_lq_n.append(scaled_deaths.loc[year, 'Neonatal Disorders'].quantile(0.025))
+        death_uq_n.append(scaled_deaths.loc[year, 'Neonatal Disorders'].quantile(0.925))
+   else:
+       mean_deaths_n.append(0)
+       death_lq_n.append(0)
+       death_uq_n.append(0)
 
 model_ci_neo = [(x - y) / 2 for x, y in zip(death_uq_n, death_lq_n)]
 gbd_ci_neo = [(x - y) / 2 for x, y in zip(gbd_deaths_2010_2019_data_neo[2], gbd_deaths_2010_2019_data_neo[1])]
