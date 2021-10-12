@@ -124,6 +124,7 @@ mult_inj_incidences_of_rti = np.mean(log_df_multiple['tlo.methods.rti']['summary
 # Store the incidence of death due to RTI per 100,000 person years and the sub categories in this sim
 mult_inj_incidences_of_death = np.mean(log_df_multiple['tlo.methods.rti']['summary_1m']
                                        ['incidence of rti death per 100,000'].tolist())
+print(f"incidence of death for multiple injuries = {mult_inj_incidences_of_death}")
 mult_inj_incidences_of_injuries = np.mean(log_df_multiple['tlo.methods.rti']['Inj_category_incidence']
                                           ['tot_inc_injuries'].tolist())
 
