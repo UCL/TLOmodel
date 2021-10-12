@@ -378,6 +378,9 @@ class CardioMetabolicDisorders(Module):
         self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_index, columns=self.conditions)
         self.df_incidence_tracker = self.df_incidence_tracker_zeros.copy()
 
+        self.df_incidence_tracker_events_zeros = pd.DataFrame(0, index=self.age_index, columns=self.events)
+        self.df_incidence_tracker_events = self.df_incidence_tracker_events_zeros.copy()
+
         # Create Tracker for the number of different types of events
         self.events_tracker = dict()
         for event in self.events:
@@ -475,7 +478,11 @@ class CardioMetabolicDisorders(Module):
         # load parameters for correct condition/event
         p = self.parameters[f'{condition}_{lm_type}']
 
-        baseline_annual_probability = 1 - math.exp(-interval_between_polls / 12 * p['baseline_annual_probability'])
+        # for events, probability of death does not need to be standardised to poll interval
+        if condition.startswith('ever_') and lm_type == 'death':
+            baseline_annual_probability = p['baseline_annual_probability']
+        else:
+            baseline_annual_probability = 1 - math.exp(-interval_between_polls / 12 * p['baseline_annual_probability'])
         # LinearModel expects native python types - if it's numpy type, convert it
         baseline_annual_probability = float(baseline_annual_probability)
 
@@ -756,6 +763,7 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             )
 
         current_incidence_df = pd.DataFrame(index=self.module.age_index, columns=self.module.conditions)
+        current_incidence_df_events = pd.DataFrame(index=self.module.age_index, columns=self.module.events)
 
         # Determine onset/removal of conditions
         for condition in self.module.conditions:
@@ -842,6 +850,13 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                     self.sim.schedule_event(CardioMetabolicDisordersEvent(self.module, person_id, event),
                                             self.sim.date + DateOffset(days=self.module.rng.randint(ndays)))
 
+                # Add incident cases to the tracker
+                current_incidence_df_events[event] = df.loc[idx_has_event].groupby('age_range').size()
+
+        # add the new incidence numbers to tracker
+        self.module.df_incidence_tracker_events = self.module.df_incidence_tracker_events.add(
+            current_incidence_df_events)
+
 
 class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
     """
@@ -871,10 +886,10 @@ class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
         )
 
         # --------- DETERMINE OUTCOME OF THIS EVENT ---------------
-        prob_death = self.module.parameters[f'{self.event}_death'].get('baseline_annual_probability')
+        prob_death = self.module.lms_event_death[self.event].predict(df.loc[[person_id]])
         # Schedule a future death event for 2 days' time
         date_of_outcome = self.sim.date + DateOffset(days=7)
-        if self.module.rng.random_sample() < prob_death:
+        if self.module.rng.random_sample() < prob_death[person_id]:
             df.at[person_id, f'nc_{self.event}_scheduled_date_death'] = date_of_outcome
             self.sim.schedule_event(CardioMetabolicDisordersDeathEvent(self.module, person_id, condition=self.event),
                                     date_of_outcome)
@@ -977,6 +992,13 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
         # Reset the counter
         self.module.df_incidence_tracker = self.module.df_incidence_tracker_zeros.copy()
 
+        # Convert incidence tracker to dict to pass through logger
+        logger.info(key='incidence_count_by_event', data=self.module.df_incidence_tracker_events.to_dict(),
+                    description=f"count of events occurring between each successive poll of logging event every "
+                                f"{self.repeat} months")
+        # Reset the counter
+        self.module.df_incidence_tracker_events = self.module.df_incidence_tracker_events_zeros.copy()
+
         def age_cats(ages_in_years):
             AGE_RANGE_CATEGORIES = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
             AGE_RANGE_LOOKUP = self.sim.modules['Demography'].AGE_RANGE_LOOKUP
@@ -1014,6 +1036,15 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
             py = py.groupby('age_range').sum()
             logger.info(key=f'person_years_{cond}', data=py.to_dict())
 
+        for event in self.module.events:
+            # mask is a Series restricting dataframe to individuals who do not have the condition, which is passed to
+            # demography module to calculate person-years lived without the condition
+            mask = (df.is_alive & ~df[f'nc_{event}'])
+            py = de.Demography.calc_py_lived_in_last_year(self, delta, mask)
+            py['age_range'] = age_cats(py.index)
+            py = py.groupby('age_range').sum()
+            logger.info(key=f'person_years_{event}', data=py.to_dict())
+
         # Make some summary statistics for prevalence by age/sex for each condition
         df = population.props
 
@@ -1037,6 +1068,28 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
 
             logger.info(
                 key=f'{condition}_prevalence',
+                description='current fraction of the adult population classified as having condition',
+                data=adult_prevalence
+            )
+
+        for event in self.module.events:
+            prev_age_sex = proportion_of_something_in_a_groupby_ready_for_logging(df, f'nc_{event}',
+                                                                                  ['sex', 'age_range'])
+
+            # Prevalence of conditions broken down by sex and age
+            logger.info(
+                key=f'{event}_prevalence_by_age_and_sex',
+                description='current fraction of the population classified as having condition, by sex and age',
+                data={'data': prev_age_sex}
+            )
+
+            # Prevalence of conditions by adults aged 20 or older
+            adult_prevalence = {
+                'prevalence': len(df[df[f'nc_{event}'] & df.is_alive & (df.age_years >= 20)]) / len(
+                    df[df.is_alive & (df.age_years >= 20)])}
+
+            logger.info(
+                key=f'{event}_prevalence',
                 description='current fraction of the adult population classified as having condition',
                 data=adult_prevalence
             )
