@@ -1167,7 +1167,7 @@ class NewbornOutcomes(Module):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 early_event, priority=0,
                 topen=self.sim.date,
-                tclose=None)
+                tclose=self.sim.date + pd.DateOffset(days=1))
 
         else:
             nci[child_id]['will_receive_pnc'] = 'late'
@@ -1422,19 +1422,19 @@ class NewbornOutcomes(Module):
 
     def run_if_care_of_the_newborn_by_skilled_attendant_at_birth_cant_run(self, hsi_event):
         person_id = hsi_event.target
-        nci = self.module.newborn_care_info
+        nci = self.newborn_care_info
 
         logger.debug(key='message', data=f'NewbornOutcomes_CareOfTheNewbornBySkilledAttendant did not run for '
                                          f'{person_id}')
 
         if not nci[person_id]['will_receive_pnc'] == 'early':
-            self.module.set_death_status(person_id)
+            self.set_death_status(person_id)
 
     def run_if_care_of_the_receives_postnatal_check_cant_run(self, hsi_event):
         person_id = hsi_event.target
         logger.debug(key='message', data=f'HSI_NewbornOutcomes_ReceivesPostnatalCheck did not run for '
                                          f'{person_id}')
-        self.module.set_death_status(person_id)
+        self.set_death_status(person_id)
 
 
 class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(HSI_Event, IndividualScopeEventMixin):

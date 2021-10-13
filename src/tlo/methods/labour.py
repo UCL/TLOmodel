@@ -2490,13 +2490,13 @@ class Labour(Module):
 
         if not mni[person_id]['sought_care_for_complication']:
             mni[person_id]['delivery_setting'] = 'home_birth'
-            self.sim.schedule_event(LabourAtHomeEvent(self.module, person_id), self.sim.date)
+            self.sim.schedule_event(LabourAtHomeEvent(self, person_id), self.sim.date)
             mni[person_id]['hsi_cant_run'] = True
 
     def run_if_receives_postnatal_check_cant_run(self, hsi_event):
         person_id = hsi_event.target
         logger.debug(key='message', data=f'HSI_Labour_ReceivesPostnatalCheck will not run for {person_id}')
-        self.module.apply_risk_of_early_postpartum_death(person_id)
+        self.apply_risk_of_early_postpartum_death(person_id)
 
     def run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self, hsi_event):
         person_id = hsi_event.target
@@ -2506,7 +2506,7 @@ class Labour(Module):
         # For women referred to this event after the postnatal SBA HSI we apply risk of death (as if should have been
         # applied in this event if it ran)
         if self.timing == 'postpartum':
-            self.module.apply_risk_of_early_postpartum_death(person_id)
+            self.apply_risk_of_early_postpartum_death(person_id)
 
 
 class LabourOnsetEvent(Event, IndividualScopeEventMixin):
