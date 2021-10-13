@@ -43,6 +43,7 @@ from tlo.methods.prostate_cancer import (
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 # ---------------------------------------------------------------------------------------------------------
 #
 #    ** NON-EMERGENCY APPOINTMENTS **
@@ -78,7 +79,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         if is_child:
             the_appt_footprint = self.make_appt_footprint({'Under5OPD': 1})  # Child out-patient appointment
         else:
-            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})   # Adult out-patient appointment
+            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})  # Adult out-patient appointment
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel1'
@@ -87,10 +88,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(key='message',
-                     data=f'HSI_GenericFirstApptAtFacilityLevel1 for person'
-                          f'{person_id}')
-
+        """Run the generic HSI (first triage appointment) for the person."""
         df = self.sim.population.props
 
         if not df.at[person_id, 'is_alive']:
@@ -103,13 +101,8 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         # Create shortcut to schedule an HSI:
         schedule_hsi = self.sim.modules["HealthSystem"].schedule_hsi_event
 
-        # todo This section is repeated from the malaria.HSI_Malaria_rdt
-        #  requests for consumables occur inside the HSI_treatment events
-        #  perhaps requests also need to occur here in case alternative treatments need to be scheduled
-
-        # --------------------------- measles diagnosis ---------------------------
-        # measles diagnosis and treatment referral (independent of age)
-        # todo if other modules can cause rash, add further conditionals
+        # ----------------------------------- ALL AGES -----------------------------------
+        # Consider Measles if rash.
         if 'Measles' in self.sim.modules:
             if "rash" in symptoms:
                 schedule_hsi(
@@ -120,26 +113,25 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     topen=self.sim.date,
                     tclose=None)
 
-        # --------------------------- automatic HIV testing ---------------------------
-        # Do HIV 'automatic' testing for everyone attending care:
+        # 'Automatic' testing for HIV for everyone attending care:
         #  - suppress the footprint (as it done as part of another appointment)
         #  - do not do referrals if the person is HIV negative (assumed not time for counselling etc).
         if 'Hiv' in self.sim.modules:
             schedule_hsi(
-                 HSI_Hiv_TestAndRefer(
-                     person_id=person_id,
-                     module=self.sim.modules['Hiv'],
-                     suppress_footprint=True,
-                     do_not_refer_if_neg=True),
-                 topen=self.sim.date,
-                 tclose=None,
-                 priority=0)
+                HSI_Hiv_TestAndRefer(
+                    person_id=person_id,
+                    module=self.sim.modules['Hiv'],
+                    suppress_footprint=True,
+                    do_not_refer_if_neg=True),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0)
 
         if age <= 5:
             # ----------------------------------- CHILD <=5 -----------------------------------
             # It's a child: Run the ICMI algorithm for this child:
             # NB. This includes children who are aged 5
-
+            # todo - bring this into the main loop to occur for all persons < 15
             # If one of the symptoms is diarrhoea, then run the algorithm for when a child presents with diarrhoea:
             if 'diarrhoea' in symptoms:
                 if 'Diarrhoea' in self.sim.modules:
@@ -159,43 +151,43 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                 diagnosis = self.sim.modules["DxAlgorithmChild"].diagnose(
                     person_id=person_id, hsi_event=self
                 )
+
         # diagnostic algorithm for child <5 yrs
         if age < 5:
-            # Next, run DxAlgorithmChild to get additional diagnoses:
-            diagnosis = self.sim.modules["DxAlgorithmChild"].diagnose(
-                person_id=person_id, hsi_event=self
-            )
+            # ----------------------------------- CHILD < 5 -----------------------------------
 
             if "Malaria" in self.sim.modules:
-                # Treat / refer based on diagnosis
-                if diagnosis == "severe_malaria":
-                    schedule_hsi(
-                        HSI_Malaria_complicated_treatment_child(
-                            person_id=person_id,
-                            module=self.sim.modules["Malaria"]),
-                        priority=1,
-                        topen=self.sim.date,
-                        tclose=None)
+                if 'fever' in symptoms:
+                    malaria_test_result = self.sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
+                        person_id=person_id, hsi_event=self)
 
-                elif diagnosis == "clinical_malaria":
-                    schedule_hsi(
-                        HSI_Malaria_non_complicated_treatment_age0_5(
-                            person_id=person_id,
-                            module=self.sim.modules["Malaria"]),
-                        priority=1,
-                        topen=self.sim.date,
-                        tclose=None)
+                    # Treat / refer based on diagnosis
+                    if malaria_test_result == "severe_malaria":
+                        schedule_hsi(
+                            HSI_Malaria_complicated_treatment_child(
+                                person_id=person_id,
+                                module=self.sim.modules["Malaria"]),
+                            priority=1,
+                            topen=self.sim.date,
+                            tclose=None)
+
+                    elif malaria_test_result == "clinical_malaria":
+                        schedule_hsi(
+                            HSI_Malaria_non_complicated_treatment_age0_5(
+                                person_id=person_id,
+                                module=self.sim.modules["Malaria"]),
+                            priority=1,
+                            topen=self.sim.date,
+                            tclose=None)
 
         elif age < 15:
             # ----------------------------------- CHILD 5-14 -----------------------------------
-            # Run DxAlgorithmChild to get (additional) diagnoses:
-            diagnosis = self.sim.modules["DxAlgorithmChild"].diagnose(
-                person_id=person_id, hsi_event=self
-            )
+            if 'fever' in symptoms and "Malaria" in self.sim.modules:
+                malaria_test_result = self.sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
+                    person_id=person_id, hsi_event=self)
 
-            if "Malaria" in self.sim.modules:
                 # Treat / refer based on diagnosis
-                if diagnosis == "severe_malaria":
+                if malaria_test_result == "severe_malaria":
                     schedule_hsi(
                         HSI_Malaria_complicated_treatment_child(
                             person_id=person_id,
@@ -204,7 +196,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                         topen=self.sim.date,
                         tclose=None)
 
-                elif diagnosis == "clinical_malaria":
+                elif malaria_test_result == "clinical_malaria":
                     schedule_hsi(
                         HSI_Malaria_non_complicated_treatment_age5_15(
                             person_id=person_id,
@@ -260,20 +252,15 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                         topen=self.sim.date,
                         tclose=None)
 
-                # If the symptoms include pelvic_pain, then begin investigation for Prostate Cancer
-                # (as well as bladder cancer):
-                    if 'pelvic_pain' in symptoms:
-                        schedule_hsi(
-                            HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
-                                person_id=person_id,
-                                module=self.sim.modules['ProstateCancer']),
-                            priority=0,
-                            topen=self.sim.date,
-                            tclose=None)
+                if 'pelvic_pain' in symptoms:
+                    schedule_hsi(
+                        HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
+                            person_id=person_id,
+                            module=self.sim.modules['ProstateCancer']),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None)
 
-            # ----- OAC
-            # If the symptoms include OtherAdultCancer_Investigation_Following_other_adult_ca_symptom,
-            # then begin investigation for other adult cancer:
             if 'OtherAdultCancer' in self.sim.modules:
                 if 'early_other_adult_ca_symptom' in symptoms:
                     schedule_hsi(
@@ -287,17 +274,16 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
             if 'BreastCancer' in self.sim.modules:
                 # If the symptoms include breast lump discernible:
-                if ('breast_lump_discernible' in symptoms):
+                if 'breast_lump_discernible' in symptoms:
                     schedule_hsi(
                         HSI_BreastCancer_Investigation_Following_breast_lump_discernible(
                             person_id=person_id,
                             module=self.sim.modules['BreastCancer'],
-                            ),
+                        ),
                         priority=0,
                         topen=self.sim.date,
                         tclose=None)
 
-            # ---- ROUTINE ASSESSEMENT FOR DEPRESSION ----
             if 'Depression' in self.sim.modules:
                 depr = self.sim.modules['Depression']
                 if (squeeze_factor == 0.0) and (self.module.rng.rand() <
@@ -306,32 +292,32 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     depr.do_when_suspected_depression(person_id=person_id, hsi_event=self)
 
             if "Malaria" in self.sim.modules:
-                # Run DxAlgorithmAdult to get additional diagnoses:
-                diagnosis = self.sim.modules["DxAlgorithmAdult"].diagnose(
-                    person_id=person_id, hsi_event=self
-                )
+                if 'fever' in symptoms:
+                    malaria_test_result = self.sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
+                        person_id=person_id, hsi_event=self)
 
-                if diagnosis == "severe_malaria":
-                    schedule_hsi(
-                        HSI_Malaria_complicated_treatment_adult(
-                            person_id=person_id,
-                            module=self.sim.modules["Malaria"]),
-                        priority=1,
-                        topen=self.sim.date,
-                        tclose=None)
+                    if malaria_test_result == "severe_malaria":
+                        schedule_hsi(
+                            HSI_Malaria_complicated_treatment_adult(
+                                person_id=person_id,
+                                module=self.sim.modules["Malaria"]),
+                            priority=1,
+                            topen=self.sim.date,
+                            tclose=None)
 
-                elif diagnosis == "clinical_malaria":
-                    schedule_hsi(
-                        HSI_Malaria_non_complicated_treatment_adult(
-                            person_id=person_id,
-                            module=self.sim.modules["Malaria"]),
-                        priority=1,
-                        topen=self.sim.date,
-                        tclose=None)
+                    elif malaria_test_result == "clinical_malaria":
+                        schedule_hsi(
+                            HSI_Malaria_non_complicated_treatment_adult(
+                                person_id=person_id,
+                                module=self.sim.modules["Malaria"]),
+                            priority=1,
+                            topen=self.sim.date,
+                            tclose=None)
 
     def did_not_run(self):
         logger.debug(key='message',
                      data='HSI_GenericFirstApptAtFacilityLevel1: did not run')
+
 
 # ---------------------------------------------------------------------------------------------------------
 #    HSI_GenericFirstApptAtFacilityLevel0
@@ -362,12 +348,8 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(key='message',
-                     data=f'This is HSI_GenericFirstApptAtFacilityLevel0 for person {person_id}')
+        pass
 
-    def did_not_run(self):
-        logger.debug(key='message',
-                     data='HSI_GenericFirstApptAtFacilityLevel0: did not run')
 
 # ---------------------------------------------------------------------------------------------------------
 #
@@ -395,7 +377,6 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         super().__init__(module, person_id=person_id)
 
         # Confirm that this appointment has been created by the HealthSeekingBehaviour module or Labour module
-        # TODO: pregnancy supervisor added as per discussions with TH, eventually will combine with HSB
         assert module.name in ['HealthSeekingBehaviour', 'Labour', 'PregnancySupervisor']
 
         # Work out if this is for a child or an adult
@@ -405,7 +386,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         if is_child:
             the_appt_footprint = self.make_appt_footprint({'Under5OPD': 1})  # Child out-patient appointment
         else:
-            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})   # Adult out-patient appointment
+            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})  # Adult out-patient appointment
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
@@ -444,16 +425,22 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
             # -----  COMPLICATION DURING BIRTH  -----
             if person_id in labour_list:
-                if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                        & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
+                if (
+                    df.at[person_id, 'la_currently_in_labour'] &
+                    mni[person_id]['sought_care_for_complication'] &
+                    (mni[person_id]['sought_care_labour_phase'] == 'intrapartum')
+                ):
                     event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
                     health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
-            # -----  COMPLICATION AFTER BIRTH  -----
-                if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                        & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
+                # -----  COMPLICATION AFTER BIRTH  -----
+                if (
+                    df.at[person_id, 'la_currently_in_labour'] &
+                    mni[person_id]['sought_care_for_complication'] &
+                    (mni[person_id]['sought_care_labour_phase'] == 'postpartum')
+                ):
                     event = HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
@@ -486,35 +473,33 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                        "anaemia"
                        }
 
-            # if person's symptoms are on severe malaria list then treat
+            # if person's symptoms are on severe malaria list then consider treatment for malaria
             any_symptoms_indicative_of_severe_malaria = len(sev_set.intersection(symptoms)) > 0
 
-            # Run DxAlgorithmAdult to log consumable and confirm malaria parasitaemia:
-            diagnosis = self.sim.modules["DxAlgorithmAdult"].diagnose(
-                person_id=person_id, hsi_event=self
-            )
+            if any_symptoms_indicative_of_severe_malaria:
+                # Check if malaria parasitaemia:
+                malaria_test_result = self.sim.modules["Malaria"].check_if_fever_is_caused_by_malaria(
+                    person_id=person_id, hsi_event=self)
 
-            # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
-            if any_symptoms_indicative_of_severe_malaria and (diagnosis in ["severe_malaria", "clinical_malaria"]):
-                # Launch the HSI for treatment for Malaria - choosing the right one for adults/children
-                if age < 5.0:
-                    health_system.schedule_hsi_event(
-                        hsi_event=HSI_Malaria_complicated_treatment_child(
-                            self.sim.modules["Malaria"], person_id=person_id
-                        ),
-                        priority=0,
-                        topen=self.sim.date,
-                    )
-                else:
-                    health_system.schedule_hsi_event(
-                        hsi_event=HSI_Malaria_complicated_treatment_adult(
-                            self.sim.modules["Malaria"], person_id=person_id
-                        ),
-                        priority=0,
-                        topen=self.sim.date,
-                    )
-        # else:
-            # treat symptoms acidosis, coma_convulsions, renal_failure, shock, jaundice, anaemia
+                # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
+                if malaria_test_result in ("severe_malaria", "clinical_malaria"):
+                    # Launch the HSI for treatment for Malaria - choosing the right one for adults/children
+                    if age < 5.0:
+                        health_system.schedule_hsi_event(
+                            hsi_event=HSI_Malaria_complicated_treatment_child(
+                                self.sim.modules["Malaria"], person_id=person_id
+                            ),
+                            priority=0,
+                            topen=self.sim.date,
+                        )
+                    else:
+                        health_system.schedule_hsi_event(
+                            hsi_event=HSI_Malaria_complicated_treatment_adult(
+                                self.sim.modules["Malaria"], person_id=person_id
+                            ),
+                            priority=0,
+                            topen=self.sim.date,
+                        )
 
         # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
         if 'craving_sandwiches' in symptoms:
@@ -530,13 +515,3 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                 person_id=person_id
             )
             health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
-
-    def did_not_run(self):
-        logger.debug(key='message',
-                     data='HSI_GenericEmergencyFirstApptAtFacilityLevel1: did not run')
-
-        return False  # Labour debugging
-        # pass
-
-    def not_available(self):
-        pass

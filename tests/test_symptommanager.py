@@ -7,7 +7,6 @@ from tlo import Date, Simulation
 from tlo.methods import (
     chronicsyndrome,
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
@@ -122,7 +121,6 @@ def test_adding_quering_and_removing_symptoms():
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
