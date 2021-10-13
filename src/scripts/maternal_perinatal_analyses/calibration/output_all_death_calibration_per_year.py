@@ -14,7 +14,7 @@ scenario_filename = 'run_without_healthsystem.py'  # <-- update this to look at 
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_no_healthsystem_run_without_healthsystem-2021-10-11T153709Z/death'
+graph_location = 'output_graphs_30k_run_without_healthsystem-2021-10-12T163706Z/death'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)

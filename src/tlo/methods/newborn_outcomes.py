@@ -619,7 +619,7 @@ class NewbornOutcomes(Module):
         child = df.loc[child_id]
 
         # Ensure only preterm infants have risk of RDS applied
-        if not child.nb_early_preterm or not child.nb_late_preterm:
+        if not child.nb_early_preterm and not child.nb_late_preterm:
             return
 
         # Use the linear model to calculate individual risk and make changes
@@ -1420,6 +1420,22 @@ class NewbornOutcomes(Module):
 
         return health_values_df
 
+    def run_if_care_of_the_newborn_by_skilled_attendant_at_birth_cant_run(self, hsi_event):
+        person_id = hsi_event.target
+        nci = self.module.newborn_care_info
+
+        logger.debug(key='message', data=f'NewbornOutcomes_CareOfTheNewbornBySkilledAttendant did not run for '
+                                         f'{person_id}')
+
+        if not nci[person_id]['will_receive_pnc'] == 'early':
+            self.module.set_death_status(person_id)
+
+    def run_if_care_of_the_receives_postnatal_check_cant_run(self, hsi_event):
+        person_id = hsi_event.target
+        logger.debug(key='message', data=f'HSI_NewbornOutcomes_ReceivesPostnatalCheck did not run for '
+                                         f'{person_id}')
+        self.module.set_death_status(person_id)
+
 
 class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1466,18 +1482,15 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(HSI_Event, I
         if not nci[person_id]['will_receive_pnc'] == 'early':
             self.module.set_death_status(person_id)
 
-    def did_not_run(self):
-        person_id = self.target
+    def never_ran(self):
+        self.module.run_if_care_of_the_newborn_by_skilled_attendant_at_birth_cant_run(self)
 
-        logger.debug(key='message', data=f'Neonate {person_id} did not receive care at birth as the squeeze factor '
-                                         f'was too high')
+    def did_not_run(self):
+        self.module.run_if_care_of_the_newborn_by_skilled_attendant_at_birth_cant_run(self)
         return False
 
     def not_available(self):
-        person_id = self.target
-        logger.debug(key='message', data=f'Neonate {person_id} did not receive care at birth as this HSI is not '
-                                         f'allowed in current configuration')
-        return False
+        self.module.run_if_care_of_the_newborn_by_skilled_attendant_at_birth_cant_run(self)
 
 
 class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
@@ -1563,18 +1576,15 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
                     self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=self.sim.date, tclose=None)
 
-    def did_not_run(self):
-        person_id = self.target
+    def never_ran(self):
+        self.module.run_if_care_of_the_receives_postnatal_check_cant_run(self)
 
-        logger.debug(key='message', data=f'Neonate {person_id} did not receive care after birth as the squeeze factor '
-                                         f'was too high')
+    def did_not_run(self):
+        self.module.run_if_care_of_the_receives_postnatal_check_cant_run(self)
         return False
 
     def not_available(self):
-        person_id = self.target
-        logger.debug(key='message', data=f'Neonate {person_id} did not receive care after birth as this HSI is not '
-                                         f'allowed in current configuration')
-        return False
+        self.module.run_if_care_of_the_receives_postnatal_check_cant_run(self)
 
 
 class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):

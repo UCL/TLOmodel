@@ -1872,7 +1872,7 @@ class PregnancySupervisor(Module):
                 df.at[individual_id, 'ps_antepartum_haemorrhage'] = 'none'
 
             if (mother.ps_htn_disorders == 'severe_pre_eclamp') and \
-                 self.mother_and_newborn_info[individual_id]['new_onset_spe']:
+                self.mother_and_newborn_info[individual_id]['new_onset_spe']:
                 self.mother_and_newborn_info[individual_id]['new_onset_spe'] = False
 
             if mother.ps_htn_disorders == 'eclampsia':

@@ -2466,8 +2466,7 @@ class Labour(Module):
                             'cpd': False,
                             'mode_of_delivery': 'vaginal_delivery',
                             # vaginal_delivery, instrumental, caesarean_section
-                            'squeeze_to_high_for_hsi': False,  # True (T) or False (F)
-                            'squeeze_to_high_for_hsi_pp': False,  # True (T) or False (F)
+                            'hsi_cant_run': False,  # True (T) or False (F)
                             'sought_care_for_complication': False,  # True (T) or False (F)
                             'sought_care_labour_phase': 'none',
                             'referred_for_cs': False,  # True (T) or False (F)
@@ -2482,6 +2481,32 @@ class Labour(Module):
                             }
 
         mni[individual_id].update(labour_variables)
+
+    def run_if_receives_skilled_birth_attendance_cant_run(self, hsi_event):
+        person_id = hsi_event.target
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        logger.debug(key='message', data=f'HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour will not run for '
+                                         f'{person_id}')
+
+        if not mni[person_id]['sought_care_for_complication']:
+            mni[person_id]['delivery_setting'] = 'home_birth'
+            self.sim.schedule_event(LabourAtHomeEvent(self.module, person_id), self.sim.date)
+            mni[person_id]['hsi_cant_run'] = True
+
+    def run_if_receives_postnatal_check_cant_run(self, hsi_event):
+        person_id = hsi_event.target
+        logger.debug(key='message', data=f'HSI_Labour_ReceivesPostnatalCheck will not run for {person_id}')
+        self.module.apply_risk_of_early_postpartum_death(person_id)
+
+    def run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self, hsi_event):
+        person_id = hsi_event.target
+        logger.debug(key='message', data=f'HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare will not run for'
+                                         f' {person_id}')
+
+        # For women referred to this event after the postnatal SBA HSI we apply risk of death (as if should have been
+        # applied in this event if it ran)
+        if self.timing == 'postpartum':
+            self.module.apply_risk_of_early_postpartum_death(person_id)
 
 
 class LabourOnsetEvent(Event, IndividualScopeEventMixin):
@@ -2670,7 +2695,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
-                logger.info(key='message', data=f'This is LabourOnsetEvent, scheduling '
+                logger.debug(key='message', data=f'This is LabourOnsetEvent, scheduling '
                                                 f'HSI_Labour_PresentsForSkilledAttendanceInLabour on date '
                                                 f'{self.sim.date} for person {individual_id} as they have chosen to '
                                                 f'seek care at a health centre for delivery')
@@ -2686,7 +2711,8 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(hospital_delivery, priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
-                logger.info(key='message', data=f'This is LabourOnsetEvent, scheduling '
+
+                logger.debug(key='message', data=f'This is LabourOnsetEvent, scheduling '
                                                 f'HSI_Labour_PresentsForSkilledAttendanceInLabour on date '
                                                 f'{self.sim.date} for person {individual_id} as they have chosen to '
                                                 f'seek care at a hospital for delivery')
@@ -2756,7 +2782,7 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
         # (Women who have been scheduled a home birth after seeking care at a facility that didnt have capacity to
         # deliver the HSI will not try to seek care if they develop a complication)
-        if not mni[individual_id]['squeeze_to_high_for_hsi']:
+        if not mni[individual_id]['hsi_cant_run']:
 
             if df.at[individual_id, 'la_obstructed_labour'] or \
                 (df.at[individual_id, 'la_antepartum_haem'] != 'none') or \
@@ -3149,44 +3175,15 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         ):
             return self.make_appt_footprint({'CompDelivery': 1})
 
+    def never_ran(self):
+        self.module.run_if_receives_skilled_birth_attendance_cant_run(self)
+
     def did_not_run(self):
-        person_id = self.target
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-        # If a woman has chosen to deliver in a facility from the onset of labour, but the squeeze factor is too high,
-        # she will be forced to return home to deliver
-        if not mni[person_id]['sought_care_for_complication']:
-            logger.debug(key='message', data=f'squeeze factor is too high for this event to run for mother {person_id} '
-                                             f'on date {self.sim.date} and she will now deliver at home')
-
-            mni[person_id]['delivery_setting'] = 'home_birth'
-            mni[person_id]['squeeze_to_high_for_hsi'] = True
-            self.sim.schedule_event(LabourAtHomeEvent(self.module, person_id), self.sim.date)
-
-        # If a woman has presented to this event during labour due to a complication, she will not receive any treatment
-        if mni[person_id]['sought_care_for_complication']:
-            logger.debug(key='message', data=f'squeeze factor is too high for this event to run for mother {person_id} '
-                                             f'on date {self.sim.date} and she could not receive care for the '
-                                             f'complications developed during her home birth')
-
+        self.module.run_if_receives_skilled_birth_attendance_cant_run(self)
         return False
 
     def not_available(self):
-        """This is called when the HSI is passed to the health system scheduler but not scheduled as the TREATMENT_ID
-        is not allowed under the 'services_available' parameter of the health system.
-        Note that this called at the time of the event being passed to the Health System at schedule_hsi_event(...) and
-        not at the time when the HSI is intended to be run (as specified by the 'topen' parameter in that call)"""
-        person_id = self.target
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        # If a woman has chosen to deliver in a facility but this event isnt allowed with the set service configuration
-        # then she will deliver at home
-        logger.debug(key='message', data=f'This event is not in the allowed service availability and therefore cannot '
-                                         f'run for mother {person_id} on date {self.sim.date}, she will now deliver at '
-                                         f'home')
-
-        if not mni[person_id]['sought_care_for_complication']:
-            mni[person_id]['delivery_setting'] = 'home_birth'
-            self.sim.schedule_event(LabourAtHomeEvent(self.module, person_id), self.sim.date)
+        self.module.run_if_receives_skilled_birth_attendance_cant_run(self)
 
 
 class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
@@ -3275,18 +3272,15 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
         return actual_appt_footprint
 
-    def did_not_run(self):
-        person_id = self.target
-        logger.debug(key='message', data='HSI_Labour_ReceivesCareForPostpartumPeriod: did not run as the squeeze factor'
-                                         f'is too high, mother {person_id} will return home on date {self.sim.date}')
+    def never_ran(self):
+        self.module.run_if_receives_postnatal_check_cant_run(self)
 
+    def did_not_run(self):
+        self.module.run_if_receives_postnatal_check_cant_run(self)
         return False
 
     def not_available(self):
-        person_id = self.target
-        logger.debug(key='message', data='This event is not in the allowed service availability and therefore cannot '
-                                         f'run for mother {person_id} on date {self.sim.date}, she will now deliver at '
-                                         f'home')
+        self.module.run_if_receives_postnatal_check_cant_run(self)
 
 
 class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, IndividualScopeEventMixin):
@@ -3425,28 +3419,15 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                 mni[person_id]['referred_for_blood']:
             actual_appt_footprint['MajorSurg'] = actual_appt_footprint['InpatientDays']
 
+    def never_ran(self):
+        self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
+
     def did_not_run(self):
-        person_id = self.target
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-        logger.debug(key='message', data='HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare: did not run as the '
-                                         f'squeeze factor is too high, mother {person_id} did not receive care')
-
-        # For women referred to this event after the postnatal SBA HSI we apply risk of death (as if should have been
-        # applied in this event if it ran)
-        if self.timing == 'postpartum':
-            logger.debug(key='msg', data=f'{person_id} apply_risk_of_early_postpartum_death')
-            self.module.apply_risk_of_early_postpartum_death(person_id)
-
+        self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
         return False
 
     def not_available(self):
-        person_id = self.target
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-        if self.timing == 'postpartum':
-            logger.debug(key='msg', data=f'{person_id} apply_risk_of_early_postpartum_death')
-            self.module.apply_risk_of_early_postpartum_death(person_id)
+        self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):

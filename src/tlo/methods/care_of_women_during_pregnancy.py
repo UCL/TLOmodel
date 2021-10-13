@@ -567,6 +567,13 @@ class CareOfWomenDuringPregnancy(Module):
         # Reset the variable to prevent future scheduling errors
         df.at[individual_id, 'ac_to_be_admitted'] = False
 
+    def call_if_maternal_emergency_assessment_cant_run(self, hsi_event):
+        individual_id = hsi_event.target
+        logger.debug(key='message', data=f'HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment: did not run for '
+                                         f'person {individual_id}')
+
+        self.sim.modules['PregnancySupervisor'].apply_risk_of_death_from_monthly_complications(individual_id)
+
     # ================================= INTERVENTIONS DELIVERED DURING ANC ============================================
     # The following functions contain the interventions that are delivered as part of routine ANC contacts. Functions
     # are called from within the ANC HSIs. Which interventions are called depends on the mothers gestation and the
@@ -1717,7 +1724,7 @@ class CareOfWomenDuringPregnancy(Module):
             logger.debug(key='msg', data=f'Mother {individual_id} has received antibiotics after being admitted for '
                                          f'chorioamnionitis')
 
-    def ectopic_pregnancy_treatment_doesnt_run(self, individual_id):
+    def ectopic_pregnancy_treatment_doesnt_run(self, hsi_event):
         """
         This function is called within HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy if the event cannot
         run/the intervention cannot be delivered. This ensures that women with ectopic pregnancies that haven't ruptured
@@ -1725,7 +1732,10 @@ class CareOfWomenDuringPregnancy(Module):
         :param individual_id: individual_id
         :return:
         """
+        individual_id = hsi_event.target
         df = self.sim.population.props
+
+        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy: did not run')
 
         from tlo.methods.pregnancy_supervisor import EctopicPregnancyRuptureEvent
 
@@ -2513,21 +2523,15 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
-    def did_not_run(self):
-        individual_id = self.target
-        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment: did not run')
+    def never_ran(self):
+        self.module.call_if_maternal_emergency_assessment_cant_run(self)
 
-        self.sim.modules['PregnancySupervisor'].apply_risk_of_death_from_monthly_complications(individual_id)
+    def did_not_run(self):
+        self.module.call_if_maternal_emergency_assessment_cant_run(self)
         return False
 
     def not_available(self):
-        individual_id = self.target
-        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment: cannot not run'
-                                         ' with this configuration')
-
-        self.sim.modules['PregnancySupervisor'].apply_risk_of_death_from_monthly_complications(individual_id)
-        return False
-
+        self.module.call_if_maternal_emergency_assessment_cant_run(self)
 
 class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
     """
@@ -3164,7 +3168,7 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
         self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_id]['delete_mni'] = True
 
         logger.debug(key='message', data=f'Mother {person_id} will now undergo surgery due to ectopic pregnancy as '
-                                             f'consumables are available')
+                                         f'consumables are available')
 
         # For women who have sought care after they have experienced rupture we use this treatment variable to
         # reduce risk of death (women who present prior to rupture do not pass through the death event as we assume
@@ -3180,22 +3184,15 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
         #        logger.debug(key='msg', data=f'Mother {person_id} could not receive treatment due to insufficient '
         #                                    f'consumables')
 
+    def never_ran(self):
+        self.module.ectopic_pregnancy_treatment_doesnt_run(self)
+
     def did_not_run(self):
-        person_id = self.target
-
-        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy: did not run')
-        self.module.ectopic_pregnancy_treatment_doesnt_run(person_id)
-
+        self.module.ectopic_pregnancy_treatment_doesnt_run(self)
         return False
 
     def not_available(self):
-        person_id = self.target
-
-        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy: cannot not run '
-                                         'with this configuration')
-        self.module.ectopic_pregnancy_treatment_doesnt_run(person_id)
-
-        return False
+        self.module.ectopic_pregnancy_treatment_doesnt_run(self)
 
 
 class AntenatalCareLoggingEvent(RegularEvent, PopulationScopeEventMixin):

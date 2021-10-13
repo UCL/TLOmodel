@@ -14,7 +14,7 @@ scenario_filename = 'run_without_healthsystem.py'  # <-- update this to look at 
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_no_healthsystem_run_without_healthsystem-2021-10-11T153709Z'
+graph_location = 'output_graphs_30k_run_without_healthsystem-2021-10-12T163706Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -218,34 +218,26 @@ def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_data_
 pregnancy_poll_results = extract_results(
     results_folder,
     module="tlo.methods.contraception",
-    key="pregnant_at_age",
-    custom_generate_series=(
-        lambda df: df.assign(year=pd.to_datetime(df['date']).dt.year).groupby(['year'])['year'].count()
-    ))
-
-contraception_failure = extract_results(
-    results_folder,
-    module="tlo.methods.contraception",
-    key="fail_contraception",
+    key="pregnancy",
     custom_generate_series=(
         lambda df: df.assign(year=pd.to_datetime(df['date']).dt.year).groupby(['year'])['year'].count()
     ))
 
 mean_pp_pregs = get_mean_and_quants(pregnancy_poll_results)[0]
-mean_cf_pregs = get_mean_and_quants(contraception_failure)[0]
-total_pregnancies_per_year = [x + y for x, y in zip(mean_pp_pregs, mean_cf_pregs)]
+#mean_cf_pregs = get_mean_and_quants(contraception_failure)[0]
+#total_pregnancies_per_year = [x + y for x, y in zip(mean_pp_pregs, mean_cf_pregs)]
 
 lq_pp = get_mean_and_quants(pregnancy_poll_results)[1]
-lq_cf = get_mean_and_quants(contraception_failure)[1]
+#lq_cf = get_mean_and_quants(contraception_failure)[1]
 uq_pp = get_mean_and_quants(pregnancy_poll_results)[2]
-uq_cf = get_mean_and_quants(contraception_failure)[2]
-total_lq = [x + y for x, y in zip(lq_pp, lq_cf)]
-total_uq = [x + y for x, y in zip(uq_pp, uq_cf)]
+#uq_cf = get_mean_and_quants(contraception_failure)[2]
+#total_lq = [x + y for x, y in zip(lq_pp, lq_cf)]
+#total_uq = [x + y for x, y in zip(uq_pp, uq_cf)]
 
 
 fig, ax = plt.subplots()
-ax.plot(sim_years, total_pregnancies_per_year, label='Model')
-ax.fill_between(sim_years, total_lq, total_uq, color='b', alpha=.1, label="UI (2.5-92.5)")
+ax.plot(sim_years, mean_pp_pregs, label='Model')
+ax.fill_between(sim_years, lq_pp, uq_pp, color='b', alpha=.1, label="UI (2.5-92.5)")
 plt.xlabel('Year')
 plt.ylabel('Pregnancies (mean)')
 plt.title('Mean number of pregnancies')
@@ -716,6 +708,7 @@ line_graph_with_ci_and_target_rate(final_twining_rate, lq_rate, uq_rate, target_
 
 
 # ---------------------------------------- Early Pregnancy Loss... ----------------------------------------------------
+total_pregnancies_per_year = get_mean_and_quants(pregnancy_poll_results)[0]
 # Ectopic pregnancies/Total pregnancies
 ectopic_data = get_comp_mean_and_rate('ectopic_unruptured', total_pregnancies_per_year, an_comps, 1000)
 
