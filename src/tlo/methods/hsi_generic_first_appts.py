@@ -147,11 +147,6 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                 if 'Stunting' in self.sim.modules:
                     self.sim.modules['Stunting'].do_when_chronic_malnutrition_assessment(person_id=person_id)
 
-                # Run DxAlgorithmChild to get additional diagnoses:
-                diagnosis = self.sim.modules["DxAlgorithmChild"].diagnose(
-                    person_id=person_id, hsi_event=self
-                )
-
         # diagnostic algorithm for child <5 yrs
         if age < 5:
             # ----------------------------------- CHILD < 5 -----------------------------------
