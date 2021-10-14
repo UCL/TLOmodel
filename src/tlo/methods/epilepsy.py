@@ -9,6 +9,9 @@ from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
+from tlo.methods.healthsystem import HSI_Event
+
 
 # todo: note this code is becoming very depracated and does not include health interactions
 
@@ -152,6 +155,12 @@ class Epilepsy(Module):
             p['daly_wt_epilepsy_severe'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=860)
             p['daly_wt_epilepsy_less_severe'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=861)
             p['daly_wt_epilepsy_seizure_free'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=862)
+
+        # Register Symptom that this module will use
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name='seizures',
+                    odds_ratio_health_seeking_in_adults=100.00)
+        )
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -418,6 +427,15 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(
                 InstantaneousDeath(self.module, individual_id, 'Epilepsy'), self.sim.date
             )
+
+        # -------------------- UPDATING OF SYMPTOM OF seizures OVER TIME --------------------------------
+
+         self.sim.modules['SymptomManager'].change_symptom(
+            person_id=df.loc[df.is_alive & (df.ep_seiz_stat == '2' or df.ep_seiz_stat == '3')].index.tolist(),
+            symptom_string='seizures',
+            add_or_remove='+',
+            disease_module=self.module
+        )
 
 
 class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
