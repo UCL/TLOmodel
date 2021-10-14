@@ -16,7 +16,7 @@ Health care seeking is prompted by the onset of the symptom diarrhoea. The indiv
  * See todo
 
 """
-from collections import Iterable
+from collections.abc import Iterable
 from pathlib import Path
 
 import numpy as np
@@ -56,15 +56,15 @@ class Diarrhoea(Module):
 
     INIT_DEPENDENCIES = {
         'Demography',
-        'Lifestyle',
         'HealthSystem',
-        'SymptomManager',
-        'Stunting',
-        'Epi',
         'Hiv',
+        'Lifestyle',
         'NewbornOutcomes',
-        'Wasting'
+        'SymptomManager',
+        'Wasting',
     }
+
+    ADDITIONAL_DEPENDENCIES = {'Alri', 'Epi', 'Stunting'}
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
@@ -1573,7 +1573,11 @@ class DiarrhoeaPropertiesOfOtherModules(Module):
     """For the purpose of the testing, this module generates the properties upon which the Alri module relies"""
 
     INIT_DEPENDENCIES = {'Demography'}
-    ALTERNATIVE_TO = {'Hiv', 'Alri', 'NewbornOutcomes', 'Stunting', 'Wasting'}
+
+    # Though this module provides some properties from NewbornOutcomes we do not list
+    # NewbornOutcomes in the ALTERNATIVE_TO set to allow using in conjunction with
+    # SimplifiedBirths which can also be used as an alternative to NewbornOutcomes
+    ALTERNATIVE_TO = {'Alri', 'Epi', 'Hiv', 'Stunting', 'Wasting'}
 
     PROPERTIES = {
         'hv_inf': Property(Types.BOOL, 'temporary property for HIV infection status'),
