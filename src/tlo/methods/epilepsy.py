@@ -521,11 +521,12 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Epilepsy_Start_Anti-Epileptics'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1  # This enforces that the apppointment must be run at that facility-level
+        self.ACCEPTED_FACILITY_LEVEL = 3  # This enforces that the apppointment must be run at that facility-level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         # Define the consumables
         # todo: set back below to False
@@ -575,3 +576,50 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
 # todo: add line below back in when consumable availability functioning
 #       if anti_epileptics_available:
         df.at[person_id, 'ep_antiep'] = True
+
+        # Schedule a follow-up for 3 months:
+        hs.schedule_hsi_event(
+            hsi_event=HSI_Epilepsy_Follow_Up(
+                module=self.module,
+                person_id=person_id,
+            ),
+            topen=self.sim.date + DateOffset(months=3),
+            tclose=None,
+            priority=0
+        )
+
+
+class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        the_appt_footprint["Over5OPD"] = 1
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = "Epilepsy_Follow_Up"
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 3
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
+
+        if not df.at[person_id, 'is_alive']:
+            return hs.get_blank_appt_footprint()
+
+        # Schedule a follow-up for 3 months:
+        hs.schedule_hsi_event(
+            hsi_event=HSI_Epilepsy_Follow_Up(
+                module=self.module,
+                person_id=person_id,
+            ),
+            topen=self.sim.date + DateOffset(months=3),
+            tclose=None,
+            priority=0
+        )
+
+    def did_not_run(self):
+        pass
