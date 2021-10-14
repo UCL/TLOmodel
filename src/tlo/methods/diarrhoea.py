@@ -59,11 +59,11 @@ class Diarrhoea(Module):
         'Lifestyle',
         'HealthSystem',
         'SymptomManager',
-        # Currently need to include DiarrhoeaPropertiesOfOtherModules as there is no alternative
-        # provider of un_clinical_acute_malnutrition property at the moment. As this
-        # module also provides the required properties from NewbornOutcomes, Hiv and Epi
-        # these are also not included here to avoid duplicated property definitions
-        'DiarrhoeaPropertiesOfOtherModules'
+        'Stunting',
+        'Epi',
+        'Hiv',
+        'NewbornOutcomes',
+        'Wasting'
     }
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
@@ -468,6 +468,8 @@ class Diarrhoea(Module):
         'gi_duration_longer_than_13days': Property(Types.BOOL,
                                                    'Whether the duration of the current episode would last longer than '
                                                    '13 days if untreated. (False if does not have current episode)'),
+        'gi_number_of_episodes': Property(Types.INT,
+                                          "Number of episodes of diarrhoea caused by a pathogen"),
 
         # ---- Internal variables storing dates of scheduled events  ----
         'gi_date_of_onset': Property(Types.DATE, 'Date of onset of current episode of diarrhoea (pd.NaT if does not '
@@ -535,6 +537,7 @@ class Diarrhoea(Module):
         df.loc[df.is_alive, 'gi_type'] = np.nan
         df.loc[df.is_alive, 'gi_dehydration'] = np.nan
         df.loc[df.is_alive, 'gi_duration_longer_than_13days'] = False
+        df.loc[df.is_alive, 'gi_number_of_episodes'] = 0
 
         # ---- Internal values ----
         df.loc[df.is_alive, 'gi_date_of_onset'] = pd.NaT
@@ -598,6 +601,7 @@ class Diarrhoea(Module):
         df.at[child_id, 'gi_type'] = np.nan
         df.at[child_id, 'gi_dehydration'] = np.nan
         df.at[child_id, 'gi_duration_longer_than_13days'] = False
+        df.at[child_id, 'gi_number_of_episodes'] = 0
 
         # ---- Internal values ----
         df.at[child_id, 'gi_date_of_onset'] = pd.NaT
@@ -905,6 +909,9 @@ class Diarrhoea(Module):
         # Those that do currently have diarrhoea, should have a pathogen
         in_current_episode = df.is_alive & df.gi_has_diarrhoea
         assert not pd.isnull(df.loc[in_current_episode, 'gi_pathogen']).any()
+
+        # Those that do currently have diarrhoea, should have a non-zero value for the total number of episodes
+        assert (df.loc[in_current_episode, 'gi_number_of_episodes'] > 0).all()
 
         # Those that currently have diarrhoea and have not had a treatment, should have either a recovery date or
         # a death_date (but not both)
@@ -1335,7 +1342,6 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         date_of_outcome = self.sim.date + DateOffset(days=duration_in_days)
 
         # Collected updated properties of this person
-        # Collected updated properties of this person
         props_new = {
             'gi_has_diarrhoea': True,
             'gi_pathogen': self.pathogen,
@@ -1397,6 +1403,9 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             },
             description='each incicdent case of diarrhoea'
         )
+
+        # Increment the counter for the number of cases of diarrhoea had
+        df.at[person_id, 'gi_number_of_episodes'] += 1
 
 
 class DiarrhoeaNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
@@ -1564,7 +1573,7 @@ class DiarrhoeaPropertiesOfOtherModules(Module):
     """For the purpose of the testing, this module generates the properties upon which the Alri module relies"""
 
     INIT_DEPENDENCIES = {'Demography'}
-    ALTERNATIVE_TO = {'Hiv', 'Alri', 'NewbornOutcomes'}
+    ALTERNATIVE_TO = {'Hiv', 'Alri', 'NewbornOutcomes', 'Stunting', 'Wasting'}
 
     PROPERTIES = {
         'hv_inf': Property(Types.BOOL, 'temporary property for HIV infection status'),

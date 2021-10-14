@@ -138,18 +138,12 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     self.sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
                         person_id=person_id, hsi_event=self)
 
-                # todo - these assesements only if the person has diarrhoea?
-                # routine assessment for acute malnutrition -----
-                if 'Wasting' in self.sim.modules:
-                    self.sim.modules['Wasting'].do_when_acute_malnutrition_assessment(person_id=person_id)
-
-                # routine assessment for chronic malnutrition -----
-                if 'Stunting' in self.sim.modules:
-                    self.sim.modules['Stunting'].do_when_chronic_malnutrition_assessment(person_id=person_id)
 
         # diagnostic algorithm for child <5 yrs
         if age < 5:
             # ----------------------------------- CHILD < 5 -----------------------------------
+            if 'Stunting' in self.sim.modules:
+                self.sim.modules['Stunting'].do_routine_assesement_for_chronic_undernutrition(person_id=person_id)
 
             if "Malaria" in self.sim.modules:
                 if 'fever' in symptoms:
