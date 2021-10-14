@@ -76,7 +76,7 @@ class Scenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         service_availability = [
             ['*'],  # draw 0: HealthSystem operational
-            []  # draw 1: HealthSystem not operational
+            []      # draw 1: HealthSystem not operational
         ]
         return {
             'HealthSystem': {

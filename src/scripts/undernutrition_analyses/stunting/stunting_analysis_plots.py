@@ -3,11 +3,7 @@ from pathlib import Path
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from tlo.analysis.utils import (
-    extract_results,
-    get_scenario_outputs,
-    summarize,
-)
+from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize
 
 # %%
 scenario_filename = 'analysis_stunting.py'
