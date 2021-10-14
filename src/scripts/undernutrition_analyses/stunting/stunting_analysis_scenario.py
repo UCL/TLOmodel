@@ -1,12 +1,12 @@
 """
 Produce a run of the Stunting Module to assess the levels of Stunting induced with default parameters and
-HealthSystem availability - including the effects of Diarrhoea and Alri and all the labour modules.
+HealthSystem availability - including the effects of Diarrhoea and Alri and all the Labour modules.
 
 Run on the batch system using:
 ```tlo batch-submit src/scripts/undernutrition_analyses/analysis_stunting.py```
 
 Or locally using:
-```tlo batch-job src/scripts/undernutrition_analyses/analysis_stunting.py```
+```tlo scenario-run src/scripts/undernutrition_analyses/analysis_stunting.py```
 """
 
 from pathlib import Path
@@ -38,9 +38,9 @@ class Scenario(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2011, 12, 31)
+        self.end_date = Date(2029, 12, 31)
         self.pop_size = 500
-        self.number_of_draws = 1
+        self.number_of_draws = 2
         self.runs_per_draw = 1
 
     def log_configuration(self):
@@ -74,7 +74,15 @@ class Scenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        pass
+        service_availability = [
+            ['*'],  # draw 0: HealthSystem operational
+            []      # draw 1: HealthSystem not operational
+        ]
+        return {
+            'HealthSystem': {
+                'Service_Availability': service_availability[draw_number],
+            },
+        }
 
 
 if __name__ == '__main__':
@@ -82,5 +90,4 @@ if __name__ == '__main__':
     scenario_run([__file__])
 
 
-# %% Analysis
-# use outputs/analysis_stunting-2021-10-14T130317Z
+

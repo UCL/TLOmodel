@@ -45,7 +45,7 @@ class Stunting(Module):
 
     """
 
-    INIT_DEPENDENCIES = {'Demography', 'Wasting'}
+    INIT_DEPENDENCIES = {'Demography', 'Wasting', 'NewbornOutcomes', 'Diarrhoea', 'Hiv'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -227,7 +227,7 @@ class Stunting(Module):
                                                             inclusive='left')
 
             stunted = make_scaled_linear_model_stunting(target_prob=p_stunting.prob_stunting, mask=mask).predict(
-                df.loc[mask], self.rng)
+                df.loc[mask], self.rng, squeeze_single_row_output=False)
 
             severely_stunted_idx = stunted.loc[
                 stunted & (self.rng.rand(len(stunted)) < p_stunting.prob_severe_given_stunting)].index
@@ -544,6 +544,8 @@ class HSI_Stunting_ComplementaryFeeding(HSI_Event, IndividualScopeEventMixin):
 
 class StuntingPropertiesOfOtherModules(Module):
     """For the purpose of the testing, this module generates the properties upon which the Stunting module relies"""
+
+    INIT_DEPENDENCIES = {'Demography'}
 
     ALTERNATIVE_TO = {'Hiv', 'NewbornOutcomes', 'Wasting', 'Diarrhoea'}
 
