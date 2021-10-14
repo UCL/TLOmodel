@@ -148,7 +148,7 @@ epi_death_rate = pd.Series(
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
 epi_death_rate.plot()
 plt.title('Rate of epilepsy death in people with seizures')
-plt.ylim(0, 200)
+plt.ylim(0, 20 )
 plt.show()
 
 incidence_epilepsy = pd.Series(
@@ -156,7 +156,7 @@ incidence_epilepsy = pd.Series(
     index=output['tlo.methods.epilepsy']['incidence_epilepsy']['date'])
 incidence_epilepsy.plot()
 plt.title('Incidence of epilepsy')
-plt.ylim(0, 2000)
+plt.ylim(0, 200 )
 plt.show()
 
 
