@@ -551,6 +551,6 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
                 if outcome_of_request_for_consumables['Item_Code'][item_code_phenytoin]:
                     anti_epileptics_available = True
 #                   logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
-# todo: add line back in
+# todo: add line below back in when consumable availability functioning
 #       if anti_epileptics_available:
         df.at[person_id, 'ep_antiep'] = True
