@@ -41,7 +41,9 @@ from tlo.methods.prostate_cancer import (
     HSI_ProstateCancer_Investigation_Following_Pelvic_Pain,
     HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms,
 )
-
+from tlo.methods.epilepsy import (
+    HSI_Epilepsy_Start_Anti_Epileptic,
+)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -256,6 +258,16 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                             HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
                                 person_id=person_id,
                                 module=self.sim.modules['ProstateCancer']),
+                            priority=0,
+                            topen=self.sim.date,
+                            tclose=None)
+
+               # If the symptoms include seizures then aim to initiate antiepileptics
+                    if 'seizures' in symptoms:
+                        schedule_hsi(
+                            HSI_Epilepsy_Start_Anti_Epileptic(
+                                person_id=person_id,
+                                module=self.sim.modules['seizures']),
                             priority=0,
                             topen=self.sim.date,
                             tclose=None)
