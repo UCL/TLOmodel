@@ -6,35 +6,25 @@ import pandas as pd
 from pytest import approx
 from scipy.stats import norm
 
-from tlo import Date, Simulation, logging
-from tlo.methods import (
-    demography,
-    stunting,
-    enhanced_lifestyle,
-    healthsystem,
-    simplified_births,
-)
+from tlo import Date, Simulation
+from tlo.lm import LinearModel, Predictor
+from tlo.methods import demography, enhanced_lifestyle, healthsystem, simplified_births, stunting
 from tlo.methods.demography import AgeUpdateEvent
+from tlo.methods.stunting import HSI_Stunting_ComplementaryFeeding
 from tlo.util import random_date
 
 
-def get_sim(tmpdir):
+def get_sim():
     """Return simulation objection with Stunting and other necessary modules registered."""
 
     start_date = Date(2010, 1, 1)
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
-    sim = Simulation(start_date=start_date, seed=0, show_progress_bar=False, log_config={
-        'filename': 'tmp',
-        'directory': tmpdir,
-        'custom_levels': {
-            "*": logging.WARNING,
-            "tlo.methods.stunting": logging.INFO}
-    })
+    sim = Simulation(start_date=start_date, seed=0)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, ignore_cons_constraints=True),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  stunting.Stunting(resourcefilepath=resourcefilepath),
                  stunting.StuntingPropertiesOfOtherModules(),
@@ -59,10 +49,10 @@ def check_params_read(sim):
                                                    f'resourcefile.'
 
 
-def test_models(tmpdir):
+def test_models():
     """Check that all the models defined work"""
     popsize = 1000
-    sim = get_sim(tmpdir)
+    sim = get_sim()
     sim.make_initial_population(n=popsize)
 
     models = stunting.Models(sim.modules['Stunting'])
@@ -71,14 +61,13 @@ def test_models(tmpdir):
     models.lm_prob_becomes_stunted.predict(df.loc[df.is_alive])
     models.lm_prob_progression_to_severe_stunting.predict(df.loc[df.is_alive])
     models.lm_prob_natural_recovery.predict(df.loc[df.is_alive])
-    models.lm_prob_improvement_with_interventions.predict(df.loc[df.is_alive])
 
 
-def test_basic_run(tmpdir):
+def test_basic_run():
     """Short run of the module using default parameters with check on dtypes"""
     dur = pd.DateOffset(years=5)
     popsize = 1000
-    sim = get_sim(tmpdir)
+    sim = get_sim()
     sim.make_initial_population(n=popsize)
 
     check_dtypes(sim)
@@ -88,18 +77,15 @@ def test_basic_run(tmpdir):
     check_dtypes(sim)
 
 
-def test_initial_prevalence_of_stunting(tmpdir):
+def test_initial_prevalence_of_stunting():
     """Check that initial prevalence of stunting is as expected"""
-    sim = get_sim(tmpdir)
+    sim = get_sim()
     sim.make_initial_population(n=50_000)
 
     # Make all the population under five and re-run `initialise_population` for `Stunting`
-    sim.population.props.date_of_birth = sim.population.props['is_alive'].apply(lambda _:
-                                                                                random_date(
-                                                                                    sim.date - pd.DateOffset(years=5),
-                                                                                    sim.date - pd.DateOffset(days=1),
-                                                                                    sim.rng)
-                                                                                )
+    sim.population.props.date_of_birth = sim.population.props['is_alive'].apply(
+        lambda _: random_date(sim.date - pd.DateOffset(years=5), sim.date - pd.DateOffset(days=1), sim.rng)
+    )
     age_update_event = AgeUpdateEvent(sim.modules['Demography'], sim.modules['Demography'].AGE_RANGE_LOOKUP)
     age_update_event.apply(sim.population)
     sim.modules['Stunting'].initialise_population(sim.population)
@@ -139,427 +125,172 @@ def test_initial_prevalence_of_stunting(tmpdir):
         assert (haz_distribution.cdf(-3.0) / haz_distribution.cdf(-2.0)) == approx(
             prevalence_of_severe_stunting_given_any_stunting_by_age[agegp], abs=0.02)
 
-#
-# def test_stunting_polling(tmpdir):
-#     """Check polling events leads to incident cases"""
-#     # get simulation object:
-#     dur = pd.DateOffset(months=3)
-#     popsize = 1000
-#     sim = get_sim(tmpdir)
-#
-#     # Make incidence of stunting very high :
-#     params = sim.modules['Stunting'].parameters
-#     for p in params:
-#         if p.startswith('base_inc_rate_stunting_by_agegp'):
-#             params[p] = [3 * v for v in params[p]]
-#
-#     sim.make_initial_population(n=popsize)
-#     sim.simulate(end_date=sim.start_date + dur)
-#     sim.event_queue.queue = []
-#
-#     # Run polling event: check that a stunting incident case is produced:
-#     polling = StuntingPollingEvent(sim.modules['Stunting'])
-#     polling.apply(sim.population)
-#     assert len([q for q in sim.event_queue.queue if isinstance(q[2], StuntingOnsetEvent)]) > 0
-#
-#
-# def test_recovery_moderate_stunting(tmpdir):
-#     """Check natural recovery of moderate stunting, by reducing the probability of remained stunted and
-#     reducing progression to severe stunting"""
-#     dur = pd.DateOffset(days=0)
-#     popsize = 1000
-#     sim = get_sim(tmpdir)
-#
-#     sim.make_initial_population(n=popsize)
-#     sim.simulate(end_date=sim.start_date + dur)
-#     sim.event_queue.queue = []  # clear the queue
-#
-#     # increase incidence of stunting
-#     sim.modules['Stunting'].stunting_incidence_equation = LinearModel(
-#         LinearModelType.MULTIPLICATIVE, 1.0)
-#
-#     # remove progression to severe stunting
-#     sim.modules['Stunting'].severe_stunting_progression_equation = LinearModel(
-#         LinearModelType.MULTIPLICATIVE, 0.0)
-#
-#     # increase probability of natural recovery (without interventions)
-#     params = sim.modules['Stunting'].parameters
-#     params['prob_remained_stunted_in_the_next_3months'] = 0.0
-#
-#     # Get person to use:
-#     df = sim.population.props
-#     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-#     person_id = under5s.index[0]
-#     assert df.loc[person_id, 'un_HAZ_category'] == 'HAZ>=-2'
-#
-#     # Run Stunting Polling event to get new incident cases:
-#     polling = StuntingPollingEvent(module=sim.modules['Stunting'])
-#     polling.apply(sim.population)
-#
-#     # Check that there is a StuntingOnsetEvent scheduled for this person:
-#     onset_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-#                          isinstance(event_tuple[1], StuntingOnsetEvent)
-#                          ][0]
-#     date_of_scheduled_onset = onset_event_tuple[0]
-#     onset_event = onset_event_tuple[1]
-#     assert date_of_scheduled_onset > sim.date
-#
-#     # Run the onset event:
-#     sim.date = date_of_scheduled_onset
-#     onset_event.apply(person_id=person_id)
-#
-#     # Check properties of this individual: should now be moderately stunted
-#     person = df.loc[person_id]
-#     assert person['un_ever_stunted']
-#     assert person['un_HAZ_category'] == '-3<=HAZ<-2'
-#     assert person['un_last_stunting_date_of_onset'] == sim.date
-#     assert pd.isnull(person['un_stunting_tx_start_date'])
-#     assert pd.isnull(person['un_stunting_recovery_date'])
-#
-#     # Check that there is a StuntingRecoveryEvent scheduled for this person:
-#     recov_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-#                          isinstance(event_tuple[1], StuntingRecoveryEvent)
-#                          ][0]
-#     date_of_scheduled_recov = recov_event_tuple[0]
-#     recov_event = recov_event_tuple[1]
-#     assert date_of_scheduled_recov > sim.date
-#
-#     # Run the recovery event:
-#     sim.date = date_of_scheduled_recov
-#     recov_event.apply(person_id=person_id)
-#
-#     # Check properties of this individual
-#     person = df.loc[person_id]
-#     assert person['un_HAZ_category'] == 'HAZ>=-2'
-#     assert person['un_stunting_recovery_date'] == sim.date
-#
-#
-# def test_recovery_severe_stunting(tmpdir):
-#     """Check natural recovery of severe stunting, by reducing the probability of remained stunted"""
-#     dur = pd.DateOffset(days=0)
-#     popsize = 1000
-#     sim = get_sim(tmpdir)
-#
-#     sim.make_initial_population(n=popsize)
-#     sim.simulate(end_date=start_date + dur)
-#     sim.event_queue.queue = []  # clear the queue
-#
-#     # increase incidence of stunting and progression to severe
-#     sim.modules['Stunting'].stunting_incidence_equation = LinearModel(
-#         LinearModelType.MULTIPLICATIVE, 1.0)
-#     sim.modules['Stunting'].severe_stunting_progression_equation = LinearModel(
-#         LinearModelType.MULTIPLICATIVE, 1.0)
-#
-#     # increase probability of natural recovery (without interventions)
-#     params = sim.modules['Stunting'].parameters
-#     params['prob_remained_stunted_in_the_next_3months'] = 0.0
-#
-#     # Get person to use:
-#     df = sim.population.props
-#     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-#     person_id = under5s.index[0]
-#     assert df.loc[person_id, 'un_HAZ_category'] == 'HAZ>=-2'
-#
-#     # Run Stunting Polling event to get new incident cases:
-#     polling = StuntingPollingEvent(module=sim.modules['Stunting'])
-#     polling.apply(sim.population)
-#
-#     # Check that there is a StuntingOnsetEvent scheduled for this person:
-#     onset_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-#                          isinstance(event_tuple[1], StuntingOnsetEvent)
-#                          ][0]
-#     date_of_scheduled_onset = onset_event_tuple[0]
-#     onset_event = onset_event_tuple[1]
-#     assert date_of_scheduled_onset > sim.date
-#
-#     # Run the onset event:
-#     sim.date = date_of_scheduled_onset
-#     onset_event.apply(person_id=person_id)
-#
-#     # Check properties of this individual: should now be moderately stunted
-#     person = df.loc[person_id]
-#     assert person['un_ever_stunted']
-#     assert person['un_HAZ_category'] == '-3<=HAZ<-2'
-#     assert person['un_last_stunting_date_of_onset'] == sim.date
-#     assert pd.isnull(person['un_stunting_tx_start_date'])
-#     assert pd.isnull(person['un_stunting_recovery_date'])
-#
-#     # Check that there is a ProgressionSevereStuntingEvent scheduled for this person:
-#     progression_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-#                                isinstance(event_tuple[1], ProgressionSevereStuntingEvent)
-#                                ][0]
-#     date_of_scheduled_progression = progression_event_tuple[0]
-#     progression_event = progression_event_tuple[1]
-#     assert date_of_scheduled_progression > sim.date
-#
-#     # Run the progression to severe stunting event:
-#     sim.date = date_of_scheduled_progression
-#     progression_event.apply(person_id=person_id)
-#
-#     # Check properties of this individual: (should now be severely stunted and without a scheduled death date)
-#     person = df.loc[person_id]
-#     assert person['un_ever_stunted']
-#     assert person['un_HAZ_category'] == 'HAZ<-3'
-#     assert pd.isnull(person['un_stunting_tx_start_date'])
-#     assert pd.isnull(person['un_stunting_recovery_date'])
-#
-#     # Check that there is a StuntingRecoveryEvent scheduled for this person:
-#     recov_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-#                          isinstance(event_tuple[1], StuntingRecoveryEvent)
-#                          ][0]
-#     date_of_scheduled_recov = recov_event_tuple[0]
-#     recov_event = recov_event_tuple[1]
-#     assert date_of_scheduled_recov > sim.date
-#
-#     # Run the recovery event:
-#     sim.date = date_of_scheduled_recov
-#     recov_event.apply(person_id=person_id)
-#
-#     # Check properties of this individual (can only improve by 1 sd in HAZ)
-#     person = df.loc[person_id]
-#     assert person['un_HAZ_category'] == '-3<=HAZ<-2'
-#     assert pd.isnull(person['un_stunting_tx_start_date'])
-#     assert pd.isnull(person['un_stunting_recovery_date'])
-#
-#     # check they have no symptoms:
-#     assert 0 == len(sim.modules['SymptomManager'].has_what(person_id, sim.modules['Stunting']))
-#
-#
-#
-#
-# def test_treatment(tmpdir):
-#     """ Test that providing a treatment prevent further stunting """
-#
-#     dur = pd.DateOffset(days=0)
-#     popsize = 1000
-#     sim = get_sim(tmpdir)
-#
-#     sim.make_initial_population(n=popsize)
-#     sim.simulate(end_date=start_date + dur)
-#     sim.event_queue.queue = []  # clear the queue
-#
-#     # increase incidence of stunting
-#     sim.modules['Stunting'].stunting_incidence_equation = LinearModel(
-#         LinearModelType.MULTIPLICATIVE, 1.0)
-#
-#     # remove progression to severe
-#     sim.modules['Stunting'].severe_stunting_progression_equation = LinearModel(
-#         LinearModelType.MULTIPLICATIVE, 0.0)
-#
-#     # increase intervention effectiveness
-#     sim.modules['Stunting'].stunting_improvement_based_on_interventions = LinearModel(
-#         LinearModelType.MULTIPLICATIVE, 1.0)
-#
-#     # Get person to use:
-#     df = sim.population.props
-#     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-#     person_id = under5s.index[0]
-#     assert df.loc[person_id, 'un_HAZ_category'] == 'HAZ>=-2'
-#
-#     # Run Stunting Polling event to get new incident cases:
-#     polling = StuntingPollingEvent(module=sim.modules['Stunting'])
-#     polling.apply(sim.population)
-#
-#     # Check that there is a StuntingOnsetEvent scheduled for this person:
-#     onset_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-#                          isinstance(event_tuple[1], StuntingOnsetEvent)
-#                          ][0]
-#     date_of_scheduled_onset = onset_event_tuple[0]
-#     onset_event = onset_event_tuple[1]
-#     assert date_of_scheduled_onset > sim.date
-#
-#     # Run the onset event:
-#     sim.date = date_of_scheduled_onset
-#     onset_event.apply(person_id=person_id)
-#
-#     # Check properties of this individual: should now be moderately stunted
-#     person = df.loc[person_id]
-#     assert person['un_ever_stunted']
-#     assert person['un_HAZ_category'] == '-3<=HAZ<-2'
-#     assert person['un_last_stunting_date_of_onset'] == sim.date
-#     assert pd.isnull(person['un_stunting_tx_start_date'])
-#     assert pd.isnull(person['un_stunting_recovery_date'])
-#
-#     # Run Recovery Polling event to apply intervention effectiveness:
-#     recovery_polling = StuntingRecoveryPollingEvent(module=sim.modules['Stunting'])
-#     recovery_polling.apply(sim.population)
-#
-#     # Check that there is a StuntingRecoveryEvent scheduled for this person:
-#     recovery_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-#                             isinstance(event_tuple[1], StuntingRecoveryEvent)
-#                             ][0]
-#     date_of_scheduled_recovery = recovery_event_tuple[0]
-#     recovery_event = recovery_event_tuple[1]
-#     assert date_of_scheduled_recovery > sim.date
-#
-#     # Run the recovery event
-#     sim.date = date_of_scheduled_recovery
-#     recovery_event.apply(person_id=person_id)
-#
-#     # Check properties of this individual
-#     person = df.loc[person_id]
-#     assert person['un_HAZ_category'] == 'HAZ>=-2'
-#     assert person['un_stunting_recovery_date'] == sim.date
-#
-#
-# def test_use_of_HSI_complementary_feeding_education_only(tmpdir):
-#     """ Check that the HSIs works"""
-#     dur = pd.DateOffset(days=0)
-#     popsize = 1000
-#     sim = get_sim(tmpdir)
-#
-#     sim.make_initial_population(n=popsize)
-#     sim.simulate(end_date=start_date + dur)
-#     sim.event_queue.queue = []  # clear the queue
-#
-#     # increase incidence of stunting
-#     sim.modules['Stunting'].stunting_incidence_equation = LinearModel(
-#         LinearModelType.MULTIPLICATIVE, 1.0)
-#
-#     # reduce progression to severe stunting
-#     sim.modules['Stunting'].severe_stunting_progression_equation = LinearModel(
-#         LinearModelType.MULTIPLICATIVE, 0.0)
-#
-#     # increase intervention effectiveness
-#     sim.modules['Stunting'].stunting_improvement_based_on_interventions = LinearModel(
-#         LinearModelType.MULTIPLICATIVE, 1.0)
-#
-#     # Get person to use:
-#     df = sim.population.props
-#     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-#     person_id = under5s.index[0]
-#     assert df.loc[person_id, 'un_HAZ_category'] == 'HAZ>=-2'
-#
-#     # Run Stunting Polling event to get new incident cases:
-#     polling = StuntingPollingEvent(module=sim.modules['Stunting'])
-#     polling.apply(sim.population)
-#
-#     # Check that there is a StuntingOnsetEvent scheduled for this person:
-#     onset_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-#                          isinstance(event_tuple[1], StuntingOnsetEvent)
-#                          ][0]
-#     date_of_scheduled_onset = onset_event_tuple[0]
-#     onset_event = onset_event_tuple[1]
-#     assert date_of_scheduled_onset > sim.date
-#
-#     # Run the onset event:
-#     sim.date = date_of_scheduled_onset
-#     onset_event.apply(person_id=person_id)
-#
-#     # Check properties of this individual: should now be moderately stunted
-#     person = df.loc[person_id]
-#     assert person['un_ever_stunted']
-#     assert person['un_HAZ_category'] == '-3<=HAZ<-2'
-#     assert person['un_last_stunting_date_of_onset'] == sim.date
-#     assert pd.isnull(person['un_stunting_recovery_date'])
-#     assert pd.isnull(person['un_stunting_tx_start_date'])
-#
-#     # Run the HSI event
-#     hsi = HSI_complementary_feeding_education_only(person_id=person_id, module=sim.modules['Stunting'])
-#     hsi.run(squeeze_factor=0.0)
-#
-#     # Check that person is now on treatment:
-#     assert sim.date == df.at[person_id, 'un_stunting_tx_start_date']
-#
-#     # Check that a CureEvent has been scheduled
-#     recovery_event = [event_tuple[1] for event_tuple in sim.find_events_for_person(person_id) if
-#                       isinstance(event_tuple[1], StuntingRecoveryEvent)][0]
-#
-#     # Run the CureEvent
-#     recovery_event.apply(person_id=person_id)
-#
-#     # Check that the person is cured and is alive still:
-#     person = df.loc[person_id]
-#     assert person['is_alive']
-#     assert person['un_HAZ_category'] == 'HAZ>=-2'
-#     assert not pd.isnull(person['un_stunting_recovery_date'])
-#
-#
-# def test_use_of_HSI(tmpdir):
-#     """ Check that the HSIs works"""
-#
-#     def test_use_HSI_by_intervention(intervention):
-#         dur = pd.DateOffset(days=0)
-#         popsize = 1000
-#         sim = get_sim(tmpdir)
-#
-#         sim.make_initial_population(n=popsize)
-#         sim.simulate(end_date=start_date + dur)
-#         sim.event_queue.queue = []  # clear the queue
-#
-#         # increase incidence of stunting
-#         sim.modules['Stunting'].stunting_incidence_equation = LinearModel(
-#             LinearModelType.MULTIPLICATIVE, 1.0)
-#
-#         # reduce progression to severe stunting
-#         sim.modules['Stunting'].severe_stunting_progression_equation = LinearModel(
-#             LinearModelType.MULTIPLICATIVE, 1.0)
-#
-#         # increase intervention effectiveness
-#         sim.modules['Stunting'].stunting_improvement_based_on_interventions = LinearModel(
-#             LinearModelType.MULTIPLICATIVE, 1.0)
-#
-#         # Get person to use:
-#         df = sim.population.props
-#         under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-#         person_id = under5s.index[0]
-#         assert df.loc[person_id, 'un_HAZ_category'] == 'HAZ>=-2'
-#
-#         # Run Stunting Polling event to get new incident cases:
-#         polling = StuntingPollingEvent(module=sim.modules['Stunting'])
-#         polling.apply(sim.population)
-#
-#         # Check that there is a StuntingOnsetEvent scheduled for this person:
-#         onset_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-#                              isinstance(event_tuple[1], StuntingOnsetEvent)
-#                              ][0]
-#         date_of_scheduled_onset = onset_event_tuple[0]
-#         onset_event = onset_event_tuple[1]
-#         assert date_of_scheduled_onset > sim.date
-#
-#         # Run the onset event:
-#         sim.date = date_of_scheduled_onset
-#         onset_event.apply(person_id=person_id)
-#
-#         # Check properties of this individual: should now be moderately stunted
-#         person = df.loc[person_id]
-#         assert person['un_ever_stunted']
-#         assert person['un_HAZ_category'] == '-3<=HAZ<-2'
-#         assert person['un_last_stunting_date_of_onset'] == sim.date
-#         assert pd.isnull(person['un_stunting_recovery_date'])
-#         assert pd.isnull(person['un_stunting_tx_start_date'])
-#
-#         # Run the HSI event
-#         if intervention == 'education_only':
-#             hsi = HSI_complementary_feeding_education_only(person_id=person_id, module=sim.modules['Stunting'])
-#             hsi.run(squeeze_factor=0.0)
-#         if intervention == 'supplementary_foods':
-#             hsi = HSI_Stunting_ComplementaryFeeding(
-#                 person_id=person_id, module=sim.modules['Stunting'])
-#             hsi.run(squeeze_factor=0.0)
-#
-#         # Check that person is now on treatment:
-#         assert sim.date == df.at[person_id, 'un_stunting_tx_start_date']
-#
-#         # Check that there is a StuntingRecoveryEvent scheduled for this person:
-#         recovery_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-#                                 isinstance(event_tuple[1], StuntingRecoveryEvent)
-#                                 ][0]
-#         date_of_scheduled_recovery = recovery_event_tuple[0]
-#         recovery_event = recovery_event_tuple[1]
-#         assert date_of_scheduled_recovery > sim.date
-#
-#         # Run the recovery event
-#         sim.date = date_of_scheduled_recovery
-#         recovery_event.apply(person_id=person_id)
-#
-#         # Run the Recovery/ CureEvent
-#         recovery_event.apply(person_id=person_id)
-#
-#         # Check that the person is cured and is alive still:
-#         person = df.loc[person_id]
-#         assert person['is_alive']
-#         assert person['un_HAZ_category'] == 'HAZ>=-2'
-#
-#     test_use_HSI_by_intervention(intervention='education_only')
-#     test_use_HSI_by_intervention(intervention='supplementary_foods')
+
+def test_polling_event_onset():
+    """Test that polling event causes onset of stunting correctly"""
+    popsize = 1000
+    sim = get_sim()
+    sim.make_initial_population(n=popsize)
+
+    # Make the risk of becoming stunted very high
+    params = sim.modules['Stunting'].parameters
+    params['base_inc_rate_stunting_by_agegp'] = [1.0] * len(params['base_inc_rate_stunting_by_agegp'])
+
+    # Initialise Simulation
+    sim.simulate(end_date=sim.start_date)
+
+    # Get polling event
+    poll = stunting.StuntingPollingEvent(sim.modules['Stunting'])
+
+    # Make all the population not stunted and low wealth quantile (so at high risk )
+    df = sim.population.props
+    df.loc[df.is_alive, 'un_HAZ_category'] = 'HAZ>=-2'
+    df.loc[df.is_alive, 'li_wealth'] = 1
+
+    # Run the poll
+    poll.apply(sim.population)
+
+    # Check that everyone under age of 5 becomes stunted
+    assert (df.loc[df.is_alive & (df.age_years < 5), 'un_HAZ_category'] == '-3<=HAZ<-2').all()
+    assert (df.loc[df.is_alive & (df.age_years >= 5), 'un_HAZ_category'] == 'HAZ>=-2').all()
+
+
+def test_polling_event_recovery():
+    """Test that the polling event causes recovery correctly"""
+    popsize = 1000
+    sim = get_sim()
+    sim.make_initial_population(n=popsize)
+
+    # Make the risk of recovering very high
+    params = sim.modules['Stunting'].parameters
+    params['mean_years_to_1stdev_natural_improvement_in_stunting'] = 1e-3
+
+    # Initialise Simulation
+    sim.simulate(end_date=sim.start_date)
+
+    # Get polling event
+    poll = stunting.StuntingPollingEvent(sim.modules['Stunting'])
+
+    # Make all the population stunted / severely stunted
+    df = sim.population.props
+    orig = pd.Series(index=df.index, data=np.random.choice(['HAZ<-3', '-3<=HAZ<-2'], len(df), p=[0.5, 0.5]))
+    df.loc[df.is_alive & (df.age_years < 5), 'un_HAZ_category'] = orig.loc[df.is_alive & (df.age_years < 5)]
+    assert df.loc[df.is_alive & (df.age_years < 5), 'un_HAZ_category'].isin(['HAZ<-3', '-3<=HAZ<-2']).all()
+
+    # Run the poll
+    poll.apply(sim.population)
+
+    # Check that everyone under 5 has moved "up" one level
+    assert (df.loc[df.is_alive & (df.age_years < 5) & (orig == '-3<=HAZ<-2'), 'un_HAZ_category'] == 'HAZ>=-2').all()
+    assert (df.loc[df.is_alive & (df.age_years < 5) & (orig == 'HAZ<-3'), 'un_HAZ_category'] == '-3<=HAZ<-2').all()
+    assert (df.loc[df.is_alive & (df.age_years >= 5), 'un_HAZ_category'] == 'HAZ>=-2').all()
+
+
+def test_polling_event_progression():
+    """Test that the polling event causes progression correctly"""
+    popsize = 1000
+    sim = get_sim()
+    sim.make_initial_population(n=popsize)
+
+    # Make the risk of progression be very high and no recovery
+    params = sim.modules['Stunting'].parameters
+    params['r_progression_severe_stunting_by_agegp'] = [1.0] * len(params['r_progression_severe_stunting_by_agegp'])
+    params['mean_years_to_1stdev_natural_improvement_in_stunting'] = 1e3
+
+    # Initialise Simulation
+    sim.simulate(end_date=sim.start_date)
+
+    # Get polling event
+    poll = stunting.StuntingPollingEvent(sim.modules['Stunting'])
+
+    # Make all the population stunted / severely stunted
+    df = sim.population.props
+    orig = pd.Series(index=df.index, data=np.random.choice(['HAZ<-3', '-3<=HAZ<-2'], len(df), p=[0.5, 0.5]))
+    df.loc[df.is_alive & (df.age_years < 5), 'un_HAZ_category'] = orig.loc[df.is_alive & (df.age_years < 5)]
+    assert df.loc[df.is_alive & (df.age_years < 5), 'un_HAZ_category'].isin(['HAZ<-3', '-3<=HAZ<-2']).all()
+
+    # Run the poll
+    poll.apply(sim.population)
+
+    # Check that those eligible have moved "down" one level
+    assert (df.loc[df.is_alive & (df.age_years < 5) & (orig == '-3<=HAZ<-2'), 'un_HAZ_category'] == 'HAZ<-3').all()
+    assert (df.loc[df.is_alive & (df.age_years < 5) & (orig == 'HAZ<-3'), 'un_HAZ_category'] == 'HAZ<-3').all()
+    assert (df.loc[df.is_alive & (df.age_years >= 5), 'un_HAZ_category'] == 'HAZ>=-2').all()
+
+
+def test_incidence_level_is_right():
+    """Check that incidence of new stunting happens at the rate that is intended"""
+    popsize = 10_000
+    sim = get_sim()
+    sim.make_initial_population(n=popsize)
+
+    # Let there no recovery and no progression
+    params = sim.modules['Stunting'].parameters
+    params['base_inc_rate_stunting_by_agegp'] = [1.0] * len(params['base_inc_rate_stunting_by_agegp'])
+    params['r_progression_severe_stunting_by_agegp'] = [0.0] * len(params['r_progression_severe_stunting_by_agegp'])
+
+    # The population will be entirely composed of children under five not stunted
+    df = sim.population.props
+    df.loc[df.is_alive, 'age_years'] = 2
+    df.loc[df.is_alive, 'age_exact_years'] = 2.0
+    df.loc[df.is_alive, 'un_HAZ_category'] = 'HAZ>=-2'
+
+    # Initialise Simulation
+    sim.simulate(end_date=sim.start_date)
+
+    # Over-write model for onset to remove risk factors:
+    incidence_rate = 0.5  # target incidence rate per year
+    sim.modules['Stunting'].models.lm_prob_becomes_stunted = LinearModel.multiplicative(
+        Predictor('age_exact_years').when('< 5', incidence_rate).otherwise(0.0)
+    )
+
+    # Run polling event once per month for a year
+    poll = stunting.StuntingPollingEvent(sim.modules['Stunting'])
+    for date in pd.date_range(Date(2010, 1, 1), sim.date + pd.DateOffset(years=1), freq='M'):
+        sim.date = date
+        poll.apply(sim.population)
+
+    # Check that the proportion of persons with stunting is approximately equal to the target incidence rate
+    assert (df.loc[df.is_alive, 'un_HAZ_category'] == '-3<=HAZ<-2').mean() == approx(
+        1.0 - np.exp(-incidence_rate * 1.0), rel=0.01)
+    assert not (df.loc[df.is_alive, 'un_HAZ_category'] == 'HAZ<-3').any()
+
+
+def test_routine_assessment_for_chronic_undernutrition():
+    """Check that a call to `do_routine_assessment_for_chronic_undernutrition` leads to an HSI for the person via
+    an HSI"""
+
+    popsize = 10_000
+    sim = get_sim()
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=sim.start_date)
+    sim.modules['HealthSystem'].reset_queue()
+
+    # Make one person have non-severe stunting
+    df = sim.population.props
+    person_id = 0
+    df.loc[person_id, 'age_years'] = 2
+    df.loc[person_id, 'age_exact_year'] = 2.0
+    df.loc[person_id, 'un_HAZ_category'] = '-3<=HAZ<-2'
+
+    # Subject the person to `do_routine_assessment_for_chronic_undernutrition`
+    sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
+
+    # Check that there is an HSI scheduled for this person
+    hsi_event_scheduled = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+                           isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)]
+    assert 1 == len(hsi_event_scheduled)
+    the_hsi_event = hsi_event_scheduled[0]
+    assert person_id == the_hsi_event.target
+
+    # Make probability of treatment success is 1.0 (consumables are available through use of `ignore_cons_constraints`)
+    sim.modules['Stunting'].parameters[
+        'un_effectiveness_complementary_feeding_promo_with_food_supplementation_in_stunting_reduction'] = 1.0
+    sim.modules['Stunting'].parameters[
+        'un_effectiveness_complementary_feeding_promo_education_only_in_stunting_reduction'] = 1.0
+
+    # Run the HSI event
+    the_hsi_event.run(squeeze_factor=0.0)
+
+    # Check that the person is not longer stunted
+    assert df.at[person_id, 'un_HAZ_category'] == 'HAZ>=-2'

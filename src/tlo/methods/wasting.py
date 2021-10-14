@@ -15,14 +15,9 @@ class Wasting(Module):
     INIT_DEPENDENCIES = {'Demography'}
 
     PROPERTIES = {
-     'un_clinical_acute_malnutrition':
-     Property(
-         Types.CATEGORICAL, 'temporary property', categories=['MAM', 'SAM', 'well']
-     ),
-    'un_ever_wasted':
-    Property(
-        Types.BOOL, 'temporary property'
-    )
+        'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL,
+                                                   'temporary property', categories=['MAM', 'SAM', 'well']),
+        'un_ever_wasted': Property(Types.BOOL, 'temporary property')
     }
 
     def __init__(self, name=None, resourcefilepath=None):

@@ -12,23 +12,23 @@ Or locally using:
 from pathlib import Path
 
 from tlo import Date, logging
-from tlo import Simulation
-from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    alri,
     care_of_women_during_pregnancy,
-    hiv,
-    newborn_outcomes,
-    postnatal_supervisor,
-    stunting, diarrhoea, alri, wasting, epi,
-)
-from tlo.methods import (
     contraception,
     demography,
+    diarrhoea,
     enhanced_lifestyle,
+    epi,
     healthsystem,
+    hiv,
     labour,
+    newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
+    stunting,
     symptommanager,
+    wasting,
 )
 from tlo.scenario import BaseScenario
 
@@ -46,7 +46,7 @@ class Scenario(BaseScenario):
     def log_configuration(self):
         return {
             'filename': 'analysis_stunting',
-            'directory': './outputs',
+            'directory': Path('./outputs'),
             'custom_levels': {
                 "*": logging.WARNING,
                 "tlo.methods.stunting": logging.INFO}
@@ -76,6 +76,7 @@ class Scenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         pass
 
+
 if __name__ == '__main__':
     from tlo.cli import scenario_run
     scenario_run([__file__])
@@ -83,4 +84,3 @@ if __name__ == '__main__':
 
 # %% Analysis
 # use outputs/analysis_stunting-2021-10-14T130317Z
-
