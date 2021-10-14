@@ -430,10 +430,17 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- UPDATING OF SYMPTOM OF seizures OVER TIME --------------------------------
 
-         self.sim.modules['SymptomManager'].change_symptom(
+        self.sim.modules['SymptomManager'].change_symptom(
             person_id=df.loc[df.is_alive & (df.ep_seiz_stat == '2' or df.ep_seiz_stat == '3')].index.tolist(),
             symptom_string='seizures',
             add_or_remove='+',
+            disease_module=self.module
+        )
+
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=df.loc[df.is_alive & (df.ep_seiz_stat == '0' or df.ep_seiz_stat == '1')].index.tolist(),
+            symptom_string='seizures',
+            add_or_remove='-',
             disease_module=self.module
         )
 
@@ -506,17 +513,13 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
-    It is first appointment that someone has when they present to the healthcare system with the severe
-    symptoms of Mockitis.
-    If they are aged over 15, then a decision is taken to start treatment at the next appointment.
-    If they are younger than 15, then another initial appointment is scheduled for then are 15 years old.
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Epilepsy_Start_Anti-Epilpetics'
+        self.TREATMENT_ID = 'Epilepsy_Start_Anti-Epileptics'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1  # This enforces that the apppointment must be run at that facility-level
         self.ALERT_OTHER_DISEASES = []
