@@ -101,8 +101,7 @@ def sample_outcome(probs: pd.DataFrame, rng: np.random.RandomState):
 
     # Scaling to ensure that the sum in each row not exceed 1.0
     probs = probs.apply(lambda row: (row / row.sum() if row.sum() >= 1.0 else row), axis=1)
-
-    assert (probs.sum(axis=1) <= 1.0).all(), "Probabilities across columns cannot sum to more than 1.0"
+    assert (probs.sum(axis=1) < (1.0 + 1e-6)).all(), "Probabilities across columns cannot sum to more than 1.0"
 
     # Compare uniform deviate to cumulative sum across columns, after including a "null" column (for no event).
     _probs = probs.copy()
