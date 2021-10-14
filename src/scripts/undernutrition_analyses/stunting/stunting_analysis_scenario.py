@@ -76,7 +76,7 @@ class Scenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         service_availability = [
             ['*'],  # draw 0: HealthSystem operational
-            []      # draw 1: HealthSystem not operational
+            []  # draw 1: HealthSystem not operational
         ]
         return {
             'HealthSystem': {
@@ -87,7 +87,5 @@ class Scenario(BaseScenario):
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
+
     scenario_run([__file__])
-
-
-

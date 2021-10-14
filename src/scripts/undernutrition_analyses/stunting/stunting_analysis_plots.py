@@ -1,19 +1,11 @@
-
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import (
     extract_results,
-    format_gbd,
     get_scenario_outputs,
-    load_pickled_dataframes,
-    make_age_grp_lookup,
-    make_age_grp_types,
-    make_calendar_period_lookup,
-    make_calendar_period_type,
     summarize,
 )
 
@@ -27,6 +19,8 @@ results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
+
+
 # log = load_pickled_dataframes(results_folder)
 # x = log['tlo.methods.stunting']['prevalence']
 
@@ -40,9 +34,9 @@ def __process(x):
 
 
 results = summarize(extract_results(results_folder,
-                                      module="tlo.methods.stunting",
-                                      key="prevalence",
-                                      custom_generate_series=__process))
+                                    module="tlo.methods.stunting",
+                                    key="prevalence",
+                                    custom_generate_series=__process))
 
 # %% Describe the mean distribution for the baseline case (with HealthSystem working)
 r = results.loc[:, (0, "mean")].unstack().unstack().T.reset_index()
