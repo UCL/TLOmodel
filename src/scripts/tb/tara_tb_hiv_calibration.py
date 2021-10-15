@@ -14,7 +14,8 @@ Run on the batch system using:
 tlo batch-submit src/scripts/tb/tara_tb_hiv_calibration.py
 
 
-save Job ID: tara_tb_hiv_calibration-2021-09-06T162434Z
+save Job ID: tara_tb_hiv_calibration-2021-10-06T094337Z
+
 
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks

@@ -8,9 +8,12 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
+import numpy as np
+import matplotlib.patches as mpatches
 
 import pandas as pd
 import datetime
+from tlo.analysis.utils import compare_number_of_deaths
 
 from tlo.analysis.utils import (
     extract_params,
@@ -290,6 +293,21 @@ model_tb_mdr = summarize(
 
 model_tb_mdr.index = model_tb_mdr.index.year
 
+
+model_tb_hiv_prop = summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_incidence",
+        column="prop_active_tb_in_plhiv",
+        index="date",
+        do_scaling=False,
+    ),
+    collapse_columns=True,
+)
+
+model_tb_hiv_prop.index = model_tb_hiv_prop.index.year
+
 # ---------------------------------- DEATHS ---------------------------------- #
 
 results_deaths = extract_results(
@@ -346,10 +364,10 @@ model_deaths_AIDS["median"] = (
     model_deaths_AIDS[cols].astype(float).quantile(0.5, axis=1)
 )
 model_deaths_AIDS["lower"] = (
-    model_deaths_AIDS[cols].astype(float).quantile(0.25, axis=1)
+    model_deaths_AIDS[cols].astype(float).quantile(0.025, axis=1)
 )
 model_deaths_AIDS["upper"] = (
-    model_deaths_AIDS[cols].astype(float).quantile(0.75, axis=1)
+    model_deaths_AIDS[cols].astype(float).quantile(0.975, axis=1)
 )
 
 # AIDS mortality rates per 100k person-years
@@ -365,6 +383,61 @@ total_aids_deaths_rate_100kpy_upper = pd.Series(
 total_aids_deaths_rate_100kpy.index = model_deaths_AIDS.index
 total_aids_deaths_rate_100kpy_lower.index = model_deaths_AIDS.index
 total_aids_deaths_rate_100kpy_upper.index = model_deaths_AIDS.index
+
+# HIV/TB deaths
+# select cause of death
+tmp = results_deaths.loc[
+    (results_deaths.cause == "AIDS_TB")
+]
+# select draw - drop columns where draw != 0, but keep year and cause
+tmp2 = tmp.loc[
+    :, ("draw" == draw)
+].copy()  # selects only columns for draw=0 (removes year/cause)
+# join year and cause back to df - needed for groupby
+frames = [tmp["year"], tmp["cause"], tmp2]
+tmp3 = pd.concat(frames, axis=1)
+
+# create new column names, dependent on number of runs in draw
+base_columns = ["year", "cause"]
+run_columns = ["run" + str(x) for x in range(0, info["runs_per_draw"])]
+base_columns.extend(run_columns)
+tmp3.columns = base_columns
+tmp3 = tmp3.set_index("year")
+
+# sum rows for each year (2 entries)
+# for each run need to combine deaths in each year, may have different numbers of runs
+model_deaths_AIDS_TB = pd.DataFrame(tmp3.groupby(["year"]).sum())
+
+# double check all columns are float64 or quantile argument will fail
+cols = [
+    col
+    for col in model_deaths_AIDS_TB.columns
+    if model_deaths_AIDS_TB[col].dtype == "float64"
+]
+model_deaths_AIDS_TB["median"] = (
+    model_deaths_AIDS_TB[cols].astype(float).quantile(0.5, axis=1)
+)
+model_deaths_AIDS_TB["lower"] = (
+    model_deaths_AIDS_TB[cols].astype(float).quantile(0.025, axis=1)
+)
+model_deaths_AIDS_TB["upper"] = (
+    model_deaths_AIDS_TB[cols].astype(float).quantile(0.975, axis=1)
+)
+
+# AIDS_TB mortality rates per 100k person-years
+total_aids_TB_deaths_rate_100kpy = pd.Series(
+    (model_deaths_AIDS_TB["median"].values / py_summary["mean"].values) * 100000
+)
+total_aids_TB_deaths_rate_100kpy_lower = pd.Series(
+    (model_deaths_AIDS_TB["lower"].values / py_summary["mean"].values) * 100000
+)
+total_aids_TB_deaths_rate_100kpy_upper = pd.Series(
+    (model_deaths_AIDS_TB["upper"].values / py_summary["mean"].values) * 100000
+)
+total_aids_TB_deaths_rate_100kpy.index = model_deaths_AIDS_TB.index
+total_aids_TB_deaths_rate_100kpy_lower.index = model_deaths_AIDS_TB.index
+total_aids_TB_deaths_rate_100kpy_upper.index = model_deaths_AIDS_TB.index
+
 
 # TB deaths
 # select cause of death
@@ -405,8 +478,8 @@ cols = [
     col for col in model_deaths_TB.columns if model_deaths_TB[col].dtype == "float64"
 ]
 model_deaths_TB["median"] = model_deaths_TB[cols].astype(float).quantile(0.5, axis=1)
-model_deaths_TB["lower"] = model_deaths_TB[cols].astype(float).quantile(0.25, axis=1)
-model_deaths_TB["upper"] = model_deaths_TB[cols].astype(float).quantile(0.75, axis=1)
+model_deaths_TB["lower"] = model_deaths_TB[cols].astype(float).quantile(0.025, axis=1)
+model_deaths_TB["upper"] = model_deaths_TB[cols].astype(float).quantile(0.975, axis=1)
 
 # TB mortality rates per 100k person-years
 tot_tb_non_hiv_deaths_rate_100kpy = pd.Series(
@@ -585,7 +658,7 @@ plt.errorbar(
     fmt="gx",
 )
 
-plt.ylim(0, 1.5)
+plt.ylim(0, 1.0)
 plt.xlim(2010, 2020)
 #
 # handles for legend
@@ -647,6 +720,9 @@ make_plot(
     model=model_hiv_child_inc["mean"] * 100,
     model_low=model_hiv_child_inc["lower"] * 100,
     model_high=model_hiv_child_inc["upper"] * 100,
+    data_mid=data_hiv_aidsinfo["incidence0_14_per100py"],
+    data_low=data_hiv_aidsinfo["incidence0_14_per100py_lower"],
+    data_high=data_hiv_aidsinfo["incidence0_14_per100py_upper"],
 )
 plt.savefig(make_graph_file_name("HIV_Incidence_in_Children"))
 
@@ -692,8 +768,6 @@ make_plot(
     model_low=model_tb_latent["lower"],
     model_high=model_tb_latent["upper"],
 )
-plt.ylim = (0, 0.22)
-
 # add latent TB estimate from Houben & Dodd 2016 (value for year=2014)
 plt.errorbar(
     model_tb_latent.index[4],
@@ -701,7 +775,8 @@ plt.errorbar(
     yerr=[[data_tb_latent_yerr[0]], [data_tb_latent_yerr[1]]],
     fmt="o",
 )
-plt.legend(["Model", "Houben & Dodd"])
+plt.ylim = (0, 0.5)
+plt.legend(["Model", "", "Houben & Dodd"])
 plt.savefig(make_graph_file_name("Latent_TB_Prevalence"))
 
 plt.show()
@@ -723,6 +798,23 @@ plt.savefig(make_graph_file_name("Proportion_TB_Cases_MDR"))
 
 plt.show()
 
+
+# ---------------------------------------------------------------------- #
+
+# proportion TB cases that are HIV+
+# expect around 60% falling to 50% by 2017
+
+make_plot(
+    title_str="Proportion of active cases that are HIV+",
+    model=model_tb_hiv_prop["mean"],
+    model_low=model_tb_hiv_prop["lower"],
+    model_high=model_tb_hiv_prop["upper"],
+)
+plt.savefig(make_graph_file_name("Proportion_TB_Cases_MDR"))
+
+plt.show()
+
+
 # ---------------------------------------------------------------------- #
 
 # AIDS deaths (including HIV/TB deaths)
@@ -737,6 +829,23 @@ make_plot(
     data_high=data_hiv_unaids_deaths["AIDS_mortality_per_100k_upper"],
 )
 plt.savefig(make_graph_file_name("AIDS_mortality"))
+
+plt.show()
+
+# ---------------------------------------------------------------------- #
+
+# AIDS/TB deaths
+make_plot(
+    title_str="Mortality to HIV-AIDS-TB per 100,000 capita",
+    model=total_aids_TB_deaths_rate_100kpy,
+    model_low=total_aids_TB_deaths_rate_100kpy_lower,
+    model_high=total_aids_TB_deaths_rate_100kpy_upper,
+    data_name="WHO",
+    data_mid=data_tb_who["mortality_tb_hiv_per_100k"],
+    data_low=data_tb_who["mortality_tb_hiv_per_100k_low"],
+    data_high=data_tb_who["mortality_tb_hiv_per_100k_high"],
+)
+plt.savefig(make_graph_file_name("AIDS_TB_mortality"))
 
 plt.show()
 
@@ -786,6 +895,192 @@ make_plot(
     data_high=data_hiv_unaids["ART_coverage_all_HIV_adults_upper"],
 )
 
-plt.savefig(make_graph_file_name("TB_treatment_coverage"))
+plt.savefig(make_graph_file_name("HIV_treatment_coverage"))
 
+plt.show()
+
+# ---------------------------------------------------------------------- #
+# %%: DEATHS - GBD COMPARISON
+# ---------------------------------------------------------------------- #
+# get numbers of deaths from model runs
+results_deaths = extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="death",
+    custom_generate_series=(
+        lambda df: df.assign(year=df["date"].dt.year)
+        .groupby(["year", "cause"])["person_id"]
+        .count()
+    ),
+    do_scaling=True,
+)
+
+results_deaths = results_deaths.reset_index()
+
+# results_deaths.columns.get_level_values(1)
+# Index(['', '', 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2], dtype='object', name='run')
+#
+# results_deaths.columns.get_level_values(0)  # this is higher level
+# Index(['year', 'cause', 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3], dtype='object', name='draw')
+
+# AIDS deaths
+# select cause of death
+tmp = results_deaths.loc[
+    (results_deaths.cause == "AIDS_TB") | (results_deaths.cause == "AIDS_non_TB")
+]
+# select draw - drop columns where draw != 0, but keep year and cause
+tmp2 = tmp.loc[
+    :, ("draw" == draw)
+].copy()  # selects only columns for draw=0 (removes year/cause)
+# join year and cause back to df - needed for groupby
+frames = [tmp["year"], tmp["cause"], tmp2]
+tmp3 = pd.concat(frames, axis=1)
+
+# create new column names, dependent on number of runs in draw
+base_columns = ["year", "cause"]
+run_columns = ["run" + str(x) for x in range(0, info["runs_per_draw"])]
+base_columns.extend(run_columns)
+tmp3.columns = base_columns
+tmp3 = tmp3.set_index("year")
+
+# sum rows for each year (2 entries)
+# for each run need to combine deaths in each year, may have different numbers of runs
+model_deaths_AIDS = pd.DataFrame(tmp3.groupby(["year"]).sum())
+
+
+# double check all columns are float64 or quantile argument will fail
+model_2010_median = model_deaths_AIDS.iloc[2].quantile(0.5)
+model_2015_median = model_deaths_AIDS.iloc[5].quantile(0.5)
+model_2010_low = model_deaths_AIDS.iloc[2].quantile(0.025)
+model_2015_low = model_deaths_AIDS.iloc[5].quantile(0.025)
+model_2010_high = model_deaths_AIDS.iloc[2].quantile(0.975)
+model_2015_high = model_deaths_AIDS.iloc[5].quantile(0.975)
+
+# get GBD estimates from any log_filepath
+death_compare = compare_number_of_deaths('outputs/Logfile__2021-10-05T223107.log', resourcefilepath)
+# sim.log_filepath example: 'outputs/Logfile__2021-10-04T155631.log'
+
+# include all ages and both sexes
+deaths2010 = death_compare.loc[("2010-2014", slice(None), slice(None), "AIDS")].sum()
+deaths2015 = death_compare.loc[("2015-2019", slice(None), slice(None), "AIDS")].sum()
+
+# include all ages and both sexes
+deaths2010_TB = death_compare.loc[("2010-2014", slice(None), slice(None), "non_AIDS_TB")].sum()
+deaths2015_TB = death_compare.loc[("2015-2019", slice(None), slice(None), "non_AIDS_TB")].sum()
+
+x_vals = [1, 2, 3, 4]
+labels = ["2010-2014", "2010-2014", "2015-2019", "2015-2019"]
+col = ["mediumblue", "mediumseagreen", "mediumblue", "mediumseagreen"]
+# handles for legend
+blue_patch = mpatches.Patch(color="mediumblue", label="GBD")
+green_patch = mpatches.Patch(color="mediumseagreen", label="TLO")
+
+# plot AIDS deaths
+y_vals = [
+    deaths2010["GBD_mean"],
+    model_2010_median,
+    deaths2015["GBD_mean"],
+    model_2015_median,
+]
+y_lower = [
+    abs(deaths2010["GBD_lower"] - deaths2010["GBD_mean"]),
+    abs(model_2010_low - model_2010_median),
+    abs(deaths2015["GBD_lower"] - deaths2015["GBD_mean"]),
+    abs(model_2015_low - model_2015_median),
+]
+y_upper = [
+    abs(deaths2010["GBD_upper"] - deaths2010["GBD_mean"]),
+    abs(model_2010_high - model_2010_median),
+    abs(deaths2015["GBD_upper"] - deaths2015["GBD_mean"]),
+    abs(model_2015_high - model_2015_median),
+]
+plt.bar(x_vals, y_vals, color=col)
+plt.errorbar(
+    x_vals, y_vals,
+    yerr=[y_lower, y_upper],
+    ls="none",
+    marker="o",
+    markeredgecolor="red",
+    markerfacecolor="red",
+    ecolor="red",
+)
+plt.xticks(ticks=x_vals, labels=labels)
+plt.title("Deaths per year due to AIDS")
+plt.legend(handles=[blue_patch, green_patch])
+plt.tight_layout()
+plt.savefig(make_graph_file_name("AIDS_deaths_with_GBD"))
+plt.show()
+
+#-------------------------------------------------------------------------------------
+# TB deaths
+# select cause of death
+tmp = results_deaths.loc[(results_deaths.cause == "TB")]
+# select draw - drop columns where draw != 0, but keep year and cause
+tmp2 = tmp.loc[
+    :, ("draw" == draw)
+].copy()  # selects only columns for draw=0 (removes year/cause)
+# join year and cause back to df - needed for groupby
+frames = [tmp["year"], tmp["cause"], tmp2]
+tmp3 = pd.concat(frames, axis=1)
+
+# create new column names, dependent on number of runs in draw
+base_columns = ["year", "cause"]
+run_columns = ["run" + str(x) for x in range(0, info["runs_per_draw"])]
+base_columns.extend(run_columns)
+tmp3.columns = base_columns
+tmp3 = tmp3.set_index("year")
+
+# sum rows for each year (2 entries)
+# for each run need to combine deaths in each year, may have different numbers of runs
+model_deaths_TB = pd.DataFrame(tmp3.groupby(["year"]).sum())
+
+# double check all columns are float64 or quantile argument will fail
+model_2010_median = model_deaths_TB.iloc[2].quantile(0.5)
+model_2015_median = model_deaths_TB.iloc[5].quantile(0.5)
+model_2010_low = model_deaths_TB.iloc[2].quantile(0.025)
+model_2015_low = model_deaths_TB.iloc[5].quantile(0.025)
+model_2010_high = model_deaths_TB.iloc[2].quantile(0.975)
+model_2015_high = model_deaths_TB.iloc[5].quantile(0.975)
+
+x_vals = [1, 2, 3, 4]
+labels = ["2010-2014", "2010-2014", "2015-2019", "2015-2019"]
+col = ["mediumblue", "mediumseagreen", "mediumblue", "mediumseagreen"]
+# handles for legend
+blue_patch = mpatches.Patch(color="mediumblue", label="GBD")
+green_patch = mpatches.Patch(color="mediumseagreen", label="TLO")
+
+# plot AIDS deaths
+y_vals = [
+    deaths2015_TB["GBD_mean"],
+    model_2010_median,
+    deaths2015_TB["GBD_mean"],
+    model_2015_median,
+]
+y_lower = [
+    abs(deaths2015_TB["GBD_lower"] - deaths2015_TB["GBD_mean"]),
+    abs(model_2010_low - model_2010_median),
+    abs(deaths2015_TB["GBD_lower"] - deaths2015_TB["GBD_mean"]),
+    abs(model_2015_low - model_2015_median),
+]
+y_upper = [
+    abs(deaths2015_TB["GBD_upper"] - deaths2015_TB["GBD_mean"]),
+    abs(model_2010_high - model_2010_median),
+    abs(deaths2015_TB["GBD_upper"] - deaths2015_TB["GBD_mean"]),
+    abs(model_2015_high - model_2015_median),
+]
+plt.bar(x_vals, y_vals, color=col)
+plt.errorbar(
+    x_vals,y_vals,
+    yerr=[y_lower, y_upper],
+    ls="none",
+    marker="o",
+    markeredgecolor="red",
+    markerfacecolor="red",
+    ecolor="red",
+)
+plt.xticks(ticks=x_vals, labels=labels)
+plt.title("Deaths per year due to TB")
+plt.legend(handles=[blue_patch, green_patch])
+plt.tight_layout()
+plt.savefig(make_graph_file_name("TB_deaths_with_GBD"))
 plt.show()
