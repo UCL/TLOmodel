@@ -7,12 +7,11 @@ from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize
 
 # %%
 scenario_filename = 'stunting_analysis_scenario.py'
-outputspath = Path('./outputs')
+outputspath = Path('./outputs/tbh03@ic.ac.uk')
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
-# results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
-results_folder = Path('/Users/tbh03/PycharmProjects/TLOmodel/outputs/analysis_stunting-2021-10-14T130317Z')  #todo undo
+results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -36,17 +35,22 @@ results = summarize(extract_results(results_folder,
 # %% Describe the mean distribution for the baseline case (with HealthSystem working)
 r = results.loc[:, (0, "mean")].unstack().unstack().T.reset_index()
 
-years_to_plot = [2010, 2011]
-cats = ['HAZ>=-2', '-3<=HAZ<-2', 'HAZ<-3']
+years_to_plot = [2010, 2015, 2020, 2025]
+cats_in_order = ['HAZ>=-2', '-3<=HAZ<-2', 'HAZ<-3']
 
 fig, axes = plt.subplots(1, len(years_to_plot), sharex=True, sharey=True)
 for year, ax in zip(years_to_plot, axes):
     breakdown_this_year = r[['age', 'cat', year]].groupby(['age', 'cat'])[year].sum()\
         .groupby(level=0).apply(lambda x: x/x.sum())
-    breakdown_this_year.unstack().plot.bar(stacked=True, ax=ax)
+    breakdown_this_year.unstack()[cats_in_order].plot.bar(stacked=True, ax=ax)
     ax.set_xlabel('Age')
     ax.set_ylabel('Proportion')
-    ax.set_title(f'{year}')
+    ax.set_title(f'Year {year}')
     ax.legend()
 plt.tight_layout()
 plt.show()
+
+
+# %%  Examine the difference in the proportion of children stunted between the two scenarios (with/without the
+# HealthSystem operating).
+# todo
