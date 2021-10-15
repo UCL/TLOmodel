@@ -16,10 +16,7 @@ results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
 
-
-# log = load_pickled_dataframes(results_folder)
-# x = log['tlo.methods.stunting']['prevalence']
-
+# %% Extract results
 def __process(x):
     x = x.set_index('date')
     x.index = x.index.year

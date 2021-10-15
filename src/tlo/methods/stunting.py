@@ -12,6 +12,7 @@ recovery. The Generic HSI calls `do_routine_assessment_for_chronic_undernutritio
 
 from collections import namedtuple
 from pathlib import Path
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -262,7 +263,7 @@ class Stunting(Module):
         df = self.sim.population.props
         df.loc[idx, 'un_HAZ_category'] = 'HAZ<-3'
 
-    def do_recovery(self, idx: pd.Index):
+    def do_recovery(self, idx: Union[list, pd.Index]):
         """Represent the recovery from stunting for the persaon_id given in `idx`. Recovery causes the person to move
         'up' one level: i.e. 'HAZ<-3' --> '-3<=HAZ<-2' or '-3<=HAZ<-2' --> 'HAZ>=-2'"""
         df = self.sim.population.props
