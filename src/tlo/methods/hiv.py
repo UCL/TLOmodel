@@ -623,10 +623,10 @@ class Hiv(Module):
         p["overall_prob_of_infec"] = (
             p["scaled_rel_prob_by_risk_factor"] * p["prob_of_infec"]
         )
+        # this needs to be series of True/False
         infec = (
             self.rng.random_sample(len(p["overall_prob_of_infec"]))
-            < p["overall_prob_of_infec"]
-        )
+            < p["overall_prob_of_infec"]) & df.is_alive
 
         # Assign the designated person as infected in the population.props dataframe:
         df.loc[infec, "hv_inf"] = True

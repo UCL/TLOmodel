@@ -37,8 +37,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 100000
+end_date = Date(2013, 1, 1)
+popsize = 50000
 
 # set up the log config
 log_config = {
@@ -54,7 +54,8 @@ log_config = {
 
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
-seed = random.randint(0, 50000)
+# seed = random.randint(0, 50000)
+seed = 6955
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),

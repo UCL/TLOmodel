@@ -600,7 +600,7 @@ cov_over_time = cov_over_time.set_index("date")
 
 # ---------------------------------------------------------------------- #
 
-# Treatment Cascade ("90-90-90") Plot for Adults
+# HIV Treatment Cascade ("90-90-90") Plot for Adults
 dx = cov_over_time["dx_adult"] * 100
 art_among_dx = (cov_over_time["art_coverage_adult"] / cov_over_time["dx_adult"]) * 100
 vs_among_art = (cov_over_time["art_coverage_adult_VL_suppression"]) * 100
@@ -676,7 +676,7 @@ plt.show()
 
 # ---------------------------------------------------------------------- #
 
-# Per capita testing rates - data from MoH quarterly reports
+# HIV Per capita testing rates - data from MoH quarterly reports
 make_plot(
     title_str="Per capita testing rates for all ages",
     model=cov_over_time["per_capita_testing_rate"],

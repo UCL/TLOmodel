@@ -635,10 +635,10 @@ class Tb(Module):
         df.loc[all_new_active, "tb_inf"] = "latent"
         df.loc[all_new_active, "tb_date_latent"] = now
 
-        # schedule active onset for time now up to 2 yrs
+        # schedule active onset for time now up to end of 2010
         # date active is picked up by regular event TbActiveEvent and properties updated at that point
         for person_id in all_new_active:
-            date_active = now + pd.DateOffset(days=self.rng.randint(0, 732))
+            date_active = now + pd.DateOffset(days=self.rng.randint(0, 365))
             df.at[person_id, "tb_scheduled_date_active"] = date_active
 
     def progression_to_active(self, population):
@@ -1796,7 +1796,6 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     data=f"schedule HSI_Tb_StartTreatment for person {person_id}",
                 )
 
-                # todo check tb_diagnosed
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
                     topen=now,
