@@ -38,9 +38,9 @@ class Scenario(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2029, 12, 31)
-        self.pop_size = 500
-        self.number_of_draws = 2
+        self.end_date = Date(2014, 12, 31)
+        self.pop_size = 5_000
+        self.number_of_draws = 1
         self.runs_per_draw = 1
 
     def log_configuration(self):
@@ -74,15 +74,16 @@ class Scenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        service_availability = [
-            ['*'],  # draw 0: HealthSystem operational
-            []      # draw 1: HealthSystem not operational
-        ]
-        return {
-            'HealthSystem': {
-                'Service_Availability': service_availability[draw_number],
-            },
-        }
+        # service_availability = [
+        #     ['*'],  # draw 0: HealthSystem operational
+        #     []      # draw 1: HealthSystem not operational
+        # ]
+        # return {
+        #     'HealthSystem': {
+        #         'Service_Availability': service_availability[draw_number],
+        #     },
+        # }
+        pass
 
 
 if __name__ == '__main__':
