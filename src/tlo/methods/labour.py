@@ -1776,7 +1776,6 @@ class Labour(Module):
                                                      f'identified during delivery. As consumables are available '
                                                      f'they will receive treatment')
 
-
     def assessment_and_treatment_of_hypertension(self, hsi_event, facility_type, labour_stage):
         """
         This function represents the diagnosis and management of hypertension during labour. This function
@@ -3084,19 +3083,12 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
 
         if squeeze_factor < params['squeeze_threshold_proph_ints']:
             self.module.prophylactic_labour_interventions(self)
-        else:
-            # Otherwise she receives no benefit of prophylaxis
-            logger.debug(key='message', data=f'mother {person_id} did not receive prophylactic labour interventions due'
-                                             f'to high squeeze')
 
         # ================================= PROPHYLACTIC MANAGEMENT PRE-ECLAMPSIA  ==============================
         # Next we see if women with severe pre-eclampsia will be identified and treated, reducing their risk of
         # eclampsia
         if squeeze_factor < params['squeeze_threshold_treatment_spe']:
             self.module.assessment_and_treatment_of_severe_pre_eclampsia_mgso4(self, facility_type_code, 'ip')
-        else:
-            logger.debug(key='message', data=f'mother {person_id} did not receive assessment or treatment of severe '
-                                             f'pre-eclampsia due to high squeeze')
 
         # ===================================== APPLYING COMPLICATION INCIDENCE =======================================
         # Following administration of prophylaxis we assess if this woman will develop any complications during labour.

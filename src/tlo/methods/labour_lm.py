@@ -303,10 +303,8 @@ def predict_uterine_rupture_death(self, df, rng=None, **externals):
     params = self.parameters
     result = params['cfr_uterine_rupture']
 
-    if person['la_uterine_rupture_treatment']:
+    if person['la_uterine_rupture_treatment'] or person['la_has_had_hysterectomy']:
         result *= params['ur_repair_treatment_effect_md']
-    if person['la_has_had_hysterectomy']:
-        result *= params['ur_hysterectomy_treatment_effect_md']
     if externals['received_blood_transfusion']:
         result *= params['ur_treatment_effect_bt_md']
 
