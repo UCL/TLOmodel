@@ -641,6 +641,16 @@ class Tb(Module):
             date_active = now + pd.DateOffset(days=self.rng.randint(0, 365))
             df.at[person_id, "tb_scheduled_date_active"] = date_active
 
+            # schedule screening / testing for proportion of baseline active cases
+            if self.rng.random_sample() < p["rate_testing_active_tb"]:
+
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Tb_ScreeningAndRefer(person_id=person_id, module=self),
+                    topen=date_active + pd.DateOffset(days=self.rng.randint(0, 14)),
+                    tclose=None,
+                    priority=0,
+                )
+
     def progression_to_active(self, population):
         # from the new latent infections, select and schedule progression to active disease
 
