@@ -344,6 +344,10 @@ class Tb(Module):
             Types.REAL,
             "rate of screening / testing per month in population with active tb",
         ),
+        "rate_testing_baseline_active": Parameter(
+            Types.REAL,
+            "probability of screening for baseline population with active tb",
+        ),
         "ds_treatment_length": Parameter(
             Types.REAL,
             "length of treatment for drug-susceptible tb (first case) in months",
@@ -642,11 +646,12 @@ class Tb(Module):
             df.at[person_id, "tb_scheduled_date_active"] = date_active
 
             # schedule screening / testing for proportion of baseline active cases
-            if self.rng.random_sample() < p["rate_testing_active_tb"]:
-
+            if self.rng.random_sample() < p["rate_testing_baseline_active"]:
+                # set HSI for 30 days after active onset, as active poll occurs monthly
+                # need to ensure properties are updated before screening
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Tb_ScreeningAndRefer(person_id=person_id, module=self),
-                    topen=date_active + pd.DateOffset(days=self.rng.randint(0, 14)),
+                    topen=date_active + pd.DateOffset(days=30),
                     tclose=None,
                     priority=0,
                 )
