@@ -221,6 +221,7 @@ class CareOfWomenDuringPregnancy(Module):
         df.loc[df.is_alive, 'ac_gest_htn_on_treatment'] = False
         df.loc[df.is_alive, 'ac_gest_diab_on_treatment'] = 'none'
         df.loc[df.is_alive, 'ac_ectopic_pregnancy_treated'] = False
+        df.loc[df.is_alive, 'ac_post_abortion_care_interventions'] = 0
         df.loc[df.is_alive, 'ac_received_abx_for_prom'] = False
         df.loc[df.is_alive, 'ac_received_abx_for_chorioamnionitis'] = False
         df.loc[df.is_alive, 'ac_mag_sulph_treatment'] = False
@@ -339,6 +340,7 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[child_id, 'ac_gest_htn_on_treatment'] = False
         df.at[child_id, 'ac_gest_diab_on_treatment'] = 'none'
         df.at[child_id, 'ac_ectopic_pregnancy_treated'] = False
+        df.at[child_id, 'ac_post_abortion_care_interventions'] = 0
         df.at[child_id, 'ac_received_abx_for_prom'] = False
         df.at[child_id, 'ac_received_abx_for_chorioamnionitis'] = False
         df.at[child_id, 'ac_mag_sulph_treatment'] = False
@@ -568,11 +570,14 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[individual_id, 'ac_to_be_admitted'] = False
 
     def call_if_maternal_emergency_assessment_cant_run(self, hsi_event):
+        df = self.sim.population.props
         individual_id = hsi_event.target
-        logger.debug(key='message', data=f'HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment: did not run for '
-                                         f'person {individual_id}')
 
-        self.sim.modules['PregnancySupervisor'].apply_risk_of_death_from_monthly_complications(individual_id)
+        if df.at[individual_id, 'is_pregnant'] and not df.at[individual_id, 'la_currently_in_labour']:
+            logger.debug(key='message', data=f'HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment: did not'
+                                             f' run for person {individual_id}')
+
+            self.sim.modules['PregnancySupervisor'].apply_risk_of_death_from_monthly_complications(individual_id)
 
     # ================================= INTERVENTIONS DELIVERED DURING ANC ============================================
     # The following functions contain the interventions that are delivered as part of routine ANC contacts. Functions

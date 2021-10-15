@@ -677,6 +677,9 @@ class NewbornOutcomes(Module):
         if day_for_event + days_post_birth_int > 6:
             day_for_event = 1
 
+        # todo: add something here to prevent 'early' PNCers arriving at postnatal supervisor week event before
+        #  receiving their PNC?
+
         self.sim.schedule_event(
             PostnatalWeekOneNeonatalEvent(self.sim.modules['PostnatalSupervisor'], individual_id),
             self.sim.date + DateOffset(days=day_for_event))
@@ -1327,6 +1330,8 @@ class NewbornOutcomes(Module):
             # Neonates who were delivered in a facility are automatically scheduled to receive care at birth at the
             # same level of facility that they were delivered in
 
+            # ===================================== HSI SCHEDULING ====================================================
+            # If delivered in a health facility schedule immediate post-delivery care
             if m['delivery_setting'] != 'home_birth':
                 if m['delivery_setting'] == 'health_centre':
                     f_level = 1
@@ -1339,29 +1344,32 @@ class NewbornOutcomes(Module):
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
-            # ========================================== POSTNATAL CHECK  =============================================
-            # Finally we determine if this neonate will receive a full postnatal check following their birth and how
-            # promptly
-            if nci[child_id]['delivery_setting'] != 'home_birth' and ((self.rng.random_sample()
-                                                                       < params['prob_pnc_check_newborn']) or
-                                                                      (m['pnc_twin_one'] != 'none')):
-                self.schedule_pnc(child_id)
+                # Followed by a full postnatal check up
+                if (self.rng.random_sample() < params['prob_pnc_check_newborn']) or (m['pnc_twin_one'] != 'none'):
+                    self.schedule_pnc(child_id)
 
-            elif nci[child_id]['delivery_setting'] == 'home_birth':
+            # If delivered at home, determine if a postnatal check will be sought for this newborn- with the probability
+            # being higher if complications have occured
+            elif m['delivery_setting'] == 'home_birth':
 
                 if df.at[child_id, 'nb_early_onset_neonatal_sepsis'] or \
                     (df.at[child_id, 'nb_encephalopathy'] != 'none') or \
                     df.at[child_id, 'nb_early_preterm'] or \
                    df.at[child_id, 'nb_late_preterm']:
+
                     care_seeking = params['prob_care_seeking_for_complication']
+
                 else:
                     care_seeking = params['prob_pnc_check_newborn']
 
+                # If indicated we schedule either and early or late PNC visit for this individual
                 if (self.rng.random_sample() < care_seeking) or (m['pnc_twin_one'] != 'none'):
                     self.schedule_pnc(child_id)
 
-                if nci[child_id]['delivery_setting'] == 'home_birth' and nci[child_id]['will_receive_pnc'] != 'early':
-                    self.scheduled_week_one_postnatal_event(child_id)
+                # If this child will not receive any early care following delivery we determine if they will die
+                # following any complications immediately after birth
+                if nci[child_id]['will_receive_pnc'] != 'early':
+                    self.set_death_status(child_id)
 
         if ~df.at[mother_id, 'ps_multiple_pregnancy'] or\
             (df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 2)) or \

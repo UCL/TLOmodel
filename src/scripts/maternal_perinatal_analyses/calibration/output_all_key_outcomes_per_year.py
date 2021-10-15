@@ -14,7 +14,7 @@ scenario_filename = 'run_without_healthsystem.py'  # <-- update this to look at 
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_30k_run_without_healthsystem-2021-10-12T163706Z'
+graph_location = 'output_graphs_30k_run_without_healthsystem-2021-10-13T154033Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -147,7 +147,7 @@ def simple_line_chart(model_rate, target_rate, x_title, y_title, title, file_nam
     plt.ylabel(y_title)
     plt.title(title)
     plt.legend()
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -160,7 +160,7 @@ def simple_bar_chart(model_rates, x_title, y_title, title, file_name):
     plt.ylabel(y_title)
     plt.title(title)
     plt.legend()
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -187,7 +187,7 @@ def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_data_
     plt.ylabel(y_label)
     plt.title(title)
     plt.legend()
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -211,7 +211,7 @@ def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_data_
 #plt.xlabel('Year')
 #plt.ylabel('Pregnancies (mean)')
 #plt.title('Mean number of pregnancies')
-##plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
+###plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
 #plt.show()
 
 
@@ -242,7 +242,7 @@ plt.xlabel('Year')
 plt.ylabel('Pregnancies (mean)')
 plt.title('Mean number of pregnancies')
 plt.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/pregnancies.png')
 plt.show()
 
 # -----------------------------------------------------Total births...------------------------------------------------
@@ -266,7 +266,7 @@ plt.xlabel('Year')
 plt.ylabel('Births (mean)')
 plt.title('Mean number of Births per Year')
 plt.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/births.png')
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/births.png')
 plt.show()
 
 # todo: some testing looking at live births vs total births...
@@ -386,7 +386,7 @@ plt.xlabel('Year')
 plt.ylabel('% total births')
 plt.title('Proportion of women attending ANC1, AN4, ANC8 ')
 plt.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_coverage.png')
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_coverage.png')
 plt.show()
 
 anc_count_df = anc_count_df.drop([0])
@@ -425,7 +425,7 @@ ax.bar(labels, anc_count_df.loc[1], width, label=1,)
 ax.set_ylabel('% of total yearly visits')
 ax.set_title('Number of ANC visits at birth per year')
 ax.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_total_visits.png')
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_total_visits.png')
 plt.show()
 
 """
@@ -500,7 +500,7 @@ ax.bar(labels, anc_before_four_months, width, label='<4m')
 ax.set_ylabel('% of ANC1 visits by gestational age')
 ax.set_title('Gestational age at first ANC visit by Year')
 ax.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_ga_first_visit_update.png')
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc_ga_first_visit_update.png')
 plt.show()
 
 target_rate_eanc4 = list()
@@ -526,7 +526,7 @@ ax.bar(labels, prop_late, width, label='Late ANC4+')
 ax.set_ylabel('% of women attending ANC4+')
 ax.set_title('Early vs Late initation of ANC4+')
 ax.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/early_late_ANC4+.png')
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/early_late_ANC4+.png')
 plt.show()
 
 # TODO: quartiles, median month ANC1
@@ -580,7 +580,7 @@ ax.bar(labels, home_birth_rate, width, label='Home Birth')
 ax.set_ylabel('% of Births by Location')
 ax.set_title('Proportion of Total Births by Location of Delivery')
 ax.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sba_delivery_location.png')
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sba_delivery_location.png')
 plt.show()
 
 
@@ -673,7 +673,7 @@ def get_early_late_pnc_split(module, target, file_name):
     ax.set_ylabel('% of PNC 1 visits')
     ax.set_title(f'Proportion of {target} PNC1 Visits Occuring pre/post 48hrs Postnatal')
     ax.legend()
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
+    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
 
@@ -864,7 +864,7 @@ def get_anaemia_graphs(df, timing):
     plt.ylabel(f'Prevalence at {timing}')
     plt.title(f'Yearly trends for prevalence of anaemia by severity at {timing}')
     plt.legend()
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anaemia_by_severity_{timing}.png')
+    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anaemia_by_severity_{timing}.png')
     plt.show()
 
 
@@ -985,7 +985,7 @@ ax.bar(labels, prop_late, width, label='Late Preterm')
 ax.set_ylabel('% of total Preterm Births')
 ax.set_title('Early vs Late Preterm Births')
 ax.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/early_late_preterm.png')
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/early_late_preterm.png')
 plt.show()
 
 # todo plot early and late seperated
@@ -1167,7 +1167,7 @@ ax1.pie(sizes, shadow=True, startangle=90)
 ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
 plt.legend(labels, loc="best")
 plt.title(f'Proportion of total CS deliveries by indication')
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/cs_by_indication.png')
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/cs_by_indication.png')
 plt.show()
 """
 
@@ -1254,7 +1254,7 @@ plt.xlabel('Year')
 plt.ylabel("Stillbirths per 1000 live births")
 plt.title('Stillbirth Rate per Year')
 plt.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sbr.png')
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sbr.png')
 plt.show()
 
 # ----------------------------------------- Fistula... -------------------------------------------------
@@ -1361,7 +1361,7 @@ plt.xlabel('Year')
 plt.ylabel('Rate per 1000 births')
 plt.title('Yearly trends for Congenital Birth Anomalies')
 plt.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_rate_of_cong_anom.png')
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_rate_of_cong_anom.png')
 plt.show()
 
 

@@ -1301,7 +1301,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                    (self.module.rng.random_sample() < params['prob_care_seeking_postnatal_emergency']):
 
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        pnc_one_maternal, priority=0, topen=self.sim.date, tclose=None)
+                        pnc_one_maternal, priority=0, topen=self.sim.date, tclose=self.sim.date + pd.DateOffset(days=1))
 
                 # If she will not receive treatment for her complications we apply risk of death now
                 else:
@@ -1310,9 +1310,9 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
             else:
                 # Women without complications in week one are scheduled to attend PNC in the future
                 if mni[individual_id]['will_receive_pnc'] == 'late':
+                    appt_date = self.sim.date + pd.DateOffset(self.module.rng.randint(0, 41))
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        pnc_one_maternal, priority=0,
-                            topen=self.sim.date + pd.DateOffset(self.module.rng.randint(0, 41)), tclose=None)
+                        pnc_one_maternal, priority=0, topen=appt_date, tclose=appt_date + pd.DateOffset(days=1))
 
 
 class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
@@ -1360,7 +1360,7 @@ class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(pnc_one_neonatal,
                                                                     priority=0,
                                                                     topen=self.sim.date,
-                                                                    tclose=None)
+                                                                    tclose=self.sim.date + pd.DateOffset(days=1))
             else:
                 self.module.apply_risk_of_maternal_or_neonatal_death_postnatal(mother_or_child='child',
                                                                                individual_id=individual_id)

@@ -1180,8 +1180,10 @@ class PregnancySupervisor(Module):
         if cause == 'spontaneous_abortion':
             df.at[individual_id, 'ps_prev_spont_abortion'] = True
 
-        complicated_sa = self.rng.random_sample() < params['prob_complicated_sa']
-        complicated_ia = self.rng.random_sample() < params['prob_complicated_ia']
+        random_draw = self.rng.random_sample()
+
+        complicated_sa = random_draw < params['prob_complicated_sa']
+        complicated_ia = random_draw < params['prob_complicated_ia']
 
         # We apply a risk of developing specific complications associated with abortion type and store using a bitset
         # property
@@ -1435,7 +1437,8 @@ class PregnancySupervisor(Module):
                         logger.info(key='maternal_complication', data={'person': person,
                                                                        'type': disease,
                                                                        'timing': 'antenatal'})
-                        self.mother_and_newborn_info[person]['new_onset_spe'] = True
+                        if disease == 'severe_pre_eclamp':
+                            self.mother_and_newborn_info[person]['new_onset_spe'] = True
 
             for disease in ['mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia', 'severe_gest_htn']:
                 log_new_progressed_cases(disease)
