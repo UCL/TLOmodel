@@ -11,7 +11,8 @@ outputspath = Path('./outputs')
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
-results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+# results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+results_folder = Path('/Users/tbh03/PycharmProjects/TLOmodel/outputs/analysis_stunting-2021-10-14T130317Z')  #todo undo
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -42,14 +43,10 @@ fig, axes = plt.subplots(1, len(years_to_plot), sharex=True, sharey=True)
 for year, ax in zip(years_to_plot, axes):
     breakdown_this_year = r[['age', 'cat', year]].groupby(['age', 'cat'])[year].sum()\
         .groupby(level=0).apply(lambda x: x/x.sum())
-    for cat in cats:
-        this_cat_by_age = breakdown_this_year.loc[(slice(None), cat)]
-        ax.bar(this_cat_by_age.index, this_cat_by_age.values, label=cat)
+    breakdown_this_year.unstack().plot.bar(stacked=True, ax=ax)
     ax.set_xlabel('Age')
     ax.set_ylabel('Proportion')
     ax.set_title(f'{year}')
     ax.legend()
 plt.tight_layout()
 plt.show()
-
-# todo do stack using "bottom"
