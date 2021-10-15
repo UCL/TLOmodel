@@ -1,3 +1,15 @@
+"""
+Stunting Module
+
+Overview
+--------
+The Stunting module determines the prevalence of stunting for children under 5 years old. A polling event runs
+every month and determines the risk of onset of non-severe stunting, progression to severe stunting or natural
+recovery. The Generic HSI calls `do_routine_assessment_for_chronic_undernutrition` for any HSI with a child under
+5 years old: if they have any stunting they are provided with an intervention - `HSI_Stunting_ComplementaryFeeding`.
+
+"""
+
 from collections import namedtuple
 from pathlib import Path
 
@@ -20,30 +32,7 @@ logger.setLevel(logging.INFO)
 # ---------------------------------------------------------------------------------------------------------
 
 class Stunting(Module):
-    """The Stunting module determines the prevalence of stunting for children under 5 years old.
-
-    todo's
-    * intro abstact
-    * tests
-    * plots
-    * last thing on HSI
-
-
-    Overview
-    ========
-
-    This is the Stunting Module.
-
-    Categories
-
-    Progression
-
-    Natural Recovery
-
-    HSI
-
-
-    """
+    """This is the disease module for Stunting"""
 
     INIT_DEPENDENCIES = {'Demography', 'Wasting', 'NewbornOutcomes', 'Diarrhoea', 'Hiv'}
 
@@ -52,12 +41,8 @@ class Stunting(Module):
         Metadata.USES_HEALTHSYSTEM,
     }
 
-    stunting_states = ['HAZ<-3', '-3<=HAZ<-2', 'HAZ>=-2']
-
     PARAMETERS = {
-        # todo - check each of these used
-
-        # Pevalence of stunting by age group at initiation
+        # Prevalence of stunting by age group at initiation
         'prev_HAZ_distribution_age_0_5mo': Parameter(
             Types.LIST, 'Distribution of HAZ among less than 6 months of age in 2015 (mean, standard deviation)'),
         'prev_HAZ_distribution_age_6_11mo': Parameter(
@@ -108,7 +93,7 @@ class Stunting(Module):
         'rr_stunting_no_exclusive_breastfeeding': Parameter(
             Types.REAL, 'Relative risk of stunting for not exclusively breastfed babies < 6 months'),
         'rr_stunting_no_continued_breastfeeding': Parameter(
-            Types.REAL, 'Relative risk of stunting for not continued breasfed infants 6-24 months'),
+            Types.REAL, 'Relative risk of stunting for not continued breastfed infants 6-24 months'),
         'rr_stunting_per_diarrhoeal_episode': Parameter(
             Types.REAL, 'Relative risk of stunting for recent diarrhoea episode'),
 
@@ -141,7 +126,10 @@ class Stunting(Module):
 
     PROPERTIES = {
         'un_HAZ_category': Property(Types.CATEGORICAL,
-                                    'Indicator of current stunting status - the height-for-age z-score category',
+                                    'Indicator of current stunting status - the height-for-age z-score category:'
+                                    '"HAZ>=-2" == No Stunting (within 2 standard deviations of mean); '
+                                    '"-3<=HAZ<-2" == Non-Severe Stunting (2-3 standard deviations from mean); '
+                                    '"HAZ<-3 == Severe Stunting (more than 3 standard deviations from mean)',
                                     categories=['HAZ<-3', '-3<=HAZ<-2', 'HAZ>=-2']),
     }
 
@@ -162,14 +150,14 @@ class Stunting(Module):
         df = population.props
         p = self.parameters
 
-        # Set default properties
+        # Set default for property
         df.loc[df.is_alive, 'un_HAZ_category'] = 'HAZ>=-2'
 
-        def get_probs_stunting(agegp):
+        def get_probs_stunting(_agegp):
             """For the a given HAZ distribution (specified in the parameters by age-group), find the odds of
             a value <-2 (= 'stunted') and the odds of a value <-3 given a value <-2 (severely stunted)."""
 
-            mean, stdev = p[f'prev_HAZ_distribution_age_{agegp}']
+            mean, stdev = p[f'prev_HAZ_distribution_age_{_agegp}']
             haz_distribution = norm(loc=mean, scale=stdev)
 
             # Compute proportion "stunted" (HAZ <-2)
@@ -275,7 +263,7 @@ class Stunting(Module):
         df.loc[idx, 'un_HAZ_category'] = 'HAZ<-3'
 
     def do_recovery(self, idx: pd.Index):
-        """Represent the recovery from stuntiyn for the persaon_id given in `idx`. Recovery causes the person to move
+        """Represent the recovery from stunting for the persaon_id given in `idx`. Recovery causes the person to move
         'up' one level: i.e. 'HAZ<-3' --> '-3<=HAZ<-2' or '-3<=HAZ<-2' --> 'HAZ>=-2'"""
         df = self.sim.population.props
         df.loc[idx, 'un_HAZ_category'] = df.loc[idx, 'un_HAZ_category'].map({
@@ -528,8 +516,8 @@ class HSI_Stunting_ComplementaryFeeding(HSI_Event, IndividualScopeEventMixin):
         if not person.is_alive:
             return
 
-        # Provide supplementary feeding if consumable available, otherwise the 'education only' materials (these have
-        # different probabilities of success).
+        # Provide supplementary feeding if consumable available, otherwise provide 'education only' (which has a
+        # different probability of success).
         if self.get_all_consumables(item_codes=self.module.cons_item_codes['supplementary_feeding']):
             self.module.do_treatment(person_id, prob_success=self.module.parameters[
                 'un_effectiveness_complementary_feeding_promo_with_food_supplementation_in_stunting_reduction'])
@@ -547,7 +535,10 @@ class StuntingPropertiesOfOtherModules(Module):
 
     INIT_DEPENDENCIES = {'Demography'}
 
-    ALTERNATIVE_TO = {'Hiv', 'NewbornOutcomes', 'Wasting', 'Diarrhoea'}
+    # Though this module provides some properties from NewbornOutcomes we do not list
+    # NewbornOutcomes in the ALTERNATIVE_TO set to allow using in conjunction with
+    # SimplifiedBirths which can also be used as an alternative to NewbornOutcomes
+    ALTERNATIVE_TO = {'Hiv', 'Wasting', 'Diarrhoea'}
 
     PROPERTIES = {
         'hv_inf': Property(Types.BOOL, 'temporary property'),
