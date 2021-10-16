@@ -10,11 +10,11 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'run_without_healthsystem.py'  # <-- update this to look at other results
+scenario_filename = 'calibration_run_all_modules.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_30k_run_without_healthsystem-2021-10-13T154033Z/death'
+graph_location = 'output_graphs_75k_calibration_run_all_modules-2021-10-15T143604Z/death'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -22,8 +22,7 @@ results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 #create_pickles_locally(results_folder)  # if not created via batch
 
 # Enter the years the simulation has ran for here?
-sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]# 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028,
-             #2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040]
+sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
 # todo: replace with something more clever at some point
 
 # ============================================HELPER FUNCTIONS... =====================================================
@@ -411,7 +410,7 @@ pie_prop_cause_of_death(values_10, '2010_2014', labels_10, 'all')
 pie_prop_cause_of_death(values_15, '2015-2020', labels_15, 'all')
 
 simplified_df = props_df.transpose()
-"""
+
 simplified_df['Abortion'] = simplified_df['induced_abortion'] + simplified_df['spontaneous_abortion']
 simplified_df['Severe PE/Eclampsia'] = simplified_df['severe_pre_eclampsia'] + simplified_df['eclampsia']
 simplified_df['PPH'] = simplified_df['postpartum_haemorrhage'] + simplified_df['secondary_postpartum_haemorrhage']
@@ -441,7 +440,7 @@ pie_prop_cause_of_death(values_10, '2010_2014', labels_10, 'combined')
 pie_prop_cause_of_death(values_15, '2015-2020', labels_15, 'combined')
 pie_prop_cause_of_death(all_values, '2010-2020', all_labels, 'total')
 
-"""
+
 # =========================================== CASE FATALITY PER COMPLICATION ==========================================
 tr = list()  # todo:update?
 dummy_denom = list()

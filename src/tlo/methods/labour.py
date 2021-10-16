@@ -2621,7 +2621,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             if birth_weight >= 4000:
                 mni[individual_id]['birth_weight'] = 'macrosomia'
             elif birth_weight >= 2500:
-                if self.module.rng.random_sample() < 0.05:  #TODO: MAKE PARAMETER (or even LM?)
+                if self.module.rng.random_sample() < 0.057:  #TODO: MAKE PARAMETER (or even LM?)
                     mni[individual_id]['birth_weight'] = 'macrosomia'
                 else:
                     mni[individual_id]['birth_weight'] = 'normal_birth_weight'
