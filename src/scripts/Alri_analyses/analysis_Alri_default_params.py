@@ -65,7 +65,7 @@ sim.register(
     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
 
     alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=22),  # choose to log an individual
-    alri.PropertiesOfOtherModules()
+    alri.AlriPropertiesOfOtherModules()
 )
 
 # Run the simulation

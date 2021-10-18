@@ -65,7 +65,7 @@ for label, service_avail in scenarios.items():
         dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
 
         alri.Alri(resourcefilepath=resourcefilepath),
-        alri.PropertiesOfOtherModules()
+        alri.AlriPropertiesOfOtherModules()
     )
 
     sim.make_initial_population(n=popsize)

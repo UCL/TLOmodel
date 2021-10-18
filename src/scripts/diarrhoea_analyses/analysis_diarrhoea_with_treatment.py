@@ -5,6 +5,7 @@ There is treatment.
 
 # %% Import Statements and initial declarations
 import datetime
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -17,7 +18,6 @@ from tlo.methods import (
     diarrhoea,
     dx_algorithm_child,
     enhanced_lifestyle,
-    healthburden,
     healthseekingbehaviour,
     healthsystem,
     simplified_births,
@@ -28,56 +28,68 @@ from tlo.methods import (
 outputpath = Path("./outputs")
 resourcefilepath = Path("./resources")
 
+no_existing_logfile = True
+
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-# %% Run the Simulation
+log_filename = outputpath / 'XXXXX'
+# <-- insert name of log file to avoid re-running the simulation
 
-start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 20_000
+if not os.path.exists(log_filename):
+    # If logfile does not exists, re-run the simulation:
+    # Do not run this cell if you already have a  logfile from a simulation:
+    start_date = Date(2010, 1, 1)
+    end_date = Date(2019, 12, 31)
+    popsize = 20_000
 
-log_config = {
-    'filename': 'LogFile',
-    'custom_levels': {
-        '*': logging.WARNING,
-        'tlo.methods.demography': logging.INFO,
-        'tlo.methods.diarrhoea': logging.INFO
+    log_config = {
+        'filename': 'diarrhoea_with_treatment',
+        'custom_levels': {
+            '*': logging.WARNING,
+            'tlo.methods.demography': logging.INFO,
+            'tlo.methods.diarrhoea': logging.INFO
+        }
     }
-}
 
-# add file handler for the purpose of logging
-sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
+    # add file handler for the purpose of logging
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
 
-# run the simulation
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-             dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-             diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-             )
+    # run the simulation
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
+                 )
 
-sim.make_initial_population(n=popsize)
-sim.simulate(end_date=end_date)
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
 
-# Get the output from the logfile
-output = parse_log_file(sim.log_filepath)
+    # display filename
+    log_filename = sim.log_filepath
+    print(f"log_filename: {log_filename}")
+
+
+output = parse_log_file(log_filename)
 
 # %% ----------------------------  INCIDENCE RATE OF DIARRHOEA BY PATHOGEN  ----------------------------
 
-#  Calculate the "incidence rate" from the output counts of incidence
-counts = output['tlo.methods.diarrhoea']['incidence_count_by_pathogen']
+#  Get counts of cases by year, pathogen and custom age-group (0 year-old, 1 year-olds and 2-4 year-old)
+counts = output['tlo.methods.diarrhoea']['incident_case']
 counts['year'] = pd.to_datetime(counts['date']).dt.year
-counts.drop(columns='date', inplace=True)
-counts.set_index(
-    'year',
-    drop=True,
-    inplace=True
-)
+counts['age_grp'] = counts['age_years'].map({
+    0: "0y",
+    1: "1y",
+    2: "2-4y",
+    3: "2-4y",
+    4: "2-4y"
+}).fillna('5+y')
+counts = counts.groupby(by=['year', 'pathogen', 'age_grp']).size().unstack()
 
 # get person-years of 0 year-old, 1 year-olds and 2-4 year-old
 py_ = output['tlo.methods.demography']['person_years']
@@ -92,26 +104,13 @@ for year in years:
     py.loc[year, '0y'] = tot_py.loc[0].values[0]
     py.loc[year, '1y'] = tot_py.loc[1].values[0]
     py.loc[year, '2-4y'] = tot_py.loc[2:4].sum().values[0]
-    # py.loc[year, '<5y'] = tot_py.loc[0:4].sum().values[0]
 
-# # get population size to make a comparison
-pop = output['tlo.methods.demography']['num_children']
-pop.set_index(
-    'date',
-    drop=True,
-    inplace=True
-)
-pop.columns = pop.columns.astype(int)
-pop['0y'] = pop[0]
-pop['1y'] = pop[1]
-pop['2-4y'] = pop[2] + pop[3] + pop[4]
-# pop['<5y'] = pop[0] + pop[1] + pop[2] + pop[3] + pop[4]
-pop.drop(columns=[x for x in range(5)], inplace=True)
 
 # Incidence rate among 0, 1, 2-4 year-olds
 inc_rate = dict()
 for age_grp in ['0y', '1y', '2-4y']:
-    inc_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
+    inc_rate[age_grp] = counts[age_grp].unstack().div(py[age_grp], axis=0).dropna()
+
 
 # Load the incidence rate data to which we calibrate
 calibration_incidence_rate_0_year_olds = {
@@ -120,7 +119,7 @@ calibration_incidence_rate_0_year_olds = {
     'adenovirus': 5.866180 / 100.0,
     'cryptosporidium': 3.0886699 / 100.0,
     'campylobacter': 9.8663257 / 100.0,
-    'ST-ETEC': 27.925146 / 100.0,
+    'ETEC': 27.925146 / 100.0,
     'sapovirus': 10.0972179 / 100.0,
     'norovirus': 20.4864004 / 100.0,
     'astrovirus': 5.4208352 / 100.0,
@@ -133,7 +132,7 @@ calibration_incidence_rate_1_year_olds = {
     'adenovirus': 5.8661803 / 100.0,
     'cryptosporidium': 1.1792363 / 100.0,
     'campylobacter': 2.7915478 / 100.0,
-    'ST-ETEC': 17.0477152 / 100.0,
+    'ETEC': 17.0477152 / 100.0,
     'sapovirus': 13.2603114 / 100.0,
     'norovirus': 6.6146727 / 100.0,
     'astrovirus': 3.5974076 / 100.0,
@@ -146,7 +145,7 @@ calibration_incidence_rate_2_to_4_year_olds = {
     'adenovirus': 0.6438 / 100.0,
     'cryptosporidium': 0.4662 / 100.0,
     'campylobacter': 0.4884 / 100.0,
-    'ST-ETEC': 1.9758 / 100.0,
+    'ETEC': 1.9758 / 100.0,
     'sapovirus': 0.555 / 100.0,
     'norovirus': 0.0888 / 100.0,
     'astrovirus': 0.1332 / 100.0,
@@ -155,7 +154,7 @@ calibration_incidence_rate_2_to_4_year_olds = {
 
 # Produce a set of line plot comparing to the calibration data
 fig, axes = plt.subplots(ncols=2, nrows=5, sharey=True)
-for ax_num, pathogen in enumerate(sim.modules['Diarrhoea'].pathogens):
+for ax_num, pathogen in enumerate(calibration_incidence_rate_0_year_olds.keys()):
     ax = fig.axes[ax_num]
     inc_rate['0y'][pathogen].plot(ax=ax, label='Model output')
     ax.hlines(y=calibration_incidence_rate_0_year_olds[pathogen],
@@ -185,8 +184,8 @@ inc_mean.plot.bar(y=['0y_model_output', '0y_calibrating_data'])
 plt.title('Incidence Rate: 0 year-olds')
 plt.xlabel('Pathogen')
 plt.ylabel('Risk of pathogen causing diarrhoea per year')
-plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_0_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.tight_layout()
+plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_0_year_olds" + datestamp + ".png"), format='png')
 plt.show()
 
 # 1 year-olds
@@ -196,8 +195,8 @@ plt.xlabel('Pathogen')
 plt.ylabel('Risk of pathogen causing diarrhoea per year')
 plt.xlabel('Pathogen')
 plt.ylabel('Risk of pathogen causing diarrhoea per year')
-plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_1_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.tight_layout()
+plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_1_year_olds" + datestamp + ".png"), format='png')
 plt.show()
 
 # 2-4 year-olds
@@ -207,11 +206,13 @@ plt.xlabel('Pathogen')
 plt.ylabel('Risk of pathogen causing diarrhoea per year')
 plt.xlabel('Pathogen')
 plt.ylabel('Risk of pathogen causing diarrhoea per year')
-plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_2-4_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.tight_layout()
+plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_2-4_year_olds" + datestamp + ".png"), format='png')
 plt.show()
 
+
 # %% ----------------------------  MEAN DEATH RATE BY PATHOGEN  ----------------------------
+
 # Load the death data to which we calibrate:
 # IHME (www.healthdata.org) / GBD project --> total deaths due to diarrhoea in Malawi,
 # per 100,000 child-years (under 5's) https://vizhub.healthdata.org/gbd-compare/
@@ -238,7 +239,7 @@ deaths = deaths.drop(deaths.loc[deaths['cause_simplified'] != 'Diarrhoea'].index
 deaths = deaths.groupby(by=['age_grp', 'year']).size().reset_index()
 deaths.rename(columns={0: 'count'}, inplace=True)
 # deaths.drop(deaths.index[deaths['year'] > 2010.0], inplace=True)
-deaths = deaths.pivot(values='count', columns='age_grp', index='year')
+deaths = deaths.pivot(values='count', columns='age_grp', index='year').fillna(0.0)
 
 # Death Rate = death count (by year, by age-group) / person-years
 death_rate = deaths.div(py)
@@ -254,28 +255,35 @@ death_rate_comparison = pd.Series(
 
 death_rate_comparison.plot.bar()
 plt.title('Death Rate to Diarrhoea in Under 5s')
-plt.savefig(outputpath / ("Diarrhoea_death_rate_0-5_year_olds" + datestamp + ".pdf"), format='pdf')
+plt.tight_layout()
+plt.savefig(outputpath / ("Diarrhoea_death_rate_0-5_year_olds" + datestamp + ".png"), format='png')
 plt.show()
+
+# %% Look at Case Fatality Rate
+# NB. approx target CFR = 5.306/10000 per GBD 2016 paper ( (num death) / num episodes )
+# ... but see update paper: https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(18)30362-1/fulltext
+
+cfr = dict()
+for age_grp in ['0y', '1y', '2-4y']:
+    cfr[age_grp] = deaths[age_grp] / counts[age_grp].groupby(by='year').sum()
+cfr = pd.DataFrame(cfr).mean() * 10_000
+
+cfr.plot.bar()
+plt.title('Case Fatality Rate for Diarrhoea')
+plt.ylabel('Deaths per 10k cases')
+plt.xlabel('Age-Group')
+plt.tight_layout()
+plt.show()
+
 
 # %% Plot total numbers of death against comparable estimate from GBD
 
 # Get comparison
-comparison = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=resourcefilepath)
+comparison = compare_number_of_deaths(logfile=log_filename, resourcefilepath=resourcefilepath)
 
 # Make a simple bar chart
 comparison.loc[('2015-2019', slice(None), '0-4', 'Childhood Diarrhoea')].sum().plot.bar()
 plt.title('Deaths per year due to Childhood Diarrhoea, 2015-2019')
 plt.tight_layout()
-plt.show()
-
-# %% Look at Case Fatality Rate
-cfr = dict()
-for age_grp in ['0y', '1y', '2-4y']:
-    cfr[age_grp] = deaths[age_grp] / counts[age_grp].apply(pd.Series).sum(axis=1)
-cfr = pd.DataFrame(cfr).drop(index=2015).mean() * 100_000
-
-cfr.plot.bar()
-plt.title('Case Fatality Rate for Diarrhoea')
-plt.ylabel('Deaths per 100k Cases')
-plt.xlabel('Age-Group')
+plt.savefig(outputpath / ("Diarrhoea_death_rate-calibration_0-4_year_olds" + datestamp + ".png"), format='png')
 plt.show()

@@ -74,7 +74,10 @@ class Simulation:
         seed_from = 'auto' if seed is None else 'user'
         self._seed = seed
         self._seed_seq = np.random.SeedSequence(seed)
-        logger.info(key='info', data=f'Simulation RNG {seed_from} seed: {self._seed}')
+        logger.info(
+            key='info',
+            data=f'Simulation RNG {seed_from} entropy = {self._seed_seq.entropy}'
+        )
         self.rng = np.random.RandomState(np.random.MT19937(self._seed_seq))
 
     def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
@@ -152,7 +155,11 @@ class Simulation:
 
             # Seed the RNG for the registered module using spawned seed sequence
             logger.info(
-                key='info', data=f'{module.name} RNG auto seed: {seed_seq.entropy}'
+                key='info',
+                data=(
+                    f'{module.name} RNG auto (entropy, spawn key) = '
+                    f'({seed_seq.entropy}, {seed_seq.spawn_key[0]})'
+                )
             )
             module.rng = np.random.RandomState(np.random.MT19937(seed_seq))
 
