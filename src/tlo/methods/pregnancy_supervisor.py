@@ -664,7 +664,7 @@ class PregnancySupervisor(Module):
                                           .when('.between(34,40)', params['aor_early_anc4_35_39'])
                                           .when('.between(39,45)', params['aor_early_anc4_40_44'])
                                           .when('.between(44,50)', params['aor_early_anc4_45_49']),
-                    Predictor('year', external=True).when('<2015', params['aor_early_anc4_2010'])
+                    Predictor('year', external=True).when('.between(2009,2015)', params['aor_early_anc4_2010'])
                                                     .when('>2014', params['aor_early_anc4_2015']),
                     Predictor('la_parity').when('.between(1,4)', params['aor_early_anc4_parity_2_3'])
                                           .when('.between(3,6)', params['aor_early_anc4_parity_4_5'])
