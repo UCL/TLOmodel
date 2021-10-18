@@ -359,25 +359,26 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        #  run a check at birth to make sure no women exceed 8 visits
-        assert df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] < 9
+        if df.at[mother_id, 'is_alive']:
+            #  run a check at birth to make sure no women exceed 8 visits
+            assert df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] < 9
 
-        # We log the total number of ANC contacts a woman has undergone at the time of birth via this dictionary
-        if 'ga_anc_one' in mni[mother_id].keys():
-            ga_anc_one = mni[mother_id]['ga_anc_one']
-        else:
-            ga_anc_one = 0
+            # We log the total number of ANC contacts a woman has undergone at the time of birth via this dictionary
+            if 'ga_anc_one' in mni[mother_id].keys():
+                ga_anc_one = mni[mother_id]['ga_anc_one']
+            else:
+                ga_anc_one = 0
 
-        total_anc_visit_count = {'person_id': mother_id,
-                                 'total_anc': df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'],
-                                 'ga_anc_one': ga_anc_one}
+            total_anc_visit_count = {'person_id': mother_id,
+                                     'total_anc': df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'],
+                                     'ga_anc_one': ga_anc_one}
 
-        logger.info(key='anc_count_on_birth', data=total_anc_visit_count,
-                    description='A dictionary containing the number of ANC visits each woman has on birth')
+            logger.info(key='anc_count_on_birth', data=total_anc_visit_count,
+                        description='A dictionary containing the number of ANC visits each woman has on birth')
 
-        # We then reset all relevant variables pertaining to care received during the antenatal period to avoid
-        # treatments remaining in place for future pregnancies
-        self.care_of_women_in_pregnancy_property_reset(ind_or_df='individual', id_or_index=mother_id)
+            # We then reset all relevant variables pertaining to care received during the antenatal period to avoid
+            # treatments remaining in place for future pregnancies
+            self.care_of_women_in_pregnancy_property_reset(ind_or_df='individual', id_or_index=mother_id)
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.debug(key='message', data=f'This is CareOfWomenDuringPregnancy, being alerted about a health system '
