@@ -259,7 +259,6 @@ def test_incidence_level_is_right():
 def test_routine_assessment_for_chronic_undernutrition_if_stunted():
     """Check that a call to `do_routine_assessment_for_chronic_undernutrition` leads to an HSI for the person via
     an HSI if there stunting."""
-
     popsize = 100
     sim = get_sim()
     sim.make_initial_population(n=popsize)
@@ -299,7 +298,6 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted():
 def test_routine_assessment_for_chronic_undernutrition_if_not_stunted():
     """Check that a call to `do_routine_assessment_for_chronic_undernutrition` does not lead to an HSI if there is no
     stunting."""
-
     popsize = 100
     sim = get_sim()
     sim.make_initial_population(n=popsize)

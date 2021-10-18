@@ -83,6 +83,7 @@ class Scenario(BaseScenario):
         #         'Service_Availability': service_availability[draw_number],
         #     },
         # }
+        # Awaiting fix to https://github.com/UCL/TLOmodel/issues/392
         pass
 
 
