@@ -90,7 +90,7 @@ class Stunting(Module):
         'rr_stunting_untreated_HIV': Parameter(
             Types.REAL, 'Relative risk of stunting for untreated HIV+'),
         'rr_stunting_wealth_level': Parameter(
-            Types.REAL, 'Relative risk of stunting by increase in wealth level'),
+            Types.REAL, 'Relative risk of stunting if wealth-level is greater than 1 compared 1'),
         'rr_stunting_no_exclusive_breastfeeding': Parameter(
             Types.REAL, 'Relative risk of stunting for not exclusively breastfed babies < 6 months'),
         'rr_stunting_no_continued_breastfeeding': Parameter(
@@ -113,14 +113,11 @@ class Stunting(Module):
             'Mean time (in years) to a one standard deviation improvement in stunting without any treatment.'),
 
         # The effect of treatment
-        'coverage_supplementary_feeding_program': Parameter(
-            Types.REAL,  # todo - delete? not used?
-            "Proportion of children diagnosed with stunting that are provided with supplementary feeding intervention"),
-        'un_effectiveness_complementary_feeding_promo_education_only_in_stunting_reduction': Parameter(
+        'effectiveness_of_complementary_feeding_education_in_stunting_reduction': Parameter(
             Types.REAL,
             'Probability of stunting being reduced by one standard deviation (category) by education about '
-            'supplementary feeding (but not supplying supplementary feeding materials).'),
-        'un_effectiveness_complementary_feeding_promo_with_food_supplementation_in_stunting_reduction': Parameter(
+            'supplementary feeding (but not supplying supplementary feeding consmables).'),
+        'effectiveness_of_food_supplementation_in_stunting_reduction': Parameter(
             Types.REAL,
             'Probability of stunting being reduced by one standard deviation (category) by supplementary feeding.'),
     }
@@ -286,7 +283,7 @@ class Stunting(Module):
             # Schedule the HSI for provision of treatment
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Stunting_ComplementaryFeeding(module=self, person_id=person_id),
-                priority=0,
+                priority=2,  # <-- lower priority that for wasting and most other HSI
                 topen=self.sim.date)
 
     def do_treatment(self, person_id, prob_success):
@@ -499,13 +496,13 @@ class StuntingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------------------------------------
 
 class HSI_Stunting_ComplementaryFeeding(HSI_Event, IndividualScopeEventMixin):
-    """This HSI is for complementary feeding with provision of supplementary foods"""
+    """This HSI is for complementary feeding with provision (or not) of supplementary foods"""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = 'Complementary_feeding_with_supplementary_foods'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'GrowthMon': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -521,11 +518,17 @@ class HSI_Stunting_ComplementaryFeeding(HSI_Event, IndividualScopeEventMixin):
         # different probability of success).
         if self.get_all_consumables(item_codes=self.module.cons_item_codes['supplementary_feeding']):
             self.module.do_treatment(person_id, prob_success=self.module.parameters[
-                'un_effectiveness_complementary_feeding_promo_with_food_supplementation_in_stunting_reduction'])
-        elif self.get_all_consumables(item_codes=self.module.cons_item_codes['education_for_supplementary_feeding']):
-            self.module.do_treatment(person_id, prob_success=self.module.parameters[
-                'un_effectiveness_complementary_feeding_promo_education_only_in_stunting_reduction'])
+                'effectiveness_of_food_supplementation_in_stunting_reduction'])
 
+        else:
+            # Request consumables for provision of education for supplementary feeding, but do not let non-availability
+            #  prevent provision of the intervention.
+            _ = self.get_all_consumables(item_codes=self.module.cons_item_codes['education_for_supplementary_feeding'])
+            self.module.do_treatment(person_id, prob_success=self.module.parameters[
+                'effectiveness_of_complementary_feeding_education_in_stunting_reduction'])
+
+
+# todo -- f/u appts of type GrowthMonitoring every six months? at level 1.0**
 
 # ---------------------------------------------------------------------------------------------------------
 #   ACCESSORIES FOR TESTING

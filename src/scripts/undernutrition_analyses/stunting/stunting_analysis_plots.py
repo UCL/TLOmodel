@@ -35,6 +35,7 @@ results = summarize(extract_results(results_folder,
 # %% Describe the mean distribution for the baseline case (with HealthSystem working)
 r = results.loc[:, (0, "mean")].unstack().unstack().T.reset_index()
 
+# Stacked-bars for specific years
 years_to_plot = [2010, 2015, 2020, 2025]
 cats_in_order = ['HAZ>=-2', '-3<=HAZ<-2', 'HAZ<-3']
 
@@ -47,6 +48,17 @@ for year, ax in zip(years_to_plot, axes):
     ax.set_ylabel('Proportion')
     ax.set_title(f'Year {year}')
     ax.legend()
+plt.tight_layout()
+plt.show()
+
+# Proportion any stunting over time by age
+props = r.groupby(by=[r.age, r.cat.isin(['HAZ<-3', '-3<=HAZ<-2'])]).sum().groupby(level=0).apply(lambda x: x/x.sum())
+fig, ax = plt.subplots()
+for _age in range(5):
+    ax.plot(props.columns, props.loc[(_age, True)], label=f'Age {_age} years')
+plt.xlabel('Year')
+plt.legend()
+plt.ylabel('Proportion Stunted (HAZ < -2)')
 plt.tight_layout()
 plt.show()
 
