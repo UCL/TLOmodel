@@ -9,7 +9,8 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize
 from tlo.methods import demography, enhanced_lifestyle, healthsystem, simplified_births, stunting
 
-# %%
+# %% Preparation
+
 scenario_filename = 'stunting_analysis_scenario.py'
 outputspath = Path('./outputs/tbh03@ic.ac.uk')
 rfp = Path('./resources')
@@ -22,7 +23,6 @@ make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
 
 
 # %% Define functions
-
 
 def __process(x):
     """Process log of stunting in a pd.Series with multi-index age / cat/ year"""
@@ -59,7 +59,7 @@ results = summarize(extract_results(results_folder,
 # Extract the the mean distribution for the baseline case (with HealthSystem working)
 mean_dist_draw0 = results.loc[:, (0, "mean")].unstack().unstack().T.reset_index()
 
-# %%  Plot results for model in 2015 relative to calibration data
+# %%  Plot results for model in 2015 relative to calibration data (from 2015)
 sim = __get_sim()
 
 
@@ -70,6 +70,7 @@ def __get_proportions_stunted_by_params(mean, stdev):
 
 def __get_proportions_stunted_by_age(_age):
     if _age < 1:
+        # get average for 0-5 months and 6-11 months
         return [
             (_a + _b) / 2.0 for _a, _b in zip(
                 __get_proportions_stunted_by_params(

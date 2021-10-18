@@ -82,7 +82,7 @@ def test_initial_prevalence_of_stunting():
     sim = get_sim()
     sim.make_initial_population(n=50_000)
 
-    # Make all the population under five and re-run `initialise_population` for `Stunting`
+    # Make all the population under five years old and re-run `initialise_population` for `Stunting`
     sim.population.props.date_of_birth = sim.population.props['is_alive'].apply(
         lambda _: random_date(sim.date - pd.DateOffset(years=5), sim.date - pd.DateOffset(days=1), sim.rng)
     )
@@ -142,7 +142,7 @@ def test_polling_event_onset():
     # Get polling event
     poll = stunting.StuntingPollingEvent(sim.modules['Stunting'])
 
-    # Make all the population not stunted and low wealth quantile (so at high risk )
+    # Make all the population not stunted and low wealth quantile (so at high risk)
     df = sim.population.props
     df.loc[df.is_alive, 'un_HAZ_category'] = 'HAZ>=-2'
     df.loc[df.is_alive, 'li_wealth'] = 1
@@ -150,7 +150,7 @@ def test_polling_event_onset():
     # Run the poll
     poll.apply(sim.population)
 
-    # Check that everyone under age of 5 becomes stunted
+    # Check that everyone under age of 5 becomes stunted and no-one over 5 is stunted
     assert (df.loc[df.is_alive & (df.age_years < 5), 'un_HAZ_category'] == '-3<=HAZ<-2').all()
     assert (df.loc[df.is_alive & (df.age_years >= 5), 'un_HAZ_category'] == 'HAZ>=-2').all()
 
@@ -180,7 +180,7 @@ def test_polling_event_recovery():
     # Run the poll
     poll.apply(sim.population)
 
-    # Check that everyone under 5 has moved "up" one level
+    # Check that everyone under 5 has moved "up" one level (and that those over 5 are still not stunted)
     assert (df.loc[df.is_alive & (df.age_years < 5) & (orig == '-3<=HAZ<-2'), 'un_HAZ_category'] == 'HAZ>=-2').all()
     assert (df.loc[df.is_alive & (df.age_years < 5) & (orig == 'HAZ<-3'), 'un_HAZ_category'] == '-3<=HAZ<-2').all()
     assert (df.loc[df.is_alive & (df.age_years >= 5), 'un_HAZ_category'] == 'HAZ>=-2').all()
@@ -212,7 +212,7 @@ def test_polling_event_progression():
     # Run the poll
     poll.apply(sim.population)
 
-    # Check that those eligible have moved "down" one level
+    # Check that those eligible have moved "down" one level (and those over 5 are still not stunted)
     assert (df.loc[df.is_alive & (df.age_years < 5) & (orig == '-3<=HAZ<-2'), 'un_HAZ_category'] == 'HAZ<-3').all()
     assert (df.loc[df.is_alive & (df.age_years < 5) & (orig == 'HAZ<-3'), 'un_HAZ_category'] == 'HAZ<-3').all()
     assert (df.loc[df.is_alive & (df.age_years >= 5), 'un_HAZ_category'] == 'HAZ>=-2').all()
@@ -220,7 +220,7 @@ def test_polling_event_progression():
 
 def test_incidence_level_is_right():
     """Check that incidence of new stunting happens at the rate that is intended"""
-    popsize = 10_000
+    popsize = 20_000
     sim = get_sim()
     sim.make_initial_population(n=popsize)
 
@@ -252,13 +252,13 @@ def test_incidence_level_is_right():
 
     # Check that the proportion of persons with stunting is approximately equal to the target incidence rate
     assert (df.loc[df.is_alive, 'un_HAZ_category'] == '-3<=HAZ<-2').mean() == approx(
-        1.0 - np.exp(-incidence_rate * 1.0), rel=0.01)
+        1.0 - np.exp(-incidence_rate * 1.0), abs=0.01)
     assert not (df.loc[df.is_alive, 'un_HAZ_category'] == 'HAZ<-3').any()
 
 
 def test_routine_assessment_for_chronic_undernutrition_if_stunted():
-    """Check that a call to `do_routine_assessment_for_chronic_undernutrition` leads to an HSI for the person via
-    an HSI if there stunting."""
+    """Check that a call to `do_routine_assessment_for_chronic_undernutrition` can lead to immediate recovery for a
+    stunted child (via an HSI)."""
     popsize = 100
     sim = get_sim()
     sim.make_initial_population(n=popsize)
@@ -276,10 +276,13 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted():
     sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
 
     # Check that there is an HSI scheduled for this person
-    hsi_event_scheduled = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-                           isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)]
+    hsi_event_scheduled = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id)
+        if isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)
+    ]
     assert 1 == len(hsi_event_scheduled)
-    the_hsi_event = hsi_event_scheduled[0]
+    assert sim.date == hsi_event_scheduled[0][0]
+    the_hsi_event = hsi_event_scheduled[0][1]
     assert person_id == the_hsi_event.target
 
     # Make probability of treatment success is 1.0 (consumables are available through use of `ignore_cons_constraints`)
@@ -293,6 +296,24 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted():
 
     # Check that the person is not longer stunted
     assert df.at[person_id, 'un_HAZ_category'] == 'HAZ>=-2'
+
+    # Check that there is a follow-up appointment scheduled
+    hsi_event_scheduled_after_first_appt = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id)
+        if isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)
+    ]
+    assert 2 == len(hsi_event_scheduled_after_first_appt)
+    assert (sim.date + pd.DateOffset(months=6)) == hsi_event_scheduled_after_first_appt[1][0]
+    the_follow_up_hsi_event = hsi_event_scheduled_after_first_appt[1][1]
+
+    # Run the Follow-up HSI event
+    the_follow_up_hsi_event.run(squeeze_factor=0.0)
+
+    # Check that after running the following appointments there are no further appointments scheduled
+    assert hsi_event_scheduled_after_first_appt == [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id)
+        if isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)
+    ]
 
 
 def test_routine_assessment_for_chronic_undernutrition_if_not_stunted():

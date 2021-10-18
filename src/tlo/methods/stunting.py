@@ -153,7 +153,7 @@ class Stunting(Module):
 
         def get_probs_stunting(_agegp):
             """For the a given HAZ distribution (specified in the parameters by age-group), find the odds of
-            a value <-2 (= 'stunted') and the odds of a value <-3 given a value <-2 (severely stunted)."""
+            a value <-2 (= 'stunted') and the odds of a value <-3 given a value <-2 (= 'severely stunted')."""
 
             mean, stdev = p[f'prev_HAZ_distribution_age_{_agegp}']
             haz_distribution = norm(loc=mean, scale=stdev)
@@ -166,7 +166,6 @@ class Stunting(Module):
 
             # Return results needed as named tuple:
             result = namedtuple('probs', ['prob_stunting', 'prob_severe_given_stunting'])
-
             return result(
                 p_stunted,
                 p_severely_stunted_given_stunted
@@ -233,7 +232,7 @@ class Stunting(Module):
         # Schedule the logging event to begin on the first day of the simulation
         sim.schedule_event(StuntingLoggingEvent(self), sim.date)
 
-        # Look-up consumable  item codes
+        # Look-up consumable item codes
         self.look_up_consumable_item_codes()
 
     def on_birth(self, mother_id, child_id):
@@ -261,7 +260,7 @@ class Stunting(Module):
         df.loc[idx, 'un_HAZ_category'] = 'HAZ<-3'
 
     def do_recovery(self, idx: Union[list, pd.Index]):
-        """Represent the recovery from stunting for the persaon_id given in `idx`. Recovery causes the person to move
+        """Represent the recovery from stunting for the person_id given in `idx`. Recovery causes the person to move
         'up' one level: i.e. 'HAZ<-3' --> '-3<=HAZ<-2' or '-3<=HAZ<-2' --> 'HAZ>=-2'"""
         df = self.sim.population.props
         df.loc[idx, 'un_HAZ_category'] = df.loc[idx, 'un_HAZ_category'].map({
@@ -379,8 +378,8 @@ class Models:
 
     def make_lm_prob_natural_recovery(self):
         """Return LinearModel for the probability per year of improving by one category (one HAZ standard deviation)
-        i.e. from being Severely Stunted to Non-Severely Stunted (-3<HAZ<=-2); and from being Non-Severely Stunted to
-        Not Stunted."""
+        i.e. from being severely stunted (HAZ<-3) to non-severely stunted (-3<HAZ<=-2); and from being non-severely
+        stunted to not Stunted (HAZ>-2)."""
         p = self.p
 
         mean_years = p['mean_years_to_1stdev_natural_improvement_in_stunting']
@@ -397,7 +396,7 @@ class Models:
 # ---------------------------------------------------------------------------------------------------------
 
 class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
-    """Regular event that schedules the natural history events for the onset and recovery of stunting."""
+    """Regular event that controls the onset of stunting, progression to severe stunting and natural recovery."""
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
@@ -405,8 +404,9 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         """
-        * Determines who will be stunted and schedules individual incident cases to represent onset.
-        * Determines who will recover and schedules individual incident cases to represent recovery.
+        * Determine who will be onset for stunting (among those not stunted) and effect that change;
+        * Determine who will be onset for recovery (among those stunted) and effect that change.
+        * Determine who will be onset for progression (among those stunted but not severely) and effect that change;
         """
         df = population.props
         models = self.module.models
@@ -419,7 +419,7 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         idx_will_be_stunted = self.apply_model(
             model=models.lm_prob_becomes_stunted,
             mask=eligible_for_stunting,
-            days_until_next_polling_event=days_until_next_polling_event
+            days_exposed_to_risk=days_until_next_polling_event
         )
         self.module.do_onset(idx_will_be_stunted)
 
@@ -431,7 +431,7 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         idx_will_recover = self.apply_model(
             model=models.lm_prob_natural_recovery,
             mask=eligible_for_recovery,
-            days_until_next_polling_event=days_until_next_polling_event
+            days_exposed_to_risk=days_until_next_polling_event
         )
         self.module.do_recovery(idx_will_recover)
 
@@ -443,22 +443,24 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         idx_will_progress = self.apply_model(
             model=models.lm_prob_progression_to_severe_stunting,
             mask=eligible_for_progression,
-            days_until_next_polling_event=days_until_next_polling_event
+            days_exposed_to_risk=days_until_next_polling_event
         )
         self.module.do_progression(idx_will_progress)
 
-    def apply_model(self, model, mask, days_until_next_polling_event):
-        """Return the persons selected by a provided LinearModel for the annual risk of an event.
+    def apply_model(self, model, mask, days_exposed_to_risk):
+        """Return the person_ids selected for an event of occur to in a given period (in days), as specified by a
+        LinearModel that provides the annual risk of the event.
         * Looks-up annual probability of the event using a linear model supplied in `model` to a population masked with
          `mask`
-        * Converts the annual probability to a probability of the event occurring before the next polling event
-        * Selects which individuals will have the events
+        * Converts the annual probability to a probability of the event occurring during the number of
+        `days_exposed_to_risk`
+        * Randomly selects which individuals will have the events
         """
         df = self.sim.population.props
         rng = self.module.rng
 
         annual_prob = model.predict(df.loc[mask]).clip(upper=1.0)
-        prob_before_next_poll = 1.0 - np.exp(np.log(1.0 - annual_prob) * days_until_next_polling_event / 365.25)
+        prob_before_next_poll = 1.0 - np.exp(np.log(1.0 - annual_prob) * days_exposed_to_risk / 365.25)
         assert pd.notnull(prob_before_next_poll).all()
         return prob_before_next_poll.index[prob_before_next_poll > rng.rand(len(prob_before_next_poll))]
 
@@ -496,12 +498,12 @@ class StuntingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------------------------------------
 
 class HSI_Stunting_ComplementaryFeeding(HSI_Event, IndividualScopeEventMixin):
-    """This HSI is for complementary feeding with provision (or not) of supplementary foods"""
+    """HSI for complementary feeding, either with the provision of supplementary foods or with education only."""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = 'Complementary_feeding_with_supplementary_foods'
+        self.TREATMENT_ID = 'Complementary_feeding_for_stunting'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -514,21 +516,30 @@ class HSI_Stunting_ComplementaryFeeding(HSI_Event, IndividualScopeEventMixin):
         if not person.is_alive:
             return
 
-        # Provide supplementary feeding if consumable available, otherwise provide 'education only' (which has a
-        # different probability of success).
-        if self.get_all_consumables(item_codes=self.module.cons_item_codes['supplementary_feeding']):
-            self.module.do_treatment(person_id, prob_success=self.module.parameters[
-                'effectiveness_of_food_supplementation_in_stunting_reduction'])
+        # Only do anything if child is under 5 and remains stunted
+        if (person.age_years < 5) and (person.un_HAZ_category in ['HAZ<-3', '-3<=HAZ<-2']):
 
-        else:
-            # Request consumables for provision of education for supplementary feeding, but do not let non-availability
-            #  prevent provision of the intervention.
-            _ = self.get_all_consumables(item_codes=self.module.cons_item_codes['education_for_supplementary_feeding'])
-            self.module.do_treatment(person_id, prob_success=self.module.parameters[
-                'effectiveness_of_complementary_feeding_education_in_stunting_reduction'])
+            # Provide supplementary feeding if consumable available, otherwise provide 'education only' (which has a
+            # different probability of success).
+            if self.get_all_consumables(item_codes=self.module.cons_item_codes['supplementary_feeding']):
+                self.module.do_treatment(person_id, prob_success=self.module.parameters[
+                    'effectiveness_of_food_supplementation_in_stunting_reduction'])
 
+            else:
+                # Request consumables for provision of education for supplementary feeding, but do not let
+                # non-availability prevent provision of the intervention.
+                _ = self.get_all_consumables(
+                    item_codes=self.module.cons_item_codes['education_for_supplementary_feeding'])
+                self.module.do_treatment(person_id, prob_success=self.module.parameters[
+                    'effectiveness_of_complementary_feeding_education_in_stunting_reduction'])
 
-# todo -- f/u appts of type GrowthMonitoring every six months? at level 1.0**
+            # Schedule a further instance of this HSI for monitoring and resupply of consumables.
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=self,
+                priority=2,  # <-- lower priority that for wasting and most other HSI
+                topen=self.sim.date + pd.DateOffset(months=6)
+            )
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   ACCESSORIES FOR TESTING
