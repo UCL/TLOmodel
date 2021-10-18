@@ -2438,15 +2438,19 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         eq = LinearModel(LinearModelType.MULTIPLICATIVE,
                          self.base_1m_prob_rti,
                          Predictor('sex').when('M', self.rr_injrti_male),
-                         Predictor('age_years').when('.between(0,4)', self.rr_injrti_age04),
-                         Predictor('age_years').when('.between(5,9)', self.rr_injrti_age59),
-                         Predictor('age_years').when('.between(10,17)', self.rr_injrti_age1017),
-                         Predictor('age_years').when('.between(18,29)', self.rr_injrti_age1829),
-                         Predictor('age_years').when('.between(30,39)', self.rr_injrti_age3039),
-                         Predictor('age_years').when('.between(40,49)', self.rr_injrti_age4049),
-                         Predictor('age_years').when('.between(50,59)', self.rr_injrti_age5059),
-                         Predictor('age_years').when('.between(60,69)', self.rr_injrti_age6069),
-                         Predictor('age_years').when('.between(70,79)', self.rr_injrti_age7079),
+                         Predictor(
+                             'age_years',
+                             conditions_are_mutually_exclusive=True
+                         )
+                         .when('.between(0,4)', self.rr_injrti_age04)
+                         .when('.between(5,9)', self.rr_injrti_age59)
+                         .when('.between(10,17)', self.rr_injrti_age1017)
+                         .when('.between(18,29)', self.rr_injrti_age1829)
+                         .when('.between(30,39)', self.rr_injrti_age3039)
+                         .when('.between(40,49)', self.rr_injrti_age4049)
+                         .when('.between(50,59)', self.rr_injrti_age5059)
+                         .when('.between(60,69)', self.rr_injrti_age6069)
+                         .when('.between(70,79)', self.rr_injrti_age7079),
                          Predictor('li_ex_alc').when(True, self.rr_injrti_excessalcohol)
                          )
         pred = eq.predict(df.loc[rt_current_non_ind])

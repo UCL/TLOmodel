@@ -69,6 +69,27 @@ def test_run():
     check_dtypes(sim)
 
 
+def test_all_injuries_run():
+    """
+    This test runs a simulation with a functioning health system with full service availability and no set
+    constraints
+    """
+    # create sim object
+    sim = create_basic_rti_sim(popsize)
+    # create a list of injuries to assign the individuals in the population
+    injuries_to_assign = sim.modules['RTI'].INJURY_CODES
+    # assign injuries to the population at random
+    sim.population.props['rt_injury_1'] = sim.rng.choice(injuries_to_assign, popsize)
+    # change the datatype back to a category
+    sim.population.props['rt_injury_1'] = sim.population.props['rt_injury_1'].astype("category")
+    # Assign people the emergency care triggering symptom so they enter the health system
+    sim.population.props['sy_severe_trauma'] = 2
+    # run simulation
+    sim.simulate(end_date=end_date)
+    # check datatypes are same through sim
+    check_dtypes(sim)
+
+
 def test_module_properties():
     """ A test to see whether the logical flows through the module are followed"""
     sim = create_basic_rti_sim(popsize)
