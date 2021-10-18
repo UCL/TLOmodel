@@ -226,22 +226,6 @@ class Epilepsy(Module):
         df.at[child_id, 'ep_epi_death'] = False
         df.at[child_id, 'ep_disability'] = 0
 
-    def query_symptoms_now(self):
-        # This is called by the health-care seeking module
-        # All modules refresh the symptomology of persons at this time
-        # And report it on the unified symptomology scale
-
-        #       logger.debug('This is Epilepsy being asked to report unified symptomology')
-
-        # Map the specific symptoms for this disease onto the unified coding scheme
-        df = self.sim.population.props  # shortcut to population properties dataframe
-
-        #       df.loc[df.is_alive, 'ep_unified_symptom_code'] \
-        #           = df.loc[df.is_alive, 'ep_seiz_stat'].map({ 0 : 1,  1 : 1,  2 : 1,  3 : 1})
-
-        #       return df.loc[df.is_alive, 'ep_unified_symptom_code']
-
-        return pd.Series('1', index=df.index[df.is_alive])
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -340,9 +324,9 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         incidence_epilepsy = (n_incident_epilepsy * 4 * 100000) / n_alive
 
         logger.info(
-            key='incidence_epilepsy',
+            key='inc_epilepsy',
             data={
-                'incident_epilepsy': incidence_epilepsy,
+                'incidence_epilepsy': incidence_epilepsy,
                 'n_incident_epilepsy': n_incident_epilepsy,
                 'n_alive': n_alive
             }
@@ -430,15 +414,17 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- UPDATING OF SYMPTOM OF seizures OVER TIME --------------------------------
 
+        dfg = df.index[df.is_alive & ((df.ep_seiz_stat == '2') | (df.ep_seiz_stat == '3'))]
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=df.loc[df.is_alive & (df.ep_seiz_stat == '2' or df.ep_seiz_stat == '3')].index.tolist(),
+            person_id=dfg,
             symptom_string='seizures',
             add_or_remove='+',
             disease_module=self.module
         )
 
+        dfh = df.index[df.is_alive & ((df.ep_seiz_stat == '0') | (df.ep_seiz_stat == '1'))]
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=df.loc[df.is_alive & (df.ep_seiz_stat == '0' or df.ep_seiz_stat == '1')].index.tolist(),
+            person_id=dfh,
             symptom_string='seizures',
             add_or_remove='-',
             disease_module=self.module
@@ -507,7 +493,7 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         individual = df.loc[[1]]
 
-#       logger.info(key='individual_check', data=individual, description='following an individual through simulation')
+        logger.info(key='individual_check', data=individual, description='following an individual through simulation')
 
 
 class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):

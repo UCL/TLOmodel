@@ -27,7 +27,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2021,  1, 1)
-popsize = 1900000
+popsize = 100
 
 # Establish the simulation object
 log_config = {
@@ -152,8 +152,8 @@ plt.ylim(0, 20 )
 plt.show()
 
 incidence_epilepsy = pd.Series(
- output['tlo.methods.epilepsy']['incidence_epilepsy']['incident_epilepsy'].values,
-    index=output['tlo.methods.epilepsy']['incidence_epilepsy']['date'])
+ output['tlo.methods.epilepsy']['inc_epilepsy']['incidence_epilepsy'].values,
+    index=output['tlo.methods.epilepsy']['inc_epilepsy']['date'])
 incidence_epilepsy.plot()
 plt.title('Incidence of epilepsy')
 plt.ylim(0, 200 )
