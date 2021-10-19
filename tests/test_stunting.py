@@ -218,44 +218,6 @@ def test_polling_event_progression():
     assert (df.loc[df.is_alive & (df.age_years >= 5), 'un_HAZ_category'] == 'HAZ>=-2').all()
 
 
-def test_incidence_level_is_right():
-    """Check that incidence of new stunting happens at the rate that is intended"""
-    popsize = 20_000
-    sim = get_sim()
-    sim.make_initial_population(n=popsize)
-
-    # Let there no recovery and no progression
-    params = sim.modules['Stunting'].parameters
-    params['base_inc_rate_stunting_by_agegp'] = [1.0] * len(params['base_inc_rate_stunting_by_agegp'])
-    params['r_progression_severe_stunting_by_agegp'] = [0.0] * len(params['r_progression_severe_stunting_by_agegp'])
-
-    # The population will be entirely composed of children under five not stunted
-    df = sim.population.props
-    df.loc[df.is_alive, 'age_years'] = 2
-    df.loc[df.is_alive, 'age_exact_years'] = 2.0
-    df.loc[df.is_alive, 'un_HAZ_category'] = 'HAZ>=-2'
-
-    # Initialise Simulation
-    sim.simulate(end_date=sim.start_date)
-
-    # Over-write model for onset to remove risk factors:
-    incidence_rate = 0.5  # target incidence rate per year
-    sim.modules['Stunting'].models.lm_prob_becomes_stunted = LinearModel.multiplicative(
-        Predictor('age_exact_years').when('< 5', incidence_rate).otherwise(0.0)
-    )
-
-    # Run polling event once per month for a year
-    poll = stunting.StuntingPollingEvent(sim.modules['Stunting'])
-    for date in pd.date_range(Date(2010, 1, 1), sim.date + pd.DateOffset(years=1), freq='M'):
-        sim.date = date
-        poll.apply(sim.population)
-
-    # Check that the proportion of persons with stunting is approximately equal to the target incidence rate
-    assert (df.loc[df.is_alive, 'un_HAZ_category'] == '-3<=HAZ<-2').mean() == approx(
-        1.0 - np.exp(-incidence_rate * 1.0), abs=0.01)
-    assert not (df.loc[df.is_alive, 'un_HAZ_category'] == 'HAZ<-3').any()
-
-
 def test_routine_assessment_for_chronic_undernutrition_if_stunted():
     """Check that a call to `do_routine_assessment_for_chronic_undernutrition` can lead to immediate recovery for a
     stunted child (via an HSI)."""
@@ -339,3 +301,57 @@ def test_routine_assessment_for_chronic_undernutrition_if_not_stunted():
     hsi_event_scheduled = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
                            isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)]
     assert 0 == len(hsi_event_scheduled)
+
+
+def test_math_of_incidence_calcs():
+    """Check that incidence of new stunting happens at the rate that is intended"""
+    popsize = 50_000
+    sim = get_sim()
+    sim.make_initial_population(n=popsize)
+
+    # Define the annual probability of becoming stunted
+    annual_prob = 0.25
+
+    # Let there no recovery and no progression
+    params = sim.modules['Stunting'].parameters
+    params['mean_years_to_1stdev_natural_improvement_in_stunting'] = 1e6
+    params['r_progression_severe_stunting_by_agegp'] = [0.0] * len(params['r_progression_severe_stunting_by_agegp'])
+
+    # The population will be entirely composed of children under five not stunted
+    df = sim.population.props
+    df.loc[df.is_alive, 'age_years'] = 2
+    df.loc[df.is_alive, 'age_exact_years'] = 2.0
+    df.loc[df.is_alive, 'un_HAZ_category'] = 'HAZ>=-2'
+
+    # Initialise Simulation
+    sim.simulate(end_date=sim.start_date)
+
+    # Over-write model for annual prob of onset (a fixed value and no risk factors):
+    sim.modules['Stunting'].models.lm_prob_becomes_stunted = LinearModel.multiplicative(
+        Predictor('age_exact_years').when('< 5', annual_prob).otherwise(0.0)
+    )
+
+    # Create a comparison simple calculation:
+    monthly_risk = 1.0 - np.exp(np.log(1.0 - annual_prob) * (1.0 / 12.0))  # 0.023688424222606752
+    x0 = 1.0  # Initial proportion of people not stunted in simple calculation
+    x = x0
+
+    # Run polling event once per month for a year
+    poll = stunting.StuntingPollingEvent(sim.modules['Stunting'])
+    for date in pd.date_range(Date(2010, 1, 1), sim.date + pd.DateOffset(years=1), freq='MS', closed='left'):
+        # Do incidence of stunting through the model's polling event
+        sim.date = date
+        poll.apply(sim.population)
+
+        # Do incidence of stunting through the 'simple calculation'
+        x = x * (1 - monthly_risk)
+
+    # Compute proportion of person stunted i the model and in the simple calculation
+    prop_model = (df.loc[df.is_alive, 'un_HAZ_category'] == '-3<=HAZ<-2').mean()
+    prop_simple = 1.0 - x
+
+    # Check that the proportions of persons stunted after one year matches the target of `annual_prob`
+    assert annual_prob == \
+           approx(prop_simple) == \
+           approx(1.0 - (1.0 - monthly_risk) ** 12) == \
+           approx(prop_model, abs=0.001)
