@@ -56,7 +56,7 @@ log_config = {
 
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2049, 1, 2)
+end_date = Date(2011, 1, 1)
 pop_size = 5000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
@@ -92,8 +92,10 @@ sim.register(
 sim.make_initial_population(n=pop_size)
 sim.simulate(end_date=end_date)
 
+req_module_path = outputpath/"tlo.methods.contraception.log"
+# req_module_name = "tlo.methods.contraception"
 # parse the simulation logfile to get the output dataframes
-log_df = parse_log_file(sim.log_filepath)
+log_df = parse_log_file(sim.log_filepath, req_module_path)
 
 # %% Plot Contraception Use Over time:
 years = mdates.YearLocator()  # every year

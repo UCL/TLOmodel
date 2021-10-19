@@ -35,7 +35,7 @@ def _parse_log_file_inner_loop(filepath, level: int = logging.INFO):
     return output_logs
 
 
-def parse_log_file(log_filepath, level: int = logging.INFO):
+def parse_log_file(log_filepath, req_module_path, level: int = logging.INFO):
     """Parses logged output from a TLO run and returns Pandas dataframes.
 
     The dictionary returned has the format::
@@ -94,13 +94,14 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
     all_module_logs = dict()
     metadata = dict()
     for file_handle in module_name_to_filehandle.values():
-        print(f'Parsing {file_handle.name}', end='', flush=True)
-        module_specific_logs = _parse_log_file_inner_loop(file_handle.name, level)
-        print(' - complete.')
-        all_module_logs.update(module_specific_logs)
-        # sometimes there is nothing to be parsed at a given level, so no metadata
-        if 'metadata_' in module_specific_logs:
-            metadata.update(module_specific_logs['_metadata'])
+        if file_handle.name == str(req_module_path):
+            print(f'Parsing {file_handle.name}', end='', flush=True)
+            module_specific_logs = _parse_log_file_inner_loop(file_handle.name, level)
+            print(' - complete.')
+            all_module_logs.update(module_specific_logs)
+            # sometimes there is nothing to be parsed at a given level, so no metadata
+            if 'metadata_' in module_specific_logs:
+                metadata.update(module_specific_logs['_metadata'])
 
     if len(metadata) > 0:
         all_module_logs['_metadata'] = metadata
