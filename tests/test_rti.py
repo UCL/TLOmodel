@@ -21,7 +21,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
-
+from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
 # create simulation parameters
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
@@ -82,8 +82,44 @@ def test_all_injuries_run():
     sim.population.props['rt_injury_1'] = sim.rng.choice(injuries_to_assign, popsize)
     # change the datatype back to a category
     sim.population.props['rt_injury_1'] = sim.population.props['rt_injury_1'].astype("category")
+    # Check that each injury appears at least once in the population, ensuring that as the simulation runs no new
+    # categorical variables will be assigned to rt_injury_1
+    assert len(set(sim.population.props['rt_injury_1'].dtypes.categories)
+               .intersection(set(sim.modules['RTI'].INJURY_CODES))) == len(set(sim.modules['RTI'].INJURY_CODES))
+    # Change permanent injuries in the simulation as they have no associated DALY weight, choose fractured skull
+    sim.population.props.loc[sim.population.props['rt_injury_1'].str.contains('P'), 'rt_injury_1'] = '112'
+    # give those who have no injury an injury, choose fractured skull
+    sim.population.props.loc[sim.population.props['rt_injury_1'] == 'none', 'rt_injury_1'] = '112'
+    # final check to ensure everyone has a non permanent injury so a daly weight can be assigned
+    assert "none" not in sim.population.props['rt_injury_1'].unique()
+    assert not sim.population.props['rt_injury_1'].str.contains('P').any()
     # Assign people the emergency care triggering symptom so they enter the health system
     sim.population.props['sy_severe_trauma'] = 2
+    # Assign an injury date
+    sim.population.props['rt_date_inj'] = sim.start_date
+    # Show that they have been injured
+    sim.population.props['rt_road_traffic_inc'] = True
+    # Assign them a random ISS score
+    sim.population.props['rt_ISS_score'] = sim.rng.randint(1, 76, size=len(sim.population.props))
+    # Assign them a random MAIS score
+    sim.population.props['rt_MAIS_military_score'] = sim.rng.randint(1, 6, size=len(sim.population.props))
+    # Assign them a date to check mortality without the health system
+    sim.population.props['rt_date_death_no_med'] = sim.start_date + pd.DateOffset(weeks=2)
+    # Assign an injury severity
+    sim.population.props['rt_inj_severity'] = sim.rng.choice(['none', 'mild', 'severe'], len(sim.population.props))
+    # Change the dtype back to category
+    sim.population.props['rt_inj_severity'] = sim.population.props['rt_inj_severity'].astype("category")
+    # replace those with an injury severity of 'none' with a mild injury severity
+    sim.population.props.loc[sim.population.props['rt_inj_severity'] == 'none', 'rt_inj_severity'] = 'mild'
+    # Assign daly weights to the population
+    sim.modules['RTI'].rti_assign_daly_weights(sim.population.props.index)
+    # Schedule the generic emergency appointment
+    for person_id in sim.population.props.index:
+        sim.modules['HealthSystem'].schedule_hsi_event(
+            hsi_event=HSI_GenericEmergencyFirstApptAtFacilityLevel1(module=sim.modules['RTI'], person_id=person_id),
+            priority=0,
+            topen=sim.date
+        )
     # run simulation
     sim.simulate(end_date=end_date)
     # check datatypes are same through sim

@@ -46,18 +46,14 @@ class RTI(Module):
     INJURY_COLUMNS = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                       'rt_injury_7', 'rt_injury_8']
 
-    INJURY_CODES = ['none', '112', '113', '133', '133a', '133b', '133c', '133d', '134', '134a',
-                    '134b', '135', '1101', '1114', '211', '212', '241', '2101', '2114', '291',
-                    '342', '343', '361', '363', '322', '323', '3101', '3113', '412', '414',
-                    '461', '463', '453', '453a', '453b', '441', '442', '443', '4101', '4113',
-                    '552', '553', '554', '5101', '5113', '612', '673', '673a', '673b', '674',
-                    '674a', '674b', '675', '675a', '675b', '676', '712', '712a', '712b', '712c',
-                    '722', '782', '782a', '782b', '782c', '783', '7101', '7113', '811', '813do',
-                    '812', '813eo', '813', '813a', '813b', '813bo', '813c', '813co', '822',
-                    '822a', '822b', '882', '883', '884', '8101', '8113', 'P133', 'P133a',
-                    'P133b', 'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135', 'P673',
-                    'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b',
-                    'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884']
+    INJURY_CODES = ['none', '112', '113', '133a', '133b', '133c', '133d', '134a', '134b', '135', '1101', '1114', '211',
+                    '212', '241', '2101', '2114', '291', '342', '343', '361', '363', '322', '323', '3101', '3113',
+                    '412', '414', '461', '463', '453a', '453b', '441', '442', '443', '4101', '4113', '552', '553',
+                    '554', '5101', '5113', '612', '673a', '673b',  '674a', '674b', '675a', '675b', '676', '712a',
+                    '712b', '712c', '722', '782a', '782b', '782c', '783', '7101', '7113', '811', '813do', '812',
+                    '813eo', '813a', '813b', '813bo', '813c', '813co',  '822a', '822b', '882', '883', '884', '8101',
+                    '8113', 'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135', 'P673a', 'P673b', 'P674a',
+                    'P674b', 'P675a', 'P675b', 'P676', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884']
 
     SWAPPING_CODES = ['712b', '812', '3113', '4113', '5113', '7113', '8113', '813a', '813b', 'P673a', 'P673b', 'P674a',
                       'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884', '813bo', '813co', '813do',
@@ -3437,6 +3433,12 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                        'Seventh injury': df.loc[person_id, 'rt_injury_7'],
                        'Eight injury': df.loc[person_id, 'rt_injury_8']}
         logger.debug(key='rti_injury_profile_of_untreated_person', data=injurycodes)
+        # reset the treatment plan
+        df.loc[person_id, 'rt_injuries_for_major_surgery'] = []
+        df.loc[person_id, 'rt_injuries_for_minor_surgery'] = []
+        df.loc[person_id, 'rt_injuries_to_cast'] = []
+        df.loc[person_id, 'rt_injuries_to_heal_with_time'] = []
+        df.loc[person_id, 'rt_injuries_for_open_fracture_treatment'] = []
 
 
 class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
