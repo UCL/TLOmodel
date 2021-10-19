@@ -37,7 +37,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+end_date = Date(2019, 1, 1)
 popsize = 20000
 
 # set up the log config
@@ -70,8 +70,8 @@ sim.register(
         capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
         disable=True,  # disables the healthsystem (no constraints and no logging) and every HSI runs
         disable_and_reject_all=False,  # disable healthsystem and no HSI runs
-        store_hsi_events_that_have_run=False,
-    ),  # convenience function for debugging
+        store_hsi_events_that_have_run=False,  # convenience function for debugging
+    ),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),

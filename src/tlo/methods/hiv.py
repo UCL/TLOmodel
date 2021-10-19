@@ -380,6 +380,10 @@ class Hiv(Module):
             Types.REAL,
             "relative probability of person with HIV infection over 10 years being on ART at baseline",
         ),
+        "aids_tb_treatment_adjustment": Parameter(
+            Types.REAL,
+            "probability of death if aids and tb, person on treatment for tb",
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -1685,13 +1689,21 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
             return
 
         # Do nothing if person is now on ART and VL suppressed (non VL suppressed has no effect)
+        # and cause of death is not TB
         if (df.at[person_id, "hv_art"] == "on_VL_suppressed") and \
             (self.cause != 'AIDS_TB'):
             return
 
-        # if aids-tb but on treatment for tb do nothing
+        # if aids-tb but on treatment for tb, reduce probability of death
         if (self.cause == 'AIDS_TB') and df.at[person_id, 'tb_on_treatment']:
-            return
+            prob = self.module.rng.rand()
+
+            if prob < self.module.parameters["aids_tb_treatment_adjustment"]:
+                self.sim.modules["Demography"].do_death(
+                    individual_id=person_id,
+                    cause="AIDS_TB",
+                    originating_module=self.module,
+                )
 
         elif (self.cause == "AIDS_TB") and not df.at[person_id, 'tb_on_treatment']:
             # Cause the death to happen immediately, cause defined by TB status
@@ -1699,6 +1711,7 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
                 individual_id=person_id, cause="AIDS_TB", originating_module=self.module
             )
         else:
+            # cause is HIV (no TB) and not virally suppressed
             self.sim.modules["Demography"].do_death(
                 individual_id=person_id,
                 cause="AIDS_non_TB",

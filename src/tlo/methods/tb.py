@@ -460,7 +460,7 @@ class Tb(Module):
             Predictor("age_years")
             .when("<15", p["prob_latent_tb_0_14"])
             .otherwise(p["prob_latent_tb_15plus"]),
-            # Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
+            Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
         )
 
         # adults progressing to active disease
@@ -640,7 +640,7 @@ class Tb(Module):
         df.loc[all_new_active, "tb_date_latent"] = now
 
         # schedule active onset for time now up to end of 2010
-        # date active is picked up by regular event TbActiveEvent and properties updated at that point
+        # tb_scheduled_date_active is picked up by regular event TbActiveEvent and properties updated at that point
         for person_id in all_new_active:
             date_active = now + pd.DateOffset(days=self.rng.randint(0, 365))
             df.at[person_id, "tb_scheduled_date_active"] = date_active
@@ -670,8 +670,7 @@ class Tb(Module):
         ].index
 
         will_progress = (
-            rng.random_sample(len(eligible_for_fast_progression))
-            < p["prop_fast_progressor"]
+            rng.random_sample(len(eligible_for_fast_progression)) < p["prop_fast_progressor"]
         )
         fast = eligible_for_fast_progression[will_progress]
 
@@ -681,8 +680,7 @@ class Tb(Module):
         ].index
 
         will_progress = (
-            rng.random_sample(len(eligible_for_fast_progression_hiv))
-            < p["prop_fast_progressor_hiv"]
+            rng.random_sample(len(eligible_for_fast_progression_hiv)) < p["prop_fast_progressor_hiv"]
         )
         fast_hiv = eligible_for_fast_progression_hiv[will_progress]
 
