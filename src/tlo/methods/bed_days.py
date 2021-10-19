@@ -13,18 +13,15 @@ from tlo import Property, Types, logging
 #   CLASS DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
 
 class BedDays:
     """
     The BedDays class. This is expected to be registered in the HealthSystem module.
     """
 
-    def __init__(self, hs_module):
+    def __init__(self, hs_module, logger):
         self.hs_module = hs_module
-
+        self.logger = logger
         # Number of days to the last day of bed_tracker
         self.days_until_last_day_of_bed_tracker = 150
 
@@ -147,7 +144,7 @@ class BedDays:
             occupancy_info = tracker.iloc[0].to_dict()
             occupancy_info.update({'date_of_bed_occupancy': tracker.index[0]})
 
-            logger.info(
+            self.logger.info(
                 key=f'bed_tracker_{bed_type}',
                 data=occupancy_info,
                 description=f'Use of bed_type {bed_type}, by day and facility'
@@ -209,7 +206,7 @@ class BedDays:
 
         # check that the number of inpatient days does not exceed the maximum of 150 days
         if self.days_until_last_day_of_bed_tracker < sum(footprint.values()):
-            logger.warning(key='warning', data=f'the requested bed days in footprint is greater than the'
+            self.logger.warning(key='warning', data=f'the requested bed days in footprint is greater than the'
                                                f'tracking period, {footprint}')
 
         df = self.hs_module.sim.population.props
