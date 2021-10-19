@@ -22,6 +22,7 @@ from tlo.methods import (
     symptommanager,
 )
 from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+
 # create simulation parameters
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
