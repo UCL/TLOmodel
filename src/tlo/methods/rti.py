@@ -2518,7 +2518,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
                len(df.loc[df.rt_road_traffic_inc & ~df.rt_imm_death])
         # ========================== Determine who will experience shock from blood loss ==============================
         # todo: improve this section, currently using a blanket assumption that those with internal bleeding or open
-        # fractures will have shock, this is a temporary fix.
+        #   fractures will have shock, this is a temporary fix.
         internal_bleeding_codes = ['361', '363', '461', '463', '813bo', '813co', '813do', '813eo']
         df = self.sim.population.props
 
@@ -4482,8 +4482,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         # Request first draft of consumables used in major surgery
         # request a general anaesthetic
-        local_anaesthetic_item_code = pd.unique(
-            consumables.loc[consumables['Items'] == "Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml", 'Item_Code'])[0]
+        general_anaesthetic_item_code = pd.unique(
+            consumables.loc[consumables['Items'] == "Halothane (fluothane)_250ml_CMST", 'Item_Code'])[0]
         # clean the site of the surgery
         sterilise_surgical_site_code = pd.unique(
             consumables.loc[consumables['Items'] == "Chlorhexidine 1.5% solution_5_CMST", 'Item_Code'])[0]
@@ -4523,7 +4523,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                                                  'Item_Code'])[0]
         consumables_for_surgery = {
             'Intervention_Package_Code': dict(),
-            'Item_Code': {local_anaesthetic_item_code: 1,
+            'Item_Code': {general_anaesthetic_item_code: 1,
                           sterilise_surgical_site_code: 1,
                           scalpel_code: 1,
                           cannula_code: 1,
@@ -4854,9 +4854,9 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # request a general anaesthetic
-        general_anaesthetic_item_code = pd.unique(
-            consumables.loc[consumables['Items'] == "Halothane (fluothane)_250ml_CMST", 'Item_Code'])[0]
+        # request a local anaesthetic
+        local_anaesthetic_item_code = pd.unique(
+            consumables.loc[consumables['Items'] == "Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml", 'Item_Code'])[0]
         # clean the site of the surgery
         sterilise_surgical_site_code = pd.unique(
             consumables.loc[consumables['Items'] == "Chlorhexidine 1.5% solution_5_CMST", 'Item_Code'])[0]
@@ -4897,7 +4897,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
                                                  'Item_Code'])[0]
         consumables_for_surgery = {
             'Intervention_Package_Code': dict(),
-            'Item_Code': {general_anaesthetic_item_code: 1,
+            'Item_Code': {local_anaesthetic_item_code: 1,
                           sterilise_surgical_site_code: 1,
                           scalpel_code: 1,
                           cannula_code: 1,

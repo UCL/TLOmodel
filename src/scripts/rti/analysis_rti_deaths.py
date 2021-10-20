@@ -42,7 +42,7 @@ log_config_with_hs = {
 }
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 12, 31)
-pop_size = 1000
+pop_size = 3000
 
 # Creat simulations both with and without the health system
 sim_no_health_system = Simulation(start_date=start_date, seed=seed, log_config=log_config_no_hs)
