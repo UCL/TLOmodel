@@ -378,8 +378,11 @@ class CardioMetabolicDisorders(Module):
         self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_index, columns=self.conditions)
         self.df_incidence_tracker = self.df_incidence_tracker_zeros.copy()
 
-        self.df_incidence_tracker_events_zeros = pd.DataFrame(0, index=self.age_index, columns=self.events)
-        self.df_incidence_tracker_events = self.df_incidence_tracker_events_zeros.copy()
+        self.df_incidence_tracker_incident_events_zeros = pd.DataFrame(0, index=self.age_index, columns=self.events)
+        self.df_incidence_tracker_incident_events = self.df_incidence_tracker_incident_events_zeros.copy()
+
+        self.df_incidence_tracker_prevalent_events_zeros = pd.DataFrame(0, index=self.age_index, columns=self.events)
+        self.df_incidence_tracker_prevalent_events = self.df_incidence_tracker_prevalent_events_zeros.copy()
 
         # Create Tracker for the number of different types of events
         self.events_tracker = dict()
@@ -763,7 +766,8 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             )
 
         current_incidence_df = pd.DataFrame(index=self.module.age_index, columns=self.module.conditions)
-        current_incidence_df_events = pd.DataFrame(index=self.module.age_index, columns=self.module.events)
+        current_incidence_df_incident_events = pd.DataFrame(index=self.module.age_index, columns=self.module.events)
+        current_incidence_df_prevalent_events = pd.DataFrame(index=self.module.age_index, columns=self.module.events)
 
         # Determine onset/removal of conditions
         for condition in self.module.conditions:
@@ -843,6 +847,9 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             if has_event.any():  # catch in case no one has event
                 idx_has_event = has_event[has_event].index
 
+                incident_cases = []
+                prevalent_cases = []
+
                 for person_id in idx_has_event:
                     start = self.sim.date
                     end = self.sim.date + DateOffset(months=m.parameters['interval_between_polls'], days=-1)
@@ -850,12 +857,21 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                     self.sim.schedule_event(CardioMetabolicDisordersEvent(self.module, person_id, event),
                                             self.sim.date + DateOffset(days=self.module.rng.randint(ndays)))
 
-                # Add incident cases to the tracker
-                current_incidence_df_events[event] = df.loc[idx_has_event].groupby('age_range').size()
+                    # Add cases to either incident or prevalent list
+                    if df.at[person_id, f'nc_{event}']:
+                        prevalent_cases.append(person_id)
+                    else:
+                        prevalent_cases.append(person_id)
+
+                # Add incident cases to the correct tracker
+                current_incidence_df_incident_events[event] = df.loc[incident_cases].groupby('age_range').size()
+                current_incidence_df_prevalent_events[event] = df.loc[prevalent_cases].groupby('age_range').size()
 
         # add the new incidence numbers to tracker
-        self.module.df_incidence_tracker_events = self.module.df_incidence_tracker_events.add(
-            current_incidence_df_events)
+        self.module.df_incidence_tracker_incident_events = self.module.df_incidence_tracker_incident_events.add(
+            current_incidence_df_incident_events)
+        self.module.df_incidence_tracker_prevalent_events = self.module.df_incidence_tracker_prevalent_events.add(
+            current_incidence_df_prevalent_events)
 
 
 class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
@@ -993,11 +1009,14 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
         self.module.df_incidence_tracker = self.module.df_incidence_tracker_zeros.copy()
 
         # Convert incidence tracker to dict to pass through logger
-        logger.info(key='incidence_count_by_event', data=self.module.df_incidence_tracker_events.to_dict(),
-                    description=f"count of events occurring between each successive poll of logging event every "
-                                f"{self.repeat} months")
-        # Reset the counter
-        self.module.df_incidence_tracker_events = self.module.df_incidence_tracker_events_zeros.copy()
+        logger.info(key='incidence_count_by_incident_event',
+                    data=self.module.df_incidence_tracker_incident_events.to_dict(),
+                    description=f"count of incident events occurring between each successive poll of logging event "
+                                f"every "f"{self.repeat} months")
+        # Reset the counters
+        self.module.df_incidence_tracker_incident_events = self.module.df_incidence_tracker_incident_events_zeros.copy()
+        self.module.df_incidence_tracker_prevalent_events = \
+            self.module.df_incidence_tracker_prevalent_events_zeros.copy()
 
         def age_cats(ages_in_years):
             AGE_RANGE_CATEGORIES = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
