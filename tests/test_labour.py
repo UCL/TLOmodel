@@ -6,13 +6,19 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.methods import (
     care_of_women_during_pregnancy,
+    cardio_metabolic_disorders,
     contraception,
     demography,
+    depression,
+    dx_algorithm_adult,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     labour,
+    malaria,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
@@ -75,14 +81,21 @@ def register_modules(ignore_cons_constraints):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
-                                           ignore_cons_constraints=ignore_cons_constraints),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                                           ignore_cons_constraints=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 malaria.Malaria(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath),
+                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+                 )
 
     return sim
 
@@ -614,6 +627,52 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     assert mni[mother_id]['referred_for_blood']
     assert mni[mother_id]['referred_for_surgery']
 
+
+def test_pph_treatment():
+    sim = register_modules(ignore_cons_constraints=False)
+    sim.make_initial_population(n=100)
+
+    sim.modules['Labour'].current_parameters['prob_haemostatis_uterotonics'] = 1
+    sim.modules['Labour'].current_parameters['prob_successful_manual_removal_placenta'] = 1
+    sim.modules['Labour'].current_parameters['cfr_pp_pph'] = 1
+    sim.modules['Labour'].current_parameters['pph_treatment_effect_uterotonics_md'] = 0
+    sim.modules['Labour'].current_parameters['pph_treatment_effect_mrp_md'] = 0
+
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    df = sim.population.props
+    women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+    df.loc[women_repro.index, 'is_pregnant'] = True
+    df.loc[women_repro.index, 'la_date_most_recent_delivery'] = sim.date
+    df.loc[women_repro.index, 'la_is_postpartum'] = True
+    df.loc[women_repro.index, 'la_postpartum_haem'] = True
+
+    for person in women_repro.index:
+        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(person)
+        sim.modules['Labour'].set_labour_mni_variables(person)
+        sim.modules['Labour'].women_in_labour.append(person)
+
+    mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+    women_with_ua = int(women_repro.index[0])
+    mni[women_with_ua]['uterine_atony'] = True
+
+    pnc = labour.HSI_Labour_ReceivesPostnatalCheck(
+        person_id=women_with_ua, module=sim.modules['Labour'], facility_level_of_this_hsi=1)
+    pnc.apply(person_id=women_with_ua, squeeze_factor=0.0)
+
+    assert sim.population.props.at[women_with_ua, 'is_alive']
+
+    women_with_rp = int(women_repro.index[1])
+    mni[women_with_rp]['retained_placenta'] = True
+
+    pnc = labour.HSI_Labour_ReceivesPostnatalCheck(
+        person_id=women_with_rp, module=sim.modules['Labour'], facility_level_of_this_hsi=1)
+    pnc.apply(person_id=women_with_rp, squeeze_factor=0.0)
+
+    assert sim.population.props.at[women_with_rp, 'is_alive']
+
+
+test_pph_treatment()
 
 def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quality_constraints():
     sim = register_modules(ignore_cons_constraints=True)

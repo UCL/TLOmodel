@@ -14,7 +14,7 @@ scenario_filename = 'calibration_run_all_modules.py'  # <-- update this to look 
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_75k_calibration_run_all_modules-2021-10-15T143604Z'
+graph_location = 'output_graphs_30k_calibration_run_all_modules-2021-10-18T084850Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)

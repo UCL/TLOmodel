@@ -70,6 +70,7 @@ class Labour(Module):
         'antepartum_haemorrhage': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
         'postpartum_sepsis': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
         'postpartum_haemorrhage': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
+        'secondary_postpartum_haemorrhage': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
         'severe_pre_eclampsia': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders'),
         'eclampsia': Cause(gbd_causes='Maternal disorders', label='Maternal Disorders')}
 
@@ -1396,6 +1397,8 @@ class Labour(Module):
                 causes.append('postpartum_sepsis')
             if df.at[individual_id, 'la_postpartum_haem'] or df.at[individual_id, 'pn_postpartum_haem_secondary']:
                 causes.append('postpartum_haemorrhage')
+            if df.at[individual_id, 'pn_postpartum_haem_secondary']:
+                causes.append('secondary_postpartum_haemorrhage')
 
         return causes
 
@@ -2156,7 +2159,7 @@ class Labour(Module):
             if (self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                 dx_tests_to_run=f'assess_pph_{facility_type}', hsi_event=hsi_event) and
                mni[person_id]['uterine_atony']):
-                if outcome_of_request_for_consumables_pph:
+                if outcome_of_request_for_consumables_pph['Intervention_Package_Code'][pkg_code_pph]:
 
                     # We apply a probability that this treatment will stop a womans bleeding in the first instance
                     # meaning she will not require further treatment

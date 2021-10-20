@@ -40,7 +40,7 @@ indirect_causes = ['AIDS', 'severe_malaria', 'Suicide', 'diabetes', 'chronic_kid
 logs_dict = dict()
 
 new_parse_log_2010 = {2010: parse_log_file(
-    log_filepath=f"./outputs/parity_200k__2021-10-13T102324.log")}
+    log_filepath=f"./outputs/calibration_files/test_pph_traetment_calibration_111__2021-10-20T133832.log")}
 new_parse_log_2015 = {2015: parse_log_file(
     log_filepath=f"./outputs/calibration_files/anc1_checker_15_calibration_2__2021-09-22T153811.log")}
 logs_dict.update(new_parse_log_2010)

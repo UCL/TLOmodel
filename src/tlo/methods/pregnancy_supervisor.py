@@ -1099,7 +1099,6 @@ class PregnancySupervisor(Module):
                                                             topen=first_anc_date,
                                                             tclose=first_anc_date + DateOffset(days=1))
 
-
     def apply_risk_of_spontaneous_abortion(self, gestation_of_interest):
         """
         This function applies risk of spontaneous abortion to a slice of data frame and is called by
@@ -1176,7 +1175,7 @@ class PregnancySupervisor(Module):
                                                            'type': f'complicated_{type_abortion}',
                                                            'timing': 'antenatal'})
 
-        self.apply_risk_of_abortion_complications(individual_id, f'{type_abortion}')
+            self.apply_risk_of_abortion_complications(individual_id, f'{type_abortion}')
 
     def apply_risk_of_abortion_complications(self, individual_id, cause):
         """

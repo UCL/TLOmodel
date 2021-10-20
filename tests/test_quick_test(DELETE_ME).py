@@ -129,12 +129,13 @@ def register_all_modules():
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 #contraception.Contraception(resourcefilepath=resourcefilepath),
-                 dummy_contraception.DummyContraceptionModule(),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 #dummy_contraception.DummyContraceptionModule(),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*']),
+                                           service_availability=['*'],
+                                           ignore_cons_constraints=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -174,6 +175,10 @@ def test_run_all_labour():
     sim.make_initial_population(n=2000)
     set_all_women_to_go_into_labour(sim)
     #sim.modules['Labour'].current_parameters['prob_ip_still_birth'] = 1
+    sim.modules['Labour'].current_parameters['odds_will_attend_pnc'] = 100
+    sim.modules['Labour'].current_parameters['prob_timings_pnc'] = [1, 0]
+    sim.modules['Labour'].current_parameters['prob_pph_other_causes'] = 0
+
     sim.simulate(end_date=Date(2010, 2, 1))
     check_dtypes(sim)
 
@@ -191,10 +196,12 @@ def test_run_all_pregnant():
     for person in all.index:
         sim.modules['Labour'].set_date_of_labour(person)
 
+
+
     sim.simulate(end_date=Date(2011, 1, 1))
     check_dtypes(sim)
 
 
 #test_run_all_pregnant()
-test_run_core_modules_normal_allocation_of_pregnancy()
-#test_run_all_labour()
+#test_run_core_modules_normal_allocation_of_pregnancy()
+test_run_all_labour()

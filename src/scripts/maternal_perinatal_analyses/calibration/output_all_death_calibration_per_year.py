@@ -14,7 +14,7 @@ scenario_filename = 'calibration_run_all_modules.py'  # <-- update this to look 
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_75k_calibration_run_all_modules-2021-10-15T143604Z/death'
+graph_location = 'output_graphs_30k_calibration_run_all_modules-2021-10-18T084850Z/death'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -335,7 +335,7 @@ for cause, tr in zip(simplified_causes, trs):
         deaths = [x + y for x, y in zip(spe_deaths, ec_deaths)]
 
     elif cause == 'postpartum_haemorrhage':
-        p_deaths = get_mean_and_quants_from_str_df(death_results, 'primary_postpartum_haemorrhage')[0]
+        p_deaths = get_mean_and_quants_from_str_df(death_results, 'postpartum_haemorrhage')[0]
         s_deaths = get_mean_and_quants_from_str_df(death_results, 'secondary_postpartum_haemorrhage')[0]
         deaths = [x + y for x, y in zip(p_deaths, s_deaths)]
 
@@ -387,8 +387,7 @@ def pie_prop_cause_of_death(values, years, labels, title):
     plt.legend(labels, loc='center left', bbox_to_anchor=(1, 0.5))
     # Equal aspect ratio ensures that pie is drawn as a circle.
     plt.title(f'Proportion of total maternal deaths by cause ({title}) {years}')
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mat_death_by_cause_{title}_{years}.png',
-                bbox_inches="tight")
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mat_death_by_cause_{title}_{years}.png', bbox_inches="tight")
     plt.show()
 
 props_df = pd.DataFrame(data=proportions_dicts)
@@ -455,6 +454,7 @@ mean_ur = get_mean_and_quants_from_str_df(la_comps, 'uterine_rupture')[0]
 mean_lsep = get_mean_and_quants_from_str_df(la_comps, 'sepsis')[0]
 mean_psep = get_mean_and_quants_from_str_df(pn_comps, 'sepsis')[0]
 mean_asep = get_mean_and_quants_from_str_df(an_comps, 'clinical_chorioamnionitis')[0]
+
 mean_ppph = get_mean_and_quants_from_str_df(la_comps, 'primary_postpartum_haemorrhage')[0]
 mean_spph = get_mean_and_quants_from_str_df(pn_comps, 'secondary_postpartum_haemorrhage')[0]
 
@@ -479,40 +479,58 @@ for inc_list in [mean_ep, mean_sa, mean_ia, mean_ur, mean_lsep,
         if item == 0:
             inc_list[index] = 0.1
 
+    print(inc_list)
+
 for inc_list, complication in \
-    zip([mean_ep, mean_sa, mean_ia, mean_ur, mean_lsep, mean_psep, mean_asep, mean_ppph, mean_spph, mean_spe, mean_ec,
+    zip([mean_ep, mean_sa, mean_ia, mean_ur, mean_psep, mean_ppph, mean_spph, mean_spe, mean_ec,
          mean_sgh, mean_aph],
-        ['ectopic_pregnancy', 'spontaneous_abortion', 'induced_abortion', 'uterine_rupture', 'intrapartum_sepsis',
-         'postpartum_sepsis', 'antenatal_sepsis', 'postpartum_haemorrhage', 'secondary_postpartum_haemorrhage',
+        ['ectopic_pregnancy', 'spontaneous_abortion', 'induced_abortion', 'uterine_rupture',
+         'postpartum_sepsis', 'postpartum_haemorrhage', 'secondary_postpartum_haemorrhage',
          'severe_pre_eclampsia', 'eclampsia', 'severe_gestational_hypertension', 'antepartum_haemorrhage']):
 
     cfr = get_comp_mean_and_rate(complication, inc_list, death_results, 100)[0]
+    print(complication, cfr)
     simple_line_chart(cfr, tr, 'Year', 'Total CFR', f'Yearly CFR for {complication}',
                       f'{complication}_cfr_per_year')
 
-an = get_comp_mean_and_rate('antenatal_sepsis', mean_asep, death_results, 100)[0]
-ip = get_comp_mean_and_rate('intrapartum_sepsis', mean_lsep, death_results, 100)[0]
-pp = get_comp_mean_and_rate('postpartum_sepsis', mean_psep, death_results, 100)[0]
-mean_cfr = [(x + y + z) / 3 for x, y, z in zip(an, ip, pp)]
-simple_line_chart(mean_cfr, tr, 'Year', 'Total CFR', 'Yearly CFR for Sepsis (combined)', 'combined_sepsis_cfr_per_year')
+mean_lsep = get_mean_and_quants_from_str_df(la_comps, 'sepsis')[0]
+mean_asep = get_mean_and_quants_from_str_df(an_comps, 'clinical_chorioamnionitis')[0]
+total_an_cases = [x + y for x, y in zip(mean_asep, mean_lsep)]
+a_deaths = get_mean_and_quants_from_str_df(death_results, 'antenatal_sepsis')[0]
+i_deaths = get_mean_and_quants_from_str_df(death_results, 'intrapartum_sepsis')[0]
+total_an_sepsis_deaths = [x + y for x, y in zip(a_deaths, i_deaths)]
+an_sep_cfr = [(x/y) * 100 for x, y in zip(total_an_sepsis_deaths, total_an_cases)]
+simple_line_chart(an_sep_cfr, tr, 'Year', 'Total CFR', 'Yearly CFR for antenatal/intrapartum sepsis',
+                  'an_ip_sepsis_cfr_per_year')
 
-ip = get_comp_mean_and_rate('postpartum_haemorrhage', mean_ppph, death_results, 100)[0]
-pp = get_comp_mean_and_rate('secondary_postpartum_haemorrhage', mean_spph, death_results, 100)[0]
-mean_cfr = [(x + y) / 2 for x, y in zip(ip, pp)]
-simple_line_chart(mean_cfr, tr, 'Year', 'Total CFR', 'Yearly CFR for PPH (combined)', 'combined_pph_cfr_per_year')
+# todo: issue with incidenec and logging of sepsis
+total_sepsis_cases = [x + y for x, y in zip(total_an_cases, mean_psep)]
+p_deaths = get_mean_and_quants_from_str_df(death_results, 'postpartum_sepsis')[0]
+total_sepsis_deaths = [x + y for x, y in zip(p_deaths, total_an_sepsis_deaths)]
+sep_cfr = [(x/y) * 100 for x, y in zip(total_sepsis_deaths, total_sepsis_cases)]
+simple_line_chart(sep_cfr, tr, 'Year', 'Total CFR', 'Yearly CFR for Sepsis (combined)', 'combined_sepsis_cfr_per_year')
 
-ia = get_comp_mean_and_rate('induced_abortion', mean_ia, death_results, 100)[0]
-sa = get_comp_mean_and_rate('spontaneous_abortion', mean_sa, death_results, 100)[0]
-mean_cfr = [(x + y) / 2 for x, y in zip(ia, sa)]
-simple_line_chart(mean_cfr, tr, 'Year', 'Total CFR', 'Yearly CFR for Abortion (combined)',
-                  'combined_abortion_cfr_per_year')
+total_pph_cases = [x + y for x, y in zip(mean_ppph, mean_spph)]
+p_deaths = get_mean_and_quants_from_str_df(death_results, 'postpartum_haemorrhage')[0]
+s_deaths = get_mean_and_quants_from_str_df(death_results, 'secondary_postpartum_haemorrhage')[0]
+total_pph_deaths = [x + y for x, y in zip(p_deaths, s_deaths)]
+cfr = [(x/y) * 100 for x, y in zip(total_pph_deaths, total_pph_cases)]
+simple_line_chart(cfr, tr, 'Year', 'Total CFR', 'Yearly CFR for PPH (combined)', 'combined_pph_cfr_per_year')
 
-spe = get_comp_mean_and_rate('severe_pre_eclampsia', mean_spe, death_results, 100)[0]
-ec = get_comp_mean_and_rate('eclampsia', mean_ec, death_results, 100)[0]
-mean_cfr = [(x + y) / 2 for x, y in zip(spe, ec)]
-simple_line_chart(mean_cfr, tr, 'Year', 'Total CFR', 'Yearly CFR for Severe Pre-eclampsia/Eclampsia (combined)',
+total_ab_cases = [x + y for x, y in zip(mean_ia, mean_sa)]
+ia_deaths = get_mean_and_quants_from_str_df(death_results, 'induced_abortion')[0]
+sa_deaths = get_mean_and_quants_from_str_df(death_results, 'spontaneous_abortion')[0]
+total_ab_deaths = [x + y for x, y in zip(ia_deaths, sa_deaths)]
+cfr = [(x/y) * 100 for x, y in zip(total_ab_deaths, total_ab_cases)]
+simple_line_chart(cfr, tr, 'Year', 'Total CFR', 'Yearly CFR for Abortion (combined)', 'combined_abortion_cfr_per_year')
+
+total_spec_cases = [x + y for x, y in zip(mean_spe, mean_ec)]
+spe_deaths = get_mean_and_quants_from_str_df(death_results, 'severe_pre_eclampsia')[0]
+ec_deaths = get_mean_and_quants_from_str_df(death_results, 'eclampsia')[0]
+total_spec_deaths = [x + y for x, y in zip(spe_deaths, ec_deaths)]
+cfr = [(x/y) * 100 for x, y in zip(total_spec_deaths, total_spec_cases)]
+simple_line_chart(cfr, tr, 'Year', 'Total CFR', 'Yearly CFR for Severe Pre-eclampsia/Eclampsia',
                   'combined_spe_ec_cfr_per_year')
-
 
 # =================================================== Neonatal Death ==================================================
 
