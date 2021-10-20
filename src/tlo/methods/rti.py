@@ -2215,11 +2215,15 @@ class RTI(Module):
             # AIS scores, their ISS score (calculated as the summed square of their three most severly injured body
             # regions, whether or not they have polytrauma (calculated if they have two or more body regions with an ISS
             # score greater than 2), their MAIS score and the number of injuries they have
-            new_row = [injuries_chosen, injais, sum(sorted(np.square(injais))[-3:]), sum(i > 2 for i in injais) > 1,
-                       max(injmais), ninj]
-            inj_df.loc[len(inj_df.index)] = new_row
+            new_row = {'Injury_codes': injuries_chosen,
+                       'AIS_scores': injais,
+                       'ISS': sum(sorted(np.square(injais))[-3:]),
+                       'Polytrauma': sum(i > 2 for i in injais) > 1,
+                       'MAIS': max(injmais),
+                       'Number_of_injuries': ninj}
+            inj_df = inj_df.append(new_row, ignore_index=True)
             # If person has an ISS score less than 15 they have a mild injury, otherwise severe
-            if new_row[2] < 15:
+            if new_row['ISS'] < 15:
                 severity_category.append('mild')
             else:
                 severity_category.append('severe')
