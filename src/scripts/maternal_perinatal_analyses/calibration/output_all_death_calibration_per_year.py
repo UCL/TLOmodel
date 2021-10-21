@@ -645,8 +645,85 @@ for year, dictionary in zip(sim_years, list_of_proportions_dicts_nb):
     plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/neo_death_by_cause_{year}.png', bbox_inches="tight")
     plt.show()
 
+# CASE FATALITY PER COMPLICATION
+nb_outcomes_df = extract_results(
+        results_folder,
+        module="tlo.methods.newborn_outcomes",
+        key="newborn_complication",
+        custom_generate_series=(
+            lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
+        do_scaling=False
+    )
+
+nb_outcomes_pn_df = extract_results(
+        results_folder,
+        module="tlo.methods.postnatal_supervisor",
+        key="newborn_complication",
+        custom_generate_series=(
+            lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
+        do_scaling=False
+    )
+
+tr = list()
+dummy_denom = list()
+for years in sim_years:
+    tr.append(0)
+    dummy_denom.append(1)
+mean_ep = get_mean_and_quants_from_str_df(an_comps, 'ectopic_unruptured')[0]
+
+early_ns = get_mean_and_quants_from_str_df(nb_outcomes_df, 'early_onset_sepsis')[0]
+early_ns_pn = get_mean_and_quants_from_str_df(nb_outcomes_pn_df, 'early_onset_sepsis')[0]
+
+total_ens = [x + y for x, y in zip(early_ns, early_ns_pn)]
+
+late_ns = get_mean_and_quants_from_str_df(nb_outcomes_pn_df, 'late_onset_sepsis')[0]
+
+mild_en = get_mean_and_quants_from_str_df(nb_outcomes_df, 'mild_enceph')[0]
+mod_en = get_mean_and_quants_from_str_df(nb_outcomes_df, 'moderate_enceph')[0]
+sev_en = get_mean_and_quants_from_str_df(nb_outcomes_df, 'severe_enceph')[0]
+total_encp = [x + y + z for x, y, z in zip(mild_en, mod_en, sev_en)]
+
+early_ptl_data = get_mean_and_quants_from_str_df(la_comps, 'early_preterm_labour')[0]
+late_ptl_data = get_mean_and_quants_from_str_df(la_comps, 'late_preterm_labour')[0]
+total_ptl_rates = [x + y for x, y in zip(early_ptl_data, late_ptl_data)]
+
+rd = get_mean_and_quants_from_str_df(nb_outcomes_df, 'not_breathing_at_birth')[0]
+
+ept = get_mean_and_quants_from_str_df(la_comps, 'early_preterm_labour')[0]  # todo: should be live births
+lpt = get_mean_and_quants_from_str_df(la_comps, 'late_preterm_labour')[0]
+total_ptbs = [x + y for x, y in zip(ept, lpt)]
+
+rds_data = get_mean_and_quants_from_str_df(nb_outcomes_df, 'respiratory_distress_syndrome')[0]
+
+rate_of_ca = get_mean_and_quants_from_str_df(nb_outcomes_df, 'congenital_heart_anomaly')[0]
+rate_of_laa = get_mean_and_quants_from_str_df(nb_outcomes_df, 'limb_or_musculoskeletal_anomaly')[0]
+rate_of_ua = get_mean_and_quants_from_str_df(nb_outcomes_df, 'urogenital_anomaly')[0]
+rate_of_da = get_mean_and_quants_from_str_df(nb_outcomes_df, 'digestive_anomaly')[0]
+rate_of_oa = get_mean_and_quants_from_str_df(nb_outcomes_df, 'other_anomaly')[0]
+
+for inc_list in [total_ens, late_ns, total_encp, total_ptl_rates, rds_data, rd, rate_of_ca, rate_of_laa, rate_of_ua,
+                 rate_of_da, rate_of_oa]:
+
+    for index, item in enumerate(inc_list):
+        if item == 0:
+            inc_list[index] = 0.1
+
+
+for inc_list, complication in \
+    zip([total_ens, late_ns, total_encp, total_ptl_rates, rds_data, rd, rate_of_ca, rate_of_laa, rate_of_ua, rate_of_da,
+        rate_of_oa],
+        ['early_onset_neonatal_sepsis', 'late_onset_sepsis', 'encephalopathy', 'preterm_other',
+         'respiratory_distress_syndrome', 'neonatal_respiratory_depression',
+         'congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',
+         'digestive_anomaly', 'other_anomaly']):
+
+    cfr = get_comp_mean_and_rate(complication, inc_list, death_results, 100)[0]
+    simple_line_chart(cfr, tr, 'Year', 'Total CFR', f'Yearly CFR for {complication}',
+                      f'{complication}_neo_cfr_per_year')
 
 
 
+
+# PROPORTION OF NMR
 
 

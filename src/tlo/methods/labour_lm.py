@@ -269,8 +269,8 @@ def predict_postpartum_haem_pp_death(self, df, rng=None, **externals):
         result *= params['pph_treatment_effect_surg_md']
     if externals['received_blood_transfusion']:
         result *= params['pph_bt_treatment_effect_md']
-    # if person['ps_anaemia_in_pregnancy']:
-    #     result *= params['rr_pph_death_anaemia']
+    if person['ps_anaemia_in_pregnancy'] or person['pn_anaemia_following_pregnancy']:
+         result *= params['rr_pph_death_anaemia']
 
     return pd.Series(data=[result], index=df.index)
 
@@ -474,11 +474,3 @@ def predict_postnatal_check(self, df, rng=None, **externals):
     result = result / (1 + result)
     return pd.Series(data=[result], index=df.index)
 
-
-def predict_care_seeking_for_complication(self, df, rng=None, **externals):
-    """individual level"""
-    #  person = df.iloc[0]
-    params = self.parameters
-    result = params['prob_careseeking_for_complication']
-
-    return pd.Series(data=[result], index=df.index)

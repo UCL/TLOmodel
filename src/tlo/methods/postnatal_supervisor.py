@@ -924,6 +924,8 @@ class PostnatalSupervisor(Module):
             risks = dict()
             for cause in causes:
                 risk = {f'{cause}': params[f'cfr_{cause}']}
+                if (cause == 'secondary_postpartum_haemorrhage') and (mother.pn_anaemia_following_pregnancy != 'none'):
+                    risk[cause] = risk[cause] * 1.5  # todo: replace with parameter
                 risks.update(risk)
 
             result = 1

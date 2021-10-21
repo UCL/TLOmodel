@@ -877,10 +877,6 @@ class Labour(Module):
             'postnatal_check': LinearModel.custom(
                 labour_lm.predict_postnatal_check, parameters=params),
 
-            # This equation calculates a womans probability of seeking care following a complication during labour or
-            # immediately after birth
-            'care_seeking_for_complication': LinearModel.custom(
-                labour_lm.predict_care_seeking_for_complication, parameters=params),
         }
 
     def on_birth(self, mother_id, child_id):
@@ -1417,12 +1413,17 @@ class Labour(Module):
 
         # Cycle through each 'cause' in the list past through the function, appending onto a dictionary a womans risk of
         # from each complication she has - as calculated from the linear model
-        for cause in causes:
-            risk = {f'{cause}': self.la_linear_models[f'{cause}_death'].predict(
-                df.loc[[individual_id]],
-                received_blood_transfusion=mni[individual_id]['received_blood_transfusion'],
-                mode_of_delivery=mni[individual_id]['mode_of_delivery'],
-                chorio_in_preg=mni[individual_id]['chorio_in_preg'])[individual_id]}
+        for cause in causes:  # todo: neaten this up?
+            if cause == 'secondary_postpartum_haemorrhage':
+                risk = {f'{cause}': self.la_linear_models['postpartum_haemorrhage_death'].predict(
+                    df.loc[[individual_id]],
+                    received_blood_transfusion=mni[individual_id]['received_blood_transfusion'],)[individual_id]}
+            else:
+                risk = {f'{cause}': self.la_linear_models[f'{cause}_death'].predict(
+                    df.loc[[individual_id]],
+                    received_blood_transfusion=mni[individual_id]['received_blood_transfusion'],
+                    mode_of_delivery=mni[individual_id]['mode_of_delivery'],
+                    chorio_in_preg=mni[individual_id]['chorio_in_preg'])[individual_id]}
 
             risks.update(risk)
 
@@ -1504,6 +1505,11 @@ class Labour(Module):
                 df.at[individual_id, 'la_eclampsia_treatment'] = False
                 df.at[individual_id, 'la_sepsis_treatment'] = False
 
+                mni[individual_id]['retained_placenta'] = False
+                mni[individual_id]['uterine_atony'] = False
+                self.pph_treatment.unset(
+                    [individual_id], 'uterotonics', 'manual_removal_placenta', 'surgery', 'hysterectomy')
+
         # ================================ SCHEDULE POSTNATAL WEEK ONE EVENT =====================================
         # For women who have survived first 24 hours after birth we reset all the key labour variables and
         # scheduled them to attend the first event in the PostnatalSupervisorModule - PostnatalWeekOne Event
@@ -1526,9 +1532,6 @@ class Labour(Module):
             # Labour specific treatment variables
             df.at[individual_id, 'la_antepartum_haem_treatment'] = False
             df.at[individual_id, 'la_uterine_rupture_treatment'] = False
-
-            self.pph_treatment.unset(
-                [individual_id], 'uterotonics', 'manual_removal_placenta', 'surgery', 'hysterectomy')
 
             # This event determines if women/newborns will develop complications in week one. We stagger when women
             # arrive at this event to simulate bunching of complications in the first few days after birth
@@ -2158,7 +2161,7 @@ class Labour(Module):
 
             if (self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                 dx_tests_to_run=f'assess_pph_{facility_type}', hsi_event=hsi_event) and
-               mni[person_id]['uterine_atony']):
+               ~mni[person_id]['retained_placenta']):
                 if outcome_of_request_for_consumables_pph['Intervention_Package_Code'][pkg_code_pph]:
 
                     # We apply a probability that this treatment will stop a womans bleeding in the first instance
@@ -2242,8 +2245,7 @@ class Labour(Module):
         params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        if df.at[person_id, 'la_postpartum_haem'] and mni[person_id]['uterine_atony'] \
-           and not self.pph_treatment.has_all(person_id, 'uterotonics'):
+        if not mni[person_id]['retained_placenta'] and not self.pph_treatment.has_all(person_id, 'uterotonics'):
 
             # We apply a probability that surgical techniques will be effective
             treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
@@ -2263,8 +2265,7 @@ class Labour(Module):
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         # Next we apply the effect of surgical treatment for women with retained placenta
-        if df.at[person_id, 'la_postpartum_haem'] and mni[person_id]['retained_placenta'] \
-           and not self.pph_treatment.has_all(person_id, 'manual_removal_placenta'):
+        elif mni[person_id]['retained_placenta'] and not self.pph_treatment.has_all(person_id, 'manual_removal_placenta'):
 
             self.pph_treatment.set(person_id, 'surgery')
             logger.debug(key='msg',
@@ -2756,6 +2757,7 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        params = self.module.current_parameters
 
         if not df.at[individual_id, 'is_alive']:
             return
@@ -2793,7 +2795,7 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                 ((df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp') and
                  mni[individual_id]['new_onset_spe']) or df.at[individual_id, 'la_uterine_rupture']:
 
-                if self.module.predict(self.module.la_linear_models['care_seeking_for_complication'], individual_id):
+                if self.module.rng.random_sample() < params['prob_careseeking_for_complication']:
 
                     mni[individual_id]['sought_care_for_complication'] = True
                     mni[individual_id]['sought_care_labour_phase'] = 'intrapartum'
@@ -2974,12 +2976,23 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
             self.module.progression_of_hypertensive_disorders(mother_id, property_prefix='pn')
 
             # And determine if this woman will receive/seek care for postnatal care after delivery
-            pnc_check = self.module.predict(self.module.la_linear_models['postnatal_check'], mother_id)
+            if df.at[mother_id, 'la_sepsis_pp'] or df.at[mother_id, 'la_postpartum_haem'] or \
+                ((df.at[mother_id, 'pn_htn_disorders'] == 'severe_pre_eclamp') and mni[mother_id]['new_onset_spe']) or \
+               (df.at[mother_id, 'pn_htn_disorders'] == 'eclampsia'):
+
+                prob_pnc = params['prob_careseeking_for_complication']
+                has_comps = True
+
+            else:
+                prob_pnc = self.module.la_linear_models['postnatal_check'].predict(
+                    df.loc[[mother_id]], mode_of_delivery=mni[mother_id]['mode_of_delivery'],
+                    delivery_setting=mni[mother_id]['delivery_setting'])[mother_id]
+                has_comps = False
 
             # If she will, we determine if this will happen less than 48 hours from birth or later
-            if pnc_check:
+            if self.module.rng.random_sample() < prob_pnc:
                 timing = self.module.rng.choice(['<48', '>48'], p=params['prob_timings_pnc'])
-                if timing == '<48':
+                if timing == '<48' or has_comps:
                     mni[mother_id]['will_receive_pnc'] = 'early'
 
                     early_event = HSI_Labour_ReceivesPostnatalCheck(
@@ -3388,8 +3401,8 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         # Women referred for surgery immediately following labour will need surgical management of postpartum bleeding
         # Treatment is varied accordingly to underlying cause of bleeding
 
-        if mni[person_id]['referred_for_surgery'] and self.timing == 'postpartum' and df.at[person_id,
-                                                                                            'la_postpartum_haem']:
+        if mni[person_id]['referred_for_surgery'] and self.timing == 'postpartum' and \
+            (df.at[person_id, 'la_postpartum_haem'] or df.at[person_id, 'pn_postpartum_haem_secondary']):
             self.module.surgical_management_of_pph(self)
 
         # =========================================== BLOOD TRANSFUSION ===============================================

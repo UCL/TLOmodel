@@ -203,5 +203,5 @@ def test_run_all_pregnant():
 
 
 #test_run_all_pregnant()
-#test_run_core_modules_normal_allocation_of_pregnancy()
-test_run_all_labour()
+test_run_core_modules_normal_allocation_of_pregnancy()
+#test_run_all_labour()
