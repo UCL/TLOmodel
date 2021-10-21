@@ -21,7 +21,7 @@ from tlo.methods import Metadata
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.methods import hiv, demography
+from tlo.methods import hiv
 from tlo.methods.causes import Cause
 
 logger = logging.getLogger(__name__)
@@ -1140,7 +1140,6 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
-        df = population.props
 
         # transmission ds-tb
         # the outcome of this will be an updated df with new tb cases
@@ -2096,7 +2095,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
             treatment_length = p["ds_retreatment_length"]
 
         # if person diagnosed with mdr - this treatment schedule takes precedence
-        elif person["tb_diagnosed_mdr"] == True:
+        elif person["tb_diagnosed_mdr"]:
 
             # if strain is mdr:
             sputum_fup = follow_up_times["mdr_sputum"].dropna()

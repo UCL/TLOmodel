@@ -688,7 +688,7 @@ plt.show()
 
 # ---------------------------------------------------------------------- #
 
-# Percent on ART
+# Percent of all HIV+ on ART
 make_plot(
     title_str="Percent of Adults (15+) on ART",
     model=cov_over_time["art_coverage_adult"] * 100,

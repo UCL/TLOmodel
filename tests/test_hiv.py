@@ -494,7 +494,7 @@ def test_test_and_refer_event_scheduled_by_main_event_poll():
 
     # Control the number of people for whom there should be a TestAndReferEvent
     # (parameter for prob of testing is 100% for adults and children - set in get_sim()
-    num_not_diagnosed = sum(~df.hv_diagnosed & df.is_alive)
+    # num_not_diagnosed = sum(~df.hv_diagnosed & df.is_alive)
 
     # Run a polling event
     pollevent = hiv.HivRegularPollingEvent(module=sim.modules["Hiv"])
