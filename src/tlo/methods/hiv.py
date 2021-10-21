@@ -384,6 +384,10 @@ class Hiv(Module):
             Types.REAL,
             "probability of death if aids and tb, person on treatment for tb",
         ),
+        "discount_aids_due_to_tb": Parameter(
+            Types.REAL,
+            "discount the probability of aids through HIV infection only to compensate for aids caused by TB",
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -1648,6 +1652,13 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
             (self.cause != 'AIDS_TB'):
             return
 
+        # need to discount some AIDS cases caused by HIV only
+        # as AIDS caused by TB is now modelled separately
+        if (self.cause == 'AIDS_non_TB') and \
+            (self.module.rng.random_sample() < self.module.parameters['discount_aids_due_to_tb']):
+            return
+
+        # if eligible for aids onset (not treated with ART or currently has active TB):
         # Update Symptoms
         self.sim.modules["SymptomManager"].change_symptom(
             person_id=person_id,
@@ -1662,6 +1673,7 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
                 months=self.module.rng.randint(1, 12))
         else:
             date_of_aids_death = self.sim.date + self.module.get_time_from_aids_to_death()
+
         self.sim.schedule_event(
             event=HivAidsDeathEvent(
                 person_id=person_id, module=self.module, cause=self.cause
