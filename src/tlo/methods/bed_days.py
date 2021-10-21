@@ -212,6 +212,12 @@ class BedDays:
             logger.warning(key='warning', data=f'the requested bed days in footprint is greater than the'
                                                f'tracking period, {footprint}')
 
+        for key, tracker in self.bed_tracker.items():
+            available_beds_on_that_day = int(tracker.loc[min(tracker.index),
+                                                         self.get_persons_level2_facility_id(person_id)])
+            if footprint[key] > available_beds_on_that_day:
+                footprint[key] = available_beds_on_that_day
+
         df = self.hs_module.sim.population.props
 
         # reset all internal properties about dates of transition between bed use states:
