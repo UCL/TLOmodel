@@ -161,6 +161,18 @@ class Alri(Module):
                      'hypoxia'  # <-- Low implies Sp02<93%'
                      }
 
+    pulmonary_complications = {'pneumothorax',
+                               'pleural_effusion',
+                               'empyema',
+                               'lung_abscess'
+                               }
+
+    systemic_complications = {'sepsis',
+                              'meningitis',
+                              'respiratory_failure'}
+
+    oxygen_exchange_complications = {'hypoxia'}
+
     PARAMETERS = {
         # Incidence rate by pathogens  -----
         'base_inc_rate_ALRI_by_RSV':
@@ -470,7 +482,7 @@ class Alri(Module):
                       'list of probabilities of difficult breathing by '
                       'pneumonia, bronchiolitis, and other_alri'
                       ),
-        'prob_fast_breathing_uncomplicated_ALRI_by_disease_type':
+        'prob_tachypnoea_uncomplicated_ALRI_by_disease_type':
             Parameter(Types.LIST,
                       'list of probabilities of fast breathing by '
                       'pneumonia, bronchiolitis, and other_alri'
@@ -487,124 +499,117 @@ class Alri(Module):
                       ),
 
         # Additional signs and symptoms from complications -----
-        'prob_loss_of_appetite_adding_from_pleural_effusion':
+        'prob_central_cyanosis_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of loss of appetite from pleural effusion'
+                      'probability of central cyanosis in pneumonia cases'
                       ),
-        'prob_loss_of_appetite_adding_from_empyema':
+        'prob_central_cyanosis_in_non_pneumonia_alri':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of loss of appetite from empyema'
+                      'probability of central cyanosis in bronchiolitis and other alri cases'
                       ),
-        'prob_severe_respiratory_distress_adding_from_respiratory_failure':
+        'prob_head_nodding_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of severe respiratory distress from respiratory failure'
+                      'probability of head nodding in pneumonia cases'
                       ),
-        'prob_severe_respiratory_distress_adding_from_sepsis':
+        'prob_head_nodding_in_non_pneumonia_alri':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of severe respiratory distress from sepsis'
+                      'probability of head nodding in bronchiolitis and other alri cases'
                       ),
-
-        # Second round of signs/symptoms added from each complication
-        # Pneumothorax ------------
-        'prob_chest_pain_adding_from_pneumothorax':
+        'prob_hypoxaemia_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of chest pain / pleurisy from pneumothorax'
+                      'probability of hypoxaemia in pneumonia cases'
                       ),
-        'prob_cyanosis_adding_from_pneumothorax':
+        'prob_hypoxaemia_in_non_pneumonia_alri':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of cyanosis from pneumothorax'
+                      'probability of hypoxaemia in bronchiolitis and other alri cases'
                       ),
-        'prob_difficult_breathing_adding_from_pneumothorax':
+        'prob_convulsions_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of difficult breathing from pneumothorax'
+                      'probability of convulsions in pneumonia cases'
                       ),
-
-        # Pleural effusion -----------
-        'prob_chest_pain_adding_from_pleural_effusion':
+        'prob_convulsions_in_non_pneumonia_alri':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of chest pain / pleurisy from pleural effusion'
+                      'probability of convulsions in bronchiolitis and other alri cases'
                       ),
-        'prob_fever_adding_from_pleural_effusion':
+        'prob_lethargy_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fever from pleural effusion'
+                      'probability of lethargy in pneumonia cases'
                       ),
-        'prob_difficult_breathing_adding_from_pleural_effusion':
+        'prob_lethargy_in_non_pneumonia_alri':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of dyspnoea/ difficult breathing from pleural effusion'
+                      'probability of lethargy in bronchiolitis and other alri cases'
                       ),
-
-        # Empyema ------------
-        'prob_chest_pain_adding_from_empyema':
+        'prob_difficulty_feeding_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of chest pain / pleurisy from empyema'
+                      'probability of difficulty feeding in pneumonia cases'
                       ),
-        'prob_fever_adding_from_empyema':
+        'prob_difficulty_feeding_in_non_pneumonia_alri':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fever from empyema'
+                      'probability of difficulty feeding in bronchiolitis and other alri cases'
                       ),
-        'prob_respiratory_distress_adding_from_empyema':
+        'prob_vomiting_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of cough with sputum from respiratory distress'
+                      'probability of vomiting in pneumonia cases'
                       ),
-
-        # Lung abscess --------------
-        'prob_chest_pain_adding_from_lung_abscess':
+        'prob_vomiting_in_non_pneumonia_alri':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of chest pain / pleurisy from lung abscess'
+                      'probability of vomiting in bronchiolitis and other alri cases'
                       ),
-        'prob_fast_breathing_adding_from_lung_abscess':
+        'prob_tachypnoea_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fast_breathing/ fast breathing from lung abscess'
+                      'probability of tachypnoea in pneumonia cases'
                       ),
-        'prob_fever_adding_from_lung_abscess':
+        'prob_tachypnoea_in_non_pneumonia_alri':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fever from lung abscess'
+                      'probability of tachypnoea in bronchiolitis and other alri cases'
                       ),
-
-        # Hypoxaemic Respiratory failure --------------
-        'prob_difficult_breathing_adding_from_respiratory_failure':
+        'prob_crackles_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of difficult breathing from respiratory failure'
+                      'probability of crackles in pneumonia cases'
                       ),
-        'prob_cyanosis_adding_from_respiratory_failure':
+        'prob_crackles_in_non_pneumonia_alri':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of cyanosis from respiratory failure'
+                      'probability of crackles in bronchiolitis and other alri cases'
                       ),
-        'prob_fast_breathing_adding_from_respiratory_failure':
+        'prob_grunting_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fast_breathing from respiratory failure'
+                      'probability of grunting in pneumonia cases'
                       ),
-        'prob_danger_signs_adding_from_respiratory_failure':
+        'prob_grunting_in_non_pneumonia_alri':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of danger signs from respiratory failure'
+                      'probability of grunting in bronchiolitis and other alri cases'
                       ),
-
-        # Meningitis ------------
-        'prob_headache_adding_from_meningitis':
+        'prob_nasal_flaring_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of headache from meningitis'
+                      'probability of nasal flaring in pneumonia cases'
                       ),
-        'prob_fever_adding_from_meningitis':
+        'prob_nasal_flaring_in_non_pneumonia_alri':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fever from meningitis'
+                      'probability of nasal flaring in bronchiolitis and other alri cases'
                       ),
-        'prob_danger_signs_adding_from_meningitis':
+        'prob_tachycardia_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of danger_signs from meningitis'
+                      'probability of tachycardia in pneumonia cases'
                       ),
-
-        # Sepsis ----------------
-        'prob_fast_breathing_adding_from_sepsis':
+        'prob_tachycardia_in_non_pneumonia_alri':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fast_breathing from sepsis'
+                      'probability of tachycardia in bronchiolitis and other alri cases'
                       ),
-        'prob_danger_signs_adding_from_sepsis':
+        'prob_fever>=38.5_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of danger signs from sepsis'
+                      'probability of fever>=38.5 in pneumonia cases'
                       ),
-        'prob_fever_adding_from_sepsis':
+        'prob_fever>=38.5_in_non_pneumonia_alri':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fever from sepsis'
+                      'probability of fever>=38.5 in bronchiolitis and other alri cases'
+                      ),
+        'prob_wheeze_in_pneumonia':
+            Parameter(Types.REAL,
+                      'probability of wheeze in pneumonia cases'
+                      ),
+        'prob_wheeze_in_non_pneumonia_alri':
+            Parameter(Types.REAL,
+                      'probability of wheeze in bronchiolitis and other alri cases'
                       ),
 
         # Parameters governing the effects of vaccine ----------------
@@ -744,8 +749,10 @@ class Alri(Module):
     def define_symptoms(self):
         """Define the symptoms that this module will use"""
         all_symptoms = {
-            'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'chest_pain', 'cyanosis',
-            'respiratory_distress', 'danger_signs'
+            'fever', 'cough', 'difficult_breathing', 'tachypnoea', 'nasal_flaring',
+            'chest_indrawing', 'chest_pain', 'central_cyanosis', 'head_nodding', 'hypoxaemia',
+            'convulsions', 'lethargy', 'difficulty_feeding', 'vomiting', 'crackles', 'grunting',
+            'tachycardia', 'fever>=38.5', 'wheeze', 'respiratory_distress', 'danger_signs'
         }
 
         for symptom_name in all_symptoms:
@@ -847,7 +854,7 @@ class Alri(Module):
 
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
         total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has('fast_breathing')] = self.daly_wts['daly_non_severe_ALRI']
+            self.sim.modules['SymptomManager'].who_has('tachypnoea')] = self.daly_wts['daly_non_severe_ALRI']
         total_daly_values.loc[
             self.sim.modules['SymptomManager'].who_has('danger_signs')] = self.daly_wts['daly_severe_ALRI']
 
@@ -1001,9 +1008,12 @@ class Alri(Module):
         # If person is on treatment, they should have a treatment start date
         assert (df.loc[curr_inf, 'ri_on_treatment'] != df.loc[curr_inf, 'ri_ALRI_tx_start_date'].isna()).all()
 
-    def impose_symptoms_for_complication(self, complication, person_id):
+    def impose_symptoms_for_complicated_alri(self, person_id):
         """Impose symptoms for a complication."""
-        symptoms = self.models.symptoms_for_complication(complication=complication)
+        df = self.sim.population.props
+        disease_type = df.at[person_id, 'ri_disease_type']
+        symptoms = self.models.symptoms_for_complicated_alri(person_id=person_id,
+                                                             disease_type=disease_type)
         for symptom in symptoms:
             self.sim.modules['SymptomManager'].change_symptom(
                 person_id=person_id,
@@ -1238,7 +1248,7 @@ class Models:
         probs = {
             symptom: p[f'prob_{symptom}_uncomplicated_ALRI_by_disease_type'][index]
             for symptom in [
-                'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'danger_signs']
+                'fever', 'cough', 'difficult_breathing', 'tachypnoea', 'chest_indrawing', 'danger_signs']
         }
 
         # determine which symptoms are onset:
@@ -1246,63 +1256,58 @@ class Models:
 
         return symptoms
 
-    def symptoms_for_complication(self, complication):
+    def symptoms_for_complicated_alri(self, person_id, disease_type):
         """Probability of each symptom for a person given a particular complication"""
         p = self.p
+        person = self.module.sim.population.props.loc[person_id]
+        probs = defaultdict(float)
 
-        if complication == 'pneumothorax':
+        has_complications = False
+
+        for complication in ['pleural_effusion', 'empyema', 'pneumothorax', 'lung_abscess', 'hypoxia']:
+            if person[f'ri_complication_{complication}']:
+                has_complications = True
+
+        if has_complications and disease_type == 'pneumonia':
             probs = {
-                'chest_pain': p[f'prob_chest_pain_adding_from_{complication}'],
-                'cyanosis': p[f'prob_cyanosis_adding_from_{complication}'],
-                'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complication}']
+                'central_cyanosis': p['prob_central_cyanosis_in_pneumonia'],
+                'head_nodding': p['prob_head_nodding_in_pneumonia'],
+                'hypoxaemia': p['prob_hypoxaemia_in_pneumonia'],
+                'convulsions': p['prob_convulsions_in_pneumonia'],
+                'lethargy': p['prob_head_nodding_in_pneumonia'],
+                'difficulty_feeding': p['prob_difficulty_feeding_in_pneumonia'],
+                'vomiting': p['prob_vomiting_in_pneumonia'],
+                'tachypnoea': p[f'prob_tachypnoea_in_pneumonia'],
+                'crackles': p['prob_crackles_in_pneumonia'],
+                'grunting': p['prob_grunting_in_pneumonia'],
+                'nasal_flaring': p['prob_nasal_flaring_in_pneumonia'],
+                'tachycardia': p['prob_tachycardia_in_pneumonia'],
+                'fever>=38.5': p['prob_fever>=38.5_in_pneumonia'],
+                'wheeze': p['prob_wheeze_in_pneumonia'],
             }
-        elif complication == 'pleural_effusion':
+        if has_complications and (disease_type == ('bronchiolitis' or ' other_alri')):
             probs = {
-                'chest_pain': p[f'prob_chest_pain_adding_from_{complication}'],
-                'fever': p[f'prob_fever_adding_from_{complication}'],
-                'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complication}']
+                'central_cyanosis': p['prob_central_cyanosis_in_non_pneumonia_alri'],
+                'head_nodding': p['prob_head_nodding_in_non_pneumonia_alri'],
+                'hypoxaemia': p['prob_hypoxaemia_in_non_pneumonia_alri'],
+                'convulsions': p['prob_convulsions_in_non_pneumonia_alri'],
+                'lethargy': p['prob_head_nodding_in_non_pneumonia_alri'],
+                'difficulty_feeding': p['prob_difficulty_feeding_in_non_pneumonia_alri'],
+                'vomiting': p['prob_vomiting_in_non_pneumonia_alri'],
+                'tachypnoea': p['prob_tachypnoea_in_non_pneumonia_alri'],
+                'crackles': p['prob_crackles_in_non_pneumonia_alri'],
+                'grunting': p['prob_grunting_in_non_pneumonia_alri'],
+                'nasal_flaring': p['prob_nasal_flaring_in_non_pneumonia_alri'],
+                'tachycardia': p['prob_tachycardia_in_non_pneumonia_alri'],
+                'fever>=38.5': p['prob_fever>=38.5_in_non_pneumonia_alri'],
+                'wheeze': p['prob_wheeze_in_non_pneumonia_alri'],
             }
-        elif complication == 'empyema':
-            probs = {
-                'chest_pain': p[f'prob_chest_pain_adding_from_{complication}'],
-                'fever': p[f'prob_fever_adding_from_{complication}'],
-                'respiratory_distress': p[f'prob_respiratory_distress_adding_from_{complication}']
-            }
-        elif complication == 'lung_abscess':
-            probs = {
-                'chest_pain': p[f'prob_chest_pain_adding_from_{complication}'],
-                'fast_breathing': p[f'prob_fast_breathing_adding_from_{complication}'],
-                'fever': p[f'prob_fever_adding_from_{complication}']
-            }
-        elif complication == 'respiratory_failure':
-            probs = {
-                'cyanosis': p[f'prob_cyanosis_adding_from_{complication}'],
-                'fast_breathing': p[f'prob_fast_breathing_adding_from_{complication}'],
-                'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complication}'],
-                'danger_signs': p[f'prob_danger_signs_adding_from_{complication}']
-            }
-        elif complication == 'sepsis':
-            probs = {
-                'fever': p[f'prob_fever_adding_from_{complication}'],
-                'fast_breathing': p[f'prob_fast_breathing_adding_from_{complication}'],
-                'danger_signs': p[f'prob_danger_signs_adding_from_{complication}']
-            }
-        elif complication == 'meningitis':
-            probs = {
-                'fever': p[f'prob_fever_adding_from_{complication}'],
-                'headache': p[f'prob_headache_adding_from_{complication}'],
-                'danger_signs': p[f'prob_danger_signs_adding_from_{complication}']
-            }
-        elif complication == 'hypoxia':
-            # (No specific symptoms for 'hypoxia')
-            return set()
-        else:
-            raise ValueError
 
         # determine which symptoms are onset:
         symptoms = {s for s, p in probs.items() if p > self.rng.rand()}
 
         return symptoms
+        # TODO: add symptoms for severe WHO-defined pneumonia/ or complications?
 
     def death(self, person_id):
         """Determine if person will die from Alri. Returns True/False"""
@@ -1522,7 +1527,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         complications = models.complications(person_id=person_id)
         df.loc[person_id, [f"ri_complication_{complication}" for complication in complications]] = True
         for complication in complications:
-            m.impose_symptoms_for_complication(person_id=person_id, complication=complication)
+            m.impose_symptoms_for_complicated_alri(person_id=person_id)
 
         # Consider delayed-onset of complications and schedule events accordingly
         date_of_onset_delayed_complications = random_date(self.sim.date, date_of_outcome, m.rng)
@@ -1564,7 +1569,7 @@ class AlriDelayedOnsetComplication(Event, IndividualScopeEventMixin):
             ~person[f'ri_complication_{self.complication}']
         ):
             df.at[person_id, f'ri_complication_{self.complication}'] = True
-            m.impose_symptoms_for_complication(complication=self.complication, person_id=person_id)
+            m.impose_symptoms_for_complicated_alri(person_id=person_id)
 
 
 class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):

@@ -194,11 +194,11 @@ def test_integrity_of_linear_models(tmpdir):
         assert isinstance(res, set)
         assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
 
-    # --- symptoms_for_complication
-    for complication in alri.complications:
-        res = models.symptoms_for_complication(complication)
-        assert isinstance(res, set)
-        assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
+    # # --- symptoms_for_complication TODO: DELETE
+    # for complication in alri.complications:
+    #     res = models.symptoms_for_complication(complication)
+    #     assert isinstance(res, set)
+    #     assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
 
     # --- death
     for disease_type in alri.disease_types:
