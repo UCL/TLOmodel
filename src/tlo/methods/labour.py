@@ -2170,10 +2170,15 @@ class Labour(Module):
                         logger.debug(key='msg', data=f'mother {person_id} received uterotonics for her PPH which has '
                                                      f'resolved')
 
-                        # We store the treatment in a bitset column, where it will be used to reduce risk of death
-                        # after PPH. Additionally she is referred for blood which also reduces risk of death
-                        self.pph_treatment.set([person_id], 'uterotonics')
-                        # todo: dont think successfully managed pph with just uterotonics would need blood?
+                        # Bleeding has stopped, this woman will not be at risk of death
+                        df.at[person_id, 'la_postpartum_haem'] = False
+                        mni[person_id]['uterine_atony'] = False
+
+                        if df.at[person_id, 'pn_postpartum_haem_secondary']:
+                            df.at[person_id, 'pn_postpartum_haem_secondary'] = False
+
+                        # todo: remove?
+                        #self.pph_treatment.set([person_id], 'uterotonics')
                         #mni[person_id]['referred_for_blood'] = True
 
                     # If uterotonics do not stop bleeding the woman is referred for additional treatment
@@ -2223,7 +2228,15 @@ class Labour(Module):
                     if params['prob_successful_manual_removal_placenta'] > self.rng.random_sample():
                         logger.debug(key='msg', data=f'mother {person_id} undergone MRP due to retained placenta and '
                                                      f'her PPH has resolved')
-                        self.pph_treatment.set([person_id], 'manual_removal_placenta')
+
+                        df.at[person_id, 'la_postpartum_haem'] = False
+                        mni[person_id]['retained_placenta'] = False
+
+                        if df.at[person_id, 'pn_postpartum_haem_secondary']:
+                            df.at[person_id, 'pn_postpartum_haem_secondary'] = False
+
+                        # TODO: remove
+                        #self.pph_treatment.set([person_id], 'manual_removal_placenta')
                         # mni[person_id]['referred_for_blood'] = True
 
                     else:
@@ -2299,6 +2312,7 @@ class Labour(Module):
             hsi_event=hsi_event, cons_req_as_footprint=consumables_needed_bt)
 
         # If they're available, the event happens
+        # TODO: this will mostly negate the effect of anaemia on risk of death from PPH...
         if outcome_of_request_for_consumables['Item_Code'][item_code_bt1]:
             mni[person_id]['received_blood_transfusion'] = True
             logger.debug(key='message', data=f'Mother {person_id} has received a blood transfusion due following a'

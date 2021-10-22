@@ -122,7 +122,7 @@ def predict_sepsis_death(self, df, rng=None, **externals):
     """individual level"""
     person = df.iloc[0]
     params = self.parameters
-    result = params['cfr_sepsis']
+    result = params['cfr_pp_sepsis']
 
     # todo: wont this give a treatment effect to postpartum women who develop a different kind of sepsis
     # todo: ? remove call to ac_received_abx_for_chorioamnionitis as i've now simplified and all treatment is delivered
@@ -261,10 +261,10 @@ def predict_postpartum_haem_pp_death(self, df, rng=None, **externals):
     treatment = self.module.pph_treatment.to_strings(person.la_postpartum_haem_treatment)
     result = params['cfr_pp_pph']
 
-    if 'uterotonics' in treatment:
-        result *= params['pph_treatment_effect_uterotonics_md']
-    if 'manual_removal_placenta' in treatment:
-        result *= params['pph_treatment_effect_mrp_md']
+    #if 'uterotonics' in treatment:
+    #    result *= params['pph_treatment_effect_uterotonics_md']
+    #if 'manual_removal_placenta' in treatment:
+    #    result *= params['pph_treatment_effect_mrp_md']
     if ('surgery' in treatment) or ('hysterectomy' in treatment):
         result *= params['pph_treatment_effect_surg_md']
     if externals['received_blood_transfusion']:
