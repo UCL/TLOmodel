@@ -147,7 +147,7 @@ class CardioMetabolicDisorders(Module):
         in conditions
     }
     event_list = {
-        f"nc_{p}": Property(Types.BOOL, f"Whether or not someone has had a {p}") for p in events}
+        f"nc_{p}": Property(Types.DATE, f"Date of when someone has had a {p}") for p in events}
     event_diagnosis_list = {
         f"nc_{p}_ever_diagnosed": Property(Types.BOOL, f"Whether or not someone has ever been diagnosed with {p}") for p
         in events
@@ -592,7 +592,7 @@ class CardioMetabolicDisorders(Module):
             df.at[child_id, f'nc_{condition}_date_last_test'] = pd.NaT
             df.at[child_id, f'nc_{condition}_on_medication'] = False
         for event in self.events:
-            df.at[child_id, f'nc_{event}'] = False
+            df.at[child_id, f'nc_{event}'] = pd.NaT
             df.at[child_id, f'nc_{event}_ever_diagnosed'] = False
             df.at[child_id, f'nc_{event}_on_medication'] = False
             df.at[child_id, f'nc_{event}_date_diagnosis'] = pd.NaT
@@ -640,8 +640,8 @@ class CardioMetabolicDisorders(Module):
         This is called by the HSI generic first appts module whenever a person attends an appointment.
         """
 
-        def get_time_since_last_test(current_date, date_of_last_test):
-            return (current_date - date_of_last_test).days > 365.25 / 2
+        def is_next_test_due(current_date, date_of_last_test):
+            return pd.isnull(date_of_last_test) or (current_date - date_of_last_test).days > 365.25 / 2
 
         df = self.sim.population.props
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
@@ -649,8 +649,12 @@ class CardioMetabolicDisorders(Module):
         for condition in self.conditions:
             # if the person hasn't been diagnosed and they don't have symptoms of the condition...
             if (~df.at[person_id, f'nc_{condition}_ever_diagnosed']) and (f'{condition}_symptoms' not in symptoms):
-                # if the person hasn't ever been tested for the condition, test if over 50 or with some probability
-                if pd.isnull(df.at[person_id, f'nc_{condition}_date_last_test']):
+                # if the person hasn't ever been tested for the condition or not tested within last 6 months,
+                # test them if age >= 50 or with some probability
+                if is_next_test_due(
+                    current_date=self.sim.date, date_of_last_test=df.at[
+                        person_id, f'nc_{condition}_date_last_test']):
+                    # TODO: @britta make these not arbitrary
                     if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
                                 f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
                         # initiate HSI event
@@ -665,27 +669,6 @@ class CardioMetabolicDisorders(Module):
                             topen=self.sim.date,
                             tclose=None
                         )
-                    # else if tested in the past, determine date of last test
-                else:
-                    if get_time_since_last_test(
-                        current_date=self.sim.date, date_of_last_test=df.at[
-                            person_id, f'nc_{condition}_date_last_test']):
-                        # and if they're over 50 or are chosen to be tested with some probability...
-                        # TODO: @britta make these not arbitrary
-                        if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
-                                    f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
-                            # initiate HSI event
-                            hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
-                                module=self,
-                                person_id=person_id,
-                                condition=f'{condition}'
-                            )
-                            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                                hsi_event,
-                                priority=0,
-                                topen=self.sim.date,
-                                tclose=None
-                            )
 
     def determine_if_will_be_investigated_events(self, person_id):
         """
@@ -696,7 +679,9 @@ class CardioMetabolicDisorders(Module):
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
         for ev in self.events:
-            if f'{ev}_damage' in symptoms:
+            # if the person has symptoms of damage from within the last 3 days, schedule them for care
+            if f'{ev}_damage' in symptoms and \
+                    ((self.sim.date-self.sim.population.props.at[person_id, 'nc_ever_stroke']).days <= 3):
                 event = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
                     module=self,
                     person_id=person_id,
@@ -845,7 +830,7 @@ class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
             return
 
         self.module.events_tracker[f'{self.event}_events'] += 1
-        df.at[person_id, f'nc_{self.event}'] = True
+        df.at[person_id, f'nc_{self.event}'] = self.sim.date
 
         # Add the outward symptom to the SymptomManager. This will result in emergency care being sought for any
         # event that takes place
