@@ -47,7 +47,7 @@ def runsim(seed=0):
 
     start_date = Date(2010, 1, 1)
     end_date = Date(2019, 12, 31)
-    popsize = 1000
+    popsize = 200000
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
@@ -85,21 +85,28 @@ for cond in condition_names:
                 '65-69', '70-74', '75-79', '80-84', '85-89', '90-94', '95-99']
 
     men_GBD = []
+    men_GBD_lower = []
+    men_GBD_upper = []
     men_model = []
     for age_cat in age_cats:
         men_GBD.append(comparison.loc[('2015-2019', 'M', f'{age_cat}', f'{cond}')]['GBD_mean'])
+        men_GBD_lower.append(comparison.loc[('2015-2019', 'M', f'{age_cat}', f'{cond}')]['GBD_lower'])
+        men_GBD_upper.append(comparison.loc[('2015-2019', 'M', f'{age_cat}', f'{cond}')]['GBD_upper'])
         men_model.append(comparison.loc[('2015-2019', 'M', f'{age_cat}', f'{cond}')]['model'])
 
+    men_GBD_error = [([mean - lower for mean, lower in zip(men_GBD, men_GBD_lower)]),
+                     ([upper - mean for upper, mean in zip(men_GBD_upper, men_GBD)])]
+
     x = np.arange(len(age_cats))
-    width = 0.35
+    width = 0.5
 
     fig, ax = plt.subplots()
-    rects1 = ax.bar(x - width/2, men_GBD, width, label='GBD mean')
-    rects2 = ax.bar(x + width/2, men_model, width, label='Model')
+    ax.bar(x, men_model, width, color='#ADD8E6', label='Model')
+    ax.errorbar(x, men_GBD, yerr=men_GBD_error, fmt='o', color='#23395d', label="GBD")
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel('Deaths')
-    ax.set_title(f'Annual Deaths from {cond} (Men, 2015-2019)')
+    ax.set_title(f'Mean Annual Deaths from {cond} (Men, 2015-2019)')
     ax.set_xticks(x)
     ax.set_xticklabels(age_cats, rotation=90)
     ax.legend()
@@ -110,20 +117,27 @@ for cond in condition_names:
 
     women_GBD = []
     women_model = []
+    women_GBD_lower = []
+    women_GBD_upper = []
     for age_cat in age_cats:
         women_GBD.append(comparison.loc[('2015-2019', 'F', f'{age_cat}', f'{cond}')]['GBD_mean'])
+        women_GBD_lower.append(comparison.loc[('2015-2019', 'F', f'{age_cat}', f'{cond}')]['GBD_lower'])
+        women_GBD_upper.append(comparison.loc[('2015-2019', 'F', f'{age_cat}', f'{cond}')]['GBD_upper'])
         women_model.append(comparison.loc[('2015-2019', 'F', f'{age_cat}', f'{cond}')]['model'])
 
+    women_GBD_error = [([mean - lower for mean, lower in zip(women_GBD, women_GBD_lower)]),
+                     ([upper - mean for upper, mean in zip(women_GBD_upper, women_GBD)])]
+
     x = np.arange(len(age_cats))
-    width = 0.35
+    width = 0.5
 
     fig, ax = plt.subplots()
-    rects3 = ax.bar(x - width/2, women_GBD, width, label='GBD mean')
-    rects4 = ax.bar(x + width/2, women_model, width, label='Model')
+    ax.bar(x, women_model, width, color='#ADD8E6', label='Model')
+    ax.errorbar(x, women_GBD, yerr=women_GBD_error, fmt='o', color='#23395d', label="GBD")
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel('Deaths')
-    ax.set_title(f'Annual Deaths from {cond} (Women, 2015-2019)')
+    ax.set_title(f'Mean Annual Deaths from {cond} (Women, 2015-2019)')
     ax.set_xticks(x)
     ax.set_xticklabels(age_cats, rotation=90)
     ax.legend()
@@ -272,22 +286,26 @@ for condition in conditions:
         plt.tight_layout()
         plt.show()
     elif condition == 'chronic_kidney_disease':
-        scatter = plt.scatter(prev_range[f'{condition}'].index, prev_range[f'{condition}']['gbd_value'].values, s=8,
-                              alpha=0.8,
-                              color='gray',
-                              label="GBD 2019")
         scatter_price = plt.scatter(prev_range[f'{condition}'].index, prev_range[f'{condition}']['value'].values,
                                     s=8,
                                     alpha=0.8,
                                     color='hotpink',
-                                    label="Nakanga et al. 2018")
+                                    label="Nakanga et al. 2020")
+        scatter = plt.scatter(prev_range[f'{condition}'].index, prev_range[f'{condition}']['gbd_value'].values,
+                              s=8,
+                              alpha=0.8,
+                              color='gray',
+                              label="GBD 2019")
         plt.xticks(rotation=90)
         plt.errorbar(prev_range[f'{condition}'].index, prev_range[f'{condition}']['gbd_value'].values,
                      yerr=gbd_error,
                      fmt='x', c='gray')
+        plt.errorbar(prev_range[f'{condition}'].index, prev_range[f'{condition}']['value'].values,
+                     yerr=0,
+                     fmt='o', c='hotpink')
         plt.ylabel(f'Proportion With {condition_title}')
         plt.title(f'Prevalence of {condition_title} by Age and Sex')
-        plt.legend([bar, scatter, scatter_price], ['Model', 'GBD 2019', 'Nakanga et al. 2018'])
+        plt.legend([bar, scatter_price, scatter], ['Model', 'Nakanga et al. 2020', 'GBD 2019'])
         plt.savefig(outputpath / f'prevalence_{condition_title}_by_age_sex.pdf')
         # plt.ylim([0, 1])
         plt.tight_layout()
@@ -456,11 +474,12 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     return inc_mean
 
 # Extract the relevant outputs and make a graph:
-def get_incidence_rate_and_death_numbers_from_logfile_events(logfile):
+def get_incidence_rate_and_death_numbers_from_logfile_events(logfile, type):
     output = parse_log_file(logfile)
 
     # Calculate the "incidence rate" from the output counts of incidence
-    counts = convert_output(output['tlo.methods.cardio_metabolic_disorders']['incidence_count_by_event'])
+    incident_counts = convert_output(
+        output['tlo.methods.cardio_metabolic_disorders'][f'incidence_count_by_{type}_event'])
 
     # create empty dict to store incidence rates
     inc_rate = dict()
@@ -483,7 +502,7 @@ def get_incidence_rate_and_death_numbers_from_logfile_events(logfile):
 
         for age_grp in age_range:
             # extract specific condition counts from counts df
-            event_counts[age_grp] = counts[f'{event}'].apply(lambda x: x.get(f'{age_grp}')).dropna()
+            event_counts[age_grp] = incident_counts[f'{event}'].apply(lambda x: x.get(f'{age_grp}')).dropna()
             individual_condition = event_counts[age_grp].apply(pd.Series).div(py[age_grp],
                                                                                   axis=0).dropna()
             individual_condition.columns = [f'{event}']
@@ -506,7 +525,8 @@ def get_incidence_rate_and_death_numbers_from_logfile_events(logfile):
 
 
 inc_by_condition = get_incidence_rate_and_death_numbers_from_logfile(sim.log_filepath)
-inc_by_event = get_incidence_rate_and_death_numbers_from_logfile_events(sim.log_filepath)
+inc_by_incident_event = get_incidence_rate_and_death_numbers_from_logfile_events(sim.log_filepath, type='incident')
+inc_by_prevalent_event = get_incidence_rate_and_death_numbers_from_logfile_events(sim.log_filepath, type='prevalent')
 
 
 # def plot_for_column_of_interest(results, column_of_interest):
@@ -528,12 +548,15 @@ inc_by_event = get_incidence_rate_and_death_numbers_from_logfile_events(sim.log_
 # for column_of_interest in inc_by_event.columns:
     # plot_for_column_of_interest(inc_by_event, column_of_interest)
 
-def make_incidence_plot(condition):
+def make_incidence_plot(condition, type):
     # Capitalize and replace underscores with spaces for title
     condition_title = condition.replace("_", " ")
     condition_title = condition_title.title()
 
-    inc_range = pd.read_excel("resources/cmd/ResourceFile_cmd_condition_and_events_incidence.xlsx", sheet_name=None)
+    if type == 'incidence':
+        inc_range = pd.read_excel(f"resources/cmd/ResourceFile_cmd_condition_and_events_{type}.xlsx", sheet_name=None)
+    else:
+        inc_range = pd.read_excel(f"resources/cmd/ResourceFile_cmd_event_{type}.xlsx", sheet_name=None)
     asymptomatic_error = [(inc_range[f'{condition}']['value'].values - inc_range[f'{condition}']['lower'].values),
                           (inc_range[f'{condition}']['upper'].values - inc_range[f'{condition}']['value'].values)]
 
@@ -544,7 +567,10 @@ def make_incidence_plot(condition):
                                   "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74",
                                   "75-79", "80-84", "85-89", "90-94", "95-99", "100+"])
     if condition == 'ever_stroke':
-        inc_df['model_incidence'] = inc_by_event.loc[f'{condition}'].transpose().values
+        if type == 'incidence':
+            inc_df['model_incidence'] = inc_by_incident_event.loc[f'{condition}'].transpose().values
+        else:
+            inc_df['model_incidence'] = inc_by_prevalent_event.loc[f'{condition}'].transpose().values
     else:
         inc_df['model_incidence'] = inc_by_condition.loc[f'{condition}'].transpose().values
 
@@ -561,8 +587,16 @@ def make_incidence_plot(condition):
     plt.xticks(rotation=90)
     plt.errorbar(inc_range[f'{condition}'].index, inc_range[f'{condition}']['value'].values, yerr=asymptomatic_error,
                  fmt='o', c='gray')
-    plt.ylabel(f'Incidence of {condition_title} per 100 PY')
-    plt.title(f'Incidence of {condition_title} by Age')
+    if condition == 'ever_stroke':
+        if type == 'incidence':
+            plt.ylabel(f'Incidence of Incident Strokes per 100 PY')
+            plt.title(f'Incidence of Incident Strokes by Age')
+        else:
+            plt.ylabel(f'Incidence of Prevalent Strokes per 100 PY')
+            plt.title(f'Incidence of Prevalent Strokes by Age')
+    else:
+        plt.ylabel(f'Incidence of {condition_title} per 100 PY')
+        plt.title(f'Incidence of {condition_title} by Age')
     plt.legend([bar, scatter], ['Model', 'GBD 2019'])
     plt.savefig(outputpath / f'incidence_{condition_title}_by_age.pdf')
     plt.tight_layout()
@@ -572,5 +606,9 @@ conditions_and_events_for_incidence = ['diabetes', 'chronic_kidney_disease', 'ch
                                        'chronic_lower_back_pain', 'ever_stroke']
 
 for condition in conditions_and_events_for_incidence:
-    make_incidence_plot(condition)
+    if condition.startswith('ever'):
+        make_incidence_plot(condition, type='incidence')
+        make_incidence_plot(condition, type='prevalence')
+    else:
+        make_incidence_plot(condition, type='incidence')
 

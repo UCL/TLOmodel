@@ -572,8 +572,8 @@ class CardioMetabolicDisorders(Module):
             Predictor('de_depr').when(True, p['rr_depression']),
             Predictor('nc_chronic_kidney_disease').when(True, p['rr_chronic_kidney_disease']),
             Predictor('nc_chronic_lower_back_pain').when(True, p['rr_chronic_lower_back_pain']),
-            Predictor('nc_chronic_ischemic_hd').when(True, p['rr_chronic_ischemic_heart_disease'])
-            # Predictor('nc_cancers').when(True, p['rr_cancers'])
+            Predictor('nc_chronic_ischemic_hd').when(True, p['rr_chronic_ischemic_heart_disease']),
+            Predictor('nc_ever_stroke').when(True, p['rr_ever_stroke'])
         )
 
         return linearmodel
@@ -861,7 +861,7 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                     if df.at[person_id, f'nc_{event}']:
                         prevalent_cases.append(person_id)
                     else:
-                        prevalent_cases.append(person_id)
+                        incident_cases.append(person_id)
 
                 # Add incident cases to the correct tracker
                 current_incidence_df_incident_events[event] = df.loc[incident_cases].groupby('age_range').size()
@@ -1012,6 +1012,12 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
         logger.info(key='incidence_count_by_incident_event',
                     data=self.module.df_incidence_tracker_incident_events.to_dict(),
                     description=f"count of incident events occurring between each successive poll of logging event "
+                                f"every "f"{self.repeat} months")
+
+        # Convert prevalence tracker to dict to pass through logger
+        logger.info(key='incidence_count_by_prevalent_event',
+                    data=self.module.df_incidence_tracker_prevalent_events.to_dict(),
+                    description=f"count of prevalent events occurring between each successive poll of logging event "
                                 f"every "f"{self.repeat} months")
         # Reset the counters
         self.module.df_incidence_tracker_incident_events = self.module.df_incidence_tracker_incident_events_zeros.copy()
