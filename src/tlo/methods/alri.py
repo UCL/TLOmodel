@@ -459,31 +459,31 @@ class Alri(Module):
         # Probability of symptom development -----
         'prob_fever_uncomplicated_ALRI_by_disease_type':
             Parameter(Types.LIST,
-                      'list of probabilities of having fever by bacterial pneumonia, viral pneumonia and bronchiolitis'
+                      'list of probabilities of having fever by pneumonia, bronchiolitis, and other_alri'
                       ),
         'prob_cough_uncomplicated_ALRI_by_disease_type':
             Parameter(Types.LIST,
-                      'list of probabilities of having cough by bacterial pneumonia, viral pneumonia and bronchiolitis'
+                      'list of probabilities of having cough by pneumonia, bronchiolitis, and other_alri'
                       ),
         'prob_difficult_breathing_uncomplicated_ALRI_by_disease_type':
             Parameter(Types.LIST,
                       'list of probabilities of difficult breathing by '
-                      'bacterial pneumonia, viral pneumonia and bronchiolitis'
+                      'pneumonia, bronchiolitis, and other_alri'
                       ),
         'prob_fast_breathing_uncomplicated_ALRI_by_disease_type':
             Parameter(Types.LIST,
                       'list of probabilities of fast breathing by '
-                      'bacterial pneumonia, viral pneumonia and bronchiolitis'
+                      'pneumonia, bronchiolitis, and other_alri'
                       ),
         'prob_chest_indrawing_uncomplicated_ALRI_by_disease_type':
             Parameter(Types.LIST,
                       'list of probabilities of chest indrawing by '
-                      'bacterial pneumonia, viral pneumonia and bronchiolitis'
+                      'pneumonia, bronchiolitis, and other_alri'
                       ),
         'prob_danger_signs_uncomplicated_ALRI_by_disease_type':
             Parameter(Types.LIST,
                       'list of probabilities of danger signs by '
-                      'bacterial pneumonia, viral pneumonia and bronchiolitis'
+                      'pneumonia, bronchiolitis, and other_alri'
                       ),
 
         # Additional signs and symptoms from complications -----
@@ -1232,7 +1232,7 @@ class Models:
         index = {
             'pneumonia': 0,
             'bronchiolitis': 1,
-            'other_alri': 2  # <-- same as probabilities for viral pneumonia
+            'other_alri': 2
         }[disease_type]
 
         probs = {
