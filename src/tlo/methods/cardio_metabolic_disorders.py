@@ -184,7 +184,6 @@ class CardioMetabolicDisorders(Module):
                   }
 
     def __init__(self, name=None, resourcefilepath=None):
-        # NB. Parameters passed to the module can be inserted in the __init__ definition.
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
