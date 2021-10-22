@@ -635,7 +635,7 @@ class CardioMetabolicDisorders(Module):
         """
         pass
 
-    def schedule_hsi_events_for_cmd(self, person_id):
+    def determine_if_will_be_investigated(self, person_id):
         """
         This is called by the HSI generic first appts module whenever a person attends an appointment.
         """
@@ -687,7 +687,7 @@ class CardioMetabolicDisorders(Module):
                                 tclose=None
                             )
 
-    def schedule_hsi_events_for_cmd_events(self, person_id):
+    def determine_if_will_be_investigated_events(self, person_id):
         """
         This is called by the HSI generic first appts module whenever a person attends an emergency appointment.
         """

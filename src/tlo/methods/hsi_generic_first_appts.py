@@ -323,7 +323,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                 # take a blood pressure measurement for proportion of individuals who have not been diagnosed and
                 # are either over 50 or younger than 50 but are selected to get tested
                 cmd = self.sim.modules['CardioMetabolicDisorders']
-                cmd.schedule_hsi_events_for_cmd(person_id=person_id)
+                cmd.determine_if_will_be_investigated(person_id=person_id)
 
     def did_not_run(self):
         logger.debug(key='message',
@@ -515,7 +515,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         # ------ CARDIO-METABOLIC DISORDERS ------
         if 'CardioMetabolicDisorders' in self.sim.modules:
             cmd = self.sim.modules['CardioMetabolicDisorders']
-            cmd.schedule_hsi_events_for_cmd_events(person_id=person_id)
+            cmd.determine_if_will_be_investigated_events(person_id=person_id)
 
         # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
         if 'craving_sandwiches' in symptoms:
