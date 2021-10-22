@@ -4287,7 +4287,6 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                                   f"{person_id}.")
                 return hs.get_blank_appt_footprint()
 
-
         if pain_level == "moderate":
             dict_to_output = {'person': person_id,
                               'pain level': pain_level}
@@ -4786,7 +4785,6 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                                                    count=len(df.loc[person_id, 'rt_injuries_for_major_surgery']))
             return hs.get_blank_appt_footprint()
 
-
     def did_not_run(self, person_id):
         df = self.sim.population.props
         logger.debug(key='rti_general_message',
@@ -5021,8 +5019,8 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         else:
             self.module.rti_do_for_minor_surgeries(person_id, count=1)
             logger.debug(key='rti_general_message',
-                         data=f"This is RTI_Minor_Surgeries failing to provide minor surgeries for person {person_id} on"
-                              f" date {self.sim.date}!!!!!!")
+                         data=f"This is RTI_Minor_Surgeries failing to provide minor surgeries for person {person_id} "
+                              f"on date {self.sim.date}!!!!!!")
             return hs.get_blank_appt_footprint()
 
     def did_not_run(self, person_id):
