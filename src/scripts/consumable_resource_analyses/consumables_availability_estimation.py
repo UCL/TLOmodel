@@ -249,7 +249,7 @@ change_colnames(matched_consumables, NameChangeList)
 lmis_matched_df = pd.merge(lmis, matched_consumables, how='inner', on=['item'])
 lmis_matched_df = lmis_matched_df.sort_values('data_source')
 
-# 2.i. For substitable drugs (within drug category), collapse by taking the product of stkout_prop (OR condition)
+# 5.2.i. For substitable drugs (within drug category), collapse by taking the product of stkout_prop (OR condition)
 # This represents Pr(all substitutes with the item code are stocked out)
 stkout_df = lmis_matched_df.groupby(['module_name','district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo', 'match_level1','match_level2'],
                                     as_index=False).agg({'stkout_prop':'prod',
@@ -261,20 +261,20 @@ stkout_df = lmis_matched_df.groupby(['module_name','district', 'fac_type_tlo', '
                                                         'consumable_reported_horiz': 'first',
                                                         'consumable_reported_vert': 'first'})
 
-# 2.ii. For complementary drugs, collapse by taking the product of (1-stkout_prob)
+# 5.2.ii. For complementary drugs, collapse by taking the product of (1-stkout_prob)
 # This represents Pr(All drugs within item code (in different match_group's) are available)
 stkout_df['available_prop'] = 1 - stkout_df['stkout_prop']
 stkout_df = stkout_df.groupby(['module_name','district', 'fac_type_tlo', 'fac_name', 'month',  'item_code', 'consumable_name_tlo', 'match_level2'],
                               as_index=False).agg({'available_prop':'prod',
-                                                    'closing_bal': 'mean', #could be min
-                                                    'amc': 'mean', # could be max
-                                                    'dispensed': 'mean',  # could be max
-                                                    'received': 'mean',  # could be min
+                                                    'closing_bal': 'sum', #could be min
+                                                    'amc': 'sum', # could be max
+                                                    'dispensed': 'sum',  # could be max
+                                                    'received': 'sum',  # could be min
                                                     'data_source': 'first',
                                                     'consumable_reported_horiz': 'first',
                                                     'consumable_reported_vert': 'first'})
 
-# 2.iii. For substitable drugs (within consumable_name_tlo), collapse by taking the product of stkout_prop (OR condition)
+# 5.2.iii. For substitable drugs (within consumable_name_tlo), collapse by taking the product of stkout_prop (OR condition)
 # This represents Pr(all substitutes with the item code are stocked out)
 stkout_df['stkout_prop'] = 1 - stkout_df['available_prop']
 stkout_df = stkout_df.groupby(['module_name','district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo'],
@@ -407,6 +407,7 @@ for var in ['district', 'fac_name', 'month']:
 
 ## --- 6.6 Export final stockout dataframe --- #
 stkout_df.to_csv(resourcefilepath / "ResourceFile_consumable_availability.csv")
+
 
 
 # In[564]:
