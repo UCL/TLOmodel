@@ -212,6 +212,26 @@ class BedDays:
             logger.warning(key='warning', data=f'the requested bed days in footprint is greater than the'
                                                f'tracking period, {footprint}')
 
+        """assign bed days logic"""
+        # The below algorithm assumes that all available beds are defined in an ascending order i.e. first column
+        # of the resource file should have highest priority bed, second column for second highest priority and so on
+
+        # 1) get available bed types using the method self.get_bed_types()
+        # 2) get the in-patient id using personal_id argument of the apply_footprint method
+        # 3) create a counter and initialise it to 0 (it will be
+        #                               used to access list elements returned from self.get_bed_types() method )
+        # 4) loop through bed days tracker dictionary and get both its keys and values
+        # 5)     get available bed days for a particular bed type in tracker on a particular day
+        # 6)     get requested bed days for a particular bed type in footprint
+        # 7)     if requested bed days in footprint > available bed days in tracker on that day
+        # 8)             get remaining days from the total requested in footprint
+        # 9)             requested bed days in footprint = available bed days in tracker on that day
+
+        # 10)            if counter < len(get available bed types) -1
+        # 11)                  footprint[get_available_bed_types[counter++]] += \
+        #                      remaining days from the total requested in footprint
+        # 12)                  counter++
+
         # a temporary footprint holding remaining bed days to be assigned to a lower class(non_bed_space)
         temp_footprint = dict()
 
