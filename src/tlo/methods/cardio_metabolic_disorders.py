@@ -195,9 +195,7 @@ class CardioMetabolicDisorders(Module):
         self.condition_list = ['nc_' + cond for cond in CardioMetabolicDisorders.conditions] + ['de_depr']
 
         # Store the symptoms that this module will use (for conditions only):
-        self.symptoms = {f"{s}_symptoms" for s in self.conditions}
-        # Remove hypertension because there are no symptoms
-        self.symptoms.remove("hypertension_symptoms")
+        self.symptoms ={f"{s}_symptoms" for s in self.conditions if s != "hypertension"}
 
         # dict to hold the probability of onset of different types of symptom given a condition
         self.prob_symptoms = dict()
