@@ -6,22 +6,26 @@ import inspect
 import json
 import os.path
 import pkgutil
-from typing import Any, Iterable, List, Mapping, Set
 import warnings
 from pathlib import Path
+from typing import Any, Iterable, List, Mapping, Set
 
 import tlo.methods
 from tlo import Date, Module, Simulation
 from tlo.dependencies import (
-    get_dependencies_and_initialise, get_module_class_map, is_valid_tlo_module_subclass
+    get_dependencies_and_initialise,
+    get_module_class_map,
+    is_valid_tlo_module_subclass,
 )
 from tlo.methods import alri, diarrhoea, healthseekingbehaviour, hiv
 from tlo.methods.healthsystem import HSI_Event, HSIEventDetails
+from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstAppt_BaseClass
 
 
 def is_valid_hsi_event_subclass(obj: Any) -> bool:
     """Whether an object is a *strict* subclass of HSI_Event"""
-    return inspect.isclass(obj) and issubclass(obj, HSI_Event) and obj is not HSI_Event
+    return inspect.isclass(obj) and issubclass(obj, HSI_Event) and obj not in (HSI_Event,
+                                                                               HSI_GenericFirstAppt_BaseClass)
 
 
 def get_hsi_event_classes_per_module(
@@ -125,6 +129,7 @@ def get_details_of_defined_hsi_events(
                 # this is an abstract base class and so does not need documenting
                 pass
             else:
+                print(hsi_event)
                 details_of_defined_hsi_events.add(
                     HSIEventDetails(
                         event_name=type(hsi_event).__name__,
