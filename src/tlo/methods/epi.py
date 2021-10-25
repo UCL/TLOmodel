@@ -567,9 +567,9 @@ class HSI_BcgVaccine(HsiBaseVaccine):
             )
 
             # check if BCG and syringes available
-            bcg_vax, syringe, safety_box = outcome["Item_Code"].keys()
+            bcg_vax, safety_box = outcome["Item_Code"].keys()
 
-            if outcome["Item_Code"][bcg_vax] & outcome["Item_Code"][syringe]:
+            if outcome["Item_Code"][bcg_vax] & outcome["Item_Code"][safety_box]:
                 self.module.increment_dose(person_id, "bcg")
 
 
