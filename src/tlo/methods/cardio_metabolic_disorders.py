@@ -18,6 +18,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
+from tlo.util import random_date
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -751,10 +752,9 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                 idx_symptom_onset = symptom_onset[symptom_onset].index
                 if idx_symptom_onset.any():
                     # schedule symptom onset some time before next polling event
-                    days_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) \
-                                                    / np.timedelta64(1, 'D')
                     for symptom in self.module.prob_symptoms[condition].keys():
-                        date_onset = self.sim.date + DateOffset(days=rng.randint(0, days_until_next_polling_event))
+                        date_onset = random_date(
+                            self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1), m.rng)
                         self.sim.modules['SymptomManager'].change_symptom(
                             person_id=idx_symptom_onset.tolist(),
                             symptom_string=f'{symptom}',
