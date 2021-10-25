@@ -490,7 +490,6 @@ def test_test_and_refer_event_scheduled_by_main_event_poll():
 
     # Simulate for 0 days so as to complete all the initialisation steps
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-    df = sim.population.props
 
     # Control the number of people for whom there should be a TestAndReferEvent
     # (parameter for prob of testing is 100% for adults and children - set in get_sim()
