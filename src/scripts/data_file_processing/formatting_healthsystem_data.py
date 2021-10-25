@@ -16,22 +16,24 @@ import pandas as pd
 
 # THE CHAI DATA (Stored in Dropbox/Thanzi la Onse/05 - Resources/Module-healthsystem/chai ehp resource use data/\
 # ORIGINAL_Optimization model import_Malawi_20180315 v10.xlsx)
-# Path on my own desktop
+# Path on local desktop
 workingfile = '/Users/jdbb1/Desktop/PyCharm/Describing Malawi Healthcare system and human resources/\
 ORIGINAL_Optimization model import_Malawi_20180315 v10.xlsx'
 
 # Auxiliary CHAI Data (Stored in Dropbox/Thanzi la Onse/05 - Resources/Module-healthsystem/chai ehp resource use data/\
 # Auxiliary CHAI Data from CHAI HR Team 12 Sep 2021)
-# Path on my own desktop
+# Path on local desktop
 auxiliaryfile = '/Users/jdbb1/Desktop/PyCharm/Describing Malawi Healthcare system and human resources/\
 Auxiliary CHAI Data from CHAI HR Team 12 Sep 2021/'
 
 # OUTPUT RESOURCE_FILES TO:
-resourcefilepath = '/Users/jdbb1/Desktop/TLOmodel/resources/'
+resourcefilepath = '/Users/jdbb1/Desktop/TLOmodel/resources/healthsystem'
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** creat and save population_by_district data
-population = pd.read_csv(resourcefilepath + 'demography/ResourceFile_PopulationSize_2018Census.csv')
+population = pd.read_csv(
+    '/Users/jdbb1/Desktop/TLOmodel/resources/demography/ResourceFile_PopulationSize_2018Census.csv'
+)
 
 pop_by_district = pd.DataFrame(population.groupby('District')['Count'].sum())
 # pop_by_region = pd.DataFrame(population.groupby('Region')['Count'].sum())
@@ -398,20 +400,20 @@ for i in range(21):
     # Proportion; Cadres except DCSA are allocated at level 1a and above
     if fund_staff_distribution.loc[4 * i + 1:4 * i + 3, 'Number of positions'].sum() > 0:  # sum of 4i+1,4i+2,4i+3
 
-        fund_staff_distribution.loc[4 * i + 1, 'Proportion_Fund'] = \
-            fund_staff_distribution.loc[4 * i + 1, 'Number of positions'] / fund_staff_distribution.loc[
-                                                                            4 * i + 1:4 * i + 3,
-                                                                            'Number of positions'].sum()
+        fund_staff_distribution.loc[4 * i + 1, 'Proportion_Fund'] = (
+            fund_staff_distribution.loc[4 * i + 1, 'Number of positions'] /
+            fund_staff_distribution.loc[4 * i + 1:4 * i + 3, 'Number of positions'].sum()
+        )
 
-        fund_staff_distribution.loc[4 * i + 2, 'Proportion_Fund'] = \
-            fund_staff_distribution.loc[4 * i + 2, 'Number of positions'] / fund_staff_distribution.loc[
-                                                                            4 * i + 1:4 * i + 3,
-                                                                            'Number of positions'].sum()
+        fund_staff_distribution.loc[4 * i + 2, 'Proportion_Fund'] = (
+            fund_staff_distribution.loc[4 * i + 2, 'Number of positions'] /
+            fund_staff_distribution.loc[4 * i + 1:4 * i + 3, 'Number of positions'].sum()
+        )
 
-        fund_staff_distribution.loc[4 * i + 3, 'Proportion_Fund'] = \
-            fund_staff_distribution.loc[4 * i + 3, 'Number of positions'] / fund_staff_distribution.loc[
-                                                                            4 * i + 1:4 * i + 3,
-                                                                            'Number of positions'].sum()
+        fund_staff_distribution.loc[4 * i + 3, 'Proportion_Fund'] = (
+            fund_staff_distribution.loc[4 * i + 3, 'Number of positions'] /
+            fund_staff_distribution.loc[4 * i + 1:4 * i + 3, 'Number of positions'].sum()
+        )
 
 # fillna
 fund_staff_distribution.fillna(0, inplace=True)
@@ -594,32 +596,37 @@ compare_staff_distribution.insert(5, 'Proportion_Fund', fund_staff_distribution_
 for i in range(63):
     # Current data compared with Fund, Opt, and ImmedNeed
     if compare_staff_distribution.loc[i, 'Proportion_Fund'] > 0:
-        compare_staff_distribution.loc[i, 'Curr_vs_Fund'] = ((compare_staff_distribution.loc[i, 'Proportion'] -
-                                                              compare_staff_distribution.loc[i, 'Proportion_Fund']) /
-                                                             compare_staff_distribution.loc[i, 'Proportion_Fund'])
+        compare_staff_distribution.loc[i, 'Curr_vs_Fund'] = (
+            (compare_staff_distribution.loc[i, 'Proportion'] - compare_staff_distribution.loc[i, 'Proportion_Fund']) /
+            compare_staff_distribution.loc[i, 'Proportion_Fund']
+        )
 
     if compare_staff_distribution.loc[i, 'Proportion_Opt'] > 0:
-        compare_staff_distribution.loc[i, 'Curr_vs_Opt'] = ((compare_staff_distribution.loc[i, 'Proportion'] -
-                                                             compare_staff_distribution.loc[i, 'Proportion_Opt']) /
-                                                            compare_staff_distribution.loc[i, 'Proportion_Opt'])
+        compare_staff_distribution.loc[i, 'Curr_vs_Opt'] = (
+            (compare_staff_distribution.loc[i, 'Proportion'] - compare_staff_distribution.loc[i, 'Proportion_Opt']) /
+            compare_staff_distribution.loc[i, 'Proportion_Opt']
+        )
 
     if compare_staff_distribution.loc[i, 'Proportion_ImmedNeed'] > 0:
-        compare_staff_distribution.loc[i, 'Curr_vs_ImmedNeed'] = ((compare_staff_distribution.loc[i, 'Proportion'] -
-                                                                   compare_staff_distribution.loc[
-                                                                       i, 'Proportion_ImmedNeed']) /
-                                                                  compare_staff_distribution.loc[
-                                                                      i, 'Proportion_ImmedNeed'])
+        compare_staff_distribution.loc[i, 'Curr_vs_ImmedNeed'] = (
+            (compare_staff_distribution.loc[i, 'Proportion'] -
+             compare_staff_distribution.loc[i, 'Proportion_ImmedNeed']) /
+            compare_staff_distribution.loc[i, 'Proportion_ImmedNeed']
+        )
     # Funded data compared with Opt and ImmedNeed
     if compare_staff_distribution.loc[i, 'Proportion_Opt'] > 0:
-        compare_staff_distribution.loc[i, 'Fund_vs_Opt'] = ((compare_staff_distribution.loc[i, 'Proportion_Fund'] -
-                                                             compare_staff_distribution.loc[i, 'Proportion_Opt']) /
-                                                            compare_staff_distribution.loc[i, 'Proportion_Opt'])
+        compare_staff_distribution.loc[i, 'Fund_vs_Opt'] = (
+            (compare_staff_distribution.loc[i, 'Proportion_Fund'] -
+             compare_staff_distribution.loc[i, 'Proportion_Opt']) /
+            compare_staff_distribution.loc[i, 'Proportion_Opt']
+        )
 
     if compare_staff_distribution.loc[i, 'Proportion_ImmedNeed'] > 0:
         compare_staff_distribution.loc[i, 'Fund_vs_ImmedNeed'] = (
             (compare_staff_distribution.loc[i, 'Proportion_Fund'] -
              compare_staff_distribution.loc[i, 'Proportion_ImmedNeed']) /
-            compare_staff_distribution.loc[i, 'Proportion_ImmedNeed'])
+            compare_staff_distribution.loc[i, 'Proportion_ImmedNeed']
+        )
 
 # Save
 compare_staff_distribution.to_csv(resourcefilepath + 'ResourceFile_Staff_Distribution_Compare.csv')
@@ -647,7 +654,7 @@ wb_extract.loc[:, 'Is_DistrictLevel'] = is_distlevel
 # Finished import from the CHAI excel:
 fund_staffing_table = wb_extract.copy()
 
-# There are a large number of officer_types EO1 (DCSA/Comm Health Workers) at HQ level, which is non-sensical
+# There are a large number of officer_types EO1 (DCSA/Comm Health Workers) at HQ level, which is non-sensible
 # Therefore, re-distribute these evenly to the districts.
 extra_CHW = fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing',
                                     fund_staffing_table.columns[fund_staffing_table.columns == 'E01']].values[0][0]
@@ -690,7 +697,7 @@ fund_staffing_table.loc[
 # fund_staffing_table.loc[
 # fund_staffing_table['District_Or_Hospital'] == 'ZCH', 'District_Or_Hospital'] = 'Referral Hospital_Southeast'
 
-# Group the referral hospitals QECH and ZCH as Referal Hospital_Southern
+# Group the referral hospitals QECH and ZCH as Referral Hospital_Southern
 Is_DistrictLevel = fund_staffing_table['Is_DistrictLevel'].values  # Save the column 'Is_DistrictLevel' first
 fund_staffing_table = pd.DataFrame(
     fund_staffing_table.groupby(by=['District_Or_Hospital'], sort=False).sum()).reset_index()
@@ -788,7 +795,7 @@ assert len(pop['District'].values) == len(
     fund_staffing_table.loc[fund_staffing_table['Is_DistrictLevel'], 'District_Or_Hospital'])
 
 # ... double check by doing the merge explicitly
-pop_districts = pd.DataFrame({'District': pd.unique(pop['District'])})
+pop_districts = pd.DataFrame({'District': pd.unique(pop['District'])})  # data frame
 chai_districts = pd.DataFrame(
     {'District': fund_staffing_table.loc[fund_staffing_table['Is_DistrictLevel'], 'District_Or_Hospital']})
 
@@ -796,7 +803,7 @@ merge_result = pop_districts.merge(chai_districts, how='inner', indicator=True)
 assert all(merge_result['_merge'] == 'both')
 assert len(merge_result) == len(pop_districts)
 
-# Split staff within each distrit to level 0 (All DCSAs at HP), level 1a (Disp, HC, etc.),
+# Split staff within each district to level 0 (All DCSAs at HP), level 1a (Disp, HC, etc.),
 # level 1b (ComHos, CHAM ComHos), and level 2 (DisHos, etc.), according to fund_staff_distribution.
 
 # First, generate a df with all districts and facility levels 0 - 2 per district
@@ -844,8 +851,8 @@ fund_staffing_table.loc[:, fund_staffing_table.columns[3:]] = \
 # fund_staffing_table ready!
 
 # Save the table without column 'Is_DistrictLevel'
-fund_staffing_table_tosave = fund_staffing_table.drop(columns='Is_DistrictLevel', inplace=False)
-fund_staffing_table_tosave.to_csv(resourcefilepath + 'ResourceFile_Funded_Staff_Table.csv')
+fund_staffing_table_to_save = fund_staffing_table.drop(columns='Is_DistrictLevel', inplace=False)
+fund_staffing_table_to_save.to_csv(resourcefilepath + 'ResourceFile_Funded_Staff_Table.csv')
 
 # Flip from wide to long format, where one row represents on staff
 fund_staff_list = pd.melt(fund_staffing_table, id_vars=['District_Or_Hospital', 'Facility_Level', 'Is_DistrictLevel'],
@@ -866,8 +873,8 @@ fund_staff_list['Is_DistrictLevel'] = fund_staff_list['Is_DistrictLevel'].astype
 fund_staff_list['Staff_ID'] = fund_staff_list.index
 
 # Save the table without column 'Is_DistrictLevel'
-fund_staff_list_tosave = fund_staff_list.drop(columns='Is_DistrictLevel', inplace=False)
-fund_staff_list_tosave.to_csv(resourcefilepath + 'ResourceFile_Funded_Staff_List.csv')
+fund_staff_list_to_save = fund_staff_list.drop(columns='Is_DistrictLevel', inplace=False)
+fund_staff_list_to_save.to_csv(resourcefilepath + 'ResourceFile_Funded_Staff_List.csv')
 
 # ***
 # --- Creating curr_staffing_table and curr_staff_list for current staff
@@ -918,7 +925,7 @@ curr_staffing_table.loc[
 curr_staffing_table.loc[
     curr_staffing_table['District_Or_Hospital'] == 'ZCH', 'District_Or_Hospital'] = 'Referral Hospital_Southern'
 
-# Group the referral hospitals QECH and ZCH as Referal Hospital_Southern
+# Group the referral hospitals QECH and ZCH as Referral Hospital_Southern
 Is_DistrictLevel = curr_staffing_table['Is_DistrictLevel'].values  # Save the column 'Is_DistrictLevel' first
 curr_staffing_table = pd.DataFrame(
     curr_staffing_table.groupby(by=['District_Or_Hospital'], sort=False).sum()).reset_index()
@@ -1047,8 +1054,8 @@ curr_staffing_table.loc[:, curr_staffing_table.columns[3:]] = (
     curr_staffing_table.loc[:, curr_staffing_table.columns[3:]].astype(float).round(0).astype(int))
 
 # Save the table without column 'Is_DistrictLevel'
-curr_staffing_table_tosave = curr_staffing_table.drop(columns='Is_DistrictLevel', inplace=False)
-curr_staffing_table_tosave.to_csv(resourcefilepath + 'ResourceFile_Current_Staff_Table.csv')
+curr_staffing_table_to_save = curr_staffing_table.drop(columns='Is_DistrictLevel', inplace=False)
+curr_staffing_table_to_save.to_csv(resourcefilepath + 'ResourceFile_Current_Staff_Table.csv')
 
 # For curr_staffing_table, flip from wide to long format and create curr_staff_list
 # The long format
@@ -1073,8 +1080,8 @@ assert (curr_staff_list.columns == fund_staff_list.columns).all()
 assert (curr_staffing_table.columns == fund_staffing_table.columns).all()
 
 # Save the table without column 'Is_DistrictLevel'
-curr_staff_list_tosave = curr_staff_list.drop(columns='Is_DistrictLevel', inplace=False)
-curr_staff_list_tosave.to_csv(resourcefilepath + 'ResourceFile_Current_Staff_List.csv')
+curr_staff_list_to_save = curr_staff_list.drop(columns='Is_DistrictLevel', inplace=False)
+curr_staff_list_to_save.to_csv(resourcefilepath + 'ResourceFile_Current_Staff_List.csv')
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** Create the Master Facilities List
@@ -1102,8 +1109,7 @@ Facility_Levels = [0, '1a', '1b', 2, 3, 4, 5]
 # Create empty dataframe that will be the Master Facilities List (mfl)
 mfl = pd.DataFrame(columns=['Facility_Level', 'District', 'Region'])
 
-# pop = pd.read_csv(resourcefilepath + 'ResourceFile_District_Population_Data.csv')
-pop_districts = pop['District'].values  # array
+pop_districts = pop['District'].values  # array; the 'pop_districts' used in previous lines is a DataFrame
 pop_regions = pd.unique(pop['Region'])
 
 # Each district is assigned with a set of community level facs, a set of primary level facs,
@@ -1287,7 +1293,7 @@ appt_types_table.to_csv(resourcefilepath + 'ResourceFile_Appt_Types_Table.csv')
 # This sheet distinguished between different types of facility in terms of the time taken by appointments occurring \
 # at each.
 # But the CHAI data do not distinguish how many officers work at each different level of facility
-# (Available staff counts for only districts (level = 0,1a,1b,2), Cenhos (level = 3), and HQ (level = 5))
+# (Available staff counts for only districts (level = 0,1a,1b,2), CenHos (level = 3), and HQ (level = 5))
 # Therefore, we will map these to the facility level that have been defined.
 # NB. In doing this, we:
 # - assume that the time taken for all appointments at each level is modelled by that for the average of \
@@ -1677,7 +1683,7 @@ HosHC_patient_facing_time = pd.DataFrame(
 # PFT table ready!
 
 # Create final tables of daily time available at each facility by officer type: Facility_ID, Facility_Type,
-# Facility_Level, Officer_Type, Officer_Typpe_Code, Total Average Minutes Per Day, Staff_Count
+# Facility_Level, Officer_Type, Officer_Type_Code, Total Average Minutes Per Day, Staff_Count
 
 # --- Daily capability for current staff
 
