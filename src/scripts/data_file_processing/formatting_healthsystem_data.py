@@ -27,7 +27,7 @@ auxiliaryfile = '/Users/jdbb1/Desktop/PyCharm/Describing Malawi Healthcare syste
 Auxiliary CHAI Data from CHAI HR Team 12 Sep 2021/'
 
 # OUTPUT RESOURCE_FILES TO:
-resourcefilepath = '/Users/jdbb1/Desktop/TLOmodel/resources/healthsystem'
+resourcefilepath = '/Users/jdbb1/Desktop/TLOmodel/resources/healthsystem/'
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** creat and save population_by_district data
@@ -73,7 +73,7 @@ officer_types_table.loc[16, 'Officer_Category'] = 'Nutrition'
 officer_types_table.loc[17:20, 'Officer_Category'] = 'Radiography'
 
 # Save
-officer_types_table.to_csv(resourcefilepath + 'ResourceFile_Cadres_and_Categories.csv')
+officer_types_table.to_csv(resourcefilepath + 'ResourceFile_Officer_Types_Table.csv')
 
 # --- Generate assumptions of current staff distribution at facility levels 0&1a&1b&2
 # Read compiled staff return data from CHAI auxiliary datasets
