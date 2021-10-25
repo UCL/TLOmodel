@@ -299,10 +299,6 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                             topen=self.sim.date,
                             tclose=None)
 
-    def did_not_run(self):
-        logger.debug(key='message',
-                     data='HSI_GenericFirstApptAtFacilityLevel1: did not run')
-
 
 # ---------------------------------------------------------------------------------------------------------
 #    HSI_GenericFirstApptAtFacilityLevel0
@@ -380,8 +376,6 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(key='message',
-                     data=f'This is HSI_GenericEmergencyFirstApptAtFacilityLevel1 for person {person_id}')
 
         df = self.sim.population.props
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
