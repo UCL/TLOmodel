@@ -31,7 +31,6 @@ class HealthSeekingBehaviour(Module):
 
     An equation gives the probability of seeking care in response to the "average" symptom. This is modified according
     to if the symptom is associated with a particular effect.
-
     """
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}

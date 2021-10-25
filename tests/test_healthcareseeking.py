@@ -90,9 +90,9 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
     assert set(df.loc[df.is_alive].index) == set(
         sim.modules['SymptomManager'].who_has('Symptom_that_does_cause_healthcare_seeking'))
 
-    # Check that no Non-Emergency Generic HSI and no Emergency Generic HSI events are scheduled
+    # Check that an Non-Emergency Generic HSI and no Emergency Generic HSI events are scheduled
     q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
-    assert any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel1) for e in q])
+    assert any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel0) for e in q])
     assert not any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
 
 
@@ -292,7 +292,7 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_only():
 
     # Check that Generic Non-Emergency HSI events are scheduled but not Emergency HSI
     q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
-    assert any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel1) for e in q])
+    assert any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel0) for e in q])
     assert not any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
 
     # And that the persons who have those HSI do have symptoms currently:
@@ -325,5 +325,5 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules():
 
     # Check that Non-Emergency Generic HSI and Emergency Generic HSI events are scheduled
     q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
-    assert any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel1) for e in q])
+    assert any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel0) for e in q])
     assert any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
