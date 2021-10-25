@@ -16,7 +16,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericEmergencyFirstApptAtFacilityLevel1,
-    HSI_GenericFirstApptAtFacilityLevel1,
+    HSI_GenericFirstApptAtFacilityLevel0,
 )
 
 # ---------------------------------------------------------------------------------------------------------
@@ -237,7 +237,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         symptom_manager = self.sim.modules["SymptomManager"]
         health_system = self.sim.modules["HealthSystem"]
         max_delay = module.parameters['max_days_delay_to_generic_HSI_after_symptoms']
-        routine_hsi_event_class = HSI_GenericFirstApptAtFacilityLevel1
+        routine_hsi_event_class = HSI_GenericFirstApptAtFacilityLevel0
         emergency_hsi_event_class = HSI_GenericEmergencyFirstApptAtFacilityLevel1
 
         # Get IDs of alive persons with new symptoms
