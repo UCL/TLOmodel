@@ -1248,7 +1248,7 @@ class Models:
         probs = {
             symptom: p[f'prob_{symptom}_uncomplicated_ALRI_by_disease_type'][index]
             for symptom in [
-                'fever', 'cough', 'difficult_breathing', 'tachypnoea', 'chest_indrawing', 'danger_signs']
+                'fever', 'cough', 'difficult_breathing', 'tachypnoea', 'chest_indrawing']
         }
 
         # determine which symptoms are onset:
@@ -1259,14 +1259,14 @@ class Models:
     def symptoms_for_complicated_alri(self, person_id, disease_type):
         """Probability of each symptom for a person given a particular complication"""
         p = self.p
-        person = self.module.sim.population.props.loc[person_id]
+        df = self.module.sim.population.props
         probs = defaultdict(float)
 
         has_complications = False
 
-        for complication in ['pleural_effusion', 'empyema', 'pneumothorax', 'lung_abscess', 'hypoxia']:
-            if person[f'ri_complication_{complication}']:
-                has_complications = True
+        complications_list = ['pleural_effusion', 'empyema', 'pneumothorax', 'lung_abscess', 'hypoxia']
+        if df.loc[person_id, [f"ri_complication_{complication}" for complication in complications_list]].any():
+            has_complications = True
 
         if has_complications and disease_type == 'pneumonia':
             probs = {
@@ -1526,7 +1526,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         complications = models.complications(person_id=person_id)
         df.loc[person_id, [f"ri_complication_{complication}" for complication in complications]] = True
-        for complication in complications:
+        if df.loc[person_id, [f"ri_complication_{complication}" for complication in complications]].any():
             m.impose_symptoms_for_complicated_alri(person_id=person_id)
 
         # Consider delayed-onset of complications and schedule events accordingly
