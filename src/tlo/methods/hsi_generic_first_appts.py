@@ -1,5 +1,5 @@
 """
-This file contains the HSI events that are the first contact with the Health System, triggerd by the onset of symptoms.
+This file contains the HSI events that are the first contact with the Health System, triggered by the onset of symptoms.
 """
 
 from tlo import logging
@@ -74,31 +74,6 @@ class HSI_GenericFirstAppt_BaseClass(HSI_Event, IndividualScopeEventMixin):
             return
 
         do_at_non_emergency_first_hsi(hsi_event=self, squeeze_factor=squeeze_factor)
-
-
-class HSI_GenericFirstApptAtFacilityLevel0(HSI_GenericFirstAppt_BaseClass):
-    """This is a Health System Interaction Event that represents the generic appointment which is the first interaction
-    with the health system following the onset of non-emergency symptom(s). It occurs at level 0."""
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel0'
-        self.ACCEPTED_FACILITY_LEVEL = 0
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
-
-
-class HSI_GenericFirstApptAtFacilityLevel1(HSI_GenericFirstAppt_BaseClass):
-    """This is a Health System Interaction Event that represents the generic appointment which is the first interaction
-    with the health system following the onset of non-emergency symptom(s). It occurs at level 1."""
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel1'
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
-            'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
 
 
 def do_at_non_emergency_first_hsi(hsi_event, squeeze_factor):
@@ -314,6 +289,31 @@ def do_at_non_emergency_first_hsi(hsi_event, squeeze_factor):
                         tclose=None)
 
 
+class HSI_GenericFirstApptAtFacilityLevel0(HSI_GenericFirstAppt_BaseClass):
+    """This is a Health System Interaction Event that represents the generic appointment which is the first interaction
+    with the health system following the onset of non-emergency symptom(s). It occurs at level 0."""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel0'
+        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
+
+
+class HSI_GenericFirstApptAtFacilityLevel1(HSI_GenericFirstAppt_BaseClass):
+    """This is a Health System Interaction Event that represents the generic appointment which is the first interaction
+    with the health system following the onset of non-emergency symptom(s). It occurs at level 1."""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel1'
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
+            'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
+
+
 # ---------------------------------------------------------------------------------------------------------
 #
 #    ** EMERGENCY APPOINTMENTS **
@@ -338,15 +338,15 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
+        person = df.loc[person_id]
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
-        age = df.at[person_id, "age_years"]
 
         health_system = self.sim.modules["HealthSystem"]
 
         if 'PregnancySupervisor' in self.sim.modules:
 
             # -----  ECTOPIC PREGNANCY  -----
-            if df.at[person_id, 'ps_ectopic_pregnancy'] != 'none':
+            if df.ps_ectopic_pregnancy != 'none':
                 event = HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
                     module=self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
                 health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
@@ -365,7 +365,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             # -----  COMPLICATION DURING BIRTH  -----
             if person_id in labour_list:
                 if (
-                    df.at[person_id, 'la_currently_in_labour'] &
+                    df.la_currently_in_labour &
                     mni[person_id]['sought_care_for_complication'] &
                     (mni[person_id]['sought_care_labour_phase'] == 'intrapartum')
                 ):
@@ -376,7 +376,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
                 # -----  COMPLICATION AFTER BIRTH  -----
                 if (
-                    df.at[person_id, 'la_currently_in_labour'] &
+                    person.la_currently_in_labour &
                     mni[person_id]['sought_care_for_complication'] &
                     (mni[person_id]['sought_care_labour_phase'] == 'postpartum')
                 ):
@@ -405,8 +405,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                        "renal_failure",
                        "shock",
                        "jaundice",
-                       "anaemia"
-                       }
+                       "anaemia"}
 
             # if person's symptoms are on severe malaria list then consider treatment for malaria
             any_symptoms_indicative_of_severe_malaria = len(sev_set.intersection(symptoms)) > 0
@@ -419,7 +418,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                 # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
                 if malaria_test_result in ("severe_malaria", "clinical_malaria"):
                     # Launch the HSI for treatment for Malaria - choosing the right one for adults/children
-                    if age < 5.0:
+                    if person.age_years < 5.0:
                         health_system.schedule_hsi_event(
                             hsi_event=HSI_Malaria_complicated_treatment_child(
                                 self.sim.modules["Malaria"], person_id=person_id
