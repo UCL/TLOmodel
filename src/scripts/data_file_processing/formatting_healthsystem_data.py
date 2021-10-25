@@ -34,7 +34,7 @@ resourcefilepath = '/Users/jdbb1/Desktop/TLOmodel/resources/'
 population = pd.read_csv(resourcefilepath + 'demography/ResourceFile_PopulationSize_2018Census.csv')
 
 pop_by_district = pd.DataFrame(population.groupby('District')['Count'].sum())
-# pop_by__region = pd.DataFrame(population.groupby('Region')['Count'].sum())
+# pop_by_region = pd.DataFrame(population.groupby('Region')['Count'].sum())
 
 # Add the column of Region
 for d in pop_by_district.index:
@@ -214,17 +214,20 @@ for i in range(21):
     # Proportion; Cadres except DCSA are allocated at level 1a and above
     if curr_staff_distribution.loc[4 * i + 1:4 * i + 3, 'Staff_Count'].sum() > 0:  # sum of 4i+1,4i+2,4i+3
 
-        curr_staff_distribution.loc[4 * i + 1, 'Proportion'] = \
-            curr_staff_distribution.loc[4 * i + 1, 'Staff_Count'] / curr_staff_distribution.loc[4 * i + 1:4 * i + 3,
-                                                                    'Staff_Count'].sum()
+        curr_staff_distribution.loc[4 * i + 1, 'Proportion'] = (
+            curr_staff_distribution.loc[4 * i + 1, 'Staff_Count'] /
+            curr_staff_distribution.loc[4 * i + 1:4 * i + 3, 'Staff_Count'].sum()
+        )
 
-        curr_staff_distribution.loc[4 * i + 2, 'Proportion'] = \
-            curr_staff_distribution.loc[4 * i + 2, 'Staff_Count'] / curr_staff_distribution.loc[4 * i + 1:4 * i + 3,
-                                                                    'Staff_Count'].sum()
+        curr_staff_distribution.loc[4 * i + 2, 'Proportion'] = (
+            curr_staff_distribution.loc[4 * i + 2, 'Staff_Count'] /
+            curr_staff_distribution.loc[4 * i + 1:4 * i + 3, 'Staff_Count'].sum()
+        )
 
-        curr_staff_distribution.loc[4 * i + 3, 'Proportion'] = \
-            curr_staff_distribution.loc[4 * i + 3, 'Staff_Count'] / curr_staff_distribution.loc[4 * i + 1:4 * i + 3,
-                                                                    'Staff_Count'].sum()
+        curr_staff_distribution.loc[4 * i + 3, 'Proportion'] = (
+            curr_staff_distribution.loc[4 * i + 3, 'Staff_Count'] /
+            curr_staff_distribution.loc[4 * i + 1:4 * i + 3, 'Staff_Count'].sum()
+        )
 
 # fillna
 curr_staff_distribution.fillna(0, inplace=True)
@@ -467,17 +470,20 @@ opt_workforce_distribution.drop(columns=['Cadre_Opt'], inplace=True)
 # Add column 'Proportion', denoting the percents of staff per cadre between level_1a, level_1b and level_2
 for i in range(21):
     if opt_workforce_distribution.loc[3 * i:3 * i + 2, 'Staff_Count_Opt'].sum() > 0:  # sum of 3i,3i+1,3i+2
-        opt_workforce_distribution.loc[3 * i, 'Proportion_Opt'] = \
-            opt_workforce_distribution.loc[3 * i, 'Staff_Count_Opt'] / opt_workforce_distribution.loc[3 * i:3 * i + 2,
-                                                                       'Staff_Count_Opt'].sum()
+        opt_workforce_distribution.loc[3 * i, 'Proportion_Opt'] = (
+            opt_workforce_distribution.loc[3 * i, 'Staff_Count_Opt'] /
+            opt_workforce_distribution.loc[3 * i:3 * i + 2, 'Staff_Count_Opt'].sum()
+        )
 
-        opt_workforce_distribution.loc[3 * i + 1, 'Proportion_Opt'] = \
-            opt_workforce_distribution.loc[3 * i + 1, 'Staff_Count_Opt'] / opt_workforce_distribution.loc[
-                                                                           3 * i:3 * i + 2, 'Staff_Count_Opt'].sum()
+        opt_workforce_distribution.loc[3 * i + 1, 'Proportion_Opt'] = (
+            opt_workforce_distribution.loc[3 * i + 1, 'Staff_Count_Opt'] /
+            opt_workforce_distribution.loc[3 * i:3 * i + 2, 'Staff_Count_Opt'].sum()
+        )
 
-        opt_workforce_distribution.loc[3 * i + 2, 'Proportion_Opt'] = \
-            opt_workforce_distribution.loc[3 * i + 2, 'Staff_Count_Opt'] / opt_workforce_distribution.loc[
-                                                                           3 * i:3 * i + 2, 'Staff_Count_Opt'].sum()
+        opt_workforce_distribution.loc[3 * i + 2, 'Proportion_Opt'] = (
+            opt_workforce_distribution.loc[3 * i + 2, 'Staff_Count_Opt'] /
+            opt_workforce_distribution.loc[3 * i:3 * i + 2, 'Staff_Count_Opt'].sum()
+        )
 
 # fillna
 opt_workforce_distribution.fillna(0, inplace=True)
@@ -535,19 +541,20 @@ immed_need_distribution.drop(columns=['Cadre_ImmedNeed'], inplace=True)
 # Add column 'Proportion', denoting the percents of staff per cadre among level_1a, level_1b, and level_2
 for i in range(21):
     if immed_need_distribution.loc[3 * i:3 * i + 2, 'Staff_Count_ImmedNeed'].sum() > 0:  # sum of 3i,3i+1,3i+2
-        immed_need_distribution.loc[3 * i, 'Proportion_ImmedNeed'] = \
-            immed_need_distribution.loc[3 * i, 'Staff_Count_ImmedNeed'] / immed_need_distribution.loc[3 * i:3 * i + 2,
-                                                                          'Staff_Count_ImmedNeed'].sum()
+        immed_need_distribution.loc[3 * i, 'Proportion_ImmedNeed'] = (
+            immed_need_distribution.loc[3 * i, 'Staff_Count_ImmedNeed'] /
+            immed_need_distribution.loc[3 * i:3 * i + 2, 'Staff_Count_ImmedNeed'].sum()
+        )
 
-        immed_need_distribution.loc[3 * i + 1, 'Proportion_ImmedNeed'] = \
-            immed_need_distribution.loc[3 * i + 1, 'Staff_Count_ImmedNeed'] / immed_need_distribution.loc[
-                                                                              3 * i:3 * i + 2,
-                                                                              'Staff_Count_ImmedNeed'].sum()
+        immed_need_distribution.loc[3 * i + 1, 'Proportion_ImmedNeed'] = (
+            immed_need_distribution.loc[3 * i + 1, 'Staff_Count_ImmedNeed'] /
+            immed_need_distribution.loc[3 * i:3 * i + 2, 'Staff_Count_ImmedNeed'].sum()
+        )
 
-        immed_need_distribution.loc[3 * i + 2, 'Proportion_ImmedNeed'] = \
-            immed_need_distribution.loc[3 * i + 2, 'Staff_Count_ImmedNeed'] / immed_need_distribution.loc[
-                                                                              3 * i:3 * i + 2,
-                                                                              'Staff_Count_ImmedNeed'].sum()
+        immed_need_distribution.loc[3 * i + 2, 'Proportion_ImmedNeed'] = (
+            immed_need_distribution.loc[3 * i + 2, 'Staff_Count_ImmedNeed'] /
+            immed_need_distribution.loc[3 * i:3 * i + 2, 'Staff_Count_ImmedNeed'].sum()
+        )
 
 # fillna
 immed_need_distribution.fillna(0, inplace=True)
@@ -610,9 +617,9 @@ for i in range(63):
 
     if compare_staff_distribution.loc[i, 'Proportion_ImmedNeed'] > 0:
         compare_staff_distribution.loc[i, 'Fund_vs_ImmedNeed'] = (
-                (compare_staff_distribution.loc[i, 'Proportion_Fund'] -
-                 compare_staff_distribution.loc[i, 'Proportion_ImmedNeed']) /
-                compare_staff_distribution.loc[i, 'Proportion_ImmedNeed'])
+            (compare_staff_distribution.loc[i, 'Proportion_Fund'] -
+             compare_staff_distribution.loc[i, 'Proportion_ImmedNeed']) /
+            compare_staff_distribution.loc[i, 'Proportion_ImmedNeed'])
 
 # Save
 compare_staff_distribution.to_csv(resourcefilepath + 'ResourceFile_Staff_Distribution_Compare.csv')
@@ -824,7 +831,7 @@ for district in pop['District']:
 
         # Split
         fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == district, cadre] = (
-                old_count[cadre].values * weight['Proportion_Fund'].values)
+            old_count[cadre].values * weight['Proportion_Fund'].values)
 
 # Add facility levels for HQ, CenHos and ZMH
 fund_staffing_table.loc[128:132, 'Facility_Level'] = ['Facility_Level_5', 'Facility_Level_3',
@@ -1029,7 +1036,7 @@ for district in pop['District']:
 
         # Split
         curr_staffing_table.loc[curr_staffing_table['District_Or_Hospital'] == district, cadre] = (
-                old_count[cadre].values * weight['Proportion'].values)
+            old_count[cadre].values * weight['Proportion'].values)
 
 # Add facility levels for HQ, CenHos and ZMH
 curr_staffing_table.loc[128:133, 'Facility_Level'] = ['Facility_Level_5', 'Facility_Level_3',
@@ -1174,7 +1181,7 @@ facilities_by_district.to_csv(resourcefilepath + 'ResourceFile_Facilities_For_Ea
 sheet = pd.read_excel(workingfile, sheet_name='Time_Base', header=None)
 
 # get rid of the junk rows
-trimmed = sheet.loc[[7, 8, 9, 11, 12, 14, 15, 17, 18, 20, 21, 23, 24, 26, 27], ]
+trimmed = sheet.loc[[7, 8, 9, 11, 12, 14, 15, 17, 18, 20, 21, 23, 24, 26, 27]]
 data_import = pd.DataFrame(data=trimmed.iloc[1:, 2:].values, columns=trimmed.iloc[0, 2:], index=trimmed.iloc[1:, 1])
 
 data_import = data_import.dropna(axis='columns', how='all')  # get rid of the 'spacer' columns
@@ -1645,7 +1652,7 @@ fr_nonpregwomen = pft_sheet.iloc[55, np.arange(2, 23)] * (1 - pft_sheet.iloc[57,
 
 # Total average working days
 workingdays = (fr_men * days_per_year_men) + (fr_nonpregwomen * days_per_year_women) + (
-        fr_pregwomen * days_per_year_pregwomen)
+    fr_pregwomen * days_per_year_pregwomen)
 
 # --- patient facing time
 # Average mins per year, Average hours per day, Average number of mins per day in Malawi
