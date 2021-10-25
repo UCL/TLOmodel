@@ -8,8 +8,6 @@ from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
     demography,
     diarrhoea,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -52,8 +50,6 @@ def register_sim():
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        dx_algorithm_child.DxAlgorithmChild(),
-        dx_algorithm_adult.DxAlgorithmAdult(),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         malaria.Malaria(resourcefilepath=resourcefilepath)
@@ -131,8 +127,6 @@ def test_remove_malaria_test(tmpdir):
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        dx_algorithm_child.DxAlgorithmChild(),
-        dx_algorithm_adult.DxAlgorithmAdult(),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         malaria.Malaria(resourcefilepath=resourcefilepath)
@@ -254,7 +248,7 @@ def test_dx_algorithm_for_malaria_outcomes():
     person_id = 0
     assert "fever" in sim.modules["SymptomManager"].has_what(person_id)
 
-    assert sim.modules['DxAlgorithmChild'].diagnose(
+    assert sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
         person_id=0,
         hsi_event=hsi_event
     ) == "clinical_malaria"
@@ -285,7 +279,7 @@ def test_dx_algorithm_for_malaria_outcomes():
     person_id = 0
     assert "fever" in sim.modules["SymptomManager"].has_what(person_id)
 
-    assert sim.modules['DxAlgorithmChild'].diagnose(
+    assert sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
         person_id=0,
         hsi_event=hsi_event
     ) == "severe_malaria"
@@ -306,13 +300,9 @@ def test_dx_algorithm_for_non_malaria_outcomes():
                      enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                      healthsystem.HealthSystem(
                          resourcefilepath=resourcefilepath,
-                         service_availability=["*"],
-                         mode_appt_constraints=0,
-                         ignore_cons_constraints=True,
-                         ignore_priority=True,
-                         capabilities_coefficient=1.0,
                          disable=True,  # disables the health system constraints so all HSI events run
                      ),
+                     malaria.Malaria(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(
                          resourcefilepath=resourcefilepath,
@@ -320,8 +310,6 @@ def test_dx_algorithm_for_non_malaria_outcomes():
                          # every symptom leads to health-care seeking
                      ),
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                     dx_algorithm_adult.DxAlgorithmAdult(),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
 
                      # Supporting modules:
@@ -360,9 +348,9 @@ def test_dx_algorithm_for_non_malaria_outcomes():
     # Set up the simulation:
     sim, hsi_event = make_blank_simulation()
 
-    # Set up the person
-    # assign fever with no symptom resolution
+    # Set up the person with fever caused by Diarrhoea and no malaria
     person_id = 0
+    sim.population.props.loc[person_id, ["ma_is_infected", " ma_inf_type"]] = (False, "none")
 
     sim.modules['SymptomManager'].change_symptom(
         person_id=person_id,
@@ -373,7 +361,7 @@ def test_dx_algorithm_for_non_malaria_outcomes():
 
     assert "fever" in sim.modules["SymptomManager"].has_what(person_id)
 
-    assert sim.modules['DxAlgorithmChild'].diagnose(
+    assert sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
         person_id=0,
         hsi_event=hsi_event
-    ) == "non-malarial fever"
+    ) == "negative_malaria_test"
