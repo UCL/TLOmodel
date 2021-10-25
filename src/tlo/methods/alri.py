@@ -379,7 +379,7 @@ class Alri(Module):
         # Risk of death parameters -----
         'base_death_rate_ALRI_by_pneumonia':
             Parameter(Types.REAL,
-                      'baseline death rate from bacterial pneumonia, base age 0-11 months'
+                      'baseline death rate from pneumonia, for those aged 0-11 months'
                       ),
         'base_death_rate_ALRI_by_bronchiolitis':
             Parameter(Types.REAL,
