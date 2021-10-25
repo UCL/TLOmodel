@@ -28,16 +28,9 @@ with all parameters set to default
 
 """
 
-import datetime
-import pickle
-from pathlib import Path
-
-import pandas as pd
-import numpy as np
 from random import randint
 
-from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo import Date, logging
 from tlo.methods import (
     demography,
     simplified_births,

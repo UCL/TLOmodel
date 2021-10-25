@@ -547,7 +547,6 @@ plt.savefig(outputpath / ("HIV_TB_deaths_with_GBD" + datestamp + ".png"), format
 plt.show()
 
 
-
 # plot TB deaths
 y_vals = [
     deaths2010_TB["GBD_mean"],

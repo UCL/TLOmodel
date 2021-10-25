@@ -5,17 +5,9 @@ Run on the batch system using:
 ```tlo batch-submit  src/scripts/hiv/hiv_tb_analyses/baseline_scenario.py```
 """
 
-
-import datetime
-import pickle
-from pathlib import Path
-
-import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
 
-from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo import Date, logging
 from tlo.methods import (
     demography,
     simplified_births,

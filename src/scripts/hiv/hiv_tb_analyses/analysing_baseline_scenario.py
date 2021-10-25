@@ -5,7 +5,6 @@ The results of the batchrun were put into the 'outputs' results_folder
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
 
 from tlo.analysis.utils import (
     extract_params,
