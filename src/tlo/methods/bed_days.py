@@ -7,7 +7,7 @@ It maintains a current record of the availability and usage of beds in the healt
 
 import pandas as pd
 
-from tlo import Property, Types, logging
+from tlo import Property, Types
 
 # ---------------------------------------------------------------------------------------------------------
 #   CLASS DEFINITIONS
@@ -206,8 +206,10 @@ class BedDays:
 
         # check that the number of inpatient days does not exceed the maximum of 150 days
         if self.days_until_last_day_of_bed_tracker < sum(footprint.values()):
-            self.logger.warning(key='warning', data=f'the requested bed days in footprint is greater than the'
-                                               f'tracking period, {footprint}')
+            self.logger.warning(
+                key='warning',
+                data=f'the requested bed days in footprint is greater than the tracking period, {footprint}'
+            )
 
         df = self.hs_module.sim.population.props
 
