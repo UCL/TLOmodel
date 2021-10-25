@@ -212,11 +212,22 @@ class BedDays:
             logger.warning(key='warning', data=f'the requested bed days in footprint is greater than the'
                                                f'tracking period, {footprint}')
 
+        # a temporary footprint holding remaining bed days to be assigned to a lower class(non_bed_space)
+        temp_footprint = dict()
+
+        non_bed_space_key = 'non_bed_space'
         for key, tracker in self.bed_tracker.items():
             available_beds_on_that_day = int(tracker.loc[min(tracker.index),
                                                          self.get_persons_level2_facility_id(person_id)])
             if footprint[key] > available_beds_on_that_day:
+                # keep the remaining bed days in a temporary footprint
+                temp_footprint[key] = footprint[key] - available_beds_on_that_day
+
+                # re-create a footprint based on bed days availability in bed tracker
                 footprint[key] = available_beds_on_that_day
+
+        # assign the remaining bed days to non bed space
+        footprint[non_bed_space_key] = sum(temp_footprint.values())
 
         df = self.hs_module.sim.population.props
 
