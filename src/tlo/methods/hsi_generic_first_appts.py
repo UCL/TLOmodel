@@ -365,7 +365,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             # -----  COMPLICATION DURING BIRTH  -----
             if person_id in labour_list:
                 if (
-                    df.la_currently_in_labour &
+                    person.la_currently_in_labour &
                     mni[person_id]['sought_care_for_complication'] &
                     (mni[person_id]['sought_care_labour_phase'] == 'intrapartum')
                 ):
