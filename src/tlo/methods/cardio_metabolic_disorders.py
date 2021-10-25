@@ -272,14 +272,13 @@ class CardioMetabolicDisorders(Module):
                 self.prob_symptoms[event] = self.parameters[f'{event}_symptoms']
             else:
                 self.prob_symptoms[event] = {}
+
         # -------------------- SYMPTOMS ---------------------------------------------------------------
-        # Declare symptoms that this module will cause and which are not included in the generic symptoms:
-        generic_symptoms = self.sim.modules['SymptomManager'].generic_symptoms
+        # Register symptoms for conditions
         for symptom_name in self.symptoms:
-            if symptom_name not in generic_symptoms:
-                self.sim.modules['SymptomManager'].register_symptom(
-                    Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
-                )
+            self.sim.modules['SymptomManager'].register_symptom(
+                Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
+            )
         # Register symptoms from events and make them emergencies
         for event in self.events:
             self.sim.modules['SymptomManager'].register_symptom(
