@@ -1115,12 +1115,11 @@ class Models:
 
         elif pathogen in self.module.pathogens['viral']:
             if (age >= 2) or (p[f'proportion_viral_pneumonia_by_{pathogen}'] > self.rng.rand()):
+                disease_type = 'pneumonia'
                 if p['prob_viral_pneumonia_bacterial_coinfection'] > self.rng.rand():
                     bacterial_coinfection = self.secondary_bacterial_infection(va_pneumo_all_doses)
-                    disease_type = 'pneumonia'
                 else:
                     bacterial_coinfection = np.nan
-                    disease_type = 'pneumonia'
             else:
                 # likely to be 'bronchiolitis' (if there is no secondary bacterial infection)
                 if p['prob_secondary_bacterial_infection_in_bronchiolitis'] > self.rng.rand():
