@@ -387,7 +387,7 @@ class Alri(Module):
                       ),
         'base_death_rate_ALRI_by_other_alri':
             Parameter(Types.REAL,
-                      'baseline death rate from viral pneumonia, base age 0-11 months'
+                      'baseline death rate from other lower respiratory infections, base age 0-11 months'
                       ),
         'rr_death_ALRI_sepsis':
             Parameter(Types.REAL,
@@ -1109,17 +1109,12 @@ class Models:
          """
         p = self.p
 
-        if pathogen in self.module.pathogens['bacterial']:
-            disease_type = 'pneumonia'
-            bacterial_coinfection = np.nan
-
-        elif pathogen in self.module.pathogens['fungal']:
+        if pathogen in set(self.module.pathogens['bacterial']).union(self.module.pathogens['fungal']):
             disease_type = 'pneumonia'
             bacterial_coinfection = np.nan
 
         elif pathogen in self.module.pathogens['viral']:
             if (age >= 2) or (p[f'proportion_viral_pneumonia_by_{pathogen}'] > self.rng.rand()):
-                # likely to be 'viral_pneumonia' (if there is no secondary bacterial infection)
                 if p['prob_viral_pneumonia_bacterial_coinfection'] > self.rng.rand():
                     bacterial_coinfection = self.secondary_bacterial_infection(va_pneumo_all_doses)
                     disease_type = 'pneumonia'
