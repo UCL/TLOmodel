@@ -462,6 +462,9 @@ def test_if_medication_prevents_all_death():
         sim.population.props.loc[
             sim.population.props.is_alive & (sim.population.props.age_years >= 20),
             f"nc_{condition}_on_medication"] = True
+        sim.population.props.loc[
+            sim.population.props.is_alive & (sim.population.props.age_years >= 20),
+            f"nc_{condition}_medication_prevents_death"] = True
 
         # set probability of treatment working to 1 and increase annual risk of death
         p = sim.modules['CardioMetabolicDisorders'].parameters
@@ -498,6 +501,8 @@ def test_if_medication_prevents_all_death():
         # check that no one died of event
         df = sim.population.props
         assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{event}').any()
+
+
 
 
 def test_hsi_investigation_not_following_symptoms():

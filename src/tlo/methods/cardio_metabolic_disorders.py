@@ -147,6 +147,10 @@ class CardioMetabolicDisorders(Module):
         f"nc_{p}_on_medication": Property(Types.BOOL, f"Whether or not someone is on medication for {p}") for p
         in conditions
     }
+    condition_medication_death_list = {
+        f"nc_{p}_medication_prevents_death": Property(Types.BOOL, f"Whether or not medication will prevent death from "
+                                                                  f"{p}") for p in conditions
+    }
     event_list = {
         f"nc_{p}": Property(Types.DATE, f"Date of when someone has had a {p}") for p in events}
     event_diagnosis_list = {
@@ -164,10 +168,15 @@ class CardioMetabolicDisorders(Module):
         f"nc_{p}_scheduled_date_death": Property(Types.DATE, f"Scheduled date of death from {p}") for p
         in events
     }
+    event_medication_death_list = {
+        f"nc_{p}_medication_prevents_death": Property(Types.BOOL, f"Whether or not medication will prevent death from "
+                                                                  f"{p}") for p in events
+    }
 
     PROPERTIES = {**condition_list, **event_list, **condition_diagnosis_list, **condition_date_diagnosis_list,
-                  **condition_date_of_last_test_list, **condition_medication_list, **event_diagnosis_list,
-                  **event_date_diagnosis_list, **event_medication_list, **event_scheduled_date_death_list,
+                  **condition_date_of_last_test_list, **condition_medication_list, **event_medication_death_list,
+                  **event_diagnosis_list, **event_date_diagnosis_list, **event_medication_list,
+                  **event_scheduled_date_death_list, **event_medication_death_list,
                   'nc_ever_weight_loss_treatment': Property(Types.BOOL,
                                                             'whether or not the person has ever had weight loss '
                                                             'treatment'),
@@ -321,6 +330,7 @@ class CardioMetabolicDisorders(Module):
             df.loc[df.is_alive, f'nc_{condition}_ever_diagnosed'] = False
             df.loc[df.is_alive, f'nc_{condition}_date_diagnosis'] = pd.NaT
             df.loc[df.is_alive, f'nc_{condition}_on_medication'] = False
+            df.loc[df.is_alive, f'nc_{condition}_medication_prevents_death'] = False
 
             # ----- Impose the symptom on random sample of those with each condition to have:
             # TODO: @britta make linear model data-specific and add in needed complexity
@@ -344,6 +354,7 @@ class CardioMetabolicDisorders(Module):
             df.loc[df.is_alive, f'nc_{event}_date_diagnosis'] = pd.NaT
             df.loc[df.is_alive, f'nc_{event}_on_medication'] = False
             df.loc[df.is_alive, f'nc_{event}_scheduled_date_death'] = pd.NaT
+            df.loc[df.is_alive, f'nc_{event}_medication_prevents_death'] = False
 
         # ----- Generate the initial "risk score" for the population based on exercise, diet, tobacco, alcohol, BMI:
         self.generate_risk_score()
@@ -588,12 +599,14 @@ class CardioMetabolicDisorders(Module):
             df.at[child_id, f'nc_{condition}_date_diagnosis'] = pd.NaT
             df.at[child_id, f'nc_{condition}_date_last_test'] = pd.NaT
             df.at[child_id, f'nc_{condition}_on_medication'] = False
+            df.at[child_id, f'nc_{condition}_medication_prevents_death'] = False
         for event in self.events:
             df.at[child_id, f'nc_{event}'] = pd.NaT
             df.at[child_id, f'nc_{event}_ever_diagnosed'] = False
             df.at[child_id, f'nc_{event}_on_medication'] = False
             df.at[child_id, f'nc_{event}_date_diagnosis'] = pd.NaT
             df.loc[child_id, f'nc_{event}_scheduled_date_death'] = pd.NaT
+            df.at[child_id, f'nc_{event}_medication_prevents_death'] = False
         # df.at[child_id, 'nc_cancers'] = False
         df.at[child_id, 'nc_risk_score'] = 0
         df.at[child_id, 'nc_n_conditions'] = 0
@@ -678,7 +691,7 @@ class CardioMetabolicDisorders(Module):
         for ev in self.events:
             # if the person has symptoms of damage from within the last 3 days, schedule them for care
             if f'{ev}_damage' in symptoms and \
-                    ((self.sim.date-self.sim.population.props.at[person_id, 'nc_ever_stroke']).days <= 3):
+                    ((self.sim.date-self.sim.population.props.at[person_id, f'nc_{ev}']).days <= 3):
                 event = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
                     module=self,
                     person_id=person_id,
@@ -861,8 +874,7 @@ class CardioMetabolicDisordersDeathEvent(Event, IndividualScopeEventMixin):
 
             if person[f'nc_{self.condition}_on_medication']:
                 # TODO: @britta replace with data specific for each condition/event
-                treatmentworks = self.module.parameters[f'{self.condition}_hsi'].pr_treatment_works
-                if self.module.rng.rand() < treatmentworks:
+                if not df.at[person_id, f'nc_{self.condition}_medication_prevents_death']:
                     self.check_if_event_and_do_death(person_id)
 
             else:
@@ -1236,6 +1248,10 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         if result_of_cons_request:
             # If medication is available, flag as being on medication
             df.at[person_id, f'nc_{self.condition}_on_medication'] = True
+            # Determine if the medication will work to prevent death
+            # TODO: @britta change to data
+            df.at[person_id, f'nc_{self.condition}_medication_prevents_death'] = \
+                self.module.rng.rand() < self.module.parameters[f'{self.condition}_hsi'].pr_treatment_works
             # Schedule their next HSI for a refill of medication in one month
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_CardioMetabolicDisorders_Refill_Medication(person_id=person_id, module=self.module,
@@ -1350,9 +1366,10 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                 if result_of_cons_request:
                     logger.debug(key='debug', data='Treatment will be provided.')
                     df.at[person_id, f'nc_{self.event}_on_medication'] = True
-                    treatmentworks = self.module.rng.rand() < self.module.parameters[
-                        f'{self.event}_hsi'].pr_treatment_works  # TODO: @britta change to data
-                    if treatmentworks:
+                    # TODO: @britta change to data
+                    df.at[person_id, f'nc_{self.event}_medication_prevents_death'] = \
+                        self.module.rng.rand() < self.module.parameters[f'{self.event}_hsi'].pr_treatment_works
+                    if df.at[person_id, f'nc_{self.event}_medication_prevents_death']:
                         # cancel the scheduled death data
                         df.at[person_id, f'nc_{self.event}_scheduled_date_death'] = pd.NaT
                         # remove all symptoms of event instantly
