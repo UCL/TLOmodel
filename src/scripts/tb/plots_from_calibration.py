@@ -4,17 +4,16 @@ function weighted_mean_for_data_comparison can be used to select which parameter
 make plots for top 5 parameter sets just to make sure they are looking ok
 """
 
+import datetime
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
-
+import matplotlib.pyplot as plt
 import pandas as pd
-import datetime
-from tlo.analysis.utils import compare_number_of_deaths
 
 from tlo.analysis.utils import (
+    compare_number_of_deaths,
     extract_params,
     extract_results,
     get_scenario_info,
@@ -215,10 +214,8 @@ def get_person_years(draw, run):
     py = pd.Series(dtype="int64", index=years)
     for year in years:
         tot_py = (
-            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series)
-            + (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(
-            pd.Series
-        )
+            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series) +
+            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(pd.Series)
         ).transpose()
         py[year] = tot_py.sum().values[0]
 
@@ -313,9 +310,8 @@ results_deaths = extract_results(
     module="tlo.methods.demography",
     key="death",
     custom_generate_series=(
-        lambda df: df.assign(year=df["date"].dt.year)
-            .groupby(["year", "cause"])["person_id"]
-            .count()
+        lambda df: df.assign(year=df["date"].dt.year).groupby(
+            ["year", "cause"])["person_id"].count()
     ),
     do_scaling=False,
 )
@@ -903,9 +899,8 @@ results_deaths = extract_results(
     module="tlo.methods.demography",
     key="death",
     custom_generate_series=(
-        lambda df: df.assign(year=df["date"].dt.year)
-            .groupby(["year", "cause"])["person_id"]
-            .count()
+        lambda df: df.assign(year=df["date"].dt.year).groupby(
+            ["year", "cause"])["person_id"].count()
     ),
     do_scaling=True,
 )

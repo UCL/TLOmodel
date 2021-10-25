@@ -10,12 +10,12 @@ source for method: Bansi-Matharu JIAS 2018
 https://onlinelibrary.wiley.com/doi/full/10.1002/jia2.25205
 """
 
-import matplotlib.pyplot as plt
-import pandas as pd
 import datetime
+import math
 import pickle
 from pathlib import Path
-import math
+
+import pandas as pd
 
 # declare the paths
 resourcefilepath = Path("./resources")
@@ -27,8 +27,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # make a dict of all data to be used in calculating calibration score
 data_dict = {}
 
-## HIV
-# read in resource files for data
+# HIV read in resource files for data
 xls = pd.ExcelFile(resourcefilepath / "ResourceFile_HIV.xlsx")
 
 # MPHIA HIV data - age-structured
@@ -59,7 +58,7 @@ data_dict["dhs_prev_2015"] = data_hiv_dhs_prev.loc[
 data_hiv_unaids_deaths = pd.read_excel(xls, sheet_name="unaids_mortality_dalys2021")
 data_dict["unaids_deaths_per_1000"] = data_hiv_unaids_deaths["AIDS_mortality_per_1000"]
 
-## TB
+# TB
 # TB WHO data: 2010-
 xls_tb = pd.ExcelFile(resourcefilepath / "ResourceFile_TB.xlsx")
 

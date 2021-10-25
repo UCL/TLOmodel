@@ -1,14 +1,15 @@
 """ load the outputs from a simulation and plot the results with comparison data """
 
-import matplotlib.pyplot as plt
-import matplotlib.lines as mlines
-import numpy as np
-import matplotlib.patches as mpatches
-
-import pandas as pd
 import datetime
 import pickle
 from pathlib import Path
+
+import matplotlib.lines as mlines
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
 from tlo.analysis.utils import compare_number_of_deaths
 
 resourcefilepath = Path("./resources")
@@ -491,8 +492,11 @@ plt.show()
 # ---------------------------------------------------------------------- #
 
 
-death_compare = compare_number_of_deaths(sim.log_filepath, resourcefilepath)
-# sim.log_filepath example: 'outputs/Logfile__2021-10-04T155631.log'
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
+list_of_paths = outputpath.glob('*.log')
+latest_path = max(list_of_paths, key=lambda p: p.stat().st_ctime)
+
+death_compare = compare_number_of_deaths(latest_path, resourcefilepath)
 
 # include all ages and both sexes
 deaths2010 = death_compare.loc[("2010-2014", slice(None), slice(None), "AIDS")].sum()

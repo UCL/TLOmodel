@@ -33,18 +33,17 @@ from random import randint
 from tlo import Date, logging
 from tlo.methods import (
     demography,
-    simplified_births,
     dx_algorithm_child,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    symptommanager,
-    epi,
     hiv,
+    simplified_births,
+    symptommanager,
     tb,
 )
-
 from tlo.scenario import BaseScenario
 
 # define size of parameter lists

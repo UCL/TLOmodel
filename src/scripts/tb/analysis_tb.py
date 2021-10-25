@@ -9,15 +9,15 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
-    simplified_births,
     dx_algorithm_child,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    symptommanager,
-    epi,
     hiv,
+    simplified_births,
+    symptommanager,
     tb,
 )
 
