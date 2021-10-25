@@ -11,10 +11,6 @@ Individuals are exposed to the risk of onset of diarrhoea. They can have diarrho
 Health care seeking is prompted by the onset of the symptom diarrhoea. The individual can be treated; if successful the
  risk of death is removed and they are cured (symptom resolved) some days later.
 
- Outstanding Issues
- * To include rotavirus vaccine
- * See todo
-
 """
 from collections import Iterable
 from pathlib import Path
@@ -679,7 +675,6 @@ class Diarrhoea(Module):
 
         else:
             # No danger signs but not hospitalized --> Out-patient
-            # todo - Should children that have no dehydration really get an Outpatient HSI?
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Diarrhoea_Treatment_Outpatient(
                     person_id=person_id,
@@ -699,12 +694,6 @@ class Diarrhoea(Module):
         * Records that treatment is provided.
 
         NB. Provisions for cholera are not included
-
-        # todo - Zinc is provided to all persons currently. It may be that this should be changed so that it is only
-        #  provided to those persons who, at the time of the HSI, have had diarrhoea for 13 days or longer.
-
-        # todo - ORS is provided to all persons currently It may be that it should only be provided to those with
-        #  'some' dehydration. (It would have no effect -- only matters if the persons has severe dehydration).
 
         See this report:
           https://apps.who.int/iris/bitstream/handle/10665/104772/9789241506823_Chartbook_eng.pdf (page 3).
