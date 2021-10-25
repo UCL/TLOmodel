@@ -346,7 +346,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         if 'PregnancySupervisor' in self.sim.modules:
 
             # -----  ECTOPIC PREGNANCY  -----
-            if df.ps_ectopic_pregnancy != 'none':
+            if person.ps_ectopic_pregnancy != 'none':
                 event = HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
                     module=self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
                 health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
