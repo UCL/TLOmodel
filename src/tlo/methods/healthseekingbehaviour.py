@@ -280,7 +280,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             # Check if no symptoms initiating (non-emergency) care seeking specified
             if len(care_seeking_symptoms) == 0:
                 continue
-            # Symptoms in non-emergengency care seeking set may or may not generate an
+            # Symptoms in non-emergency care seeking set may or may not generate an
             # associated HSI event, we first select all persons in subgroup who have
             # any symptoms which may lead to a HSI event being generated.
             # From here onwards care seeking should be taken to mean specifically
