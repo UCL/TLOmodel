@@ -129,7 +129,6 @@ def get_details_of_defined_hsi_events(
                 # this is an abstract base class and so does not need documenting
                 pass
             else:
-                print(hsi_event)
                 details_of_defined_hsi_events.add(
                     HSIEventDetails(
                         event_name=type(hsi_event).__name__,
