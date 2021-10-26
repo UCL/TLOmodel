@@ -442,7 +442,8 @@ def test_if_no_health_system_and_hundred_death():
         # check that no one died of condition
         df = sim.population.props
 
-        assert not (df.loc[~df.date_of_birth.isna() & df[f'nc_{event}'] & (df.age_years >= 20), 'is_alive']).any()
+        assert not (
+            df.loc[~df.date_of_birth.isna() & pd.isnull(df[f'nc_{event}']) & (df.age_years >= 20), 'is_alive']).any()
 
 
 def test_if_medication_prevents_all_death():
