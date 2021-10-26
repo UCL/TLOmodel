@@ -732,10 +732,9 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
 
         # Function to schedule deaths on random day throughout polling period
         def schedule_death_to_occur_before_next_poll(p_id, cond, interval_between_polls):
-            ndays = (self.sim.date + DateOffset(months=interval_between_polls, days=-1) - self.sim.date).days
             self.sim.schedule_event(
                 CardioMetabolicDisordersDeathEvent(self.module, p_id, cond),
-                self.sim.date + DateOffset(days=self.module.rng.randint(ndays))
+                random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1), m.rng)
             )
 
         current_incidence_df = pd.DataFrame(index=self.module.age_index, columns=self.module.conditions)
