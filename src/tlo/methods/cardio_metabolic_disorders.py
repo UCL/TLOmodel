@@ -1159,40 +1159,28 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
         if f'{self.condition}_symptoms' not in self.sim.modules['SymptomManager'].has_what(person_id):
             return hs.get_blank_appt_footprint()
 
-        # Figure out availability of any consumables needed for the test:
-        if 'test_item_code' in self.module.parameters[f'{self.condition}_hsi']:
-            # check if consumables are available
-            item_code = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
-            result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
-            )['Item_Code'][item_code]
-        else:
-            result_of_cons_request = True
+        # Run a test to diagnose whether the person has condition:
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run=f'assess_{self.condition}',
+            hsi_event=self
+        )
+        df.at[person_id, f'nc_{self.condition}_date_last_test'] = self.sim.date
+        if dx_result:
+            # record date of diagnosis:
+            df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
+            df.at[person_id, f'nc_{self.condition}_ever_diagnosed'] = True
 
-        if result_of_cons_request:
-            # Run a test to diagnose whether the person has condition:
-            dx_result = hs.dx_manager.run_dx_test(
-                dx_tests_to_run=f'assess_{self.condition}',
-                hsi_event=self
+            # start weight loss recommendation (except for CKD) and medication for all conditions
+            hs.schedule_hsi_event(
+                hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                    module=self.module,
+                    person_id=person_id,
+                    condition=self.condition
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
             )
-            df.at[person_id, f'nc_{self.condition}_date_last_test'] = self.sim.date
-            if dx_result:
-                # record date of diagnosis:
-                df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
-                df.at[person_id, f'nc_{self.condition}_ever_diagnosed'] = True
-
-                # start weight loss recommendation (except for CKD) and medication for all conditions
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
-                        module=self.module,
-                        person_id=person_id,
-                        condition=self.condition
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
 
     def did_not_run(self):
         pass
