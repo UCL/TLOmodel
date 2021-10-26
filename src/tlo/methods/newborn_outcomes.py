@@ -237,19 +237,7 @@ class NewbornOutcomes(Module):
         'treatment_effect_kmc': Parameter(
             Types.LIST, 'treatment effect of kangaroo mother care on preterm mortality'),
 
-        # ASSESSMENT SENSITIVITY AND SQUEEZE THRESHOLDS...
-        'sensitivity_of_assessment_of_neonatal_sepsis_hc': Parameter(
-            Types.LIST, 'sensitivity of dx_test assessment of neonatal sepsis in level 1 health centre'),
-        'sensitivity_of_assessment_of_neonatal_sepsis_hp': Parameter(
-            Types.LIST, 'sensitivity of dx_test assessment of neonatal sepsis in level 1 hospital'),
-        'sensitivity_of_assessment_of_ftt_hc': Parameter(
-            Types.LIST, 'sensitivity of dx_test assessment of failure to transition in level 1 health centre'),
-        'sensitivity_of_assessment_of_ftt_hp': Parameter(
-            Types.LIST, 'sensitivity of dx_test assessment of failure to transition in level 1 hospital'),
-        'sensitivity_of_assessment_of_lbw_hc': Parameter(
-            Types.LIST, 'sensitivity of dx_test assessment of low birth weight in level 1 health centre'),
-        'sensitivity_of_assessment_of_lbw_hp': Parameter(
-            Types.LIST, 'sensitivity of dx_test assessment of low birth weight in level 1 hospital'),
+        # SQUEEZE THRESHOLDS...
         'squeeze_threshold_essential_newborn_care': Parameter(
             Types.LIST, 'squeeze factor threshold below which essential newborn care can be given'),
         'squeeze_threshold_kmc': Parameter(
@@ -388,42 +376,6 @@ class NewbornOutcomes(Module):
     def initialise_simulation(self, sim):
         # Register logging event
         sim.schedule_event(NewbornOutcomesLoggingEvent(self), sim.date + DateOffset(years=1))
-
-        # =======================Register dx_tests for complications during labour/postpartum=======================
-        # As with the labour module these dx_tests represent a probability that one of the following clinical outcomes
-        # will be detected by the health care worker and treatment will be initiated
-
-        # The sensitivity parameter varies by facility type, with 'hc' meaning health centre and 'hp' meaning hospital
-
-        dx_manager = sim.modules['HealthSystem'].dx_manager
-
-        # Neonatal sepsis...
-        dx_manager.register_dx_test(assess_neonatal_sepsis_hc=DxTest(
-            property='nb_early_onset_neonatal_sepsis',
-            sensitivity=self.current_parameters['sensitivity_of_assessment_of_neonatal_sepsis_hc']))
-        dx_manager.register_dx_test(assess_neonatal_sepsis_hp=DxTest(
-            property='nb_early_onset_neonatal_sepsis',
-            sensitivity=self.current_parameters['sensitivity_of_assessment_of_neonatal_sepsis_hp']))
-
-        # Not breathing at birth ...
-        dx_manager.register_dx_test(assess_not_breathing_at_birth_hc=DxTest(
-            property='nb_not_breathing_at_birth',
-            sensitivity=self.current_parameters['sensitivity_of_assessment_of_ftt_hc']))
-        dx_manager.register_dx_test(assess_not_breathing_at_birth_hp=DxTest(
-            property='nb_not_breathing_at_birth',
-            sensitivity=self.current_parameters['sensitivity_of_assessment_of_ftt_hp']))
-
-        # Low birth weight...
-        dx_manager.register_dx_test(assess_low_birth_weight_hc=DxTest(
-            property='nb_low_birth_weight_status', target_categories=['extremely_low_birth_weight',
-                                                                      'very_low_birth_weight',
-                                                                      'low_birth_weight'],
-            sensitivity=self.current_parameters['sensitivity_of_assessment_of_lbw_hc'])),
-        dx_manager.register_dx_test(assess_low_birth_weight_hp=DxTest(
-            property='nb_low_birth_weight_status', target_categories=['extremely_low_birth_weight',
-                                                                      'very_low_birth_weight',
-                                                                      'low_birth_weight'],
-            sensitivity=self.current_parameters['sensitivity_of_assessment_of_lbw_hp']))
 
         # ======================================= LINEAR MODEL EQUATIONS ==============================================
         # All linear equations used in this module are stored within the nb_newborn_equations
@@ -987,9 +939,8 @@ class NewbornOutcomes(Module):
         df = self.sim.population.props
         person_id = hsi_event.target
 
-        # We use the dx_manager to determine if a newborn who is low birth weight is correctly identified and treated
-        if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                dx_tests_to_run=f'assess_low_birth_weight_{facility_type}', hsi_event=hsi_event):
+        if (df.at[person_id, 'nb_low_birth_weight_status'] != 'normal_birth_weight') or \
+          (df.at[person_id, 'nb_low_birth_weight_status'] != 'macrosomia'):
 
             # Store treatment as a property of the newborn used to apply treatment effect
             df.at[person_id, 'nb_kangaroo_mother_care'] = True
@@ -1041,16 +992,13 @@ class NewbornOutcomes(Module):
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         # Required consumables are defined
-        pkg_code_resus = pd.unique(consumables.loc[
-                                       consumables['Intervention_Pkg'] == 'Neonatal resuscitation (institutional)',
-                                       'Intervention_Pkg_Code'])[0]
+        if df.at[person_id, 'nb_not_breathing_at_birth']:
+            pkg_code_resus = pd.unique(consumables.loc[
+                                           consumables['Intervention_Pkg'] == 'Neonatal resuscitation (institutional)',
+                                           'Intervention_Pkg_Code'])[0]
 
-        all_available = hsi_event.get_all_consumables(
-            pkg_codes=[pkg_code_resus])
-
-        # Use the dx_manager to determine if staff will correctly identify this neonate will require resuscitation
-        if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-           dx_tests_to_run=f'assess_not_breathing_at_birth_{facility_type}', hsi_event=hsi_event):
+            all_available = hsi_event.get_all_consumables(
+                pkg_codes=[pkg_code_resus])
 
             # Then, if the consumables are available,resuscitation is started. We assume this is delayed in
             # deliveries that are not attended
@@ -1077,45 +1025,40 @@ class NewbornOutcomes(Module):
         # We assume that only hospitals are able to deliver full supportive care for neonatal sepsis, full supportive
         # care evokes a stronger treatment effect than injectable antibiotics alone
 
-        if facility_type == 'hp':
-            # Define the consumables
-            pkg_code_sep = pd.unique(consumables.loc[
-                                     consumables['Intervention_Pkg'] == 'Newborn sepsis - full supportive care',
-                                     'Intervention_Pkg_Code'])[0]
+        if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or df.at[person_id, 'pn_sepsis_late_neonatal'] or\
+          df.at[person_id, 'pn_sepsis_early_neonatal']:
 
-            all_available = hsi_event.get_all_consumables(
-                pkg_codes=[pkg_code_sep])
+            if facility_type == 'hp':
 
-            # Use the dx_manager to determine if staff will correctly identify this neonate will treatment for sepsis
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                 dx_tests_to_run=f'assess_neonatal_sepsis_{facility_type}', hsi_event=hsi_event) or \
-                df.at[person_id, 'pn_sepsis_late_neonatal'] or df.at[person_id, 'pn_sepsis_early_neonatal']:
+                # Define the consumables
+                pkg_code_sep = pd.unique(consumables.loc[
+                                         consumables['Intervention_Pkg'] == 'Newborn sepsis - full supportive care',
+                                         'Intervention_Pkg_Code'])[0]
+
+                all_available = hsi_event.get_all_consumables(
+                    pkg_codes=[pkg_code_sep])
 
                 # Then, if the consumables are available, treatment for sepsis is delivered
                 if all_available:
                     df.at[person_id, 'nb_supp_care_neonatal_sepsis'] = True
 
         # The same pattern is then followed for health centre care
-        elif facility_type == 'hc':
-            item_code_iv_penicillin = pd.unique(
-                consumables.loc[consumables['Items'] == 'Benzylpenicillin 1g (1MU), PFR_Each_CMST', 'Item_Code'])[0]
-            item_code_iv_gentamicin = pd.unique(
-                consumables.loc[consumables['Items'] == 'Gentamicin 40mg/ml, 2ml_each_CMST', 'Item_Code'])[0]
-            item_code_giving_set = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with '
-                                                                                     'needle',
-                                                                                     'Item_Code'])[0]
-            # todo: add other required consumables
-            consumables_inj_abx_sepsis = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {item_code_iv_penicillin: 1, item_code_iv_gentamicin: 1,
-                              item_code_giving_set: 1}}
+            elif facility_type == 'hc':
+                item_code_iv_penicillin = pd.unique(
+                    consumables.loc[consumables['Items'] == 'Benzylpenicillin 1g (1MU), PFR_Each_CMST', 'Item_Code'])[0]
+                item_code_iv_gentamicin = pd.unique(
+                    consumables.loc[consumables['Items'] == 'Gentamicin 40mg/ml, 2ml_each_CMST', 'Item_Code'])[0]
+                item_code_giving_set = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with '
+                                                                                         'needle',
+                                                                                         'Item_Code'])[0]
+                # todo: add other required consumables
+                consumables_inj_abx_sepsis = {
+                    'Intervention_Package_Code': {},
+                    'Item_Code': {item_code_iv_penicillin: 1, item_code_iv_gentamicin: 1,
+                                  item_code_giving_set: 1}}
 
-            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=hsi_event, cons_req_as_footprint=consumables_inj_abx_sepsis)
-
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-               dx_tests_to_run=f'assess_neonatal_sepsis_{facility_type}', hsi_event=hsi_event) or \
-                df.at[person_id, 'pn_sepsis_late_neonatal'] or df.at[person_id, 'pn_sepsis_early_neonatal']:
+                outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=hsi_event, cons_req_as_footprint=consumables_inj_abx_sepsis)
 
                 if (outcome_of_request_for_consumables['Item_Code'][item_code_iv_penicillin]) and \
                    (outcome_of_request_for_consumables['Item_Code'][item_code_iv_gentamicin]):
