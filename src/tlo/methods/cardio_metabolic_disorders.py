@@ -515,7 +515,6 @@ class CardioMetabolicDisorders(Module):
                 conditions_are_exhaustive=True,
             )
             .when('1', p['rr_wealth_1'])
-            .when('1', p['rr_wealth_1'])
             .when('2', p['rr_wealth_2'])
             .when('3', p['rr_wealth_3'])
             .when('4', p['rr_wealth_4'])
