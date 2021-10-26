@@ -190,7 +190,7 @@ class CardioMetabolicDisorders(Module):
                                                   )
                   }
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None, resourcefilepath=None, do_log_df: bool = False):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
@@ -209,6 +209,9 @@ class CardioMetabolicDisorders(Module):
 
         # retrieve age range categories from Demography module
         self.age_index = None
+
+        # store bool for logging df
+        self.do_log_df = do_log_df
 
     def read_parameters(self, data_folder):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
@@ -1057,8 +1060,12 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
                     )
 
         # output entire dataframe for logistic regression
-        # df = population.props
-        # df.to_csv('df_for_regression.csv')
+        if self.module.do_log_df:
+            df = population.props
+            columns_of_interest = ['sex', 'age_range', 'li_urban', 'li_wealth', 'li_bmi', 'li_low_ex', 'li_high_salt',
+                                   'li_high_sugar', 'li_ex_alc', 'li_tob', 'nc_diabetes', 'nc_hypertension']
+            logger.info(key='df_snapshot', data=df.loc[df.is_alive, [columns_of_interest]],
+                        message='dataframe of CMD variables for logistic regression')
 
         # Update risk score
         self.module.update_risk_score()
