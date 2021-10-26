@@ -183,9 +183,6 @@ class CardioMetabolicDisorders(Module):
                   'nc_weight_loss_worked': Property(Types.BOOL,
                                                     'whether or not weight loss treatment worked'),
                   'nc_risk_score': Property(Types.INT, 'score to represent number of risk conditions the person has'),
-                  'nc_cancers': Property(Types.BOOL,
-                                         'shadow property for whether or not the person currently has any cancer'
-                                         ),
                   'nc_n_conditions': Property(Types.INT,
                                               'how many NCD conditions the person currently has'),
                   'nc_condition_combos': Property(Types.BOOL,
@@ -561,7 +558,6 @@ class CardioMetabolicDisorders(Module):
             Predictor('nc_chronic_kidney_disease').when(True, p['rr_chronic_kidney_disease']),
             Predictor('nc_chronic_lower_back_pain').when(True, p['rr_chronic_lower_back_pain']),
             Predictor('nc_chronic_ischemic_hd').when(True, p['rr_chronic_ischemic_heart_disease'])
-            # Predictor('nc_cancers').when(True, p['rr_cancers'])
         )
 
         return linearmodel
@@ -606,7 +602,6 @@ class CardioMetabolicDisorders(Module):
             df.at[child_id, f'nc_{event}_date_diagnosis'] = pd.NaT
             df.loc[child_id, f'nc_{event}_scheduled_date_death'] = pd.NaT
             df.at[child_id, f'nc_{event}_medication_prevents_death'] = False
-        # df.at[child_id, 'nc_cancers'] = False
         df.at[child_id, 'nc_risk_score'] = 0
         df.at[child_id, 'nc_n_conditions'] = 0
         df.at[child_id, 'nc_condition_combos'] = False
