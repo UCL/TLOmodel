@@ -1122,11 +1122,10 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
             if not person['nc_ever_weight_loss_treatment']:
                 df.at[person_id, 'nc_ever_weight_loss_treatment'] = True
                 # Schedule a post-weight loss event for 6-9 months for individual to potentially lose weight:
-                start = self.sim.date
-                end = self.sim.date + DateOffset(months=m.parameters['interval_between_polls'], days=-1)
-                ndays = (end - start).days
                 self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(self.module, person_id, self.condition),
-                                        self.sim.date + DateOffset(days=self.module.rng.randint(ndays)))
+                                        random_date(self.sim.date,
+                                                    self.sim.date + self.frequency - pd.DateOffset(days=1),
+                                                    m.rng))
 
 
 class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
