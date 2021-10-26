@@ -1128,9 +1128,6 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
                 self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(self.module, person_id, self.condition),
                                         self.sim.date + DateOffset(days=self.module.rng.randint(ndays)))
 
-    def did_not_run(self):
-        pass
-
 
 class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
     """
