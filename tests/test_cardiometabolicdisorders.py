@@ -231,8 +231,7 @@ def hsi_checks(sim):
 def start_sim_and_clear_event_queues(sim):
     """Simulate for 0 days so as to complete all the initialisation steps, but then clear the event queues"""
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
-    sim.event_queue.queue.clear()
+    sim.modules['HealthSystem'].reset_queue()
     return sim
 
 
