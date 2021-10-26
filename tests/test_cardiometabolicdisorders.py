@@ -206,13 +206,13 @@ def hsi_checks(sim):
 
     # check that those who have ever been diagnosed have a date of last test
 
-    assert ~pd.isnull(df.loc[df.nc_diabetes_ever_diagnosed, 'nc_diabetes_date_last_test']).all()
-    assert ~pd.isnull(df.loc[df.nc_hypertension_ever_diagnosed, 'nc_hypertension_date_last_test']).all()
-    assert ~pd.isnull(
+    assert pd.notnull(df.loc[df.nc_diabetes_ever_diagnosed, 'nc_diabetes_date_last_test']).all()
+    assert pd.notnull(df.loc[df.nc_hypertension_ever_diagnosed, 'nc_hypertension_date_last_test']).all()
+    assert pd.notnull(
         df.loc[df.nc_chronic_lower_back_pain_ever_diagnosed, 'nc_chronic_lower_back_pain_date_last_test']).all()
-    assert ~pd.isnull(df.loc[df.nc_chronic_kidney_disease_ever_diagnosed,
+    assert pd.notnull(df.loc[df.nc_chronic_kidney_disease_ever_diagnosed,
                              'nc_chronic_kidney_disease_date_last_test']).all()
-    assert ~pd.isnull(df.loc[df.nc_chronic_ischemic_hd_ever_diagnosed, 'nc_chronic_ischemic_hd_date_last_test']).all()
+    assert pd.notnull(df.loc[df.nc_chronic_ischemic_hd_ever_diagnosed, 'nc_chronic_ischemic_hd_date_last_test']).all()
 
     # check that everyone receiving medication for a condition has been diagnosed
 
