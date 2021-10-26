@@ -357,7 +357,7 @@ class CardioMetabolicDisorders(Module):
             df.loc[df.is_alive, f'nc_{event}_medication_prevents_death'] = False
 
         # ----- Generate the initial "risk score" for the population based on exercise, diet, tobacco, alcohol, BMI:
-        self.generate_risk_score()
+        self.update_risk_score()
 
         # ----- Set all other parameters to False / NaT
         df.loc[df.is_alive, 'nc_ever_weight_loss_treatment'] = False
@@ -612,7 +612,7 @@ class CardioMetabolicDisorders(Module):
         df.at[child_id, 'nc_n_conditions'] = 0
         df.at[child_id, 'nc_condition_combos'] = False
 
-    def generate_risk_score(self):
+    def update_risk_score(self):
         """
         Generates or updates the risk score for individuals at initialisation of population
         """
@@ -1067,7 +1067,7 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
         # df.to_csv('df_for_regression.csv')
 
         # Update risk score
-        self.module.generate_risk_score()
+        self.module.update_risk_score()
 
 
 # ---------------------------------------------------------------------------------------------------------
