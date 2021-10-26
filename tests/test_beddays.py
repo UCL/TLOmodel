@@ -618,3 +618,20 @@ def test_the_use_of_beds_from_multiple_facilities():
     # person 2 is in the Southern region for which no beddays capacity is defimed
     with pytest.raises(KeyError):
         hs.bed_days.impose_beddays_footprint(person_id=2, footprint=footprint)
+
+# 1) def test_assign_remaining_bed_days_to_a_lower_class():
+#  set of checks to test the allocation of bed days algorithm
+# 2)    initialise a simulation object
+# 3)    Register the two required modules(demography and health system)
+# 4)    initialise the bed_days class via health system
+# 5)    create a simple BedCapacity with sample facility id's for testing
+# 6)    create a bed capacity dataframe
+# 7)    create and start simulation
+# 8)    initialise / reset bed days tracker
+
+# 9)    impose a footprint requesting more high priority beds(high_dependency_beds) than those in capacity
+# 10)   check that imposing footprint on an individual works
+# 11)   check that high priority beds are assigned according to availability in tracker on that day
+# 12)   check that the remaining days are assigned to a next higher priority bed type i.e general bed and if the
+#           the capacity of the next bed type can't accommodate all days, ensure another bed type of lower class takes
+#           the remaining days
