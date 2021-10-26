@@ -785,7 +785,7 @@ def test_no_availability_of_consumables_for_events():
 
         # Run the DeathEvent on this person
         t = CardioMetabolicDisordersDeathEvent(module=sim.modules['CardioMetabolicDisorders'], person_id=person_id,
-                                               condition=f'{event}')
+                                               condition_or_event=f'{event}')
         t.apply(person_id=person_id)
 
         assert not df.at[person_id, 'is_alive']
