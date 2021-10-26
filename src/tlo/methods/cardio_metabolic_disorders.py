@@ -804,11 +804,9 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                 idx_has_event = has_event[has_event].index
 
                 for person_id in idx_has_event:
-                    start = self.sim.date
-                    end = self.sim.date + DateOffset(months=m.parameters['interval_between_polls'], days=-1)
-                    ndays = (end - start).days
                     self.sim.schedule_event(CardioMetabolicDisordersEvent(self.module, person_id, event),
-                                            self.sim.date + DateOffset(days=self.module.rng.randint(ndays)))
+                                            random_date(self.sim.date, self.sim.date + self.frequency -
+                                                        pd.DateOffset(days=1), m.rng))
 
 
 class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
