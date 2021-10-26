@@ -174,9 +174,9 @@ class CardioMetabolicDisorders(Module):
     }
 
     PROPERTIES = {**condition_list, **event_list, **condition_diagnosis_list, **condition_date_diagnosis_list,
-                  **condition_date_of_last_test_list, **condition_medication_list, **event_medication_death_list,
+                  **condition_date_of_last_test_list, **condition_medication_list, **condition_medication_death_list,
                   **event_diagnosis_list, **event_date_diagnosis_list, **event_medication_list,
-                  **event_scheduled_date_death_list, **event_medication_death_list,
+                  **event_medication_death_list, **event_scheduled_date_death_list,
                   'nc_ever_weight_loss_treatment': Property(Types.BOOL,
                                                             'whether or not the person has ever had weight loss '
                                                             'treatment'),
