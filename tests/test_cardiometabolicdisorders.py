@@ -307,8 +307,7 @@ def test_if_health_system_cannot_run():
 
 # helper function to run the sim with the healthcare system disabled
 def make_simulation_health_system_disabled():
-    """Make the simulation with:
-    * the demography module with the OtherDeathsPoll not running
+    """Make the simulation with the healthcare system disabled
     """
     sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
 
@@ -329,8 +328,7 @@ def make_simulation_health_system_disabled():
 
 # helper function to run the sim with the healthcare system disabled
 def make_simulation_health_system_functional():
-    """Make the simulation with:
-    * the demography module with the OtherDeathsPoll not running
+    """Make the simulation with the healthcare system enabled and no cons constraints
     """
     sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
 
