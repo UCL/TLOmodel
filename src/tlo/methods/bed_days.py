@@ -304,10 +304,10 @@ class BedDays:
 
     def get_persons_level2_facility_id(self, persons_id):
         """Helper function to find the facility at which an HSI event will take place; i.e. the facility 2 facility to
-         which the person has acccess"""
+         which the person has access"""
 
         the_district = self.hs_module.sim.population.props.at[persons_id, 'district_of_residence']
-        facility_level = 2
+        facility_level = '2'
 
         # Return an id of the (one) health_facility available to this person (based on their district)
         return self.hs_module.parameters["Facilities_For_Each_District"][facility_level][the_district][0]
