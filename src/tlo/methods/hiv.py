@@ -983,7 +983,8 @@ class Hiv(Module):
         df = self.sim.population.props
 
         if not (df.loc[person_id, 'hv_art'] == 'not'):
-            logger.warning("This event should not be running. do_when_diagnosed is for persons being newly dianogsed.")
+            logger.warning(key="message",
+                           data="This event should not be running. do_when_diagnosed is for newly diagnosed persons.")
 
         # Consider if the person will be referred to start ART
         has_aids_symptoms = 'aids_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)
@@ -1302,7 +1303,7 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
 
         # Check that there are on PrEP currently:
         if not person["hv_is_on_prep"]:
-            logger.warning('This event should not be running')
+            logger.warning(key='message', data='This event should not be running')
 
         # Determine if this appointment is actually attended by the person who has already started on PrEP
         if m.rng.random_sample() < m.parameters['probability_of_being_retained_on_prep_every_3_months']:

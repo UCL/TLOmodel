@@ -181,37 +181,30 @@ class Logger:
             raise ValueError(f"Both oldstyle and structured logging has been used for {self.name}, "
                              "please update all logging to use structured logging")
 
-    def _handle_old_or_new(self, msg=None, *args, key=None, data=None, description=None, level, **kwargs):
+    def _check_and_filter(self, msg=None, *args, key=None, data=None, description=None, level, **kwargs):
         if self._std_logger.isEnabledFor(level):
             level_str = _logging.getLevelName(level)  # e.g. 'CRITICAL', 'INFO' etc.
             level_function = getattr(self._std_logger, level_str.lower())  # e.g. `critical` or `info` methods
-            # if this is an old-style logging call
-            if msg or msg == []:
-                # NOTE: std logger branch can be removed once transition is completed
-                self._check_logging_style(is_structured=False)
-                level_function(self._make_old_style_msg(level_str, msg), *args, **kwargs)
-            # otherwise, this is a new-style structure logging call
-            else:
-                if key is None or data is None:
-                    raise ValueError("Structured logging requires `key` and `data` keyword arguments")
-                self._check_logging_style(is_structured=True)
-                level_function(self._get_json(level=level, key=key, data=data, description=description))
+            if key is None or data is None:
+                raise ValueError("Structured logging requires `key` and `data` keyword arguments")
+            self._check_logging_style(is_structured=True)
+            level_function(self._get_json(level=level, key=key, data=data, description=description))
 
     def critical(self, msg=None, *args, key: str = None,
                  data: Union[dict, pd.DataFrame, list, set, tuple, str] = None, description=None, **kwargs):
-        self._handle_old_or_new(msg, *args, key=key, data=data, description=description, level=CRITICAL, **kwargs)
+        self._check_and_filter(msg, *args, key=key, data=data, description=description, level=CRITICAL, **kwargs)
 
     def debug(self, msg=None, *args, key: str = None,
               data: Union[dict, pd.DataFrame, list, set, tuple, str] = None, description=None, **kwargs):
-        self._handle_old_or_new(msg, *args, key=key, data=data, description=description, level=DEBUG, **kwargs)
+        self._check_and_filter(msg, *args, key=key, data=data, description=description, level=DEBUG, **kwargs)
 
     def info(self, msg=None, *args, key: str = None,
              data: Union[dict, pd.DataFrame, list, set, tuple, str] = None, description=None, **kwargs):
-        self._handle_old_or_new(msg, *args, key=key, data=data, description=description, level=INFO, **kwargs)
+        self._check_and_filter(msg, *args, key=key, data=data, description=description, level=INFO, **kwargs)
 
     def warning(self, msg=None, *args, key: str = None,
                 data: Union[dict, pd.DataFrame, list, set, tuple, str] = None, description=None, **kwargs):
-        self._handle_old_or_new(msg, *args, key=key, data=data, description=description, level=WARNING, **kwargs)
+        self._check_and_filter(msg, *args, key=key, data=data, description=description, level=WARNING, **kwargs)
 
 
 CRITICAL = _logging.CRITICAL
