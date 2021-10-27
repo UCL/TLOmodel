@@ -274,14 +274,14 @@ class HealthSystem(Module):
         appt_type_per_level_data = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'ResourceFile_ApptType_By_FacLevel.csv'
         )
-        self.parameters['ApptType_By_FacLevel'] = [
-            set(
+        self.parameters['ApptType_By_FacLevel'] = {
+            _facility_level: set(
                 appt_type_per_level_data['Appt_Type_Code'][
-                    appt_type_per_level_data[f'Facility_Level_{i}']
+                    appt_type_per_level_data[f'Facility_Level_{_facility_level}']
                 ]
             )
-            for i in facility_levels
-        ]
+            for _facility_level in self._facility_levels
+        }
 
         mfl = pd.read_csv(path_to_resourcefiles_for_healthsystem / 'ResourceFile_Master_Facilities_List.csv')
         self.parameters['Master_Facilities_List'] = mfl.iloc[:, 1:]  # get rid of extra column
@@ -540,13 +540,17 @@ class HealthSystem(Module):
                 # It must have EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT,
                 # ACCEPTED_FACILITY_LEVELS and ALERT_OTHER_DISEASES defined
 
-                # Correct formated EXPECTED_APPT_FOOTPRINT
+                # Correct formatted EXPECTED_APPT_FOOTPRINT
                 assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT)
 
                 # That it has an 'ACCEPTED_FACILITY_LEVEL' attribute
-                # (Integer specificying the facility level at which HSI_Event must occur)
-                assert isinstance(hsi_event.ACCEPTED_FACILITY_LEVEL, int)
-                assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels
+                # (Integer or string specifying the facility level at which HSI_Event must occur)
+                hsi_event.ACCEPTED_FACILITY_LEVEL = str(hsi_event.ACCEPTED_FACILITY_LEVEL) \
+                    if not isinstance(hsi_event.ACCEPTED_FACILITY_LEVEL, str) \
+                    else hsi_event.ACCEPTED_FACILITY_LEVEL
+                assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels, \
+                    f"In the HSI with TREATMENT_ID {hsi_event.TREATMENT_ID}, the value for ACCEPTED_FACILITY_LEVEL " \
+                    f"({hsi_event.ACCEPTED_FACILITY_LEVEL}) is not a recognised facility level."
 
                 self.bed_days.check_beddays_footprint_format(hsi_event.BEDDAYS_FOOTPRINT)
 
