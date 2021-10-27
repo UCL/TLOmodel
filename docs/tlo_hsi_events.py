@@ -19,13 +19,11 @@ from tlo.dependencies import (
 )
 from tlo.methods import alri, diarrhoea, healthseekingbehaviour, hiv
 from tlo.methods.healthsystem import HSI_Event, HSIEventDetails
-from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstAppt_BaseClass
 
 
 def is_valid_hsi_event_subclass(obj: Any) -> bool:
     """Whether an object is a *strict* subclass of HSI_Event"""
-    return inspect.isclass(obj) and issubclass(obj, HSI_Event) and obj not in (HSI_Event,
-                                                                               HSI_GenericFirstAppt_BaseClass)
+    return inspect.isclass(obj) and issubclass(obj, HSI_Event) and obj is not HSI_Event
 
 
 def get_hsi_event_classes_per_module(
