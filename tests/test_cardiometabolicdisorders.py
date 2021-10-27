@@ -714,9 +714,6 @@ def test_hsi_emergency_events():
 def test_no_availability_of_consumables_for_conditions():
     """Check if consumables aren't available that everyone drops off of treatment"""
 
-    # Create a list of the item codes used by this module
-    all_item_codes = {216, 233, 221, 226, 47, 2064, 225, 234}
-
     # Make a list of all conditions and events to run this test for
     condition_list = ['diabetes', 'chronic_lower_back_pain', 'chronic_kidney_disease', 'chronic_ischemic_hd']
     for condition in condition_list:
@@ -730,7 +727,7 @@ def test_no_availability_of_consumables_for_conditions():
         sim = start_sim_and_clear_event_queues(sim)
 
         # Make consumables not available
-        sim.modules['HealthSystem'].prob_item_codes_available.loc[all_item_codes] = 0.0
+        sim.modules['HealthSystem'].prob_item_codes_available *= 0.0
         sim.modules['HealthSystem'].determine_availability_of_consumables_today()
 
         df = sim.population.props
@@ -753,9 +750,6 @@ def test_no_availability_of_consumables_for_conditions():
 def test_no_availability_of_consumables_for_events():
     """Check if consumables aren't available that HSI events are commissioned but individual dies of event anyway"""
 
-    # Create a list of the item codes used by this module
-    all_item_codes = {216, 233, 221, 226, 47, 2064, 225, 234}
-
     # Make a list of all events to run this test for
     event_list = ['ever_stroke', 'ever_heart_attack']
     for event in event_list:
@@ -773,7 +767,7 @@ def test_no_availability_of_consumables_for_events():
         sim = start_sim_and_clear_event_queues(sim)
 
         # Make consumables not available
-        sim.modules['HealthSystem'].prob_item_codes_available.loc[all_item_codes] = 0.0
+        sim.modules['HealthSystem'].prob_item_codes_available *= 0.0
         sim.modules['HealthSystem'].determine_availability_of_consumables_today()
 
         df = sim.population.props
