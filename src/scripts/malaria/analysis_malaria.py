@@ -11,8 +11,6 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -62,8 +60,6 @@ sim.register(
     ),
     symptommanager.SymptomManager(resourcefilepath=resources),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-    dx_algorithm_child.DxAlgorithmChild(),
-    dx_algorithm_adult.DxAlgorithmAdult(),
     healthburden.HealthBurden(resourcefilepath=resources),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
     malaria.Malaria(

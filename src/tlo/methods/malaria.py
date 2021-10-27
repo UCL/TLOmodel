@@ -567,6 +567,27 @@ class Malaria(Module):
                         duration_in_days=None,
                     )
 
+    def check_if_fever_is_caused_by_malaria(self, person_id, hsi_event):
+        """Run by an HSI when an adult presents with fever"""
+
+        # Call the DxTest RDT to diagnose malaria
+        dx_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+            dx_tests_to_run='malaria_rdt',
+            hsi_event=hsi_event
+        )
+
+        true_malaria_infection_type = self.sim.population.props.at[person_id, "ma_inf_type"]
+
+        if dx_result:
+            if true_malaria_infection_type == "severe":
+                return "severe_malaria"
+
+            elif true_malaria_infection_type in ("clinical", "asym"):
+                return "clinical_malaria"
+
+        else:
+            return "negative_malaria_test"
+
 
 class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):

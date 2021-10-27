@@ -12,8 +12,6 @@ from tlo.methods import (
     contraception,
     demography,
     depression,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -116,9 +114,7 @@ def register_all_modules():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  malaria.Malaria(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath)),
 
                  # - Dummy HIV module (as contraception requires the property hv_inf)
                  DummyHivModule()
