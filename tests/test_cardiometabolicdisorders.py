@@ -778,7 +778,7 @@ def test_no_availability_of_consumables_for_events():
         df.at[person_id, f"nc_{event}_ever_diagnosed"] = False
         df.at[person_id, f"nc_{event}_on_medication"] = False
 
-        # Run the Refill_Medication event
+        # Run the CardioMetabolicDisordersEvent event
         t = CardioMetabolicDisordersEvent(module=sim.modules['CardioMetabolicDisorders'],
                                           person_id=person_id, event=event)
         t.apply(person_id=person_id)
