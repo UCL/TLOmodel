@@ -613,7 +613,7 @@ def test_hsi_weight_loss_and_medication():
 
         # set probability of weight loss working to 1
         p = sim.modules['CardioMetabolicDisorders'].parameters
-        p[f'{condition}_hsi']["pr_bmi_reduction"] = 1
+        p["pr_bmi_reduction"] = 1
 
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
@@ -809,3 +809,4 @@ def test_no_availability_of_consumables_for_events():
 
         assert not df.at[person_id, 'is_alive']
         assert df.at[person_id, 'cause_of_death'] == f'{event}'
+

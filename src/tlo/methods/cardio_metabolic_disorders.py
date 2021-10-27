@@ -120,7 +120,9 @@ class CardioMetabolicDisorders(Module):
         f"{p}_initial_prev": Parameter(Types.DICT, 'initial prevalence of condition') for p in conditions
     }
     other_params_dict = {
-        'interval_between_polls': Parameter(Types.INT, 'months between the main polling event')
+        'interval_between_polls': Parameter(Types.INT, 'months between the main polling event'),
+        'pr_bmi_reduction': Parameter(Types.INT, 'probability of an individual having a reduction in BMI following '
+                                                 'weight loss treatment')
     }
 
     PARAMETERS = {**onset_conditions_param_dicts, **removal_conditions_param_dicts, **hsi_conditions_param_dicts,
@@ -260,6 +262,7 @@ class CardioMetabolicDisorders(Module):
 
         # Set the interval (in months) between the polls
         p['interval_between_polls'] = 3
+        p['pr_bmi_reduction'] = 0.1
 
         # Check that every value has been read-in successfully
         for param_name in self.PARAMETERS:
@@ -906,8 +909,7 @@ class CardioMetabolicDisordersWeightLossEvent(Event, IndividualScopeEventMixin):
         if not person.is_alive:
             return
         else:
-            if self.module.rng.rand() < self.sim.modules[
-                    'CardioMetabolicDisorders'].parameters[f'{self.condition}_hsi'].pr_bmi_reduction:
+            if self.module.rng.rand() < self.module.parameters['pr_bmi_reduction']:
                 df.at[person_id, 'li_bmi'] -= 1
                 df.at[person_id, 'nc_weight_loss_worked'] = True
 
@@ -1115,10 +1117,12 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
         elif person['nc_risk_score'] >= 2:
             if not person['nc_ever_weight_loss_treatment']:
                 df.at[person_id, 'nc_ever_weight_loss_treatment'] = True
+                frequency = DateOffset(
+                    months=self.sim.modules['CardioMetabolicDisorders'].parameters['interval_between_polls'])
                 # Schedule a post-weight loss event for 6-9 months for individual to potentially lose weight:
                 self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(self.module, person_id, self.condition),
                                         random_date(self.sim.date,
-                                                    self.sim.date + self.frequency - pd.DateOffset(days=1),
+                                                    self.sim.date + frequency - pd.DateOffset(days=1),
                                                     m.rng))
 
 
