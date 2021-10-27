@@ -20,6 +20,7 @@ from tlo.methods import (
 from tlo.methods.cardio_metabolic_disorders import (
     CardioMetabolicDisordersDeathEvent,
     CardioMetabolicDisordersEvent,
+    CardioMetabolicDisordersWeightLossEvent,
     HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms,
     HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms,
     HSI_CardioMetabolicDisorders_Refill_Medication,
@@ -610,6 +611,10 @@ def test_hsi_weight_loss_and_medication():
         # make initial population
         sim.make_initial_population(n=50)
 
+        # set probability of weight loss working to 1
+        p = sim.modules['CardioMetabolicDisorders'].parameters
+        p[f'{condition}_hsi']["pr_bmi_reduction"] = 1
+
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
 
@@ -620,16 +625,38 @@ def test_hsi_weight_loss_and_medication():
         df.at[person_id, f"nc_{condition}"] = True
         df.at[person_id, f"nc_{condition}_ever_diagnosed"] = True
         df.at[person_id, f"nc_{condition}_on_medication"] = False
+        df.at[person_id, "li_bmi"] = 4
 
         # Run the StartWeightLossAndMedication event
         t = HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(module=sim.modules[
             'CardioMetabolicDisorders'], person_id=person_id, condition=f'{condition}')
         t.apply(person_id=person_id, squeeze_factor=0.0)
 
-        # Check that the individual is now on medication and that there is Refill_Medication event scheduled
+        # Check that the individual has received weight loss treatment, is now on medication, and that there is a
+        # Refill_Medication event scheduled
+
         assert df.at[person_id, f"nc_{condition}_on_medication"]
         assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4],
                           HSI_CardioMetabolicDisorders_Refill_Medication)
+
+        if condition != 'chronic_kidney_disease':  # those with CKD are not recommended to lose weight
+            # Check that the individual has received weight loss treatment
+            assert df.at[person_id, 'nc_ever_weight_loss_treatment']
+            # Check that the individual has a CardioMetabolicDisordersWeightLossEvent scheduled
+            events_for_this_person = sim.find_events_for_person(person_id)
+            assert 1 == len(events_for_this_person)
+            next_event_date, next_event_obj = events_for_this_person[person_id]
+            assert isinstance(next_event_obj, cardio_metabolic_disorders.CardioMetabolicDisordersWeightLossEvent)
+            assert next_event_date >= sim.date
+
+            # Run the WeightLossEvent
+            t = CardioMetabolicDisordersWeightLossEvent(module=sim.modules['CardioMetabolicDisorders'],
+                                                        person_id=person_id, condition=f'{condition}')
+            t.apply(person_id=person_id)
+
+            # Check that individual's BMI has reduced by 1 and they are flagged as having experienced weight loss
+            assert df.at[person_id, "li_bmi"] == 3
+            assert df.at[person_id, "nc_weight_loss_worked"]
 
 
 def test_hsi_emergency_events():

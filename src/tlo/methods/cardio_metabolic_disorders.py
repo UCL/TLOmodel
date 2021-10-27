@@ -912,11 +912,10 @@ class CardioMetabolicDisordersWeightLossEvent(Event, IndividualScopeEventMixin):
         if not person.is_alive:
             return
         else:
-            p_bmi_reduction = 0.2  # TODO: @britta change to actual data
-            if person['li_bmi'] > 2:
-                if self.module.rng.rand() < p_bmi_reduction:
-                    df.at[person_id, 'li_bmi'] -= 1
-                    df.at[person_id, 'nc_weight_loss_worked'] = True
+            if self.module.rng.rand() < self.sim.modules[
+                    'CardioMetabolicDisorders'].parameters[f'{self.condition}_hsi'].pr_bmi_reduction:
+                df.at[person_id, 'li_bmi'] -= 1
+                df.at[person_id, 'nc_weight_loss_worked'] = True
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1107,17 +1106,18 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
             # record date of diagnosis:
             df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
             df.at[person_id, f'nc_{self.condition}_ever_diagnosed'] = True
-            # start weight loss recommendation:
-            hs.schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
-                    module=self.module,
-                    person_id=person_id,
-                    condition=f'{self.condition}'
-                ),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None
-            )
+            # If person's BMI is higher than normal, start weight loss recommendation:
+            if df.at[person_id, 'li_bmi'] > 2:
+                hs.schedule_hsi_event(
+                    hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                        module=self.module,
+                        person_id=person_id,
+                        condition=f'{self.condition}'
+                    ),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+                )
         elif person['nc_risk_score'] >= 2:
             if not person['nc_ever_weight_loss_treatment']:
                 df.at[person_id, 'nc_ever_weight_loss_treatment'] = True
@@ -1201,17 +1201,19 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         self.condition = condition
 
     def apply(self, person_id, squeeze_factor):
-        # don't advise those with CKD to lose weight, but do so for all other conditions
-        if self.condition != 'chronic_kidney_disease':
-            self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
-            # Schedule a post-weight loss event for individual to potentially lose weight:
-            self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(self.module, person_id, self.condition),
-                                    random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1),
-                                                self.module.rng))
 
-        # start medication
         df = self.sim.population.props
         person = df.loc[person_id]
+
+        # don't advise those with CKD to lose weight, but do so for all other conditions if BMI is higher than normal
+        if self.condition != 'chronic_kidney_disease' and (df.at[person_id, 'li_bmi'] > 2):
+            self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
+            # Schedule a post-weight loss event for individual to potentially lose weight:
+            frequency = DateOffset(
+                months=self.sim.modules['CardioMetabolicDisorders'].parameters['interval_between_polls'])
+            self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(self.module, person_id, self.condition),
+                                    random_date(self.sim.date, self.sim.date + frequency - pd.DateOffset(
+                                        days=1), self.module.rng))
 
         # If person is already on medication, do not do anything
         if person[f'nc_{self.condition}_on_medication']:
