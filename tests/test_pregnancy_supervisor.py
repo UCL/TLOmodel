@@ -114,7 +114,7 @@ def register_all_modules():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  malaria.Malaria(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath)),
+                 depression.Depression(resourcefilepath=resourcefilepath),
 
                  # - Dummy HIV module (as contraception requires the property hv_inf)
                  DummyHivModule()
@@ -924,7 +924,7 @@ def test_pregnancy_supervisor_pre_eclampsia_and_progression():
         sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
 
     # Move the women's gestational age back by 1 week
-    df.loc[pregnant_women.index, 'ps_gestational_age_in_weeks'] =\
+    df.loc[pregnant_women.index, 'ps_gestational_age_in_weeks'] = \
         (df.loc[pregnant_women.index, 'ps_gestational_age_in_weeks'] - 1)
 
     # Set risk of death to 0 and relative risk of stillbirth in pre-eclampsia to 10 which should force still birth
