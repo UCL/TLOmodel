@@ -9,7 +9,6 @@ from tlo.methods import (
     cardio_metabolic_disorders,
     demography,
     depression,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -77,7 +76,6 @@ def test_basic_run():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -121,7 +119,6 @@ def test_basic_run_with_high_incidence_hypertension():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -253,7 +250,6 @@ def test_if_health_system_cannot_run():
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath)
                  )
@@ -314,7 +310,6 @@ def make_simulation_health_system_disabled():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -335,7 +330,6 @@ def make_simulation_health_system_functional():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False,
                                            ignore_cons_constraints=True),
@@ -521,11 +515,13 @@ def test_hsi_investigation_not_following_symptoms():
 
         df = sim.population.props
 
-        # Get target person and make them have condition but not be diagnosed yet
+        # Get target person and make them have condition but not be diagnosed yet, and high enough BMI for them to
+        # receive weight loss treatment
         person_id = 0
         df.at[person_id, f"nc_{condition}"] = True
         df.at[person_id, f"nc_{condition}_ever_diagnosed"] = False
         df.at[person_id, f"nc_{condition}_on_medication"] = False
+        df.at[person_id, 'li_bmi'] = 4
 
         # Run the InvestigationNotFollowingSymptoms event
         t = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(module=sim.modules[
@@ -564,11 +560,13 @@ def test_hsi_investigation_following_symptoms():
 
         df = sim.population.props
 
-        # Get target person and make them have condition, be symptomatic, but not be diagnosed yet
+        # Get target person and make them have condition, be symptomatic, but not be diagnosed yet, and high enough
+        # BMI for them to receive weight loss treatment
         person_id = 0
         df.at[person_id, f"nc_{condition}"] = True
         df.at[person_id, f"nc_{condition}_ever_diagnosed"] = False
         df.at[person_id, f"nc_{condition}_on_medication"] = False
+        df.at[person_id, 'li_bmi'] = 4
 
         sim.modules['SymptomManager'].change_symptom(
             person_id=person_id,

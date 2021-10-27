@@ -1110,18 +1110,17 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
             # Record date of diagnosis:
             df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
             df.at[person_id, f'nc_{self.condition}_ever_diagnosed'] = True
-            # If person's BMI is higher than normal (i.e., 2), start weight loss treatment
-            if df.at[person_id, 'li_bmi'] > 2:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
-                        module=self.module,
-                        person_id=person_id,
-                        condition=f'{self.condition}'
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+            # Schedule HSI_CardioMetabolicDisorders_StartWeightLossAndMedication event
+            hs.schedule_hsi_event(
+                hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                    module=self.module,
+                    person_id=person_id,
+                    condition=f'{self.condition}'
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+            )
         # If person has at least 2 risk factors, start weight loss treatment
         elif person['nc_risk_score'] >= 2:
             if not person['nc_ever_weight_loss_treatment']:
