@@ -72,7 +72,7 @@ officer_types_table.to_csv(resourcefilepath + 'ResourceFile_Officer_Types_Table.
 
 # --- Generate assumptions of current staff distribution at facility levels 0&1a&1b&2
 # Read compiled staff return data from CHAI auxiliary datasets
-compiled_staff_return = pd.read_excel(auxiliaryfile + 'Compiled Staff Returns.xlsx',
+compiled_staff_return = pd.read_excel(path_to_auxiliaryfiles / 'Compiled Staff Returns.xlsx',
                                       sheet_name='Compiled Staff Returns', skiprows=range(5))
 
 # Get relevant columns
@@ -242,7 +242,7 @@ curr_staff_distribution.to_csv(outputlocation / 'ResourceFile_Current_Staff_Dist
 
 # --- Generate assumptions of established/funded staff distribution at facility levels 0&1a&1b&2
 # Read 2018-03-09 Facility-level establishment MOH & CHAM from CHAI auxiliary datasets
-fund_staff_2018_raw = pd.read_excel(auxiliaryfile + '2018-03-09 Facility-level establishment MOH & CHAM.xlsx',
+fund_staff_2018_raw = pd.read_excel(path_to_auxiliaryfiles / '2018-03-09 Facility-level establishment MOH & CHAM.xlsx',
                                     sheet_name='Establishment listing')
 
 # Get relevant columns
@@ -428,7 +428,7 @@ fund_staff_distribution.to_csv(outputlocation / 'ResourceFile_Funded_Staff_Distr
 # --- CHAI WFOM optimal workforce and immediately needed staff distribution
 
 # Preparing optimal workforce from CHAI auxiliary datasets
-opt_workforce = pd.read_excel(auxiliaryfile + 'MalawiOptimization_OUTPUT2022 SH 2019-10-19.xlsx',
+opt_workforce = pd.read_excel(path_to_auxiliaryfiles / 'MalawiOptimization_OUTPUT2022 SH 2019-10-19.xlsx',
                               sheet_name='Sums by facility type')
 # Drop redundant row
 opt_workforce.drop(0, inplace=True)
@@ -488,7 +488,7 @@ opt_workforce_distribution.fillna(0, inplace=True)
 # opt_workforce_distribution ready!
 
 # Preparing immediately needed estimates from CHAI auxiliary datasets
-immed_need = pd.read_excel(auxiliaryfile + 'MalawiOptimization_OUTPUT_ALLYEARS_Curr.xlsx',
+immed_need = pd.read_excel(path_to_auxiliaryfiles / 'MalawiOptimization_OUTPUT_ALLYEARS_Curr.xlsx',
                            sheet_name='CurrBase Output')
 
 # Select relevant data
