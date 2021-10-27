@@ -16,7 +16,8 @@ import matplotlib.pyplot as plt
 from matplotlib import pyplot # for figures
 
 # Set working directory
-os.chdir('C:/Users/sm2511/PycharmProjects/TLOmodel')
+#os.chdir('C:/Users/sm2511/PycharmProjects/TLOmodel')
+os.chdir('/Users/sakshimohan/Dropbox (Personal)/York/Research Projects/TLO Model/PycharmProjects/')
 
 # define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -40,10 +41,6 @@ def change_colnames(df, NameChangeList): # Change column names
     df.columns = ColNames2
     return df
 
-
-# In[557]:
-
-
 ## 1. DATA IMPORT AND CLEANING ##
 #########################################################################################
 
@@ -52,7 +49,19 @@ lmis_df = pd.read_csv(resourcefilepath / 'ResourceFile_LMIS_2018.csv', low_memor
 
 ## 1. BASIC CLEANING ##
 ## Rename columns
-NameChangeList = [('RYear','year'),                  ('RMonth','month'),                  ('Name (Geographic Zones)','district'),                  ('Name (Facility Operators)','fac_owner'),                  ('Name','fac_name'),                  ('fac_name (Programs)','program'),                  ('fac_name (Facility Types)','fac_type'),                  ('Fullproductname','item'),                  ('Closing Bal','closing_bal'),                  ('Dispensed','dispensed'),                  ('AMC','amc'),                  ('Received','received'),                  ('Stockout days','stkout_days'),                ]
+NameChangeList = [('RYear','year'),
+                  ('RMonth','month'),
+                  ('Name (Geographic Zones)','district'),
+                  ('Name (Facility Operators)','fac_owner'),
+                  ('Name','fac_name'),
+                  ('fac_name (Programs)','program'),
+                  ('fac_name (Facility Types)','fac_type'),
+                  ('Fullproductname','item'),
+                  ('Closing Bal','closing_bal'),
+                  ('Dispensed','dispensed'),
+                  ('AMC','amc'),
+                  ('Received','received'),
+                  ('Stockout days','stkout_days')]
 
 change_colnames(lmis_df, NameChangeList)
 
@@ -64,10 +73,18 @@ lmis_df = lmis_df[~cond_pvt1 & ~cond_pvt2]
 ## Clean facility types to match with types in the TLO model
 # See link: https://docs.google.com/spreadsheets/d/1fcp2-smCwbo0xQDh7bRUnMunCKguBzOIZjPFZKlHh5Y/edit#gid=0
 cond_level0 = (lmis_df['fac_name'].str.contains('Health Post'))
-cond_level1a = (lmis_df['fac_type'] == 'Clinic') | (lmis_df['fac_type'] == 'Health Centre') |                 (lmis_df['fac_name'].str.contains('Clinic')) | (lmis_df['fac_name'].str.contains('Health Centre')) |                 (lmis_df['fac_name'].str.contains('Maternity')) | (lmis_df['fac_name'] == 'Chilaweni') |                 (lmis_df['fac_name'] == 'Chimwawa')| (lmis_df['fac_name'].str.contains('Dispensary'))
-cond_level1b =  (lmis_df['fac_name'].str.contains('Community Hospital')) |                 (lmis_df['fac_type'] == 'Rural/Community Hospital') |                 (lmis_df['fac_name'] == 'St Peters Hospital') | (lmis_df['fac_name'] == 'Police College Hospital') |                 (lmis_df['fac_type'] == 'CHAM') | (lmis_df['fac_owner'] == 'CHAM')
+cond_level1a = (lmis_df['fac_type'] == 'Clinic') | (lmis_df['fac_type'] == 'Health Centre') |\
+               (lmis_df['fac_name'].str.contains('Clinic')) | (lmis_df['fac_name'].str.contains('Health Centre')) |\
+               (lmis_df['fac_name'].str.contains('Maternity')) | (lmis_df['fac_name'] == 'Chilaweni') |\
+               (lmis_df['fac_name'] == 'Chimwawa')| (lmis_df['fac_name'].str.contains('Dispensary'))
+cond_level1b = (lmis_df['fac_name'].str.contains('Community Hospital')) |\
+                (lmis_df['fac_type'] == 'Rural/Community Hospital') |\
+                (lmis_df['fac_name'] == 'St Peters Hospital') |\
+                (lmis_df['fac_name'] == 'Police College Hospital') |\
+                (lmis_df['fac_type'] == 'CHAM') | (lmis_df['fac_owner'] == 'CHAM')
 cond_level2 = (lmis_df['fac_type'] == 'District Health Office') | (lmis_df['fac_name'].str.contains('DHO'))
-cond_level3 = (lmis_df['fac_type'] == 'Central Hospital') |                (lmis_df['fac_name'].str.contains('Central Hospital'))
+cond_level3 = (lmis_df['fac_type'] == 'Central Hospital') |\
+              (lmis_df['fac_name'].str.contains('Central Hospital'))
 cond_level4 = (lmis_df['fac_name'] == 'Zomba Mental Hospital')
 lmis_df.loc[cond_level0,'fac_type_tlo'] = 'Facility_level_0'
 lmis_df.loc[cond_level1a,'fac_type_tlo'] = 'Facility_level_1a'
@@ -199,10 +216,6 @@ for m in range(1,13):
     count_stkout_entries = count_stkout_entries + lmis_df_wide_flat['stkout_days ' + months_dict[m]].count().sum()
 print(count_stkout_entries, "stockout entries after third interpolation")
 
-
-# In[560]:
-
-
 ## 4. CALCULATE STOCK OUT RATES BY MONTH and FACILITY ##
 #########################################################################################
 
@@ -221,10 +234,6 @@ for m in range(1,13):
 lmis = pd.wide_to_long(lmis, stubnames=['closing_bal', 'received', 'amc', 'dispensed', 'stkout_days', 'stkout_prop','data_source', 'consumable_reported_vert'], i=['district', 'fac_type_tlo', 'fac_name', 'program', 'item'], j='month',
                     sep=' ', suffix=r'\w+')
 lmis = lmis.reset_index()
-
-
-# In[561]:
-
 
 ## 5. LOAD CLEANED MATCHED CONSUMABLE LIST FROM TLO MODEL AND MERGE WITH LMIS DATA ##
 #########################################################################################
@@ -266,10 +275,10 @@ stkout_df = lmis_matched_df.groupby(['module_name','district', 'fac_type_tlo', '
 stkout_df['available_prop'] = 1 - stkout_df['stkout_prop']
 stkout_df = stkout_df.groupby(['module_name','district', 'fac_type_tlo', 'fac_name', 'month',  'item_code', 'consumable_name_tlo', 'match_level2'],
                               as_index=False).agg({'available_prop':'prod',
-                                                    'closing_bal': 'mean', #could be min
-                                                    'amc': 'mean', # could be max
-                                                    'dispensed': 'mean',  # could be max
-                                                    'received': 'mean',  # could be min
+                                                    'closing_bal': 'sum', #could be min
+                                                    'amc': 'sum', # could be max
+                                                    'dispensed': 'sum',  # could be max
+                                                    'received': 'sum',  # could be min
                                                     'data_source': 'first',
                                                     'consumable_reported_horiz': 'first',
                                                     'consumable_reported_vert': 'first'})
@@ -297,10 +306,6 @@ stkout_df = stkout_df.reset_index()
 stkout_df = stkout_df[['module_name', 'district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo',
              'stkout_prop', 'available_prop', 'closing_bal', 'amc', 'dispensed', 'received',
              'data_source', 'consumable_reported_horiz', 'consumable_reported_vert']]
-
-
-# In[562]:
-
 
 ## 6. ADD STOCKOUT DATA FROM OTHER SOURCES TO COMPLETE STOCKOUT DATAFRAME ##
 #########################################################################################
@@ -407,10 +412,6 @@ for var in ['district', 'fac_name', 'month']:
 
 ## --- 6.6 Export final stockout dataframe --- #
 stkout_df.to_csv(resourcefilepath / "ResourceFile_consumable_availability.csv")
-
-
-# In[564]:
-
 
 ## 8. CALIBRATION TO HHFA DATA, 2018/19 ##
 #########################################################################################
