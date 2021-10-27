@@ -182,15 +182,10 @@ class CardioMetabolicDisorders(Module):
                                                             'treatment'),
                   'nc_weight_loss_worked': Property(Types.BOOL,
                                                     'whether or not weight loss treatment worked'),
-                  'nc_risk_score': Property(Types.INT, 'score to represent number of risk conditions the person has'),
-                  'nc_n_conditions': Property(Types.INT,
-                                              'how many NCD conditions the person currently has'),
-                  'nc_condition_combos': Property(Types.BOOL,
-                                                  'whether or not the person currently has a combination of conds'
-                                                  )
+                  'nc_risk_score': Property(Types.INT, 'score to represent number of risk conditions the person has')
                   }
 
-    def __init__(self, name=None, resourcefilepath=None, do_log_df: bool = False):
+    def __init__(self, name=None, resourcefilepath=None, do_log_df: bool = False, do_condition_combos: bool = False):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
@@ -210,8 +205,9 @@ class CardioMetabolicDisorders(Module):
         # retrieve age range categories from Demography module
         self.age_index = None
 
-        # store bool for logging df
+        # store bools for logging df or logging condition combos
         self.do_log_df = do_log_df
+        self.do_condition_combos = do_condition_combos
 
     def read_parameters(self, data_folder):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
@@ -606,8 +602,6 @@ class CardioMetabolicDisorders(Module):
             df.loc[child_id, f'nc_{event}_scheduled_date_death'] = pd.NaT
             df.at[child_id, f'nc_{event}_medication_prevents_death'] = False
         df.at[child_id, 'nc_risk_score'] = 0
-        df.at[child_id, 'nc_n_conditions'] = 0
-        df.at[child_id, 'nc_condition_combos'] = False
 
     def update_risk_score(self):
         """
@@ -1010,50 +1004,50 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
             )
 
         # Counter for number of co-morbidities
-        mask = df.is_alive
-        df.loc[mask, 'nc_n_conditions'] = df.loc[mask, self.module.condition_list].sum(axis=1)
-        n_comorbidities_all = pd.DataFrame(index=self.module.age_index,
-                                           columns=list(range(0, len(self.module.condition_list) + 1)))
-        df = df[['age_range', 'nc_n_conditions']]
+        if self.module.do_condition_combos:
+            df.loc[df.is_alive, 'nc_n_conditions'] = df.loc[df.is_alive, self.module.condition_list].sum(axis=1)
+            n_comorbidities_all = pd.DataFrame(index=self.module.age_index,
+                                               columns=list(range(0, len(self.module.condition_list) + 1)))
+            df = df[['age_range', 'nc_n_conditions']]
 
-        for num in range(0, len(self.module.condition_list) + 1):
-            col = df.loc[df['nc_n_conditions'] == num].groupby(['age_range']).apply(lambda x: pd.Series(
-                {'count': x['nc_n_conditions'].count()}))
-            n_comorbidities_all.loc[:, num] = col['count']
+            for num in range(0, len(self.module.condition_list) + 1):
+                col = df.loc[df['nc_n_conditions'] == num].groupby(['age_range']).apply(lambda x: pd.Series(
+                    {'count': x['nc_n_conditions'].count()}))
+                n_comorbidities_all.loc[:, num] = col['count']
 
-        prop_comorbidities_all = n_comorbidities_all.div(n_comorbidities_all.sum(axis=1), axis=0)
+            prop_comorbidities_all = n_comorbidities_all.div(n_comorbidities_all.sum(axis=1), axis=0)
 
-        logger.info(key='mm_prevalence_by_age_all',
-                    description='annual summary of multi-morbidities by age for all',
-                    data=prop_comorbidities_all.to_dict()
-                    )
+            logger.info(key='mm_prevalence_by_age_all',
+                        description='annual summary of multi-morbidities by age for all',
+                        data=prop_comorbidities_all.to_dict()
+                        )
 
-        # output combinations of different conditions
-        df = population.props
+            # output combinations of different conditions
+            df = population.props
 
-        combos = combinations(self.module.condition_list, 2)
-        condition_combos = list(combos)
+            combos = combinations(self.module.condition_list, 2)
+            condition_combos = list(combos)
 
-        n_combos = pd.DataFrame(index=df['age_range'].value_counts().sort_index().index)
+            n_combos = pd.DataFrame(index=df['age_range'].value_counts().sort_index().index)
 
-        for i in range(0, len(condition_combos)):
-            df.loc[df.is_alive, 'nc_condition_combos'] = np.where(
-                df.loc[df.is_alive, f'{condition_combos[i][0]}'] &
-                df.loc[df.is_alive, f'{condition_combos[i][1]}'],
-                True, False)
-            col = df.loc[df.is_alive].groupby(['age_range'])['nc_condition_combos'].count()
-            n_combos.reset_index()
-            n_combos.loc[:, (f'{condition_combos[i][0]}' + '_' + f'{condition_combos[i][1]}')] = col.values
+            for i in range(0, len(condition_combos)):
+                df.loc[df.is_alive, 'nc_condition_combos'] = np.where(
+                    df.loc[df.is_alive, f'{condition_combos[i][0]}'] &
+                    df.loc[df.is_alive, f'{condition_combos[i][1]}'],
+                    True, False)
+                col = df.loc[df.is_alive].groupby(['age_range'])['nc_condition_combos'].count()
+                n_combos.reset_index()
+                n_combos.loc[:, (f'{condition_combos[i][0]}' + '_' + f'{condition_combos[i][1]}')] = col.values
 
-        # output proportions of different combinations of conditions
+            # output proportions of different combinations of conditions
 
-        prop_combos = n_combos.div(df.groupby(['age_range'])['age_range'].count(), axis=0)
-        prop_combos.index = prop_combos.index.astype(str)
+            prop_combos = n_combos.div(df.groupby(['age_range'])['age_range'].count(), axis=0)
+            prop_combos.index = prop_combos.index.astype(str)
 
-        logger.info(key='prop_combos',
-                    description='proportion of combinations of morbidities',
-                    data=prop_combos.to_dict()
-                    )
+            logger.info(key='prop_combos',
+                        description='proportion of combinations of morbidities',
+                        data=prop_combos.to_dict()
+                        )
 
         # output entire dataframe for logistic regression
         if self.module.do_log_df:
