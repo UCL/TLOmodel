@@ -502,8 +502,6 @@ def test_if_medication_prevents_all_death():
         assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{event}').any()
 
 
-
-
 def test_hsi_investigation_not_following_symptoms():
     """Create a person and check if the functions in HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms
     create the correct HSI"""
@@ -809,4 +807,3 @@ def test_no_availability_of_consumables_for_events():
 
         assert not df.at[person_id, 'is_alive']
         assert df.at[person_id, 'cause_of_death'] == f'{event}'
-
