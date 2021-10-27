@@ -15,8 +15,6 @@ from tlo.methods import (
     demography,
     depression,
     diarrhoea,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     epi,
     epilepsy,
@@ -72,8 +70,6 @@ def run_sim(service_availability):
         contraception.Contraception(resourcefilepath=rfp),
         labour.Labour(resourcefilepath=rfp),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=rfp),
-        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=rfp),
-        dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=rfp),
         #
         # Disease modules considered complete:
         diarrhoea.Diarrhoea(resourcefilepath=rfp),
