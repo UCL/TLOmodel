@@ -645,7 +645,7 @@ def test_hsi_weight_loss_and_medication():
             # Check that the individual has a CardioMetabolicDisordersWeightLossEvent scheduled
             events_for_this_person = sim.find_events_for_person(person_id)
             assert 1 == len(events_for_this_person)
-            next_event_date, next_event_obj = events_for_this_person
+            next_event_date, next_event_obj = events_for_this_person[person_id]
             assert isinstance(next_event_obj, cardio_metabolic_disorders.CardioMetabolicDisordersWeightLossEvent)
             assert next_event_date >= sim.date
 
@@ -785,7 +785,7 @@ def test_no_availability_of_consumables_for_events():
 
         events_for_this_person = sim.find_events_for_person(person_id)
         assert 1 == len(events_for_this_person)
-        next_event_date, next_event_obj = events_for_this_person
+        next_event_date, next_event_obj = events_for_this_person[person_id]
         assert isinstance(next_event_obj, cardio_metabolic_disorders.CardioMetabolicDisordersDeathEvent)
         assert next_event_date >= sim.date
 
