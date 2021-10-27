@@ -9,17 +9,28 @@ It allocates health care workers ('officers') to one of the seven Facility Level
 
 """
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
 
 resourcefilepath = Path('resources')
 
-path_original_files_on_dropbox = Path('/Users/tbh03/Dropbox (SPH Imperial College)')  # <-- point to the TLO dropbox locally
+path_original_files_on_dropbox = Path(
+    '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi La Onse Theme 1 SHARE')  # <-- point to the TLO dropbox locally
 
-# LOCATION OF INPUT FILE:
-workingfile = path_original_files_on_dropbox / '05 - Resources' / 'Module-healthsystem' / 'chai ehp resource use data' / 'ORIGINAL_Optimization model import_Malawi_20180315 v10.xlsx'
-path_to_auxiliaryfiles = path_original_files_on_dropbox / '05 - Resources' / 'Module-healthsystem' / 'chai ehp resource use data' / 'Auxiliary CHAI Data from CHAI HR Team 12 Sep 2021'
+# LOCATION OF INPUT FILES:
+workingfile = (path_original_files_on_dropbox /
+               '05 - Resources' /
+               'Module-healthsystem' /
+               'chai ehp resource use data' /
+               'ORIGINAL' /
+               'Optimization model import_Malawi_20180315 v10.xlsx')
+path_to_auxiliaryfiles = (path_original_files_on_dropbox /
+                          '05 - Resources' /
+                          'Module-healthsystem' /
+                          'chai ehp resource use data' /
+                          'Auxiliary CHAI Data from CHAI HR Team 12 Sep 2021')
 
 # OUTPUT RESOURCE_FILES TO:
 outputlocation = resourcefilepath / 'healthsystem'
@@ -68,7 +79,7 @@ officer_types_table.loc[16, 'Officer_Category'] = 'Nutrition'
 officer_types_table.loc[17:20, 'Officer_Category'] = 'Radiography'
 
 # Save
-officer_types_table.to_csv(resourcefilepath + 'ResourceFile_Officer_Types_Table.csv')
+officer_types_table.to_csv(outputlocation / 'ResourceFile_Officer_Types_Table.csv')
 
 # --- Generate assumptions of current staff distribution at facility levels 0&1a&1b&2
 # Read compiled staff return data from CHAI auxiliary datasets

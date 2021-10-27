@@ -972,7 +972,7 @@ class HealthSystem(Module):
             else:
                 load_factor[officer] = max(call / availability - 1, 0)
 
-        # 5) Convert these load-factors into an overall 'squeeze' signal for each HSI,
+        # 2) Convert these load-factors into an overall 'squeeze' signal for each HSI,
         # based on the highest load-factor of any officer required (or zero if event
         # has an empty footprint)
         squeeze_factor_per_hsi_event = np.array([
