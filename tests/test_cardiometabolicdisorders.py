@@ -135,15 +135,12 @@ def test_basic_run_with_high_incidence_hypertension():
 
     p['hypertension_onset']["baseline_annual_probability"] = 10000
     p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = 10
-    p['diabetes_onset'] = p['diabetes_onset'].mask(p['diabetes_onset'] > 0, 0)
-    p['chronic_lower_back_pain_onset'] = p['chronic_lower_back_pain_onset'].mask(p['chronic_lower_back_pain_onset'] > 0,
-                                                                                 0)
-    p['chronic_kidney_disease_onset'] = p['chronic_kidney_disease_onset'].mask(p['chronic_kidney_disease_onset'] > 0, 0)
-    p['diabetes_initial_prev'] = p['diabetes_initial_prev'].mask(p['diabetes_initial_prev'] > 0, 0)
-    p['chronic_lower_back_pain_initial_prev'] = p['chronic_lower_back_pain_initial_prev']. \
-        mask(p['chronic_lower_back_pain_initial_prev'] > 0, 0)
-    p['chronic_kidney_disease_initial_prev'] = p['chronic_kidney_disease_initial_prev']. \
-        mask(p['chronic_kidney_disease_initial_prev'] > 0, 0)
+    p['diabetes_onset'] *= 0.0
+    p['chronic_lower_back_pain_onset'] *= 0.0
+    p['chronic_kidney_disease_onset'] *= 0.0
+    p['diabetes_initial_prev'] *= 0.0
+    p['chronic_lower_back_pain_initial_prev'] *= 0.0
+    p['chronic_kidney_disease_initial_prev'] *= 0.0
 
     # Increase RR of heart disease very high if individual has hypertension
     p['chronic_ischemic_hd_onset']["rr_hypertension"] = 1000
