@@ -755,9 +755,11 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             # Add incident cases to the tracker
             current_incidence_df[condition] = df.loc[idx_acquires_condition].groupby('age_range').size()
 
-            # Schedule symptom onset for both those with new onset of condition and those who already have condition
+            # Schedule symptom onset for both those with new onset of condition and those who already have condition,
+            # among those who do not have the symptom already
             if len(self.module.lms_symptoms[condition]) > 0:
-                symptom_eligible_population = df.is_alive & df[f'nc_{condition}']
+                symptom_eligible_population = df.is_alive & df[f'nc_{condition}'] & ~df.index.isin(
+                    self.sim.modules['SymptomManager'].who_has(f'{condition}_symptoms'))
                 symptom_onset = self.module.lms_symptoms[condition][f'{condition}_symptoms'].predict(
                     df.loc[symptom_eligible_population], rng, squeeze_single_row_output=False
                 )
