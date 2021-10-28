@@ -1228,13 +1228,8 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         assert person[f'nc_{self.condition}_ever_diagnosed'], "The person is not diagnosed and so should not be " \
                                                               "receiving an HSI."
         # Check availability of medication for condition
-        item_code = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
-        result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
-        )['Item_Code'][item_code]
-
-        if result_of_cons_request:
+        if self.get_all_consumables(
+            item_codes=self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')):
             # If medication is available, flag as being on medication
             df.at[person_id, f'nc_{self.condition}_on_medication'] = True
             # Determine if the medication will work to prevent death
@@ -1283,12 +1278,8 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
         # Check availability of medication for condition
-        item_code = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
-        result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
-        )['Item_Code'][item_code]
-        if result_of_cons_request:
+        if self.get_all_consumables(
+            item_codes=self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')):
             # Schedule their next HSI for a refill of medication, one month from now
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=self,
@@ -1346,12 +1337,8 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             df.at[person_id, f'nc_{self.event}_ever_diagnosed'] = True
             if squeeze_factor < 0.5:
                 # If squeeze factor is not too large:
-                item_code = self.module.parameters[f'{self.event}_hsi'].get('emergency_medication_item_code')
-                result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
-                    hsi_event=self,
-                    cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
-                )['Item_Code'][item_code]
-                if result_of_cons_request:
+                if self.get_all_consumables(
+                        item_codes=self.module.parameters[f'{self.event}_hsi'].get('medication_item_code')):
                     logger.debug(key='debug', data='Treatment will be provided.')
                     df.at[person_id, f'nc_{self.event}_on_medication'] = True
                     # TODO: @britta change to data
