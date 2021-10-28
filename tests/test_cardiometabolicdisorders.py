@@ -371,7 +371,7 @@ def test_if_no_health_system_and_zero_death():
         assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{condition}').any()
 
 
-def test_if_no_health_system_and_hundred_death():
+def test_if_no_health_system_and_high_risk_of_death():
     """"
     Make the health-system unavailable to run any HSI event and set death rate to 100% to check that everyone dies
     """
@@ -694,7 +694,7 @@ def test_hsi_weight_loss_and_medication():
             # Check that the individual has a CardioMetabolicDisordersWeightLossEvent scheduled
             events_for_this_person = sim.find_events_for_person(person_id)
             assert 1 == len(events_for_this_person)
-            next_event_date, next_event_obj = events_for_this_person[person_id]
+            next_event_date, next_event_obj = events_for_this_person[0]
             assert isinstance(next_event_obj, cardio_metabolic_disorders.CardioMetabolicDisordersWeightLossEvent)
             assert next_event_date >= sim.date
 
@@ -834,7 +834,7 @@ def test_no_availability_of_consumables_for_events():
 
         events_for_this_person = sim.find_events_for_person(person_id)
         assert 1 == len(events_for_this_person)
-        next_event_date, next_event_obj = events_for_this_person[person_id]
+        next_event_date, next_event_obj = events_for_this_person[0]
         assert isinstance(next_event_obj, cardio_metabolic_disorders.CardioMetabolicDisordersDeathEvent)
         assert next_event_date >= sim.date
 
