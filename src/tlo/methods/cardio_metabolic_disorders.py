@@ -350,8 +350,8 @@ class CardioMetabolicDisorders(Module):
                         conditions_are_mutually_exclusive=True,
                         conditions_are_exhaustive=True
                     )
-                        .when(True, 1.0)
-                        .when(False, 0.0))
+                    .when(True, 1.0)
+                    .when(False, 0.0))
                 has_symptom_at_init = lm_init_symptoms.predict(df.loc[df.is_alive], self.rng)
                 self.sim.modules['SymptomManager'].change_symptom(
                     person_id=has_symptom_at_init.index[has_symptom_at_init].tolist(),
