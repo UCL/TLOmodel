@@ -371,7 +371,7 @@ def test_if_no_health_system_and_zero_death():
         assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{condition}').any()
 
 
-def test_if_no_health_system_and_hundred_death():
+def test_if_no_health_system_and_high_risk_of_death():
     """"
     Make the health-system unavailable to run any HSI event and set death rate to 100% to check that everyone dies
     """
