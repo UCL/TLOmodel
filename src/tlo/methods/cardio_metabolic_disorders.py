@@ -881,8 +881,9 @@ class CardioMetabolicDisordersDeathEvent(Event, IndividualScopeEventMixin):
 
     def check_if_event_and_do_death(self, person_id):
         """
-        Helper function to perform do_death if condition is a condition and for an event only if the scheduled
-        date of death matches the current date.
+        Helper function to perform do_death if person dies of a condition or event. If person dies of an event, this
+        will only perform do_death if the scheduled date of death matches the current date (to allow for the possibility
+        that treatment will intercede in an prevent death from the event).
         """
         df = self.sim.population.props
         person = df.loc[person_id]
@@ -895,7 +896,7 @@ class CardioMetabolicDisordersDeathEvent(Event, IndividualScopeEventMixin):
                                                         cause=f'{self.condition_or_event}',
                                                         originating_module=self.module)
         else:
-            # Condition is a condition (not an event) with no scheduled date of death, so proceed with death
+            # Conditions have no scheduled date of death, so proceed with death
             self.sim.modules['Demography'].do_death(individual_id=person_id,
                                                     cause=f'{self.condition_or_event}',
                                                     originating_module=self.module)
