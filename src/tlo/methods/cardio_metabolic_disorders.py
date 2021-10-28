@@ -1,7 +1,16 @@
 """
-The joint Cardio-Metabolic Disorders model by Tim Hallett and Britta Jewell, October 2020
+The joint Cardio-Metabolic Disorders model determines onset, outcome and treatment of:
+* Diabetes
+* Hypertension
+* Chronic Kidney Disease
+* Chronic Ischemic Heart Disease
+* Stroke
+* Heart Attack
 
+And:
+* Chronic Lower Back Pain
 """
+
 import math
 from itertools import combinations
 from pathlib import Path
@@ -1338,12 +1347,9 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             df.at[person_id, f'nc_{self.event}_ever_diagnosed'] = True
             if squeeze_factor < 0.5:
                 # If squeeze factor is not too large:
-                item_code = self.module.parameters[f'{self.event}_hsi'].get('emergency_medication_item_code')
-                result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
-                    hsi_event=self,
-                    cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
-                )['Item_Code'][item_code]
-                if result_of_cons_request:
+                if self.get_all_consumables(
+                    item_codes=self.module.parameters[f'{self.event}_hsi'].get('emergency_medication_item_code')
+                ):
                     logger.debug(key='debug', data='Treatment will be provided.')
                     df.at[person_id, f'nc_{self.event}_on_medication'] = True
                     # TODO: @britta change to data
