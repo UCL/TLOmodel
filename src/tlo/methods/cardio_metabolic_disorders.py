@@ -138,11 +138,11 @@ class CardioMetabolicDisorders(Module):
         in conditions
     }
     condition_date_diagnosis_list = {
-        f"nc_{p}_date_diagnosis": Property(Types.DATE, f"When someone has  been diagnosed with {p}") for p
+        f"nc_{p}_date_diagnosis": Property(Types.DATE, f"When someone has been diagnosed with {p}") for p
         in conditions
     }
     condition_date_of_last_test_list = {
-        f"nc_{p}_date_last_test": Property(Types.DATE, f"When someone has  last been tested for {p}") for p
+        f"nc_{p}_date_last_test": Property(Types.DATE, f"When someone has last been tested for {p}") for p
         in conditions
     }
     condition_medication_list = {
@@ -150,8 +150,8 @@ class CardioMetabolicDisorders(Module):
         in conditions
     }
     condition_medication_death_list = {
-        f"nc_{p}_medication_prevents_death": Property(Types.BOOL, f"Whether or not medication will prevent death from "
-                                                                  f"{p}") for p in conditions
+        f"nc_{p}_medication_prevents_death": Property(Types.BOOL, f"Whether or not medication (if provided) will "
+                                                                  f"prevent death from {p}") for p in conditions
     }
     event_list = {
         f"nc_{p}": Property(Types.DATE, f"Date of when someone has had a {p}") for p in events}
@@ -205,7 +205,7 @@ class CardioMetabolicDisorders(Module):
         self.prob_symptoms = dict()
 
         # retrieve age range categories from Demography module
-        self.age_index = None
+        self.age_cats = None
 
         # store bools for whether or not to log the df or log combinations of co-morbidities
         self.do_log_df = do_log_df
@@ -302,7 +302,7 @@ class CardioMetabolicDisorders(Module):
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
-        self.age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
+        self.age_cats = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
         df = population.props
 
         men = df.is_alive & (df.sex == 'M')
@@ -320,7 +320,7 @@ class CardioMetabolicDisorders(Module):
             # men & women without condition
             men_wo_cond = men & ~df[f'nc_{condition}']
             women_wo_cond = women & ~df[f'nc_{condition}']
-            for _age_range in self.age_index:
+            for _age_range in self.age_cats:
                 # Select all eligible individuals (men & women w/o condition and in age range)
                 sample_eligible(men_wo_cond & (df.age_range == _age_range), p[f'm_{_age_range}'], condition)
                 sample_eligible(women_wo_cond & (df.age_range == _age_range), p[f'f_{_age_range}'], condition)
@@ -375,7 +375,7 @@ class CardioMetabolicDisorders(Module):
         sim.schedule_event(CardioMetabolicDisorders_LoggingEvent(self), sim.date)
 
         # Dict to hold counters for the number of episodes by condition-type and age-group
-        self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_index, columns=self.conditions)
+        self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_cats, columns=self.conditions)
         self.df_incidence_tracker = self.df_incidence_tracker_zeros.copy()
 
         # Create tracker for the number of different types of events
@@ -583,9 +583,9 @@ class CardioMetabolicDisorders(Module):
         # Load parameters for correct condition/event
         p = self.prob_symptoms[condition]
         for symptom in p.keys():
-            symptom_3mo = 1 - math.exp(-interval_between_polls / 12 * p.get(f'{symptom}'))
+            p_symptom_onset = 1 - math.exp(-interval_between_polls / 12 * p.get(f'{symptom}'))
             lms_symptoms_dict[condition][f'{symptom}'] = LinearModel(LinearModelType.MULTIPLICATIVE,
-                                                                     symptom_3mo, Predictor(f'nc_{condition}')
+                                                                     p_symptom_onset, Predictor(f'nc_{condition}')
                                                                      .when(True, 1.0).otherwise(0.0))
         return lms_symptoms_dict[condition]
 
@@ -658,7 +658,7 @@ class CardioMetabolicDisorders(Module):
 
         for condition in self.conditions:
             # If the person hasn't been diagnosed and they don't have symptoms of the condition...
-            if (~df.at[person_id, f'nc_{condition}_ever_diagnosed']) and (f'{condition}_symptoms' not in symptoms):
+            if (not df.at[person_id, f'nc_{condition}_ever_diagnosed']) and (f'{condition}_symptoms' not in symptoms):
                 # If the person hasn't ever been tested for the condition or not tested within last 6 months,
                 # test them if age >= 50 or with a given probability in the params for each condition
                 if is_next_test_due(
@@ -740,7 +740,7 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                 random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1), m.rng)
             )
 
-        current_incidence_df = pd.DataFrame(index=self.module.age_index, columns=self.module.conditions)
+        current_incidence_df = pd.DataFrame(index=self.module.age_cats, columns=self.module.conditions)
 
         # Determine onset/removal of conditions
         for condition in self.module.conditions:
@@ -1016,7 +1016,7 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
         # of different conditions in the population
         if self.module.do_condition_combos:
             df.loc[df.is_alive, 'nc_n_conditions'] = df.loc[df.is_alive, self.module.condition_list].sum(axis=1)
-            n_comorbidities_all = pd.DataFrame(index=self.module.age_index,
+            n_comorbidities_all = pd.DataFrame(index=self.module.age_cats,
                                                columns=list(range(0, len(self.module.condition_list) + 1)))
             df = df[['age_range', 'nc_n_conditions']]
 
