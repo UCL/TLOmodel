@@ -1227,13 +1227,9 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         assert person[f'nc_{self.condition}_ever_diagnosed'], "The person is not diagnosed and so should not be " \
                                                               "receiving an HSI."
         # Check availability of medication for condition
-        item_code = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
-        result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
-        )['Item_Code'][item_code]
-
-        if result_of_cons_request:
+        if self.get_all_consumables(
+            item_codes=self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
+        ):
             # If medication is available, flag as being on medication
             df.at[person_id, f'nc_{self.condition}_on_medication'] = True
             # Determine if the medication will work to prevent death
