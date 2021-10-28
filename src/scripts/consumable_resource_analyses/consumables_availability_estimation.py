@@ -1,6 +1,15 @@
 
 """
-This will generate estimates of availability of consumables used by disease modules
+This script generates estimates of availability of consumables used by disease modules.
+
+It create one row for each consumable for availability at a specific facility and month when the data is extracted from
+the OpenLMIS dataset and one row for each consumable for availability aggregated across all facilities when the data is
+extracted from the Harmonised Health Facility Assessment 2018/19.
+
+Consumable availability is measured as probability of stockout at any point in time.
+
+Data from OpenLMIS includes closing balance, quantity received, quantity dispensed, and average monthly consumption
+for each month by facility.
 """
 # Import Statements and initial declarations
 import os #
@@ -15,9 +24,9 @@ import copy
 import matplotlib.pyplot as plt
 from matplotlib import pyplot # for figures
 
-# Set working directory
-#os.chdir('C:/Users/sm2511/PycharmProjects/TLOmodel')
-os.chdir('/Users/sakshimohan/Dropbox (Personal)/York/Research Projects/TLO Model/PycharmProjects/')
+# Set local Dropbox source
+dropboxpath = Path("/Users/sakshimohan/Dropbox (Personal)/Thanzi la Onse/05 - Resources/\
+Module-healthsystem/consumables raw files/")
 
 # define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -45,7 +54,7 @@ def change_colnames(df, NameChangeList): # Change column names
 #########################################################################################
 
 ## Import 2018 data
-lmis_df = pd.read_csv(resourcefilepath / 'ResourceFile_LMIS_2018.csv', low_memory = False)
+lmis_df = pd.read_csv(dropboxpath / 'ResourceFile_LMIS_2018.csv', low_memory = False)
 
 ## 1. BASIC CLEANING ##
 ## Rename columns
@@ -186,7 +195,8 @@ for m in range(1,13):
 count_stkout_entries = lmis_df_wide_flat['stkout_days'].count(axis = 1).sum()
 print(count_stkout_entries, "stockout entries after second interpolation")
 
-lmis_df_wide_flat['consumable_reported_horiz'] = lmis_df_wide_flat['closing_bal'].count(axis = 1) # generate a column which reports the number of entries of closing balance
+lmis_df_wide_flat['consumable_reporting_freq'] = lmis_df_wide_flat['closing_bal'].count(axis = 1) # generate a column
+# which reports the number of entries of closing balance for a specific consumable by a facility during the year
 
 # Flatten multilevel columns
 lmis_df_wide_flat.columns = [' '.join(col).strip() for col in lmis_df_wide_flat.columns.values]
@@ -195,12 +205,13 @@ lmis_df_wide_flat.columns = [' '.join(col).strip() for col in lmis_df_wide_flat.
 # RULE: If the balance on a consumable is ever reported and if any consumables are reported during the month, stkout_days = number of days of the month
 for m in range(1,13):
     month = 'closing_bal ' + months_dict[m]
-    var_name = 'consumable_reported_vert ' + months_dict[m]
-    lmis_df_wide_flat[var_name] = lmis_df_wide_flat.groupby("fac_name")[month].transform('count')
+    var_name = 'consumables_reported_in_mth ' + months_dict[m]
+    lmis_df_wide_flat[var_name] = lmis_df_wide_flat.groupby("fac_name")[month].transform('count') # generate a column
+# which reports the number of consumables for which closing balance was recorded by a facility in a given month
 
 for m in range(1,13):
-    cond1 = lmis_df_wide_flat['consumable_reported_horiz'] > 0
-    cond2 = lmis_df_wide_flat['consumable_reported_vert ' + months_dict[m]] > 0
+    cond1 = lmis_df_wide_flat['consumable_reporting_freq'] > 0
+    cond2 = lmis_df_wide_flat['consumables_reported_in_mth ' + months_dict[m]] > 0
     cond3 = lmis_df_wide_flat['stkout_days ' + months_dict[m]].notna()
     lmis_df_wide_flat.loc[cond1 & cond2 & ~cond3,[('data_source ' + months_dict[m])]] = 'lmis_interpolation_rule3'
 
@@ -231,7 +242,7 @@ for m in range(1,13):
         lmis['stkout_prop ' + months_dict[m]] = lmis['stkout_days ' + months_dict[m]]/28
 
 # Reshape data
-lmis = pd.wide_to_long(lmis, stubnames=['closing_bal', 'received', 'amc', 'dispensed', 'stkout_days', 'stkout_prop','data_source', 'consumable_reported_vert'], i=['district', 'fac_type_tlo', 'fac_name', 'program', 'item'], j='month',
+lmis = pd.wide_to_long(lmis, stubnames=['closing_bal', 'received', 'amc', 'dispensed', 'stkout_days', 'stkout_prop','data_source', 'consumables_reported_in_mth'], i=['district', 'fac_type_tlo', 'fac_name', 'program', 'item'], j='month',
                     sep=' ', suffix=r'\w+')
 lmis = lmis.reset_index()
 
@@ -267,8 +278,8 @@ stkout_df = lmis_matched_df.groupby(['module_name','district', 'fac_type_tlo', '
                                                         'dispensed': 'sum',
                                                         'received': 'sum',
                                                         'data_source': 'first',
-                                                        'consumable_reported_horiz': 'first',
-                                                        'consumable_reported_vert': 'first'})
+                                                        'consumable_reporting_freq': 'first',
+                                                        'consumables_reported_in_mth': 'first'})
 
 # 2.ii. For complementary drugs, collapse by taking the product of (1-stkout_prob)
 # This represents Pr(All drugs within item code (in different match_group's) are available)
@@ -280,8 +291,8 @@ stkout_df = stkout_df.groupby(['module_name','district', 'fac_type_tlo', 'fac_na
                                                     'dispensed': 'sum',  # could be max
                                                     'received': 'sum',  # could be min
                                                     'data_source': 'first',
-                                                    'consumable_reported_horiz': 'first',
-                                                    'consumable_reported_vert': 'first'})
+                                                    'consumable_reporting_freq': 'first',
+                                                    'consumables_reported_in_mth': 'first'})
 
 # 2.iii. For substitable drugs (within consumable_name_tlo), collapse by taking the product of stkout_prop (OR condition)
 # This represents Pr(all substitutes with the item code are stocked out)
@@ -293,8 +304,8 @@ stkout_df = stkout_df.groupby(['module_name','district', 'fac_type_tlo', 'fac_na
                                                     'dispensed': 'sum',
                                                     'received': 'sum',
                                                     'data_source': 'first',
-                                                    'consumable_reported_horiz': 'first',
-                                                    'consumable_reported_vert': 'first'})
+                                                    'consumable_reporting_freq': 'first',
+                                                    'consumables_reported_in_mth': 'first'})
 stkout_df['available_prop'] = 1 - stkout_df['stkout_prop']
 
 # Some missing values change to 100% stockouts during the aggregation above. Fix this manually
@@ -305,7 +316,7 @@ for var in ['stkout_prop', 'available_prop', 'closing_bal', 'amc', 'dispensed', 
 stkout_df = stkout_df.reset_index()
 stkout_df = stkout_df[['module_name', 'district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo',
              'stkout_prop', 'available_prop', 'closing_bal', 'amc', 'dispensed', 'received',
-             'data_source', 'consumable_reported_horiz', 'consumable_reported_vert']]
+             'data_source', 'consumable_reporting_freq', 'consumables_reported_in_mth']]
 
 ## 6. ADD STOCKOUT DATA FROM OTHER SOURCES TO COMPLETE STOCKOUT DATAFRAME ##
 #########################################################################################
@@ -317,7 +328,7 @@ unmatched_consumables = pd.merge(unmatched_consumables, matched_consumables[['it
 unmatched_consumables = unmatched_consumables[unmatched_consumables['item_y'].isna()]
 
 # ** Extract stock availability data from HHFA and clean data **
-hhfa_df = pd.read_excel(open(resourcefilepath/'ResourceFile_hhfa_consumables.xlsx', 'rb'), sheet_name='hhfa_data')
+hhfa_df = pd.read_excel(open(dropboxpath/'ResourceFile_hhfa_consumables.xlsx', 'rb'), sheet_name='hhfa_data')
 
 # Use the ratio of availability rates between levels 1b on one hand and levels 2 and 3 on the other to extrapolate
 # availability rates for levels 2 and 3 from the HHFA data
@@ -356,7 +367,8 @@ unmatched_consumables_df = unmatched_consumables_df.reset_index()
 n = len(unmatched_consumables_df)
 
 # Final cleaning
-NameChangeList = [('consumable_name_tlo_x','consumable_name_tlo'),                  ('available_prop_hhfa', 'available_prop'),                ]
+NameChangeList = [('consumable_name_tlo_x','consumable_name_tlo'),
+                  ('available_prop_hhfa', 'available_prop')]
 change_colnames(unmatched_consumables_df, NameChangeList)
 
 ## --- 6.2 Append OpenLMIS stockout dataframe with HHFA stockout dataframe and Extract in .csv format --- #
@@ -369,7 +381,8 @@ stkout_df = stkout_df.append(unmatched_consumables_df)
 ## --- 6.3 Append stockout rate for facility level 0 from HHFA --- #
 cond = hhfa_df['item_code'].notna()
 hhfa_fac0 = hhfa_df[cond][['item_code', 'consumable_name_tlo', 'fac_count_Facility_level_0', 'available_prop_hhfa_Facility_level_0']]
-NameChangeList = [('fac_count_Facility_level_0','fac_count'),                  ('available_prop_hhfa_Facility_level_0', 'available_prop'),                ]
+NameChangeList = [('fac_count_Facility_level_0','fac_count'),
+                  ('available_prop_hhfa_Facility_level_0', 'available_prop')]
 change_colnames(hhfa_fac0, NameChangeList)
 hhfa_fac0['fac_type_tlo'] = 'Facility_level_0'
 hhfa_fac0['stkout_prop'] = 1 - hhfa_fac0['available_prop']
@@ -383,7 +396,8 @@ stkout_df = stkout_df[~cond]
 stkout_df = stkout_df.append(hhfa_fac0)
 
 ## --- 6.4 Generate new category variable for analysis --- #
-cond_RH = (stkout_df['module_name'].str.contains('care_of_women_during_pregnancy')) |          (stkout_df['module_name'].str.contains('labour'))
+cond_RH = (stkout_df['module_name'].str.contains('care_of_women_during_pregnancy')) |\
+          (stkout_df['module_name'].str.contains('labour'))
 cond_newborn = (stkout_df['module_name'].str.contains('newborn'))
 cond_ari = stkout_df['module_name'] == 'acute lower respiratory infections'
 cond_rti = stkout_df['module_name'] == 'Road traffic injuries'
@@ -432,7 +446,7 @@ lmis_calibration_df = stkout_df[~cond1].groupby(['module_name','fac_type_tlo', '
 calibration_df = pd.merge(lmis_calibration_df, hhfa_calibration_df, how='inner', on=['item_code', 'fac_type_tlo'])
 calibration_df['difference'] = (calibration_df['available_prop_hhfa'] - calibration_df['available_prop'])
 
-## --- 8.2 Compare OpenLMIS estimates with HHFA estimates --- ##
+## --- 8.2 Compare OpenLMIS estimates with HHFA estimates (CALIBRATION) --- ##
 # Summary results by level of care
 calibration_df.groupby(['fac_type_tlo'])[['available_prop','available_prop_hhfa','difference']].mean()
 
@@ -446,26 +460,26 @@ ax = calibration_df[cond].plot.line(x='labels', y=['available_prop','available_p
 ax.set_xticks(np.arange(len(calibration_df[cond]['labels'])))
 ax.set_xticklabels(calibration_df[cond]['labels'], rotation = 90, fontsize=7)
 plt.title('Level 1a', fontsize=size,weight="bold")
-#plt.savefig(outputfilepath / 'calibration_level1a.png')
+#plt.savefig(outputfilepath / 'consumableavailability_calibration_level1a.png')
 
 cond = calibration_df['fac_type_tlo'] == 'Facility_level_1b'
 ax = calibration_df[cond].plot.line(x='labels', y=['available_prop','available_prop_hhfa'])
 ax.set_xticks(np.arange(len(calibration_df[cond]['labels'])))
 ax.set_xticklabels(calibration_df[cond]['labels'], rotation = 90, fontsize=7)
 plt.title('Level 1b', fontsize=size,weight="bold")
-#plt.savefig(outputfilepath / 'calibration_level1b.png')
+#plt.savefig(outputfilepath / 'consumableavailability_calibration_level1b.png')
 
 cond = calibration_df['fac_type_tlo'] == 'Facility_level_2'
 ax = calibration_df[cond].plot.line(x='labels', y=['available_prop','available_prop_hhfa'])
 ax.set_xticks(np.arange(len(calibration_df[cond]['labels'])))
 ax.set_xticklabels(calibration_df[cond]['labels'], rotation = 90, fontsize=7)
 plt.title('Level 2', fontsize=size,weight="bold")
-#plt.savefig(outputfilepath / 'calibration_level2.png')
+#plt.savefig(outputfilepath / 'consumableavailability_calibration_level2.png')
 
 cond = calibration_df['fac_type_tlo'] == 'Facility_level_3'
 ax = calibration_df[cond].plot.line(x='labels', y=['available_prop','available_prop_hhfa'])
 ax.set_xticks(np.arange(len(calibration_df[cond]['labels'])))
 ax.set_xticklabels(calibration_df[cond]['labels'], rotation = 90, fontsize=7)
 plt.title('Level 3', fontsize=size,weight="bold")
-#plt.savefig(outputfilepath / 'calibration_level3.png')
+#plt.savefig(outputfilepath / 'consumableavailability_calibration_level3.png')
 
