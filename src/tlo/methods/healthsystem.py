@@ -334,7 +334,8 @@ class HealthSystem(Module):
 
         # Read in ResourceFile_Consumables and then process it to create the data structures needed
         # NB. Modules can use this to look-up what consumables they need.
-        self.parameters['Consumables'] = pd.read_csv(path_to_resourcefiles_for_healthsystem / 'ResourceFile_Consumables.csv')
+        self.parameters['Consumables'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'ResourceFile_Consumables.csv')
         self.process_consumables_file()
 
         # Set default parameter for Service Availablity (everthing available)
@@ -342,7 +343,7 @@ class HealthSystem(Module):
 
         # Data on the number of beds available of each type by facility_id
         self.parameters['BedCapacity'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem/ 'ResourceFile_Bed_Capacity.csv')
+            path_to_resourcefiles_for_healthsystem / 'ResourceFile_Bed_Capacity.csv')
 
     def process_consumables_file(self):
         """Helper function for processing the consumables data (stored as self.parameters['Consumables'])

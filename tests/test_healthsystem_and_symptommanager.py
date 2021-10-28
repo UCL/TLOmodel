@@ -45,7 +45,7 @@ def check_dtypes(simulation):
 def test_using_parameter_or_argument_to_set_service_availability():
     """
     Check that can set service_availability through argument or through parameter.
-    Should be equal to what is specified by the parameter, but overwrite with what was provided in arguement if an
+    Should be equal to what is specified by the parameter, but overwrite with what was provided in argument if an
     argument was specified -- provided for backward compatibility.)
     """
 
@@ -252,7 +252,7 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
-    # Check that some mockitis cured occured (though health system)
+    # Check that some mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 
@@ -294,7 +294,7 @@ def test_run_in_mode_1_with_capacity(tmpdir):
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
-    # Check that some mockitis cured occured (though health system)
+    # Check that some mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 
@@ -338,7 +338,7 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
     assert (hsi_events.loc[hsi_events['Person_ID'] >= 0, 'Squeeze_Factor'] == 100.0).all()
     assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'Squeeze_Factor'] == 0.0).all()
 
-    # Check that some mockitis cured occured (though health system)
+    # Check that some mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 
@@ -380,7 +380,7 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
-    # Check that some mockitis cured occured (though health system)
+    # Check that some mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 
@@ -426,7 +426,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'did_run']).astype(bool).all()  # all Population level events
     assert pd.isnull(sim.population.props['mi_date_cure']).all()  # No cures of mockitis occurring
 
-    # Check that no mockitis cured occured (though health system)
+    # Check that no mockitis cured occurred (though health system)
     assert not any(sim.population.props['mi_status'] == 'P')
 
 
@@ -554,10 +554,10 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
     # read the results
     output = parse_log_file(sim.log_filepath)
 
-    # Do the check for the occurance of the GenericFirstAppt which is created by the HSB module
+    # Do the check for the occurrence of the GenericFirstAppt which is created by the HSB module
     assert 'GenericFirstApptAtFacilityLevel1' in output['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'].values
 
-    # Check that some mockitis cured occured (though health system)
+    # Check that some mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 
