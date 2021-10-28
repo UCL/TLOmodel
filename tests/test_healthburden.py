@@ -18,8 +18,6 @@ from tlo.methods import (
     demography,
     depression,
     diarrhoea,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthsystem,
@@ -109,8 +107,6 @@ def test_cause_of_disability_being_registered():
     sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
     sim.register(
         demography.Demography(resourcefilepath=rfp),
-        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=rfp),
-        dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=rfp),
         symptommanager.SymptomManager(resourcefilepath=rfp),
         breast_cancer.BreastCancer(resourcefilepath=rfp),
         enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),

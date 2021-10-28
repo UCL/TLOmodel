@@ -85,7 +85,6 @@ sim.register(
     newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
     postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
 
-    dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resources),
     hiv.DummyHivModule(),
 )
 ```
