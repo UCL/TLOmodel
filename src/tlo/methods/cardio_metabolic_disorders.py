@@ -195,9 +195,6 @@ class CardioMetabolicDisorders(Module):
         self.conditions = CardioMetabolicDisorders.conditions
         self.events = CardioMetabolicDisorders.events
 
-        # create list that includes conditions modelled by other modules
-        self.condition_list = ['nc_' + cond for cond in CardioMetabolicDisorders.conditions] + ['de_depr']
-
         # Store the symptoms that this module will use (for conditions only):
         self.symptoms = {f"{s}_symptoms" for s in self.conditions if s != "hypertension"}
 
@@ -635,7 +632,7 @@ class CardioMetabolicDisorders(Module):
         # TODO: @britta add in functionality to fetch daly weight from resourcefile
 
         df = self.sim.population.props
-        any_condition = df.loc[df.is_alive, self.condition_list].any(axis=1)
+        any_condition = df.loc[df.is_alive, self.conditions].any(axis=1)
 
         return any_condition * 0.0
 
@@ -1016,12 +1013,12 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
         # If param do_condition_combos = True, produce counters for number of co-morbidities by age and the combinations
         # of different conditions in the population
         if self.module.do_condition_combos:
-            df.loc[df.is_alive, 'nc_n_conditions'] = df.loc[df.is_alive, self.module.condition_list].sum(axis=1)
+            df.loc[df.is_alive, 'nc_n_conditions'] = df.loc[df.is_alive, self.module.conditions].sum(axis=1)
             n_comorbidities_all = pd.DataFrame(index=self.module.age_index,
-                                               columns=list(range(0, len(self.module.condition_list) + 1)))
+                                               columns=list(range(0, len(self.module.conditions) + 1)))
             df = df[['age_range', 'nc_n_conditions']]
 
-            for num in range(0, len(self.module.condition_list) + 1):
+            for num in range(0, len(self.module.conditions) + 1):
                 col = df.loc[df['nc_n_conditions'] == num].groupby(['age_range']).apply(lambda x: pd.Series(
                     {'count': x['nc_n_conditions'].count()}))
                 n_comorbidities_all.loc[:, num] = col['count']
@@ -1036,7 +1033,7 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
             # output combinations of different conditions
             df = population.props
 
-            combos = combinations(self.module.condition_list, 2)
+            combos = combinations(self.module.conditions, 2)
             condition_combos = list(combos)
 
             n_combos = pd.DataFrame(index=df['age_range'].value_counts().sort_index().index)
