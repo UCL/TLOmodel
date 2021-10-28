@@ -1,7 +1,16 @@
 """
-The joint Cardio-Metabolic Disorders model by Tim Hallett and Britta Jewell, October 2020
+The joint Cardio-Metabolic Disorders model determines onset, outcome and treatment of:
+* Diabetes
+* Hypertension
+* Chronic Kidney Disease
+* Chronic Ischemic Heart Disease
+* Stroke
+* Heart Attack
 
+And:
+* Chronic Lower Back Pain
 """
+
 import math
 from itertools import combinations
 from pathlib import Path
@@ -138,11 +147,11 @@ class CardioMetabolicDisorders(Module):
         in conditions
     }
     condition_date_diagnosis_list = {
-        f"nc_{p}_date_diagnosis": Property(Types.DATE, f"When someone has  been diagnosed with {p}") for p
+        f"nc_{p}_date_diagnosis": Property(Types.DATE, f"When someone has been diagnosed with {p}") for p
         in conditions
     }
     condition_date_of_last_test_list = {
-        f"nc_{p}_date_last_test": Property(Types.DATE, f"When someone has  last been tested for {p}") for p
+        f"nc_{p}_date_last_test": Property(Types.DATE, f"When someone has last been tested for {p}") for p
         in conditions
     }
     condition_medication_list = {
@@ -150,8 +159,8 @@ class CardioMetabolicDisorders(Module):
         in conditions
     }
     condition_medication_death_list = {
-        f"nc_{p}_medication_prevents_death": Property(Types.BOOL, f"Whether or not medication will prevent death from "
-                                                                  f"{p}") for p in conditions
+        f"nc_{p}_medication_prevents_death": Property(Types.BOOL, f"Whether or not medication (if provided) will "
+                                                                  f"prevent death from {p}") for p in conditions
     }
     event_list = {
         f"nc_{p}": Property(Types.DATE, f"Date of when someone has had a {p}") for p in events}
@@ -202,7 +211,7 @@ class CardioMetabolicDisorders(Module):
         self.prob_symptoms = dict()
 
         # retrieve age range categories from Demography module
-        self.age_index = None
+        self.age_cats = None
 
         # store bools for whether or not to log the df or log combinations of co-morbidities
         self.do_log_df = do_log_df
@@ -299,7 +308,7 @@ class CardioMetabolicDisorders(Module):
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
-        self.age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
+        self.age_cats = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
         df = population.props
 
         men = df.is_alive & (df.sex == 'M')
@@ -317,7 +326,7 @@ class CardioMetabolicDisorders(Module):
             # men & women without condition
             men_wo_cond = men & ~df[f'nc_{condition}']
             women_wo_cond = women & ~df[f'nc_{condition}']
-            for _age_range in self.age_index:
+            for _age_range in self.age_cats:
                 # Select all eligible individuals (men & women w/o condition and in age range)
                 sample_eligible(men_wo_cond & (df.age_range == _age_range), p[f'm_{_age_range}'], condition)
                 sample_eligible(women_wo_cond & (df.age_range == _age_range), p[f'f_{_age_range}'], condition)
@@ -377,7 +386,7 @@ class CardioMetabolicDisorders(Module):
         sim.schedule_event(CardioMetabolicDisorders_LoggingEvent(self), sim.date)
 
         # Dict to hold counters for the number of episodes by condition-type and age-group
-        self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_index, columns=self.conditions)
+        self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_cats, columns=self.conditions)
         self.df_incidence_tracker = self.df_incidence_tracker_zeros.copy()
 
         # Create tracker for the number of different types of events
@@ -494,48 +503,48 @@ class CardioMetabolicDisorders(Module):
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True
             )
-                .when('.between(0, 4)', p['rr_0_4'])
-                .when('.between(5, 9)', p['rr_5_9'])
-                .when('.between(10, 14)', p['rr_10_14'])
-                .when('.between(15, 19)', p['rr_15_19'])
-                .when('.between(20, 24)', p['rr_20_24'])
-                .when('.between(25, 29)', p['rr_25_29'])
-                .when('.between(30, 34)', p['rr_30_34'])
-                .when('.between(35, 39)', p['rr_35_39'])
-                .when('.between(40, 44)', p['rr_40_44'])
-                .when('.between(45, 49)', p['rr_45_49'])
-                .when('.between(50, 54)', p['rr_50_54'])
-                .when('.between(55, 59)', p['rr_55_59'])
-                .when('.between(60, 64)', p['rr_60_64'])
-                .when('.between(65, 69)', p['rr_65_69'])
-                .when('.between(70, 74)', p['rr_70_74'])
-                .when('.between(75, 79)', p['rr_75_79'])
-                .when('.between(80, 84)', p['rr_80_84'])
-                .when('.between(85, 89)', p['rr_85_89'])
-                .when('.between(90, 94)', p['rr_90_94'])
-                .when('.between(95, 99)', p['rr_95_99'])
-                .when('>= 100', p['rr_100']),
+            .when('.between(0, 4)', p['rr_0_4'])
+            .when('.between(5, 9)', p['rr_5_9'])
+            .when('.between(10, 14)', p['rr_10_14'])
+            .when('.between(15, 19)', p['rr_15_19'])
+            .when('.between(20, 24)', p['rr_20_24'])
+            .when('.between(25, 29)', p['rr_25_29'])
+            .when('.between(30, 34)', p['rr_30_34'])
+            .when('.between(35, 39)', p['rr_35_39'])
+            .when('.between(40, 44)', p['rr_40_44'])
+            .when('.between(45, 49)', p['rr_45_49'])
+            .when('.between(50, 54)', p['rr_50_54'])
+            .when('.between(55, 59)', p['rr_55_59'])
+            .when('.between(60, 64)', p['rr_60_64'])
+            .when('.between(65, 69)', p['rr_65_69'])
+            .when('.between(70, 74)', p['rr_70_74'])
+            .when('.between(75, 79)', p['rr_75_79'])
+            .when('.between(80, 84)', p['rr_80_84'])
+            .when('.between(85, 89)', p['rr_85_89'])
+            .when('.between(90, 94)', p['rr_90_94'])
+            .when('.between(95, 99)', p['rr_95_99'])
+            .when('>= 100', p['rr_100']),
             Predictor('li_urban').when(True, p['rr_urban']),
             Predictor(
                 'li_wealth',
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True,
             )
-                .when('1', p['rr_wealth_1'])
-                .when('2', p['rr_wealth_2'])
-                .when('3', p['rr_wealth_3'])
-                .when('4', p['rr_wealth_4'])
-                .when('5', p['rr_wealth_5']),
+            .when('1', p['rr_wealth_1'])
+            .when('2', p['rr_wealth_2'])
+            .when('3', p['rr_wealth_3'])
+            .when('4', p['rr_wealth_4'])
+            .when('5', p['rr_wealth_5']),
             Predictor(
                 'li_bmi',
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True
             )
-                .when('1', p['rr_bmi_1'])
-                .when('2', p['rr_bmi_2'])
-                .when('3', p['rr_bmi_3'])
-                .when('4', p['rr_bmi_4'])
-                .when('5', p['rr_bmi_5']),
+            .when('1', p['rr_bmi_1'])
+            .when('2', p['rr_bmi_2'])
+            .when('3', p['rr_bmi_3'])
+            .when('4', p['rr_bmi_4'])
+            .when('5', p['rr_bmi_5']),
             Predictor('li_low_ex').when(True, p['rr_low_exercise']),
             Predictor('li_high_salt').when(True, p['rr_high_salt']),
             Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
@@ -546,18 +555,18 @@ class CardioMetabolicDisorders(Module):
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True
             )
-                .when('1', p['rr_marital_status_1'])
-                .when('2', p['rr_marital_status_2'])
-                .when('3', p['rr_marital_status_3']),
+            .when('1', p['rr_marital_status_1'])
+            .when('2', p['rr_marital_status_2'])
+            .when('3', p['rr_marital_status_3']),
             Predictor('li_in_ed').when(True, p['rr_in_education']),
             Predictor(
                 'li_ed_lev',
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True
             )
-                .when('1', p['rr_current_education_level_1'])
-                .when('2', p['rr_current_education_level_2'])
-                .when('3', p['rr_current_education_level_3']),
+            .when('1', p['rr_current_education_level_1'])
+            .when('2', p['rr_current_education_level_2'])
+            .when('3', p['rr_current_education_level_3']),
             Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
             Predictor('li_no_access_handwashing').when(True, p['rr_no_access_handwashing']),
             Predictor('li_no_clean_drinking_water').when(True, p['rr_no_clean_drinking_water']),
@@ -585,13 +594,10 @@ class CardioMetabolicDisorders(Module):
         # Load parameters for correct condition/event
         p = self.prob_symptoms[condition]
         for symptom in p.keys():
-            symptom_3mo = 1 - math.exp(-interval_between_polls / 12 * p.get(f'{symptom}'))
-            lms_symptoms_dict[condition][f'{symptom}'] = LinearModel(LinearModelType.MULTIPLICATIVE, symptom_3mo,
-                                                                     Predictor(f'nc_{condition}',
-                                                                               conditions_are_mutually_exclusive=True,
-                                                                               conditions_are_exhaustive=True)
-                                                                     .when(True, 1.0)
-                                                                     .when(False, 0.0))
+            p_symptom_onset = 1 - math.exp(-interval_between_polls / 12 * p.get(f'{symptom}'))
+            lms_symptoms_dict[condition][f'{symptom}'] = LinearModel(LinearModelType.MULTIPLICATIVE,
+                                                                     p_symptom_onset, Predictor(f'nc_{condition}')
+                                                                     .when(True, 1.0).otherwise(0.0))
         return lms_symptoms_dict[condition]
 
     def on_birth(self, mother_id, child_id):
@@ -663,7 +669,7 @@ class CardioMetabolicDisorders(Module):
 
         for condition in self.conditions:
             # If the person hasn't been diagnosed and they don't have symptoms of the condition...
-            if (~df.at[person_id, f'nc_{condition}_ever_diagnosed']) and (f'{condition}_symptoms' not in symptoms):
+            if (not df.at[person_id, f'nc_{condition}_ever_diagnosed']) and (f'{condition}_symptoms' not in symptoms):
                 # If the person hasn't ever been tested for the condition or not tested within last 6 months,
                 # test them if age >= 50 or with a given probability in the params for each condition
                 if is_next_test_due(
@@ -671,7 +677,7 @@ class CardioMetabolicDisorders(Module):
                         person_id, f'nc_{condition}_date_last_test']):
                     # TODO: @britta make these not arbitrary
                     if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
-                        f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
+                                f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
                         # initiate HSI event
                         hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
                             module=self,
@@ -696,7 +702,7 @@ class CardioMetabolicDisorders(Module):
         for ev in self.events:
             # If the person has symptoms of damage from within the last 3 days, schedule them for emergency care
             if f'{ev}_damage' in symptoms and \
-                ((self.sim.date - self.sim.population.props.at[person_id, f'nc_{ev}']).days <= 3):
+                    ((self.sim.date-self.sim.population.props.at[person_id, f'nc_{ev}']).days <= 3):
                 event = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
                     module=self,
                     person_id=person_id,
@@ -745,7 +751,7 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                 random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1), m.rng)
             )
 
-        current_incidence_df = pd.DataFrame(index=self.module.age_index, columns=self.module.conditions)
+        current_incidence_df = pd.DataFrame(index=self.module.age_cats, columns=self.module.conditions)
 
         # Determine onset/removal of conditions
         for condition in self.module.conditions:
@@ -1022,7 +1028,7 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
         # of different conditions in the population
         if self.module.do_condition_combos:
             df.loc[df.is_alive, 'nc_n_conditions'] = df.loc[df.is_alive, self.module.conditions].sum(axis=1)
-            n_comorbidities_all = pd.DataFrame(index=self.module.age_index,
+            n_comorbidities_all = pd.DataFrame(index=self.module.age_cats,
                                                columns=list(range(0, len(self.module.conditions) + 1)))
             df = df[['age_range', 'nc_n_conditions']]
 
@@ -1234,7 +1240,8 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
                                                               "receiving an HSI."
         # Check availability of medication for condition
         if self.get_all_consumables(
-            item_codes=self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')):
+            item_codes=self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
+        ):
             # If medication is available, flag as being on medication
             df.at[person_id, f'nc_{self.condition}_on_medication'] = True
             # Determine if the medication will work to prevent death
@@ -1284,7 +1291,8 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
 
         # Check availability of medication for condition
         if self.get_all_consumables(
-            item_codes=self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')):
+            item_codes=self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
+        ):
             # Schedule their next HSI for a refill of medication, one month from now
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=self,
@@ -1343,7 +1351,8 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             if squeeze_factor < 0.5:
                 # If squeeze factor is not too large:
                 if self.get_all_consumables(
-                    item_codes=self.module.parameters[f'{self.event}_hsi'].get('medication_item_code')):
+                    item_codes=self.module.parameters[f'{self.event}_hsi'].get('emergency_medication_item_code')
+                ):
                     logger.debug(key='debug', data='Treatment will be provided.')
                     df.at[person_id, f'nc_{self.event}_on_medication'] = True
                     # TODO: @britta change to data
