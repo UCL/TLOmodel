@@ -493,6 +493,62 @@ def test_if_medication_prevents_all_death():
         assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{event}').any()
 
 
+def test_symptoms():
+    """"
+    Test that if symptoms are onset with 100% probability, all persons with condition have symptoms
+    """
+
+    # Create and run a short simulation for use in the tests
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
+                 )
+    p = sim.modules['CardioMetabolicDisorders'].parameters
+
+    # Set incidence of hypertension very high and incidence of all other conditions to 0, set initial prevalence of
+    # other conditions to 0
+
+    p['diabetes_onset']["baseline_annual_probability"] = 10000
+    p['diabetes_symptoms']['diabetes_symptoms'] = 10000
+    p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = 10000
+    p['chronic_ischemic_hd_symptoms']['chronic_ischemic_hd_symptoms'] = 10000
+    p['chronic_lower_back_pain_onset']["baseline_annual_probability"] = 10000
+    p['chronic_lower_back_pain_symptoms']['chronic_lower_back_pain_symptoms'] = 10000
+    p['chronic_kidney_disease_onset']["baseline_annual_probability"] = 10000
+    p['chronic_kidney_disease_symptoms']['chronic_kidney_disease_symptoms'] = 10000
+
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=Date(year=2011, month=1, day=1))
+
+    df = sim.population.props
+    df = df[df.is_alive]
+
+    who_has_diabetes = [i for i in df['nc_diabetes'].index if df['nc_diabetes'][i]]
+    who_has_diabetes_symptoms = sim.modules['SymptomManager'].who_has('diabetes_symptoms')
+    who_has_chronic_ischemic_hd = [i for i in df['nc_chronic_ischemic_hd'].index if df['nc_chronic_ischemic_hd'][i]]
+    who_has_chronic_ischemic_hd_symptoms = sim.modules['SymptomManager'].who_has('chronic_ischemic_hd_symptoms')
+    who_has_chronic_lower_back_pain = [i for i in df['nc_chronic_lower_back_pain'].index if df[
+        'nc_chronic_lower_back_pain'][i]]
+    who_has_chronic_lower_back_pain_symptoms = sim.modules['SymptomManager'].who_has('chronic_lower_back_pain_symptoms')
+    who_has_chronic_kidney_disease = [i for i in df['nc_chronic_kidney_disease'].index if df[
+        'nc_chronic_kidney_disease'][i]]
+    who_has_chronic_kidney_disease_symptoms = sim.modules['SymptomManager'].who_has('chronic_kidney_disease_symptoms')
+
+    assert who_has_diabetes == who_has_diabetes_symptoms
+    assert who_has_chronic_ischemic_hd == who_has_chronic_ischemic_hd_symptoms
+    assert who_has_chronic_lower_back_pain == who_has_chronic_lower_back_pain_symptoms
+    assert who_has_chronic_kidney_disease == who_has_chronic_kidney_disease_symptoms
+
+
 def test_hsi_investigation_not_following_symptoms():
     """Create a person and check if the functions in HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms
     create the correct HSI"""
