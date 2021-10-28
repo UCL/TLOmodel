@@ -12,7 +12,6 @@ from tlo.lm import LinearModel
 from tlo.methods import (
     alri,
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -58,7 +57,6 @@ def get_sim(tmpdir):
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
         alri.Alri(resourcefilepath=resourcefilepath, log_indivdual=0, do_checks=True),
         AlriPropertiesOfOtherModules()
     )

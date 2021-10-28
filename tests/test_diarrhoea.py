@@ -12,7 +12,6 @@ from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
     diarrhoea,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -82,7 +81,6 @@ def test_basic_run_of_diarrhoea_module_with_default_params(tmpdir):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 dx_algorithm_child.DxAlgorithmChild()
                  )
 
     sim.make_initial_population(n=popsize)
@@ -297,7 +295,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                      ),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
                      diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                     dx_algorithm_child.DxAlgorithmChild()
                      )
         # Edit rate of spurious symptoms to be limited to additional cases of diarrhoea:
         sp_symps = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
@@ -598,7 +595,6 @@ def test_does_treatment_prevent_death():
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-                 dx_algorithm_child.DxAlgorithmChild(),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
