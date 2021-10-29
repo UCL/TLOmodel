@@ -210,11 +210,14 @@ class CardioMetabolicDisorders(Module):
         # Store the symptoms that this module will use (for conditions only):
         self.symptoms = {f"{s}_symptoms" for s in self.conditions if s != "hypertension"}
 
-        # dict to hold the probability of onset of different types of symptom given a condition
+        # Dict to hold the probability of onset of different types of symptom given a condition
         self.prob_symptoms = dict()
 
-        # retrieve age range categories from Demography module
+        # Retrieve age range categories from Demography module
         self.age_cats = None
+
+        # Dict to hold the DALY weights
+        self.daly_wts = dict()
 
         # store bools for whether or not to log the df or log combinations of co-morbidities
         self.do_log_df = do_log_df
@@ -387,6 +390,18 @@ class CardioMetabolicDisorders(Module):
         sim.schedule_event(CardioMetabolicDisorders_MainPollingEvent(self, self.parameters['interval_between_polls']),
                            sim.date)
         sim.schedule_event(CardioMetabolicDisorders_LoggingEvent(self), sim.date)
+
+        # Get DALY weights
+        if 'HealthBurden' in self.sim.modules.keys():
+            self.daly_wts['daly_diabetes'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=1)
+            self.daly_wts['daly_hypertension'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=1)
+            self.daly_wts['daly_chronic_kidney_disease'] = self.sim.modules[
+                'HealthBurden'].get_daly_weight(sequlae_code=1)
+            self.daly_wts['daly_chronic_ischemic_hd'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=1)
+            self.daly_wts['daly_chronic_lower_back_pain'] = self.sim.modules[
+                'HealthBurden'].get_daly_weight(sequlae_code=1)
+            self.daly_wts['daly_stroke'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=1)
+            self.daly_wts['daly_heart_attack'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=1)
 
         # Dict to hold counters for the number of episodes by condition-type and age-group
         self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_cats, columns=self.conditions)
@@ -659,6 +674,23 @@ class CardioMetabolicDisorders(Module):
         # return pd.Series(index=df.index[df.is_alive],data=0.0)
 
         # TODO: @britta add in functionality to fetch daly weight from resourcefile
+
+        df = self.sim.population.props
+        total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
+        total_daly_values.loc[
+            self.sim.modules['SymptomManager'].who_has('diabetes_symptoms')] = self.daly_wts['daly_diabetes']
+        total_daly_values.loc[
+            self.sim.modules['SymptomManager'].who_has('hypertension_symptoms')] = self.daly_wts['daly_hypertension']
+        total_daly_values.loc[
+            self.sim.modules['SymptomManager'].who_has('hypertension_symptoms')] = self.daly_wts['daly_hypertension']
+
+        # Split out by pathogen that causes the Alri
+        dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index, 'ri_primary_pathogen'], dtype='float')
+        daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0)
+
+        # add prefix to label according to the name of the causes of disability declared
+        daly_values_by_pathogen = daly_values_by_pathogen.add_prefix('ALRI_')
+        return daly_values_by_pathogen
 
         df = self.sim.population.props
         any_condition = df.loc[df.is_alive, self.condition_list].any(axis=1)
