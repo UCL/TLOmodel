@@ -10,7 +10,6 @@ from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
     chronicsyndrome,
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -55,7 +54,6 @@ def bundle():
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
 
                  mockitis.Mockitis(),

@@ -19,7 +19,6 @@ from tlo.methods import (
     contraception,
     demography,
     depression,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -53,7 +52,8 @@ def runsim(seed=0):
 
     # run the simulation
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),

@@ -9,7 +9,6 @@ from tlo.methods import (
     cardio_metabolic_disorders,
     demography,
     depression,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -20,6 +19,7 @@ from tlo.methods import (
 from tlo.methods.cardio_metabolic_disorders import (
     CardioMetabolicDisordersDeathEvent,
     CardioMetabolicDisordersEvent,
+    CardioMetabolicDisordersWeightLossEvent,
     HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms,
     HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms,
     HSI_CardioMetabolicDisorders_Refill_Medication,
@@ -76,7 +76,6 @@ def test_basic_run():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -120,7 +119,6 @@ def test_basic_run_with_high_incidence_hypertension():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -137,15 +135,12 @@ def test_basic_run_with_high_incidence_hypertension():
 
     p['hypertension_onset']["baseline_annual_probability"] = 10000
     p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = 10
-    p['diabetes_onset'] = p['diabetes_onset'].mask(p['diabetes_onset'] > 0, 0)
-    p['chronic_lower_back_pain_onset'] = p['chronic_lower_back_pain_onset'].mask(p['chronic_lower_back_pain_onset'] > 0,
-                                                                                 0)
-    p['chronic_kidney_disease_onset'] = p['chronic_kidney_disease_onset'].mask(p['chronic_kidney_disease_onset'] > 0, 0)
-    p['diabetes_initial_prev'] = p['diabetes_initial_prev'].mask(p['diabetes_initial_prev'] > 0, 0)
-    p['chronic_lower_back_pain_initial_prev'] = p['chronic_lower_back_pain_initial_prev']. \
-        mask(p['chronic_lower_back_pain_initial_prev'] > 0, 0)
-    p['chronic_kidney_disease_initial_prev'] = p['chronic_kidney_disease_initial_prev']. \
-        mask(p['chronic_kidney_disease_initial_prev'] > 0, 0)
+    p['diabetes_onset'] *= 0.0
+    p['chronic_lower_back_pain_onset'] *= 0.0
+    p['chronic_kidney_disease_onset'] *= 0.0
+    p['diabetes_initial_prev'] *= 0.0
+    p['chronic_lower_back_pain_initial_prev'] *= 0.0
+    p['chronic_kidney_disease_initial_prev'] *= 0.0
 
     # Increase RR of heart disease very high if individual has hypertension
     p['chronic_ischemic_hd_onset']["rr_hypertension"] = 1000
@@ -206,13 +201,13 @@ def hsi_checks(sim):
 
     # check that those who have ever been diagnosed have a date of last test
 
-    assert ~pd.isnull(df.loc[df.nc_diabetes_ever_diagnosed, 'nc_diabetes_date_last_test']).all()
-    assert ~pd.isnull(df.loc[df.nc_hypertension_ever_diagnosed, 'nc_hypertension_date_last_test']).all()
-    assert ~pd.isnull(
+    assert pd.notnull(df.loc[df.nc_diabetes_ever_diagnosed, 'nc_diabetes_date_last_test']).all()
+    assert pd.notnull(df.loc[df.nc_hypertension_ever_diagnosed, 'nc_hypertension_date_last_test']).all()
+    assert pd.notnull(
         df.loc[df.nc_chronic_lower_back_pain_ever_diagnosed, 'nc_chronic_lower_back_pain_date_last_test']).all()
-    assert ~pd.isnull(df.loc[df.nc_chronic_kidney_disease_ever_diagnosed,
+    assert pd.notnull(df.loc[df.nc_chronic_kidney_disease_ever_diagnosed,
                              'nc_chronic_kidney_disease_date_last_test']).all()
-    assert ~pd.isnull(df.loc[df.nc_chronic_ischemic_hd_ever_diagnosed, 'nc_chronic_ischemic_hd_date_last_test']).all()
+    assert pd.notnull(df.loc[df.nc_chronic_ischemic_hd_ever_diagnosed, 'nc_chronic_ischemic_hd_date_last_test']).all()
 
     # check that everyone receiving medication for a condition has been diagnosed
 
@@ -231,8 +226,7 @@ def hsi_checks(sim):
 def start_sim_and_clear_event_queues(sim):
     """Simulate for 0 days so as to complete all the initialisation steps, but then clear the event queues"""
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
-    sim.event_queue.queue.clear()
+    sim.modules['HealthSystem'].reset_queue()
     return sim
 
 
@@ -253,7 +247,6 @@ def test_if_health_system_cannot_run():
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath)
                  )
@@ -308,14 +301,12 @@ def test_if_health_system_cannot_run():
 
 # helper function to run the sim with the healthcare system disabled
 def make_simulation_health_system_disabled():
-    """Make the simulation with:
-    * the demography module with the OtherDeathsPoll not running
+    """Make the simulation with the healthcare system disabled
     """
     sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -330,14 +321,12 @@ def make_simulation_health_system_disabled():
 
 # helper function to run the sim with the healthcare system disabled
 def make_simulation_health_system_functional():
-    """Make the simulation with:
-    * the demography module with the OtherDeathsPoll not running
+    """Make the simulation with the healthcare system enabled and no cons constraints
     """
     sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False,
                                            ignore_cons_constraints=True),
@@ -382,7 +371,7 @@ def test_if_no_health_system_and_zero_death():
         assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{condition}').any()
 
 
-def test_if_no_health_system_and_hundred_death():
+def test_if_no_health_system_and_high_risk_of_death():
     """"
     Make the health-system unavailable to run any HSI event and set death rate to 100% to check that everyone dies
     """
@@ -442,7 +431,8 @@ def test_if_no_health_system_and_hundred_death():
         # check that no one died of condition
         df = sim.population.props
 
-        assert not (df.loc[~df.date_of_birth.isna() & df[f'nc_{event}'] & (df.age_years >= 20), 'is_alive']).any()
+        assert not (
+            df.loc[~df.date_of_birth.isna() & pd.isnull(df[f'nc_{event}']) & (df.age_years >= 20), 'is_alive']).any()
 
 
 def test_if_medication_prevents_all_death():
@@ -462,6 +452,9 @@ def test_if_medication_prevents_all_death():
         sim.population.props.loc[
             sim.population.props.is_alive & (sim.population.props.age_years >= 20),
             f"nc_{condition}_on_medication"] = True
+        sim.population.props.loc[
+            sim.population.props.is_alive & (sim.population.props.age_years >= 20),
+            f"nc_{condition}_medication_prevents_death"] = True
 
         # set probability of treatment working to 1 and increase annual risk of death
         p = sim.modules['CardioMetabolicDisorders'].parameters
@@ -500,6 +493,62 @@ def test_if_medication_prevents_all_death():
         assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{event}').any()
 
 
+def test_symptoms():
+    """"
+    Test that if symptoms are onset with 100% probability, all persons with condition have symptoms
+    """
+
+    # Create and run a short simulation for use in the tests
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
+                 )
+    p = sim.modules['CardioMetabolicDisorders'].parameters
+
+    # Set incidence of hypertension very high and incidence of all other conditions to 0, set initial prevalence of
+    # other conditions to 0
+
+    p['diabetes_onset']["baseline_annual_probability"] = 10000
+    p['diabetes_symptoms']['diabetes_symptoms'] = 10000
+    p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = 10000
+    p['chronic_ischemic_hd_symptoms']['chronic_ischemic_hd_symptoms'] = 10000
+    p['chronic_lower_back_pain_onset']["baseline_annual_probability"] = 10000
+    p['chronic_lower_back_pain_symptoms']['chronic_lower_back_pain_symptoms'] = 10000
+    p['chronic_kidney_disease_onset']["baseline_annual_probability"] = 10000
+    p['chronic_kidney_disease_symptoms']['chronic_kidney_disease_symptoms'] = 10000
+
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=Date(year=2011, month=1, day=1))
+
+    df = sim.population.props
+    df = df[df.is_alive]
+
+    who_has_diabetes = [i for i in df['nc_diabetes'].index if df['nc_diabetes'][i]]
+    who_has_diabetes_symptoms = sim.modules['SymptomManager'].who_has('diabetes_symptoms')
+    who_has_chronic_ischemic_hd = [i for i in df['nc_chronic_ischemic_hd'].index if df['nc_chronic_ischemic_hd'][i]]
+    who_has_chronic_ischemic_hd_symptoms = sim.modules['SymptomManager'].who_has('chronic_ischemic_hd_symptoms')
+    who_has_chronic_lower_back_pain = [i for i in df['nc_chronic_lower_back_pain'].index if df[
+        'nc_chronic_lower_back_pain'][i]]
+    who_has_chronic_lower_back_pain_symptoms = sim.modules['SymptomManager'].who_has('chronic_lower_back_pain_symptoms')
+    who_has_chronic_kidney_disease = [i for i in df['nc_chronic_kidney_disease'].index if df[
+        'nc_chronic_kidney_disease'][i]]
+    who_has_chronic_kidney_disease_symptoms = sim.modules['SymptomManager'].who_has('chronic_kidney_disease_symptoms')
+
+    assert who_has_diabetes == who_has_diabetes_symptoms
+    assert who_has_chronic_ischemic_hd == who_has_chronic_ischemic_hd_symptoms
+    assert who_has_chronic_lower_back_pain == who_has_chronic_lower_back_pain_symptoms
+    assert who_has_chronic_kidney_disease == who_has_chronic_kidney_disease_symptoms
+
+
 def test_hsi_investigation_not_following_symptoms():
     """Create a person and check if the functions in HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms
     create the correct HSI"""
@@ -519,11 +568,13 @@ def test_hsi_investigation_not_following_symptoms():
 
         df = sim.population.props
 
-        # Get target person and make them have condition but not be diagnosed yet
+        # Get target person and make them have condition but not be diagnosed yet, and high enough BMI for them to
+        # receive weight loss treatment
         person_id = 0
         df.at[person_id, f"nc_{condition}"] = True
         df.at[person_id, f"nc_{condition}_ever_diagnosed"] = False
         df.at[person_id, f"nc_{condition}_on_medication"] = False
+        df.at[person_id, 'li_bmi'] = 4
 
         # Run the InvestigationNotFollowingSymptoms event
         t = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(module=sim.modules[
@@ -562,11 +613,13 @@ def test_hsi_investigation_following_symptoms():
 
         df = sim.population.props
 
-        # Get target person and make them have condition, be symptomatic, but not be diagnosed yet
+        # Get target person and make them have condition, be symptomatic, but not be diagnosed yet, and high enough
+        # BMI for them to receive weight loss treatment
         person_id = 0
         df.at[person_id, f"nc_{condition}"] = True
         df.at[person_id, f"nc_{condition}_ever_diagnosed"] = False
         df.at[person_id, f"nc_{condition}_on_medication"] = False
+        df.at[person_id, 'li_bmi'] = 4
 
         sim.modules['SymptomManager'].change_symptom(
             person_id=person_id,
@@ -607,6 +660,10 @@ def test_hsi_weight_loss_and_medication():
         # make initial population
         sim.make_initial_population(n=50)
 
+        # set probability of weight loss working to 1
+        p = sim.modules['CardioMetabolicDisorders'].parameters
+        p["pr_bmi_reduction"] = 1
+
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
 
@@ -617,16 +674,38 @@ def test_hsi_weight_loss_and_medication():
         df.at[person_id, f"nc_{condition}"] = True
         df.at[person_id, f"nc_{condition}_ever_diagnosed"] = True
         df.at[person_id, f"nc_{condition}_on_medication"] = False
+        df.at[person_id, "li_bmi"] = 4
 
         # Run the StartWeightLossAndMedication event
         t = HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(module=sim.modules[
             'CardioMetabolicDisorders'], person_id=person_id, condition=f'{condition}')
         t.apply(person_id=person_id, squeeze_factor=0.0)
 
-        # Check that the individual is now on medication and that there is Refill_Medication event scheduled
+        # Check that the individual has received weight loss treatment, is now on medication, and that there is a
+        # Refill_Medication event scheduled
+
         assert df.at[person_id, f"nc_{condition}_on_medication"]
         assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4],
                           HSI_CardioMetabolicDisorders_Refill_Medication)
+
+        if condition != 'chronic_kidney_disease':  # those with CKD are not recommended to lose weight
+            # Check that the individual has received weight loss treatment
+            assert df.at[person_id, 'nc_ever_weight_loss_treatment']
+            # Check that the individual has a CardioMetabolicDisordersWeightLossEvent scheduled
+            events_for_this_person = sim.find_events_for_person(person_id)
+            assert 1 == len(events_for_this_person)
+            next_event_date, next_event_obj = events_for_this_person[0]
+            assert isinstance(next_event_obj, cardio_metabolic_disorders.CardioMetabolicDisordersWeightLossEvent)
+            assert next_event_date >= sim.date
+
+            # Run the WeightLossEvent
+            t = CardioMetabolicDisordersWeightLossEvent(module=sim.modules['CardioMetabolicDisorders'],
+                                                        person_id=person_id, condition=f'{condition}')
+            t.apply(person_id=person_id)
+
+            # Check that individual's BMI has reduced by 1 and they are flagged as having experienced weight loss
+            assert df.at[person_id, "li_bmi"] == 3
+            assert df.at[person_id, "nc_weight_loss_worked"]
 
 
 def test_hsi_emergency_events():
@@ -684,9 +763,6 @@ def test_hsi_emergency_events():
 def test_no_availability_of_consumables_for_conditions():
     """Check if consumables aren't available that everyone drops off of treatment"""
 
-    # Create a list of the item codes used by this module
-    all_item_codes = {216, 233, 221, 226, 47, 2064, 225, 234}
-
     # Make a list of all conditions and events to run this test for
     condition_list = ['diabetes', 'chronic_lower_back_pain', 'chronic_kidney_disease', 'chronic_ischemic_hd']
     for condition in condition_list:
@@ -700,7 +776,7 @@ def test_no_availability_of_consumables_for_conditions():
         sim = start_sim_and_clear_event_queues(sim)
 
         # Make consumables not available
-        sim.modules['HealthSystem'].prob_item_codes_available.loc[all_item_codes] = 0.0
+        sim.modules['HealthSystem'].prob_item_codes_available *= 0.0
         sim.modules['HealthSystem'].determine_availability_of_consumables_today()
 
         df = sim.population.props
@@ -723,9 +799,6 @@ def test_no_availability_of_consumables_for_conditions():
 def test_no_availability_of_consumables_for_events():
     """Check if consumables aren't available that HSI events are commissioned but individual dies of event anyway"""
 
-    # Create a list of the item codes used by this module
-    all_item_codes = {216, 233, 221, 226, 47, 2064, 225, 234}
-
     # Make a list of all events to run this test for
     event_list = ['ever_stroke', 'ever_heart_attack']
     for event in event_list:
@@ -743,7 +816,7 @@ def test_no_availability_of_consumables_for_events():
         sim = start_sim_and_clear_event_queues(sim)
 
         # Make consumables not available
-        sim.modules['HealthSystem'].prob_item_codes_available.loc[all_item_codes] = 0.0
+        sim.modules['HealthSystem'].prob_item_codes_available *= 0.0
         sim.modules['HealthSystem'].determine_availability_of_consumables_today()
 
         df = sim.population.props
@@ -754,14 +827,14 @@ def test_no_availability_of_consumables_for_events():
         df.at[person_id, f"nc_{event}_ever_diagnosed"] = False
         df.at[person_id, f"nc_{event}_on_medication"] = False
 
-        # Run the Refill_Medication event
+        # Run the CardioMetabolicDisordersEvent event
         t = CardioMetabolicDisordersEvent(module=sim.modules['CardioMetabolicDisorders'],
                                           person_id=person_id, event=event)
         t.apply(person_id=person_id)
 
         events_for_this_person = sim.find_events_for_person(person_id)
         assert 1 == len(events_for_this_person)
-        next_event_date, next_event_obj = events_for_this_person[person_id]
+        next_event_date, next_event_obj = events_for_this_person[0]
         assert isinstance(next_event_obj, cardio_metabolic_disorders.CardioMetabolicDisordersDeathEvent)
         assert next_event_date >= sim.date
 
@@ -780,7 +853,7 @@ def test_no_availability_of_consumables_for_events():
 
         # Run the DeathEvent on this person
         t = CardioMetabolicDisordersDeathEvent(module=sim.modules['CardioMetabolicDisorders'], person_id=person_id,
-                                               condition=f'{event}')
+                                               originating_cause=f'{event}')
         t.apply(person_id=person_id)
 
         assert not df.at[person_id, 'is_alive']
