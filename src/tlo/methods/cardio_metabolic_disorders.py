@@ -393,15 +393,26 @@ class CardioMetabolicDisorders(Module):
 
         # Get DALY weights
         if 'HealthBurden' in self.sim.modules.keys():
-            self.daly_wts['daly_diabetes'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=1)
-            self.daly_wts['daly_hypertension'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=1)
-            self.daly_wts['daly_chronic_kidney_disease'] = self.sim.modules[
-                'HealthBurden'].get_daly_weight(sequlae_code=1)
-            self.daly_wts['daly_chronic_ischemic_hd'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=1)
-            self.daly_wts['daly_chronic_lower_back_pain'] = self.sim.modules[
-                'HealthBurden'].get_daly_weight(sequlae_code=1)
-            self.daly_wts['daly_stroke'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=1)
-            self.daly_wts['daly_heart_attack'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=1)
+            self.daly_wts['daly_diabetes_uncomplicated'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=971)
+            self.daly_wts['daly_diabetes_complicated'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=970)
+            self.daly_wts['daly_chronic_kidney_disease_moderate'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=978)
+            self.daly_wts['daly_chronic_kidney_disease_severe'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=976)
+            self.daly_wts['daly_chronic_ischemic_hd'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=697)
+            self.daly_wts['daly_chronic_lower_back_pain_moderate'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=1180)
+            self.daly_wts['daly_chronic_lower_back_pain_severe'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=1183)
+            self.daly_wts['daly_stroke_acute'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=705)
+            self.daly_wts['daly_stroke_chronic'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=707)
+            self.daly_wts['daly_heart_attack_acute_days_1_2'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=689)
+            self.daly_wts['daly_heart_attack_acute_days_3_28'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=693)
 
         # Dict to hold counters for the number of episodes by condition-type and age-group
         self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_cats, columns=self.conditions)
@@ -679,10 +690,11 @@ class CardioMetabolicDisorders(Module):
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
         total_daly_values.loc[
             self.sim.modules['SymptomManager'].who_has('diabetes_symptoms')] = self.daly_wts['daly_diabetes']
+        total_daly_values.loc[self.sim.modules['SymptomManager'].who_has('chronic_lower_back_pain_symptoms')] = \
+            self.daly_wts['daly_chronic_lower_back_pain']
         total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has('hypertension_symptoms')] = self.daly_wts['daly_hypertension']
-        total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has('hypertension_symptoms')] = self.daly_wts['daly_hypertension']
+            self.sim.modules['SymptomManager'].who_has('chronic_ischemic_hd_symptoms')] = \
+            self.daly_wts['daly_chronic_ischemic_hd']
 
         # Split out by pathogen that causes the Alri
         dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index, 'ri_primary_pathogen'], dtype='float')
