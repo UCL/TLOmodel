@@ -17,7 +17,7 @@ class Epi(Module):
     it sets up the vaccination schedule for all children from birth
     """
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem'}
 
     # Declare Metadata
     METADATA = {Metadata.USES_HEALTHSYSTEM}
