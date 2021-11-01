@@ -192,9 +192,7 @@ def predict_antepartum_haem_ip(self, df, rng=None, **externals):
 
     if person['ps_placenta_praevia']:
         result += params['prob_aph_placenta_praevia_labour']
-    if person['ps_placental_abruption']:
-        result += params['prob_aph_placental_abruption_labour']
-    if person['la_placental_abruption']:
+    if person['ps_placental_abruption'] or person['la_placental_abruption']:
         result += params['prob_aph_placental_abruption_labour']
 
     return pd.Series(data=[result], index=df.index)
@@ -222,21 +220,12 @@ def predict_pph_uterine_atony_pp(self, df, rng=None, **externals):
 
     if externals['amtsl_given']:
         result *= params['treatment_effect_amtsl']
-    if person['pn_htn_disorders'] == 'mild_pre_eclamp':
+    if (person['pn_htn_disorders'] != 'none') or person['nc_hypertension']:
         result *= params['rr_pph_ua_hypertension']
-    if person['pn_htn_disorders'] == 'mild_pre_eclamp':
-        result *= params['rr_pph_ua_hypertension']
-    if person['pn_htn_disorders'] == 'mild_pre_eclamp':
-        result *= params['rr_pph_ua_hypertension']
-    if person['pn_htn_disorders'] == 'mild_pre_eclamp':
-        result *= params['rr_pph_ua_hypertension']
-    if person['la_placental_abruption']:
-        result *= params['rr_pph_ua_placental_abruption']
     if person['ps_multiple_pregnancy']:
         result *= params['rr_pph_ua_multiple_pregnancy']
     if person['la_placental_abruption'] or person['ps_placental_abruption']:
         result *= params['rr_pph_ua_placental_abruption']
-
     if externals['macrosomia']:
         result *= params['rr_pph_ua_macrosomia']
 
@@ -261,16 +250,12 @@ def predict_postpartum_haem_pp_death(self, df, rng=None, **externals):
     treatment = self.module.pph_treatment.to_strings(person.la_postpartum_haem_treatment)
     result = params['cfr_pp_pph']
 
-    #if 'uterotonics' in treatment:
-    #    result *= params['pph_treatment_effect_uterotonics_md']
-    #if 'manual_removal_placenta' in treatment:
-    #    result *= params['pph_treatment_effect_mrp_md']
     if ('surgery' in treatment) or ('hysterectomy' in treatment):
         result *= params['pph_treatment_effect_surg_md']
     if externals['received_blood_transfusion']:
         result *= params['pph_bt_treatment_effect_md']
     if person['ps_anaemia_in_pregnancy'] or person['pn_anaemia_following_pregnancy']:
-         result *= params['rr_pph_death_anaemia']
+        result *= params['rr_pph_death_anaemia']
 
     return pd.Series(data=[result], index=df.index)
 
@@ -329,13 +314,7 @@ def predict_intrapartum_still_birth(self, df, rng=None, **externals):
         result *= params['rr_still_birth_aph']
     # todo: risk should modify with severity- placeholder
 
-    if person['ps_htn_disorders'] == 'mild_pre_eclamp':
-        result *= params['rr_still_birth_hypertension']
-    if person['ps_htn_disorders'] == 'gest_htn':
-        result *= params['rr_still_birth_hypertension']
-    if person['ps_htn_disorders'] == 'severe_gest_htn':
-        result *= params['rr_still_birth_hypertension']
-    if person['ps_htn_disorders'] == 'severe_pre_eclamp':
+    if person['ps_htn_disorders'] != 'none':
         result *= params['rr_still_birth_hypertension']
 
     if person['la_sepsis'] or person['ps_chorioamnionitis']:
@@ -466,10 +445,15 @@ def predict_postnatal_check(self, df, rng=None, **externals):
     if person['la_parity'] > 4:
         result *= params['or_pnc_parity_>4']
 
+    if person['ac_total_anc_visits_current_pregnancy'] > 3:
+        result *= params['or_pnc_anc4+']
+
     if externals['mode_of_delivery'] == 'caesarean_section':
         result *= params['or_pnc_caesarean_delivery']
-    if externals['delivery_setting'] == 'home_birth':
+    if externals['delivery_setting'] != 'home_birth':
         result *= params['or_pnc_facility_delivery']
+
+
 
     result = result / (1 + result)
     return pd.Series(data=[result], index=df.index)

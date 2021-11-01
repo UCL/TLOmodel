@@ -147,7 +147,7 @@ def predict_enceph_death(self, df, rng=None, **externals):
     params = self.parameters
     result = params['cfr_enceph']
 
-    if person['nb_encephalopathy'] == 'severe_encepj':
+    if person['nb_encephalopathy'] == 'severe_enceph':
         result *= params['cfr_multiplier_severe_enceph']
     if person['nb_received_neonatal_resus']:
         result *= params['treatment_effect_resuscitation']

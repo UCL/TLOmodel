@@ -1825,7 +1825,7 @@ class PregnancySupervisor(Module):
         causes = list()
 
         # Create list of the potential causes of death if they are present in the mother
-        if mother.ps_antepartum_haemorrhage == 'severe':
+        if mother.ps_antepartum_haemorrhage:
             causes.append('antepartum_haemorrhage')
         if (mother.ps_htn_disorders == 'severe_pre_eclamp') and \
            self.mother_and_newborn_info[individual_id]['new_onset_spe']:
@@ -1866,7 +1866,7 @@ class PregnancySupervisor(Module):
             del self.mother_and_newborn_info[individual_id]
 
         else:
-            if mother.ps_antepartum_haemorrhage == 'severe':
+            if mother.ps_antepartum_haemorrhage:
                 df.at[individual_id, 'ps_antepartum_haemorrhage'] = 'none'
 
             if (mother.ps_htn_disorders == 'severe_pre_eclamp') and \
