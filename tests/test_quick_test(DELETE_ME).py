@@ -9,8 +9,6 @@ from tlo.methods import (
     contraception,
     demography,
     depression,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -25,7 +23,7 @@ from tlo.methods import (
      joes_fake_props_module, cardio_metabolic_disorders, dummy_contraception
 )
 
-seed = 228
+seed = 1234
 
 # The resource files
 try:
@@ -142,8 +140,6 @@ def register_all_modules():
                  malaria.Malaria(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
                  #hiv.DummyHivModule(),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath),
                  #joes_fake_props_module.JoesFakePropsModule(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
