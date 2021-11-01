@@ -356,8 +356,8 @@ class CardioMetabolicDisorders(Module):
                         conditions_are_mutually_exclusive=True,
                         conditions_are_exhaustive=True
                     )
-                    .when(True, 1.0)
-                    .when(False, 0.0))
+                        .when(True, 1.0)
+                        .when(False, 0.0))
                 has_symptom_at_init = lm_init_symptoms.predict(df.loc[df.is_alive], self.rng)
                 self.sim.modules['SymptomManager'].change_symptom(
                     person_id=has_symptom_at_init.index[has_symptom_at_init].tolist(),
@@ -542,48 +542,48 @@ class CardioMetabolicDisorders(Module):
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True
             )
-            .when('.between(0, 4)', p['rr_0_4'])
-            .when('.between(5, 9)', p['rr_5_9'])
-            .when('.between(10, 14)', p['rr_10_14'])
-            .when('.between(15, 19)', p['rr_15_19'])
-            .when('.between(20, 24)', p['rr_20_24'])
-            .when('.between(25, 29)', p['rr_25_29'])
-            .when('.between(30, 34)', p['rr_30_34'])
-            .when('.between(35, 39)', p['rr_35_39'])
-            .when('.between(40, 44)', p['rr_40_44'])
-            .when('.between(45, 49)', p['rr_45_49'])
-            .when('.between(50, 54)', p['rr_50_54'])
-            .when('.between(55, 59)', p['rr_55_59'])
-            .when('.between(60, 64)', p['rr_60_64'])
-            .when('.between(65, 69)', p['rr_65_69'])
-            .when('.between(70, 74)', p['rr_70_74'])
-            .when('.between(75, 79)', p['rr_75_79'])
-            .when('.between(80, 84)', p['rr_80_84'])
-            .when('.between(85, 89)', p['rr_85_89'])
-            .when('.between(90, 94)', p['rr_90_94'])
-            .when('.between(95, 99)', p['rr_95_99'])
-            .when('>= 100', p['rr_100']),
+                .when('.between(0, 4)', p['rr_0_4'])
+                .when('.between(5, 9)', p['rr_5_9'])
+                .when('.between(10, 14)', p['rr_10_14'])
+                .when('.between(15, 19)', p['rr_15_19'])
+                .when('.between(20, 24)', p['rr_20_24'])
+                .when('.between(25, 29)', p['rr_25_29'])
+                .when('.between(30, 34)', p['rr_30_34'])
+                .when('.between(35, 39)', p['rr_35_39'])
+                .when('.between(40, 44)', p['rr_40_44'])
+                .when('.between(45, 49)', p['rr_45_49'])
+                .when('.between(50, 54)', p['rr_50_54'])
+                .when('.between(55, 59)', p['rr_55_59'])
+                .when('.between(60, 64)', p['rr_60_64'])
+                .when('.between(65, 69)', p['rr_65_69'])
+                .when('.between(70, 74)', p['rr_70_74'])
+                .when('.between(75, 79)', p['rr_75_79'])
+                .when('.between(80, 84)', p['rr_80_84'])
+                .when('.between(85, 89)', p['rr_85_89'])
+                .when('.between(90, 94)', p['rr_90_94'])
+                .when('.between(95, 99)', p['rr_95_99'])
+                .when('>= 100', p['rr_100']),
             Predictor('li_urban').when(True, p['rr_urban']),
             Predictor(
                 'li_wealth',
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True,
             )
-            .when('1', p['rr_wealth_1'])
-            .when('2', p['rr_wealth_2'])
-            .when('3', p['rr_wealth_3'])
-            .when('4', p['rr_wealth_4'])
-            .when('5', p['rr_wealth_5']),
+                .when('1', p['rr_wealth_1'])
+                .when('2', p['rr_wealth_2'])
+                .when('3', p['rr_wealth_3'])
+                .when('4', p['rr_wealth_4'])
+                .when('5', p['rr_wealth_5']),
             Predictor(
                 'li_bmi',
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True
             )
-            .when('1', p['rr_bmi_1'])
-            .when('2', p['rr_bmi_2'])
-            .when('3', p['rr_bmi_3'])
-            .when('4', p['rr_bmi_4'])
-            .when('5', p['rr_bmi_5']),
+                .when('1', p['rr_bmi_1'])
+                .when('2', p['rr_bmi_2'])
+                .when('3', p['rr_bmi_3'])
+                .when('4', p['rr_bmi_4'])
+                .when('5', p['rr_bmi_5']),
             Predictor('li_low_ex').when(True, p['rr_low_exercise']),
             Predictor('li_high_salt').when(True, p['rr_high_salt']),
             Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
@@ -594,18 +594,18 @@ class CardioMetabolicDisorders(Module):
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True
             )
-            .when('1', p['rr_marital_status_1'])
-            .when('2', p['rr_marital_status_2'])
-            .when('3', p['rr_marital_status_3']),
+                .when('1', p['rr_marital_status_1'])
+                .when('2', p['rr_marital_status_2'])
+                .when('3', p['rr_marital_status_3']),
             Predictor('li_in_ed').when(True, p['rr_in_education']),
             Predictor(
                 'li_ed_lev',
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True
             )
-            .when('1', p['rr_current_education_level_1'])
-            .when('2', p['rr_current_education_level_2'])
-            .when('3', p['rr_current_education_level_3']),
+                .when('1', p['rr_current_education_level_1'])
+                .when('2', p['rr_current_education_level_2'])
+                .when('3', p['rr_current_education_level_3']),
             Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
             Predictor('li_no_access_handwashing').when(True, p['rr_no_access_handwashing']),
             Predictor('li_no_clean_drinking_water').when(True, p['rr_no_clean_drinking_water']),
@@ -674,21 +674,58 @@ class CardioMetabolicDisorders(Module):
 
     def report_daly_values(self):
         """Report DALY values to the HealthBurden module"""
-        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
-        # experienced by persons in the previous month. Only rows for alive-persons must be returned.
-        # The names of the series of columns is taken to be the label of the cause of this disability.
-        # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-        # To return a value of 0.0 (fully health) for everyone, use:
-        # df = self.sim.popultion.props
-        # return pd.Series(index=df.index[df.is_alive],data=0.0)
-
-        # TODO: @britta add in functionality to fetch daly weight from resourcefile
+        def left_censor(obs, window_open):
+            return obs.apply(lambda x: max(x, window_open) if ~pd.isnull(x) else pd.NaT)
 
         df = self.sim.population.props
-        any_condition = df.loc[df.is_alive, self.condition_list].any(axis=1)
 
-        return any_condition * 0.0
+        dalys = pd.Series(data=0.0, index=df.index[df.is_alive])
+        # Diabetes: give everyone who is diagnosed or on medication uncomplicated diabetes daly weight
+        dalys.loc[df['nc_diabetes_ever_diagnosed' or 'nc_diabetes_on_medication']] = self.daly_wts[
+            'daly_diabetes_uncomplicated']
+        # Diabetes: overwrite those with symptoms to have complicated diabetes daly weight
+        dalys.loc[
+            self.sim.modules['SymptomManager'].who_has('diabetes_symptoms')] = self.daly_wts[
+            'daly_diabetes_complicated']
+        # Chronic Lower Back Pain: give those who have symptoms moderate weight
+        dalys.loc[
+            self.sim.modules['SymptomManager'].who_has('chronic_lower_back_pain_symptoms')] = self.daly_wts[
+            'daly_chronic_lower_back_pain']
+        # Chronic Kidney Disease: give those who are diagnosed or on medication moderate CKD daly weight
+        dalys.loc[df['nc_chronic_kidney_disease_ever_diagnosed' or 'nc_chronic_kidney_disease_on_medication']] = \
+            self.daly_wts['daly_chronic_kidney_disease_moderate']
+        # Chronic Kidney Disease: overwrite those who have symptoms to have severe CKD
+        dalys.loc[
+            self.sim.modules['SymptomManager'].who_has('chronic_kidney_disease_symptoms')] = self.daly_wts[
+            'daly_chronic_kidney_disease_severe']
+        # Chronic Ischemic Heart Disease: give everyone with CIHD symptoms moderate CIHD daly weight
+        dalys.loc[
+            self.sim.modules['SymptomManager'].who_has('chronic_ischemic_hd_symptoms')] = self.daly_wts[
+            'daly_chronic_ischemic_hd']
+        # Stroke: give everyone moderate long-term consequences daly weight
+        dalys.loc[df.nc_ever_stroke] = self.daly_wts['daly_stroke']
+        # Heart Attack: first calculate proportion of month spent following heart attack, then attach weighted daly
+        # Calculate fraction of the last month that was spent after having a heart attack
+        any_heart_attack_in_the_last_month = (df['is_alive']) & (~pd.isnull(df['nc_ever_heart_attack_date_last_event'])
+                                                                 & (df['nc_ever_heart_attack_date_last_event'] <=
+                                                                    self.sim.date)) & (
+                                                 (df['nc_ever_heart_attack_date_last_event'] >=
+                                                  (self.sim.date - DateOffset(months=1)))
+                                             )
+
+        start_heart_attack = left_censor(df.loc[any_heart_attack_in_the_last_month,
+                                                'nc_ever_heart_attack_date_last_event'], self.sim.date -
+                                         DateOffset(months=1))
+        dur_heart_attack_in_days = (self.sim.date - start_heart_attack).dt.days.clip(0).fillna(0)
+        # If duration longer than 28 days, replace with 28 days
+        dur_heart_attack_in_days = dur_heart_attack_in_days.replace([29, 30, 31], 28)
+        days_in_last_month = (self.sim.date - (self.sim.date - DateOffset(months=1))).days
+        fraction_of_month_heart_attack = dur_heart_attack_in_days / days_in_last_month
+        dalys.loc[any_heart_attack_in_the_last_month] = fraction_of_month_heart_attack * \
+                                                        self.daly_wts['daly_heart_attack_avg']
+
+        return dalys
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -717,7 +754,7 @@ class CardioMetabolicDisorders(Module):
                         person_id, f'nc_{condition}_date_last_test']):
                     # TODO: @britta make these not arbitrary
                     if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
-                                f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
+                        f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
                         # initiate HSI event
                         hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
                             module=self,
@@ -742,7 +779,7 @@ class CardioMetabolicDisorders(Module):
         for ev in self.events:
             # If the person has symptoms of damage from within the last 3 days, schedule them for emergency care
             if f'{ev}_damage' in symptoms and \
-                    ((self.sim.date-self.sim.population.props.at[person_id, f'nc_{ev}_date_last_event']).days <= 3):
+                ((self.sim.date - self.sim.population.props.at[person_id, f'nc_{ev}_date_last_event']).days <= 3):
                 event = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
                     module=self,
                     person_id=person_id,
