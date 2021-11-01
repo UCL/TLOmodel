@@ -147,7 +147,7 @@ class Alri(Module):
 
     # Declare the disease types:
     disease_types = {
-        'bacterial_pneumonia', 'viral_pneumonia', 'fungal_pneumonia', 'bronchiolitis'
+        'pneumonia', 'bronchiolitis', 'other_alri'
     }
 
     # Declare the Alri complications:
@@ -377,21 +377,17 @@ class Alri(Module):
                       ),
 
         # Risk of death parameters -----
-        'base_death_rate_ALRI_by_bacterial_pneumonia':
+        'base_death_rate_ALRI_by_pneumonia':
             Parameter(Types.REAL,
-                      'baseline death rate from bacterial pneumonia, base age 0-11 months'
+                      'baseline death rate from pneumonia, for those aged 0-11 months'
                       ),
         'base_death_rate_ALRI_by_bronchiolitis':
             Parameter(Types.REAL,
                       'baseline death rate from bronchiolitis, base age 0-11 months'
                       ),
-        'base_death_rate_ALRI_by_viral_pneumonia':
+        'base_death_rate_ALRI_by_other_alri':
             Parameter(Types.REAL,
-                      'baseline death rate from viral pneumonia, base age 0-11 months'
-                      ),
-        'base_death_rate_ALRI_by_fungal_pneumonia':
-            Parameter(Types.REAL,
-                      'baseline death rate from fungal pneumonia, base age 0-11 months'
+                      'baseline death rate from other lower respiratory infections, base age 0-11 months'
                       ),
         'rr_death_ALRI_sepsis':
             Parameter(Types.REAL,
@@ -463,31 +459,31 @@ class Alri(Module):
         # Probability of symptom development -----
         'prob_fever_uncomplicated_ALRI_by_disease_type':
             Parameter(Types.LIST,
-                      'list of probabilities of having fever by bacterial pneumonia, viral pneumonia and bronchiolitis'
+                      'list of probabilities of having fever by pneumonia, bronchiolitis, and other_alri'
                       ),
         'prob_cough_uncomplicated_ALRI_by_disease_type':
             Parameter(Types.LIST,
-                      'list of probabilities of having cough by bacterial pneumonia, viral pneumonia and bronchiolitis'
+                      'list of probabilities of having cough by pneumonia, bronchiolitis, and other_alri'
                       ),
         'prob_difficult_breathing_uncomplicated_ALRI_by_disease_type':
             Parameter(Types.LIST,
                       'list of probabilities of difficult breathing by '
-                      'bacterial pneumonia, viral pneumonia and bronchiolitis'
+                      'pneumonia, bronchiolitis, and other_alri'
                       ),
         'prob_fast_breathing_uncomplicated_ALRI_by_disease_type':
             Parameter(Types.LIST,
                       'list of probabilities of fast breathing by '
-                      'bacterial pneumonia, viral pneumonia and bronchiolitis'
+                      'pneumonia, bronchiolitis, and other_alri'
                       ),
         'prob_chest_indrawing_uncomplicated_ALRI_by_disease_type':
             Parameter(Types.LIST,
                       'list of probabilities of chest indrawing by '
-                      'bacterial pneumonia, viral pneumonia and bronchiolitis'
+                      'pneumonia, bronchiolitis, and other_alri'
                       ),
         'prob_danger_signs_uncomplicated_ALRI_by_disease_type':
             Parameter(Types.LIST,
                       'list of probabilities of danger signs by '
-                      'bacterial pneumonia, viral pneumonia and bronchiolitis'
+                      'pneumonia, bronchiolitis, and other_alri'
                       ),
 
         # Additional signs and symptoms from complications -----
@@ -1113,28 +1109,22 @@ class Models:
          """
         p = self.p
 
-        if pathogen in self.module.pathogens['bacterial']:
-            disease_type = 'bacterial_pneumonia'
-            bacterial_coinfection = np.nan
-
-        elif pathogen in self.module.pathogens['fungal']:
-            disease_type = 'fungal_pneumonia'
+        if pathogen in set(self.module.pathogens['bacterial']).union(self.module.pathogens['fungal']):
+            disease_type = 'pneumonia'
             bacterial_coinfection = np.nan
 
         elif pathogen in self.module.pathogens['viral']:
             if (age >= 2) or (p[f'proportion_viral_pneumonia_by_{pathogen}'] > self.rng.rand()):
-                # likely to be 'viral_pneumonia' (if there is no secondary bacterial infection)
+                disease_type = 'pneumonia'
                 if p['prob_viral_pneumonia_bacterial_coinfection'] > self.rng.rand():
                     bacterial_coinfection = self.secondary_bacterial_infection(va_pneumo_all_doses)
-                    disease_type = 'bacterial_pneumonia' if pd.notnull(bacterial_coinfection) else 'viral_pneumonia'
                 else:
                     bacterial_coinfection = np.nan
-                    disease_type = 'viral_pneumonia'
             else:
                 # likely to be 'bronchiolitis' (if there is no secondary bacterial infection)
                 if p['prob_secondary_bacterial_infection_in_bronchiolitis'] > self.rng.rand():
                     bacterial_coinfection = self.secondary_bacterial_infection(va_pneumo_all_doses)
-                    disease_type = 'bacterial_pneumonia' if pd.notnull(bacterial_coinfection) else 'bronchiolitis'
+                    disease_type = 'pneumonia' if pd.notnull(bacterial_coinfection) else 'bronchiolitis'
                 else:
                     bacterial_coinfection = np.nan
                     disease_type = 'bronchiolitis'
@@ -1185,7 +1175,7 @@ class Models:
             for c in ['pneumothorax', 'pleural_effusion', 'lung_abscess', 'sepsis', 'meningitis', 'hypoxia']:
                 probs[c] += p[f"prob_{c}_by_bacterial_pneumonia"]
 
-        if primary_path_is_viral and (disease_type == 'viral_pneumonia'):
+        if primary_path_is_viral and (disease_type == 'pneumonia'):
             for c in ['pneumothorax', 'pleural_effusion', 'sepsis', 'hypoxia']:
                 probs[c] += p[f"prob_{c}_by_viral_pneumonia"]
 
@@ -1234,10 +1224,9 @@ class Models:
 
         assert disease_type in self.module.disease_types
         index = {
-            'bacterial_pneumonia': 0,
-            'viral_pneumonia': 1,
-            'bronchiolitis': 2,
-            'fungal_pneumonia': 1  # <-- same as probabilities for viral pneumonia
+            'pneumonia': 0,
+            'bronchiolitis': 1,
+            'other_alri': 2
         }[disease_type]
 
         probs = {

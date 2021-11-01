@@ -6,7 +6,6 @@ import pandas as pd
 from tlo import Date, Simulation, logging
 from tlo.methods import (
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     epi,
     healthburden,
@@ -59,7 +58,6 @@ def make_sim():
             disable=True,
         ),
         # disables the health system constraints so all HSI events run
-        dx_algorithm_child.DxAlgorithmChild(),
         epi.Epi(resourcefilepath=resources),
         measles.Measles(resourcefilepath=resources),
     )
