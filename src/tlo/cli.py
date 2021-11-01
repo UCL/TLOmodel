@@ -593,14 +593,14 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
     image_reference = batch_models.ImageReference(
         publisher="microsoft-azure-batch",
         offer="ubuntu-server-container",
-        sku="16-04-lts",
+        sku="20-04-lts",
         version="latest",
     )
 
     virtual_machine_configuration = batch_models.VirtualMachineConfiguration(
         image_reference=image_reference,
         container_configuration=container_conf,
-        node_agent_sku_id="batch.node.ubuntu 16.04",
+        node_agent_sku_id="batch.node.ubuntu 20.04",
     )
 
     pool = batch_models.PoolSpecification(
