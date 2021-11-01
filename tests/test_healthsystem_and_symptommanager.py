@@ -11,7 +11,6 @@ from tlo.methods import (
     Metadata,
     chronicsyndrome,
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
@@ -97,7 +96,6 @@ def test_run_with_healthsystem_no_disease_modules_defined():
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  )
 
@@ -132,7 +130,6 @@ def test_run_no_interventions_allowed(tmpdir):
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -180,7 +177,6 @@ def test_run_in_mode_0_with_capacity(tmpdir):
                                            mode_appt_constraints=0),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
                  )
@@ -233,7 +229,6 @@ def test_run_in_mode_0_no_capacity(tmpdir):
                                            mode_appt_constraints=0),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath)
@@ -276,7 +271,6 @@ def test_run_in_mode_1_with_capacity(tmpdir):
                                            mode_appt_constraints=1),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -318,7 +312,6 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
                                            mode_appt_constraints=1),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -362,7 +355,6 @@ def test_run_in_mode_2_with_capacity(tmpdir):
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -406,7 +398,6 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -452,7 +443,6 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
                                            ignore_cons_constraints=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -496,7 +486,6 @@ def test_run_in_with_hs_disabled(tmpdir):
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
@@ -541,7 +530,6 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )

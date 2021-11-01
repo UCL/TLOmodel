@@ -11,7 +11,6 @@ from tlo.lm import LinearModel
 from tlo.methods import (
     care_of_women_during_pregnancy,
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
@@ -60,7 +59,6 @@ def get_sim(use_simplified_birth=True):
                      healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                      hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
                      )
     else:
@@ -74,7 +72,6 @@ def get_sim(use_simplified_birth=True):
                      healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                      hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
                      # Disable check to avoid error due to lack of Contraception module
                      check_all_dependencies=False,
@@ -476,7 +473,6 @@ def test_aids_symptoms_lead_to_treatment_being_initiated():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
                                                                # force symptoms to lead to health care seeking:
                                                                force_any_symptom_to_lead_to_healthcareseeking=True),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
                  )
 
@@ -916,7 +912,6 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_and_no_restart():
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
                  )
 
@@ -1013,7 +1008,6 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_but_will_restart():
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
                  )
 
