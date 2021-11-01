@@ -590,6 +590,10 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
     """
     print("Creating job.")
 
+    # From https://docs.microsoft.com/en-us/azure/batch/batch-docker-container-workloads#linux-support
+    # We require Ubuntu image with container support (publisher microsoft-azure-batch; offer microsoft-azure-batch)
+    # Get the latest SKU by inspecting output of `az batch pool supported-images list` for publisher+offer
+    # Update node_agent_sku_id (below), if necessary
     image_reference = batch_models.ImageReference(
         publisher="microsoft-azure-batch",
         offer="ubuntu-server-container",
