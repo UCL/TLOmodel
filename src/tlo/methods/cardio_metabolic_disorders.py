@@ -6,7 +6,6 @@ The joint Cardio-Metabolic Disorders model determines onset, outcome and treatme
 * Chronic Ischemic Heart Disease
 * Stroke
 * Heart Attack
-
 And:
 * Chronic Lower Back Pain
 """
@@ -42,7 +41,6 @@ class CardioMetabolicDisorders(Module):
     CardioMetabolicDisorders module covers a subset of cardio-metabolic conditions and events. Conditions are binary
     and individuals experience a risk of acquiring or losing a condition based on annual probability and
     demographic/lifestyle risk factors.
-
     """
     # Save a master list of the events that are covered in this module
     conditions = ['diabetes',
@@ -163,13 +161,16 @@ class CardioMetabolicDisorders(Module):
                                                                   f"prevent death from {p}") for p in conditions
     }
     event_list = {
-        f"nc_{p}": Property(Types.DATE, f"Date of when someone has had a {p}") for p in events}
+        f"nc_{p}": Property(Types.BOOL, f"Whether or not someone has had a {p}") for p in events}
+    event_date_last_list = {
+        f"nc_{p}_date_last_event": Property(Types.DATE, f"Date of last {p}") for p in events
+    }
     event_diagnosis_list = {
         f"nc_{p}_ever_diagnosed": Property(Types.BOOL, f"Whether or not someone has ever been diagnosed with {p}") for p
         in events
     }
     event_date_diagnosis_list = {
-        f"nc_{p}_date_diagnosis": Property(Types.DATE, f"When someone has  been diagnosed with {p}") for p
+        f"nc_{p}_date_diagnosis": Property(Types.DATE, f"When someone has last been diagnosed with {p}") for p
         in events}
     event_medication_list = {
         f"nc_{p}_on_medication": Property(Types.BOOL, f"Whether or not someone has ever been diagnosed with {p}") for p
@@ -186,7 +187,7 @@ class CardioMetabolicDisorders(Module):
 
     PROPERTIES = {**condition_list, **event_list, **condition_diagnosis_list, **condition_date_diagnosis_list,
                   **condition_date_of_last_test_list, **condition_medication_list, **condition_medication_death_list,
-                  **event_diagnosis_list, **event_date_diagnosis_list, **event_medication_list,
+                  **event_date_last_list, **event_diagnosis_list, **event_date_diagnosis_list, **event_medication_list,
                   **event_medication_death_list, **event_scheduled_date_death_list,
                   'nc_ever_weight_loss_treatment': Property(Types.BOOL,
                                                             'whether or not the person has ever had weight loss '
@@ -212,12 +213,13 @@ class CardioMetabolicDisorders(Module):
 
         # Dict to hold the probability of onset of different types of symptom given a condition
         self.prob_symptoms = dict()
-
         # Retrieve age range categories from Demography module
         self.age_cats = None
-
         # Dict to hold the DALY weights
         self.daly_wts = dict()
+
+        # retrieve age range categories from Demography module
+        self.age_cats = None
 
         # store bools for whether or not to log the df or log combinations of co-morbidities
         self.do_log_df = do_log_df
@@ -225,7 +227,6 @@ class CardioMetabolicDisorders(Module):
 
     def read_parameters(self, data_folder):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
-
         ResourceFile_cmd_condition_onset.xlsx = parameters for onset of conditions
         ResourceFile_cmd_condition_removal.xlsx  = parameters for removal of conditions
         ResourceFile_cmd_condition_death.xlsx  = parameters for death rate from conditions
@@ -236,7 +237,6 @@ class CardioMetabolicDisorders(Module):
         ResourceFile_cmd_events_death.xlsx  = parameters for death rate from events
         ResourceFile_cmd_events_symptoms.xlsx  = symptoms for events
         ResourceFile_cmd_events_hsi.xlsx  = HSI parameters for events
-
         """
         cmd_path = Path(self.resourcefilepath) / "cmd"
         cond_onset = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_onset.xlsx", sheet_name=None)
@@ -368,6 +368,8 @@ class CardioMetabolicDisorders(Module):
         # ----- Set ever_diagnosed, date of diagnosis, and on_medication to false / NaT
         # for everyone
         for event in self.events:
+            df.loc[df.is_alive, f'nc_{event}'] = False
+            df.loc[df.is_alive, f'nc_{event}_date_last_event'] = pd.NaT
             df.loc[df.is_alive, f'nc_{event}_ever_diagnosed'] = False
             df.loc[df.is_alive, f'nc_{event}_date_diagnosis'] = pd.NaT
             df.loc[df.is_alive, f'nc_{event}_on_medication'] = False
@@ -403,29 +405,28 @@ class CardioMetabolicDisorders(Module):
                 self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=976)
             self.daly_wts['daly_chronic_ischemic_hd'] = \
                 self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=697)
-            self.daly_wts['daly_chronic_lower_back_pain_moderate'] = \
+            self.daly_wts['daly_chronic_lower_back_pain'] = \
                 self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=1180)
-            self.daly_wts['daly_chronic_lower_back_pain_severe'] = \
-                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=1183)
-            self.daly_wts['daly_stroke_acute'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=705)
-            self.daly_wts['daly_stroke_chronic'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=707)
+            self.daly_wts['daly_stroke'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=701)
             self.daly_wts['daly_heart_attack_acute_days_1_2'] = \
                 self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=689)
             self.daly_wts['daly_heart_attack_acute_days_3_28'] = \
                 self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=693)
+            # The average of these is what is used for the weight for any heart attack event
+            self.daly_wts['daly_heart_attack_avg'] = (
+                (2 / 28) * self.daly_wts['daly_heart_attack_acute_days_1_2']
+                + (26 / 28) * self.daly_wts['daly_heart_attack_acute_days_3_28']
+            )
 
         # Dict to hold counters for the number of episodes by condition-type and age-group
         self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_cats, columns=self.conditions)
         self.df_incidence_tracker = self.df_incidence_tracker_zeros.copy()
 
         # Create tracker for the number of different types of events
-        self.df_incidence_tracker_incident_events_zeros = pd.DataFrame(0, index=self.age_index, columns=self.events)
+        self.df_incidence_tracker_incident_events_zeros = pd.DataFrame(0, index=self.age_cats, columns=self.events)
         self.df_incidence_tracker_incident_events = self.df_incidence_tracker_incident_events_zeros.copy()
-
-        self.df_incidence_tracker_prevalent_events_zeros = pd.DataFrame(0, index=self.age_index, columns=self.events)
+        self.df_incidence_tracker_prevalent_events_zeros = pd.DataFrame(0, index=self.age_cats, columns=self.events)
         self.df_incidence_tracker_prevalent_events = self.df_incidence_tracker_prevalent_events_zeros.copy()
-
-        # Create Tracker for the number of different types of events
         self.events_tracker = dict()
         for event in self.events:
             self.events_tracker[f'{event}_events'] = 0
@@ -514,7 +515,6 @@ class CardioMetabolicDisorders(Module):
         """
         Build a linear model for the risk of onset, removal, or death from a condition, or occurrence or death from
         an event.
-
         :param condition: the condition or event to build the linear model for
         :param interval_between_polls: the duration (in months) between the polls
         :param lm_type: whether or not the lm is for onset, removal, death, or event in order to select the correct
@@ -525,7 +525,6 @@ class CardioMetabolicDisorders(Module):
         # load parameters for correct condition/event
         p = self.parameters[f'{condition}_{lm_type}']
 
-        # Baseline annual probability here is interpreted as the basic incidence rate per year
         # for events, probability of death does not need to be standardised to poll interval
         if condition.startswith('ever_') and lm_type == 'death':
             baseline_annual_probability = p['baseline_annual_probability']
@@ -643,7 +642,6 @@ class CardioMetabolicDisorders(Module):
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
-
         :param mother_id: the mother for this child
         :param child_id: the new child
         """
@@ -656,7 +654,8 @@ class CardioMetabolicDisorders(Module):
             df.at[child_id, f'nc_{condition}_on_medication'] = False
             df.at[child_id, f'nc_{condition}_medication_prevents_death'] = False
         for event in self.events:
-            df.at[child_id, f'nc_{event}'] = pd.NaT
+            df.at[child_id, f'nc_{event}'] = False
+            df.at[child_id, f'nc_{event}_date_last_event'] = pd.NaT
             df.at[child_id, f'nc_{event}_ever_diagnosed'] = False
             df.at[child_id, f'nc_{event}_on_medication'] = False
             df.at[child_id, f'nc_{event}_date_diagnosis'] = pd.NaT
@@ -685,24 +684,6 @@ class CardioMetabolicDisorders(Module):
         # return pd.Series(index=df.index[df.is_alive],data=0.0)
 
         # TODO: @britta add in functionality to fetch daly weight from resourcefile
-
-        df = self.sim.population.props
-        total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
-        total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has('diabetes_symptoms')] = self.daly_wts['daly_diabetes']
-        total_daly_values.loc[self.sim.modules['SymptomManager'].who_has('chronic_lower_back_pain_symptoms')] = \
-            self.daly_wts['daly_chronic_lower_back_pain']
-        total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has('chronic_ischemic_hd_symptoms')] = \
-            self.daly_wts['daly_chronic_ischemic_hd']
-
-        # Split out by pathogen that causes the Alri
-        dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index, 'ri_primary_pathogen'], dtype='float')
-        daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0)
-
-        # add prefix to label according to the name of the causes of disability declared
-        daly_values_by_pathogen = daly_values_by_pathogen.add_prefix('ALRI_')
-        return daly_values_by_pathogen
 
         df = self.sim.population.props
         any_condition = df.loc[df.is_alive, self.condition_list].any(axis=1)
@@ -761,7 +742,7 @@ class CardioMetabolicDisorders(Module):
         for ev in self.events:
             # If the person has symptoms of damage from within the last 3 days, schedule them for emergency care
             if f'{ev}_damage' in symptoms and \
-                    ((self.sim.date-self.sim.population.props.at[person_id, f'nc_{ev}']).days <= 3):
+                    ((self.sim.date-self.sim.population.props.at[person_id, f'nc_{ev}_date_last_event']).days <= 3):
                 event = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
                     module=self,
                     person_id=person_id,
@@ -788,7 +769,6 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
 
     def __init__(self, module, interval_between_polls):
         """The Main Polling Event of the CardioMetabolicDisorders Module
-
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(months=interval_between_polls))
@@ -796,7 +776,6 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
 
     def apply(self, population):
         """Apply this event to the population.
-
         :param population: the current population
         """
         df = population.props
@@ -894,11 +873,11 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                     else:
                         incident_cases.append(person_id)
 
-                # Add incident cases to the correct tracker
+                    # Add incident cases to the correct tracker
                 current_incidence_df_incident_events[event] = df.loc[incident_cases].groupby('age_range').size()
                 current_incidence_df_prevalent_events[event] = df.loc[prevalent_cases].groupby('age_range').size()
 
-        # add the new incidence numbers to tracker
+        # Add the new incidence numbers to tracker
         self.module.df_incidence_tracker_incident_events = self.module.df_incidence_tracker_incident_events.add(
             current_incidence_df_incident_events)
         self.module.df_incidence_tracker_prevalent_events = self.module.df_incidence_tracker_prevalent_events.add(
@@ -921,7 +900,8 @@ class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
             return
 
         self.module.events_tracker[f'{self.event}_events'] += 1
-        df.at[person_id, f'nc_{self.event}'] = self.sim.date
+        df.at[person_id, f'nc_{self.event}'] = True
+        df.at[person_id, f'nc_{self.event}_date_last_event'] = self.sim.date
 
         # Add the outward symptom to the SymptomManager. This will result in emergency care being sought for any
         # event that takes place
@@ -1041,12 +1021,11 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
         # Reset the counter
         self.module.df_incidence_tracker = self.module.df_incidence_tracker_zeros.copy()
 
-        # Convert incidence tracker to dict to pass through logger
+        # Convert incidence tracker for events to dict to pass through logger
         logger.info(key='incidence_count_by_incident_event',
                     data=self.module.df_incidence_tracker_incident_events.to_dict(),
                     description=f"count of incident events occurring between each successive poll of logging event "
                                 f"every "f"{self.repeat} months")
-
         # Convert prevalence tracker to dict to pass through logger
         logger.info(key='incidence_count_by_prevalent_event',
                     data=self.module.df_incidence_tracker_prevalent_events.to_dict(),
@@ -1133,21 +1112,19 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
             prev_age_sex = proportion_of_something_in_a_groupby_ready_for_logging(df, f'nc_{event}',
                                                                                   ['sex', 'age_range'])
 
-            # Prevalence of conditions broken down by sex and age
+            # Prevalence of events broken down by sex and age
             logger.info(
                 key=f'{event}_prevalence_by_age_and_sex',
                 description='current fraction of the population classified as having condition, by sex and age',
                 data={'data': prev_age_sex}
             )
-
-            # Prevalence of conditions by adults aged 20 or older
+            # Prevalence of events by adults aged 20 or older
             adult_prevalence = {
                 'prevalence': len(df[df[f'nc_{event}'] & df.is_alive & (df.age_years >= 20)]) / len(
                     df[df.is_alive & (df.age_years >= 20)])}
-
             logger.info(
                 key=f'{event}_prevalence',
-                description='current fraction of the adult population classified as having condition',
+                description='current fraction of the adult population classified as having event',
                 data=adult_prevalence
             )
 
