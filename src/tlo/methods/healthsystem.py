@@ -1,11 +1,12 @@
 """
-Todo:   - speed up
-        - phase-out use of facility_name and replace with facility_id
-        - re-organised resource files: bring in one united file, and then decompose following read_parameters
+Todo:   - phase-out use of facility_name and replace with facility_id
         - bed days parameterisation
         - let the level of the appointment be in the log
         - move things to the hsi base class
         - let the logger give times of each hcw
+        - deprecate support for consumables packages and increase efficiency of that stuff
+        - distance to facility
+        - streamline input arguments
 """
 
 import heapq as hp
@@ -86,37 +87,41 @@ def _accepts_argument(function: callable, argument: str) -> bool:
 
 class HealthSystem(Module):
     """
-    This is the Health System Module
-    Version: September 2019
+    This is the Health System Module.
     The execution of all health systems interactions are controlled through this module.
     """
 
     INIT_DEPENDENCIES = {'Demography'}
 
     PARAMETERS = {
-        'BedCapacity': Parameter(Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
-        'Officer_Types': Parameter(Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),
-        'Daily_Capabilities': Parameter(
-            Types.DATA_FRAME, 'The capabilities by facility and officer type available each day'
-        ),
+        # Organization of the HealthSystem
+        'Master_Facilities_List': Parameter(Types.DATA_FRAME, 'Listing of all health facilities.'),
+
+        # Definitions of the officers and appointment types
+        'Officer_Types_Table': Parameter(Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),
         'Appt_Types_Table': Parameter(Types.DATA_FRAME, 'The names of the type of appointments with the health system'),
-        'Appt_Time_Table': Parameter(
-            Types.DICT, 'The time taken for each appointment, according to officer and facility type.'
-        ),
-        'Appt_Time_Table_PARAMETER': Parameter(Types.DATA_FRAME, 'The time taken for each appointment, according to officer and facility type.'), # rename once have remove the 'Appt_Time_Tabble
         'Appt_Offered_By_Facility_Level': Parameter(
             Types.DATA_FRAME, 'Table indicating whether or not each appointment is offered at each facility level.'),
-        'ApptType_By_FacLevel': Parameter(
-            Types.LIST, 'Indicates whether an appointment type can occur at a facility level.'
-        ), # todo - maybe this should not be a parameter
-        'Master_Facilities_List': Parameter(Types.DATA_FRAME, 'Listing of all health facilities.'),
-        'Facilities_For_Each_District': Parameter(
-            Types.DICT,
-            'Mapping between a district and all of the health facilities to which its \
-                      population have access.',
-        ),
+        'Appt_Time_Table': Parameter(Types.DATA_FRAME,
+                                     'The time taken for each appointment, according to officer and facility type.'),
+
+        # Capabilities of the HealthSystem (under alternative assumptions)
+        'Daily_Capabilities_actual': Parameter(
+            Types.DATA_FRAME, 'The capabilities (minutes of time available of each type of officer in each facility) '
+                              'based on the _estimated current_ number and distribution of staff estimated.'),
+        'Daily_Capabilities_funded': Parameter(
+            Types.DATA_FRAME, 'The capabilities (minutes of time available of each type of officer in each facility) '
+                              'based on the _potential_ number and distribution of staff estimated (i.e. those '
+                              'positions that can be funded).'),
+
+        # Availability of Consumables
         'Consumables': Parameter(Types.DATA_FRAME, 'List of consumables used in each intervention and their costs.'),
         'Consumables_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
+
+        # Infrastructure and Equipment
+        'BedCapacity': Parameter(Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
+
+        # Service Availability
         'Service_Availability': Parameter(Types.LIST, 'List of services to be available.')
     }
 
@@ -252,13 +257,14 @@ class HealthSystem(Module):
             path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv')
         self.parameters['Appt_Offered_By_Facility_Level'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' / 'ResourceFile_ApptType_By_FacLevel.csv')
-        self.parameters['Appt_Time_Table_PARAMETER'] = pd.read_csv(
+        self.parameters['Appt_Time_Table'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv'
         )
 
-        # Load 'Daily_Capabilities' (depends on whether to use `actual` or `funded` file)
-        self.parameters['Daily_Capabilities'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'human_resources' / f'{self.use_funded_or_actual_staffing}' / 'ResourceFile_Daily_Capabilities.csv'
+        # Load 'Daily_Capabilities' (for both actual and funded)
+        for _i in ['actual', 'funded']:
+            self.parameters[f'Daily_Capabilities_{_i}'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'human_resources' / f'{_i}' / 'ResourceFile_Daily_Capabilities.csv'
         ).iloc[:, 1:]  # todo can remove ".iloc[:, 1:]" when csv do not come with the index included.
 
         # Read in ResourceFile_Consumables and then process it to create the data structures needed
@@ -272,7 +278,6 @@ class HealthSystem(Module):
         # Set default parameter for Service Availability (everything available)
         self.parameters['Service_Availability'] = ['*']
 
-
     def pre_initialise_population(self):
         """Do processing following `read_parameters` prior to generating the population."""
         self.process_human_resources_files()
@@ -282,19 +287,20 @@ class HealthSystem(Module):
     def process_human_resources_files(self):
         """Create the data-structures needed from the information read into the parameters"""
 
-        # Define Facility Levels
+        # * Define Facility Levels
         self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
         assert self._facility_levels == set(['0', '1a', '1b', '2', '3', '4'])
 
-        # Define Appointment Types
+        # * Define Appointment Types
         self._appointment_types = set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
 
-        # Define the Officers Needed For Each Appointment
-        # Store data as dict of dicts, with outer-dict indexed by string facility level and
+        # * Define the Officers Needed For Each Appointment
+        # (Store data as dict of dicts, with outer-dict indexed by string facility level and
         # inner-dict indexed by string type code with values corresponding to list of (named)
-        # tuples of appointment officer type codes and time taken.
-        appt_time_data = self.parameters['Appt_Time_Table_PARAMETER']
-        appt_times_per_level_and_type = {_facility_level: defaultdict(list) for _facility_level in self._facility_levels}
+        # tuples of appointment officer type codes and time taken.)
+        appt_time_data = self.parameters['Appt_Time_Table']
+        appt_times_per_level_and_type = {_facility_level: defaultdict(list) for _facility_level in
+                                         self._facility_levels}
         for appt_time_tuple in appt_time_data.itertuples():
             appt_times_per_level_and_type[
                 appt_time_tuple.Facility_Level
@@ -313,11 +319,11 @@ class HealthSystem(Module):
                 for appt_info_list in appt_times_per_level_and_type[level].values()
             ) == len(appt_time_data)
         )
-        self.parameters['Appt_Time_Table'] = appt_times_per_level_and_type   # todo - make this not a parameter but self._appt_times
+        self._appt_times = appt_times_per_level_and_type
 
-        # Define which appointments are possible at each facility level
+        # * Define Which Appointments Are Possible At Each Facility Level
         appt_type_per_level_data = self.parameters['Appt_Offered_By_Facility_Level']
-        self.parameters['ApptType_By_FacLevel'] = {   # todo - make this not a parameter
+        self._appt_type_by_facLevel = {
             _facility_level: set(
                 appt_type_per_level_data['Appt_Type_Code'][
                     appt_type_per_level_data[f'Facility_Level_{_facility_level}']
@@ -326,48 +332,61 @@ class HealthSystem(Module):
             for _facility_level in self._facility_levels
         }
 
-        # Todo - aim is to generate 'facilities_per_level_and_district' entirely from self.parameters['Master_Facilities_List']
-        # todo generate this here.
-        facilities_per_district_data = pd.read_csv(
-            self.resourcefilepath / 'healthsystem' / 'organisation' / 'ResourceFile_Facilities_For_Each_District.csv')
-        # remove reference to 'Facility_Level 5' (this is HQ) and is not used here.
-        facilities_per_district_data = facilities_per_district_data.drop(
-            facilities_per_district_data.index[facilities_per_district_data['Facility_Level'] == '5']
-        )
-        districts = set(facilities_per_district_data['District'].unique())  # todo - cross-check with Demography!?
-
-        # Store data as dict of dicts, with outer-dict indexed by string facility level and
+        # Also store data as dict of dicts, with outer-dict indexed by string facility level and
         # inner-dict indexed by district name with values corresponding to (named) tuples of
         # facility ID and name
+        # Get look-up of the districts (by name) in each region (by name)
+        districts_in_region = self.sim.modules['Demography'].parameters['districts_in_region']
+        all_districts = set(self.sim.modules['Demography'].parameters['district_num_to_district_name'].values())
+
         facilities_per_level_and_district = {_facility_level: {} for _facility_level in self._facility_levels}
-        for facility_tuple in facilities_per_district_data.itertuples():
-            facilities_per_level_and_district[
-                facility_tuple.Facility_Level
-            ][
-                facility_tuple.District
-            ] = FacilityInfo(
-                id=facility_tuple.Facility_ID,
-                name=facility_tuple.Facility_Name
-            )
+        for facility_tuple in self.parameters['Master_Facilities_List'].itertuples():
+
+            if pd.notnull(facility_tuple.District):
+                # A facility that is specific to a district:
+                facilities_per_level_and_district[facility_tuple.Facility_Level][facility_tuple.District] = \
+                    FacilityInfo(
+                        id=facility_tuple.Facility_ID,
+                        name=facility_tuple.Facility_Name
+                    )
+
+            elif pd.isnull(facility_tuple.District) and pd.notnull(facility_tuple.Region):
+                # A facility that is specific to region (and not a district):
+                for _district in districts_in_region[facility_tuple.Region]:
+                    facilities_per_level_and_district[facility_tuple.Facility_Level][_district] = \
+                        FacilityInfo(
+                            id=facility_tuple.Facility_ID,
+                            name=facility_tuple.Facility_Name
+                        )
+
+            elif (
+                pd.isnull(facility_tuple.District) and
+                pd.isnull(facility_tuple.Region) and
+                (facility_tuple.Facility_Level != '5')
+            ):
+                # A facility that is National (not specific to a region or a district) (ignoring level 5 (headquarters))
+                for _district in all_districts:
+                    facilities_per_level_and_district[facility_tuple.Facility_Level][_district] = \
+                        FacilityInfo(
+                            id=facility_tuple.Facility_ID,
+                            name=facility_tuple.Facility_Name
+                        )
+
+        # Check that there is facility of every level for every district:
         assert all(
-            districts == facilities_per_level_and_district[_facility_level].keys()
+            all_districts == facilities_per_level_and_district[_facility_level].keys()
             for _facility_level in self._facility_levels
-        ), "Facilities_For_Each_District resource file does not contain facilities at all levels for all districts"
+        ), "There is not one of each facility type available to each district."
 
-        self.parameters['Facilities_For_Each_District'] = facilities_per_level_and_district
+        self._facilities_for_each_district = facilities_per_level_and_district
 
+        # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
+        self._daily_capabilities = self.format_daily_capabilities()
 
-        # Daily Capabilities
-        self.reformat_daily_capabilities()  # Reformats this table to include zero where capacity is not available
-        # todo - refactor so is not over-writing parameter but instead creating a protected property
-
-        # Store set of officers with non-zero daily availability for checking scheduled
-        # HSI events do not make appointment time requests of unavailable officers
-        self._officers_with_availability = set(
-            self.parameters['Daily_Capabilities'].index[
-                (self.parameters['Daily_Capabilities']['Total_Minutes_Per_Day'] > 0)
-            ]
-        )
+        # Also, store the set of officers with non-zero daily availability
+        # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
+        # never available.)
+        self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
 
     def process_consumables_file(self):
         """Helper function for processing the consumables data (stored as self.parameters['Consumables'])
@@ -437,16 +456,16 @@ class HealthSystem(Module):
             m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHSYSTEM in m.METADATA
         ]
 
-        # Check that set of districts of residence in population are subset o districts from
-        # Facilities_For_Each_District resource file
+        # Check that set of districts of residence in population are subset of districts from
+        # `self._facilities_for_each_district`, which is derived from self.parameters['Master_Facilities_List']
         df = self.sim.population.props
         districts_of_residence = set(df.loc[df.is_alive, "district_of_residence"].cat.categories)
         assert all(
             districts_of_residence.issubset(per_level_facilities.keys())
-            for per_level_facilities in self.parameters["Facilities_For_Each_District"].values()
+            for per_level_facilities in self._facilities_for_each_district.values()
         ), (
             "At least one district_of_residence value in population not present in "
-            "Facilities_For_Each_District resource file"
+            "self._facilities_for_each_district resource file"
         )
 
         # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
@@ -596,7 +615,7 @@ class HealthSystem(Module):
                 # Check that the event does not request an appointment at a facility
                 # level which is not possible
                 appt_type_to_check_list = hsi_event.EXPECTED_APPT_FOOTPRINT.keys()
-                facility_appt_types = self.parameters['ApptType_By_FacLevel'][
+                facility_appt_types = self._appt_type_by_facLevel[
                     hsi_event.ACCEPTED_FACILITY_LEVEL
                 ]
                 assert facility_appt_types.issuperset(appt_type_to_check_list), (
@@ -768,7 +787,7 @@ class HealthSystem(Module):
                         person_id=hsi_event.target, treatment_id=hsi_event.TREATMENT_ID
                     )
 
-    def reformat_daily_capabilities(self):
+    def format_daily_capabilities(self) -> pd.Series:
         """
         This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
         every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity
@@ -779,8 +798,8 @@ class HealthSystem(Module):
         (This is so that its easier to track where demands are being placed where there is no capacity)
         """
 
-        # Get the capabilities data as they are imported
-        capabilities = self.parameters['Daily_Capabilities']
+        # Get the capabilities data imported (according to the specified underlying assumptions).
+        capabilities = self.parameters[f'Daily_Capabilities_{self.use_funded_or_actual_staffing}']
 
         # Create dataframe containing background information about facility and officer types
         facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
@@ -827,25 +846,23 @@ class HealthSystem(Module):
         assert abs(capabilities_ex['Total_Minutes_Per_Day'].sum() - capabilities['Total_Mins_Per_Day'].sum()) < 1e-7
         assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
 
-        # Updates the capabilities table with the reformatted version
-        self.parameters['Daily_Capabilities'] = capabilities_ex
+        # return the pd.Series of `Total_Minutes_Per_Day' indexed for each type of officer at each facility
+        return capabilities_ex['Total_Minutes_Per_Day']
+
 
     def get_capabilities_today(self) -> pd.Series:
         """
         Get the capabilities of the health system today.
-        returns: Series giving minutes available for each officer type in each facility type
+        returns: pd.Series giving minutes available for each officer type in each facility type
 
         Functions can go in here in the future that could expand the time available,
         simulating increasing efficiency (the concept of a productivity ratio raised
         by Martin Chalkley).
 
-        For now this method only scales by the static `capabilities_coefficient` scale
+        For now this method only multiplies the estimated minutes available by the `capabilities_coefficient` scale
         factor.
         """
-        return (
-            self.parameters['Daily_Capabilities']['Total_Minutes_Per_Day']
-            * self.capabilities_coefficient
-        )
+        return self._daily_capabilities * self.capabilities_coefficient
 
     def get_blank_appt_footprint(self):
         """
@@ -892,7 +909,7 @@ class HealthSystem(Module):
 
         # Return the (one) health_facility available to this person (based on their
         # district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL
-        return self.parameters["Facilities_For_Each_District"][the_level][the_district]
+        return self._facilities_for_each_district[the_level][the_district]
 
     def get_appt_footprint_as_time_request(self, hsi_event, actual_appt_footprint=None):
         """
@@ -927,7 +944,7 @@ class HealthSystem(Module):
         # No entry in cache so compute time request
 
         # Appointment times for each facility and officer combination
-        appt_times = self.parameters['Appt_Time_Table']
+        appt_times = self._appt_times
 
         # Facility level required by this event
         the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
@@ -945,7 +962,7 @@ class HealthSystem(Module):
             except KeyError as e:
                 raise KeyError(
                     f"The time needed for this appointment is not defined for this "
-                    f"specified facility level in the Appt_Time_Table. "
+                    f"specified facility level in the self._appt_times. "
                     f"Event treatment ID: {hsi_event.TREATMENT_ID}"
                 ) from e
             for appt_info in appt_info_list:
@@ -1039,7 +1056,7 @@ class HealthSystem(Module):
                     cons_req_as_footprint['Item_Code'].keys(),
                     [True] * len(cons_req_as_footprint['Item_Code'].keys()
                                  )))
-                }
+            }
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Determine availability of each item and package:
@@ -1276,7 +1293,7 @@ class HealthSystem(Module):
         list_of_events = list()
 
         for ev_tuple in self.HSI_EVENT_QUEUE:
-            date = ev_tuple[1]   # this is the 'topen' value
+            date = ev_tuple[1]  # this is the 'topen' value
             event = ev_tuple[4]
             if isinstance(event.target, (int, np.integer)):
                 if event.target == person_id:
@@ -1620,7 +1637,7 @@ class HSI_Event:
                 if not isinstance(item_codes, list):
                     item_codes = [item_codes]
                 # turn into 'consumable footprint':
-                footprint_items = dict(zip(item_codes, [1]*len(item_codes)))
+                footprint_items = dict(zip(item_codes, [1] * len(item_codes)))
             else:
                 footprint_items = {}
 
@@ -1628,7 +1645,7 @@ class HSI_Event:
             if pkg_codes is not None:
                 if not isinstance(pkg_codes, list):
                     pkg_codes = [pkg_codes]
-                footprint_pkgs = dict(zip(pkg_codes, [1]*len(pkg_codes)))
+                footprint_pkgs = dict(zip(pkg_codes, [1] * len(pkg_codes)))
             else:
                 footprint_pkgs = {}
 
@@ -1702,6 +1719,7 @@ class HSIEventWrapper(Event):
     be passed to the main simulation scheduler.
     When this event is run (by the simulation scheduler) it runs the HSI event with squeeze_factor=0.0
     """
+
     def __init__(self, hsi_event, *args, **kwargs):
         super().__init__(hsi_event.module, *args, **kwargs)
         self.hsi_event = hsi_event
@@ -1712,7 +1730,6 @@ class HSIEventWrapper(Event):
         # (this check normally happens in the HealthSystemScheduler and silently do not run the HSI event)
 
         if isinstance(self.hsi_event.target, tlo.population.Population) \
-                or (self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']):
-
+            or (self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']):
             # Run the event (with 0 squeeze_factor) and ignore the output
             _ = self.hsi_event.run(squeeze_factor=0.0)
