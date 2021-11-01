@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import random as rm
 import pytest
 
 from tlo import Date, Module, Simulation, logging
@@ -581,9 +582,9 @@ def test_the_use_of_beds_from_multiple_facilities():
 
     # Define the district and the facility_id to which the person will have beddays.
     person_info = [
-        ("Chitipa", 64),    # <-- in the Northern region, so use facility_id 64
-        ("Kasungu", 65),    # <-- in the Central region, so use facility_id 65
-        ("Machinga", 66)    # <-- in the Southern region, so use facility_id 66 (for which no capacity is defined)
+        ("Chitipa", 64),  # <-- in the Northern region, so use facility_id 64
+        ("Kasungu", 65),  # <-- in the Central region, so use facility_id 65
+        ("Machinga", 66)  # <-- in the Southern region, so use facility_id 66 (for which no capacity is defined)
     ]
 
     df = sim.population.props
@@ -619,19 +620,41 @@ def test_the_use_of_beds_from_multiple_facilities():
     with pytest.raises(KeyError):
         hs.bed_days.impose_beddays_footprint(person_id=2, footprint=footprint)
 
-# 1) def test_assign_remaining_bed_days_to_a_lower_class():
-#  set of checks to test the allocation of bed days algorithm
-# 2)    initialise a simulation object
-# 3)    Register the two required modules(demography and health system)
-# 4)    initialise the bed_days class via health system
-# 5)    create a simple BedCapacity with sample facility id's for testing
-# 6)    create a bed capacity dataframe
-# 7)    create and start simulation
-# 8)    initialise / reset bed days tracker
 
-# 9)    impose a footprint requesting more high priority beds(high_dependency_beds) than those in capacity
-# 10)   check that imposing footprint on an individual works
-# 11)   check that high priority beds are assigned according to availability in tracker on that day
-# 12)   check that the remaining days are assigned to a next higher priority bed type i.e general bed and if the
-#           the capacity of the next bed type can't accommodate all days, ensure another bed type of lower class takes
-#           the remaining days
+def test_bed_days_allocation_to_one_bed_type():
+    sim = Simulation(start_date=start_date)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+    )
+
+    # call HealthSystem Module to initialise BedDays class
+    hs = sim.modules['HealthSystem']
+
+    # Update BedCapacity data with a simple table:
+    level2_facility_ids = [64, 65, 66]  # <-- the level 2 facilities for each region
+    cap_bedtype1 = 1
+
+    # create a simple bed capacity dataframe
+    hs.parameters['BedCapacity'] = pd.DataFrame(
+        data={
+            'Facility_ID': level2_facility_ids,
+            'bedtype1': cap_bedtype1,
+        }
+    )
+
+    # Create a 21 day simulation
+    days_sim = hs.bed_days.days_until_last_day_of_bed_tracker
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=days_sim))
+
+    # reset bed days tracker to the start_date of the simulation
+    hs.bed_days.initialise_beddays_tracker()
+
+    # 1) impose a footprint
+    personal_ids = [0, 1, 2, 3, 4]
+
+    # make persons request use of bed day in different days
+    for ids in personal_ids:
+        sim.date = start_date + pd.DateOffset(days=rm.randint(0, 3))
+        hs.bed_days.impose_beddays_footprint(person_id=ids, footprint={'bedtype1': 5 + ids})
