@@ -221,6 +221,9 @@ class HealthSystem(Module):
         # Create the instance of BedDays to record usage of in-patient bed days
         self.bed_days = BedDays(self)
 
+        # Create pointer for the HealthSystemScheduler event
+        self.healthsystemscheduler = None
+
     def read_parameters(self, data_folder):
 
         path_to_resourcefiles_for_healthsystem = Path(self.resourcefilepath) / 'healthsystem'
@@ -430,7 +433,8 @@ class HealthSystem(Module):
 
         # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
         if not (self.disable or self.disable_and_reject_all):
-            sim.schedule_event(HealthSystemScheduler(self), sim.date)
+            self.healthsystemscheduler = HealthSystemScheduler(self)
+            sim.schedule_event(self.healthsystemscheduler, sim.date)
 
         # Update consumables available today:
         self.determine_availability_of_consumables_today()

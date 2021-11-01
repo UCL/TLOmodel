@@ -549,6 +549,96 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+def test_all_appt_types_can_run():
+    """Check that if an appointment type is declared as one that can run at a facility-type of level `x` that it can
+    run for at the level for persons in any district."""
+
+    # Create Dummy Module to host the HSI
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    # Create a dummy HSI event class
+    class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id, appt_type, level):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'DummyHSIEvent'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({appt_type: 1})
+            self.ACCEPTED_FACILITY_LEVEL = level
+
+            self.ran = False
+
+        def apply(self, person_id, squeeze_factor):
+            self.run = True
+
+
+    sim = Simulation(start_date=start_date, seed=0)
+
+    # Register the core modules and simulate for 0 days
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=2),
+                 # <-- hard constraint (only HSI events with no squeeze factor can run)
+                 DummyModule()
+                 )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date)
+
+    # Get pointer to the HealthSystemScheduler event
+    healthsystemscheduler = sim.modules['HealthSystem'].healthsystemscheduler
+
+    # Get the table showing which types of appointment can occur at which level
+    appt_types_by_level = sim.modules['HealthSystem'].parameters['ApptType_By_FacLevel']
+
+    # Get the all the districts in which a person could be resident, and allocate one person to each district
+    person_in_district = {i: d for i, d in enumerate(sim.population.props['district_of_residence'].cat.categories)}
+    sim.population.props.loc[person_in_district.keys(), 'is_alive'] = True
+    sim.population.props.loc[person_in_district.keys(), 'district_of_residence'] = list(person_in_district.values())
+
+    # For each type of appointment, for a person in each district, create the HSI, schedule the HSI and see if it can be run
+    error_msg = list()
+
+    for level in appt_types_by_level:
+        for appt_type in appt_types_by_level[level]:
+            for person_id in person_in_district:
+
+                sim.modules['HealthSystem'].reset_queue()
+
+                hsi = DummyHSIEvent(module=sim.modules['DummyModule'],
+                                    person_id=person_id,
+                                    appt_type=appt_type,
+                                    level=level)
+
+                sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi,
+                    topen=sim.date,
+                    tclose=sim.date + pd.DateOffset(days=1),
+                    priority=1
+                )
+
+                healthsystemscheduler.apply(sim.population)
+
+                if not hsi.ran:
+                    error_msg.append(
+                        f"The HSI did not run: {level=}, {appt_type=}, district={person_in_district[person_id]}"
+                    )
+
+    print(error_msg)
+
+    assert 0 == len(error_msg)
+
+
+
+
 def test_use_of_helper_function_get_all_consumables():
     """Test that the helper function 'get_all_consumables' in the base class of the HSI works as expected."""
 
