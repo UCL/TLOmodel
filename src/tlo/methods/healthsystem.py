@@ -103,9 +103,12 @@ class HealthSystem(Module):
         'Appt_Time_Table': Parameter(
             Types.DICT, 'The time taken for each appointment, according to officer and facility type.'
         ),
+        'Appt_Time_Table_PARAMETER': Parameter(Types.DATA_FRAME, 'The time taken for each appointment, according to officer and facility type.'), # rename once have remove the 'Appt_Time_Tabble
+        'Appt_Offered_By_Facility_Level': Parameter(
+            Types.DATA_FRAME, 'Table indicating whether or not each appointment is offered at each facility level.'),
         'ApptType_By_FacLevel': Parameter(
             Types.LIST, 'Indicates whether an appointment type can occur at a facility level.'
-        ),
+        ), # todo - maybe this should not be a parameter
         'Master_Facilities_List': Parameter(Types.DATA_FRAME, 'Listing of all health facilities.'),
         'Facilities_For_Each_District': Parameter(
             Types.DICT,
@@ -135,10 +138,11 @@ class HealthSystem(Module):
         ignore_cons_constraints: bool = False,
         ignore_priority: bool = False,
         capabilities_coefficient: Optional[float] = None,
+        use_funded_or_actual_staffing: Optional[str] = 'actual',
         disable: bool = False,
         disable_and_reject_all: bool = False,
         store_hsi_events_that_have_run: bool = False,
-        record_hsi_event_details: bool = False,
+        record_hsi_event_details: bool = False
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -156,6 +160,9 @@ class HealthSystem(Module):
         :param capabilities_coefficient: Multiplier for the capabilities of health
             officers, if ``None`` set to ratio of initial population to estimated 2010
             population.
+        :param use_funded_or_actual_staffing: If `actual`, then use the numbers and distribution of staff estimated to
+        be available currently; If `funded`, then use the numbers and distribution of staff that are potentially
+        available.
         :param disable: If ``True``, disables the health system (no constraints and no
             logging) and every HSI event runs.
         :param disable_and_reject_all: If ``True``, disable health system and no HSI
@@ -194,6 +201,10 @@ class HealthSystem(Module):
             assert isinstance(capabilities_coefficient, float)
         self.capabilities_coefficient = capabilities_coefficient
 
+        # Find which resourcefile to use - those for the actual staff available or the funded staff available
+        assert use_funded_or_actual_staffing in ['actual', 'funded']
+        self.use_funded_or_actual_staffing = use_funded_or_actual_staffing
+
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
         self.recognised_modules_names = []
 
@@ -228,32 +239,62 @@ class HealthSystem(Module):
 
         path_to_resourcefiles_for_healthsystem = Path(self.resourcefilepath) / 'healthsystem'
 
+        # Load basic information about the organization of the HealthSystem
+        self.parameters['Master_Facilities_List'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv'
+        ).iloc[:, 1:]
+        # todo can remove ".iloc[:, 1:]" when csv do not come with the index included.
+
+        # Load ResourceFiles that define appointment and officer types
         self.parameters['Officer_Types_Table'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'ResourceFile_Officer_Types_Table.csv'
-        )
-
+            path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' / 'ResourceFile_Officer_Types_Table.csv')
         self.parameters['Appt_Types_Table'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'ResourceFile_Appt_Types_Table.csv'
+            path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv')
+        self.parameters['Appt_Offered_By_Facility_Level'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' / 'ResourceFile_ApptType_By_FacLevel.csv')
+        self.parameters['Appt_Time_Table_PARAMETER'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv'
         )
 
-        self._appointment_types = set(
-            self.parameters['Appt_Types_Table']['Appt_Type_Code'])
+        # Load 'Daily_Capabilities' (depends on whether to use `actual` or `funded` file)
+        self.parameters['Daily_Capabilities'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'human_resources' / f'{self.use_funded_or_actual_staffing}' / 'ResourceFile_Daily_Capabilities.csv'
+        ).iloc[:, 1:]  # todo can remove ".iloc[:, 1:]" when csv do not come with the index included.
 
-        appt_time_data = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'ResourceFile_Appt_Time_Table.csv'
-        )
+        # Read in ResourceFile_Consumables and then process it to create the data structures needed
+        self.parameters['Consumables'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables.csv')
 
-        facility_levels = set(appt_time_data['Facility_Level'].unique())
+        # Data on the number of beds available of each type by facility_id
+        self.parameters['BedCapacity'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'infrastructure_and_equipment' / 'ResourceFile_Bed_Capacity.csv')
 
-        assert facility_levels == set(['0', '1a', '1b', '2', '3', '4'])
+        # Set default parameter for Service Availability (everything available)
+        self.parameters['Service_Availability'] = ['*']
 
-        # Store facility levels in module for check in schedule_hsi_event and for
-        # check against levels in facilities per district resource file
-        self._facility_levels = facility_levels
+
+    def pre_initialise_population(self):
+        """Do processing following `read_parameters` prior to generating the population."""
+        self.process_human_resources_files()
+        self.process_consumables_file()
+        self.bed_days.pre_initialise_population()
+
+    def process_human_resources_files(self):
+        """Create the data-structures needed from the information read into the parameters"""
+
+        # Define Facility Levels
+        self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
+        assert self._facility_levels == set(['0', '1a', '1b', '2', '3', '4'])
+
+        # Define Appointment Types
+        self._appointment_types = set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
+
+        # Define the Officers Needed For Each Appointment
         # Store data as dict of dicts, with outer-dict indexed by string facility level and
         # inner-dict indexed by string type code with values corresponding to list of (named)
         # tuples of appointment officer type codes and time taken.
-        appt_times_per_level_and_type = {_facility_level: defaultdict(list) for _facility_level in facility_levels}
+        appt_time_data = self.parameters['Appt_Time_Table_PARAMETER']
+        appt_times_per_level_and_type = {_facility_level: defaultdict(list) for _facility_level in self._facility_levels}
         for appt_time_tuple in appt_time_data.itertuples():
             appt_times_per_level_and_type[
                 appt_time_tuple.Facility_Level
@@ -268,16 +309,15 @@ class HealthSystem(Module):
         assert (
             sum(
                 len(appt_info_list)
-                for level in facility_levels
+                for level in self._facility_levels
                 for appt_info_list in appt_times_per_level_and_type[level].values()
             ) == len(appt_time_data)
         )
-        self.parameters['Appt_Time_Table'] = appt_times_per_level_and_type
+        self.parameters['Appt_Time_Table'] = appt_times_per_level_and_type   # todo - make this not a parameter but self._appt_times
 
-        appt_type_per_level_data = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'ResourceFile_ApptType_By_FacLevel.csv'
-        )
-        self.parameters['ApptType_By_FacLevel'] = {
+        # Define which appointments are possible at each facility level
+        appt_type_per_level_data = self.parameters['Appt_Offered_By_Facility_Level']
+        self.parameters['ApptType_By_FacLevel'] = {   # todo - make this not a parameter
             _facility_level: set(
                 appt_type_per_level_data['Appt_Type_Code'][
                     appt_type_per_level_data[f'Facility_Level_{_facility_level}']
@@ -286,28 +326,20 @@ class HealthSystem(Module):
             for _facility_level in self._facility_levels
         }
 
-        mfl = pd.read_csv(path_to_resourcefiles_for_healthsystem / 'ResourceFile_Master_Facilities_List.csv')
-        self.parameters['Master_Facilities_List'] = mfl.iloc[:, 1:]  # get rid of extra column
-
+        # Todo - aim is to generate 'facilities_per_level_and_district' entirely from self.parameters['Master_Facilities_List']
+        # todo generate this here.
         facilities_per_district_data = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'ResourceFile_Facilities_For_Each_District.csv'
-        )
-
+            self.resourcefilepath / 'healthsystem' / 'organisation' / 'ResourceFile_Facilities_For_Each_District.csv')
         # remove reference to 'Facility_Level 5' (this is HQ) and is not used here.
         facilities_per_district_data = facilities_per_district_data.drop(
             facilities_per_district_data.index[facilities_per_district_data['Facility_Level'] == '5']
         )
-        districts = set(facilities_per_district_data['District'].unique())
+        districts = set(facilities_per_district_data['District'].unique())  # todo - cross-check with Demography!?
 
-        # Check facility levels match those from appointment time table
-        assert set(facilities_per_district_data['Facility_Level'].unique()) == self._facility_levels, (
-            "Mismatch between facility levels in Facilities_For_Each_District "
-            "resource file and Appt_Time_Table resource files"
-        )
         # Store data as dict of dicts, with outer-dict indexed by string facility level and
         # inner-dict indexed by district name with values corresponding to (named) tuples of
         # facility ID and name
-        facilities_per_level_and_district = {_facility_level: {} for _facility_level in facility_levels}
+        facilities_per_level_and_district = {_facility_level: {} for _facility_level in self._facility_levels}
         for facility_tuple in facilities_per_district_data.itertuples():
             facilities_per_level_and_district[
                 facility_tuple.Facility_Level
@@ -324,9 +356,11 @@ class HealthSystem(Module):
 
         self.parameters['Facilities_For_Each_District'] = facilities_per_level_and_district
 
-        caps = pd.read_csv(path_to_resourcefiles_for_healthsystem / 'ResourceFile_Current_Staff_Daily_Capabilities.csv')
-        self.parameters['Daily_Capabilities'] = caps.iloc[:, 1:]
+
+        # Daily Capabilities
         self.reformat_daily_capabilities()  # Reformats this table to include zero where capacity is not available
+        # todo - refactor so is not over-writing parameter but instead creating a protected property
+
         # Store set of officers with non-zero daily availability for checking scheduled
         # HSI events do not make appointment time requests of unavailable officers
         self._officers_with_availability = set(
@@ -334,19 +368,6 @@ class HealthSystem(Module):
                 (self.parameters['Daily_Capabilities']['Total_Minutes_Per_Day'] > 0)
             ]
         )
-
-        # Read in ResourceFile_Consumables and then process it to create the data structures needed
-        # NB. Modules can use this to look-up what consumables they need.
-        self.parameters['Consumables'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'ResourceFile_Consumables.csv')
-        self.process_consumables_file()
-
-        # Set default parameter for Service Availablity (everthing available)
-        self.parameters['Service_Availability'] = ['*']
-
-        # Data on the number of beds available of each type by facility_id
-        self.parameters['BedCapacity'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'ResourceFile_Bed_Capacity.csv')
 
     def process_consumables_file(self):
         """Helper function for processing the consumables data (stored as self.parameters['Consumables'])
@@ -387,9 +408,6 @@ class HealthSystem(Module):
         self.parameters['Consumables_Cost_List'] = pd.Series(
             raw[['Item_Code', 'Unit_Cost']].drop_duplicates().set_index('Item_Code')['Unit_Cost']
         )
-
-    def pre_initialise_population(self):
-        self.bed_days.pre_initialise_population()
 
     def initialise_population(self, population):
         # If capabilities coefficient was not explicitly specified, use ratio of initial
@@ -753,7 +771,7 @@ class HealthSystem(Module):
     def reformat_daily_capabilities(self):
         """
         This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
-        every permutation of officer_type_code and facility_id, with zeros against permuations where no capacity
+        every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity
         is available.
 
         It also give the dataframe an index that is useful for merging on (based on Facility_ID and Officer Type)
@@ -818,7 +836,7 @@ class HealthSystem(Module):
         returns: Series giving minutes available for each officer type in each facility type
 
         Functions can go in here in the future that could expand the time available,
-        simulating increasing efficiency (the concept of a productivitiy ratio raised
+        simulating increasing efficiency (the concept of a productivity ratio raised
         by Martin Chalkley).
 
         For now this method only scales by the static `capabilities_coefficient` scale

@@ -551,7 +551,7 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
 
 def test_all_appt_types_can_run():
     """Check that if an appointment type is declared as one that can run at a facility-type of level `x` that it can
-    run for at the level for persons in any district."""
+    run at the level for persons in any district."""
 
     # Create Dummy Module to host the HSI
     class DummyModule(Module):
@@ -586,8 +586,10 @@ def test_all_appt_types_can_run():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2),
+                                           mode_appt_constraints=2,
+                                           use_funded_or_actual_staffing='actual'),
                  # <-- hard constraint (only HSI events with no squeeze factor can run)
+                 # <-- using the 'funded' number/distribution of officers
                  DummyModule()
                  )
     sim.make_initial_population(n=100)
@@ -632,11 +634,13 @@ def test_all_appt_types_can_run():
                         f"The HSI did not run: {level=}, {appt_type=}, district={person_in_district[person_id]}"
                     )
 
-    print(error_msg)
+    if len(error_msg):
+        # Print any errors to screen and to file
+        for _line in error_msg:
+            print(_line)
+        pd.DataFrame(error_msg).to_csv('error_dump.txt', index=False, header=False)
 
     assert 0 == len(error_msg)
-
-
 
 
 def test_use_of_helper_function_get_all_consumables():
