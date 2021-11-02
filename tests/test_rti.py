@@ -9,8 +9,6 @@ from tlo import Date, Simulation
 from tlo.methods import (
     demography,
     depression,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     epi,
     epilepsy,
@@ -47,8 +45,6 @@ def create_basic_rti_sim(population_size):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
                  rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
                  )
 
@@ -185,8 +181,6 @@ def test_with_more_modules():
                  epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
 
     # Make the population
@@ -215,8 +209,6 @@ def test_run_health_system_high_squeeze():
                  rti.RTI(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
     # make the initial population
     sim.make_initial_population(n=popsize)
@@ -242,8 +234,6 @@ def test_run_health_system_events_wont_run():
                  rti.RTI(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
     # make initial population
     sim.make_initial_population(n=popsize)
@@ -301,8 +291,6 @@ def test_no_capabilities():
                  rti.RTI(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
     # make initial population
     sim.make_initial_population(n=popsize)
@@ -330,8 +318,6 @@ def test_health_system_disabled():
                  rti.RTI(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath)
                  )
     # make the initial population
     sim.make_initial_population(n=popsize)
