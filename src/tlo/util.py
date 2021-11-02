@@ -134,9 +134,9 @@ class BitsetHandler:
     def df(self) -> pd.DataFrame:
         return self._population.props
 
-    def element_repr(self, element: str) -> str:
-        """Returns integer representation of the specified element"""
-        return self._lookup[element]
+    def element_repr(self, *elements: str) -> int:
+        """Returns integer representation of the specified element(s)"""
+        return sum(self._lookup[el] for el in elements)
 
     def set(self, where, *elements: str) -> None:
         """For individuals matching `where` argument, set the bit (i.e. set to True) the given elements
@@ -148,8 +148,7 @@ class BitsetHandler:
 
         :param where: condition to filter rows that will be set
         :param elements: one or more elements to set to True"""
-        value = sum([self._lookup[x] for x in elements])
-        self.df.loc[where, self._column] = np.bitwise_or(self.df.loc[where, self._column], value)
+        self.df.loc[where, self._column] |= self.element_repr(*elements)
 
     def unset(self, where, *elements: str) -> None:
         """For individuals matching `where` argument, unset the bit (i.e. set to False) the given elements
@@ -161,9 +160,7 @@ class BitsetHandler:
 
         :param where: condition to filter rows that will be unset
         :param elements: one or more elements to set to False"""
-        value = sum([self._lookup[x] for x in elements])
-        value = np.invert(np.array(value, np.int64))
-        self.df.loc[where, self._column] = np.bitwise_and(self.df.loc[where, self._column], value)
+        self.df.loc[where, self._column] &= ~np.int64(self.element_repr(*elements))
 
     def has_all(self, where, *elements: str, first=False) -> Union[pd.Series, bool]:
         """Check whether individual(s) have all the elements given set to True
@@ -178,7 +175,7 @@ class BitsetHandler:
         :param where: condition to filter rows that will checked
         :param elements: one or more elements to set to True
         :param first: a keyword argument to return first item in Series instead of Series"""
-        value = sum([self._lookup[x] for x in elements])
+        value = self.element_repr(*elements)
         matched = np.bitwise_and(self.df.loc[where, self._column], value) == value
         if first:
             return matched.iloc[0]
@@ -187,9 +184,8 @@ class BitsetHandler:
     def has_any(self, where, *elements: str, first=False):
         """Sister method to `has_all` but instead checks whether matching rows have any of the elements
         set to True"""
-        matched = pd.Series(False, index=self.df.index[where])
-        for element in elements:
-            matched = matched.where(matched, self.has_all(where, element))
+        value = self.element_repr(*elements)
+        matched = np.bitwise_and(self.df.loc[where, self._column], value) != 0
         if first:
             return matched.iloc[0]
         return matched
@@ -205,21 +201,18 @@ class BitsetHandler:
         :param where: condition to filter rows that will returned
         :param first: return the first entry of the resulting series
         """
-        def int_to_set(integer):
-            bin_repr = format(integer, 'b')
-            return {self._lookup[2 ** k] for k, v in enumerate(reversed(list(bin_repr))) if v == '1'}
-        sets = self.df.loc[where, self._column].apply(int_to_set)
+        sets = self.df.loc[where, self._column].apply(self.to_strings)
         if first:
             return sets.iloc[0]
         return sets
 
     def to_strings(self, integer):
-        """Given an integer value, returns the corresponding string. For fast lookup
+        """Given an integer value, returns the corresponding set of strings. For fast lookup
 
         :param integer: the integer value for the bitset
         """
         bin_repr = format(integer, 'b')
-        return {self._lookup[2 ** k] for k, v in enumerate(reversed(list(bin_repr))) if v == '1'}
+        return {self._elements[k] for k, v in enumerate(reversed(bin_repr)) if v == '1'}
 
     def compress(self, uncompressed: pd.DataFrame) -> None:
         def convert(column):
