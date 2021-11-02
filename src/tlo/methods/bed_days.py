@@ -310,7 +310,7 @@ class BedDays:
         facility_level = '2'
 
         # Return an id of the (one) health_facility available to this person (based on their district)
-        return self.hs_module.parameters["Facilities_For_Each_District"][facility_level][the_district][0]
+        return self.hs_module._facilities_for_each_district[facility_level][the_district][0]
 
     def remove_beddays_footprint(self, person_id):
         """Helper function that will remove from the bed-days tracker the days of bed-days remaining for a person.

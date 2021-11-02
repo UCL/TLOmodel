@@ -1,5 +1,5 @@
 """
-Todo:   - phase-out use of facility_name and replace with facility_id
+Todo:   - phase-out use of facility_name and replace with facility_id ?!
         - bed days parameterisation
         - let the level of the appointment be in the log
         - move things to the hsi base class
@@ -126,9 +126,6 @@ class HealthSystem(Module):
     }
 
     PROPERTIES = {
-        'hs_dist_to_facility': Property(
-            Types.REAL, 'The distance for each person to their nearest clinic (of any type)'
-        ),
         'hs_is_inpatient': Property(
             Types.BOOL, 'Whether or not the person is currently an in-patient at any medical facility'
         ),
@@ -284,8 +281,62 @@ class HealthSystem(Module):
         self.process_consumables_file()
         self.bed_days.pre_initialise_population()
 
+    def initialise_population(self, population):
+        # todo - move this to initialis simulation
+        # If capabilities coefficient was not explicitly specified, use ratio of initial
+        # population size to estimated actual population in 2010
+        if self.capabilities_coefficient is None:
+            demography_module = self.sim.modules['Demography']
+            self.capabilities_coefficient = (
+                demography_module.compute_initial_population_scaling_factor(
+                    population.initial_size
+                )
+            )
+
+        self.bed_days.initialise_population(population.props)
+
+    def initialise_simulation(self, sim):
+
+        # Set the tracker in preparation for the simulation
+        self.bed_days.initialise_beddays_tracker()
+
+        # Capture list of disease modules:
+        self.recognised_modules_names = [
+            m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHSYSTEM in m.METADATA
+        ]
+
+        # Check that set of districts of residence in population are subset of districts from
+        # `self._facilities_for_each_district`, which is derived from self.parameters['Master_Facilities_List']
+        df = self.sim.population.props
+        districts_of_residence = set(df.loc[df.is_alive, "district_of_residence"].cat.categories)
+        assert all(
+            districts_of_residence.issubset(per_level_facilities.keys())
+            for per_level_facilities in self._facilities_for_each_district.values()
+        ), (
+            "At least one district_of_residence value in population not present in "
+            "self._facilities_for_each_district resource file"
+        )
+
+        # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
+        if not (self.disable or self.disable_and_reject_all):
+            self.healthsystemscheduler = HealthSystemScheduler(self)
+            sim.schedule_event(self.healthsystemscheduler, sim.date)
+
+        # Update consumables available today:
+        self.determine_availability_of_consumables_today()
+
+        # Determine service_availability
+        self.set_service_availability()
+
+    def on_birth(self, mother_id, child_id):
+        self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
+
+    def on_simulation_end(self):
+        """Put out to the log the information from the tracker of the last day of the simulation"""
+        self.bed_days.on_simulation_end()
+
     def process_human_resources_files(self):
-        """Create the data-structures needed from the information read into the parameters"""
+        """Create the data-structures needed from the information read into the parameters."""
 
         # * Define Facility Levels
         self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
@@ -428,56 +479,67 @@ class HealthSystem(Module):
             raw[['Item_Code', 'Unit_Cost']].drop_duplicates().set_index('Item_Code')['Unit_Cost']
         )
 
-    def initialise_population(self, population):
-        # If capabilities coefficient was not explicitly specified, use ratio of initial
-        # population size to estimated actual population in 2010
-        if self.capabilities_coefficient is None:
-            demography_module = self.sim.modules['Demography']
-            self.capabilities_coefficient = (
-                demography_module.compute_initial_population_scaling_factor(
-                    population.initial_size
-                )
-            )
-        df = population.props
-        # Assign hs_dist_to_facility'
-        # (For now, let this be a random number, but in future it may be properly informed based on \
-        #  population density distribitions)
-        # Note that this characteritic is inherited from mother to child.
-        df.loc[df.is_alive, 'hs_dist_to_facility'] = self.rng.uniform(0.01, 5.00, df.is_alive.sum())
-        self.bed_days.initialise_population(df)
+    def format_daily_capabilities(self) -> pd.Series:
+        """
+        This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
+        every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity
+        is available.
 
-    def initialise_simulation(self, sim):
+        It also give the dataframe an index that is useful for merging on (based on Facility_ID and Officer Type)
 
-        # Set the tracker in preparation for the simulation
-        self.bed_days.initialise_beddays_tracker()
+        (This is so that its easier to track where demands are being placed where there is no capacity)
+        """
 
-        # Capture list of disease modules:
-        self.recognised_modules_names = [
-            m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHSYSTEM in m.METADATA
-        ]
+        # Get the capabilities data imported (according to the specified underlying assumptions).
+        capabilities = self.parameters[f'Daily_Capabilities_{self.use_funded_or_actual_staffing}']
 
-        # Check that set of districts of residence in population are subset of districts from
-        # `self._facilities_for_each_district`, which is derived from self.parameters['Master_Facilities_List']
-        df = self.sim.population.props
-        districts_of_residence = set(df.loc[df.is_alive, "district_of_residence"].cat.categories)
-        assert all(
-            districts_of_residence.issubset(per_level_facilities.keys())
-            for per_level_facilities in self._facilities_for_each_district.values()
-        ), (
-            "At least one district_of_residence value in population not present in "
-            "self._facilities_for_each_district resource file"
+        # Create dataframe containing background information about facility and officer types
+        facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
+        officer_type_codes = self.parameters['Officer_Types_Table']['Officer_Type_Code'].values
+
+        facs = list()
+        officers = list()
+        for f in facility_ids:
+            for o in officer_type_codes:
+                facs.append(f)
+                officers.append(o)
+
+        capabilities_ex = pd.DataFrame(data={'Facility_ID': facs, 'Officer_Type_Code': officers})
+
+        # Merge in information about facility from Master Facilities List
+        mfl = self.parameters['Master_Facilities_List']
+        capabilities_ex = capabilities_ex.merge(mfl, on='Facility_ID', how='left')
+
+        # Merge in information about officers
+        officer_types = self.parameters['Officer_Types_Table'][['Officer_Type_Code', 'Officer_Type']]
+        capabilities_ex = capabilities_ex.merge(officer_types, on='Officer_Type_Code', how='left')
+
+        # Merge in the capabilities (minutes available) for each officer type (inferring zero minutes where
+        # there is no entry in the imported capabilities table)
+        capabilities_ex = capabilities_ex.merge(
+            capabilities[['Facility_ID', 'Officer_Type_Code', 'Total_Mins_Per_Day']],
+            on=['Facility_ID', 'Officer_Type_Code'],
+            how='left',
+        )
+        capabilities_ex = capabilities_ex.fillna(0)
+
+        # Give the standard index:
+        capabilities_ex = capabilities_ex.set_index(
+            'FacilityID_'
+            + capabilities_ex['Facility_ID'].astype(str)
+            + '_Officer_'
+            + capabilities_ex['Officer_Type_Code']
         )
 
-        # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
-        if not (self.disable or self.disable_and_reject_all):
-            self.healthsystemscheduler = HealthSystemScheduler(self)
-            sim.schedule_event(self.healthsystemscheduler, sim.date)
+        # Rename 'Total_Minutes_Per_Day'
+        capabilities_ex = capabilities_ex.rename(columns={'Total_Mins_Per_Day': 'Total_Minutes_Per_Day'})
 
-        # Update consumables available today:
-        self.determine_availability_of_consumables_today()
+        # Checks
+        assert abs(capabilities_ex['Total_Minutes_Per_Day'].sum() - capabilities['Total_Mins_Per_Day'].sum()) < 1e-7
+        assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
 
-        # Determine service_availability
-        self.set_service_availability()
+        # return the pd.Series of `Total_Minutes_Per_Day' indexed for each type of officer at each facility
+        return capabilities_ex['Total_Minutes_Per_Day']
 
     def set_service_availability(self):
         """Set service availability. (Should be equal to what is specified by the parameter, but overwrite with what was
@@ -496,23 +558,6 @@ class HealthSystem(Module):
                     data=f"Running Health System With the Following Service Availability: "
                          f"{self.service_availability}"
                     )
-
-    def on_birth(self, mother_id, child_id):
-
-        # New child inherits the hs_dist_to_facility of the mother
-        df = self.sim.population.props
-        df.at[child_id, 'hs_dist_to_facility'] = df.at[mother_id, 'hs_dist_to_facility']
-        self.bed_days.on_birth(df, mother_id, child_id)
-
-    def on_simulation_end(self):
-        """Put out to the log the information from the tracker of the last day of the simulation"""
-        self.bed_days.on_simulation_end()
-
-    def register_disease_module(self, new_disease_module):
-        """
-        This is now deprecated. Disease modules do not need to register with the health system.
-        """
-        raise NotImplementedError
 
     def schedule_hsi_event(
         self, hsi_event, priority, topen, tclose=None, do_hsi_event_checks=True
@@ -786,69 +831,6 @@ class HealthSystem(Module):
                     self.sim.modules[module_name].on_hsi_alert(
                         person_id=hsi_event.target, treatment_id=hsi_event.TREATMENT_ID
                     )
-
-    def format_daily_capabilities(self) -> pd.Series:
-        """
-        This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
-        every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity
-        is available.
-
-        It also give the dataframe an index that is useful for merging on (based on Facility_ID and Officer Type)
-
-        (This is so that its easier to track where demands are being placed where there is no capacity)
-        """
-
-        # Get the capabilities data imported (according to the specified underlying assumptions).
-        capabilities = self.parameters[f'Daily_Capabilities_{self.use_funded_or_actual_staffing}']
-
-        # Create dataframe containing background information about facility and officer types
-        facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
-        officer_type_codes = self.parameters['Officer_Types_Table']['Officer_Type_Code'].values
-
-        facs = list()
-        officers = list()
-        for f in facility_ids:
-            for o in officer_type_codes:
-                facs.append(f)
-                officers.append(o)
-
-        capabilities_ex = pd.DataFrame(data={'Facility_ID': facs, 'Officer_Type_Code': officers})
-
-        # Merge in information about facility from Master Facilities List
-        mfl = self.parameters['Master_Facilities_List']
-        capabilities_ex = capabilities_ex.merge(mfl, on='Facility_ID', how='left')
-
-        # Merge in information about officers
-        officer_types = self.parameters['Officer_Types_Table'][['Officer_Type_Code', 'Officer_Type']]
-        capabilities_ex = capabilities_ex.merge(officer_types, on='Officer_Type_Code', how='left')
-
-        # Merge in the capabilities (minutes available) for each officer type (inferring zero minutes where
-        # there is no entry in the imported capabilities table)
-        capabilities_ex = capabilities_ex.merge(
-            capabilities[['Facility_ID', 'Officer_Type_Code', 'Total_Mins_Per_Day']],
-            on=['Facility_ID', 'Officer_Type_Code'],
-            how='left',
-        )
-        capabilities_ex = capabilities_ex.fillna(0)
-
-        # Give the standard index:
-        capabilities_ex = capabilities_ex.set_index(
-            'FacilityID_'
-            + capabilities_ex['Facility_ID'].astype(str)
-            + '_Officer_'
-            + capabilities_ex['Officer_Type_Code']
-        )
-
-        # Rename 'Total_Minutes_Per_Day'
-        capabilities_ex = capabilities_ex.rename(columns={'Total_Mins_Per_Day': 'Total_Minutes_Per_Day'})
-
-        # Checks
-        assert abs(capabilities_ex['Total_Minutes_Per_Day'].sum() - capabilities['Total_Mins_Per_Day'].sum()) < 1e-7
-        assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
-
-        # return the pd.Series of `Total_Minutes_Per_Day' indexed for each type of officer at each facility
-        return capabilities_ex['Total_Minutes_Per_Day']
-
 
     def get_capabilities_today(self) -> pd.Series:
         """
@@ -1250,25 +1232,21 @@ class HealthSystem(Module):
         :param total_footprint: Per-officer totals of footprints of all the HSI events that ran
         """
 
-        # Combine the current_capabiliites and total_footprint per-officer totals
-        total_calls_per_officer = pd.Series(total_footprint, dtype='float64')
-        comparison = self.parameters['Daily_Capabilities'][['Facility_ID']].copy()
+        # Combine the current_capabilities and total_footprint per-officer totals
+        comparison = pd.DataFrame(index=current_capabilities.index)
         comparison['Total_Minutes_Per_Day'] = current_capabilities
-        comparison['Minutes_Used'] = total_calls_per_officer
-        comparison['Minutes_Used'].fillna(0, inplace=True)
-        total_calls = total_calls_per_officer.sum()
-
+        comparison['Minutes_Used'] = pd.Series(total_footprint, dtype='float64')
+        comparison['Minutes_Used'] = comparison['Minutes_Used'].fillna(0.0)
         assert len(comparison) == len(current_capabilities)
-        assert np.isclose(comparison['Minutes_Used'].sum(), total_calls)
 
-        # Sum within each Facility_ID using groupby (Index of 'summary' is Facility_ID)
-        summary = comparison.groupby('Facility_ID')[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
+        # Sum within each Facility_ID
+        facility_id = [_f.split('_')[1] for _f in comparison.index]
+        summary = comparison.groupby(by=facility_id)[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
 
         # Compute Fraction of Time Used Across All Facilities
         total_available = summary['Total_Minutes_Per_Day'].sum()
         fraction_time_used_across_all_facilities = (
-            total_calls / total_available if total_available > 0
-            else 0  # no capabilities or nan arising
+            summary['Minutes_Used'].sum() / total_available if total_available > 0 else 0
         )
 
         # Compute Fraction of Time Used In Each Facility
@@ -1282,6 +1260,10 @@ class HealthSystem(Module):
         logger.info(key='Capacity',
                     data=log_capacity,
                     description='daily summary of utilisation and capacity of health system resources')
+
+    def remove_beddays_footprint(self, person_id):
+        # removing bed_days from a particular individual if any
+        self.bed_days.remove_beddays_footprint(person_id=person_id)
 
     def find_events_for_person(self, person_id: int):
         """Find the events in the HSI_EVENT_QUEUE for a particular person.
@@ -1300,10 +1282,6 @@ class HealthSystem(Module):
                     list_of_events.append((date, event))
 
         return list_of_events
-
-    def remove_beddays_footprint(self, person_id):
-        # removing bed_days from a particular individual if any
-        self.bed_days.remove_beddays_footprint(person_id=person_id)
 
     def reset_queue(self):
         """Set the HSI event queue to be empty"""
