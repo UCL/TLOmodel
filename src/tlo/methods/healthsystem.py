@@ -631,6 +631,11 @@ class HealthSystem(Module):
 
                 # That it has an 'ACCEPTED_FACILITY_LEVEL' attribute
                 # (Integer or string specifying the facility level at which HSI_Event must occur)
+                # --**--
+                # To temporarily enable backward compatibility with "FacilityLevel1", automatically convert 1 to '1'
+                if hsi_event.ACCEPTED_FACILITY_LEVEL == 1:
+                    hsi_event.ACCEPTED_FACILITY_LEVEL = '1a'
+                # --**--
                 hsi_event.ACCEPTED_FACILITY_LEVEL = str(hsi_event.ACCEPTED_FACILITY_LEVEL) \
                     if not isinstance(hsi_event.ACCEPTED_FACILITY_LEVEL, str) \
                     else hsi_event.ACCEPTED_FACILITY_LEVEL

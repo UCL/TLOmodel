@@ -571,11 +571,16 @@ def test_all_appt_types_can_run():
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({appt_type: 1})
             self.ACCEPTED_FACILITY_LEVEL = level
 
-            self.ran = False
+            self.this_hsi_event_ran = False
 
         def apply(self, person_id, squeeze_factor):
-            self.run = True
+            self.this_hsi_event_ran = True
 
+        def did_not_run(self, *args, **kwargs):
+            print('did not run')
+
+        def never_ran(self):
+            print('never ran')
 
     sim = Simulation(start_date=start_date, seed=0)
 
@@ -584,7 +589,7 @@ def test_all_appt_types_can_run():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2,
-                                           use_funded_or_actual_staffing='actual'),
+                                           use_funded_or_actual_staffing='funded'),
                  # <-- hard constraint (only HSI events with no squeeze factor can run)
                  # <-- using the 'funded' number/distribution of officers
                  DummyModule()
@@ -606,13 +611,12 @@ def test_all_appt_types_can_run():
     # For each type of appointment, for a person in each district, create the HSI, schedule the HSI and see if it can be run
     error_msg = list()
 
-    for appt_type in appt_types_offered.index:
-        for level in appt_types_offered.columns:
+    for person_id in person_in_district:
+        for appt_type in appt_types_offered.index:
+            for level in appt_types_offered.columns:
 
-            if appt_types_offered.at[appt_type, level]:
-                # This appointment type should be available at this level:
-
-                for person_id in person_in_district:
+                if appt_types_offered.at[appt_type, level]:
+                    # This appointment type should be available at this level:
 
                     sim.modules['HealthSystem'].reset_queue()
 
@@ -630,7 +634,7 @@ def test_all_appt_types_can_run():
 
                     healthsystemscheduler.apply(sim.population)
 
-                    if not hsi.ran:
+                    if not hsi.this_hsi_event_ran:
                         error_msg.append(
                             f"The HSI did not run: {level=}, {appt_type=}, district={person_in_district[person_id]}"
                         )
