@@ -614,7 +614,6 @@ def test_all_appt_types_can_run():
     for person_id in person_in_district:
         for appt_type in appt_types_offered.index:
             for level in appt_types_offered.columns:
-
                 if appt_types_offered.at[appt_type, level]:
                     # This appointment type should be available at this level:
 

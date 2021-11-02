@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-resourcefilepath = Path('resources')
+resourcefilepath = Path('./resources')
 
 path_to_dropbox = Path(
     '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi La Onse Theme 1 SHARE')  # <-- point to the TLO dropbox locally
