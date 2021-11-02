@@ -16,17 +16,17 @@ import pandas as pd
 
 resourcefilepath = Path('resources')
 
-path_original_files_on_dropbox = Path(
+path_to_dropbox = Path(
     '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi La Onse Theme 1 SHARE')  # <-- point to the TLO dropbox locally
 
 # LOCATION OF INPUT FILES:
-workingfile = (path_original_files_on_dropbox /
+workingfile = (path_to_dropbox /
                '05 - Resources' /
                'Module-healthsystem' /
                'chai ehp resource use data' /
                'ORIGINAL' /
                'Optimization model import_Malawi_20180315 v10.xlsx')
-path_to_auxiliaryfiles = (path_original_files_on_dropbox /
+path_to_auxiliaryfiles = (path_to_dropbox /
                           '05 - Resources' /
                           'Module-healthsystem' /
                           'chai ehp resource use data' /

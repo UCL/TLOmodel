@@ -1,11 +1,10 @@
 """
 Todo:   - phase-out use of facility_name and replace with facility_id ?!
-        - bed days parameterisation
+        - deprecate support for consumables packages and increase efficiency of that stuff
         - let the level of the appointment be in the log
+        - bed days parameterisation
         - move things to the hsi base class
         - let the logger give times of each hcw
-        - deprecate support for consumables packages and increase efficiency of that stuff
-        - distance to facility
         - streamline input arguments
 """
 
