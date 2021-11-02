@@ -138,7 +138,6 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     self.sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
                         person_id=person_id, hsi_event=self)
 
-        # diagnostic algorithm for child <5 yrs
         if age < 5:
             # ----------------------------------- CHILD < 5 -----------------------------------
             if 'Stunting' in self.sim.modules:

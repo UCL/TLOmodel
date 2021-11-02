@@ -197,12 +197,9 @@ def test_module_dependencies_complete(sim, module_class):
     [
         (module, module_class_map[dependency_name])
         for module in module_class_map.values()
-        # Skip test for DxAlgorithm* modules as these need to be used in conjunction
-        # with disease modules for the dependencies to be relevant
-        # Also skip test for NewbornOutcomes as long simulation needed for birth events
-        # to occur and dependencies to be used
+        # Skip test for NewbornOutcomes as long simulation needed for birth events to occur and dependencies to be used
         if module.__name__ not in {
-            'DxAlgorithmAdult', 'DxAlgorithmChild', 'NewbornOutcomes'
+            'NewbornOutcomes'
         }
         for dependency_name in get_all_required_dependencies(module)
     ],
