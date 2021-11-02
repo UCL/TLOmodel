@@ -115,6 +115,10 @@ class RTI(Module):
             'Proportion of those involved in an RTI that die at site of accident or die before seeking medical '
             'intervention'
         ),
+        'prob_bleeding_leads_to_shock': Parameter(
+            Types.REAL,
+            'The proportion of those with heavily bleeding injuries who go into shock'
+        ),
         'prob_death_iss_less_than_9': Parameter(
             Types.REAL,
             'Proportion of people who pass away in the following month after medical treatment for injuries with an ISS'
@@ -2381,6 +2385,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         self.rr_injrti_male = p['rr_injrti_male']
         self.rr_injrti_excessalcohol = p['rr_injrti_excessalcohol']
         self.imm_death_proportion_rti = p['imm_death_proportion_rti']
+        self.prob_bleeding_leads_to_shock = p['prob_bleeding_leads_to_shock']
         self.rt_emergency_care_ISS_score_cut_off = p['rt_emergency_care_ISS_score_cut_off']
 
     def apply(self, population):
@@ -2517,14 +2522,15 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         assert len(df.loc[df.rt_road_traffic_inc & ~df.rt_imm_death, 'rt_ISS_score'] > 0) == \
                len(df.loc[df.rt_road_traffic_inc & ~df.rt_imm_death])
         # ========================== Determine who will experience shock from blood loss ==============================
-        # todo: improve this section, currently using a blanket assumption that those with internal bleeding or open
-        #   fractures will have shock, this is a temporary fix.
+        # todo: calibrate the percentage of people who will go into shock
         internal_bleeding_codes = ['361', '363', '461', '463', '813bo', '813co', '813do', '813eo']
         df = self.sim.population.props
 
-        shock_index, _ = \
+        potential_shock_index, _ = \
             road_traffic_injuries.rti_find_and_count_injuries(df.loc[df.rt_road_traffic_inc, RTI.INJURY_COLUMNS],
                                                               internal_bleeding_codes)
+        rand_for_shock = self.module.rng.random_sample(len(potential_shock_index))
+        shock_index = potential_shock_index[self.prob_bleeding_leads_to_shock > rand_for_shock]
         df.loc[shock_index, 'rt_in_shock'] = True
         # ========================== Decide survival time without medical intervention ================================
         # todo: find better time for survival data without med int for ISS scores
