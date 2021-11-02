@@ -28,8 +28,6 @@ from tlo.methods import (
     demography,
     depression,
     diarrhoea,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     epi,
     epilepsy,
@@ -224,8 +222,6 @@ sim.register(
         capabilities_coefficient=args.capabilities_coefficient,
         record_hsi_event_details=args.record_hsi_event_details
     ),
-    dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-    dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
 
     # Modules for birth/labour/newborns
     contraception.Contraception(resourcefilepath=resourcefilepath),
