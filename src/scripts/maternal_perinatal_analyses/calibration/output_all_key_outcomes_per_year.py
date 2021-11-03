@@ -10,11 +10,11 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'calibration_run_all_modules.py'  # <-- update this to look at other results
+scenario_filename = 'mph_long_run_calibration_check.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_30k_calibration_run_all_modules-2021-10-18T084850Z'
+graph_location = 'output_graphs_30k_mph_long_run_calibration_check-2021-11-01T130622Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -961,8 +961,9 @@ line_graph_with_ci_and_target_rate(total_aph_rates, aph_lqs, aph_uqs, target_aph
 early_ptl_data = get_comp_mean_and_rate('early_preterm_labour', total_births_per_year, la_comps, 100)
 late_ptl_data = get_comp_mean_and_rate('late_preterm_labour', total_births_per_year, la_comps, 100)
 
-target_ptl_dict = {'double': False,
-                   'first': {'year': 2020, 'value': 19.8, 'label': 'Antony et al.', 'ci': 0},
+target_ptl_dict = {'double': True,
+                   'first': {'year': 2012, 'value': 19.8, 'label': 'Antony et al.', 'ci': 0},
+                   'second': {'year': 2014, 'value': 10, 'label': 'Chawanpaiboon et al.', 'ci': (14.3-7.4)/2},
                    }
 
 total_ptl_rates = [x + y for x, y in zip(early_ptl_data[0], late_ptl_data[0])]
