@@ -300,7 +300,8 @@ class CardioMetabolicDisorders(Module):
         # Register symptoms for conditions and give non-generic symptom 'average' healthcare seeking
         for symptom_name in self.symptoms:
             self.sim.modules['SymptomManager'].register_symptom(
-                Symptom(name=symptom_name)
+                Symptom(name=symptom_name,
+                        odds_ratio_health_seeking_in_adults=0)
             )
         # Register symptoms from events and make them emergencies
         for event in self.events:
