@@ -767,6 +767,19 @@ class CardioMetabolicDisorders(Module):
                             topen=self.sim.date,
                             tclose=None
                         )
+            elif (not df.at[person_id, f'nc_{condition}_ever_diagnosed']) and (f'{condition}_symptoms' in symptoms):
+                # initiate HSI event
+                hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
+                    module=self,
+                    person_id=person_id,
+                    condition=f'{condition}'
+                )
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event,
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+                )
 
     def determine_if_will_be_investigated_events(self, person_id):
         """
