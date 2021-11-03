@@ -13,7 +13,6 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import (
-    bladder_cancer,
     cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
@@ -25,7 +24,6 @@ from tlo.methods import (
     healthsystem,
     labour,
     newborn_outcomes,
-    oesophagealcancer,
     postnatal_supervisor,
     pregnancy_supervisor,
     simplified_births,
@@ -46,22 +44,27 @@ def runsim(seed=0):
 
     start_date = Date(2010, 1, 1)
     end_date = Date(2019, 12, 31)
-    popsize = 200000
+    popsize = 10000
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
     # run the simulation
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 #care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 #contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 #labour.Labour(resourcefilepath=resourcefilepath),
+                 #newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 #postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 #pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath, do_log_df=False,
+                                                                     do_condition_combos=True)
                  )
 
     sim.make_initial_population(n=popsize)
@@ -334,6 +337,24 @@ for condition in conditions:
     plt.ylim([0, 0.4])
     plt.tight_layout()
     plt.savefig(outputpath / f'prevalence_{condition_title}_over_time.pdf')
+    plt.show()
+
+    # Plot diagnosis among all adults with condition over time
+    diagnosis_by_condition = output['tlo.methods.cardio_metabolic_disorders'][f'{condition}_diagnosis_prevalence']
+    plt.plot(diagnosis_by_condition['date'], diagnosis_by_condition[f'{condition}_diagnosis_prevalence'])
+    plt.ylabel(f'Proportion Diagnosed with {condition_title} Over Time (Ages 20+)')
+    plt.xlabel('Year')
+    plt.tight_layout()
+    plt.savefig(outputpath / f'diagnosis_{condition_title}_over_time.pdf')
+    plt.show()
+
+    # Plot those on medication among all adults with condition over time
+    medication_by_condition = output['tlo.methods.cardio_metabolic_disorders'][f'{condition}_medication_prevalence']
+    plt.plot(medication_by_condition['date'], medication_by_condition[f'{condition}_medication_prevalence'])
+    plt.ylabel(f'Proportion on Medication for {condition_title} Over Time (Ages 20+)')
+    plt.xlabel('Year')
+    plt.tight_layout()
+    plt.savefig(outputpath / f'medication_{condition_title}_over_time.pdf')
     plt.show()
 
 for event in events:
