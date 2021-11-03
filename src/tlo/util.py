@@ -3,7 +3,6 @@ from collections import defaultdict
 from typing import Dict, List, Union
 
 import numpy as np
-import pandas
 import pandas as pd
 from pandas import DateOffset
 
@@ -114,6 +113,7 @@ def sample_outcome(probs: pd.DataFrame, rng: np.random.RandomState):
 
 
 class BitsetHandler:
+
     def __init__(self, population: Population, column: str, elements: List[str]):
         """Provides functions to operate on an int column in the population dataframe as a bitset
 
@@ -124,7 +124,9 @@ class BitsetHandler:
         """
         assert isinstance(population, Population), 'First argument is the population object (not the `props` dataframe)'
         assert column in population.props.columns, 'Column not found in population dataframe'
-        self._population = population
+        assert population.props[column].dtype == np.int64, 'Column must be of int64 type'
+        assert len(elements) <= 64, 'A maximum of 64 elements are supported'
+        self._population: Population = population
         self._column: str = column
         self._elements: List[str] = elements
         self._lookup = {k: 2 ** i for i, k in enumerate(elements)}
@@ -134,9 +136,9 @@ class BitsetHandler:
     def df(self) -> pd.DataFrame:
         return self._population.props
 
-    def element_repr(self, *elements: str) -> int:
+    def element_repr(self, *elements: str) -> np.int64:
         """Returns integer representation of the specified element(s)"""
-        return sum(self._lookup[el] for el in elements)
+        return np.int64(sum(self._lookup[el] for el in elements))
 
     def set(self, where, *elements: str) -> None:
         """For individuals matching `where` argument, set the bit (i.e. set to True) the given elements
@@ -176,7 +178,7 @@ class BitsetHandler:
         :param elements: one or more elements to set to True
         :param first: a keyword argument to return first item in Series instead of Series"""
         value = self.element_repr(*elements)
-        matched = np.bitwise_and(self.df.loc[where, self._column], value) == value
+        matched = (self.df.loc[where, self._column] & value) == value
         if first:
             return matched.iloc[0]
         return matched
@@ -185,7 +187,7 @@ class BitsetHandler:
         """Sister method to `has_all` but instead checks whether matching rows have any of the elements
         set to True"""
         value = self.element_repr(*elements)
-        matched = np.bitwise_and(self.df.loc[where, self._column], value) != 0
+        matched = (self.df.loc[where, self._column] & value) != 0
         if first:
             return matched.iloc[0]
         return matched

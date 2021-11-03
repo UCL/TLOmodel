@@ -45,6 +45,26 @@ def updated_symptoms(dataframe, symptoms):
     return symptoms
 
 
+def test_error_on_too_many_elements(population):
+    with pytest.raises(AssertionError, match='maximum'):
+        BitsetHandler(population, 'symptoms', [str(i) for i in range(100)])
+
+
+def test_error_on_incorrect_column_dtype(population):
+    with pytest.raises(AssertionError, match='int64'):
+        BitsetHandler(population, 'is_alive', [str(i) for i in range(8)])
+
+
+def test_error_on_missing_column(population):
+    with pytest.raises(AssertionError, match='not found'):
+        BitsetHandler(population, 'test', [str(i) for i in range(8)])
+
+
+def test_error_on_incorrect_population_type(dataframe):
+    with pytest.raises(AssertionError, match='population object'):
+        BitsetHandler(dataframe, 'symptoms', [str(i) for i in range(8)])
+
+
 def test_uncompress(symptoms):
     u = symptoms.uncompress()
     assert len(u) == 5
