@@ -3630,7 +3630,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             cons_req_as_footprint=consumables_fractures,
             to_log=True)
         # if the consumables are available then the appointment can run
-        if all(is_cons_available['Item_Code'].values()):
+        if is_cons_available:
             logger.debug(key='rti_general_message',
                          data=f"Fracture casts available for person %d's {fracturecastcounts + slingcounts} fractures, "
                               f"{person_id}"
@@ -3779,7 +3779,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
             hsi_event=self,
             cons_req_as_footprint=consumables_fractures,
             to_log=True)
-        if all(is_cons_available['Item_Code'].values()):
+        if is_cons_available:
             logger.debug(key='rti_general_message',
                          data=f"Fracture casts available for person {person_id} {open_fracture_counts} open fractures"
                          )
@@ -4017,7 +4017,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 hsi_event=self,
                 cons_req_as_footprint=consumables_burns,
                 to_log=True)['Item_Code']
-            if all(value for value in is_cons_available.values()):
+            if is_cons_available:
                 logger.debug(key='rti_general_message',
                              data=f"This facility has burn treatment available which has been used for person "
                                   f"{person_id}")
@@ -4109,7 +4109,7 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
                 hsi_event=self,
                 cons_req_as_footprint=consumables_tetanus,
                 to_log=True)
-            if all(is_tetanus_available['Item_Code'].values()):
+            if is_cons_available:
                 logger.debug(key='rti_general_message',
                              data=f"Tetanus vaccine requested for person {person_id} and given")
             else:
@@ -4314,7 +4314,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
             logger.debug(key='rti_general_message',
                          data=f"Person {person_id} has requested tramadol for moderate pain relief")
 
-            if all(is_cons_available['Item_Code'].values()):
+            if is_cons_available:
                 logger.debug(key='rti_general_message',
                              data=f"This facility has pain management available for moderate pain which has been used "
                                   f"for person {person_id}.")
@@ -4352,7 +4352,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
             logger.debug(key='rti_general_message',
                          data=f"Person {person_id} has requested morphine for severe pain relief")
 
-            if all(is_cons_available['Item_Code'].values()):
+            if is_cons_available:
                 logger.debug(key='rti_general_message',
                              data=f"This facility has pain management available for severe pain which has been used for"
                                   f" person {person_id}")
@@ -4567,8 +4567,9 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
-
-        if all(request_outcome['Item_Code'].values()):
+        # todo: think about consequences of certain consumables not being available for major surgery and model health
+        #  outcomes
+        if is_cons_available:
             rng = self.module.rng
             road_traffic_injuries = self.sim.modules['RTI']
             # check the people sent here hasn't died due to rti, have had their injuries diagnosed and been through
@@ -4971,7 +4972,9 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
             hsi_event=self,
             cons_req_as_footprint=consumables_for_surgery,
             to_log=True)
-        if all(request_outcome['Item_Code'].values()):
+        # todo: think about consequences of certain consumables not being available for minor surgery and model health
+        #  outcomes
+        if is_cons_available:
             injury_columns = persons_injuries.columns
             # create a dictionary to store the recovery times for each injury in days
             minor_surg_recov_time_days = {
