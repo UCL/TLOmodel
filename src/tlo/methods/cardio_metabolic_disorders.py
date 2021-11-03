@@ -301,7 +301,7 @@ class CardioMetabolicDisorders(Module):
         for symptom_name in self.symptoms:
             self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(name=symptom_name,
-                        odds_ratio_health_seeking_in_adults=0)
+                        odds_ratio_health_seeking_in_adults=0.01)
             )
         # Register symptoms from events and make them emergencies
         for event in self.events:
@@ -886,6 +886,7 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                 df.loc[eligible_population], rng, squeeze_single_row_output=False)
             idx_loses_condition = loses_condition[loses_condition].index
             df.loc[idx_loses_condition, f'nc_{condition}'] = False
+            df.loc[idx_loses_condition, f'nc_{condition}_on_medication'] = False
 
             # -------------------- DEATH FROM CARDIO-METABOLIC CONDITION ---------------------------------------
             # There is a risk of death for those who have a cardio-metabolic condition.
