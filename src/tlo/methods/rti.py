@@ -4109,7 +4109,7 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
                 hsi_event=self,
                 cons_req_as_footprint=consumables_tetanus,
                 to_log=True)
-            if is_cons_available:
+            if is_tetanus_available:
                 logger.debug(key='rti_general_message',
                              data=f"Tetanus vaccine requested for person {person_id} and given")
             else:
