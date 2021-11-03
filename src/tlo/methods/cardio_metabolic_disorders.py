@@ -1145,6 +1145,28 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
                 data=adult_prevalence
             )
 
+            diagnosed = {
+                'diagnosis_prevalence': len(df[df[f'nc_{condition}_ever_diagnosed'] & df.is_alive & (
+                    df.age_years >= 20)]) / len(df[df[f'nc_{condition}'] & df.is_alive & (df.age_years >= 20)])
+            }
+
+            logger.info(
+                key=f'{condition}_diagnosis_prevalence',
+                description='current fraction of the adult population diagnosed for the condition',
+                data=diagnosed
+            )
+
+            on_medication = {
+                'medication_prevalence': len(df[df[f'nc_{condition}_on_medication'] & df.is_alive & (
+                    df.age_years >= 20)]) / len(df[df[f'nc_{condition}'] & df.is_alive & (df.age_years >= 20)])
+            }
+
+            logger.info(
+                key=f'{condition}_medication_prevalence',
+                description='current fraction of the adult population being on medication for the condition',
+                data=on_medication
+            )
+
         for event in self.module.events:
             prev_age_sex = proportion_of_something_in_a_groupby_ready_for_logging(df, f'nc_{event}',
                                                                                   ['sex', 'age_range'])
