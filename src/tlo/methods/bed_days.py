@@ -212,37 +212,12 @@ class BedDays:
             logger.warning(key='warning', data=f'the requested bed days in footprint is greater than the'
                                                f'tracking period, {footprint}')
 
-        """assign bed days logic"""
-        # The below algorithm assumes that all available beds are defined in an ascending order i.e. first column
-        # of the resource file should have highest priority bed, second column for second highest priority and so on
-
-        # 1) get the dates of bed use using footprint values
-        # 2) check with bed tracker to see availability of bed on the requested days
-        # 3) allocate all requested days if available
-        # 4) if some days are unavailable, loop through the requested days and check for those that are not available
-        # 5)     get available bed days for a particular bed type in tracker on a particular day
-        # 6)     get requested bed days for a particular bed type in footprint
-        # 7)     if requested bed days in footprint > available bed days in tracker on that day
-        # 8)             get remaining days from the total requested in footprint
-        # 9)             requested bed days in footprint = available bed days in tracker on that day
-
-        # 10)            if counter < len(get available bed types) -1
-        # 11)                  footprint[get_available_bed_types[counter++]] += \
-        #                      remaining days from the total requested in footprint
-        # 12)                  counter++
-
-        print(f'footprint before checking availability {footprint}')
-
-        # the below lines check bed days tracker against the bed days requested. they decide according to bed days
-        # availability whether to issue all requested beds or issue some and allocate the remaining bed days to a
-        # next lower class bed
-
+        get_bed_types = self.get_bed_types()
         counter = 0  # for indexing purposes
+
         for bed_type in footprint.keys():
             # find all required bed days per each bed type
             get_number_of_days = [self.hs_module.sim.date + pd.DateOffset(days=_d) for _d in range(footprint[bed_type])]
-
-            print(f'the persons facility id is {person_id, self.hs_module.sim.date, self.get_persons_level2_facility_id(person_id)}')
 
             # check the availability of beds for a requested period in bed tracker
             availability_of_beds = self.bed_tracker[bed_type].loc[
@@ -257,15 +232,14 @@ class BedDays:
                         days_to_be_assigned_to_next_low_class_bed = 1 + (max(availability_of_beds.index - key)).days
 
                         # subtract the requested days with available days
-                        footprint[self.get_bed_types()[counter]] -= days_to_be_assigned_to_next_low_class_bed
+                        footprint[get_bed_types[counter]] -= days_to_be_assigned_to_next_low_class_bed
 
                         # add the remaining days to another bed type of a lower class if any
-                        if not bed_type == list(footprint.keys())[-1]:
+                        if not bed_type == get_bed_types[-1]:
                             footprint[self.get_bed_types()[counter + 1]] += days_to_be_assigned_to_next_low_class_bed
                             counter += 1
                         break
 
-        print(f'modified footprint{footprint}')
         df = self.hs_module.sim.population.props
         # reset all internal properties about dates of transition between bed use states:
         df.loc[person_id, self.list_of_cols_with_internal_dates['all']] = pd.NaT
@@ -282,7 +256,6 @@ class BedDays:
             person_id=person_id,
             add_footprint=True
         )
-        print(f'tracker is {self.bed_tracker}')
 
     def edit_bed_tracker(self, dates_of_bed_use, person_id, add_footprint=True):
         """Helper function to record the usage (or freeing-up) of beds in the bed-tracker
