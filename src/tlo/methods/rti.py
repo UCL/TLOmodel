@@ -4569,7 +4569,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             return hs.get_blank_appt_footprint()
         # todo: think about consequences of certain consumables not being available for major surgery and model health
         #  outcomes
-        if is_cons_available:
+        if request_outcome:
             rng = self.module.rng
             road_traffic_injuries = self.sim.modules['RTI']
             # check the people sent here hasn't died due to rti, have had their injuries diagnosed and been through
@@ -4974,7 +4974,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
             to_log=True)
         # todo: think about consequences of certain consumables not being available for minor surgery and model health
         #  outcomes
-        if is_cons_available:
+        if request_outcome:
             injury_columns = persons_injuries.columns
             # create a dictionary to store the recovery times for each injury in days
             minor_surg_recov_time_days = {
