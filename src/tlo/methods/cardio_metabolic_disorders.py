@@ -1460,8 +1460,15 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
 
         assert person[f'nc_{self.condition}_ever_diagnosed'], "The person is not diagnosed and so should not be " \
                                                               "receiving an HSI."
-        # Check that the person is on medication
+
+        # Check that the person still has the condition
         if not person[f'nc_{self.condition}']:
+            # This person no longer has the condition so will not have this HSI and will drop off of medication
+            # Return the blank_appt_footprint() so that this HSI does not occupy any time resources
+            person[f'nc_{self.condition}_on_medication'] = False
+            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        # Check that the person is on medication
+        if not person[f'nc_{self.condition}_on_medication']:
             # This person is not on medication so will not have this HSI
             # Return the blank_appt_footprint() so that this HSI does not occupy any time resources
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
