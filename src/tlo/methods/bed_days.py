@@ -237,8 +237,8 @@ class BedDays:
                         # add the remaining days to another bed type of a lower class if any
                         if not bed_type == get_bed_types[-1]:
                             footprint[self.get_bed_types()[counter + 1]] += days_to_be_assigned_to_next_low_class_bed
-                            counter += 1
                         break
+            counter += 1
 
         df = self.hs_module.sim.population.props
         # reset all internal properties about dates of transition between bed use states:
