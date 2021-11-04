@@ -90,8 +90,7 @@ def get_sim(use_simplified_birth=True):
 def adjust_availability_of_consumables_for_hiv(sim, available=True):
     all_item_codes = set()
     for f in sim.modules['Hiv'].item_codes_for_consumables_required.values():
-        all_item_codes = all_item_codes.union(
-            sim.modules['HealthSystem'].get_consumables_as_individual_items(f).index)
+        all_item_codes = all_item_codes.union(f.keys())
 
     sim.modules['HealthSystem'].prob_item_codes_available.loc[all_item_codes] = 1.0 if available else 0.0
 
