@@ -749,8 +749,12 @@ class CareOfWomenDuringPregnancy(Module):
             consumables.loc[consumables['Intervention_Pkg'] == 'ITN distribution to pregnant women',
                             'Intervention_Pkg_Code'])[0]
 
+        # consumables_llitn = {
+        #     'Intervention_Package_Code': {pkg_code_obstructed_llitn: 1},
+        #     'Item_Code': {}}
+        # remove use of package_codes
         consumables_llitn = {
-            'Intervention_Package_Code': {pkg_code_obstructed_llitn: 1},
+            'Intervention_Package_Code': {},
             'Item_Code': {}}
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
@@ -1597,15 +1601,17 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
+        # consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
         # Define the consumable package code
-        pkg_code_eclampsia_and_spe = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
-                            'Intervention_Pkg_Code'])[0]
-
-        all_available = hsi_event.get_all_consumables(
-            pkg_codes=[pkg_code_eclampsia_and_spe])
+        # # pkg_code_eclampsia_and_spe = pd.unique(
+        # #     consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
+        # #                     'Intervention_Pkg_Code'])[0]
+        #
+        # all_available = hsi_event.get_all_consumables(
+        #     pkg_codes=[pkg_code_eclampsia_and_spe])
+        # remove use of package_codes
+        all_available = True
 
         # If available deliver the treatment
         if all_available:
@@ -3127,11 +3133,12 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
                                          f'presenting and will now undergo treatment')
 
         # We define the required consumables and check their availability
-        ectopic_pkg = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Ectopic case management',
-                                                'Intervention_Pkg_Code'])[0]
+        # ectopic_pkg = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Ectopic case management',
+        #                                         'Intervention_Pkg_Code'])[0]
 
-        all_available = self.get_all_consumables(
-            pkg_codes=[ectopic_pkg])
+        # all_available = self.get_all_consumables(
+        #     items_codes=[self.module.item)
+        all_available = True  # remove use of package_codes
 
         # If they are available then treatment can go ahead
         if all_available:

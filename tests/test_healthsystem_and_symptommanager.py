@@ -181,9 +181,6 @@ def test_run_in_mode_0_with_capacity(tmpdir):
                  chronicsyndrome.ChronicSyndrome(),
                  )
 
-    # Set the availability of consumables to 50% for everything
-    sim.modules['HealthSystem'].prob_item_codes_available.loc[:, :] = 0.5
-
     # Run the simulation
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
@@ -197,16 +194,7 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
-    # Check that at least some consumables requests fail due to lack of availability
-    items_not_available = [
-        v for v in output['tlo.methods.healthsystem']['Consumables']['Item_NotAvailable'] if v != '{}'
-    ]
-    pkgs_not_available = [
-        v for v in output['tlo.methods.healthsystem']['Consumables']['Package_NotAvailable'] if v != '{}'
-    ]
-    assert 0 < len(items_not_available + pkgs_not_available)
-
-    # Check that some mockitis cured occurred (though health system)
+    # Check that some Mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 

@@ -580,7 +580,7 @@ class HSI_RotaVaccine(HsiBaseVaccine):
         # available from 2012 onwards
         df = self.sim.population.props
         if df.at[person_id, "va_rota"] < self.module.all_doses["rota"]:
-            if self.get_all_consumables(item_codes=self.modules.cons_item_codes["rota"]):
+            if self.get_all_consumables(item_codes=self.module.cons_item_codes["rota"]):
                 self.module.increment_dose(person_id, "rota")
 
 
@@ -600,7 +600,7 @@ class HSI_MeaslesRubellaVaccine(HsiBaseVaccine):
         return "Epi_MeaslesRubella"
 
     def apply(self, person_id, squeeze_factor):
-        if self.get_all_consumables(item_codes=self.sim.modules.cons_items_codes["measles_and_rubella"]):
+        if self.get_all_consumables(item_codes=self.sim.module.cons_items_codes["measles_and_rubella"]):
             self.module.increment_dose(person_id, "measles")
             self.module.increment_dose(person_id, "rubella")
 
