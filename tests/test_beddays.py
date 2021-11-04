@@ -659,13 +659,17 @@ def test_bed_days_allocation_to_one_bed_type():
     # impose footprint on person_id 0 starting from the first day of simulation
     hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
 
+    # check that all requested days of bedTypeA are given
+    assert 5 == footprint['bedtype1'], "not all days have been assigned"
+
     # check that all days are allocated
     assert 0 == hs.bed_days.bed_tracker["bedtype1"][hs.bed_days.get_persons_level2_facility_id(personal_id)].head(
         5).sum(), f'equating different values'
 
     """ 2) test Bed available for the first but not all of the days requested """
-    personal_id = 1  # individual id in population
-    # reset bed days tracker
+    # reset variables
+    personal_id = 1
+    footprint = {'bedtype1': 5}
     hs.bed_days.initialise_beddays_tracker()
 
     # make bed available for the first day only
@@ -673,16 +677,20 @@ def test_bed_days_allocation_to_one_bed_type():
         hs.bed_days.bed_tracker["bedtype1"].index > sim.date, 0, inplace=True)
 
     # impose footprint on person_id 0 starting from the first day of simulation
-    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint={'bedtype1': 5})
+    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
 
-    #  check that only first day is allocated
+    # check that only one day of bedTypeA is given
+    assert 1 == footprint['bedtype1'], "not more or less than 1 day should be assigned"
+
+    #  check that only first day is allocated in tracker
     assert 0 == hs.bed_days.bed_tracker["bedtype1"][hs.bed_days.get_persons_level2_facility_id(personal_id)].head(
         5).sum(), f'equating different values'
 
     """ 3) test Bed not available on the first day, but available on later days """
-    personal_id = 2  # individual id in population
-
-    hs.bed_days.initialise_beddays_tracker()  # reset bed days tracker
+    # reset variables
+    personal_id = 2
+    footprint = {'bedtype1': 5}
+    hs.bed_days.initialise_beddays_tracker()
 
     # make bed unavailable on the first day
     hs.bed_days.bed_tracker["bedtype1"][hs.bed_days.get_persons_level2_facility_id(personal_id)].mask(
@@ -699,14 +707,18 @@ def test_bed_days_allocation_to_one_bed_type():
         hs.bed_days.get_persons_level2_facility_id(personal_id)].head(
         5).sum()
 
+    # check that no bed day of bedTypeA is given
+    assert 0 == footprint['bedtype1'], "no bed day should be given"
+
     #  check that no bed day is allocated
     assert sum_tracker_values_before_impose_footprint == sum_tracker_values_after_impose_footprint, \
         f'equating different values'
 
     """4) test Bed available on 1st, 3rd and 5th day"""
-    personal_id = 3  # individual id in population
+    # reset variables
+    personal_id = 3
+    footprint = {'bedtype1': 5}
 
-    # reset a simple bed capacity dataframe
     hs.parameters['BedCapacity'] = pd.DataFrame(
         data={
             'Facility_ID': level2_facility_ids,
@@ -728,18 +740,21 @@ def test_bed_days_allocation_to_one_bed_type():
         5).sum()
 
     # impose footprint on person_id 0 starting from the first day of simulation
-    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint={'bedtype1': 5})
+    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
 
     sum_tracker_values_after_impose_footprint = hs.bed_days.bed_tracker["bedtype1"][
         hs.bed_days.get_persons_level2_facility_id(personal_id)].head(
         5).sum()
+
+    # check that only one day of bedTypeA is given
+    assert 1 == footprint['bedtype1'], "not more or less than 1 day should be assigned"
 
     #  check that only first day is allocated
     assert sum_tracker_values_before_impose_footprint - 1 == sum_tracker_values_after_impose_footprint, \
         f'equating different values'
 
 
-def test_bed_days_allocation_to_multiple_bed_types():
+def test_multiple_bed_types_allocation_with_lower_class_bed_always_available():
     sim = Simulation(start_date=start_date)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
@@ -793,6 +808,13 @@ def test_bed_days_allocation_to_multiple_bed_types():
 
         total_allocation += total_bed_allocation.sum(axis=1).sum()
 
+    # check that all requested days of bedtypeA are given
+    assert 5 == footprint['bedtypeA']
+
+    # check that all requested days of bedtypeB are given
+    assert 5 == footprint['bedtypeB']
+
+    # check that all days have been allocated to bed days tracker
     assert total_allocation == sum(footprint.values()), "not all bed days were allocated"
 
     """2) test Bed A available for the first but not all of the days requested (but bed B available)"""
@@ -821,11 +843,14 @@ def test_bed_days_allocation_to_multiple_bed_types():
 
         total_allocation += total_bed_allocation.sum(axis=1).sum()
 
+    # check that only one days of bedtypeA is given
+    assert 1 == footprint['bedtypeA']
+
+    # check that bedtypeB has equal or greater than number of requested days given
+    assert 5 <= footprint['bedtypeB']
+
     # since bedtypeB is always available, check that all requested days are allocated
     assert total_allocation == sum(footprint.values()), "not all bed days were allocated"
-
-    # check that only one day is allocated to bedtypeA
-    assert 1 == footprint[list(footprint.keys())[0]]
 
     # check that the remaining bed days from bed A are assigned to bed B
     assert footprint_before_impose_bed_days['bedtypeB'] + (footprint_before_impose_bed_days['bedtypeB'] -
@@ -858,11 +883,14 @@ def test_bed_days_allocation_to_multiple_bed_types():
 
         total_allocation += total_bed_allocation.sum(axis=1).sum()
 
+    # check that no bed day is assigned to bedtypeA
+    assert 0 == footprint[list(footprint.keys())[0]]
+
+    # check that bedtypeB has equal or greater than number of requested days given
+    assert 5 <= footprint['bedtypeB']
+
     # since bedtypeB is always available, check that all requested days are allocated
     assert total_allocation == sum(footprint.values()), "not all bed days were allocated"
-
-    # check that no bed day is allocated to bedtypeA
-    assert 0 == footprint[list(footprint.keys())[0]]
 
     # check that all bed days from bed A are assigned to bed B
     assert footprint_before_impose_bed_days['bedtypeB'] + (footprint_before_impose_bed_days['bedtypeB'] -
@@ -905,13 +933,194 @@ def test_bed_days_allocation_to_multiple_bed_types():
 
         total_allocation += total_bed_allocation.sum(axis=1).sum()
 
+    # check that only one day of bedtypeA is given
+    assert 1 == footprint[list(footprint.keys())[0]]
+
+    # check that all days are assigned to bedtypeB (days might even be greater but not less than the requested)
+    assert 5 <= footprint[list(footprint.keys())[-1]]
+
     # since bedtypeB is always available, check that all requested days are allocated
     assert total_allocation == sum(footprint.values()), "not all bed days were allocated"
-
-    # check that only one day is allocated to bedtypeA
-    assert 1 == footprint[list(footprint.keys())[0]]
 
     # check that the remaining bed days from bed A are assigned to bed B
     assert footprint_before_impose_bed_days['bedtypeB'] + (footprint_before_impose_bed_days['bedtypeB'] -
                                                            footprint['bedtypeA']) == footprint[
                list(footprint.keys())[1]]
+
+
+def test_multiple_bed_types_allocation_with_lower_class_bed_never_available():
+    sim = Simulation(start_date=start_date)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+    )
+
+    # call HealthSystem Module to initialise BedDays class
+    hs = sim.modules['HealthSystem']
+
+    # Update BedCapacity data with a simple table:
+    level2_facility_ids = [64, 65, 66]  # <-- the level 2 facilities for each region
+    cap_bedtypeA = 1
+    cap_bedtypeB = 0
+
+    # create a simple bed capacity dataframe
+    hs.parameters['BedCapacity'] = pd.DataFrame(
+        data={
+            'Facility_ID': level2_facility_ids,
+            'bedtypeA': cap_bedtypeA,
+            'bedtypeB': cap_bedtypeB
+        }
+    )
+
+    # Create a 21 day simulation
+    days_sim = hs.bed_days.days_until_last_day_of_bed_tracker
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=days_sim))
+
+    # reset bed days tracker to the start_date of the simulation
+    hs.bed_days.initialise_beddays_tracker()
+
+    sim.date = start_date
+    footprint = {'bedtypeA': 5, 'bedtypeB': 5}  # a sample footprint
+
+    """1) test Bed bedTypeA available for all days requested"""
+    personal_id = 0  # person id in population
+
+    beddays_dataframe_before_apply_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
+
+    # impose footprint on person_id 0 starting from the first day of simulation
+    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+
+    beddays_dataframe_after_apply_footprint = hs.bed_days.bed_tracker
+
+    total_allocation = 0
+    # check that all days are allocated
+    for bed_type in footprint.keys():
+        total_bed_allocation = beddays_dataframe_before_apply_footprint[bed_type].subtract(
+            beddays_dataframe_after_apply_footprint[bed_type])
+
+        total_allocation += total_bed_allocation.sum(axis=1).sum()
+
+    # check that all days of bedtypeA are given
+    assert 5 == footprint['bedtypeA']
+
+    # since B is never available, check that no bed day of bedtypeB is given
+    assert 0 == footprint['bedtypeB']
+
+    # check only available days(bedtypeA) are allocated
+    assert 5 == total_allocation
+
+    """2) test Bed A available for the first but not all of the days requested"""
+    # reset some variables
+    personal_id = 1
+    footprint = {'bedtypeA': 5, 'bedtypeB': 5}
+    hs.bed_days.initialise_beddays_tracker()
+
+    # make bedtypeA available for the first day only
+    hs.bed_days.bed_tracker["bedtypeA"][hs.bed_days.get_persons_level2_facility_id(personal_id)].mask(
+        hs.bed_days.bed_tracker["bedtypeA"].index > sim.date, 0, inplace=True)
+
+    # copy the contents of bed tracker dictionary
+    beddays_dataframe_before_apply_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
+
+    # impose footprint on person_id 1 starting from the first day of simulation
+    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+
+    beddays_dataframe_after_apply_footprint = hs.bed_days.bed_tracker
+
+    total_allocation = 0
+    # check that all days are allocated
+    for bed_type in footprint.keys():
+        total_bed_allocation = beddays_dataframe_before_apply_footprint[bed_type].subtract(
+            beddays_dataframe_after_apply_footprint[bed_type])
+
+        total_allocation += total_bed_allocation.sum(axis=1).sum()
+
+    # check that only one day is assigned to bedtypeA
+    assert 1 == footprint['bedtypeA']
+
+    # since B is never available, check that no bed day of bedtypeB has been assigned
+    assert 0 == footprint['bedtypeB']
+
+    # check that the total allocation is equal to 1(bedtypeA)
+    assert 1 == total_allocation
+
+    """3) test Bed not available on the first day, but available on later days"""
+    # reset some variables
+    personal_id = 2
+    footprint = {'bedtypeA': 5, 'bedtypeB': 5}
+    hs.bed_days.initialise_beddays_tracker()
+
+    # make bedtypeA not available on the first day, but available on later days
+    hs.bed_days.bed_tracker["bedtypeA"][hs.bed_days.get_persons_level2_facility_id(personal_id)].mask(
+        hs.bed_days.bed_tracker["bedtypeA"].index == sim.date, 0, inplace=True)
+
+    # copy the contents of bed tracker dictionary
+    beddays_dataframe_before_apply_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
+
+    # impose footprint on person_id 2 starting from the first day of simulation
+    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+
+    beddays_dataframe_after_apply_footprint = hs.bed_days.bed_tracker
+
+    total_allocation = 0
+    # check that all days are allocated
+    for bed_type in footprint.keys():
+        total_bed_allocation = beddays_dataframe_before_apply_footprint[bed_type].subtract(
+            beddays_dataframe_after_apply_footprint[bed_type])
+
+        total_allocation += total_bed_allocation.sum(axis=1).sum()
+
+    # check that no bed day is assigned to bedtypeA
+    assert 0 == footprint['bedtypeA'], "no allocation should happen since no bed days are available"
+
+    # check that no bed day is assigned to bedtypeB
+    assert 0 == footprint['bedtypeB'], "no allocation should happen since no bed days are available"
+
+    # since both bedtypeA and bedtypeB are never available, check that no bed days are allocated
+    assert 0 == total_allocation, "no allocation should happen since no bed days is available"
+
+    """4) test Bed available on 1st, 3rd and 5th day"""
+    # reset some few variables
+    personal_id = 3
+    footprint = {'bedtypeA': 5, 'bedtypeB': 5}
+    hs.parameters['BedCapacity'] = pd.DataFrame(
+        data={
+            'Facility_ID': level2_facility_ids,
+            'bedtypeA': 0,
+            'bedtypeB': 0
+        }
+    )
+    hs.bed_days.initialise_beddays_tracker()
+
+    # make bedtypeA available on 1st, 3rd and 5th day
+    bed_available_days = [0, 2, 4]
+    for bed_available_day in bed_available_days:
+        hs.bed_days.bed_tracker["bedtypeA"][hs.bed_days.get_persons_level2_facility_id(personal_id)].mask(
+            hs.bed_days.bed_tracker["bedtypeA"].index == sim.date + pd.DateOffset(days=bed_available_day), 1,
+            inplace=True)
+
+    # copy the contents of bed tracker dictionary
+    beddays_dataframe_before_apply_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
+
+    # impose footprint on person_id 3 starting from the first day of simulation
+    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+
+    beddays_dataframe_after_apply_footprint = hs.bed_days.bed_tracker
+
+    total_allocation = 0
+    # check that all days are allocated
+    for bed_type in footprint.keys():
+        total_bed_allocation = beddays_dataframe_before_apply_footprint[bed_type].subtract(
+            beddays_dataframe_after_apply_footprint[bed_type])
+
+        total_allocation += total_bed_allocation.sum(axis=1).sum()
+
+    # check that only one day is assigned to bedtypeA
+    assert 1 == footprint['bedtypeA']
+
+    # since B is never available, check that no bed day of bedtypeB has been assigned
+    assert 0 == footprint['bedtypeB']
+
+    # check that the total allocation is equal to 1(bedtypeA)
+    assert 1 == total_allocation
