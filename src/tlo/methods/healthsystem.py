@@ -12,7 +12,7 @@ import heapq as hp
 from collections import Counter, defaultdict
 from itertools import repeat
 from pathlib import Path
-from typing import Iterable, List, NamedTuple, Optional, Sequence, Tuple
+from typing import Iterable, List, NamedTuple, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -1601,9 +1601,9 @@ class HSI_Event:
         if footprint is None:
             # Item Codes provided:
             if item_codes is not None:
-                if isinstance(item_codes, list):
+                if isinstance(item_codes, (int, list)):
                     # If it's only a list of item_codes, assume the request is for one of each.
-                    item_codes = [item_codes]
+                    item_codes = [item_codes] if not isinstance(item_codes, list) else item_codes
                     footprint_items = dict(zip(item_codes, [1]*len(item_codes)))
                 elif isinstance(item_codes, dict):
                     footprint_items = item_codes
