@@ -991,7 +991,6 @@ class HealthSystem(Module):
             raise NotImplementedError
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Could check the format of the cons_req_as_footprint
         # It is removed as this is a time-consuming check that is rarely required
