@@ -488,56 +488,6 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         # Do here whatever happens during an outreach event with an individual
         # ~~~~~~~~~~~~~~~~~~~~~~
 
-        # Make request for some consumables
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables['Intervention_Pkg'] == 'First line treatment for new TB cases for adults',
-                'Intervention_Pkg_Code',
-            ]
-        )[0]
-        pkg_code2 = pd.unique(
-            consumables.loc[
-                consumables['Intervention_Pkg'] == 'MDR notification among previously treated patients',
-                'Intervention_Pkg_Code',
-            ]
-        )[0]
-
-        item_code1 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code']
-        )[0]
-        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
-
-        consumables_needed = {
-            'Intervention_Package_Code': {pkg_code1: 1, pkg_code2: 1},
-            'Item_Code': {item_code1: 1, item_code2: 1},
-        }
-
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed
-        )
-
-        # answer comes back in the same format, but with quantities replaced with bools indicating availability
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code1]:
-            logger.debug(key='debug', data='PkgCode1 is available, so use it.')
-        else:
-            logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
-
-        # check to see if all consumables returned (for demonstration purposes):
-        all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code1]) and \
-                        (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code2]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code1]) and \
-                        (outcome_of_request_for_consumables['Item_Code'][item_code2])
-
-        # use helper function instead (for demonstration purposes)
-        all_available_using_helper_function = self.get_all_consumables(
-            item_codes=[item_code1, item_code2],
-            pkg_codes=[pkg_code1, pkg_code2]
-        )
-
-        # Demonstrate equivalence
-        assert all_available == all_available_using_helper_function
-
         # Return the actual appt footprints
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
         actual_appt_footprint['ConWithDCSA'] = actual_appt_footprint['ConWithDCSA'] * 2
