@@ -2427,6 +2427,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[diedfromrtiidx, 'rt_date_death_no_med'] = pd.NaT
         df.loc[diedfromrtiidx, 'rt_MAIS_military_score'] = 0
         df.loc[diedfromrtiidx, 'rt_debugging_DALY_wt'] = 0
+        df.loc[diedfromrtiidx, 'rt_in_shock'] = False
         # reset whether they have been selected for an injury this month
         df['rt_road_traffic_inc'] = False
 
@@ -2532,6 +2533,12 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         rand_for_shock = self.module.rng.random_sample(len(potential_shock_index))
         shock_index = potential_shock_index[self.prob_bleeding_leads_to_shock > rand_for_shock]
         df.loc[shock_index, 'rt_in_shock'] = True
+        # log the percentage of those with RTIs in shock
+        percent_in_shock = \
+            len(shock_index) / len(selected_for_rti_inj) if len(selected_for_rti_inj) > 0 else 'none_injured'
+        logger.info(key='Percent_of_shock_in_rti',
+                    data={'Percent_of_shock_in_rti': percent_in_shock},
+                    description='The percentage of those assigned injuries who were also assign the shock property')
         # ========================== Decide survival time without medical intervention ================================
         # todo: find better time for survival data without med int for ISS scores
         # Assign a date in the future for which when the simulation reaches that date, the person's mortality will be
