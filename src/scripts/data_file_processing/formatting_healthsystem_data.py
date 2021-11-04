@@ -17,7 +17,7 @@ import pandas as pd
 resourcefilepath = Path('./resources')
 
 path_to_dropbox = Path(
-    '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi La Onse Theme 1 SHARE')  # <-- point to the TLO dropbox locally
+    '/Users/jdbb1/Dropbox/Thanzi La Onse')  # <-- point to the TLO dropbox locally
 
 # LOCATION OF INPUT FILES:
 workingfile = (path_to_dropbox /
@@ -49,7 +49,7 @@ for d in pop_by_district.index:
     pop_by_district.loc[d, 'Region'] = population.loc[population['District'] == d, 'Region'].values[0]
 
 # Save
-pop_by_district.to_csv(outputlocation / 'organisation' / 'ResourceFile_District_Population_Data.csv', index=False)
+pop_by_district.to_csv(outputlocation / 'organisation' / 'ResourceFile_District_Population_Data.csv', index=True)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** Below we generate staffing tables: fund_staffing_table for funded/established staff, and\
@@ -79,7 +79,8 @@ officer_types_table.loc[16, 'Officer_Category'] = 'Nutrition'
 officer_types_table.loc[17:20, 'Officer_Category'] = 'Radiography'
 
 # Save
-officer_types_table.to_csv(outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Officer_Types_Table.csv', index=False)
+officer_types_table.to_csv(outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Officer_Types_Table.csv',
+                           index=False)
 
 # --- Generate assumptions of current staff distribution at facility levels 0&1a&1b&2
 # Read compiled staff return data from CHAI auxiliary datasets
@@ -249,7 +250,9 @@ curr_staff_distribution.loc[idx_dcsa[1:4], 'Proportion'] = 0.00
 # curr_staff_distribution ready!
 
 # Save
-curr_staff_distribution.to_csv(outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Current_Staff_Distribution_Assumption.csv', index=False)
+curr_staff_distribution.to_csv(
+    outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Current_Staff_Distribution_Assumption.csv',
+    index=False)
 
 # --- Generate assumptions of established/funded staff distribution at facility levels 0&1a&1b&2
 # Read 2018-03-09 Facility-level establishment MOH & CHAM from CHAI auxiliary datasets
@@ -433,7 +436,9 @@ fund_staff_distribution.loc[fund_idx_dcsa[1:4], 'Proportion_Fund'] = 0.00
 # fund_staff_distribution ready!
 
 # Save
-fund_staff_distribution.to_csv(outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Funded_Staff_Distribution_Assumption.csv', index=False)
+fund_staff_distribution.to_csv(
+    outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Funded_Staff_Distribution_Assumption.csv',
+    index=False)
 
 # We read info from CHAI estimates of optimal and immediately needed workforce for comparison wherever possible
 # --- CHAI WFOM optimal workforce and immediately needed staff distribution
@@ -684,6 +689,16 @@ fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'].isin(['KCH',
     fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']), 'D01'] + \
     extra_D01_per_referralhosp
 
+# Since districts Balaka,Machinga,Mwanza,Neno,Ntchisi,Salima and central hospitals have 0 C01, while C01 is \
+# required by Mental appts at level 1b, level 2 and level 3, we move some C01 from 'HQ or missing' to them.
+fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'].isin(
+    ['Balaka', 'Machinga', 'Mwanza', 'Neno', 'Ntchisi', 'Salima', 'KCH', 'MCH', 'QECH', 'ZCH']), 'C01'] = 1
+fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'C01'] = (
+    fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'C01'] -
+    fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'].isin(
+        ['Balaka', 'Machinga', 'Mwanza', 'Neno', 'Ntchisi', 'Salima', 'KCH', 'MCH', 'QECH', 'ZCH']), 'C01'].sum()
+)
+
 # Sort out which are district allocations and which are central hospitals and above
 
 # We assign HQ to HQ; KCH as RefHos in Central region; MCH as RefHos in Northern region;
@@ -826,6 +841,21 @@ district_faclevel.drop(columns=['value'], axis=1, inplace=True)
 fund_staffing_table = district_faclevel.merge(fund_staffing_table, how='outer')
 
 # Split staff among levels
+
+# Before split, update the funded C01 distributions at levels 1a, 1b and 2 using CHAI Optimal Workforce estimates. \
+# This is because funded C01 are all at level 1b (100%), meanwhile appt time base requires C01 at level 2. \
+# CHAI Optimal Workforce locates C01 47.92% at level 1b and 52.08% at level 2, which seems more sensible.
+idx_c01_level_1b = fund_staff_distribution[
+    (fund_staff_distribution['Cadre_Code'] == 'C01') &
+    (fund_staff_distribution['Facility_Level'] == 'Facility_Level_1b')].index
+fund_staff_distribution.loc[idx_c01_level_1b, 'Proportion_Fund'] = 0.4792
+
+idx_c01_level_2 = fund_staff_distribution[
+    (fund_staff_distribution['Cadre_Code'] == 'C01') &
+    (fund_staff_distribution['Facility_Level'] == 'Facility_Level_2')].index
+fund_staff_distribution.loc[idx_c01_level_2, 'Proportion_Fund'] = 0.5208
+
+# Split
 for district in pop['District']:
     for cadre in set(fund_staffing_table.columns[3:]):
         # The proportions
@@ -850,15 +880,20 @@ for district in pop['District']:
 fund_staffing_table.loc[128:132, 'Facility_Level'] = ['Facility_Level_5', 'Facility_Level_3',
                                                       'Facility_Level_3', 'Facility_Level_3',
                                                       'Facility_Level_4']
-# Make values integers (after rounding)
+
+# Make values integers (round(): rounding up and down to the nearest integer)
+# fund_staffing_table.loc[:, fund_staffing_table.columns[3:]] = \
+#     fund_staffing_table.loc[:, fund_staffing_table.columns[3:]].astype(float).round(0).astype(int)
+# Make values integers (ceil(): rounding up to the nearest integer)
 fund_staffing_table.loc[:, fund_staffing_table.columns[3:]] = \
-    fund_staffing_table.loc[:, fund_staffing_table.columns[3:]].astype(float).round(0).astype(int)
+    fund_staffing_table.loc[:, fund_staffing_table.columns[3:]].apply(np.ceil)
 
 # fund_staffing_table ready!
 
 # Save the table without column 'Is_DistrictLevel'
 fund_staffing_table_to_save = fund_staffing_table.drop(columns='Is_DistrictLevel', inplace=False)
-fund_staffing_table_to_save.to_csv(outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Funded_Staff_Table.csv', index=False)
+fund_staffing_table_to_save.to_csv(
+    outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Funded_Staff_Table.csv', index=False)
 
 # Flip from wide to long format, where one row represents on staff
 fund_staff_list = pd.melt(fund_staffing_table, id_vars=['District_Or_Hospital', 'Facility_Level', 'Is_DistrictLevel'],
@@ -880,7 +915,8 @@ fund_staff_list['Staff_ID'] = fund_staff_list.index
 
 # Save the table without column 'Is_DistrictLevel'
 fund_staff_list_to_save = fund_staff_list.drop(columns='Is_DistrictLevel', inplace=False)
-fund_staff_list_to_save.to_csv(outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Funded_Staff_List.csv', index=False)
+fund_staff_list_to_save.to_csv(outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Funded_Staff_List.csv',
+                               index=False)
 
 # ***
 # --- Creating curr_staffing_table and curr_staff_list for current staff
@@ -1061,7 +1097,8 @@ curr_staffing_table.loc[:, curr_staffing_table.columns[3:]] = (
 
 # Save the table without column 'Is_DistrictLevel'
 curr_staffing_table_to_save = curr_staffing_table.drop(columns='Is_DistrictLevel', inplace=False)
-curr_staffing_table_to_save.to_csv(outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Current_Staff_Table.csv', index=False)
+curr_staffing_table_to_save.to_csv(
+    outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Current_Staff_Table.csv', index=False)
 
 # For curr_staffing_table, flip from wide to long format and create curr_staff_list
 # The long format
@@ -1087,7 +1124,8 @@ assert (curr_staffing_table.columns == fund_staffing_table.columns).all()
 
 # Save the table without column 'Is_DistrictLevel'
 curr_staff_list_to_save = curr_staff_list.drop(columns='Is_DistrictLevel', inplace=False)
-curr_staff_list_to_save.to_csv(outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Current_Staff_List.csv', index=False)
+curr_staff_list_to_save.to_csv(outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Current_Staff_List.csv',
+                               index=False)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** Create the Master Facilities List
@@ -1186,7 +1224,8 @@ for d in pop_districts:
 assert len(facilities_by_district) == len(pop_districts) * len(Facility_Levels)
 
 # Save
-facilities_by_district.to_csv(outputlocation / 'organisation' / 'ResourceFile_Facilities_For_Each_District.csv', index=False)
+facilities_by_district.to_csv(outputlocation / 'organisation' / 'ResourceFile_Facilities_For_Each_District.csv',
+                              index=False)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** Now look at the types of appointments
@@ -1286,7 +1325,8 @@ appt_types_table['Appt_Cat'].replace(to_replace=' ', value='_', regex=True, inpl
 assert not pd.isnull(appt_types_table).any().any()
 
 # Save
-appt_types_table.to_csv(outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv', index=False)
+appt_types_table.to_csv(outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv',
+                        index=False)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** Now, make the ApptTimeTable
@@ -1381,7 +1421,8 @@ ApptTimeTable = ApptTimeTable.drop(ApptTimeTable[pd.isnull(ApptTimeTable['Time_T
 ApptTimeTable.reset_index(drop=True, inplace=True)
 
 # Save
-ApptTimeTable.to_csv(outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv', index=False)
+ApptTimeTable.to_csv(outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv',
+                     index=False)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** Create a table that determines what kind of appointment can be serviced in each Facility Level
@@ -1401,7 +1442,8 @@ for appt_type in ApptType_By_FacLevel.index:
 ApptType_By_FacLevel = ApptType_By_FacLevel.add_prefix('Facility_Level_')
 
 # Save
-ApptType_By_FacLevel.to_csv(outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_ApptType_By_FacLevel.csv', index=False)
+ApptType_By_FacLevel.to_csv(
+    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_ApptType_By_FacLevel.csv', index=True)
 
 # --- check
 # Look to see where different types of staff member need to be located:
@@ -1554,7 +1596,8 @@ for d in pop_districts:
         assert np.asarray(list(appt_ok_per_fac.values())).any()
 
 # Save
-curr_facility_assignment.to_csv(outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Current_Staff_Facility_Assignment.csv', index=False)
+curr_facility_assignment.to_csv(
+    outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Current_Staff_Facility_Assignment.csv', index=False)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** Determine how funded staff are allocated to the facilities \
@@ -1629,7 +1672,8 @@ for d in pop_districts:
         assert np.asarray(list(appt_ok_per_fac.values())).any()
 
 # Save
-fund_facility_assignment.to_csv(outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Funded_Staff_Facility_Assignment.csv', index=False)
+fund_facility_assignment.to_csv(
+    outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Funded_Staff_Facility_Assignment.csv', index=False)
 
 # Check that tables for current staff and funded staff have the same columns
 assert (fund_facility_assignment.columns == curr_facility_assignment.columns).all()
@@ -1795,6 +1839,68 @@ assert ((fund_daily_capability.groupby('Facility_ID')['Staff_Count'].sum()) > 0)
 assert (fund_daily_capability.columns == curr_daily_capability.columns).all()
 
 # Save
-HosHC_patient_facing_time.to_csv(outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Patient_Facing_Time.csv', index=False)
-curr_daily_capability.to_csv(outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Current_Staff_Daily_Capabilities.csv', index=False)
-fund_daily_capability.to_csv(outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Funded_Staff_Daily_Capabilities.csv', index=False)
+HosHC_patient_facing_time.to_csv(
+    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Patient_Facing_Time.csv', index=False)
+curr_daily_capability.to_csv(
+    outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Current_Staff_Daily_Capabilities.csv', index=False)
+fund_daily_capability.to_csv(
+    outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Funded_Staff_Daily_Capabilities.csv', index=False)
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Update Appt_Time_Table, ApptType_By_FacLevel, curr_daily_capability, and fund_daily_capability \
+# considering officer categories instead of officer types
+
+# Make copies of results from previous sections
+appt_time_table_coarse = ApptTimeTable.copy()
+appt_type_by_level_coarse = ApptType_By_FacLevel.copy()
+fund_daily_capability_coarse = fund_daily_capability.copy()
+curr_daily_capability_coarse = curr_daily_capability.copy()
+
+# Generate appt_time_table_coarse with officer_category, instead of officer_type
+appt_time_table_coarse = pd.DataFrame(
+    appt_time_table_coarse.groupby(['Appt_Type_Code', 'Facility_Level', 'Officer_Category']).sum()
+).reset_index()
+
+# Generate appt_type_by_level_coarse with officer_category, instead of officer_type
+appt_type_by_level_coarse = pd.DataFrame(index=appt_types_table['Appt_Type_Code'],
+                                         columns=Facility_Levels,
+                                         data=False,
+                                         dtype=bool)
+
+for appt_type in appt_type_by_level_coarse.index:
+    for fac_level in appt_type_by_level_coarse.columns:
+        # Can this appt_type happen at this facility_level?
+        # Check to see if appt_time_table_coarse has any time requirement
+
+        appt_type_by_level_coarse.at[appt_type, fac_level] = \
+            ((appt_time_table_coarse['Facility_Level'] == fac_level) & (
+                appt_time_table_coarse['Appt_Type_Code'] == appt_type)).any()
+
+appt_type_by_level_coarse = appt_type_by_level_coarse.add_prefix('Facility_Level_')
+
+# Check; The two tables should be equal
+assert (appt_type_by_level_coarse == ApptType_By_FacLevel).all().all()
+
+# Generate fund_daily_capability_coarse with officer_category, instead of officer_type
+fund_daily_capability_coarse = pd.DataFrame(
+    fund_daily_capability_coarse.groupby(
+        ['Facility_ID', 'District', 'Facility_Level', 'Region', 'Facility_Name', 'Officer_Category'],
+        dropna=False).sum()
+).reset_index()
+
+# Generate curr_daily_capability_coarse with officer_category, instead of officer_type
+curr_daily_capability_coarse = pd.DataFrame(
+    curr_daily_capability_coarse.groupby(
+        ['Facility_ID', 'District', 'Facility_Level', 'Region', 'Facility_Name', 'Officer_Category'],
+        dropna=False).sum()
+).reset_index()
+
+# Save
+appt_time_table_coarse.to_csv(
+    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table_Coarse.csv', index=False)
+
+curr_daily_capability_coarse.to_csv(
+    outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Daily_Capabilities_Coarse.csv', index=False)
+
+fund_daily_capability_coarse.to_csv(
+    outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Daily_Capabilities_Coarse.csv', index=False)
