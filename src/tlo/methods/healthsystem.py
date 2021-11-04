@@ -1263,6 +1263,17 @@ class HealthSystem(Module):
         self.HSI_EVENT_QUEUE = []
         self.hsi_event_queue_counter = 0
 
+    def get_item_codes_from_package_name(self, package=None):
+        """Helper function to provide the item codes and quantities in a dict of the form {<item_code>:<quantity>} for
+         a given package name."""
+        consumables = self.parameters['Consumables']
+        if package is not None:
+            return consumables.loc[
+                consumables['Intervention_Pkg'] == package, ['Item_Code', 'Expected_Units_Per_Case']].set_index(
+                'Item_Code')['Expected_Units_Per_Case'].apply(np.ceil).astype(int).to_dict()
+        else:
+            return {}
+
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
