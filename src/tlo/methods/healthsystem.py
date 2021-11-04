@@ -981,6 +981,17 @@ class HealthSystem(Module):
         :return: In the same format of the provided footprint, giving a bool for each package or item returned
         """
 
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Ensure that package_codes are not being used anywhere in the code
+        #
+        # (This is a precursor to the deprecation of package_code, which is needed to transition to the new
+        #  consumables data, provided in PR #405)
+        #
+        if not 0 == len(cons_req_as_footprint['Intervention_Package_Code']):
+            raise NotImplementedError
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Could check the format of the cons_req_as_footprint
         # It is removed as this is a time-consuming check that is rarely required
