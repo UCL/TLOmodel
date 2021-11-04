@@ -1591,17 +1591,21 @@ class HSI_Event:
 
     def get_all_consumables(self, item_codes=None, pkg_codes=None, footprint=None):
         """Helper function to allow for getting and checking of entire set of consumables.
-        It accepts a footprint, or an item_code, or a package_code, and returns True/False for whether all the items
-         are available. It avoids the use of consumables 'footprints'."""
+        It accepts a footprint, or item_codes (list or dict [to show quantities]), or package_codes (list or dict [to
+        show quantities]), and returns True/False for whether all the items are available."""
 
         # Turn the input arguments into the usual consumables footprint if it's not already provided as a footprint:
         if footprint is None:
             # Item Codes provided:
             if item_codes is not None:
-                if not isinstance(item_codes, list):
+                if isinstance(item_codes, list):
+                    # If it's only a list of item_codes, assume the request is for one of each.
                     item_codes = [item_codes]
-                # turn into 'consumable footprint':
-                footprint_items = dict(zip(item_codes, [1]*len(item_codes)))
+                    footprint_items = dict(zip(item_codes, [1]*len(item_codes)))
+                elif isinstance(item_codes, dict):
+                    footprint_items = item_codes
+                else:
+                    raise ValueError("The item_codes are given in an unrecognised format")
             else:
                 footprint_items = {}
 
