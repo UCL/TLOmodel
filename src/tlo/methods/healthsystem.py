@@ -1273,6 +1273,10 @@ class HealthSystem(Module):
         else:
             return {}
 
+    def get_item_code_from_item_name(self, item: str) -> int:
+        """Helper function to provide the item_code (an int) when provided with the name of the item"""
+        consumables = self.parameters['Consumables']
+        return pd.unique(consumables.loc[consumables["Items"] == item, "Item_Code"])[0]
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
