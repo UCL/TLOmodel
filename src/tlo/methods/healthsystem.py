@@ -1262,16 +1262,13 @@ class HealthSystem(Module):
         self.HSI_EVENT_QUEUE = []
         self.hsi_event_queue_counter = 0
 
-    def get_item_codes_from_package_name(self, package=None):
+    def get_item_codes_from_package_name(self, package: str) -> dict:
         """Helper function to provide the item codes and quantities in a dict of the form {<item_code>:<quantity>} for
          a given package name."""
         consumables = self.parameters['Consumables']
-        if package is not None:
-            return consumables.loc[
-                consumables['Intervention_Pkg'] == package, ['Item_Code', 'Expected_Units_Per_Case']].set_index(
-                'Item_Code')['Expected_Units_Per_Case'].apply(np.ceil).astype(int).to_dict()
-        else:
-            return {}
+        return consumables.loc[
+            consumables['Intervention_Pkg'] == package, ['Item_Code', 'Expected_Units_Per_Case']].set_index(
+            'Item_Code')['Expected_Units_Per_Case'].apply(np.ceil).astype(int).to_dict()
 
     def get_item_code_from_item_name(self, item: str) -> int:
         """Helper function to provide the item_code (an int) when provided with the name of the item"""
@@ -1592,7 +1589,8 @@ class HSI_Event:
         self.post_apply_hook()
         return updated_appt_footprint
 
-    def get_all_consumables(self, item_codes=None, pkg_codes=None, footprint=None):
+    #todo - clean out this function
+    def get_all_consumables(self, item_codes: Union[int, list, dict] = None, pkg_codes=None, footprint=None):
         """Helper function to allow for getting and checking of entire set of consumables.
         It accepts a footprint, or item_codes (list or dict [to show quantities]), or package_codes (list or dict [to
         show quantities]), and returns True/False for whether all the items are available."""
