@@ -1599,7 +1599,7 @@ class HSI_Event:
         if footprint is None:
             # Item Codes provided:
             if item_codes is not None:
-                if isinstance(item_codes, (int, list)):
+                if isinstance(item_codes, (int, np.integer, list)):
                     # If it's only a list of item_codes, assume the request is for one of each.
                     item_codes = [item_codes] if not isinstance(item_codes, list) else item_codes
                     footprint_items = dict(zip(item_codes, [1]*len(item_codes)))
