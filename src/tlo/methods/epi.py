@@ -561,16 +561,15 @@ class HSI_BcgVaccine(HsiBaseVaccine):
         if df.at[person_id, "va_bcg"] < self.module.all_doses["bcg"]:
             outcome = self.request_vax_consumables(
                 items=[
-                    ("BCG vaccine", 1),
                     ("Syringe, autodisposable, BCG, 0.1 ml, with needle", 1),
                     ("Safety box for used syringes/needles, 5 liter", 1)
                 ]
             )
 
             # check if BCG and syringes available
-            bcg_vax, syringe, safety_box = outcome["Item_Code"].keys()
+            bcg_vax, safety_box = outcome["Item_Code"].keys()
 
-            if outcome["Item_Code"][bcg_vax] & outcome["Item_Code"][syringe]:
+            if outcome["Item_Code"][bcg_vax] & outcome["Item_Code"][safety_box]:
                 self.module.increment_dose(person_id, "bcg")
 
 
@@ -599,7 +598,7 @@ class HSI_DtpHibHepVaccine(HsiBaseVaccine):
         outcome = self.request_vax_consumables(
             items=[
                 ("Pentavalent vaccine (DPT, Hep B, Hib)", 1),
-                ("Syringe, needle + swab", 2),
+                ("Syringe, Autodisable SoloShot IX ", 1),
                 ("Safety box for used syringes/needles, 5 liter", 1)
             ]
         )
@@ -648,7 +647,7 @@ class HSI_PneumoVaccine(HsiBaseVaccine):
         outcome = self.request_vax_consumables(
             items=[
                 ("Pneumococcal vaccine", 1),
-                ("Syringe, needle + swab", 2),
+                ("Syringe, Autodisable SoloShot IX ", 1),
                 ("Safety box for used syringes/needles, 5 liter", 1)
             ]
         )

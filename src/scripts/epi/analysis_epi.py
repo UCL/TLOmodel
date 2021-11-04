@@ -9,16 +9,14 @@ from matplotlib import pyplot as plt
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    care_of_women_during_pregnancy,
-    contraception,
     demography,
     enhanced_lifestyle,
     epi,
     healthburden,
+    healthseekingbehaviour,
     healthsystem,
-    labour,
-    newborn_outcomes,
-    pregnancy_supervisor,
+    simplified_births,
+    symptommanager,
 )
 
 start_time = time.time()
@@ -33,7 +31,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 12, 31)
+end_date = Date(2014, 12, 31)
 popsize = 500
 
 log_config = {
@@ -50,25 +48,23 @@ sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 service_availability = ["*"]
 
 # Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(
-                 resourcefilepath=resourcefilepath,
-                 service_availability=service_availability,
-                 mode_appt_constraints=2,  # no constraints by officer type/time
-                 ignore_cons_constraints=True,
-                 ignore_priority=True,
-                 capabilities_coefficient=0.0,
-                 disable=True,
-             ),
-             # disables the health system constraints so all HSI events run
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             labour.Labour(resourcefilepath=resourcefilepath),
-             newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-             contraception.Contraception(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             epi.Epi(resourcefilepath=resourcefilepath))
+sim.register(
+    demography.Demography(resourcefilepath=resourcefilepath),
+    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    healthsystem.HealthSystem(
+        resourcefilepath=resourcefilepath,
+        service_availability=service_availability,
+        mode_appt_constraints=0,
+        ignore_cons_constraints=True,
+        ignore_priority=True,
+        capabilities_coefficient=1.0,
+        disable=True,
+    ),
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    epi.Epi(resourcefilepath=resourcefilepath))
 
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
