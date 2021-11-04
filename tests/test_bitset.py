@@ -72,29 +72,6 @@ def test_uncompress(symptoms):
     assert (~u.all()).all()
 
 
-def test_uncompress_compress_uncompress(symptoms):
-    uncompressed_1 = symptoms.uncompress()
-    symptoms.compress(uncompressed_1)
-    uncompressed_2 = symptoms.uncompress()
-    assert len(uncompressed_2) == 5
-    assert np.all(uncompressed_2.columns == pd.Index(['fever', 'cough', 'nausea', 'vomiting']))
-    assert (~uncompressed_2.all()).all()
-
-
-def test_compress(symptoms):
-    uncompressed = pd.DataFrame(
-        data={
-            'fever': True,
-            'cough': False,
-            'nausea': [True, False, False, False, False],
-            'vomiting': [True, False, True, False, True]
-        },
-        index=range(5)
-    )
-    symptoms.compress(uncompressed)
-    pd.testing.assert_frame_equal(symptoms.uncompress(), uncompressed)
-
-
 def test_set_individual(symptoms):
     # individual
     symptoms.set([0], 'nausea')

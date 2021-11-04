@@ -313,13 +313,6 @@ class BitsetHandler:
             sets = self.df.loc[where, columns].applymap(self.to_strings)
         return sets.iloc[0] if first else sets
 
-    def compress(self, uncompressed: pd.DataFrame):
-        def convert(column):
-            value_of_column = self._element_to_int_map[column.name]
-            return column.replace({True: value_of_column, False: 0})
-        collapsed = uncompressed.apply(convert).sum(axis=1).astype('int64')
-        self.df.loc[uncompressed.index, self._column] = collapsed
-
     def uncompress(
         self,
         where=None,
