@@ -14,10 +14,17 @@ def dataframe():
     return pd.DataFrame(
         data={
             'symptoms': pd.Series(0, index=range(5), dtype=np.dtype('int64')),
+            'sy_stomachache': pd.Series(0, index=range(5), dtype=np.dtype('int64')),
+            'sy_injury':  pd.Series(0, index=range(5), dtype=np.dtype('int64')),
             'is_alive': pd.Series(True, index=range(5), dtype=np.dtype('bool')),
             'age': pd.Series([5, 10, 20, 30, 40], index=range(5), dtype=np.dtype('int'))
         }
     )
+
+
+@pytest.fixture
+def sy_columns(dataframe):
+    return [col for col in dataframe.columns if col[:3] == 'sy_']
 
 
 @pytest.fixture
@@ -45,6 +52,13 @@ def updated_symptoms(dataframe, symptoms):
     return symptoms
 
 
+@pytest.fixture
+def module_bitset_handler(population):
+    return BitsetHandler(
+        population, None, ['Module1', 'Module2', 'Module3', 'Module4']
+    )
+
+
 def test_error_on_too_many_elements(population):
     with pytest.raises(AssertionError, match='maximum'):
         BitsetHandler(population, 'symptoms', [str(i) for i in range(100)])
@@ -65,6 +79,16 @@ def test_error_on_incorrect_population_type(dataframe):
         BitsetHandler(dataframe, 'symptoms', [str(i) for i in range(8)])
 
 
+def test_error_on_set_without_columns_arg(module_bitset_handler):
+    with pytest.raises(ValueError, match='columns'):
+        module_bitset_handler.set([0], 'Module1')
+
+
+def test_error_on_unset_without_columns_arg(module_bitset_handler):
+    with pytest.raises(ValueError, match='columns'):
+        module_bitset_handler.unset([0], 'Module1')
+
+
 def test_uncompress(symptoms):
     u = symptoms.uncompress()
     assert len(u) == 5
@@ -72,15 +96,78 @@ def test_uncompress(symptoms):
     assert (~u.all()).all()
 
 
+def test_uncompress_multiple_col(module_bitset_handler, sy_columns):
+    uncompressed = module_bitset_handler.uncompress(columns=sy_columns)
+    assert isinstance(uncompressed, dict)
+    assert all(k in sy_columns for k in uncompressed.keys())
+    assert all(isinstance(v, pd.DataFrame) for v in uncompressed.values())
+    assert all(len(v) == 5 and (~v).all().all() for v in uncompressed.values())
+
+
 def test_set_individual(symptoms):
-    # individual
     symptoms.set([0], 'nausea')
     u = symptoms.uncompress()
     assert (u.loc[0] == [False, False, True, False]).all()
 
 
+def test_unset_individual(symptoms):
+    symptoms.unset([0], 'fever')
+    u = symptoms.uncompress()
+    assert not u.loc[0].any()
+
+
+def test_set_unset_individual(symptoms):
+    symptoms.set([0], 'fever')
+    symptoms.unset([0], 'fever')
+    u = symptoms.uncompress()
+    assert not u.loc[0].any()
+
+
+def test_set_individual_multiple_columns(module_bitset_handler, sy_columns):
+    module_bitset_handler.set([0], 'Module1', columns=sy_columns)
+    uncompressed = module_bitset_handler.uncompress(columns=sy_columns)
+    for col in sy_columns:
+        assert (uncompressed[col].loc[0] == [True, False, False, False]).all()
+
+
+def test_unset_individual_multiple_columns(module_bitset_handler, sy_columns):
+    module_bitset_handler.unset([0], 'Module2', columns=sy_columns)
+    uncompressed = module_bitset_handler.uncompress(columns=sy_columns)
+    for col in sy_columns:
+        assert not uncompressed[col].loc[0].any()
+
+
+def test_set_unset_individual_multiple_columns(module_bitset_handler, sy_columns):
+    module_bitset_handler.set([0], 'Module1', 'Module3', columns=sy_columns)
+    module_bitset_handler.unset([0], 'Module3', columns=sy_columns)
+    uncompressed = module_bitset_handler.uncompress(columns=sy_columns)
+    for col in sy_columns:
+        assert (uncompressed[col].loc[0] == [True, False, False, False]).all()
+
+
+def test_set_multiple_rows(symptoms):
+    symptoms.set([1, 2], 'nausea', 'vomiting')
+    u = symptoms.uncompress()
+    assert (u.loc[1] == [False, False, True, True]).all()
+    assert (u.loc[2] == [False, False, True, True]).all()
+
+
+def test_set_multiple_rows_explicit_col(symptoms):
+    symptoms.set([1, 2], 'nausea', 'vomiting', columns='symptoms')
+    u = symptoms.uncompress()
+    assert (u.loc[1] == [False, False, True, True]).all()
+    assert (u.loc[2] == [False, False, True, True]).all()
+
+
+def test_set_multiple_rows_multiple_columns(module_bitset_handler, sy_columns):
+    module_bitset_handler.set([0, 2], 'Module1', 'Module3', columns=sy_columns)
+    uncompressed = module_bitset_handler.uncompress(columns=sy_columns)
+    for col in sy_columns:
+        assert (uncompressed[col].loc[0] == [True, False, True, False]).all()
+        assert (uncompressed[col].loc[2] == [True, False, True, False]).all()
+
+
 def test_set_subset(dataframe, symptoms):
-    # subset
     symptoms.set(dataframe.index % 2 == 0, 'vomiting')
     u = symptoms.uncompress()
     assert (u.loc[dataframe.index % 2 == 0, 'vomiting']).all()
@@ -96,6 +183,12 @@ def test_set_all(dataframe, symptoms):
     symptoms.unset([1], 'cough')
     u = symptoms.uncompress()
     assert (~u.loc[1]).all()
+
+
+def test_set_all_multiple_columns(module_bitset_handler, sy_columns):
+    module_bitset_handler.set(slice(None), 'Module1', columns=sy_columns)
+    uncompressed = module_bitset_handler.uncompress(columns=sy_columns)
+    assert all(v.Module1.all() for v in uncompressed.values())
 
 
 def test_multiple_set(dataframe, symptoms):
@@ -115,6 +208,16 @@ def test_multiple_set(dataframe, symptoms):
     pd.testing.assert_frame_equal(symptoms.uncompress(), reference_uncompressed)
 
 
+def test_has(symptoms):
+    symptoms.set([2], 'cough')
+    assert symptoms.has([2], 'cough', first=True)
+
+
+def test_has_multiple_columns(module_bitset_handler, sy_columns):
+    module_bitset_handler.set([2], 'Module2', columns=sy_columns)
+    assert module_bitset_handler.has([2], 'Module2', columns=sy_columns).all().all()
+
+
 def test_has_all(dataframe, updated_symptoms):
     # no one should have fever
     assert (~updated_symptoms.has_all(dataframe.is_alive, 'fever')).all()
@@ -130,6 +233,18 @@ def test_has_all(dataframe, updated_symptoms):
     ).all()
 
 
+def test_has_all_multiple_columns(module_bitset_handler, sy_columns):
+    module_bitset_handler.set(
+        [0], *(f'Module{i}' for i in range(1, 5)), columns=sy_columns[0]
+    )
+    module_bitset_handler.set([1], 'Module3', columns=sy_columns[1])
+    has_all = module_bitset_handler.has_all(
+        [0, 1], 'Module1', 'Module3', columns=sy_columns
+    )
+    assert (has_all[sy_columns[0]] == [True, False]).all()
+    assert (has_all[sy_columns[1]] == [False, False]).all()
+
+
 def test_has_any(dataframe, updated_symptoms):
     assert (
         updated_symptoms.has_any(dataframe.is_alive, 'cough', 'vomiting')
@@ -137,6 +252,16 @@ def test_has_any(dataframe, updated_symptoms):
     ).all()
     # does individual 1 have vomiting or fever - use 'pop' to get single entry, not Series
     assert (updated_symptoms.has_any([0], 'fever', 'vomiting', first=True))
+
+
+def test_has_any_multiple_columns(module_bitset_handler, sy_columns):
+    module_bitset_handler.set([0], 'Module1', columns=sy_columns[0])
+    module_bitset_handler.set([1], 'Module3', columns=sy_columns[1])
+    has_any = module_bitset_handler.has_any(
+        [0, 1], 'Module1', 'Module3', columns=sy_columns
+    )
+    assert (has_any[sy_columns[0]] == [True, False]).all()
+    assert (has_any[sy_columns[1]] == [False, True]).all()
 
 
 def test_uncompress_individual(updated_symptoms):
@@ -180,6 +305,13 @@ def test_clear(updated_symptoms):
     assert updated_symptoms.not_empty([0], first=True)
     updated_symptoms.clear([0])
     assert updated_symptoms.is_empty([0], first=True)
+
+
+def test_clear_multiple_columns(module_bitset_handler, sy_columns):
+    module_bitset_handler.set([0, 1], 'Module1', 'Module2', columns=sy_columns)
+    assert module_bitset_handler.not_empty([0, 1], columns=sy_columns).any().any()
+    module_bitset_handler.clear([0, 1], columns=sy_columns)
+    assert module_bitset_handler.is_empty([0, 1], columns=sy_columns).all().all()
 
 
 def test_linearmodel_with_bitset(dataframe, symptoms):
