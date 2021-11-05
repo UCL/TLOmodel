@@ -242,9 +242,7 @@ class HealthSystem(Module):
 
         # Load basic information about the organization of the HealthSystem
         self.parameters['Master_Facilities_List'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv'
-        ).iloc[:, 1:]
-        # todo can remove ".iloc[:, 1:]" when csv do not come with the index included.
+            path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
 
         # Load ResourceFiles that define appointment and officer types
         self.parameters['Officer_Types_Table'] = pd.read_csv(
@@ -260,8 +258,7 @@ class HealthSystem(Module):
         # Load 'Daily_Capabilities' (for both actual and funded)
         for _i in ['actual', 'funded']:
             self.parameters[f'Daily_Capabilities_{_i}'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'human_resources' / f'{_i}' / 'ResourceFile_Daily_Capabilities.csv'
-        ).iloc[:, 1:]  # todo can remove ".iloc[:, 1:]" when csv do not come with the index included.
+            path_to_resourcefiles_for_healthsystem / 'human_resources' / f'{_i}' / 'ResourceFile_Daily_Capabilities.csv')
 
         # Read in ResourceFile_Consumables and then process it to create the data structures needed
         self.parameters['Consumables'] = pd.read_csv(
@@ -358,7 +355,7 @@ class HealthSystem(Module):
                 appt_time_tuple.Appt_Type_Code
             ].append(
                 AppointmentSubunit(
-                    officer_type=appt_time_tuple.Officer_Type_Code,
+                    officer_type=appt_time_tuple.Officer_Category,
                     time_taken=appt_time_tuple.Time_Taken_Mins
                 )
             )
@@ -491,11 +488,12 @@ class HealthSystem(Module):
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
         capabilities = self.parameters[f'Daily_Capabilities_{self.use_funded_or_actual_staffing}']
+        capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
 
         # Create dataframe containing background information about facility and officer types
         facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
-        officer_type_codes = self.parameters['Officer_Types_Table']['Officer_Type_Code'].values
-
+        officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values) # todo - avoid use of the file or define differnetly
+        # # naming to be not with _ within the name of an oficer
         facs = list()
         officers = list()
         for f in facility_ids:
@@ -510,8 +508,8 @@ class HealthSystem(Module):
         capabilities_ex = capabilities_ex.merge(mfl, on='Facility_ID', how='left')
 
         # Merge in information about officers
-        officer_types = self.parameters['Officer_Types_Table'][['Officer_Type_Code', 'Officer_Type']]
-        capabilities_ex = capabilities_ex.merge(officer_types, on='Officer_Type_Code', how='left')
+        # officer_types = self.parameters['Officer_Types_Table'][['Officer_Type_Code', 'Officer_Type']]
+        # capabilities_ex = capabilities_ex.merge(officer_types, on='Officer_Type_Code', how='left')
 
         # Merge in the capabilities (minutes available) for each officer type (inferring zero minutes where
         # there is no entry in the imported capabilities table)

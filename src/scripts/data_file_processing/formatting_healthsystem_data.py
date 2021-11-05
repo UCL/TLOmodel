@@ -1841,8 +1841,8 @@ assert ((fund_daily_capability.groupby('Facility_ID')['Staff_Count'].sum()) > 0)
 assert (fund_daily_capability.columns == curr_daily_capability.columns).all()
 
 # Save
-HosHC_patient_facing_time.to_csv(
-    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Patient_Facing_Time.csv', index=False)
+# HosHC_patient_facing_time.to_csv(
+#     outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Patient_Facing_Time.csv', index=False)
 curr_daily_capability.to_csv(
     outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Current_Staff_Daily_Capabilities.csv', index=False)
 fund_daily_capability.to_csv(
