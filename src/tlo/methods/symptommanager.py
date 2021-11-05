@@ -13,7 +13,7 @@ Outstanding issues
 """
 from collections import defaultdict
 from pathlib import Path
-from typing import Sequence
+from typing import Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -494,30 +494,23 @@ class SymptomManager(Module):
             )
         )
 
-    def clear_symptoms(self, person_id, disease_module):
+    def clear_symptoms(self, person_id: Union[int, Sequence[int]], disease_module: str):
         """
-        This is a helper function that remove all the symptoms in a specified person that is caused by a specified
-        disease module
+        Remove all the symptoms for one or more persons caused by a specified disease module
 
-        :param person_id:
-        :param disease_module_name:
+        :param person_id: IDs for one or more persons to clear symptoms for.
+        :param disease_module_name: Name of disease module to clear symptoms for.
         """
         df = self.sim.population.props
 
-        assert isinstance(person_id, (int, np.integer)), 'person_id must be a single integer for one particular person'
-        assert df.at[person_id, 'is_alive'], "The person is not alive"
-        assert disease_module.name in ([self.name] + self.recognised_module_names), \
-            "Disease Module Name is not recognised"
-
-        symptoms_caused_by_this_disease_module = self.has_what(person_id, disease_module)
-
-        for symp in symptoms_caused_by_this_disease_module:
-            self.change_symptom(
-                person_id=person_id,
-                symptom_string=symp,
-                add_or_remove='-',
-                disease_module=disease_module
-            )
+        if isinstance(person_id, (int, np.integer)):
+            person_id = [person_id]
+        assert df.loc[person_id, 'is_alive'].all(), "One or more persons not alive"
+        assert disease_module.name in ([self.name] + self.recognised_module_names), (
+            "Disease module name is not recognised"
+        )
+        sy_columns = [self.get_column_name_for_symptom(sym) for sym in self.symptom_names]
+        self.bsh.unset(person_id, disease_module.name, columns=sy_columns)
 
     def get_persons_with_newly_onset_symptoms(self):
         return self.persons_with_newly_onset_symptoms
