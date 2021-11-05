@@ -318,7 +318,7 @@ class SymptomManager(Module):
         df = self.sim.population.props
 
         # Make the person_id into a list if not already a sequence
-        if not isinstance(person_id, Sequence):
+        if isinstance(person_id, (int, np.integer)):
             person_id = [person_id]
 
         if isinstance(symptom_string, str):
@@ -415,13 +415,13 @@ class SymptomManager(Module):
         has_all_symptoms = self.bsh.not_empty(df.is_alive, columns=sy_columns).all(axis=1)
         return has_all_symptoms[has_all_symptoms].index.tolist()
 
-    def who_not_have(self, symptom_string):
+    def who_not_have(self, symptom_string: str) -> pd.Series:
         """
-        This is a helper function to run the list of person_ids for person who are alive and do not have a particular
-        symptom.
+        Get a boolean series indicating whether individuals are alive and do not have a symptom.
 
-        :param symptom_string: the string of the symptom
-        :return: list of person_ids who are alive and have that symptom (caused by that disease_module)
+        :param symptom_string: The string of the symptom.
+        :return: Boolean series that can be used to index the population dataframe to
+            select individuals which are alive and do not have symptom.
         """
 
         df = self.sim.population.props
@@ -431,12 +431,10 @@ class SymptomManager(Module):
         assert symptom_string in self.symptom_names, 'Symptom not registered'
 
         # Does not have symptom:
-        no_symptom = self.bsh.is_empty(
+        return self.bsh.is_empty(
             df.is_alive,
             columns=self.get_column_name_for_symptom(symptom_string)
         )
-
-        return no_symptom[no_symptom].index.tolist()
 
     def has_what(self, person_id, disease_module=None):
         """
@@ -613,24 +611,21 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
         """Determine who will be onset which which symptoms today"""
 
         df = self.sim.population.props
-        idx = {
-            'children': df.loc[df.is_alive & (df.age_years < 15)].index,
-            'adults': df.loc[df.is_alive & (df.age_years >= 15)].index
-        }
+        group_selector = {'children': df.age_years < 15, 'adults': df.age_years >= 15}
 
         # For each generic symptom, impose it on a random sample of persons who do not have that symptom currently:
         for symp in sorted(self.module.generic_symptoms):
-            does_not_have_symptom = self.module.who_not_have(symptom_string=symp)
+            do_not_have_symptom = self.module.who_not_have(symptom_string=symp)
 
             for group in ['children', 'adults']:
 
                 p = self.generic_symptoms['prob_per_day'][group][symp]
                 dur = self.generic_symptoms['duration_in_days'][group][symp]
-
-                idx_grp = idx[group]
-                eligible_to_get_symptom = idx_grp[idx_grp.isin(does_not_have_symptom)]
-                persons_to_onset_with_this_symptom = list(
-                    eligible_to_get_symptom[self.rand(len(eligible_to_get_symptom)) < p])
+                eligible_to_get_symptom = group_selector[group] & do_not_have_symptom
+                persons_eligible_to_get_symptom = df.index[eligible_to_get_symptom]
+                persons_to_onset_with_this_symptom = persons_eligible_to_get_symptom[
+                    self.rand(len(persons_eligible_to_get_symptom)) < p
+                ]
 
                 # Do onset
                 self.sim.modules['SymptomManager'].change_symptom(
@@ -675,7 +670,8 @@ class SymptomManager_SpuriousSymptomResolve(RegularEvent, PopulationScopeEventMi
         for symp in self.to_resolve.keys():
             if date_today in self.to_resolve[symp]:
                 person_ids = self.to_resolve[symp].pop(date_today)
-                person_ids_alive = list(df.index[df.is_alive & (df.index.isin(person_ids))])
+                persons = df.loc[person_ids]
+                person_ids_alive = persons[persons.is_alive].index
                 self.module.change_symptom(
                     person_id=person_ids_alive,
                     add_or_remove='-',
