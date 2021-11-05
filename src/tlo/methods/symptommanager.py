@@ -321,7 +321,8 @@ class SymptomManager(Module):
             person_id = [person_id]
 
         # Strip out the person_ids for anyone who is not alive:
-        person_id = list(df.index[df.is_alive & (df.index.isin(person_id))])
+        persons = df.loc[person_id]
+        person_id = persons[persons.is_alive].index
 
         # Check that the symptom_string is legitimate
         assert symptom_string in self.symptom_names, f'Symptom {symptom_string} is not recognised'
