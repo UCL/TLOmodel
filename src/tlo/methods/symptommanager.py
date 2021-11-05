@@ -263,18 +263,19 @@ class SymptomManager(Module):
         ]
         modules_that_can_impose_symptoms = [self.name] + self.recognised_module_names
 
-        # Establish the BitSetHandler for each symptoms
-        self.bsh = dict()
-        for symptom_name in self.symptom_names:
-            symptom_column_name = self.get_column_name_for_symptom(symptom_name)
-            self.bsh[symptom_name] = BitsetHandler(self.sim.population,
-                                                   symptom_column_name,
-                                                   modules_that_can_impose_symptoms)
-
-            # NB. Bit Set Handler will establish such that everyone has no symptoms. i.e. can check below:
-            # u = self.bsh[symptom_name].uncompress()
-            # assert set(u.columns) == set(modules_that_can_impose_symptoms)
-            # assert not u.any().any()
+        # Establish the BitSetHandler for the symptoms
+        self.bsh = BitsetHandler(
+            population=self.sim.population,
+            column=None,
+            elements=modules_that_can_impose_symptoms
+        )
+        # NB. Bitset handler will establish such that everyone has no symptoms. i.e. can check below:
+        # symptom_col_names = [self.get_column_name_for_symptom(s) for s in self.symptom_names]
+        # uncompressed = self.bsh.uncompress(columns=symptom_col_names)
+        # for key, u in uncompressed.items():
+        #     assert key in symptom_col_names
+        #     assert set(u.columns) == set(modules_that_can_impose_symptoms)
+        #     assert not u.any().any()
 
     def initialise_simulation(self, sim):
         """Schedule SpuriousSymptomsOnset/Resolve if the parameter 'spurious_symptoms' is True"""
@@ -354,11 +355,13 @@ class SymptomManager(Module):
             self.sim.schedule_event(event=auto_onset_event, date=date_of_onset)
             return
 
+        sy_columns = self.get_column_name_for_symptom(symptom_string)
+
         # Make the operation:
         if add_or_remove == '+':
             # Add this disease module as a cause of this symptom
 
-            self.bsh[symptom_string].set(person_id, disease_module.name)
+            self.bsh.set(person_id, disease_module.name, columns=sy_columns)
             self.persons_with_newly_onset_symptoms = self.persons_with_newly_onset_symptoms.union(person_id)
 
             # If a duration is given, schedule the auto-resolve event to turn off these symptoms after specified time.
@@ -374,14 +377,14 @@ class SymptomManager(Module):
             # Remove this disease module as a cause of this symptom
             # But, first, check that this symptom is being caused by this disease module.
             the_disease_module_is_causing_the_symptom = \
-                self.bsh[symptom_string].uncompress(person_id)[disease_module.name].all()
+                self.bsh.has(person_id, disease_module.name, columns=sy_columns).all()
             if not the_disease_module_is_causing_the_symptom:
                 logger.debug(key="message",
                              data=f"Request from disease module '{disease_module.name}' to remove the symptom "
                                   f"'{symptom_string}', which it is not currently causing.")
 
             # Do the remove:
-            self.bsh[symptom_string].unset(person_id, disease_module.name)
+            self.bsh.unset(person_id, disease_module.name, columns=sy_columns)
 
     def who_has(self, list_of_symptoms):
         """
@@ -404,10 +407,8 @@ class SymptomManager(Module):
 
         # Find who has all the symptoms
         df = self.sim.population.props
-        has_all_symptoms = pd.Series(index=df.index[df.is_alive], data=True)
-        for s in list_of_symptoms:
-            has_all_symptoms = has_all_symptoms & self.bsh[s].not_empty(df.is_alive)
-
+        sy_columns = [self.get_column_name_for_symptom(s) for s in list_of_symptoms]
+        has_all_symptoms = self.bsh.not_empty(df.is_alive, columns=sy_columns).all(axis=1)
         return has_all_symptoms[has_all_symptoms].index.tolist()
 
     def who_not_have(self, symptom_string):
@@ -426,7 +427,10 @@ class SymptomManager(Module):
         assert symptom_string in self.symptom_names, 'Symptom not registered'
 
         # Does not have symptom:
-        no_symptom = self.bsh[symptom_string].is_empty(df.is_alive)
+        no_symptom = self.bsh.is_empty(
+            df.is_alive,
+            columns=self.get_column_name_for_symptom(symptom_string)
+        )
 
         return no_symptom[no_symptom].index.tolist()
 
@@ -446,16 +450,16 @@ class SymptomManager(Module):
         df = self.sim.population.props
         assert df.at[person_id, 'is_alive'], "The person is not alive"
 
-        columns = [self.get_column_name_for_symptom(s) for s in self.symptom_names]
-        df = self.sim.population.props
-        person = df.loc[person_id, columns]
-
-        if disease_module:
+        if disease_module is not None:
             assert disease_module.name in ([self.name] + self.recognised_module_names), \
                 "Disease Module Name is not recognised"
-            return [s for s in self.symptom_names if disease_module.name in self.bsh[s].to_strings(person[f'sy_{s}'])]
-
-        return [s for s in self.symptom_names if person[f'sy_{s}'] > 0]
+            sy_columns = [self.get_column_name_for_symptom(s) for s in self.symptom_names]
+            person_has = self.bsh.has(
+                [person_id], disease_module.name, first=True, columns=sy_columns
+            )
+            return [s for s in self.symptom_names if person_has[f'sy_{s}']]
+        else:
+            return [s for s in self.symptom_names if df.loc[person_id, f'sy_{s}'] > 0]
 
     def have_what(self, person_ids):
         """Find the set of symptoms for a list of person_ids.
@@ -480,7 +484,13 @@ class SymptomManager(Module):
         assert df.at[person_id, 'is_alive'], "The person is not alive"
         assert symptom_string in self.symptom_names
 
-        return list(self.bsh[symptom_string].get([person_id], first=True))
+        return list(
+            self.bsh.get(
+                [person_id],
+                first=True,
+                columns=self.get_column_name_for_symptom(symptom_string)
+            )
+        )
 
     def clear_symptoms(self, person_id, disease_module):
         """
