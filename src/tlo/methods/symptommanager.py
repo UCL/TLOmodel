@@ -372,7 +372,7 @@ class SymptomManager(Module):
 
         else:
             # Remove this disease module as a cause of this symptom
-            # But, first, check that this symptom is being caused by this diease module.
+            # But, first, check that this symptom is being caused by this disease module.
             the_disease_module_is_causing_the_symptom = \
                 self.bsh[symptom_string].uncompress(person_id)[disease_module.name].all()
             if not the_disease_module_is_causing_the_symptom:
