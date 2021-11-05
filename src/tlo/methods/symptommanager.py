@@ -13,6 +13,7 @@ Outstanding issues
 """
 from collections import defaultdict
 from pathlib import Path
+from typing import Sequence
 
 import numpy as np
 import pandas as pd
@@ -316,7 +317,7 @@ class SymptomManager(Module):
         df = self.sim.population.props
 
         # Make the person_id into a list
-        if type(person_id) != list:
+        if not isinstance(person_id, Sequence):
             person_id = [person_id]
 
         # Strip out the person_ids for anyone who is not alive:
