@@ -855,6 +855,8 @@ idx_c01_level_2 = fund_staff_distribution[
     (fund_staff_distribution['Facility_Level'] == 'Facility_Level_2')].index
 fund_staff_distribution.loc[idx_c01_level_2, 'Proportion_Fund'] = 0.5208
 
+# Use the CHAI Opt distributions; first need to make it include level 0
+
 # Split
 for district in pop['District']:
     for cadre in set(fund_staffing_table.columns[3:]):
@@ -1900,7 +1902,7 @@ appt_time_table_coarse.to_csv(
     outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table_Coarse.csv', index=False)
 
 curr_daily_capability_coarse.to_csv(
-    outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Daily_Capabilities_Coarse.csv', index=False)
+    outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Daily_Capabilities.csv', index=False)
 
 fund_daily_capability_coarse.to_csv(
-    outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Daily_Capabilities_Coarse.csv', index=False)
+    outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Daily_Capabilities.csv', index=False)
