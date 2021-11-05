@@ -855,8 +855,6 @@ idx_c01_level_2 = fund_staff_distribution[
     (fund_staff_distribution['Facility_Level'] == 'Facility_Level_2')].index
 fund_staff_distribution.loc[idx_c01_level_2, 'Proportion_Fund'] = 0.5208
 
-# Use the CHAI Opt distributions; first need to make it include level 0
-
 # Split
 for district in pop['District']:
     for cadre in set(fund_staffing_table.columns[3:]):
@@ -1094,8 +1092,11 @@ curr_staffing_table.loc[128:133, 'Facility_Level'] = ['Facility_Level_5', 'Facil
                                                       'Facility_Level_3', 'Facility_Level_3',
                                                       'Facility_Level_4']  # 128:132 also OK
 # Make values integers (after rounding)
-curr_staffing_table.loc[:, curr_staffing_table.columns[3:]] = (
-    curr_staffing_table.loc[:, curr_staffing_table.columns[3:]].astype(float).round(0).astype(int))
+# curr_staffing_table.loc[:, curr_staffing_table.columns[3:]] = (
+#     curr_staffing_table.loc[:, curr_staffing_table.columns[3:]].astype(float).round(0).astype(int))
+# Make values integers (use math.ceil())
+curr_staffing_table.loc[:, curr_staffing_table.columns[3:]] = \
+    curr_staffing_table.loc[:, curr_staffing_table.columns[3:]].apply(np.ceil)
 
 # Save the table without column 'Is_DistrictLevel'
 curr_staffing_table_to_save = curr_staffing_table.drop(columns='Is_DistrictLevel', inplace=False)
