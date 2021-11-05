@@ -311,23 +311,27 @@ class SymptomManager(Module):
         :param date_of_onset: Date for the symptoms to start
         :param duration_in_days: If self-resolving, duration of symptoms
         :param person_id: The person_id (int or list of int) for whom the symptom changes
-        :param symptom_string: The string for the symptom (must be one of the generic_symptoms)
+        :param symptom_string: The string for the symptom or list of multiple symptom strings
         :param add_or_remove: '+' to add the symptom or '-' to remove the symptom
         :param disease_module: pointer to the disease module that is reporting this change in symptom
         """
         df = self.sim.population.props
 
-        # Make the person_id into a list
+        # Make the person_id into a list if not already a sequence
         if not isinstance(person_id, Sequence):
             person_id = [person_id]
+
+        if isinstance(symptom_string, str):
+            symptom_string = [symptom_string]
 
         # Strip out the person_ids for anyone who is not alive:
         persons = df.loc[person_id]
         person_id = persons[persons.is_alive].index
 
-        # Check that the symptom_string is legitimate
-        assert symptom_string in self.symptom_names, f'Symptom {symptom_string} is not recognised'
-        assert ('sy_' + symptom_string) in df.columns, 'Symptom has not been declared'
+        # Check that all symptoms in symptom_string are legitimate
+        for sym in symptom_string:
+            assert sym in self.symptom_names, f'Symptom {sym} is not recognised'
+            assert ('sy_' + sym) in df.columns, 'Symptom has not been declared'
 
         # Check that the add/remove signal is legitimate
         assert add_or_remove in ['+', '-']
@@ -355,7 +359,7 @@ class SymptomManager(Module):
             self.sim.schedule_event(event=auto_onset_event, date=date_of_onset)
             return
 
-        sy_columns = self.get_column_name_for_symptom(symptom_string)
+        sy_columns = [self.get_column_name_for_symptom(sym) for sym in symptom_string]
 
         # Make the operation:
         if add_or_remove == '+':
@@ -377,10 +381,10 @@ class SymptomManager(Module):
             # Remove this disease module as a cause of this symptom
             # But, first, check that this symptom is being caused by this disease module.
             the_disease_module_is_causing_the_symptom = \
-                self.bsh.has(person_id, disease_module.name, columns=sy_columns).all()
+                self.bsh.has(person_id, disease_module.name, columns=sy_columns).all().all()
             if not the_disease_module_is_causing_the_symptom:
                 logger.debug(key="message",
-                             data=f"Request from disease module '{disease_module.name}' to remove the symptom "
+                             data=f"Request from disease module '{disease_module.name}' to remove the symptom(s) "
                                   f"'{symptom_string}', which it is not currently causing.")
 
             # Do the remove:
