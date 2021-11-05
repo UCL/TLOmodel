@@ -14,7 +14,7 @@ pop_regions = pd.unique(pop['Region'])
 
 # Get appt time table (coarse)
 appt_time_table_coarse = pd.read_csv(
-    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv')
+    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table_Coarse.csv')
 
 # Get funded capabilities (coarse)
 fund_daily_capability_coarse = pd.read_csv(
