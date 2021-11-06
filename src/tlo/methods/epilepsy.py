@@ -157,9 +157,7 @@ class Epilepsy(Module):
 
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='seizures',
-                    odds_ratio_health_seeking_in_adults=100.00)
-        )
+            Symptom("seizures", emergency_in_children=True, emergency_in_adults=True))
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -361,6 +359,9 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         alive_seiz_stat_1_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
         alive_seiz_stat_2_or_3_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3'])) & df.ep_antiep]
 
+# todo - this below should be instead dealt with by people with seizures presenting and then being
+# todo   diagnosed and put on anti-epileptics
+
         def start_antiep(ep_seiz_stat, probability):
             """start individuals with seiz status on antiep with given probability"""
             idx = df.index[df.is_alive & (df.ep_seiz_stat == ep_seiz_stat) & ~df.ep_antiep]
@@ -380,6 +381,9 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
             event = HSI_Epilepsy_Start_Anti_Epileptic(self.module, person_id=person_id_to_start_treatment)
             target_date = self.sim.date + DateOffset(days=int(self.module.rng.rand() * 30))
             self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=target_date, tclose=None)
+
+
+
 
         def stop_antiep(indices, probability):
             """stop individuals on antiep with given probability"""
@@ -490,7 +494,7 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'n_antiep': n_antiep
                     })
 
-        individual = df.loc[[1]]
+        individual = df.loc[[18]]
 
         logger.info(key='individual_check', data=individual, description='following an individual through simulation')
 
@@ -559,8 +563,8 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
                     anti_epileptics_available = True
 #                   logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
 # todo: add line below back in when consumable availability functioning
-#       if anti_epileptics_available:
-        df.at[person_id, 'ep_antiep'] = True
+        if anti_epileptics_available:
+           df.at[person_id, 'ep_antiep'] = True
 
         # Schedule a follow-up for 3 months:
         hs.schedule_hsi_event(
