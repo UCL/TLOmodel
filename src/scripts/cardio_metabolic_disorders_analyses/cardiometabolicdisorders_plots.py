@@ -43,8 +43,8 @@ def runsim(seed=0):
     # add file handler for the purpose of logging
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2019, 12, 31)
-    popsize = 10000
+    end_date = Date(2015, 12, 31)
+    popsize = 5000
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
@@ -53,7 +53,8 @@ def runsim(seed=0):
                  #care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  #contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False,
+                                           ignore_cons_constraints=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -414,6 +415,39 @@ for event in events:
     plt.tight_layout()
     plt.savefig(outputpath / f'prevalence_{event_title}_over_time.pdf')
     plt.show()
+
+# Plot snapshot of % diagnosed and % on medication
+
+diagnosis_df = pd.DataFrame(index=['diagnosis_prev'])
+
+for condition in conditions:
+    diagnosis = output['tlo.methods.cardio_metabolic_disorders'][f'{condition}_diagnosis_prevalence']
+    diagnosis_df[f'{condition}'] = diagnosis[f'{condition}_diagnosis_prevalence'].iloc[-1]
+diagnosis_df = diagnosis_df.transpose()
+bar = plt.bar(diagnosis_df.index, diagnosis_df['diagnosis_prev'],
+              alpha=0.25,
+              color='b',
+              label='Model')
+steps_data = [0.007, 0.08]
+scatter_steps = plt.scatter(['diabetes', 'hypertension'], steps_data, s=10,
+                          alpha=0.8,
+                          color='#23395d',
+                          label="STEPS Survey 2017")
+steps_error = [[0.001, 0.013], [0.017, 0.016]]
+plt.errorbar(['diabetes', 'hypertension'], steps_data, yerr=steps_error,
+                 fmt='o', c='#23395d')
+price_data = [0.0126, 0.0909]
+scatter_price = plt.scatter(['diabetes', 'hypertension'], price_data, s=20,
+                          alpha=1.0,
+                          color='hotpink',
+                          label="Price et al. 2018")
+plt.xticks(rotation=90)
+plt.ylabel(f'Proportion Diagnosed with Condition')
+plt.title(f'Proportion Diagnosed with CMD Conditions in 2019')
+plt.legend([bar, scatter_steps, scatter_price], ['Model', 'STEPS Survey 2017', 'Price et al. 2018'])
+plt.savefig(outputpath / f'diagnosis_by_condition.pdf')
+plt.tight_layout()
+plt.show()
 
 # plot prevalence of multi-morbidities
 age_range = sim.modules['Demography'].AGE_RANGE_CATEGORIES
