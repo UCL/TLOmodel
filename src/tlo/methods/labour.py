@@ -2868,7 +2868,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
                 (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_future'):
             mni[person_id]['referred_for_cs'] = True
         elif df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'avd_now':
-            mni[person_id]['delivery_mode'] = 'instrumental'
+            mni[person_id]['mode_of_delivery'] = 'instrumental'
 
         # LOG CONSUMABLES FOR DELIVERY...
         # We assume all deliveries require this basic package of consumables but we do not condition the event running
@@ -2943,6 +2943,13 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # Prophylactic treatment to prevent postpartum bleeding is applied
         if not mni[person_id]['sought_care_for_complication'] and (squeeze_factor < params['squeeze_threshold_amtsl']):
             self.module.active_management_of_the_third_stage_of_labour(self)
+
+        # ==== Caesarean section/AVD for un-modelled reason ======
+        # todo: still unsure if this is the right thing to do
+        if (not mni[person_id]['referred_for_cs'] and (not mni[person_id]['mode_of_delivery'] == 'instrumental')) and \
+            (self.module.rng.random_sample() < 0.02):  # todo: set as parameter
+            mni[person_id]['referred_for_cs'] = True
+            mni[person_id]['cs_indication'] = 'other'
 
         # ========================================== SCHEDULING CEMONC CARE =========================================
         # Finally women who require additional treatment have the appropriate HSI scheduled to deliver further care
