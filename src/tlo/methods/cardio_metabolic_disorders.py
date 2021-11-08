@@ -299,10 +299,17 @@ class CardioMetabolicDisorders(Module):
         # -------------------- SYMPTOMS ---------------------------------------------------------------
         # Register symptoms for conditions and give non-generic symptom 'average' healthcare seeking
         for symptom_name in self.symptoms:
-            self.sim.modules['SymptomManager'].register_symptom(
-                Symptom(name=symptom_name,
-                        odds_ratio_health_seeking_in_adults=0.01)
-            )
+            # Those with chronic lower back pain have a higher propensity to seek care than other conditions
+            if symptom_name == 'chronic_lower_back_pain_symptoms':
+                self.sim.modules['SymptomManager'].register_symptom(
+                    Symptom(name=symptom_name,
+                            odds_ratio_health_seeking_in_adults=0.2)
+                )
+            else:
+                self.sim.modules['SymptomManager'].register_symptom(
+                    Symptom(name=symptom_name,
+                            odds_ratio_health_seeking_in_adults=0.0001)
+                )
         # Register symptoms from events and make them emergencies
         for event in self.events:
             self.sim.modules['SymptomManager'].register_symptom(
@@ -328,6 +335,25 @@ class CardioMetabolicDisorders(Module):
             if sum(init_prev):
                 df.loc[eligible[init_prev], f'nc_{_condition}'] = True
 
+        def sample_eligible_diagnosis_medication(_filter, _p, _condition):
+            """uses filter to get eligible population and samples individuals for prior diagnosis & medication use
+             using p"""
+            eligible = df.index[_filter]
+            init_diagnosis = self.rng.choice([True, False], size=len(eligible), p=[_p, 1 - _p])
+            if sum(init_diagnosis):
+                df.loc[eligible[init_diagnosis], f'nc_{_condition}_ever_diagnosed'] = True
+                df.loc[eligible[init_diagnosis], f'nc_{_condition}_date_diagnosis'] = self.sim.date
+                df.loc[eligible[init_diagnosis], f'nc_{_condition}_date_last_test'] = self.sim.date
+                df.loc[eligible[init_diagnosis], f'nc_{_condition}_on_medication'] = self.sim.date
+
+        def sample_eligible_treatment_success(_filter, _p, _condition):
+            """uses filter to get eligible population and samples individuals for prior diagnosis & medication use
+             using p"""
+            eligible = df.index[_filter]
+            init_treatment_works = self.rng.choice([True, False], size=len(eligible), p=[_p, 1 - _p])
+            if sum(init_treatment_works):
+                df.loc[eligible[init_treatment_works], f'nc_{_condition}_medication_prevents_death'] = True
+
         for condition in self.conditions:
             p = self.parameters[f'{condition}_initial_prev']
             # men & women without condition
@@ -345,6 +371,20 @@ class CardioMetabolicDisorders(Module):
             df.loc[df.is_alive, f'nc_{condition}_date_diagnosis'] = pd.NaT
             df.loc[df.is_alive, f'nc_{condition}_on_medication'] = False
             df.loc[df.is_alive, f'nc_{condition}_medication_prevents_death'] = False
+
+            # ----- Sample among eligible population who have the condition to set initial proportion diagnosed and on
+            # medication
+
+            p_initial_diagnosis = self.parameters[f'{condition}_hsi']['pr_diagnosed']
+            # population with condition
+            w_cond = df[f'nc_{condition}']
+            sample_eligible_diagnosis_medication(w_cond, p_initial_diagnosis, condition)
+
+            # for those on medication, sample to set initial proportion for whom medication prevents death
+            p_treatment_works = self.parameters[f'{condition}_hsi']['pr_treatment_works']
+            # population already on medication
+            on_med = df[f'nc_{condition}_on_medication']
+            sample_eligible_treatment_success(on_med, p_treatment_works, condition)
 
             # ----- Impose the symptom on random sample of those with each condition to have:
             # TODO: @britta make linear model data-specific and add in needed complexity
@@ -754,8 +794,8 @@ class CardioMetabolicDisorders(Module):
                     current_date=self.sim.date, date_of_last_test=df.at[
                         person_id, f'nc_{condition}_date_last_test']):
                     # TODO: @britta make these not arbitrary
-                    if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
-                                f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
+                    if df.at[person_id, 'age_years'] >= 50 or (self.rng.rand() < self.parameters[
+                                f'{condition}_hsi'].get('pr_assessed_other_symptoms')):
                         # initiate HSI event
                         hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
                             module=self,
@@ -1466,7 +1506,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         if not person[f'nc_{self.condition}']:
             # This person no longer has the condition so will not have this HSI and will drop off of medication
             # Return the blank_appt_footprint() so that this HSI does not occupy any time resources
-            person[f'nc_{self.condition}_on_medication'] = False
+            df.at[person_id, f'nc_{self.condition}_on_medication'] = False
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         # Check that the person is on medication
         if not person[f'nc_{self.condition}_on_medication']:
