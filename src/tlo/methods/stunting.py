@@ -155,7 +155,7 @@ class Stunting(Module):
             """For the a given HAZ distribution (specified in the parameters by age-group), find the odds of
             a value <-2 (= 'stunted') and the odds of a value <-3 given a value <-2 (= 'severely stunted')."""
 
-            mean, stdev = p[f'prev_HAZ_distribution_age_{_agegp}']
+            mean, stdev = p[f'prev_HAZ_distribution_age_{_agegp[0]}_{_agegp[1]}mo']
             haz_distribution = norm(loc=mean, scale=stdev)
 
             # Compute proportion "stunted" (HAZ <-2)
