@@ -202,11 +202,11 @@ class Stunting(Module):
                 intercept=target_odds / actual_odds if not np.isnan(actual_prob) else target_odds
             )
 
-        for agegp in ['0_5mo', '6_11mo', '12_23mo', '24_35mo', '36_47mo', '48_59mo']:
+        for agegp in [(0, 5), (6, 11), (12, 23), (24, 35), (36, 47), (48, 59)]:  # in months
             p_stunting = get_probs_stunting(agegp)
 
-            low_bound_age_in_years = int(agegp.split('_')[0]) / 12.0
-            high_bound_age_in_years = (1 + int(agegp.split('_')[1].split('mo')[0])) / 12.0
+            low_bound_age_in_years = agegp[0] / 12.0
+            high_bound_age_in_years = (1 + agegp[1]) / 12.0
 
             mask = df.is_alive & df.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
                                                             inclusive='left')
@@ -215,7 +215,7 @@ class Stunting(Module):
                 df.loc[mask], self.rng, squeeze_single_row_output=False)
 
             severely_stunted_idx = stunted.loc[
-                stunted & (self.rng.rand(len(stunted)) < p_stunting.prob_severe_given_stunting)].index
+                stunted & (self.rng.random_sample(len(stunted)) < p_stunting.prob_severe_given_stunting)].index
             stunted_but_not_severe_idx = set(stunted[stunted].index) - set(severely_stunted_idx)
 
             df.loc[stunted_but_not_severe_idx, "un_HAZ_category"] = '-3<=HAZ<-2'
@@ -278,17 +278,17 @@ class Stunting(Module):
 
         if not is_stunted:
             return
-        else:
-            # Schedule the HSI for provision of treatment
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Stunting_ComplementaryFeeding(module=self, person_id=person_id),
-                priority=2,  # <-- lower priority that for wasting and most other HSI
-                topen=self.sim.date)
+
+        # Schedule the HSI for provision of treatment
+        self.sim.modules['HealthSystem'].schedule_hsi_event(
+            hsi_event=HSI_Stunting_ComplementaryFeeding(module=self, person_id=person_id),
+            priority=2,  # <-- lower priority that for wasting and most other HSI
+            topen=self.sim.date)
 
     def do_treatment(self, person_id, prob_success):
         """Represent the treatment with supplementary feeding. If treatment is successful, effect the recovery
         of the person immediately."""
-        if prob_success > self.rng.rand():
+        if prob_success > self.rng.random_sample():
             self.do_recovery([person_id])
 
 
@@ -463,7 +463,7 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         cum_prob_over_days_exposed = 1.0 - np.exp(np.log(1.0 - annual_prob) * days_exposed_to_risk / 365.25)
 
         assert pd.notnull(cum_prob_over_days_exposed).all()
-        return mask[mask].index[cum_prob_over_days_exposed > rng.rand(mask.sum())]
+        return mask[mask].index[cum_prob_over_days_exposed > rng.random_sample(mask.sum())]
 
 
 # ---------------------------------------------------------------------------------------------------------
