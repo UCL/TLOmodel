@@ -74,9 +74,9 @@ class CardioMetabolicDisorders(Module):
         'diabetes': Cause(
             gbd_causes='Diabetes mellitus', label='Diabetes'),
         'chronic_ischemic_hd': Cause(
-            gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
+            gbd_causes={'Ischemic heart disease', 'Hypertensive heart disease'}, label='Heart Disease'),
         'ever_heart_attack': Cause(
-            gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
+            gbd_causes={'Ischemic heart disease', 'Hypertensive heart disease'}, label='Heart Disease'),
         'ever_stroke': Cause(
             gbd_causes='Stroke', label='Stroke'),
         'chronic_kidney_disease': Cause(
@@ -86,13 +86,13 @@ class CardioMetabolicDisorders(Module):
     # Declare Causes of Disability #todo - to be updated when DALYS calc are completed
     CAUSES_OF_DISABILITY = {
         'any_ncd':
-            Cause(gbd_causes=[
+            Cause(gbd_causes={
                 'Diabetes mellitus',
                 'Ischemic heart disease',
                 'Hypertensive heart disease',
                 'Stroke',
                 'Chronic kidney disease'
-            ],
+            },
                 label='NCD')
     }
 
@@ -344,7 +344,7 @@ class CardioMetabolicDisorders(Module):
 
             # ----- Impose the symptom on random sample of those with each condition to have:
             # TODO: @britta make linear model data-specific and add in needed complexity
-            for symptom in self.prob_symptoms[condition].keys():
+            for symptom in self.prob_symptoms[condition]:
                 lm_init_symptoms = LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     self.prob_symptoms[condition].get(f'{symptom}'),
@@ -596,7 +596,7 @@ class CardioMetabolicDisorders(Module):
         lms_symptoms_dict[condition] = {}
         # Load parameters for correct condition/event
         p = self.prob_symptoms[condition]
-        for symptom in p.keys():
+        for symptom in p:
             p_symptom_onset = 1 - math.exp(-interval_between_polls / 12 * p.get(f'{symptom}'))
             lms_symptoms_dict[condition][f'{symptom}'] = LinearModel(LinearModelType.MULTIPLICATIVE,
                                                                      p_symptom_onset, Predictor(f'nc_{condition}')
@@ -622,7 +622,7 @@ class CardioMetabolicDisorders(Module):
             df.at[child_id, f'nc_{event}_ever_diagnosed'] = False
             df.at[child_id, f'nc_{event}_on_medication'] = False
             df.at[child_id, f'nc_{event}_date_diagnosis'] = pd.NaT
-            df.loc[child_id, f'nc_{event}_scheduled_date_death'] = pd.NaT
+            df.at[child_id, f'nc_{event}_scheduled_date_death'] = pd.NaT
             df.at[child_id, f'nc_{event}_medication_prevents_death'] = False
         df.at[child_id, 'nc_risk_score'] = 0
 
@@ -679,7 +679,7 @@ class CardioMetabolicDisorders(Module):
                     current_date=self.sim.date, date_of_last_test=df.at[
                         person_id, f'nc_{condition}_date_last_test']):
                     # TODO: @britta make these not arbitrary
-                    if df.at[person_id, 'age_years'] >= 50 or self.rng.rand() < self.parameters[
+                    if df.at[person_id, 'age_years'] >= 50 or self.rng.random_sample() < self.parameters[
                                 f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
                         # initiate HSI event
                         hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
@@ -931,10 +931,10 @@ class CardioMetabolicDisordersWeightLossEvent(Event, IndividualScopeEventMixin):
 
         if not person.is_alive:
             return
-        else:
-            if self.module.rng.rand() < self.module.parameters['pr_bmi_reduction']:
-                df.at[person_id, 'li_bmi'] -= 1
-                df.at[person_id, 'nc_weight_loss_worked'] = True
+
+        if self.module.rng.random_sample() < self.module.parameters['pr_bmi_reduction']:
+            df.at[person_id, 'li_bmi'] -= 1
+            df.at[person_id, 'nc_weight_loss_worked'] = True
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1250,7 +1250,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             # Determine if the medication will work to prevent death
             # TODO: @britta change to data
             df.at[person_id, f'nc_{self.condition}_medication_prevents_death'] = \
-                self.module.rng.rand() < self.module.parameters[f'{self.condition}_hsi'].pr_treatment_works
+                self.module.rng.random_sample() < self.module.parameters[f'{self.condition}_hsi'].pr_treatment_works
             # Schedule their next HSI for a refill of medication in one month
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_CardioMetabolicDisorders_Refill_Medication(person_id=person_id, module=self.module,
@@ -1360,7 +1360,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                     df.at[person_id, f'nc_{self.event}_on_medication'] = True
                     # TODO: @britta change to data
                     df.at[person_id, f'nc_{self.event}_medication_prevents_death'] = \
-                        self.module.rng.rand() < self.module.parameters[f'{self.event}_hsi'].pr_treatment_works
+                        self.module.rng.random_sample() < self.module.parameters[f'{self.event}_hsi'].pr_treatment_works
                     if df.at[person_id, f'nc_{self.event}_medication_prevents_death']:
                         # Cancel the scheduled death data
                         df.at[person_id, f'nc_{self.event}_scheduled_date_death'] = pd.NaT
@@ -1391,4 +1391,3 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
 
     def did_not_run(self):
         logger.debug(key='debug', data='HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: did not run')
-        pass
