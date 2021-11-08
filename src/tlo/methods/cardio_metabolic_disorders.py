@@ -344,7 +344,7 @@ class CardioMetabolicDisorders(Module):
 
             # ----- Impose the symptom on random sample of those with each condition to have:
             # TODO: @britta make linear model data-specific and add in needed complexity
-            for symptom in self.prob_symptoms[condition]:
+            for symptom in self.prob_symptoms[condition].keys():
                 lm_init_symptoms = LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     self.prob_symptoms[condition].get(f'{symptom}'),
@@ -596,7 +596,7 @@ class CardioMetabolicDisorders(Module):
         lms_symptoms_dict[condition] = {}
         # Load parameters for correct condition/event
         p = self.prob_symptoms[condition]
-        for symptom in p:
+        for symptom in p.keys():
             p_symptom_onset = 1 - math.exp(-interval_between_polls / 12 * p.get(f'{symptom}'))
             lms_symptoms_dict[condition][f'{symptom}'] = LinearModel(LinearModelType.MULTIPLICATIVE,
                                                                      p_symptom_onset, Predictor(f'nc_{condition}')
