@@ -600,7 +600,7 @@ class HSI_MeaslesRubellaVaccine(HsiBaseVaccine):
         return "Epi_MeaslesRubella"
 
     def apply(self, person_id, squeeze_factor):
-        if self.get_all_consumables(item_codes=self.sim.module.cons_items_codes["measles_and_rubella"]):
+        if self.get_all_consumables(item_codes=self.module.cons_item_codes["measles_and_rubella"]):
             self.module.increment_dose(person_id, "measles")
             self.module.increment_dose(person_id, "rubella")
 
