@@ -154,7 +154,8 @@ class DxTest:
     * Optional:
     Use of consumable - specify either
         :param cons_req_as_item_code: the item code(s) (and quantities) of the consumables that are required for the
-        test to be done.
+        test to be done. This can be integer (the item_code needed [assume quantity=1]), a list (list of item_codes
+        [for each assuming quantity=1]), or a dict (of the form <item_code>:<quantity>). # todo rename this
     Performance of test:
         Specify any of the following if the property's dtype is bool
             :param sensitivity: the sensitivity of the test (probability that a true value will be observed as true)
@@ -168,7 +169,7 @@ class DxTest:
     """
     def __init__(self,
                  property: str,
-                 cons_req_as_item_code: Union[int, list, dict] = None,  # todo: rename to item_codes
+                 cons_req_as_item_code: Union[int, list, dict] = None,
                  sensitivity: float = None,
                  specificity: float = None,
                  measure_error_stdev: float = None,

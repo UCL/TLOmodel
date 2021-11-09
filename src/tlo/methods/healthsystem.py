@@ -1275,6 +1275,7 @@ class HealthSystem(Module):
         consumables = self.parameters['Consumables']
         return pd.unique(consumables.loc[consumables["Items"] == item, "Item_Code"])[0]
 
+
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
     This is the HealthSystemScheduler. It is an event that occurs every day, inspects the calls on the healthsystem
@@ -1589,11 +1590,12 @@ class HSI_Event:
         self.post_apply_hook()
         return updated_appt_footprint
 
-    #todo - clean out this function
     def get_all_consumables(self, item_codes: Union[int, list, dict] = None, pkg_codes=None, footprint=None):
         """Helper function to allow for getting and checking of entire set of consumables.
         It accepts a footprint, or item_codes (list or dict [to show quantities]), or package_codes (list or dict [to
         show quantities]), and returns True/False for whether all the items are available."""
+        # todo - clean out this function
+        # todo - point to helper function provided in the HealthSystem
 
         # Turn the input arguments into the usual consumables footprint if it's not already provided as a footprint:
         if footprint is None:
