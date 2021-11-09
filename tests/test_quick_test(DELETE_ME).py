@@ -23,7 +23,7 @@ from tlo.methods import (
      joes_fake_props_module, cardio_metabolic_disorders, dummy_contraception
 )
 
-seed = 985
+seed = 220
 
 # The resource files
 try:

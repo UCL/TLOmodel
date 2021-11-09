@@ -296,6 +296,125 @@ total_completed_pregnancies_per_year = [a + b + c + d + e for a, b, c, d, e in z
 # ========================================== INTERVENTION COVERAGE... =================================================
 # 1.) Antenatal Care... # TODO: THIS COULD CERTAINLY BE SIMPLIFIED
 # Mean proportion of women (across draws) who have given birth that have attended ANC1, ANC4+ and ANC8+ per year...
+"""
+anc_count_on_birth = extract_results(
+    results_folder,
+    module="tlo.methods.care_of_women_during_pregnancy",
+    key="anc_count_on_birth",
+    custom_generate_series=(
+        lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'total_anc', 'ga_anc_one'])['person_id'].count()),
+    do_scaling=False
+)
+
+def get_means(df):
+    mean_list = 0
+    for index in df.index:
+        mean_list += df.loc[index].mean()
+    return mean_list
+
+def get_quantile(df, value):
+    quant = 0
+    for index in df.index:
+        quant += df.loc[index].quantile(value)
+
+    quant_list = quant/len(df.index)
+
+    return quant_list
+
+anc1 = list()
+anc1lqs = list()
+anc1uqs = list()
+anc4 = list()
+anc4lqs = list()
+anc4uqs = list()
+anc_before_four_months = list()
+early_anc_4_list = list()
+late_anc_4_list = list()
+anc_before_four_five_months = list()
+anc_before_six_seven_months = list()
+anc_before_eight_plus_months = list()
+
+anc0_list = list()
+anc1_list = list()
+anc2_list = list()
+anc3_list = list()
+anc4_list = list()
+anc5_list = list()
+anc6_list = list()
+anc7_list = list()
+anc8_list = list()
+
+for year in sim_years:
+    year_df = anc_count_on_birth.loc[year]
+    all_women = 0
+    total_women_anc = 0
+
+    for anc_list, visit in zip([anc0_list, anc1_list, anc2_list, anc3_list, anc4_list, anc5_list,
+                                anc6_list, anc7_list, anc8_list], [0, 1, 2, 3, 4, 5, 6, 7, 8]):
+        mean = get_means(year_df.loc[visit, 0:len(year_df.columns)])
+        all_women += mean
+
+        if visit > 0:
+            total_women_anc += mean
+
+    for anc_list, visit in zip([anc0_list, anc1_list, anc2_list, anc3_list, anc4_list, anc5_list,
+                                anc6_list, anc7_list, anc8_list], [0, 1, 2, 3, 4, 5, 6, 7, 8]):
+        if anc_list == anc0_list:
+            anc_list.append(((get_means(year_df.loc[visit, 0:len(year_df.columns)]) / all_women) * 100))
+        else:
+            anc_list.append(((get_means(year_df.loc[visit, 0:len(year_df.columns)]) / total_women_anc) * 100))
+
+
+    anc1_year = year_df.loc[(slice(1, 8), slice(0, 50)), 0:len(year_df.columns)]
+    anc1.append((get_means(anc1_year) / all_women) * 100)
+    anc1lqs.append((get_quantile(anc1_year, 0.025) / all_women) * 100)
+    anc1uqs.append((get_quantile(anc1_year, 0.925) / all_women) * 100)
+
+    anc4_year = year_df.loc[(slice(4, 8), slice(0, 50)), 0:len(year_df.columns)]
+    anc4.append((get_means(anc4_year) / all_women) * 100)
+    anc4lqs.append((get_quantile(anc4_year, 0.025) / all_women) * 100)
+    anc4uqs.append((get_quantile(anc4_year, 0.925) / all_women) * 100)
+
+    early_anc = year_df.loc[(slice(1, 8), slice(0, 13)), 0:len(year_df.columns)]
+    early_anc4 = year_df.loc[(slice(4, 8), slice(0, 17)), 0:len(year_df.columns)]
+    late_anc4 = year_df.loc[(slice(4, 8), slice(18, 50)), 0:len(year_df.columns)]
+    four_to_five = year_df.loc[(slice(1, 8), slice(14, 22)), 0:len(year_df.columns)]
+    six_to_seven = year_df.loc[(slice(1, 8), slice(23, 31)), 0:len(year_df.columns)]
+    eight_plus = year_df.loc[(slice(1, 8), slice(32, 50)), 0:len(year_df.columns)]
+
+    early_anc_4_list.append((get_means(early_anc4) / total_women_anc) * 100)
+    late_anc_4_list.append((get_means(late_anc4) / total_women_anc) * 100)
+    anc_before_four_months.append((get_means(early_anc)/total_women_anc) * 100)
+    anc_before_four_five_months.append((get_means(four_to_five)/total_women_anc) * 100)
+    anc_before_six_seven_months.append((get_means(six_to_seven)/total_women_anc) * 100)
+    anc_before_eight_plus_months.append((get_means(eight_plus)/total_women_anc) * 100)
+
+target_anc1_dict = {'double': True,
+                    'first': {'year': 2010, 'value': 94, 'label': 'DHS 2010', 'ci':0},
+                    'second': {'year': 2015, 'value': 95, 'label': 'DHS 2015', 'ci':0}}
+target_anc4_dict = {'double': True,
+                    'first': {'year': 2010, 'value': 45.5, 'label': 'DHS 2010', 'ci': 0},
+                    'second': {'year': 2015, 'value': 51, 'label': 'DHS 2015', 'ci': 0}}
+
+line_graph_with_ci_and_target_rate(anc1, anc1lqs, anc1uqs, target_anc1_dict,'Year',
+                                   '% of total births',  'Proportion of women attending >= 1 ANC contact per year',
+                                   'anc_prop_anc1')
+line_graph_with_ci_and_target_rate(anc4, anc4lqs, anc4uqs, target_anc4_dict,
+                                   'Year', '% total births', 'Proportion of women attending >= 4 ANC contact per year',
+                                   'anc_prop_anc4')
+
+
+#yearly_anc1_rates = [(x / y) * 100 for x, y in zip(early_anc_4_list, total_anc4)]
+
+
+
+#simple_line_chart(yearly_anc1_rates, target_rate_an, 'Year', '% of total births',
+#                  'Proportion of women attending >= 1 ANC contact per year', 'anc_prop_anc1')
+#simple_line_chart(yearly_anc4_rates, target_rate_anc4, 'Year', '% total births',
+#                  'Proportion of women attending >= 4 ANC contact per year', 'anc_prop_anc4')
+
+"""
+
 results = extract_results(
     results_folder,
     module="tlo.methods.care_of_women_during_pregnancy",
@@ -460,17 +579,16 @@ for year in sim_years:
     for index in year_df.index:
         total_women_that_year += year_df.loc[index].mean()
 
-    year_series = anc_ga_first_visit.loc[year]
-    anc1 = get_means(year_series.loc[0, 0:len(year_series.columns)])
+    anc1 = get_means(year_df.loc[0, 0:len(year_df.columns)])
 
     total_women_anc = total_women_that_year - anc1
 
-    early_anc = year_series.loc[(slice(1, 8), slice(0, 13)), 0:len(year_series.columns)]
-    early_anc4 = year_series.loc[(slice(4, 8), slice(0, 17)), 0:len(year_series.columns)]
-    late_anc4 = year_series.loc[(slice(4, 8), slice(18, 50)), 0:len(year_series.columns)]
-    four_to_five = year_series.loc[(slice(1, 8), slice(14, 22)), 0:len(year_series.columns)]
-    six_to_seven = year_series.loc[(slice(1, 8), slice(23, 31)), 0:len(year_series.columns)]
-    eight_plus = year_series.loc[(slice(1, 8), slice(32, 50)), 0:len(year_series.columns)]
+    early_anc = year_df.loc[(slice(1, 8), slice(0, 13)), 0:len(year_df.columns)]
+    early_anc4 = year_df.loc[(slice(4, 8), slice(0, 17)), 0:len(year_df.columns)]
+    late_anc4 = year_df.loc[(slice(4, 8), slice(18, 50)), 0:len(year_df.columns)]
+    four_to_five = year_df.loc[(slice(1, 8), slice(14, 22)), 0:len(year_df.columns)]
+    six_to_seven = year_df.loc[(slice(1, 8), slice(23, 31)), 0:len(year_df.columns)]
+    eight_plus = year_df.loc[(slice(1, 8), slice(32, 50)), 0:len(year_df.columns)]
 
     sum_means_early = get_means(early_anc)
     sum_means_early_anc4 = get_means(early_anc4)
@@ -528,6 +646,7 @@ ax.set_title('Early vs Late initation of ANC4+')
 ax.legend()
 #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/early_late_ANC4+.png')
 plt.show()
+
 
 # TODO: quartiles, median month ANC1
 # todo: target rates

@@ -713,12 +713,11 @@ class CareOfWomenDuringPregnancy(Module):
     #  ================================ ADDITIONAL ANTENATAL HELPER FUNCTIONS =========================================
     def get_approx_days_of_pregnancy(self, person_id):
         df = self.sim.population.props
-
         approx_days = (40 - df.at[person_id, 'ps_gestational_age_in_weeks']) * 7
-        if approx_days == 0:
+        if approx_days < 1:
             approx_days = 7
-
-        return approx_days
+        assert approx_days > 1
+        return round(approx_days)
 
     def determine_gestational_age_for_next_contact(self, person_id):
         """
