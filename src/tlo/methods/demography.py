@@ -715,7 +715,8 @@ def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False
     print('The scaling factor can found in the log key=scaling_factor')
 
     # Get information about the real population size (Malawi Census in 2018)
-    cens_tot = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
+    cens_tot = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")[
+        'Count'].sum()
     cens_yr = 2018
 
     # Get information about the model population size in 2018 (and fail if no 2018)
