@@ -362,8 +362,8 @@ class PregnancySupervisor(Module):
             Types.LIST, 'risk reduction of still birth for women receiving nutritional supplements'),
 
         'anc_service_structure': Parameter(
-            Types.LIST, 'stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysis'
-                        ' scripts to change ANC structure'),
+            Types.INT, 'stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysis'
+                       ' scripts to change ANC structure'),
 
     }
 
@@ -422,7 +422,10 @@ class PregnancySupervisor(Module):
 
         # For the first period (2010-2015) we use the first value in each list as a parameter
         for key, value in self.parameters.items():
-            self.current_parameters[key] = self.parameters[key][0]
+            if type(value) is list:
+                self.current_parameters[key] = self.parameters[key][0]
+            else:
+                self.current_parameters[key] = self.parameters[key]
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module.
         # Currently this module calculates and reports all DALY weights from all maternal modules
@@ -2408,7 +2411,10 @@ class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
 
         def switch_parameters(master_params, current_params):
             for key, value in current_params.items():
-                current_params[key] = master_params[key][1]
+                if type(value) is list:
+                    current_params[key] = master_params[key][1]
+                else:
+                    current_params[key] = master_params[key]
 
         switch_parameters(self.module.parameters, self.module.current_parameters)
 
