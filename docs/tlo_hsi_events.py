@@ -15,7 +15,7 @@ from tlo import Date, Module, Simulation
 from tlo.dependencies import (
     get_dependencies_and_initialise, get_init_dependencies, get_module_class_map, is_valid_tlo_module_subclass
 )
-from tlo.methods import alri, contraception, diarrhoea, healthseekingbehaviour, hiv
+from tlo.methods import alri, contraception, diarrhoea, healthseekingbehaviour, hiv, stunting
 from tlo.methods.healthsystem import HSI_Event, HSIEventDetails
 
 
@@ -388,6 +388,7 @@ if __name__ == '__main__':
             'alri': alri.Alri,
             'diarrhoea': diarrhoea.Diarrhoea,
             'contraception': contraception.Contraception,
+            'stunting': stunting.Stunting
         }
         print('Getting details of defined HSI events by inspecting tlo.methods...')
         inspect_hsi_event_details = get_details_of_defined_hsi_events(

@@ -91,15 +91,17 @@ def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng:
 def sample_outcome(probs: pd.DataFrame, rng: np.random.RandomState):
     """ Helper function to randomly sample an outcome for each individual in a population from a set of probabilities
     that are specific to each individual.
-
     :param probs: Each row of this dataframe represents the person and the columns are the possible outcomes. The
     values are the probability of that outcome for that individual. For each individual, the probabilities of each
-    outcome are assumed to be independent and mutually exlusive (but not neccesarily exhaustive).
+    outcome are assumed to be independent and mutually exclusive (but not necessarily exhaustive). If they sum to more
+    than 1.0, then they are (silently) scaled so that they do sum to 1.0.
     :param rng: Random Number state to use for the generation of random numbers.
     :return: A dict of the form {<index>:<outcome>} where an outcome is selected.
     """
 
-    assert (probs.sum(axis=1) <= 1.0).all(), "Probabilities across columns cannot sum to more than 1.0"
+    # Scaling to ensure that the sum in each row not exceed 1.0
+    probs = probs.apply(lambda row: (row / row.sum() if row.sum() >= 1.0 else row), axis=1)
+    assert (probs.sum(axis=1) < (1.0 + 1e-6)).all(), "Probabilities across columns cannot sum to more than 1.0"
 
     # Compare uniform deviate to cumulative sum across columns, after including a "null" column (for no event).
     _probs = probs.copy()

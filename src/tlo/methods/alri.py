@@ -81,14 +81,14 @@ class Alri(Module):
 
     INIT_DEPENDENCIES = {
         'Demography',
+        'Hiv',
         'Lifestyle',
+        'NewbornOutcomes',
         'SymptomManager',
-        # Currently need to include AlriPropertiesOfOtherModules as there is no alternative
-        # provider of un_clinical_acute_malnutrition property at the moment. As this
-        # module also provides the required properties from NewbornOutcomes, Hiv and Epi
-        # these are also not included here to avoid duplicated property definitions
-        'AlriPropertiesOfOtherModules'
+        'Wasting',
     }
+
+    ADDITIONAL_DEPENDENCIES = {'Epi'}
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
@@ -1837,7 +1837,11 @@ class AlriPropertiesOfOtherModules(Module):
     """For the purpose of the testing, this module generates the properties upon which the Alri module relies"""
 
     INIT_DEPENDENCIES = {'Demography'}
-    ALTERNATIVE_TO = {'Hiv', 'Epi', 'NewbornOutcomes'}
+
+    # Though this module provides some properties from NewbornOutcomes we do not list
+    # NewbornOutcomes in the ALTERNATIVE_TO set to allow using in conjunction with
+    # SimplifiedBirths which can also be used as an alternative to NewbornOutcomes
+    ALTERNATIVE_TO = {'Hiv', 'Epi', 'Wasting'}
 
     PROPERTIES = {
         'hv_inf': Property(Types.BOOL, 'temporary property'),
