@@ -521,11 +521,10 @@ class Contraception(Module):
         df.at[woman_id, "co_contraception"] = new
 
         # Log the change
-        woman = df.loc[woman_id]
         logger.info(key='contraception_change',
                     data={
                         'woman_id': woman_id,
-                        'age_years': woman['age_years'],
+                        'age_years': df.at[woman_id, 'age_years'],
                         'switch_from': old,
                         'switch_to': new,
                     },
