@@ -10,14 +10,12 @@ import numpy as np
 
 from tlo import Date, logging
 from tlo.methods import (
-    contraception,
     demography,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
-    labour,
     mockitis,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 from tlo.scenario import BaseScenario
@@ -49,9 +47,7 @@ class MockitisBatch(BaseScenario):
             healthsystem.HealthSystem(resourcefilepath=self.resources, disable=True, service_availability=['*']),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
-            contraception.Contraception(resourcefilepath=self.resources),
-            labour.Labour(resourcefilepath=self.resources),
-            pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
+            simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
             mockitis.Mockitis(resourcefilepath=self.resources)
         ]
 

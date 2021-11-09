@@ -54,7 +54,7 @@ Conditions of Early Childhood
 
 * **Diarrhoea**: Childhood diarrhoea caused by virus or bacteria resulting in dehydration, and the treatments associated. :download:`.docx <./write-ups/Diarrhoea.docx>`
 
-* **Malnutrition**: Childhood malnutrition, short and long-term outcomes and treatments. (Forthcoming)
+* **Childhood Undernutrition**: Acute and chronic undernutrition and its effects of Wasting and Stunting. :download:`.docx <./write-ups/ChildhoodUndernutrition.docx>`
 
 
 Communicable Diseases
