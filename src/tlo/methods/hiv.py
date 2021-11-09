@@ -718,7 +718,6 @@ class Hiv(Module):
             )
         )
 
-
     def on_birth(self, mother_id, child_id):
         """
         * Initialise our properties for a newborn individual;

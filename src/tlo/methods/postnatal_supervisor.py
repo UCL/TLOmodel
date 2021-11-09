@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -1068,13 +1069,17 @@ class PostnatalSupervisor(Module):
         item_code_urine_dipstick = pd.unique(
             consumables.loc[consumables['Items'] == 'Test strips, urine analysis', 'Item_Code'])[0]
 
-        consumables_dipstick = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_urine_dipstick: 1}}
+        # consumables_dipstick = {
+        #     'Intervention_Package_Code': {},
+        #     'Item_Code': {item_code_urine_dipstick: 1}}
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_dipstick)
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event,
+        #     cons_req_as_footprint=consumables_dipstick)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
 
         if outcome_of_request_for_consumables['Item_Code'][item_code_urine_dipstick] and (self.rng.random_sample()
                                                                                           < params['prob_intervention'
@@ -1920,12 +1925,13 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
         # --------------------------------------- SEPSIS TREATMENT ---------------------------------------------------
         if mother.pn_sepsis_late_postpartum:
             # First check the availability of consumables for treatment
-            pkg_code_sepsis = pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'Maternal sepsis case management',
-                                'Intervention_Pkg_Code'])[0]
+            # pkg_code_sepsis = pd.unique(
+            #     consumables.loc[consumables['Intervention_Pkg'] == 'Maternal sepsis case management',
+            #                     'Intervention_Pkg_Code'])[0]
 
-            all_available = self.get_all_consumables(
-                pkg_codes=[pkg_code_sepsis])
+            # all_available = self.get_all_consumables(
+            #     pkg_codes=[pkg_code_sepsis])
+            all_available = True
 
             # If available then treatment is delivered
             if all_available:
@@ -1941,12 +1947,13 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
         # ------------------------------------- SECONDARY PPH TREATMENT -----------------------------------------------
         if mother.pn_postpartum_haem_secondary:
             # First check the availability of consumables for treatment
-            pkg_code_pph = pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of postpartum hemorrhage',
-                                'Intervention_Pkg_Code'])[0]
+            # pkg_code_pph = pd.unique(
+            #     consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of postpartum hemorrhage',
+            #                     'Intervention_Pkg_Code'])[0]
 
-            all_available = self.get_all_consumables(
-                pkg_codes=[pkg_code_pph])
+            # all_available = self.get_all_consumables(
+            #     pkg_codes=[pkg_code_pph])
+            all_available = True
 
             # If available then treatment is delivered
             if all_available:
@@ -1963,19 +1970,23 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
         # Treatment for complications of hypertension include two interventions, anti hypertensive therapy and
         # magnesium
         if mother.pn_htn_disorders == 'gest_htn' or mother.pn_htn_disorders == 'mild_pre_eclamp':
-            approx_days_of_pn_period = (6 - df.at[person_id, 'pn_postnatal_period_in_weeks']) * 7
+            # approx_days_of_pn_period = (6 - df.at[person_id, 'pn_postnatal_period_in_weeks']) * 7
 
             # Define the consumables and check their availability
             item_code_methyldopa = pd.unique(
                 consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMST', 'Item_Code'])[0]
 
-            consumables_gest_htn_treatment = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {item_code_methyldopa: 4 * approx_days_of_pn_period}}
+            # consumables_gest_htn_treatment = {
+            #     'Intervention_Package_Code': {},
+            #     'Item_Code': {item_code_methyldopa: 4 * approx_days_of_pn_period}}
 
-            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=consumables_gest_htn_treatment)
+            # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            #     hsi_event=self,
+            #     cons_req_as_footprint=consumables_gest_htn_treatment)
+            outcome_of_request_for_consumables = {
+                'Intervention_Package_Code': defaultdict(lambda: True),
+                'Item_Code': defaultdict(lambda: True)
+            }
 
             # If they are available then the woman is started on treatment
             if outcome_of_request_for_consumables['Item_Code'][item_code_methyldopa]:
@@ -2001,15 +2012,19 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
                 consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMST', 'Item_Code'])[0]
 
             # As we need multiple of one consumable we use the old method to check availablity
-            consumables_gest_htn_treatment = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {item_code_hydralazine: 1, item_code_wfi: 1, item_code_needle: 1,
-                              item_code_gloves: 1, item_code_methyldopa: 4}}
+            # consumables_gest_htn_treatment = {
+            #     'Intervention_Package_Code': {},
+            #     'Item_Code': {item_code_hydralazine: 1, item_code_wfi: 1, item_code_needle: 1,
+            #                   item_code_gloves: 1, item_code_methyldopa: 4}}
 
             # Then query if these consumables are available during this HSI
-            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=consumables_gest_htn_treatment)
+            # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            #     hsi_event=self,
+            #     cons_req_as_footprint=consumables_gest_htn_treatment)
+            outcome_of_request_for_consumables = {
+                'Intervention_Package_Code': defaultdict(lambda: True),
+                'Item_Code': defaultdict(lambda: True)
+            }
 
             # If they are available then the woman is started on treatment
             if (outcome_of_request_for_consumables['Item_Code'][item_code_hydralazine]) and \
@@ -2023,12 +2038,13 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
                     df.at[person_id, 'pn_htn_disorders'] = 'gest_htn'
 
             if mother.pn_htn_disorders == 'severe_pre_eclamp' or mother.pn_htn_disorders == 'eclampsia':
-                pkg_code_severe_pre_eclampsia = pd.unique(
-                    consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
-                                    'Intervention_Pkg_Code'])[0]
+                # pkg_code_severe_pre_eclampsia = pd.unique(
+                #     consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
+                #                     'Intervention_Pkg_Code'])[0]
 
-                all_available = self.get_all_consumables(
-                    pkg_codes=[pkg_code_severe_pre_eclampsia])
+                # all_available = self.get_all_consumables(
+                #     pkg_codes=[pkg_code_severe_pre_eclampsia])
+                all_available = True
 
                 if all_available:
                     df.at[person_id, 'pn_mag_sulph_treatment'] = True
@@ -2112,7 +2128,7 @@ class HSI_PostnatalSupervisor_NeonatalWardInpatientCare(HSI_Event, IndividualSco
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         child = df.loc[person_id]
 
         if not child.is_alive:
@@ -2120,12 +2136,13 @@ class HSI_PostnatalSupervisor_NeonatalWardInpatientCare(HSI_Event, IndividualSco
 
         # Here we deliver treatment to any neonates who have been admitted to either early or late onset sepsis
         if child.pn_sepsis_early_neonatal or child.pn_sepsis_late_neonatal:
-            pkg_code_sep = pd.unique(consumables.loc[
-                                         consumables['Intervention_Pkg'] == 'Newborn sepsis - full supportive care',
-                                         'Intervention_Pkg_Code'])[0]
+            # pkg_code_sep = pd.unique(consumables.loc[
+            #                              consumables['Intervention_Pkg'] == 'Newborn sepsis - full supportive care',
+            #                              'Intervention_Pkg_Code'])[0]
 
-            all_available = self.get_all_consumables(
-                pkg_codes=[pkg_code_sep])
+            # all_available = self.get_all_consumables(
+            #     pkg_codes=[pkg_code_sep])
+            all_available = True
 
             if all_available:
                 df.at[person_id, 'pn_sepsis_neonatal_full_supp_care'] = True

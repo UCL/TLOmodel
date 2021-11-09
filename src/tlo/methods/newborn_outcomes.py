@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -820,12 +821,16 @@ class NewbornOutcomes(Module):
         item_code_vit_k_syringe = pd.unique(
             consumables.loc[consumables['Items'] == 'Syringe,  disposable 2ml,  hypoluer with 23g needle_each_'
                                                     'CMST', 'Item_Code'])[0]
-        consumables_vit_k_and_eye_care = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_tetracycline: 1, item_code_vit_k: 1, item_code_vit_k_syringe: 1}}
+        # consumables_vit_k_and_eye_care = {
+        #     'Intervention_Package_Code': {},
+        #     'Item_Code': {item_code_tetracycline: 1, item_code_vit_k: 1, item_code_vit_k_syringe: 1}}
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event, cons_req_as_footprint=consumables_vit_k_and_eye_care)
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event, cons_req_as_footprint=consumables_vit_k_and_eye_care)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
 
         # If they are available the intervention is delivered, there is limited evidence of the effect of these
         # interventions so currently we are just mapping the consumables
@@ -972,15 +977,16 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
         person_id = hsi_event.target
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         # Required consumables are defined
-        pkg_code_resus = pd.unique(consumables.loc[
-                                       consumables['Intervention_Pkg'] == 'Neonatal resuscitation (institutional)',
-                                       'Intervention_Pkg_Code'])[0]
+        # pkg_code_resus = pd.unique(consumables.loc[
+        #                                consumables['Intervention_Pkg'] == 'Neonatal resuscitation (institutional)',
+        #                                'Intervention_Pkg_Code'])[0]
 
-        all_available = hsi_event.get_all_consumables(
-            pkg_codes=[pkg_code_resus])
+        # all_available = hsi_event.get_all_consumables(
+        #     pkg_codes=[pkg_code_resus])
+        all_available = True
 
         # Use the dx_manager to determine if staff will correctly identify this neonate will require resuscitation
         if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
@@ -1014,12 +1020,13 @@ class NewbornOutcomes(Module):
 
         if facility_type == 'hp':
             # Define the consumables
-            pkg_code_sep = pd.unique(consumables.loc[
-                                     consumables['Intervention_Pkg'] == 'Newborn sepsis - full supportive care',
-                                     'Intervention_Pkg_Code'])[0]
+            # pkg_code_sep = pd.unique(consumables.loc[
+            #                          consumables['Intervention_Pkg'] == 'Newborn sepsis - full supportive care',
+            #                          'Intervention_Pkg_Code'])[0]
 
-            all_available = hsi_event.get_all_consumables(
-                pkg_codes=[pkg_code_sep])
+            # all_available = hsi_event.get_all_consumables(
+            #     pkg_codes=[pkg_code_sep])
+            all_available = True
 
             # Use the dx_manager to determine if staff will correctly identify this neonate will treatment for sepsis
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
@@ -1040,13 +1047,17 @@ class NewbornOutcomes(Module):
                                                                                      'needle',
                                                                                      'Item_Code'])[0]
 
-            consumables_inj_abx_sepsis = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {item_code_iv_penicillin: 1, item_code_iv_gentamicin: 1,
-                              item_code_giving_set: 1}}
+            # consumables_inj_abx_sepsis = {
+            #     'Intervention_Package_Code': {},
+            #     'Item_Code': {item_code_iv_penicillin: 1, item_code_iv_gentamicin: 1,
+            #                   item_code_giving_set: 1}}
 
-            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=hsi_event, cons_req_as_footprint=consumables_inj_abx_sepsis)
+            # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            #     hsi_event=hsi_event, cons_req_as_footprint=consumables_inj_abx_sepsis)
+            outcome_of_request_for_consumables = {
+                'Intervention_Package_Code': defaultdict(lambda: True),
+                'Item_Code': defaultdict(lambda: True)
+            }
 
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                dx_tests_to_run=f'assess_neonatal_sepsis_{facility_type}', hsi_event=hsi_event):
