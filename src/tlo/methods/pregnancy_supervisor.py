@@ -361,6 +361,10 @@ class PregnancySupervisor(Module):
         'treatment_effect_still_birth_food_sups': Parameter(
             Types.LIST, 'risk reduction of still birth for women receiving nutritional supplements'),
 
+        'anc_service_structure': Parameter(
+            Types.LIST, 'stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysis'
+                        ' scripts to change ANC structure'),
+
     }
 
     PROPERTIES = {
@@ -1089,11 +1093,17 @@ class PregnancySupervisor(Module):
 
         from tlo.methods.care_of_women_during_pregnancy import (
             HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact,
+            HSI_CareOfWomenDuringPregnancy_FocusedANCVisit
         )
+        if params['anc_service_structure'] == 8:
+            first_anc_appt = HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
+                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id,
+                facility_level_of_this_hsi=facility_level)
 
-        first_anc_appt = HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
-            self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id,
-            facility_level_of_this_hsi=facility_level)
+        elif params['anc_service_structure'] == 4:
+            first_anc_appt = HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
+                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id,
+                facility_level_of_this_hsi=facility_level)
 
         self.sim.modules['HealthSystem'].schedule_hsi_event(first_anc_appt, priority=0,
                                                             topen=first_anc_date,

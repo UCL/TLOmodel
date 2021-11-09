@@ -23,7 +23,7 @@ from tlo.methods import (
      joes_fake_props_module, cardio_metabolic_disorders, dummy_contraception
 )
 
-seed = 220
+seed = 67
 
 # The resource files
 try:
@@ -159,6 +159,7 @@ def test_run_core_modules_normal_allocation_of_pregnancy():
     sim = register_all_modules()
     sim.make_initial_population(n=10000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
+    sim.modules['PregnancySupervisor'].current_parameters['anc_service_structure'] = 4
     sim.simulate(end_date=Date(2011, 1, 1))
     check_dtypes(sim)
 
