@@ -140,6 +140,8 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
         if age < 5:
             # ----------------------------------- CHILD < 5 -----------------------------------
+            if 'Stunting' in self.sim.modules:
+                self.sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
 
             if "Malaria" in self.sim.modules:
                 if 'fever' in symptoms:
