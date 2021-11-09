@@ -181,14 +181,8 @@
 <p>General utility functions for TLO analysis</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.parse_log_file">
-<span class="sig-name descname"><span class="pre">parse_log_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#parse_log_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.parse_log_file" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">parse_log_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#parse_log_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.parse_log_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parses logged output from a TLO run and returns Pandas dataframes.</p>
-<p>The format can be one of two style, old-style TLO logging like</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">INFO</span><span class="o">|&lt;</span><span class="n">logger</span> <span class="n">name</span><span class="o">&gt;|&lt;</span><span class="n">simulation</span> <span class="n">datestamp</span><span class="o">&gt;|&lt;</span><span class="n">log</span> <span class="n">key</span><span class="o">&gt;|&lt;</span><span class="n">python</span> <span class="nb">list</span> <span class="ow">or</span> <span class="n">dictionary</span><span class="o">&gt;</span>
-</pre></div>
-</div>
-<p>or a JSON representation with the first instance from a log key being a header line, and all following
-rows being data only rows (without column names or metadata).</p>
 <p>The dictionary returned has the format:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
     <span class="o">&lt;</span><span class="n">logger</span> <span class="mi">1</span> <span class="n">name</span><span class="o">&gt;</span><span class="p">:</span> <span class="p">{</span>
@@ -209,7 +203,7 @@ rows being data only rows (without column names or metadata).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>filepath</strong> – file path to log file</p></li>
+<li><p><strong>log_filepath</strong> – file path to log file</p></li>
 <li><p><strong>level</strong> – logging level to be parsed for structured logging</p></li>
 </ul>
 </dd>
@@ -358,7 +352,7 @@ NB.
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 21, 2021.
+        Last updated on Nov 09, 2021.
       </span>
 
     </p>

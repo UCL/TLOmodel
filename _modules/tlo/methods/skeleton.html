@@ -306,16 +306,17 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 <div class="viewcode-block" id="Skeleton.report_daly_values"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.report_daly_values">[docs]</a>    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been</span>
-        <span class="c1"># experienced by persons in the previous month. Only rows for alive-persons must be returned.</span>
-        <span class="c1"># If multiple causes in CAUSES_OF_DISABILITY are defined, a pd.DataFrame must be returned with a column</span>
-        <span class="c1"># corresponding to each cause (but if only one cause in CAUSES_OF_DISABILITY is defined, the pd.Series does not</span>
-        <span class="c1"># need to be given a specific name).</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been</span>
+<span class="sd">        experienced by persons in the previous month. Only rows for alive-persons must be returned.</span>
+<span class="sd">        If multiple causes in CAUSES_OF_DISABILITY are defined, a pd.DataFrame must be returned with a column</span>
+<span class="sd">        corresponding to each cause (but if only one cause in CAUSES_OF_DISABILITY is defined, the pd.Series does not</span>
+<span class="sd">        need to be given a specific name).</span>
 
-        <span class="c1"># To return a value of 0.0 (fully health) for everyone, use:</span>
-        <span class="c1"># df = self.sim.popultion.props</span>
-        <span class="c1"># return pd.Series(index=df.index[df.is_alive],data=0.0)</span>
-
+<span class="sd">        To return a value of 0.0 (fully health) for everyone, use:</span>
+<span class="sd">        df = self.sim.population.props</span>
+<span class="sd">        return pd.Series(index=df.index[df.is_alive],data=0.0)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 <div class="viewcode-block" id="Skeleton.on_hsi_alert"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.on_hsi_alert">[docs]</a>    <span class="k">def</span> <span class="nf">on_hsi_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">):</span>
@@ -366,7 +367,7 @@
 <span class="c1">#   LOGGING EVENTS</span>
 <span class="c1">#</span>
 <span class="c1">#   Put the logging events here. There should be a regular logger outputting current states of the</span>
-<span class="c1">#   population. There may also be a loggig event that is driven by particular events.</span>
+<span class="c1">#   population. There may also be a logging event that is driven by particular events.</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
 <div class="viewcode-block" id="Skeleton_LoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton_LoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">Skeleton_LoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
@@ -381,7 +382,7 @@
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Skeleton</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Skeleton_LoggingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton_LoggingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="c1"># Make some summary statitics</span>
+        <span class="c1"># Make some summary statistics</span>
 
         <span class="n">dict_to_output</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;Metric_One&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
@@ -407,11 +408,8 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Skeleton</span><span class="p">)</span>
 
-        <span class="c1"># Define the call on resources of this treatment event: Time of Officers (Appointments)</span>
-        <span class="c1">#   - get an &#39;empty&#39; footprint:</span>
-        <span class="n">the_appt_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
-        <span class="c1">#   - update to reflect the appointments that are required</span>
-        <span class="n">the_appt_footprint</span><span class="p">[</span><span class="s1">&#39;Over5OPD&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># This requires one out patient</span>
+        <span class="c1"># Define the appointments types needed</span>
+        <span class="n">the_appt_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;Over5OPD&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>  <span class="c1"># This requires one adult out-patient appt.</span>
 
         <span class="c1"># Define the facilities at which this event can occur (only one is allowed)</span>
         <span class="c1"># Choose from: list(pd.unique(self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Facilities_For_Each_District&#39;]</span>
@@ -435,6 +433,8 @@
 <span class="sd">              that have been allocated to this event.</span>
 
 <span class="sd">        Can return an updated APPT_FOOTPRINT if this differs from the declaration in self.EXPECTED_APPT_FOOTPRINT</span>
+
+<span class="sd">        To request consumables use - self.get_all_consumables(item_codes=my_item_codes)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
@@ -449,7 +449,7 @@
 
 <div class="viewcode-block" id="HSI_Skeleton_Example_Interaction.never_ran"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.HSI_Skeleton_Example_Interaction.never_ran">[docs]</a>    <span class="k">def</span> <span class="nf">never_ran</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Do any action that is neccessary when it is clear that the HSI event will never be run. This will occur if it</span>
+<span class="sd">        Do any action that is necessary when it is clear that the HSI event will never be run. This will occur if it</span>
 <span class="sd">        has not run and the simulation date has passed the date &#39;tclose&#39; by which the event was scheduled to have</span>
 <span class="sd">        occurred.</span>
 <span class="sd">        Do not return anything.</span>
@@ -467,7 +467,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 21, 2021.
+        Last updated on Nov 09, 2021.
       </span>
 
     </p>

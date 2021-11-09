@@ -180,7 +180,6 @@
 <span id="tlo-methods-hsi-generic-first-appts-module"></span><h1>tlo.methods.hsi_generic_first_appts module<a class="headerlink" href="#module-tlo.methods.hsi_generic_first_appts" title="Permalink to this headline">¶</a></h1>
 <p>The file contains the event HSI_GenericFirstApptAtFacilityLevel1, which describes the first interaction with
 the health system following the onset of acute generic symptoms.</p>
-<p># Todo - the performance of algorthim here needs to be validated against real-world data</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_GenericFirstApptAtFacilityLevel1">
 <em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">HSI_GenericFirstApptAtFacilityLevel1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_generic_first_appts.html#HSI_GenericFirstApptAtFacilityLevel1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_generic_first_appts.HSI_GenericFirstApptAtFacilityLevel1" title="Permalink to this definition">¶</a></dt>
@@ -208,8 +207,7 @@ constructor, but may also take further keyword arguments.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_GenericFirstApptAtFacilityLevel1.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_generic_first_appts.html#HSI_GenericFirstApptAtFacilityLevel1.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_generic_first_appts.HSI_GenericFirstApptAtFacilityLevel1.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
+<dd><p>Run the generic HSI (first triage appointment) for the person.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -252,13 +250,6 @@ constructor, but may also take further keyword arguments.</p>
 <p>Must be implemented by subclasses.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_GenericFirstApptAtFacilityLevel0.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_generic_first_appts.html#HSI_GenericFirstApptAtFacilityLevel0.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_generic_first_appts.HSI_GenericFirstApptAtFacilityLevel0.did_not_run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
-to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -292,20 +283,6 @@ constructor, but may also take further keyword arguments.</p>
 <p>Must be implemented by subclasses.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_GenericEmergencyFirstApptAtFacilityLevel1.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_generic_first_appts.html#HSI_GenericEmergencyFirstApptAtFacilityLevel1.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_generic_first_appts.HSI_GenericEmergencyFirstApptAtFacilityLevel1.did_not_run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
-to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.hsi_generic_first_appts.HSI_GenericEmergencyFirstApptAtFacilityLevel1.not_available">
-<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hsi_generic_first_appts.html#HSI_GenericEmergencyFirstApptAtFacilityLevel1.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hsi_generic_first_appts.HSI_GenericEmergencyFirstApptAtFacilityLevel1.not_available" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
-parameter service_availability.</p>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -325,7 +302,7 @@ parameter service_availability.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 21, 2021.
+        Last updated on Nov 09, 2021.
       </span>
 
     </p>

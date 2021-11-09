@@ -1,0 +1,49 @@
+tlo.methods.wasting module
+==========================
+
+.. automodule:: tlo.methods.wasting
+
+
+.. autoclass:: Wasting
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - un_clinical_acute_malnutrition
+          - CATEGORICAL
+          - temporary property.  Possible values are: [MAM, SAM, well, ]
+        * - un_ever_wasted
+          - BOOL
+          - temporary property
+
+
+
+     **Class attributes:**
+
+     INIT_DEPENDENCIES : {'Demography'}
+
+     **Functions (defined or overridden in class Wasting):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+
+
+
+

@@ -759,17 +759,21 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Creating job.&quot;</span><span class="p">)</span>
 
+    <span class="c1"># From https://docs.microsoft.com/en-us/azure/batch/batch-docker-container-workloads#linux-support</span>
+    <span class="c1"># We require Ubuntu image with container support (publisher microsoft-azure-batch; offer microsoft-azure-batch)</span>
+    <span class="c1"># Get the latest SKU by inspecting output of `az batch pool supported-images list` for publisher+offer</span>
+    <span class="c1"># Update node_agent_sku_id (below), if necessary</span>
     <span class="n">image_reference</span> <span class="o">=</span> <span class="n">batch_models</span><span class="o">.</span><span class="n">ImageReference</span><span class="p">(</span>
         <span class="n">publisher</span><span class="o">=</span><span class="s2">&quot;microsoft-azure-batch&quot;</span><span class="p">,</span>
         <span class="n">offer</span><span class="o">=</span><span class="s2">&quot;ubuntu-server-container&quot;</span><span class="p">,</span>
-        <span class="n">sku</span><span class="o">=</span><span class="s2">&quot;16-04-lts&quot;</span><span class="p">,</span>
+        <span class="n">sku</span><span class="o">=</span><span class="s2">&quot;20-04-lts&quot;</span><span class="p">,</span>
         <span class="n">version</span><span class="o">=</span><span class="s2">&quot;latest&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">virtual_machine_configuration</span> <span class="o">=</span> <span class="n">batch_models</span><span class="o">.</span><span class="n">VirtualMachineConfiguration</span><span class="p">(</span>
         <span class="n">image_reference</span><span class="o">=</span><span class="n">image_reference</span><span class="p">,</span>
         <span class="n">container_configuration</span><span class="o">=</span><span class="n">container_conf</span><span class="p">,</span>
-        <span class="n">node_agent_sku_id</span><span class="o">=</span><span class="s2">&quot;batch.node.ubuntu 16.04&quot;</span><span class="p">,</span>
+        <span class="n">node_agent_sku_id</span><span class="o">=</span><span class="s2">&quot;batch.node.ubuntu 20.04&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">pool</span> <span class="o">=</span> <span class="n">batch_models</span><span class="o">.</span><span class="n">PoolSpecification</span><span class="p">(</span>
@@ -851,7 +855,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 21, 2021.
+        Last updated on Nov 09, 2021.
       </span>
 
     </p>

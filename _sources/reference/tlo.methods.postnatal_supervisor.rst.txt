@@ -343,13 +343,13 @@ tlo.methods.postnatal_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Labour', 'PregnancySupervisor', 'NewbornOutcomes', 'Lifestyle'}
+     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'Lifestyle', 'PregnancySupervisor', 'Labour'}
 
-     CAUSES_OF_DEATH : {'maternal': <tlo.methods.causes.Cause object at 0x7f99679fb280>, 'neonatal': <tlo.methods.causes.Cause object at 0x7f99679fbb50>}
+     CAUSES_OF_DEATH : {'maternal': <tlo.methods.causes.Cause object at 0x7f830a05a250>, 'neonatal': <tlo.methods.causes.Cause object at 0x7f830a05ab20>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7f99679fbbb0>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7f830a05ab80>}
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
 

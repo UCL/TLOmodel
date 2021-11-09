@@ -35,8 +35,6 @@ tlo.methods.hsi_generic_first_appts module
 
      .. automethod:: apply
 
-     .. automethod:: did_not_run
-
 
 
 
@@ -54,10 +52,6 @@ tlo.methods.hsi_generic_first_appts module
      .. automethod:: __init__
 
      .. automethod:: apply
-
-     .. automethod:: did_not_run
-
-     .. automethod:: not_available
 
 
 

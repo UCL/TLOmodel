@@ -42,7 +42,7 @@
     
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="tlo.methods.ncds module" href="tlo.methods.ncds.html" />
+    <link rel="next" title="Publications" href="../publications.html" />
     <link rel="prev" title="tlo.simulation module" href="tlo.simulation.html" /> 
 </head>
 
@@ -228,14 +228,11 @@ columns are the original state, rows are the new state. values are the probabili
 <dt class="sig sig-object py" id="tlo.util.sample_outcome">
 <span class="sig-name descname"><span class="pre">sample_outcome</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">probs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.random.mtrand.RandomState</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/util.html#sample_outcome"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.util.sample_outcome" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper function to randomly sample an outcome for each individual in a population from a set of probabilities
-that are specific to each individual.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>_probs</strong> – Each row of this dataframe represents the person and the columns are the possible outcomes. The</p>
-</dd>
-</dl>
-<p>values are the probability of that outcome for that individual. For each individual, the probabilities of each
-outcome are assumed to be independent and mutually exlusive (but not neccesarily exhaustive).
+that are specific to each individual.
+:param probs: Each row of this dataframe represents the person and the columns are the possible outcomes. The
+values are the probability of that outcome for that individual. For each individual, the probabilities of each
+outcome are assumed to be independent and mutually exclusive (but not necessarily exhaustive). If they sum to more
+than 1.0, then they are (silently) scaled so that they do sum to 1.0.
 :param rng: Random Number state to use for the generation of random numbers.
 :return: A dict of the form {&lt;index&gt;:&lt;outcome&gt;} where an outcome is selected.</p>
 </dd></dl>
@@ -392,7 +389,7 @@ False otherwise</p>
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="tlo.methods.ncds.html" class="btn btn-neutral float-right" title="tlo.methods.ncds module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../publications.html" class="btn btn-neutral float-right" title="Publications" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
         <a href="tlo.simulation.html" class="btn btn-neutral float-left" title="tlo.simulation module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
@@ -401,7 +398,7 @@ False otherwise</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 21, 2021.
+        Last updated on Nov 09, 2021.
       </span>
 
     </p>

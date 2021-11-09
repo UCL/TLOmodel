@@ -1080,7 +1080,7 @@
             <span class="s1">&#39;palliative_since_last_log&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">oc_date_palliative_care</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">date_lastlog</span><span class="p">,</span> <span class="n">date_now</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
         <span class="p">})</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">|summary_stats|</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span></div></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;summary_stats&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">out</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>
@@ -1093,7 +1093,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 21, 2021.
+        Last updated on Nov 09, 2021.
       </span>
 
     </p>

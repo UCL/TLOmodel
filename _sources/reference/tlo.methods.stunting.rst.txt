@@ -1,0 +1,286 @@
+tlo.methods.stunting module
+===========================
+
+.. automodule:: tlo.methods.stunting
+
+
+.. autoclass:: Stunting
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - prev_HAZ_distribution_age_0_5mo
+          - LIST
+          - Distribution of HAZ among less than 6 months of age in 2015 (mean, standard deviation)
+        * - prev_HAZ_distribution_age_6_11mo
+          - LIST
+          - Distribution of HAZ among 6 months and 1 year of age in 2015 (mean, standard deviation)
+        * - prev_HAZ_distribution_age_12_23mo
+          - LIST
+          - Distribution of HAZ among 1 year olds in 2015 (mean, standard deviation)
+        * - prev_HAZ_distribution_age_24_35mo
+          - LIST
+          - Distribution of HAZ among 2 year olds in 2015 (mean, standard deviation)
+        * - prev_HAZ_distribution_age_36_47mo
+          - LIST
+          - Distribution of HAZ among 3 year olds in 2015 (mean, standard deviation)
+        * - prev_HAZ_distribution_age_48_59mo
+          - LIST
+          - Distribution of HAZ among 4 year olds  in 2015 (mean, standard deviation)
+        * - or_stunting_male
+          - REAL
+          - Odds ratio of stunting if male gender
+        * - or_stunting_preterm_and_AGA
+          - REAL
+          - Odds ratio of stunting if born preterm and adequate for gestational age
+        * - or_stunting_SGA_and_term
+          - REAL
+          - Odds ratio of stunting if born term and small for geatational age
+        * - or_stunting_SGA_and_preterm
+          - REAL
+          - Odds ratio of stunting if born preterm and small for gestational age
+        * - or_stunting_hhwealth_Q5
+          - REAL
+          - Odds ratio of stunting if household wealth is poorest Q5, ref group Q1
+        * - or_stunting_hhwealth_Q4
+          - REAL
+          - Odds ratio of stunting if household wealth is poorer Q4, ref group Q1
+        * - or_stunting_hhwealth_Q3
+          - REAL
+          - Odds ratio of stunting if household wealth is middle Q3, ref group Q1
+        * - or_stunting_hhwealth_Q2
+          - REAL
+          - Odds ratio of stunting if household wealth is richer Q2, ref group Q1
+        * - base_inc_rate_stunting_by_agegp
+          - LIST
+          - Baseline incidence rate per year of stunting by age group (1-5, 6-11, 12-23, 24-35, 36-47, 48-59mo
+        * - rr_stunting_preterm_and_AGA
+          - REAL
+          - Relative risk of stunting if born preterm and adequate for gestational age
+        * - rr_stunting_SGA_and_term
+          - REAL
+          - Relative risk of stunting if born term and small for gestational age
+        * - rr_stunting_SGA_and_preterm
+          - REAL
+          - Relative risk of stunting if born preterm and small for gestational age
+        * - rr_stunting_prior_wasting
+          - REAL
+          - Relative risk of stunting if prior wasting in the last 3 months
+        * - rr_stunting_untreated_HIV
+          - REAL
+          - Relative risk of stunting for untreated HIV+
+        * - rr_stunting_wealth_level
+          - REAL
+          - Relative risk of stunting if wealth-level is greater than 1 compared 1
+        * - rr_stunting_no_exclusive_breastfeeding
+          - REAL
+          - Relative risk of stunting for not exclusively breastfed babies < 6 months
+        * - rr_stunting_no_continued_breastfeeding
+          - REAL
+          - Relative risk of stunting for not continued breastfed infants 6-24 months
+        * - rr_stunting_per_diarrhoeal_episode
+          - REAL
+          - Relative risk of stunting for recent diarrhoea episode
+        * - r_progression_severe_stunting_by_agegp
+          - LIST
+          - Rates per year of progression to severe stunting by age group (1-5, 6-11, 12-23, 24-35, 36-47, 48-59mo
+        * - rr_progress_severe_stunting_if_prior_wasting
+          - REAL
+          - Relative risk of severe stunting if previously wasted
+        * - rr_progress_severe_stunting_untreated_HIV
+          - REAL
+          - Relative risk of severe stunting for untreated HIV+
+        * - mean_years_to_1stdev_natural_improvement_in_stunting
+          - REAL
+          - Mean time (in years) to a one standard deviation improvement in stunting without any treatment.
+        * - effectiveness_of_complementary_feeding_education_in_stunting_reduction
+          - REAL
+          - Probability of stunting being reduced by one standard deviation (category) by education about supplementary feeding (but not supplying supplementary feeding consmables).
+        * - effectiveness_of_food_supplementation_in_stunting_reduction
+          - REAL
+          - Probability of stunting being reduced by one standard deviation (category) by supplementary feeding.
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - un_HAZ_category
+          - CATEGORICAL
+          - Indicator of current stunting status - the height-for-age z-score category:"HAZ>=-2" == No Stunting (within 2 standard deviations of mean); "-3<=HAZ<-2" == Non-Severe Stunting (2-3 standard deviations from mean); "HAZ<-3 == Severe Stunting (more than 3 standard deviations from mean).  Possible values are: [HAZ<-3, -3<=HAZ<-2, HAZ>=-2, ]
+
+
+
+     **Class attributes:**
+
+     INIT_DEPENDENCIES : {'Diarrhoea', 'Wasting', 'Hiv', 'NewbornOutcomes', 'Demography'}
+
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+
+     **Functions (defined or overridden in class Stunting):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: look_up_consumable_item_codes
+
+     .. automethod:: do_onset
+
+     .. automethod:: do_progression
+
+     .. automethod:: do_recovery
+
+     .. automethod:: do_routine_assessment_for_chronic_undernutrition
+
+     .. automethod:: do_treatment
+
+
+
+
+
+
+
+
+.. autoclass:: StuntingPollingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class StuntingPollingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: apply_model
+
+
+
+
+
+
+
+
+.. autoclass:: StuntingLoggingEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class StuntingLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Stunting_ComplementaryFeeding
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Stunting_ComplementaryFeeding):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: StuntingPropertiesOfOtherModules
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - hv_inf
+          - BOOL
+          - temporary property
+        * - hv_art
+          - CATEGORICAL
+          - temporary property.  Possible values are: [not, on_VL_suppressed, on_not_VL_suppressed, ]
+        * - nb_low_birth_weight_status
+          - CATEGORICAL
+          - temporary property.  Possible values are: [extremely_low_birth_weight, very_low_birth_weight, low_birth_weight, normal_birth_weight, ]
+        * - nb_size_for_gestational_age
+          - CATEGORICAL
+          - temporary property.  Possible values are: [small_for_gestational_age, average_for_gestational_age, ]
+        * - nb_late_preterm
+          - BOOL
+          - temporary property
+        * - nb_early_preterm
+          - BOOL
+          - temporary property
+        * - nb_breastfeeding_status
+          - CATEGORICAL
+          - temporary property.  Possible values are: [none, non_exclusive, exclusive, ]
+        * - un_ever_wasted
+          - BOOL
+          - temporary property
+        * - gi_number_of_episodes
+          - INT
+          - temporary property
+
+
+
+     **Class attributes:**
+
+     ALTERNATIVE_TO : {'Diarrhoea', 'Hiv', 'Wasting'}
+
+     INIT_DEPENDENCIES : {'Demography'}
+
+     **Functions (defined or overridden in class StuntingPropertiesOfOtherModules):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+
+
+
+

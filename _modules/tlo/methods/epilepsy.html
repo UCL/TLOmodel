@@ -408,18 +408,16 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is called whenever there is an HSI event commissioned by one of the other disease modules.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="s1">&#39;This is Epilepsy, being alerted about a health system interaction person </span><span class="si">%d</span><span class="s1"> for: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
-            <span class="n">person_id</span><span class="p">,</span>
-            <span class="n">treatment_id</span><span class="p">,</span>
-        <span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span>
+                     <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;This is Epilepsy, being alerted about a health system interaction &#39;</span>
+                          <span class="sa">f</span><span class="s1">&#39;by person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1"> for: </span><span class="si">{</span><span class="n">treatment_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Epilepsy.report_daly_values"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.report_daly_values">[docs]</a>    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been</span>
         <span class="c1"># experienced by persons in the previous month. Only rows for alive-persons must be returned.</span>
         <span class="c1"># The names of the series of columns is taken to be the label of the cause of this disability.</span>
         <span class="c1"># It will be recorded by the healthburden module as &lt;ModuleName&gt;_&lt;Cause&gt;.</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;This is Epilepsy reporting my health values&#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;This is Epilepsy reporting my health values&#39;</span><span class="p">)</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>  <span class="c1"># shortcut to population properties dataframe</span>
         <span class="n">disability_series_for_alive_persons</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;ep_disability&#39;</span><span class="p">]</span>
@@ -503,9 +501,8 @@
         <span class="n">incidence_epilepsy</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_incident_epilepsy</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">100000</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_alive</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">|incidence_epilepsy|</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-            <span class="p">{</span>
+            <span class="n">key</span><span class="o">=</span><span class="s1">&#39;incidence_epilepsy&#39;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span>
                 <span class="s1">&#39;incident_epilepsy&#39;</span><span class="p">:</span> <span class="n">incidence_epilepsy</span><span class="p">,</span>
                 <span class="s1">&#39;n_incident_epilepsy&#39;</span><span class="p">:</span> <span class="n">n_incident_epilepsy</span><span class="p">,</span>
                 <span class="s1">&#39;n_alive&#39;</span><span class="p">:</span> <span class="n">n_alive</span>
@@ -621,9 +618,8 @@
 
         <span class="n">cum_deaths</span> <span class="o">=</span> <span class="p">(</span><span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">|epilepsy_logging|</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                    <span class="p">{</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;epilepsy_logging&#39;</span><span class="p">,</span>
+                    <span class="n">data</span><span class="o">=</span><span class="p">{</span>
                         <span class="s1">&#39;prop_seiz_stat_0&#39;</span><span class="p">:</span> <span class="n">prop_seiz_stat_0</span><span class="p">,</span>
                         <span class="s1">&#39;prop_seiz_stat_1&#39;</span><span class="p">:</span> <span class="n">prop_seiz_stat_1</span><span class="p">,</span>
                         <span class="s1">&#39;prop_seiz_stat_2&#39;</span><span class="p">:</span> <span class="n">prop_seiz_stat_2</span><span class="p">,</span>
@@ -677,7 +673,7 @@
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_phenobarbitone</span><span class="p">]:</span>
             <span class="n">anti_epileptics_available</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!&#39;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">item_code_carbamazepine</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
                 <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Carbamazepine 200mg_1000_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
@@ -691,7 +687,7 @@
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_carbamazepine</span><span class="p">]:</span>
                 <span class="n">anti_epileptics_available</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!&#39;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">item_code_phenytoin</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
                     <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Phenytoin sodium 100mg_1000_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
@@ -705,7 +701,7 @@
                 <span class="p">)</span>
                 <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_phenytoin</span><span class="p">]:</span>
                     <span class="n">anti_epileptics_available</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!&#39;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">anti_epileptics_available</span><span class="p">:</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ep_antiep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div></div>
 </pre></div>
@@ -720,7 +716,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 21, 2021.
+        Last updated on Nov 09, 2021.
       </span>
 
     </p>

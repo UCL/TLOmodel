@@ -20,6 +20,15 @@ BreastCancer
 * ``PalliativeCare`` at facility level 3 with appointment footprint: ``Over5OPD``.
 * ``StartTreatment`` at facility level 3 with appointment footprint: ``MajorSurg``.
 
+CardioMetabolicDisorders
+************************
+
+* ``InvestigationNotFollowingSymptoms`` at facility level 1 with appointment footprint: ``Over5OPD``.
+* ``Investigation_Following_Symptoms`` at facility level 1 with appointment footprint: ``Over5OPD``.
+* ``Medication_Refill`` at facility level 1 with appointment footprint: ``Over5OPD``.
+* ``SeeksEmergencyCareAndGetsTreatment`` at facility level 2 with appointment footprint: ``Over5OPD``.
+* ``WeightLossAndMedication`` at facility level 1 with appointment footprint: ``Over5OPD``.
+
 CareOfWomenDuringPregnancy
 **************************
 
@@ -38,6 +47,11 @@ CareOfWomenDuringPregnancy
 * ``ThirdAntenatalCareContact`` at facility level ? with appointment footprint: ``ANCSubsequent``.
 * ``TreatmentForEctopicPregnancy`` at facility level 1 with appointment footprint: ``MajorSurg``.
 * ``PresentsForInductionOfLabour`` at facility level 1 with appointment footprint: ``Over5OPD``.
+
+Contraception
+*************
+
+* ``FamilyPlanningAppt`` at facility level 1 with appointment footprint: ``FamPlan``.
 
 Depression
 **********
@@ -147,4 +161,9 @@ ProstateCancer
 * ``MonitorTreatment`` at facility level 3 with appointment footprint: ``Over5OPD``.
 * ``PalliativeCare`` at facility level 3 with appointment footprint: ``Over5OPD``.
 * ``StartTreatment`` at facility level 3 with appointment footprint: ``MajorSurg``.
+
+Stunting
+********
+
+* ``Complementary_feeding_for_stunting`` at facility level 1 with appointment footprint: ``Under5OPD``.
 

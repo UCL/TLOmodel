@@ -42,7 +42,7 @@
     
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="tlo.methods.symptommanager module" href="tlo.methods.symptommanager.html" />
+    <link rel="next" title="tlo.methods.stunting module" href="tlo.methods.stunting.html" />
     <link rel="prev" title="tlo.methods.simplified_births module" href="tlo.methods.simplified_births.html" /> 
 </head>
 
@@ -240,10 +240,10 @@ framework:</p>
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>ADDITIONAL_DEPENDENCIES : {‘HealthSystem’}</p>
-<p>CAUSES_OF_DEATH : {‘tlo_name_of_a_cause_of_death_in_this_module’: &lt;tlo.methods.causes.Cause object at 0x7f9967ae5af0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘tlo_name_of_a_cause_of_disability_in_this_module’: &lt;tlo.methods.causes.Cause object at 0x7f9967ae5b50&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘tlo_name_of_a_cause_of_death_in_this_module’: &lt;tlo.methods.causes.Cause object at 0x7f830ae115e0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘tlo_name_of_a_cause_of_disability_in_this_module’: &lt;tlo.methods.causes.Cause object at 0x7f830ae11640&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p>SYMPTOMS : {}</p>
 <p><strong>Functions (defined or overridden in class Skeleton):</strong></p>
@@ -308,7 +308,15 @@ It is a good place to add initial events to the event queue.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.skeleton.Skeleton.report_daly_values">
 <span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/skeleton.html#Skeleton.report_daly_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.skeleton.Skeleton.report_daly_values" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
+experienced by persons in the previous month. Only rows for alive-persons must be returned.
+If multiple causes in CAUSES_OF_DISABILITY are defined, a pd.DataFrame must be returned with a column
+corresponding to each cause (but if only one cause in CAUSES_OF_DISABILITY is defined, the pd.Series does not
+need to be given a specific name).</p>
+<p>To return a value of 0.0 (fully health) for everyone, use:
+df = self.sim.population.props
+return pd.Series(index=df.index[df.is_alive],data=0.0)</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.skeleton.Skeleton.on_hsi_alert">
@@ -417,6 +425,7 @@ that have been allocated to this event.</p></li>
 </ul>
 </div></blockquote>
 <p>Can return an updated APPT_FOOTPRINT if this differs from the declaration in self.EXPECTED_APPT_FOOTPRINT</p>
+<p>To request consumables use - self.get_all_consumables(item_codes=my_item_codes)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -431,7 +440,7 @@ Return False to cause this HSI event not to be rescheduled and to therefore neve
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.skeleton.HSI_Skeleton_Example_Interaction.never_ran">
 <span class="sig-name descname"><span class="pre">never_ran</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/skeleton.html#HSI_Skeleton_Example_Interaction.never_ran"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.skeleton.HSI_Skeleton_Example_Interaction.never_ran" title="Permalink to this definition">¶</a></dt>
-<dd><p>Do any action that is neccessary when it is clear that the HSI event will never be run. This will occur if it
+<dd><p>Do any action that is necessary when it is clear that the HSI event will never be run. This will occur if it
 has not run and the simulation date has passed the date ‘tclose’ by which the event was scheduled to have
 occurred.
 Do not return anything.</p>
@@ -447,7 +456,7 @@ Do not return anything.</p>
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="tlo.methods.symptommanager.html" class="btn btn-neutral float-right" title="tlo.methods.symptommanager module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tlo.methods.stunting.html" class="btn btn-neutral float-right" title="tlo.methods.stunting module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
         <a href="tlo.methods.simplified_births.html" class="btn btn-neutral float-left" title="tlo.methods.simplified_births module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
@@ -456,7 +465,7 @@ Do not return anything.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 21, 2021.
+        Last updated on Nov 09, 2021.
       </span>
 
     </p>

@@ -261,13 +261,13 @@ tlo.methods.hiv module
 
      ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes'}
 
-     CAUSES_OF_DEATH : {'AIDS': <tlo.methods.causes.Cause object at 0x7f99679ad310>}
+     CAUSES_OF_DEATH : {'AIDS': <tlo.methods.causes.Cause object at 0x7f830a00a2e0>}
 
-     CAUSES_OF_DISABILITY : {'AIDS': <tlo.methods.causes.Cause object at 0x7f99679ad3a0>}
+     CAUSES_OF_DISABILITY : {'AIDS': <tlo.methods.causes.Cause object at 0x7f830a00a370>}
 
-     INIT_DEPENDENCIES : {'Demography', 'Lifestyle', 'SymptomManager', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'SymptomManager', 'Lifestyle', 'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 

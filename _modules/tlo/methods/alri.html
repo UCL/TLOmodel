@@ -252,14 +252,14 @@
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;Demography&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Hiv&#39;</span><span class="p">,</span>
         <span class="s1">&#39;Lifestyle&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;NewbornOutcomes&#39;</span><span class="p">,</span>
         <span class="s1">&#39;SymptomManager&#39;</span><span class="p">,</span>
-        <span class="c1"># Currently need to include AlriPropertiesOfOtherModules as there is no alternative</span>
-        <span class="c1"># provider of un_clinical_acute_malnutrition property at the moment. As this</span>
-        <span class="c1"># module also provides the required properties from NewbornOutcomes, Hiv and Epi</span>
-        <span class="c1"># these are also not included here to avoid duplicated property definitions</span>
-        <span class="s1">&#39;AlriPropertiesOfOtherModules&#39;</span>
+        <span class="s1">&#39;Wasting&#39;</span><span class="p">,</span>
     <span class="p">}</span>
+
+    <span class="n">ADDITIONAL_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Epi&#39;</span><span class="p">}</span>
 
     <span class="n">OPTIONAL_INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">}</span>
 
@@ -318,7 +318,7 @@
 
     <span class="c1"># Declare the disease types:</span>
     <span class="n">disease_types</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;bacterial_pneumonia&#39;</span><span class="p">,</span> <span class="s1">&#39;viral_pneumonia&#39;</span><span class="p">,</span> <span class="s1">&#39;fungal_pneumonia&#39;</span><span class="p">,</span> <span class="s1">&#39;bronchiolitis&#39;</span>
+        <span class="s1">&#39;pneumonia&#39;</span><span class="p">,</span> <span class="s1">&#39;bronchiolitis&#39;</span><span class="p">,</span> <span class="s1">&#39;other_alri&#39;</span>
     <span class="p">}</span>
 
     <span class="c1"># Declare the Alri complications:</span>
@@ -548,21 +548,17 @@
                       <span class="p">),</span>
 
         <span class="c1"># Risk of death parameters -----</span>
-        <span class="s1">&#39;base_death_rate_ALRI_by_bacterial_pneumonia&#39;</span><span class="p">:</span>
+        <span class="s1">&#39;base_death_rate_ALRI_by_pneumonia&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
-                      <span class="s1">&#39;baseline death rate from bacterial pneumonia, base age 0-11 months&#39;</span>
+                      <span class="s1">&#39;baseline death rate from pneumonia, for those aged 0-11 months&#39;</span>
                       <span class="p">),</span>
         <span class="s1">&#39;base_death_rate_ALRI_by_bronchiolitis&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
                       <span class="s1">&#39;baseline death rate from bronchiolitis, base age 0-11 months&#39;</span>
                       <span class="p">),</span>
-        <span class="s1">&#39;base_death_rate_ALRI_by_viral_pneumonia&#39;</span><span class="p">:</span>
+        <span class="s1">&#39;base_death_rate_ALRI_by_other_alri&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
-                      <span class="s1">&#39;baseline death rate from viral pneumonia, base age 0-11 months&#39;</span>
-                      <span class="p">),</span>
-        <span class="s1">&#39;base_death_rate_ALRI_by_fungal_pneumonia&#39;</span><span class="p">:</span>
-            <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
-                      <span class="s1">&#39;baseline death rate from fungal pneumonia, base age 0-11 months&#39;</span>
+                      <span class="s1">&#39;baseline death rate from other lower respiratory infections, base age 0-11 months&#39;</span>
                       <span class="p">),</span>
         <span class="s1">&#39;rr_death_ALRI_sepsis&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
@@ -634,31 +630,31 @@
         <span class="c1"># Probability of symptom development -----</span>
         <span class="s1">&#39;prob_fever_uncomplicated_ALRI_by_disease_type&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span>
-                      <span class="s1">&#39;list of probabilities of having fever by bacterial pneumonia, viral pneumonia and bronchiolitis&#39;</span>
+                      <span class="s1">&#39;list of probabilities of having fever by pneumonia, bronchiolitis, and other_alri&#39;</span>
                       <span class="p">),</span>
         <span class="s1">&#39;prob_cough_uncomplicated_ALRI_by_disease_type&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span>
-                      <span class="s1">&#39;list of probabilities of having cough by bacterial pneumonia, viral pneumonia and bronchiolitis&#39;</span>
+                      <span class="s1">&#39;list of probabilities of having cough by pneumonia, bronchiolitis, and other_alri&#39;</span>
                       <span class="p">),</span>
         <span class="s1">&#39;prob_difficult_breathing_uncomplicated_ALRI_by_disease_type&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span>
                       <span class="s1">&#39;list of probabilities of difficult breathing by &#39;</span>
-                      <span class="s1">&#39;bacterial pneumonia, viral pneumonia and bronchiolitis&#39;</span>
+                      <span class="s1">&#39;pneumonia, bronchiolitis, and other_alri&#39;</span>
                       <span class="p">),</span>
         <span class="s1">&#39;prob_fast_breathing_uncomplicated_ALRI_by_disease_type&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span>
                       <span class="s1">&#39;list of probabilities of fast breathing by &#39;</span>
-                      <span class="s1">&#39;bacterial pneumonia, viral pneumonia and bronchiolitis&#39;</span>
+                      <span class="s1">&#39;pneumonia, bronchiolitis, and other_alri&#39;</span>
                       <span class="p">),</span>
         <span class="s1">&#39;prob_chest_indrawing_uncomplicated_ALRI_by_disease_type&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span>
                       <span class="s1">&#39;list of probabilities of chest indrawing by &#39;</span>
-                      <span class="s1">&#39;bacterial pneumonia, viral pneumonia and bronchiolitis&#39;</span>
+                      <span class="s1">&#39;pneumonia, bronchiolitis, and other_alri&#39;</span>
                       <span class="p">),</span>
         <span class="s1">&#39;prob_danger_signs_uncomplicated_ALRI_by_disease_type&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span>
                       <span class="s1">&#39;list of probabilities of danger signs by &#39;</span>
-                      <span class="s1">&#39;bacterial pneumonia, viral pneumonia and bronchiolitis&#39;</span>
+                      <span class="s1">&#39;pneumonia, bronchiolitis, and other_alri&#39;</span>
                       <span class="p">),</span>
 
         <span class="c1"># Additional signs and symptoms from complications -----</span>
@@ -988,9 +984,8 @@
 
         <span class="c1"># Get DALY weights</span>
         <span class="k">if</span> <span class="s1">&#39;HealthBurden&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span><span class="p">[</span><span class="s1">&#39;daly_ALRI&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_daly_weight</span><span class="p">(</span><span class="n">sequlae_code</span><span class="o">=</span><span class="mi">47</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span><span class="p">[</span><span class="s1">&#39;daly_severe_ALRI&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_daly_weight</span><span class="p">(</span><span class="n">sequlae_code</span><span class="o">=</span><span class="mi">47</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span><span class="p">[</span><span class="s1">&#39;daly_very_severe_ALRI&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_daly_weight</span><span class="p">(</span><span class="n">sequlae_code</span><span class="o">=</span><span class="mi">46</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span><span class="p">[</span><span class="s1">&#39;daly_non_severe_ALRI&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_daly_weight</span><span class="p">(</span><span class="n">sequlae_code</span><span class="o">=</span><span class="mi">47</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span><span class="p">[</span><span class="s1">&#39;daly_severe_ALRI&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_daly_weight</span><span class="p">(</span><span class="n">sequlae_code</span><span class="o">=</span><span class="mi">46</span><span class="p">)</span>
 
         <span class="c1"># Define the max episode duration</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_duration_of_episode</span> <span class="o">=</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;days_between_treatment_and_cure&#39;</span><span class="p">])</span></div>
@@ -1023,7 +1018,7 @@
 
         <span class="n">total_daly_values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">])</span>
         <span class="n">total_daly_values</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">who_has</span><span class="p">(</span><span class="s1">&#39;fast_breathing&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span><span class="p">[</span><span class="s1">&#39;daly_ALRI&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">who_has</span><span class="p">(</span><span class="s1">&#39;fast_breathing&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span><span class="p">[</span><span class="s1">&#39;daly_non_severe_ALRI&#39;</span><span class="p">]</span>
         <span class="n">total_daly_values</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">who_has</span><span class="p">(</span><span class="s1">&#39;danger_signs&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span><span class="p">[</span><span class="s1">&#39;daly_severe_ALRI&#39;</span><span class="p">]</span>
 
@@ -1285,28 +1280,22 @@
 <span class="sd">         &quot;&quot;&quot;</span>
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span>
 
-        <span class="k">if</span> <span class="n">pathogen</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">pathogens</span><span class="p">[</span><span class="s1">&#39;bacterial&#39;</span><span class="p">]:</span>
-            <span class="n">disease_type</span> <span class="o">=</span> <span class="s1">&#39;bacterial_pneumonia&#39;</span>
-            <span class="n">bacterial_coinfection</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-
-        <span class="k">elif</span> <span class="n">pathogen</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">pathogens</span><span class="p">[</span><span class="s1">&#39;fungal&#39;</span><span class="p">]:</span>
-            <span class="n">disease_type</span> <span class="o">=</span> <span class="s1">&#39;fungal_pneumonia&#39;</span>
+        <span class="k">if</span> <span class="n">pathogen</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">pathogens</span><span class="p">[</span><span class="s1">&#39;bacterial&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">pathogens</span><span class="p">[</span><span class="s1">&#39;fungal&#39;</span><span class="p">]):</span>
+            <span class="n">disease_type</span> <span class="o">=</span> <span class="s1">&#39;pneumonia&#39;</span>
             <span class="n">bacterial_coinfection</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
 
         <span class="k">elif</span> <span class="n">pathogen</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">pathogens</span><span class="p">[</span><span class="s1">&#39;viral&#39;</span><span class="p">]:</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">age</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;proportion_viral_pneumonia_by_</span><span class="si">{</span><span class="n">pathogen</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()):</span>
-                <span class="c1"># likely to be &#39;viral_pneumonia&#39; (if there is no secondary bacterial infection)</span>
+                <span class="n">disease_type</span> <span class="o">=</span> <span class="s1">&#39;pneumonia&#39;</span>
                 <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;prob_viral_pneumonia_bacterial_coinfection&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">():</span>
                     <span class="n">bacterial_coinfection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">secondary_bacterial_infection</span><span class="p">(</span><span class="n">va_pneumo_all_doses</span><span class="p">)</span>
-                    <span class="n">disease_type</span> <span class="o">=</span> <span class="s1">&#39;bacterial_pneumonia&#39;</span> <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">notnull</span><span class="p">(</span><span class="n">bacterial_coinfection</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;viral_pneumonia&#39;</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">bacterial_coinfection</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-                    <span class="n">disease_type</span> <span class="o">=</span> <span class="s1">&#39;viral_pneumonia&#39;</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># likely to be &#39;bronchiolitis&#39; (if there is no secondary bacterial infection)</span>
                 <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;prob_secondary_bacterial_infection_in_bronchiolitis&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">():</span>
                     <span class="n">bacterial_coinfection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">secondary_bacterial_infection</span><span class="p">(</span><span class="n">va_pneumo_all_doses</span><span class="p">)</span>
-                    <span class="n">disease_type</span> <span class="o">=</span> <span class="s1">&#39;bacterial_pneumonia&#39;</span> <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">notnull</span><span class="p">(</span><span class="n">bacterial_coinfection</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;bronchiolitis&#39;</span>
+                    <span class="n">disease_type</span> <span class="o">=</span> <span class="s1">&#39;pneumonia&#39;</span> <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">notnull</span><span class="p">(</span><span class="n">bacterial_coinfection</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;bronchiolitis&#39;</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">bacterial_coinfection</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
                     <span class="n">disease_type</span> <span class="o">=</span> <span class="s1">&#39;bronchiolitis&#39;</span>
@@ -1357,7 +1346,7 @@
             <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;pneumothorax&#39;</span><span class="p">,</span> <span class="s1">&#39;pleural_effusion&#39;</span><span class="p">,</span> <span class="s1">&#39;lung_abscess&#39;</span><span class="p">,</span> <span class="s1">&#39;sepsis&#39;</span><span class="p">,</span> <span class="s1">&#39;meningitis&#39;</span><span class="p">,</span> <span class="s1">&#39;hypoxia&#39;</span><span class="p">]:</span>
                 <span class="n">probs</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;prob_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">_by_bacterial_pneumonia&quot;</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="n">primary_path_is_viral</span> <span class="ow">and</span> <span class="p">(</span><span class="n">disease_type</span> <span class="o">==</span> <span class="s1">&#39;viral_pneumonia&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">primary_path_is_viral</span> <span class="ow">and</span> <span class="p">(</span><span class="n">disease_type</span> <span class="o">==</span> <span class="s1">&#39;pneumonia&#39;</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;pneumothorax&#39;</span><span class="p">,</span> <span class="s1">&#39;pleural_effusion&#39;</span><span class="p">,</span> <span class="s1">&#39;sepsis&#39;</span><span class="p">,</span> <span class="s1">&#39;hypoxia&#39;</span><span class="p">]:</span>
                 <span class="n">probs</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">+=</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;prob_</span><span class="si">{</span><span class="n">c</span><span class="si">}</span><span class="s2">_by_viral_pneumonia&quot;</span><span class="p">]</span>
 
@@ -1406,10 +1395,9 @@
 
         <span class="k">assert</span> <span class="n">disease_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">disease_types</span>
         <span class="n">index</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;bacterial_pneumonia&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s1">&#39;viral_pneumonia&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="s1">&#39;bronchiolitis&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-            <span class="s1">&#39;fungal_pneumonia&#39;</span><span class="p">:</span> <span class="mi">1</span>  <span class="c1"># &lt;-- same as probabilities for viral pneumonia</span>
+            <span class="s1">&#39;pneumonia&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s1">&#39;bronchiolitis&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;other_alri&#39;</span><span class="p">:</span> <span class="mi">2</span>
         <span class="p">}[</span><span class="n">disease_type</span><span class="p">]</span>
 
         <span class="n">probs</span> <span class="o">=</span> <span class="p">{</span>
@@ -2020,7 +2008,11 @@
     <span class="sd">&quot;&quot;&quot;For the purpose of the testing, this module generates the properties upon which the Alri module relies&quot;&quot;&quot;</span>
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">}</span>
-    <span class="n">ALTERNATIVE_TO</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Hiv&#39;</span><span class="p">,</span> <span class="s1">&#39;Epi&#39;</span><span class="p">,</span> <span class="s1">&#39;NewbornOutcomes&#39;</span><span class="p">}</span>
+
+    <span class="c1"># Though this module provides some properties from NewbornOutcomes we do not list</span>
+    <span class="c1"># NewbornOutcomes in the ALTERNATIVE_TO set to allow using in conjunction with</span>
+    <span class="c1"># SimplifiedBirths which can also be used as an alternative to NewbornOutcomes</span>
+    <span class="n">ALTERNATIVE_TO</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Hiv&#39;</span><span class="p">,</span> <span class="s1">&#39;Epi&#39;</span><span class="p">,</span> <span class="s1">&#39;Wasting&#39;</span><span class="p">}</span>
 
     <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;hv_inf&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;temporary property&#39;</span><span class="p">),</span>
@@ -2074,7 +2066,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 21, 2021.
+        Last updated on Nov 09, 2021.
       </span>
 
     </p>

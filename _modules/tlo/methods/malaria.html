@@ -203,7 +203,8 @@
 
         <span class="c1"># cleaned coverage values for IRS and ITN (populated in `read_parameters`)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">itn_irs</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">all_inc</span> <span class="o">=</span> <span class="kc">None</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_inc</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span></div>
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;Contraception&#39;</span><span class="p">,</span> <span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">,</span> <span class="s1">&#39;SymptomManager&#39;</span>
@@ -554,6 +555,13 @@
             <span class="p">)</span>  <span class="c1"># schedule the death</span></div>
 
 <div class="viewcode-block" id="Malaria.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        * 1) Schedule the Main Regular Polling Events</span>
+<span class="sd">        * 2) Define the DxTests</span>
+<span class="sd">        * 3) Look-up and save the codes for consumables</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># 1) ----------------------------------- REGULAR EVENTS -----------------------------------</span>
 
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MalariaPollingEventDistrict</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
@@ -569,13 +577,13 @@
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MalariaTxLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">364</span><span class="p">))</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MalariaPrevDistrictLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mf">30.5</span><span class="p">))</span>
 
-        <span class="c1"># ----------------------------------- DIAGNOSTIC TESTS -----------------------------------</span>
+        <span class="c1"># 2) ----------------------------------- DIAGNOSTIC TESTS -----------------------------------</span>
         <span class="c1"># Create the diagnostic test representing the use of RDT for malaria diagnosis</span>
         <span class="c1"># and registers it with the Diagnostic Test Manager</span>
         <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Consumables&quot;</span><span class="p">]</span>
 
         <span class="c1"># need to convert this from int64 to int for the dx_manager using tolist()</span>
-        <span class="n">item_code1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+        <span class="n">item_code_test</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
             <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
                 <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Malaria test kit (RDT)&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;Item_Code&quot;</span><span class="p">,</span>
@@ -585,10 +593,85 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">register_dx_test</span><span class="p">(</span>
             <span class="n">malaria_rdt</span><span class="o">=</span><span class="n">DxTest</span><span class="p">(</span>
                 <span class="nb">property</span><span class="o">=</span><span class="s1">&#39;ma_is_infected&#39;</span><span class="p">,</span>
-                <span class="n">cons_req_as_item_code</span><span class="o">=</span><span class="n">item_code1</span><span class="p">,</span>
+                <span class="n">cons_req_as_item_code</span><span class="o">=</span><span class="n">item_code_test</span><span class="p">,</span>
                 <span class="n">sensitivity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;sensitivity_rdt&#39;</span><span class="p">],</span>
             <span class="p">)</span>
-        <span class="p">)</span></div>
+        <span class="p">)</span>
+
+        <span class="c1"># 3) ----------------------------------- CONSUMABLES -----------------------------------</span>
+
+        <span class="c1"># malaria treatment uncomplicated children &lt;15kg</span>
+        <span class="n">item_code2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Item_Code&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">item_code3</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST&quot;</span><span class="p">,</span> <span class="s2">&quot;Item_Code&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;malaria_uncomplicated_young_children&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_test</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                          <span class="n">item_code2</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                          <span class="n">item_code3</span><span class="p">:</span> <span class="mi">18</span><span class="p">},</span>
+        <span class="p">}</span>
+
+        <span class="c1"># malaria treatment uncomplicated children &gt;15kg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;malaria_uncomplicated_older_children&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_test</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                          <span class="n">item_code2</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                          <span class="n">item_code3</span><span class="p">:</span> <span class="mi">18</span><span class="p">},</span>
+        <span class="p">}</span>
+
+        <span class="c1"># malaria treatment uncomplicated adults &gt;36kg</span>
+        <span class="n">item_code4</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Paracetamol 500mg_1000_CMST&quot;</span><span class="p">,</span> <span class="s2">&quot;Item_Code&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;malaria_uncomplicated_adult&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_test</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                          <span class="n">item_code2</span><span class="p">:</span> <span class="mf">3.6</span><span class="p">,</span>
+                          <span class="n">item_code4</span><span class="p">:</span> <span class="mi">18</span><span class="p">},</span>
+        <span class="p">}</span>
+
+        <span class="c1"># malaria treatment complicated - same consumables for adults and children</span>
+        <span class="n">item_code5</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Injectable artesunate&quot;</span><span class="p">,</span> <span class="s2">&quot;Item_Code&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">item_code6</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Cannula iv  (winged with injection pot) 18_each_CMST&quot;</span><span class="p">,</span> <span class="s2">&quot;Item_Code&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">item_code7</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Glove disposable latex medium_100_CMST&quot;</span><span class="p">,</span> <span class="s2">&quot;Item_Code&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">item_code8</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Gauze, swabs 8-ply 10cm x 10cm_100_CMST&quot;</span><span class="p">,</span> <span class="s2">&quot;Item_Code&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">item_code9</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Water for injection, 10ml_Each_CMST&quot;</span><span class="p">,</span> <span class="s2">&quot;Item_Code&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;malaria_complicated&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code5</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                          <span class="n">item_code6</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                          <span class="n">item_code7</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                          <span class="n">item_code8</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                          <span class="n">item_code9</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                          <span class="p">},</span>
+        <span class="p">}</span>
+
+        <span class="c1"># malaria IPTp for pregnant women</span>
+        <span class="n">item_code10</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg&quot;</span><span class="p">,</span> <span class="s2">&quot;Item_Code&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;malaria_iptp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{},</span>
+            <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code10</span><span class="p">:</span> <span class="mi">6</span><span class="p">},</span>
+        <span class="p">}</span></div>
 
 <div class="viewcode-block" id="Malaria.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -734,7 +817,28 @@
                         <span class="n">add_or_remove</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
                         <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
                         <span class="n">duration_in_days</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                    <span class="p">)</span></div></div>
+                    <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Malaria.check_if_fever_is_caused_by_malaria"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.check_if_fever_is_caused_by_malaria">[docs]</a>    <span class="k">def</span> <span class="nf">check_if_fever_is_caused_by_malaria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Run by an HSI when an adult presents with fever&quot;&quot;&quot;</span>
+
+        <span class="c1"># Call the DxTest RDT to diagnose malaria</span>
+        <span class="n">dx_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
+            <span class="n">dx_tests_to_run</span><span class="o">=</span><span class="s1">&#39;malaria_rdt&#39;</span><span class="p">,</span>
+            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span>
+        <span class="p">)</span>
+
+        <span class="n">true_malaria_infection_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_inf_type&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">dx_result</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">true_malaria_infection_type</span> <span class="o">==</span> <span class="s2">&quot;severe&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s2">&quot;severe_malaria&quot;</span>
+
+            <span class="k">elif</span> <span class="n">true_malaria_infection_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;clinical&quot;</span><span class="p">,</span> <span class="s2">&quot;asym&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="s2">&quot;clinical_malaria&quot;</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;negative_malaria_test&quot;</span></div></div>
 
 
 <div class="viewcode-block" id="MalariaPollingEventDistrict"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaPollingEventDistrict">[docs]</a><span class="k">class</span> <span class="nc">MalariaPollingEventDistrict</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
@@ -1004,30 +1108,8 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
                          <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;HSI_Malaria_tx_0_5: requesting malaria treatment for child </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-            <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Consumables&quot;</span><span class="p">]</span>
-            <span class="n">pkg_code1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                    <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Intervention_Pkg&quot;</span><span class="p">]</span>
-                    <span class="o">==</span> <span class="s2">&quot;Uncomplicated (children, &lt;15 kg)&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;Intervention_Pkg_Code&quot;</span><span class="p">,</span>
-                <span class="p">]</span>
-            <span class="p">)[</span>
-                <span class="mi">0</span>
-            <span class="p">]</span>  <span class="c1"># this pkg_code includes another rdt</span>
-
-            <span class="n">the_cons_footprint</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">pkg_code1</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
-                <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="p">}</span>
-
-            <span class="c1"># request the treatment</span>
-            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span>
-                <span class="s2">&quot;HealthSystem&quot;</span>
-            <span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-                <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">the_cons_footprint</span>
-            <span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
+                    <span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;malaria_uncomplicated_young_children&#39;</span><span class="p">]):</span>
 
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
                              <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;HSI_Malaria_tx_0_5: giving malaria treatment for child </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -1070,30 +1152,8 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
                          <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;HSI_Malaria_tx_5_15: requesting malaria treatment for child </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-            <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Consumables&quot;</span><span class="p">]</span>
-            <span class="n">pkg_code1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                    <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Intervention_Pkg&quot;</span><span class="p">]</span>
-                    <span class="o">==</span> <span class="s2">&quot;Uncomplicated (children, &gt;15 kg)&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;Intervention_Pkg_Code&quot;</span><span class="p">,</span>
-                <span class="p">]</span>
-            <span class="p">)[</span>
-                <span class="mi">0</span>
-            <span class="p">]</span>  <span class="c1"># this pkg_code includes another rdt</span>
-
-            <span class="n">the_cons_footprint</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">pkg_code1</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
-                <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="p">}</span>
-
-            <span class="c1"># request the treatment</span>
-            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span>
-                <span class="s2">&quot;HealthSystem&quot;</span>
-            <span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-                <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">the_cons_footprint</span>
-            <span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
+                    <span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;malaria_uncomplicated_older_children&#39;</span><span class="p">]):</span>
 
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
                              <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;HSI_Malaria_tx_5_15: giving malaria treatment for child </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -1131,42 +1191,20 @@
 <div class="viewcode-block" id="HSI_Malaria_non_complicated_treatment_adult.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_adult.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;is_alive&quot;</span><span class="p">]:</span>
 
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
                          <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;HSI_Malaria_tx_adult: requesting malaria treatment for person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-            <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Consumables&quot;</span><span class="p">]</span>
-            <span class="n">pkg_code1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                    <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Intervention_Pkg&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Uncomplicated (adult, &gt;36 kg)&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;Intervention_Pkg_Code&quot;</span><span class="p">,</span>
-                <span class="p">]</span>
-            <span class="p">)[</span>
-                <span class="mi">0</span>
-            <span class="p">]</span>  <span class="c1"># this pkg_code includes another rdt</span>
-
-            <span class="n">the_cons_footprint</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">pkg_code1</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
-                <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="p">}</span>
-
-            <span class="c1"># request the treatment</span>
-            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span>
-                <span class="s2">&quot;HealthSystem&quot;</span>
-            <span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-                <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">the_cons_footprint</span><span class="p">,</span> <span class="n">to_log</span><span class="o">=</span><span class="kc">False</span>
-            <span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
+                    <span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;malaria_uncomplicated_adult&#39;</span><span class="p">]):</span>
 
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
                              <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;HSI_Malaria_tx_adult: giving malaria treatment for person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;is_alive&quot;</span><span class="p">]:</span>
-                    <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_date_tx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
-                    <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx_counter&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span></div>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_date_tx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx_counter&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span></div>
 
 <div class="viewcode-block" id="HSI_Malaria_non_complicated_treatment_adult.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_adult.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
@@ -1196,43 +1234,22 @@
 <div class="viewcode-block" id="HSI_Malaria_complicated_treatment_child.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_complicated_treatment_child.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;is_alive&quot;</span><span class="p">]:</span>
 
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
                          <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;HSI_Malaria_tx_compl_child: requesting complicated malaria treatment for &#39;</span>
                               <span class="sa">f</span><span class="s1">&#39;child </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-            <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Consumables&quot;</span><span class="p">]</span>
-            <span class="n">pkg_code1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                    <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Intervention_Pkg&quot;</span><span class="p">]</span>
-                    <span class="o">==</span> <span class="s2">&quot;Complicated (children, injectable artesunate)&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;Intervention_Pkg_Code&quot;</span><span class="p">,</span>
-                <span class="p">]</span>
-            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-
-            <span class="n">the_cons_footprint</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">pkg_code1</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
-                <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="p">}</span>
-
-            <span class="c1"># request the treatment</span>
-            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span>
-                <span class="s2">&quot;HealthSystem&quot;</span>
-            <span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-                <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">the_cons_footprint</span><span class="p">,</span> <span class="n">to_log</span><span class="o">=</span><span class="kc">False</span>
-            <span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
+                    <span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;malaria_complicated&#39;</span><span class="p">]):</span>
 
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
                              <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;HSI_Malaria_tx_compl_child: giving complicated malaria treatment for &#39;</span>
                                   <span class="sa">f</span><span class="s1">&#39;child </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;is_alive&quot;</span><span class="p">]:</span>
-                    <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_date_tx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
-                    <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx_counter&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span></div>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_date_tx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx_counter&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span></div>
 
 <div class="viewcode-block" id="HSI_Malaria_complicated_treatment_child.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_complicated_treatment_child.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
@@ -1262,43 +1279,22 @@
 <div class="viewcode-block" id="HSI_Malaria_complicated_treatment_adult.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_complicated_treatment_adult.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;is_alive&quot;</span><span class="p">]:</span>
 
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
                          <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;HSI_Malaria_tx_compl_adult: requesting complicated malaria treatment &#39;</span>
                               <span class="sa">f</span><span class="s1">&#39;for person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-            <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Consumables&quot;</span><span class="p">]</span>
-            <span class="n">pkg_code1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                    <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Intervention_Pkg&quot;</span><span class="p">]</span>
-                    <span class="o">==</span> <span class="s2">&quot;Complicated (adults, injectable artesunate)&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;Intervention_Pkg_Code&quot;</span><span class="p">,</span>
-                <span class="p">]</span>
-            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-
-            <span class="n">the_cons_footprint</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">pkg_code1</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
-                <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="p">}</span>
-
-            <span class="c1"># request the treatment</span>
-            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span>
-                <span class="s2">&quot;HealthSystem&quot;</span>
-            <span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-                <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">the_cons_footprint</span>
-            <span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
+                    <span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;malaria_complicated&#39;</span><span class="p">]):</span>
 
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
                              <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;HSI_Malaria_tx_compl_adult: giving complicated malaria treatment &#39;</span>
                                   <span class="sa">f</span><span class="s1">&#39;for person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;is_alive&quot;</span><span class="p">]:</span>
-                    <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_date_tx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
-                    <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx_counter&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span></div>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_date_tx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx_counter&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span></div>
 
 <div class="viewcode-block" id="HSI_Malaria_complicated_treatment_adult.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_complicated_treatment_adult.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;HSI_Malaria_tx_compl_adult: did not run&quot;</span><span class="p">)</span>
@@ -1328,37 +1324,18 @@
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;is_alive&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;is_alive&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]:</span>
             <span class="k">return</span>
 
-        <span class="k">elif</span> <span class="p">(</span>
-            <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]</span>
-        <span class="p">):</span>
+        <span class="k">else</span><span class="p">:</span>
 
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
                          <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;HSI_MalariaIPTp: requesting IPTp for person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-            <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Consumables&quot;</span><span class="p">]</span>
-            <span class="n">pkg_code1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                    <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Intervention_Pkg&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;IPT (pregnant women)&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;Intervention_Pkg_Code&quot;</span><span class="p">,</span>
-                <span class="p">]</span>
-            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-
-            <span class="n">the_cons_footprint</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">pkg_code1</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
-                <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="p">}</span>
-
             <span class="c1"># request the treatment</span>
-            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span>
-                <span class="s2">&quot;HealthSystem&quot;</span>
-            <span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-                <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">the_cons_footprint</span>
-            <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
+                    <span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;malaria_iptp&#39;</span><span class="p">]):</span>
 
-            <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
                              <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;HSI_MalariaIPTp: giving IPTp for person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
@@ -1622,7 +1599,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 21, 2021.
+        Last updated on Nov 09, 2021.
       </span>
 
     </p>

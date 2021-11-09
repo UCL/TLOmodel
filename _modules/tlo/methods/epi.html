@@ -732,16 +732,15 @@
         <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;va_bcg&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">all_doses</span><span class="p">[</span><span class="s2">&quot;bcg&quot;</span><span class="p">]:</span>
             <span class="n">outcome</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request_vax_consumables</span><span class="p">(</span>
                 <span class="n">items</span><span class="o">=</span><span class="p">[</span>
-                    <span class="p">(</span><span class="s2">&quot;BCG vaccine&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
                     <span class="p">(</span><span class="s2">&quot;Syringe, autodisposable, BCG, 0.1 ml, with needle&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
                     <span class="p">(</span><span class="s2">&quot;Safety box for used syringes/needles, 5 liter&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
                 <span class="p">]</span>
             <span class="p">)</span>
 
             <span class="c1"># check if BCG and syringes available</span>
-            <span class="n">bcg_vax</span><span class="p">,</span> <span class="n">syringe</span><span class="p">,</span> <span class="n">safety_box</span> <span class="o">=</span> <span class="n">outcome</span><span class="p">[</span><span class="s2">&quot;Item_Code&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="n">bcg_vax</span><span class="p">,</span> <span class="n">safety_box</span> <span class="o">=</span> <span class="n">outcome</span><span class="p">[</span><span class="s2">&quot;Item_Code&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
 
-            <span class="k">if</span> <span class="n">outcome</span><span class="p">[</span><span class="s2">&quot;Item_Code&quot;</span><span class="p">][</span><span class="n">bcg_vax</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">outcome</span><span class="p">[</span><span class="s2">&quot;Item_Code&quot;</span><span class="p">][</span><span class="n">syringe</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">outcome</span><span class="p">[</span><span class="s2">&quot;Item_Code&quot;</span><span class="p">][</span><span class="n">bcg_vax</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">outcome</span><span class="p">[</span><span class="s2">&quot;Item_Code&quot;</span><span class="p">][</span><span class="n">safety_box</span><span class="p">]:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;bcg&quot;</span><span class="p">)</span></div></div>
 
 
@@ -770,7 +769,7 @@
         <span class="n">outcome</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request_vax_consumables</span><span class="p">(</span>
             <span class="n">items</span><span class="o">=</span><span class="p">[</span>
                 <span class="p">(</span><span class="s2">&quot;Pentavalent vaccine (DPT, Hep B, Hib)&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                <span class="p">(</span><span class="s2">&quot;Syringe, needle + swab&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;Syringe, Autodisable SoloShot IX &quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
                 <span class="p">(</span><span class="s2">&quot;Safety box for used syringes/needles, 5 liter&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
             <span class="p">]</span>
         <span class="p">)</span>
@@ -819,7 +818,7 @@
         <span class="n">outcome</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request_vax_consumables</span><span class="p">(</span>
             <span class="n">items</span><span class="o">=</span><span class="p">[</span>
                 <span class="p">(</span><span class="s2">&quot;Pneumococcal vaccine&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                <span class="p">(</span><span class="s2">&quot;Syringe, needle + swab&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;Syringe, Autodisable SoloShot IX &quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
                 <span class="p">(</span><span class="s2">&quot;Safety box for used syringes/needles, 5 liter&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
             <span class="p">]</span>
         <span class="p">)</span>
@@ -969,7 +968,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 21, 2021.
+        Last updated on Nov 09, 2021.
       </span>
 
     </p>

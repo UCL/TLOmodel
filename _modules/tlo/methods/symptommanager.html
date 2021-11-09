@@ -545,8 +545,9 @@
             <span class="n">the_disease_module_is_causing_the_symptom</span> <span class="o">=</span> \
                 <span class="bp">self</span><span class="o">.</span><span class="n">bsh</span><span class="p">[</span><span class="n">symptom_string</span><span class="p">]</span><span class="o">.</span><span class="n">uncompress</span><span class="p">(</span><span class="n">person_id</span><span class="p">)[</span><span class="n">disease_module</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">the_disease_module_is_causing_the_symptom</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Request from disease module &#39;</span><span class="si">{</span><span class="n">disease_module</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; to remove the symptom &quot;</span>
-                             <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">symptom_string</span><span class="si">}</span><span class="s2">&#39;, which it is not currently causing.&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+                             <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Request from disease module &#39;</span><span class="si">{</span><span class="n">disease_module</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; to remove the symptom &quot;</span>
+                                  <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">symptom_string</span><span class="si">}</span><span class="s2">&#39;, which it is not currently causing.&quot;</span><span class="p">)</span>
 
             <span class="c1"># Do the remove:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">bsh</span><span class="p">[</span><span class="n">symptom_string</span><span class="p">]</span><span class="o">.</span><span class="n">unset</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="n">disease_module</span><span class="o">.</span><span class="n">name</span><span class="p">)</span></div>
@@ -848,7 +849,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 21, 2021.
+        Last updated on Nov 09, 2021.
       </span>
 
     </p>

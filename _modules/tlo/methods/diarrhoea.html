@@ -187,7 +187,7 @@
 <span class="sd"> * See todo</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Iterable</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -227,15 +227,15 @@
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;Demography&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;Lifestyle&#39;</span><span class="p">,</span>
         <span class="s1">&#39;HealthSystem&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Hiv&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Lifestyle&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;NewbornOutcomes&#39;</span><span class="p">,</span>
         <span class="s1">&#39;SymptomManager&#39;</span><span class="p">,</span>
-        <span class="c1"># Currently need to include DiarrhoeaPropertiesOfOtherModules as there is no alternative</span>
-        <span class="c1"># provider of un_clinical_acute_malnutrition property at the moment. As this</span>
-        <span class="c1"># module also provides the required properties from NewbornOutcomes, Hiv and Epi</span>
-        <span class="c1"># these are also not included here to avoid duplicated property definitions</span>
-        <span class="s1">&#39;DiarrhoeaPropertiesOfOtherModules&#39;</span>
+        <span class="s1">&#39;Wasting&#39;</span><span class="p">,</span>
     <span class="p">}</span>
+
+    <span class="n">ADDITIONAL_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Alri&#39;</span><span class="p">,</span> <span class="s1">&#39;Epi&#39;</span><span class="p">,</span> <span class="s1">&#39;Stunting&#39;</span><span class="p">}</span>
 
     <span class="n">OPTIONAL_INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;HealthBurden&#39;</span><span class="p">}</span>
 
@@ -440,13 +440,9 @@
         <span class="s1">&#39;prob_prolonged_to_persistent_diarr&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;probability of prolonged diarrhoea becoming persistent diarrhoea&#39;</span>
                       <span class="p">),</span>
-        <span class="s1">&#39;rr_bec_persistent_age12to23&#39;</span><span class="p">:</span>
+        <span class="s1">&#39;rr_bec_persistent_age&gt;6mo&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
-                      <span class="s1">&#39;relative rate of acute diarrhoea becoming persistent diarrhoea for age 12 to 23 months&#39;</span>
-                      <span class="p">),</span>
-        <span class="s1">&#39;rr_bec_persistent_age24to59&#39;</span><span class="p">:</span>
-            <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
-                      <span class="s1">&#39;relative rate of acute diarrhoea becoming persistent diarrhoea for age 24 to 59 months&#39;</span>
+                      <span class="s1">&#39;relative rate of acute diarrhoea becoming persistent diarrhoea for children over 6 months&#39;</span>
                       <span class="p">),</span>
         <span class="s1">&#39;rr_bec_persistent_HIV&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
@@ -551,10 +547,6 @@
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;relative risk of diarrhoea death (compared to `case_fatality_rate_AWD` if the &#39;</span>
                                   <span class="s1">&#39;diarrhoea is of type &quot;bloody&quot; (i.e. dyssentry).&#39;</span>
                       <span class="p">),</span>
-        <span class="s1">&#39;rr_diarr_death_age12to23mo&#39;</span><span class="p">:</span>
-            <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
-                      <span class="s1">&#39;relative risk of diarrhoea death for ages 12 to 23 months&#39;</span>
-                      <span class="p">),</span>
         <span class="s1">&#39;rr_diarr_death_age24to59mo&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
                       <span class="s1">&#39;relative risk of diarrhoea death for ages 24 to 59 months&#39;</span>
@@ -583,13 +575,13 @@
                       <span class="p">),</span>
 
         <span class="c1"># Parameters governing the care provided to those that present with Diarrhoea</span>
-        <span class="s1">&#39;sensitivity_danger_signs_visual_inspection&#39;</span><span class="p">:</span>
+        <span class="s1">&#39;sensitivity_severe_dehydration_visual_inspection&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
-                      <span class="s1">&#39;sensitivity of health care workers visual inspection of danger signs&#39;</span>
+                      <span class="s1">&#39;sensitivity of IMCI severe dehydration algorithm for dehydration &gt;9</span><span class="si">% lo</span><span class="s1">ss of body weight&#39;</span>
                       <span class="p">),</span>
-        <span class="s1">&#39;specificity_danger_signs_visual_inspection&#39;</span><span class="p">:</span>
+        <span class="s1">&#39;specificity_severe_dehydration_visual_inspection&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
-                      <span class="s1">&#39;specificity of health care workers visual inspection of danger signs&#39;</span>
+                      <span class="s1">&#39;specificity of IMCI severe dehydration algorithm for dehydration &gt;9</span><span class="si">% lo</span><span class="s1">ss of body weight&#39;</span>
                       <span class="p">),</span>
         <span class="s1">&#39;prob_hospitalization_on_danger_signs&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
@@ -612,7 +604,15 @@
         <span class="s1">&#39;number_of_days_reduced_duration_with_zinc&#39;</span><span class="p">:</span>
             <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s1">&#39;number of days reduced duration with zinc&#39;</span><span class="p">),</span>
         <span class="s1">&#39;days_between_treatment_and_cure&#39;</span><span class="p">:</span>
-            <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s1">&#39;number of days between any treatment being given in an HSI and the cure occurring.&#39;</span><span class="p">)</span>
+            <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s1">&#39;number of days between any treatment being given in an HSI and the cure occurring.&#39;</span><span class="p">),</span>
+
+        <span class="c1"># Parameters describing efficacy of the monovalent rotavirus vaccine (R1)</span>
+        <span class="s1">&#39;rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo&#39;</span><span class="p">:</span>
+            <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
+                      <span class="s1">&#39;relative risk of severe dehydration with rotavirus vaccine, for under 1 years old.&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo&#39;</span><span class="p">:</span>
+            <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
+                      <span class="s1">&#39;relative risk of severe dehydration with rotavirus vaccine, for those aged 1 year and older.&#39;</span><span class="p">),</span>
     <span class="p">}</span>
 
     <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{</span>
@@ -639,6 +639,8 @@
         <span class="s1">&#39;gi_duration_longer_than_13days&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span>
                                                    <span class="s1">&#39;Whether the duration of the current episode would last longer than &#39;</span>
                                                    <span class="s1">&#39;13 days if untreated. (False if does not have current episode)&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;gi_number_of_episodes&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span>
+                                          <span class="s2">&quot;Number of episodes of diarrhoea caused by a pathogen&quot;</span><span class="p">),</span>
 
         <span class="c1"># ---- Internal variables storing dates of scheduled events  ----</span>
         <span class="s1">&#39;gi_date_of_onset&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATE</span><span class="p">,</span> <span class="s1">&#39;Date of onset of current episode of diarrhoea (pd.NaT if does not &#39;</span>
@@ -706,6 +708,7 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;gi_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;gi_dehydration&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;gi_duration_longer_than_13days&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;gi_number_of_episodes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="c1"># ---- Internal values ----</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;gi_date_of_onset&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
@@ -749,11 +752,11 @@
         <span class="c1"># The danger signs are classified collectively and are based on the result of a DxTest representing the ability</span>
         <span class="c1"># of the clinician to correctly determine the true value of the property &#39;gi_dehydration&#39; being &#39;severe&#39;.=</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">register_dx_test</span><span class="p">(</span>
-            <span class="n">danger_signs_visual_inspection</span><span class="o">=</span><span class="n">DxTest</span><span class="p">(</span>
+            <span class="n">imci_severe_dehydration_visual_inspection</span><span class="o">=</span><span class="n">DxTest</span><span class="p">(</span>
                 <span class="nb">property</span><span class="o">=</span><span class="s1">&#39;gi_dehydration&#39;</span><span class="p">,</span>
                 <span class="n">target_categories</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;severe&#39;</span><span class="p">],</span>
-                <span class="n">sensitivity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;sensitivity_danger_signs_visual_inspection&#39;</span><span class="p">],</span>
-                <span class="n">specificity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;specificity_danger_signs_visual_inspection&#39;</span><span class="p">]</span>
+                <span class="n">sensitivity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;sensitivity_severe_dehydration_visual_inspection&#39;</span><span class="p">],</span>
+                <span class="n">specificity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;specificity_severe_dehydration_visual_inspection&#39;</span><span class="p">]</span>
             <span class="p">)</span>
         <span class="p">)</span></div>
 
@@ -769,6 +772,7 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;gi_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;gi_dehydration&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;gi_duration_longer_than_13days&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;gi_number_of_episodes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="c1"># ---- Internal values ----</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;gi_date_of_onset&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
@@ -835,7 +839,7 @@
 
         <span class="c1"># 1) Assessment of danger signs</span>
         <span class="n">danger_signs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
-            <span class="n">dx_tests_to_run</span><span class="o">=</span><span class="s2">&quot;danger_signs_visual_inspection&quot;</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
+            <span class="n">dx_tests_to_run</span><span class="o">=</span><span class="s2">&quot;imci_severe_dehydration_visual_inspection&quot;</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
 
         <span class="c1"># 2) Determine which HSI to use:</span>
         <span class="k">if</span> <span class="n">danger_signs</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;prob_hospitalization_on_danger_signs&#39;</span><span class="p">]):</span>
@@ -1077,6 +1081,9 @@
         <span class="n">in_current_episode</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">gi_has_diarrhoea</span>
         <span class="k">assert</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">in_current_episode</span><span class="p">,</span> <span class="s1">&#39;gi_pathogen&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
 
+        <span class="c1"># Those that do currently have diarrhoea, should have a non-zero value for the total number of episodes</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">in_current_episode</span><span class="p">,</span> <span class="s1">&#39;gi_number_of_episodes&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
         <span class="c1"># Those that currently have diarrhoea and have not had a treatment, should have either a recovery date or</span>
         <span class="c1"># a death_date (but not both)</span>
         <span class="n">has_recovery_date</span> <span class="o">=</span> <span class="o">~</span><span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">in_current_episode</span> <span class="o">&amp;</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">gi_treatment_date</span><span class="p">),</span>
@@ -1206,7 +1213,7 @@
         <span class="k">return</span> <span class="n">_incidence_equations_by_pathogen</span>
 
     <span class="k">def</span> <span class="nf">get_prob_persisent_if_prolonged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                                        <span class="n">age_years</span><span class="p">,</span>
+                                        <span class="n">age_exact_years</span><span class="p">,</span>
                                         <span class="n">un_HAZ_category</span><span class="p">,</span>
                                         <span class="n">un_clinical_acute_malnutrition</span><span class="p">,</span>
                                         <span class="n">untreated_hiv</span><span class="p">,</span>
@@ -1214,10 +1221,8 @@
         <span class="c1"># Baseline prob:</span>
         <span class="n">prob_persistent_if_prolonged</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;prob_prolonged_to_persistent_diarr&#39;</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="n">age_years</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">prob_persistent_if_prolonged</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_bec_persistent_age12to23&#39;</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="n">age_years</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span>
-            <span class="n">prob_persistent_if_prolonged</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_diarr_death_age24to59mo&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">age_exact_years</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
+            <span class="n">prob_persistent_if_prolonged</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_bec_persistent_age&gt;6mo&#39;</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="n">un_HAZ_category</span> <span class="o">==</span> <span class="s1">&#39;HAZ&lt;-3&#39;</span><span class="p">:</span>
             <span class="n">prob_persistent_if_prolonged</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_bec_persistent_stunted&#39;</span><span class="p">]</span>
@@ -1232,7 +1237,7 @@
 
     <span class="k">def</span> <span class="nf">get_duration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                      <span class="n">pathogen</span><span class="p">,</span>
-                     <span class="n">age_years</span><span class="p">,</span>
+                     <span class="n">age_exact_years</span><span class="p">,</span>
                      <span class="n">un_HAZ_category</span><span class="p">,</span>
                      <span class="n">un_clinical_acute_malnutrition</span><span class="p">,</span>
                      <span class="n">untreated_hiv</span><span class="p">,</span>
@@ -1246,10 +1251,10 @@
 
         <span class="c1"># Get probability of this episode being &quot;persistent&quot; if it is &quot;prolonged&quot;</span>
         <span class="n">prob_persistent_if_prolonged</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_prob_persisent_if_prolonged</span><span class="p">(</span>
-            <span class="n">age_years</span><span class="p">,</span>
-            <span class="n">un_HAZ_category</span><span class="p">,</span>
-            <span class="n">un_clinical_acute_malnutrition</span><span class="p">,</span>
-            <span class="n">untreated_hiv</span><span class="p">,</span>
+            <span class="n">age_exact_years</span><span class="o">=</span><span class="n">age_exact_years</span><span class="p">,</span>
+            <span class="n">un_HAZ_category</span><span class="o">=</span><span class="n">un_HAZ_category</span><span class="p">,</span>
+            <span class="n">un_clinical_acute_malnutrition</span><span class="o">=</span><span class="n">un_clinical_acute_malnutrition</span><span class="p">,</span>
+            <span class="n">untreated_hiv</span><span class="o">=</span><span class="n">untreated_hiv</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">prob_prolonged</span><span class="p">:</span>
@@ -1265,10 +1270,22 @@
         <span class="sd">&quot;&quot;&quot;For new incident case of diarrhoea, determine the type - &#39;watery&#39; or &#39;bloody&#39;&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s1">&#39;watery&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;proportion_AWD_in_</span><span class="si">{</span><span class="n">pathogen</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="s1">&#39;bloody&#39;</span>
 
-    <span class="k">def</span> <span class="nf">get_dehydration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pathogen</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;For new incident case of diarrhoea, determine the degree of dehydration - &#39;none&#39;, &#39;some&#39; or &#39;severe&#39;&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">get_dehydration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pathogen</span><span class="p">,</span> <span class="n">va_rota_all_doses</span><span class="p">,</span> <span class="n">age_years</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For new incident case of diarrhoea, determine the degree of dehydration - &#39;none&#39;, &#39;some&#39; or &#39;severe&#39;.</span>
+<span class="sd">        The effect of the R1 vaccine is to reduce the probability of severe dehydration.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">pathogen</span> <span class="o">==</span> <span class="s2">&quot;rotavirus&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">va_rota_all_doses</span><span class="p">:</span>
+            <span class="n">relative_prob_severe_dehydration_due_to_vaccine</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">age_years</span> <span class="o">&lt;</span> <span class="mi">1</span> \
+                <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">relative_prob_severe_dehydration_due_to_vaccine</span> <span class="o">=</span> <span class="mf">1.0</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;prob_dehydration_by_</span><span class="si">{</span><span class="n">pathogen</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;probability_of_severe_dehydration_if_some_dehydration&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;probability_of_severe_dehydration_if_some_dehydration&#39;</span><span class="p">]</span>
+                <span class="o">*</span> <span class="n">relative_prob_severe_dehydration_due_to_vaccine</span>
+            <span class="p">):</span>
                 <span class="k">return</span> <span class="s1">&#39;severe&#39;</span>
             <span class="k">return</span> <span class="s1">&#39;some&#39;</span>
         <span class="k">return</span> <span class="s1">&#39;none&#39;</span>
@@ -1303,9 +1320,9 @@
         <span class="k">if</span> <span class="n">dehydration</span> <span class="o">==</span> <span class="s1">&#39;severe&#39;</span><span class="p">:</span>
             <span class="n">risk</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_diarr_death_severe_dehydration&#39;</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="mf">1.0</span> <span class="o">&lt;=</span> <span class="n">age_exact_years</span> <span class="o">&lt;</span> <span class="mf">2.0</span><span class="p">:</span>
-            <span class="n">risk</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_diarr_death_age12to23mo&#39;</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="n">age_exact_years</span> <span class="o">&lt;</span> <span class="mf">5.0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">age_exact_years</span> <span class="o">&lt;</span> <span class="mf">2.0</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">&lt;=</span> <span class="n">age_exact_years</span> <span class="o">&lt;</span> <span class="mf">5.0</span><span class="p">):</span>
             <span class="n">risk</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_diarr_death_age24to59mo&#39;</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">risk</span> <span class="o">*=</span> <span class="mf">0.0</span>
@@ -1488,7 +1505,7 @@
         <span class="c1"># Determine the duration of the dirarrhoea, the date of outcome and the end of episode (the date when this</span>
         <span class="c1"># episode ends. It is the last possible data that any HSI could affect this episode.)</span>
         <span class="n">duration_in_days</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">get_duration</span><span class="p">(</span><span class="n">pathogen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pathogen</span><span class="p">,</span>
-                                                 <span class="n">age_years</span><span class="o">=</span><span class="n">person</span><span class="o">.</span><span class="n">age_years</span><span class="p">,</span>
+                                                 <span class="n">age_exact_years</span><span class="o">=</span><span class="n">person</span><span class="o">.</span><span class="n">age_exact_years</span><span class="p">,</span>
                                                  <span class="n">un_HAZ_category</span><span class="o">=</span><span class="n">person</span><span class="o">.</span><span class="n">un_HAZ_category</span><span class="p">,</span>
                                                  <span class="n">un_clinical_acute_malnutrition</span><span class="o">=</span><span class="n">person</span><span class="o">.</span><span class="n">un_clinical_acute_malnutrition</span><span class="p">,</span>
                                                  <span class="n">untreated_hiv</span><span class="o">=</span><span class="n">untreated_hiv</span><span class="p">,</span>
@@ -1496,12 +1513,13 @@
         <span class="n">date_of_outcome</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">duration_in_days</span><span class="p">)</span>
 
         <span class="c1"># Collected updated properties of this person</span>
-        <span class="c1"># Collected updated properties of this person</span>
         <span class="n">props_new</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;gi_has_diarrhoea&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
             <span class="s1">&#39;gi_pathogen&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pathogen</span><span class="p">,</span>
             <span class="s1">&#39;gi_type&#39;</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">get_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pathogen</span><span class="p">),</span>
-            <span class="s1">&#39;gi_dehydration&#39;</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">get_dehydration</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pathogen</span><span class="p">),</span>
+            <span class="s1">&#39;gi_dehydration&#39;</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">get_dehydration</span><span class="p">(</span><span class="n">pathogen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pathogen</span><span class="p">,</span>
+                                                       <span class="n">va_rota_all_doses</span><span class="o">=</span><span class="n">person</span><span class="o">.</span><span class="n">va_rota_all_doses</span><span class="p">,</span>
+                                                       <span class="n">age_years</span><span class="o">=</span><span class="n">person</span><span class="o">.</span><span class="n">age_years</span><span class="p">),</span>
             <span class="s1">&#39;gi_duration_longer_than_13days&#39;</span><span class="p">:</span> <span class="n">duration_in_days</span> <span class="o">&gt;=</span> <span class="mi">13</span><span class="p">,</span>
             <span class="s1">&#39;gi_date_of_onset&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
             <span class="s1">&#39;gi_date_end_of_last_episode&#39;</span><span class="p">:</span> <span class="n">date_of_outcome</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;days_between_treatment_and_cure&#39;</span><span class="p">]),</span>
@@ -1555,7 +1573,10 @@
                 <span class="s1">&#39;will_die&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">props_new</span><span class="p">[</span><span class="s1">&#39;gi_scheduled_date_recovery&#39;</span><span class="p">])</span>
             <span class="p">},</span>
             <span class="n">description</span><span class="o">=</span><span class="s1">&#39;each incicdent case of diarrhoea&#39;</span>
-        <span class="p">)</span></div></div>
+        <span class="p">)</span>
+
+        <span class="c1"># Increment the counter for the number of cases of diarrhoea had</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;gi_number_of_episodes&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span></div></div>
 
 
 <div class="viewcode-block" id="DiarrhoeaNaturalRecoveryEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.DiarrhoeaNaturalRecoveryEvent">[docs]</a><span class="k">class</span> <span class="nc">DiarrhoeaNaturalRecoveryEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
@@ -1723,7 +1744,11 @@
     <span class="sd">&quot;&quot;&quot;For the purpose of the testing, this module generates the properties upon which the Alri module relies&quot;&quot;&quot;</span>
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">}</span>
-    <span class="n">ALTERNATIVE_TO</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Hiv&#39;</span><span class="p">,</span> <span class="s1">&#39;Alri&#39;</span><span class="p">,</span> <span class="s1">&#39;NewbornOutcomes&#39;</span><span class="p">}</span>
+
+    <span class="c1"># Though this module provides some properties from NewbornOutcomes we do not list</span>
+    <span class="c1"># NewbornOutcomes in the ALTERNATIVE_TO set to allow using in conjunction with</span>
+    <span class="c1"># SimplifiedBirths which can also be used as an alternative to NewbornOutcomes</span>
+    <span class="n">ALTERNATIVE_TO</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Alri&#39;</span><span class="p">,</span> <span class="s1">&#39;Epi&#39;</span><span class="p">,</span> <span class="s1">&#39;Hiv&#39;</span><span class="p">,</span> <span class="s1">&#39;Stunting&#39;</span><span class="p">,</span> <span class="s1">&#39;Wasting&#39;</span><span class="p">}</span>
 
     <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;hv_inf&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;temporary property for HIV infection status&#39;</span><span class="p">),</span>
@@ -1736,7 +1761,7 @@
                                                    <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;MAM&#39;</span><span class="p">,</span> <span class="s1">&#39;SAM&#39;</span><span class="p">,</span> <span class="s1">&#39;well&#39;</span><span class="p">]),</span>
         <span class="s1">&#39;un_HAZ_category&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span> <span class="s1">&#39;temporary property&#39;</span><span class="p">,</span>
                                     <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;HAZ&lt;-3&#39;</span><span class="p">,</span> <span class="s1">&#39;-3&lt;=HAZ&lt;-2&#39;</span><span class="p">,</span> <span class="s1">&#39;HAZ&gt;=-2&#39;</span><span class="p">]),</span>
-
+        <span class="s1">&#39;va_rota_all_doses&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;temporary property&#39;</span><span class="p">)</span>
     <span class="p">}</span>
 
 <div class="viewcode-block" id="DiarrhoeaPropertiesOfOtherModules.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.DiarrhoeaPropertiesOfOtherModules.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -1752,7 +1777,8 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;ri_current_infection_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;nb_breastfeeding_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;non_exclusive&#39;</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;un_clinical_acute_malnutrition&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;well&#39;</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;un_HAZ_category&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;HAZ&gt;=-2&#39;</span></div>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;un_HAZ_category&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;HAZ&gt;=-2&#39;</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;va_rota_all_doses&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="DiarrhoeaPropertiesOfOtherModules.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.DiarrhoeaPropertiesOfOtherModules.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
         <span class="k">pass</span></div>
@@ -1764,7 +1790,8 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child</span><span class="p">,</span> <span class="s1">&#39;ri_current_infection_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child</span><span class="p">,</span> <span class="s1">&#39;nb_breastfeeding_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;non_exclusive&#39;</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child</span><span class="p">,</span> <span class="s1">&#39;un_clinical_acute_malnutrition&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;well&#39;</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child</span><span class="p">,</span> <span class="s1">&#39;un_HAZ_category&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;HAZ&gt;=-2&#39;</span></div></div>
+        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child</span><span class="p">,</span> <span class="s1">&#39;un_HAZ_category&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;HAZ&gt;=-2&#39;</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child</span><span class="p">,</span> <span class="s1">&#39;va_rota_all_doses&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div></div>
 
 
 <div class="viewcode-block" id="DiarrhoeaCheckPropertiesEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.DiarrhoeaCheckPropertiesEvent">[docs]</a><span class="k">class</span> <span class="nc">DiarrhoeaCheckPropertiesEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
@@ -1811,7 +1838,6 @@
     <span class="n">diarrhoea_module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;case_fatality_rate_AWD&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0001</span>
     <span class="n">diarrhoea_module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;rr_diarr_death_bloody&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1000</span>
     <span class="n">diarrhoea_module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;rr_diarr_death_severe_dehydration&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1000</span>
-    <span class="n">diarrhoea_module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;rr_diarr_death_age12to23mo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
     <span class="n">diarrhoea_module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;rr_diarr_death_age24to59mo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
     <span class="n">diarrhoea_module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;rr_diarr_death_if_duration_longer_than_13_days&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
     <span class="n">diarrhoea_module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;rr_diarr_death_untreated_HIV&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
@@ -1830,8 +1856,8 @@
 
     <span class="c1"># Apply perfect assessment and referral</span>
     <span class="n">diarrhoea_module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;prob_hospitalization_referral_for_severe_diarrhoea&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
-    <span class="n">diarrhoea_module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;sensitivity_danger_signs_visual_inspection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
-    <span class="n">diarrhoea_module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;specificity_danger_signs_visual_inspection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">diarrhoea_module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;sensitivity_severe_dehydration_visual_inspection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">diarrhoea_module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;specificity_severe_dehydration_visual_inspection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
 </pre></div>
 
            </div>
@@ -1844,7 +1870,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 21, 2021.
+        Last updated on Nov 09, 2021.
       </span>
 
     </p>

@@ -19,8 +19,6 @@ Submodules
    tlo.methods.demography
    tlo.methods.depression
    tlo.methods.diarrhoea
-   tlo.methods.dx_algorithm_adult
-   tlo.methods.dx_algorithm_child
    tlo.methods.dxmanager
    tlo.methods.enhanced_lifestyle
    tlo.methods.epi
@@ -45,8 +43,10 @@ Submodules
    tlo.methods.prostate_cancer
    tlo.methods.simplified_births
    tlo.methods.skeleton
+   tlo.methods.stunting
    tlo.methods.symptommanager
    tlo.methods.tb
+   tlo.methods.wasting
 
 Module contents
 ---------------

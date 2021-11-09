@@ -18,42 +18,51 @@ tlo.methods.contraception module
         * - Item
           - Type
           - Description
-        * - fertility_schedule
+        * - Method_Use_In_2010
           - DATA_FRAME
-          - Age_spec fertility
-        * - contraception_initiation1
+          - Proportion of women using each method in 2010, by age.
+        * - Pregnancy_NotUsing_In_2010
           - DATA_FRAME
-          - irate1_
-        * - contraception_initiation2
+          - Probability per year of a women not on contraceptive becoming pregnant, by age.
+        * - Pregnancy_NotUsing_HIVeffect
           - DATA_FRAME
-          - irate2_
-        * - contraception_switching
+          - Relative probability of becoming pregnant whilst not using a a contraceptive for HIV-positive women compared to HIV-negative women.
+        * - Failure_ByMethod
           - DATA_FRAME
-          - Switching
-        * - contraception_switching_matrix
-          - DATA_FRAME
-          - switching_matrix
-        * - contraception_discontinuation
-          - DATA_FRAME
-          - Discontinuation
-        * - contraception_failure
-          - DATA_FRAME
-          - Failure
-        * - r_init1_age
-          - REAL
-          - proportioniate change in irate1 for each age in years
-        * - r_discont_age
-          - REAL
-          - proportioniate change in drate for each age in years
+          - Probability per month of a women on a contraceptive becoming pregnant, by method
         * - rr_fail_under25
           - REAL
-          - Increase in Failure rate for under-25s
-        * - r_init_year
-          - REAL
-          - proportional change in contraception initiation rates for each year, 2010 to 2100
-        * - r_discont_year
-          - REAL
-          - proportional change in contraception_discontinuation rate for each year,                                     2010 to 2100
+          - The relative risk of becoming pregnant whilst using a contraceptive for woman younger than 25 years compared to older women.
+        * - Initiation_ByMethod
+          - DATA_FRAME
+          - Probability per month of a women who is not using any contraceptive method of starting use of a method, by method.
+        * - Initiation_ByAge
+          - DATA_FRAME
+          - The effect of age on the probability of starting use of contraceptive (add one for multiplicative effect).
+        * - Initiation_ByYear
+          - DATA_FRAME
+          - The age-specific effect of calendar year on the probability of starting use of contraceptive (multiplicative effect). Values are chosen so as to induce a trend in age-specific fertility consistent with the WPP estimates.
+        * - Initiation_AfterBirth
+          - DATA_FRAME
+          - The probability of a woman starting a contraceptive immidiately after birth, by method.
+        * - Discontinuation_ByMethod
+          - DATA_FRAME
+          - The probability per month of discontinuing use of a method, by method.
+        * - Discontinuation_ByAge
+          - DATA_FRAME
+          - The effect of age on the probability of discontinuing use of contraceptive (add one for multiplicative effect).
+        * - Discontinuation_ByYear
+          - DATA_FRAME
+          - The age-specific effect of calendar year on the probability of discontinuing use of contraceptive (multiplicative effect). Values are chosen so as to induce a trend in age-specific fertility consistent with the WPP estimates.
+        * - Prob_Switch_From
+          - DATA_FRAME
+          - The probability per month that a women switches from one form of contraceptive to another, conditional that she will not discontinue use of the method.
+        * - Prob_Switch_From_And_To
+          - DATA_FRAME
+          - The probability of switching to a new method, by method, conditional that the woman will switch to a new method.
+        * - days_between_appts_for_maintenance
+          - INT
+          - The number of days between successive family planning appointments for women that are maintaining the use of a method.
 
 
      **PROPERTIES:**
@@ -68,28 +77,30 @@ tlo.methods.contraception module
         * - co_contraception
           - CATEGORICAL
           - Current contraceptive method.  Possible values are: [not_using, pill, IUD, injections, implant, male_condom, female_sterilization, other_modern, periodic_abstinence, withdrawal, other_traditional, ]
-        * - co_date_of_childbirth
-          - DATE
-          - Due date of child for those who become pregnant
         * - is_pregnant
           - BOOL
           - Whether this individual is currently pregnant
         * - date_of_last_pregnancy
           - DATE
-          - Date of the last pregnancy of this individual
+          - Date that the most recent or current pregnancy began.
         * - co_unintended_preg
           - BOOL
-          - Unintended pregnancies following contraception failure
+          - Whether the most recent or current pregnancy was unintended.
+        * - co_date_of_last_fp_appt
+          - DATE
+          - The date of the most recent Family Planning appointment. This is used to determine if a Family Planning appointment is needed to maintain the person on their current contraceptive. If the person is to maintain use of the current contraceptive, they will have an HSI only if the days elapsed since this value exceeds the parameter `days_between_appts_for_maintenance`.
 
 
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Labour', 'PregnancySupervisor'}
+     ADDITIONAL_DEPENDENCIES : {'Hiv', 'Labour'}
 
      INIT_DEPENDENCIES : {'Demography'}
 
      METADATA : {}
+
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthSystem'}
 
      **Functions (defined or overridden in class Contraception):**
 
@@ -97,12 +108,25 @@ tlo.methods.contraception module
 
      .. automethod:: read_parameters
 
+     .. automethod:: pre_initialise_population
+
      .. automethod:: initialise_population
 
      .. automethod:: initialise_simulation
 
      .. automethod:: on_birth
 
+     .. automethod:: end_pregnancy
+
+     .. automethod:: process_params
+
+     .. automethod:: select_contraceptive_following_birth
+
+     .. automethod:: get_item_code_for_each_contraceptive
+
+     .. automethod:: schedule_batch_of_contraceptive_changes
+
+     .. automethod:: do_and_log_individual_contraception_change
 
 
 
@@ -110,58 +134,31 @@ tlo.methods.contraception module
 
 
 
-.. autoclass:: ContraceptionSwitchingPoll
+
+.. autoclass:: ContraceptionPoll
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
-     **Functions (defined or overridden in class ContraceptionSwitchingPoll):**
+     **Functions (defined or overridden in class ContraceptionPoll):**
 
      .. automethod:: __init__
 
      .. automethod:: apply
 
-     .. automethod:: init1
+     .. automethod:: update_contraceptive
 
-     .. automethod:: switch
+     .. automethod:: initiate
 
-     .. automethod:: discontinue
+     .. automethod:: discontinue_switch_or_continue
 
+     .. automethod:: update_pregnancy
 
+     .. automethod:: pregnancy_for_those_on_contraceptive
 
+     .. automethod:: pregnancy_for_those_not_on_contraceptive
 
-
-
-
-
-.. autoclass:: Fail
-
-     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
-
-
-     **Functions (defined or overridden in class Fail):**
-
-     .. automethod:: __init__
-
-     .. automethod:: apply
-
-
-
-
-
-
-
-
-.. autoclass:: PregnancyPoll
-
-     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
-
-
-     **Functions (defined or overridden in class PregnancyPoll):**
-
-     .. automethod:: __init__
-
-     .. automethod:: apply
+     .. automethod:: set_new_pregnancy
 
 
 
@@ -176,6 +173,102 @@ tlo.methods.contraception module
 
 
      **Functions (defined or overridden in class ContraceptionLoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Contraception_FamilyPlanningAppt
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Contraception_FamilyPlanningAppt):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: never_ran
+
+
+
+
+
+
+
+
+.. autoclass:: SimplifiedPregnancyAndLabour
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - la_currently_in_labour
+          - BOOL
+          - whether this woman is currently in labour
+        * - la_has_had_hysterectomy
+          - BOOL
+          - whether this woman has had a hysterectomy as treatment for a complication of labour, and therefore is unable to conceive
+        * - la_is_postpartum
+          - BOOL
+          - Whether a woman is in the postpartum period, from delivery until day +42 (6 weeks)
+        * - ps_ectopic_pregnancy
+          - CATEGORICAL
+          - Whether a woman is experiencing ectopic pregnancy and its current state.  Possible values are: [none, not_ruptured, ruptured, ]
+
+
+
+     **Class attributes:**
+
+     ALTERNATIVE_TO : {'Labour'}
+
+     INIT_DEPENDENCIES : {'Contraception'}
+
+     METADATA : {}
+
+     **Functions (defined or overridden in class SimplifiedPregnancyAndLabour):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: set_date_of_labour
+
+
+
+
+
+
+
+
+.. autoclass:: EndOfPregnancyEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class EndOfPregnancyEvent):**
 
      .. automethod:: __init__
 

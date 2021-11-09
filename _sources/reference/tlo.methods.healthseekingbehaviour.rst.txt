@@ -73,7 +73,7 @@ tlo.methods.healthseekingbehaviour module
 
      ADDITIONAL_DEPENDENCIES : {'Lifestyle'}
 
-     INIT_DEPENDENCIES : {'Demography', 'SymptomManager', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'SymptomManager', 'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 

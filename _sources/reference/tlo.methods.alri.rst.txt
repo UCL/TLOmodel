@@ -159,18 +159,15 @@ tlo.methods.alri module
         * - prob_lung_abscess_to_sepsis
           - REAL
           - probability of lung abscess causing sepsis
-        * - base_death_rate_ALRI_by_bacterial_pneumonia
+        * - base_death_rate_ALRI_by_pneumonia
           - REAL
-          - baseline death rate from bacterial pneumonia, base age 0-11 months
+          - baseline death rate from pneumonia, for those aged 0-11 months
         * - base_death_rate_ALRI_by_bronchiolitis
           - REAL
           - baseline death rate from bronchiolitis, base age 0-11 months
-        * - base_death_rate_ALRI_by_viral_pneumonia
+        * - base_death_rate_ALRI_by_other_alri
           - REAL
-          - baseline death rate from viral pneumonia, base age 0-11 months
-        * - base_death_rate_ALRI_by_fungal_pneumonia
-          - REAL
-          - baseline death rate from fungal pneumonia, base age 0-11 months
+          - baseline death rate from other lower respiratory infections, base age 0-11 months
         * - rr_death_ALRI_sepsis
           - REAL
           - relative death rate from Alri for sepsis, base age 0-11 months
@@ -221,22 +218,22 @@ tlo.methods.alri module
           - proportion of other pathogens infection causing viral pneumonia
         * - prob_fever_uncomplicated_ALRI_by_disease_type
           - LIST
-          - list of probabilities of having fever by bacterial pneumonia, viral pneumonia and bronchiolitis
+          - list of probabilities of having fever by pneumonia, bronchiolitis, and other_alri
         * - prob_cough_uncomplicated_ALRI_by_disease_type
           - LIST
-          - list of probabilities of having cough by bacterial pneumonia, viral pneumonia and bronchiolitis
+          - list of probabilities of having cough by pneumonia, bronchiolitis, and other_alri
         * - prob_difficult_breathing_uncomplicated_ALRI_by_disease_type
           - LIST
-          - list of probabilities of difficult breathing by bacterial pneumonia, viral pneumonia and bronchiolitis
+          - list of probabilities of difficult breathing by pneumonia, bronchiolitis, and other_alri
         * - prob_fast_breathing_uncomplicated_ALRI_by_disease_type
           - LIST
-          - list of probabilities of fast breathing by bacterial pneumonia, viral pneumonia and bronchiolitis
+          - list of probabilities of fast breathing by pneumonia, bronchiolitis, and other_alri
         * - prob_chest_indrawing_uncomplicated_ALRI_by_disease_type
           - LIST
-          - list of probabilities of chest indrawing by bacterial pneumonia, viral pneumonia and bronchiolitis
+          - list of probabilities of chest indrawing by pneumonia, bronchiolitis, and other_alri
         * - prob_danger_signs_uncomplicated_ALRI_by_disease_type
           - LIST
-          - list of probabilities of danger signs by bacterial pneumonia, viral pneumonia and bronchiolitis
+          - list of probabilities of danger signs by pneumonia, bronchiolitis, and other_alri
         * - prob_loss_of_appetite_adding_from_pleural_effusion
           - REAL
           - probability of additional signs/symptoms of loss of appetite from pleural effusion
@@ -355,13 +352,13 @@ tlo.methods.alri module
           - Does the person currently have an infection with a pathogen that can cause Alri.
         * - ri_primary_pathogen
           - CATEGORICAL
-          - If infected, what is the pathogen with which the person is currently infected. (np.nan if not infected).  Possible values are: [Staph_aureus, Influenza, Hib, Enterobacteriaceae, other_bacterial_pathogens, HMPV, Strep_pneumoniae_non_PCV13, Adenovirus, Parainfluenza, RSV, Rhinovirus, Bocavirus, other_viral_pathogens, Strep_pneumoniae_PCV13, other_Strepto_Enterococci, H.influenzae_non_type_b, P.jirovecii, ]
+          - If infected, what is the pathogen with which the person is currently infected. (np.nan if not infected).  Possible values are: [P.jirovecii, H.influenzae_non_type_b, Hib, Bocavirus, HMPV, Strep_pneumoniae_PCV13, other_Strepto_Enterococci, Adenovirus, RSV, Influenza, Parainfluenza, Strep_pneumoniae_non_PCV13, Enterobacteriaceae, Rhinovirus, other_viral_pathogens, other_bacterial_pathogens, Staph_aureus, ]
         * - ri_secondary_bacterial_pathogen
           - CATEGORICAL
           - If infected, is there a secondary bacterial pathogen (np.nan if none or not applicable).  Possible values are: [Strep_pneumoniae_PCV13, Strep_pneumoniae_non_PCV13, Hib, H.influenzae_non_type_b, Staph_aureus, Enterobacteriaceae, other_Strepto_Enterococci, other_bacterial_pathogens, ]
         * - ri_disease_type
           - CATEGORICAL
-          - If infected, what disease type is the person currently suffering from..  Possible values are: [fungal_pneumonia, viral_pneumonia, bacterial_pneumonia, bronchiolitis, ]
+          - If infected, what disease type is the person currently suffering from..  Possible values are: [pneumonia, bronchiolitis, other_alri, ]
         * - ri_on_treatment
           - BOOL
           - Is this person currently receiving treatment.
@@ -385,21 +382,23 @@ tlo.methods.alri module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'ALRI_Staph_aureus': <tlo.methods.causes.Cause object at 0x7f9967878940>, 'ALRI_Influenza': <tlo.methods.causes.Cause object at 0x7f9967884f10>, 'ALRI_Hib': <tlo.methods.causes.Cause object at 0x7f99678910a0>, 'ALRI_Enterobacteriaceae': <tlo.methods.causes.Cause object at 0x7f9967891eb0>, 'ALRI_other_bacterial_pathogens': <tlo.methods.causes.Cause object at 0x7f9967891f10>, 'ALRI_HMPV': <tlo.methods.causes.Cause object at 0x7f9967891f70>, 'ALRI_Strep_pneumoniae_non_PCV13': <tlo.methods.causes.Cause object at 0x7f9967891fd0>, 'ALRI_Adenovirus': <tlo.methods.causes.Cause object at 0x7f99678a2070>, 'ALRI_Parainfluenza': <tlo.methods.causes.Cause object at 0x7f99678a20d0>, 'ALRI_RSV': <tlo.methods.causes.Cause object at 0x7f99678a2130>, 'ALRI_Rhinovirus': <tlo.methods.causes.Cause object at 0x7f99678a2190>, 'ALRI_Bocavirus': <tlo.methods.causes.Cause object at 0x7f99678a21f0>, 'ALRI_other_viral_pathogens': <tlo.methods.causes.Cause object at 0x7f99678a2250>, 'ALRI_Strep_pneumoniae_PCV13': <tlo.methods.causes.Cause object at 0x7f99678a22b0>, 'ALRI_other_Strepto_Enterococci': <tlo.methods.causes.Cause object at 0x7f99678a2310>, 'ALRI_H.influenzae_non_type_b': <tlo.methods.causes.Cause object at 0x7f99678a2370>, 'ALRI_P.jirovecii': <tlo.methods.causes.Cause object at 0x7f99678a23d0>}
+     ADDITIONAL_DEPENDENCIES : {'Epi'}
 
-     CAUSES_OF_DISABILITY : {'ALRI_Staph_aureus': <tlo.methods.causes.Cause object at 0x7f99678a2430>, 'ALRI_Influenza': <tlo.methods.causes.Cause object at 0x7f99678a2490>, 'ALRI_Hib': <tlo.methods.causes.Cause object at 0x7f99678a24f0>, 'ALRI_Enterobacteriaceae': <tlo.methods.causes.Cause object at 0x7f99678a2550>, 'ALRI_other_bacterial_pathogens': <tlo.methods.causes.Cause object at 0x7f99678a25b0>, 'ALRI_HMPV': <tlo.methods.causes.Cause object at 0x7f99678a2610>, 'ALRI_Strep_pneumoniae_non_PCV13': <tlo.methods.causes.Cause object at 0x7f99678a2670>, 'ALRI_Adenovirus': <tlo.methods.causes.Cause object at 0x7f99678a26d0>, 'ALRI_Parainfluenza': <tlo.methods.causes.Cause object at 0x7f99678a2730>, 'ALRI_RSV': <tlo.methods.causes.Cause object at 0x7f99678a2790>, 'ALRI_Rhinovirus': <tlo.methods.causes.Cause object at 0x7f99678a27f0>, 'ALRI_Bocavirus': <tlo.methods.causes.Cause object at 0x7f99678a2850>, 'ALRI_other_viral_pathogens': <tlo.methods.causes.Cause object at 0x7f99678a28b0>, 'ALRI_Strep_pneumoniae_PCV13': <tlo.methods.causes.Cause object at 0x7f99678a2910>, 'ALRI_other_Strepto_Enterococci': <tlo.methods.causes.Cause object at 0x7f99678a2970>, 'ALRI_H.influenzae_non_type_b': <tlo.methods.causes.Cause object at 0x7f99678a29d0>, 'ALRI_P.jirovecii': <tlo.methods.causes.Cause object at 0x7f99678a2a30>}
+     CAUSES_OF_DEATH : {'ALRI_P.jirovecii': <tlo.methods.causes.Cause object at 0x7f8309ed69a0>, 'ALRI_H.influenzae_non_type_b': <tlo.methods.causes.Cause object at 0x7f8309ee4f70>, 'ALRI_Hib': <tlo.methods.causes.Cause object at 0x7f8309ef1100>, 'ALRI_Bocavirus': <tlo.methods.causes.Cause object at 0x7f8309ef1f70>, 'ALRI_HMPV': <tlo.methods.causes.Cause object at 0x7f8309ef1fd0>, 'ALRI_Strep_pneumoniae_PCV13': <tlo.methods.causes.Cause object at 0x7f8309f01070>, 'ALRI_other_Strepto_Enterococci': <tlo.methods.causes.Cause object at 0x7f8309f010d0>, 'ALRI_Adenovirus': <tlo.methods.causes.Cause object at 0x7f8309f01130>, 'ALRI_RSV': <tlo.methods.causes.Cause object at 0x7f8309f01190>, 'ALRI_Influenza': <tlo.methods.causes.Cause object at 0x7f8309f011f0>, 'ALRI_Parainfluenza': <tlo.methods.causes.Cause object at 0x7f8309f01250>, 'ALRI_Strep_pneumoniae_non_PCV13': <tlo.methods.causes.Cause object at 0x7f8309f012b0>, 'ALRI_Enterobacteriaceae': <tlo.methods.causes.Cause object at 0x7f8309f01310>, 'ALRI_Rhinovirus': <tlo.methods.causes.Cause object at 0x7f8309f01370>, 'ALRI_other_viral_pathogens': <tlo.methods.causes.Cause object at 0x7f8309f013d0>, 'ALRI_other_bacterial_pathogens': <tlo.methods.causes.Cause object at 0x7f8309f01430>, 'ALRI_Staph_aureus': <tlo.methods.causes.Cause object at 0x7f8309f01490>}
 
-     INIT_DEPENDENCIES : {'Demography', 'AlriPropertiesOfOtherModules', 'SymptomManager', 'Lifestyle'}
+     CAUSES_OF_DISABILITY : {'ALRI_P.jirovecii': <tlo.methods.causes.Cause object at 0x7f8309f014f0>, 'ALRI_H.influenzae_non_type_b': <tlo.methods.causes.Cause object at 0x7f8309f01550>, 'ALRI_Hib': <tlo.methods.causes.Cause object at 0x7f8309f015b0>, 'ALRI_Bocavirus': <tlo.methods.causes.Cause object at 0x7f8309f01610>, 'ALRI_HMPV': <tlo.methods.causes.Cause object at 0x7f8309f01670>, 'ALRI_Strep_pneumoniae_PCV13': <tlo.methods.causes.Cause object at 0x7f8309f016d0>, 'ALRI_other_Strepto_Enterococci': <tlo.methods.causes.Cause object at 0x7f8309f01730>, 'ALRI_Adenovirus': <tlo.methods.causes.Cause object at 0x7f8309f01790>, 'ALRI_RSV': <tlo.methods.causes.Cause object at 0x7f8309f017f0>, 'ALRI_Influenza': <tlo.methods.causes.Cause object at 0x7f8309f01850>, 'ALRI_Parainfluenza': <tlo.methods.causes.Cause object at 0x7f8309f018b0>, 'ALRI_Strep_pneumoniae_non_PCV13': <tlo.methods.causes.Cause object at 0x7f8309f01910>, 'ALRI_Enterobacteriaceae': <tlo.methods.causes.Cause object at 0x7f8309f01970>, 'ALRI_Rhinovirus': <tlo.methods.causes.Cause object at 0x7f8309f019d0>, 'ALRI_other_viral_pathogens': <tlo.methods.causes.Cause object at 0x7f8309f01a30>, 'ALRI_other_bacterial_pathogens': <tlo.methods.causes.Cause object at 0x7f8309f01a90>, 'ALRI_Staph_aureus': <tlo.methods.causes.Cause object at 0x7f8309f01af0>}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Lifestyle', 'Wasting', 'Hiv', 'NewbornOutcomes', 'Demography'}
+
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
-     all_pathogens : {'Staph_aureus', 'Influenza', 'Hib', 'Enterobacteriaceae', 'other_bacterial_pathogens', 'HMPV', 'Strep_pneumoniae_non_PCV13', 'Adenovirus', 'Parainfluenza', 'RSV', 'Rhinovirus', 'Bocavirus', 'other_viral_pathogens', 'Strep_pneumoniae_PCV13', 'other_Strepto_Enterococci', 'H.influenzae_non_type_b', 'P.jirovecii'}
+     all_pathogens : {'P.jirovecii', 'H.influenzae_non_type_b', 'Hib', 'Bocavirus', 'HMPV', 'Strep_pneumoniae_PCV13', 'other_Strepto_Enterococci', 'Adenovirus', 'RSV', 'Influenza', 'Parainfluenza', 'Strep_pneumoniae_non_PCV13', 'Enterobacteriaceae', 'Rhinovirus', 'other_viral_pathogens', 'other_bacterial_pathogens', 'Staph_aureus'}
 
-     complications : {'lung_abscess', 'meningitis', 'hypoxia', 'empyema', 'pleural_effusion', 'sepsis', 'respiratory_failure', 'pneumothorax'}
+     complications : {'empyema', 'lung_abscess', 'hypoxia', 'pleural_effusion', 'respiratory_failure', 'sepsis', 'meningitis', 'pneumothorax'}
 
-     disease_types : {'fungal_pneumonia', 'viral_pneumonia', 'bacterial_pneumonia', 'bronchiolitis'}
+     disease_types : {'pneumonia', 'bronchiolitis', 'other_alri'}
 
      pathogens : {'viral': ['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', 'Adenovirus', 'Bocavirus', 'other_viral_pathogens'], 'bacterial': ['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', 'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', 'other_Strepto_Enterococci', 'other_bacterial_pathogens'], 'fungal': ['P.jirovecii']}
 
@@ -671,7 +670,7 @@ tlo.methods.alri module
 
      **Class attributes:**
 
-     ALTERNATIVE_TO : {'Hiv', 'NewbornOutcomes', 'Epi'}
+     ALTERNATIVE_TO : {'Epi', 'Hiv', 'Wasting'}
 
      INIT_DEPENDENCIES : {'Demography'}
 

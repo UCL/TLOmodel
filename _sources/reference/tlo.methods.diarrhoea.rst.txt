@@ -168,12 +168,9 @@ tlo.methods.diarrhoea module
         * - prob_prolonged_to_persistent_diarr
           - REAL
           - probability of prolonged diarrhoea becoming persistent diarrhoea
-        * - rr_bec_persistent_age12to23
+        * - rr_bec_persistent_age>6mo
           - REAL
-          - relative rate of acute diarrhoea becoming persistent diarrhoea for age 12 to 23 months
-        * - rr_bec_persistent_age24to59
-          - REAL
-          - relative rate of acute diarrhoea becoming persistent diarrhoea for age 24 to 59 months
+          - relative rate of acute diarrhoea becoming persistent diarrhoea for children over 6 months
         * - rr_bec_persistent_HIV
           - REAL
           - relative rate of acute diarrhoea becoming persistent diarrhoea for HIV positive
@@ -264,9 +261,6 @@ tlo.methods.diarrhoea module
         * - rr_diarr_death_bloody
           - REAL
           - relative risk of diarrhoea death (compared to `case_fatality_rate_AWD` if the diarrhoea is of type "bloody" (i.e. dyssentry).
-        * - rr_diarr_death_age12to23mo
-          - REAL
-          - relative risk of diarrhoea death for ages 12 to 23 months
         * - rr_diarr_death_age24to59mo
           - REAL
           - relative risk of diarrhoea death for ages 24 to 59 months
@@ -291,12 +285,12 @@ tlo.methods.diarrhoea module
         * - rr_diarr_death_shigella
           - REAL
           - relative risk of diarrhoea death if caused by shigella
-        * - sensitivity_danger_signs_visual_inspection
+        * - sensitivity_severe_dehydration_visual_inspection
           - REAL
-          - sensitivity of health care workers visual inspection of danger signs
-        * - specificity_danger_signs_visual_inspection
+          - sensitivity of IMCI severe dehydration algorithm for dehydration >9% loss of body weight
+        * - specificity_severe_dehydration_visual_inspection
           - REAL
-          - specificity of health care workers visual inspection of danger signs
+          - specificity of IMCI severe dehydration algorithm for dehydration >9% loss of body weight
         * - prob_hospitalization_on_danger_signs
           - REAL
           - probability of hospitalisation when danger signs are detected in an initial consultation
@@ -318,6 +312,12 @@ tlo.methods.diarrhoea module
         * - days_between_treatment_and_cure
           - INT
           - number of days between any treatment being given in an HSI and the cure occurring.
+        * - rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo
+          - REAL
+          - relative risk of severe dehydration with rotavirus vaccine, for under 1 years old.
+        * - rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo
+          - REAL
+          - relative risk of severe dehydration with rotavirus vaccine, for those aged 1 year and older.
 
 
      **PROPERTIES:**
@@ -344,6 +344,9 @@ tlo.methods.diarrhoea module
         * - gi_duration_longer_than_13days
           - BOOL
           - Whether the duration of the current episode would last longer than 13 days if untreated. (False if does not have current episode)
+        * - gi_number_of_episodes
+          - INT
+          - Number of episodes of diarrhoea caused by a pathogen
         * - gi_date_of_onset
           - DATE
           - Date of onset of current episode of diarrhoea (pd.NaT if does not have current episode of diarrhoea).
@@ -364,13 +367,15 @@ tlo.methods.diarrhoea module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Diarrhoea_rotavirus': <tlo.methods.causes.Cause object at 0x7f9967c39b80>, 'Diarrhoea_shigella': <tlo.methods.causes.Cause object at 0x7f9967c39be0>, 'Diarrhoea_adenovirus': <tlo.methods.causes.Cause object at 0x7f9967c39c40>, 'Diarrhoea_cryptosporidium': <tlo.methods.causes.Cause object at 0x7f9967c39ca0>, 'Diarrhoea_campylobacter': <tlo.methods.causes.Cause object at 0x7f9967c39d00>, 'Diarrhoea_ETEC': <tlo.methods.causes.Cause object at 0x7f9967c39d60>, 'Diarrhoea_sapovirus': <tlo.methods.causes.Cause object at 0x7f9967c39dc0>, 'Diarrhoea_norovirus': <tlo.methods.causes.Cause object at 0x7f9967c39e20>, 'Diarrhoea_astrovirus': <tlo.methods.causes.Cause object at 0x7f9967c39e80>, 'Diarrhoea_tEPEC': <tlo.methods.causes.Cause object at 0x7f9967c39ee0>}
+     ADDITIONAL_DEPENDENCIES : {'Epi', 'Alri', 'Stunting'}
 
-     CAUSES_OF_DISABILITY : {'Diarrhoea': <tlo.methods.causes.Cause object at 0x7f9967c39fa0>}
+     CAUSES_OF_DEATH : {'Diarrhoea_rotavirus': <tlo.methods.causes.Cause object at 0x7f830aef84c0>, 'Diarrhoea_shigella': <tlo.methods.causes.Cause object at 0x7f830aef8520>, 'Diarrhoea_adenovirus': <tlo.methods.causes.Cause object at 0x7f830aef8580>, 'Diarrhoea_cryptosporidium': <tlo.methods.causes.Cause object at 0x7f830aef85e0>, 'Diarrhoea_campylobacter': <tlo.methods.causes.Cause object at 0x7f830aef8640>, 'Diarrhoea_ETEC': <tlo.methods.causes.Cause object at 0x7f830aef86a0>, 'Diarrhoea_sapovirus': <tlo.methods.causes.Cause object at 0x7f830aef8700>, 'Diarrhoea_norovirus': <tlo.methods.causes.Cause object at 0x7f830aef8760>, 'Diarrhoea_astrovirus': <tlo.methods.causes.Cause object at 0x7f830aef87c0>, 'Diarrhoea_tEPEC': <tlo.methods.causes.Cause object at 0x7f830aef8820>}
 
-     INIT_DEPENDENCIES : {'Demography', 'Lifestyle', 'HealthSystem', 'DiarrhoeaPropertiesOfOtherModules', 'SymptomManager'}
+     CAUSES_OF_DISABILITY : {'Diarrhoea': <tlo.methods.causes.Cause object at 0x7f830aef88e0>}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Lifestyle', 'Wasting', 'HealthSystem', 'Hiv', 'NewbornOutcomes', 'Demography'}
+
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -571,12 +576,15 @@ tlo.methods.diarrhoea module
         * - un_HAZ_category
           - CATEGORICAL
           - temporary property.  Possible values are: [HAZ<-3, -3<=HAZ<-2, HAZ>=-2, ]
+        * - va_rota_all_doses
+          - BOOL
+          - temporary property
 
 
 
      **Class attributes:**
 
-     ALTERNATIVE_TO : {'Hiv', 'NewbornOutcomes', 'Alri'}
+     ALTERNATIVE_TO : {'Epi', 'Wasting', 'Alri', 'Stunting', 'Hiv'}
 
      INIT_DEPENDENCIES : {'Demography'}
 

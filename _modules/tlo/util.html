@@ -260,15 +260,17 @@
 <div class="viewcode-block" id="sample_outcome"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.sample_outcome">[docs]</a><span class="k">def</span> <span class="nf">sample_outcome</span><span class="p">(</span><span class="n">probs</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Helper function to randomly sample an outcome for each individual in a population from a set of probabilities</span>
 <span class="sd">    that are specific to each individual.</span>
-
-<span class="sd">    :param _probs: Each row of this dataframe represents the person and the columns are the possible outcomes. The</span>
+<span class="sd">    :param probs: Each row of this dataframe represents the person and the columns are the possible outcomes. The</span>
 <span class="sd">    values are the probability of that outcome for that individual. For each individual, the probabilities of each</span>
-<span class="sd">    outcome are assumed to be independent and mutually exlusive (but not neccesarily exhaustive).</span>
+<span class="sd">    outcome are assumed to be independent and mutually exclusive (but not necessarily exhaustive). If they sum to more</span>
+<span class="sd">    than 1.0, then they are (silently) scaled so that they do sum to 1.0.</span>
 <span class="sd">    :param rng: Random Number state to use for the generation of random numbers.</span>
 <span class="sd">    :return: A dict of the form {&lt;index&gt;:&lt;outcome&gt;} where an outcome is selected.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">assert</span> <span class="p">(</span><span class="n">probs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(),</span> <span class="s2">&quot;Probabilities across columns cannot sum to more than 1.0&quot;</span>
+    <span class="c1"># Scaling to ensure that the sum in each row not exceed 1.0</span>
+    <span class="n">probs</span> <span class="o">=</span> <span class="n">probs</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="p">(</span><span class="n">row</span> <span class="o">/</span> <span class="n">row</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="mf">1.0</span> <span class="k">else</span> <span class="n">row</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="p">(</span><span class="n">probs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="mf">1e-6</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">(),</span> <span class="s2">&quot;Probabilities across columns cannot sum to more than 1.0&quot;</span>
 
     <span class="c1"># Compare uniform deviate to cumulative sum across columns, after including a &quot;null&quot; column (for no event).</span>
     <span class="n">_probs</span> <span class="o">=</span> <span class="n">probs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -443,7 +445,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 21, 2021.
+        Last updated on Nov 09, 2021.
       </span>
 
     </p>

@@ -109,7 +109,7 @@ tlo.methods.epi module
 
      **Class attributes:**
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 

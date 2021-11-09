@@ -170,11 +170,11 @@
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">General utility functions for TLO analysis</span>
 <span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
-<span class="kn">from</span> <span class="nn">ast</span> <span class="kn">import</span> <span class="n">literal_eval</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TextIO</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -187,52 +187,25 @@
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_parse_line</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Parses a single line of logged output. It has the format:</span>
-<span class="sd">    INFO|&lt;logger name&gt;|&lt;simulation date&gt;|&lt;log key&gt;|&lt;python object&gt;</span>
-
-<span class="sd">    It returns the dictionary:</span>
-<span class="sd">        { &#39;logger&#39;: &lt;logger name&gt;,</span>
-<span class="sd">          &#39;sim_date&#39;: &lt;simulation date&gt;,</span>
-<span class="sd">          &#39;key&#39;: &lt;the key of this log entry&gt;,</span>
-<span class="sd">          &#39;object&#39;: &lt;the logged python object&gt;</span>
-<span class="sd">        }</span>
-
-<span class="sd">    :param line: the full line from log file</span>
-<span class="sd">    :return: a dictionary with parsed line</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">parts</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">5</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">None</span>
-
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">line</span><span class="p">)</span>
-
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">parsed</span> <span class="o">=</span> <span class="n">literal_eval</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
-    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-        <span class="n">parsed</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="p">{</span><span class="s1">&#39;Timestamp&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">,</span> <span class="s1">&#39;nan&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="s1">&#39;NaT&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span><span class="p">})</span>
-
-    <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;logger&#39;</span><span class="p">:</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-        <span class="s1">&#39;sim_date&#39;</span><span class="p">:</span> <span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
-        <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="n">parts</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
-        <span class="s1">&#39;object&#39;</span><span class="p">:</span> <span class="n">parsed</span>
-    <span class="p">}</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">info</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">info</span>
+<span class="k">def</span> <span class="nf">_parse_log_file_inner_loop</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Parses the log file and returns dictionary of dataframes&quot;&quot;&quot;</span>
+    <span class="n">log_data</span> <span class="o">=</span> <span class="n">LogData</span><span class="p">()</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="k">as</span> <span class="n">log_file</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">log_file</span><span class="p">:</span>
+            <span class="c1"># only parse json entities</span>
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;{&#39;</span><span class="p">):</span>
+                <span class="n">log_data</span><span class="o">.</span><span class="n">parse_log_line</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">level</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;FAILURE: found old-style log:&#39;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span>
+    <span class="c1"># convert dictionaries to dataframes</span>
+    <span class="n">output_logs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">log_data</span><span class="o">.</span><span class="n">get_log_dataframes</span><span class="p">()}</span>
+    <span class="k">return</span> <span class="n">output_logs</span>
 
 
-<div class="viewcode-block" id="parse_log_file"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.parse_log_file">[docs]</a><span class="k">def</span> <span class="nf">parse_log_file</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">):</span>
+<div class="viewcode-block" id="parse_log_file"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.parse_log_file">[docs]</a><span class="k">def</span> <span class="nf">parse_log_file</span><span class="p">(</span><span class="n">log_filepath</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Parses logged output from a TLO run and returns Pandas dataframes.</span>
-
-<span class="sd">    The format can be one of two style, old-style TLO logging like ::</span>
-
-<span class="sd">        INFO|&lt;logger name&gt;|&lt;simulation datestamp&gt;|&lt;log key&gt;|&lt;python list or dictionary&gt;</span>
-
-<span class="sd">    or a JSON representation with the first instance from a log key being a header line, and all following</span>
-<span class="sd">    rows being data only rows (without column names or metadata).</span>
 
 <span class="sd">    The dictionary returned has the format::</span>
 
@@ -251,104 +224,59 @@
 <span class="sd">            ...</span>
 <span class="sd">        }</span>
 
-<span class="sd">    :param filepath: file path to log file</span>
+<span class="sd">    :param log_filepath: file path to log file</span>
 <span class="sd">    :param level: logging level to be parsed for structured logging</span>
 <span class="sd">    :return: dictionary of parsed log data</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">oldstyle_loglines</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">log_data</span> <span class="o">=</span> <span class="n">LogData</span><span class="p">()</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="k">as</span> <span class="n">log_file</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Processing log file </span><span class="si">{</span><span class="n">log_filepath</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">uuid_to_module_name</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>  <span class="c1"># uuid to module name</span>
+    <span class="n">module_name_to_filehandle</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">TextIO</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>  <span class="c1"># module name to file handle</span>
+
+    <span class="n">log_directory</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">log_filepath</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Writing module-specific log files to </span><span class="si">{</span><span class="n">log_directory</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="c1"># iterate over each line in the logfile</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_filepath</span><span class="p">)</span> <span class="k">as</span> <span class="n">log_file</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">log_file</span><span class="p">:</span>
-            <span class="c1"># only parse json entities</span>
+            <span class="c1"># only parse lines that are json log lines (old-style logging is not supported)</span>
             <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;{&#39;</span><span class="p">):</span>
-                <span class="n">log_data</span><span class="o">.</span><span class="n">parse_log_line</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">level</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">oldstyle_loglines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+                <span class="n">log_data_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+                <span class="n">uuid</span> <span class="o">=</span> <span class="n">log_data_json</span><span class="p">[</span><span class="s1">&#39;uuid&#39;</span><span class="p">]</span>
+                <span class="c1"># if this is a header line (only header lines have a `type` key)</span>
+                <span class="k">if</span> <span class="s1">&#39;type&#39;</span> <span class="ow">in</span> <span class="n">log_data_json</span><span class="p">:</span>
+                    <span class="n">module_name</span> <span class="o">=</span> <span class="n">log_data_json</span><span class="p">[</span><span class="s2">&quot;module&quot;</span><span class="p">]</span>
+                    <span class="n">uuid_to_module_name</span><span class="p">[</span><span class="n">uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">module_name</span>
+                    <span class="c1"># we only need to create the file if we don&#39;t already have one for this module</span>
+                    <span class="k">if</span> <span class="n">module_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">module_name_to_filehandle</span><span class="p">:</span>
+                        <span class="n">module_name_to_filehandle</span><span class="p">[</span><span class="n">module_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_directory</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module_name</span><span class="si">}</span><span class="s2">.log&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span>
+                <span class="c1"># copy line from log file to module-specific log file (both headers and non-header lines)</span>
+                <span class="n">module_name_to_filehandle</span><span class="p">[</span><span class="n">uuid_to_module_name</span><span class="p">[</span><span class="n">uuid</span><span class="p">]]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
 
-    <span class="c1"># convert dictionaries to dataframes</span>
-    <span class="n">output_logs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">log_data</span><span class="o">.</span><span class="n">get_log_dataframes</span><span class="p">(),</span> <span class="o">**</span><span class="n">_oldstyle_parse_output</span><span class="p">(</span><span class="n">oldstyle_loglines</span><span class="p">)}</span>
-    <span class="k">return</span> <span class="n">output_logs</span></div>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Finished writing module-specific log files.&#39;</span><span class="p">)</span>
 
+    <span class="c1"># close all module-specific files</span>
+    <span class="k">for</span> <span class="n">file_handle</span> <span class="ow">in</span> <span class="n">module_name_to_filehandle</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="n">file_handle</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
-<span class="k">def</span> <span class="nf">_oldstyle_parse_output</span><span class="p">(</span><span class="n">list_of_log_lines</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Parses logged output from a TLO run and create Pandas dataframes for analysis.</span>
+    <span class="c1"># parse each module-specific log file and collect the results into a single dictionary. metadata about each log</span>
+    <span class="c1"># is returned in the same key &#39;_metadata&#39;, so it needs to be collected separately and then merged back in.</span>
+    <span class="n">all_module_logs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">file_handle</span> <span class="ow">in</span> <span class="n">module_name_to_filehandle</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Parsing </span><span class="si">{</span><span class="n">file_handle</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">module_specific_logs</span> <span class="o">=</span> <span class="n">_parse_log_file_inner_loop</span><span class="p">(</span><span class="n">file_handle</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">level</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39; - complete.&#39;</span><span class="p">)</span>
+        <span class="n">all_module_logs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">module_specific_logs</span><span class="p">)</span>
+        <span class="c1"># sometimes there is nothing to be parsed at a given level, so no metadata</span>
+        <span class="k">if</span> <span class="s1">&#39;metadata_&#39;</span> <span class="ow">in</span> <span class="n">module_specific_logs</span><span class="p">:</span>
+            <span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">module_specific_logs</span><span class="p">[</span><span class="s1">&#39;_metadata&#39;</span><span class="p">])</span>
 
-<span class="sd">    Used by parse_log_file() to handle old-style TLO logging</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">all_module_logs</span><span class="p">[</span><span class="s1">&#39;_metadata&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadata</span>
 
-<span class="sd">    Each input line follows the format:</span>
-<span class="sd">    INFO|&lt;logger name&gt;|&lt;simulation datestamp&gt;|&lt;log key&gt;|&lt;python list or dictionary&gt;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Finished.&#39;</span><span class="p">)</span>
 
-<span class="sd">    e.g.</span>
-
-<span class="sd">    [</span>
-<span class="sd">    &#39;INFO|tlo.methods.demography|2010-11-02 23:00:59.111968|on_birth|{&#39;mother&#39;: 17, &#39;child&#39;: 50}&#39;,</span>
-<span class="sd">    &#39;INFO|tlo.methods.demography|2011-01-01 00:00:00|population|{&#39;total&#39;: 51, &#39;male&#39;: 21, &#39;female&#39;: 30}&#39;,</span>
-<span class="sd">    &#39;INFO|tlo.methods.demography|2011-01-01 00:00:00|age_range_m|[5, 4, 1, 1, 1, 2, 1, 2, 2, 1, 1, 0]&#39;,</span>
-<span class="sd">    &#39;INFO|tlo.methods.demography|2011-01-01 00:00:00|age_range_f|[4, 7, 5, 1, 5, 1, 2, 0, 1, 2, 0, 1]&#39;,</span>
-<span class="sd">    ]</span>
-
-<span class="sd">    The dictionary returned has the format:</span>
-<span class="sd">    {</span>
-<span class="sd">        &lt;logger 1 name&gt;: {</span>
-<span class="sd">                           &lt;log key 1&gt;: &lt;pandas dataframe&gt;,</span>
-<span class="sd">                           &lt;log key 2&gt;: &lt;pandas dataframe&gt;,</span>
-<span class="sd">                           &lt;log key 3&gt;: &lt;pandas dataframe&gt;</span>
-<span class="sd">                         },</span>
-
-<span class="sd">        &lt;logger 2 name&gt;: {</span>
-<span class="sd">                           &lt;log key 4&gt;: &lt;pandas dataframe&gt;,</span>
-<span class="sd">                           &lt;log key 5&gt;: &lt;pandas dataframe&gt;,</span>
-<span class="sd">                           &lt;log key 6&gt;: &lt;pandas dataframe&gt;</span>
-<span class="sd">                         },</span>
-<span class="sd">        ...</span>
-<span class="sd">    }</span>
-
-<span class="sd">    :param list_of_log_lines: a list of log lines in the required format</span>
-<span class="sd">    :return: a dictionary holding logged data as Python objects</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">o</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-
-    <span class="c1"># for each logged line</span>
-    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">list_of_log_lines</span><span class="p">:</span>
-        <span class="c1"># we only parse &#39;INFO&#39; lines that have 5 parts</span>
-        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;INFO&#39;</span><span class="p">):</span>
-            <span class="n">i</span> <span class="o">=</span> <span class="n">_parse_line</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
-            <span class="c1"># if this line isn&#39;t in the right format</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">i</span><span class="p">:</span>
-                <span class="k">continue</span>
-            <span class="c1"># add a dictionary for the logger name, if required</span>
-            <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;logger&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">o</span><span class="p">:</span>
-                <span class="n">o</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;logger&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-            <span class="c1"># add a dataframe for the name/key of this log entry, if required</span>
-            <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">o</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;logger&#39;</span><span class="p">]]:</span>
-                <span class="c1"># if the logged data is a list, it doesn&#39;t have column names</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
-                    <span class="c1"># create column names for each entry in the list</span>
-                    <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;col_</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]))]</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="c1"># create column names from the keys of the dictionary</span>
-                    <span class="n">columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-                <span class="n">columns</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;date&#39;</span><span class="p">)</span>
-                <span class="n">o</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;logger&#39;</span><span class="p">]][</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
-
-            <span class="n">df</span> <span class="o">=</span> <span class="n">o</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;logger&#39;</span><span class="p">]][</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]]</span>
-
-            <span class="c1"># create a new row to append to the dataframe, add the simulation date</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="n">row</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]</span>
-                <span class="n">row</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;sim_date&#39;</span><span class="p">]</span>
-            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]):</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;warning&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;List to dataframe </span><span class="si">{</span><span class="n">i</span><span class="p">[</span><span class="s2">&quot;key&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1"> number of columns do not match&#39;</span><span class="p">)</span>
-                <span class="c1"># add list to columns (skip first column, which is date)</span>
-                <span class="n">row</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]))</span>
-                <span class="n">row</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;sim_date&#39;</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Could not parse line: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">line</span><span class="p">)</span>
-                <span class="k">continue</span>
-            <span class="c1"># append the new row to the dataframe for this logger &amp; log name</span>
-            <span class="n">o</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;logger&#39;</span><span class="p">]][</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">o</span>
+    <span class="k">return</span> <span class="n">all_module_logs</span></div>
 
 
 <div class="viewcode-block" id="write_log_to_excel"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.write_log_to_excel">[docs]</a><span class="k">def</span> <span class="nf">write_log_to_excel</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">log_dataframes</span><span class="p">):</span>
@@ -656,6 +584,7 @@
 <div class="viewcode-block" id="create_pickles_locally"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.create_pickles_locally">[docs]</a><span class="k">def</span> <span class="nf">create_pickles_locally</span><span class="p">(</span><span class="n">scenario_output_dir</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;For a run from the Batch system that has not resulted in the creation of the pickles, reconstruct the pickles</span>
 <span class="sd">     locally.&quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">turn_log_into_pickles</span><span class="p">(</span><span class="n">logfile</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Opening </span><span class="si">{</span><span class="n">logfile</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">outputs</span> <span class="o">=</span> <span class="n">parse_log_file</span><span class="p">(</span><span class="n">logfile</span><span class="p">)</span>
@@ -746,7 +675,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 21, 2021.
+        Last updated on Nov 09, 2021.
       </span>
 
     </p>

@@ -42,7 +42,7 @@
     
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="tlo.methods.dx_algorithm_adult module" href="tlo.methods.dx_algorithm_adult.html" />
+    <link rel="next" title="tlo.methods.dxmanager module" href="tlo.methods.dxmanager.html" />
     <link rel="prev" title="tlo.methods.depression module" href="tlo.methods.depression.html" /> 
 </head>
 
@@ -411,137 +411,129 @@ The individual may recovery naturally or die.</p>
 <td><p>REAL</p></td>
 <td><p>probability of prolonged diarrhoea becoming persistent diarrhoea</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_bec_persistent_age12to23</p></td>
+<tr class="row-even"><td><p>rr_bec_persistent_age&gt;6mo</p></td>
 <td><p>REAL</p></td>
-<td><p>relative rate of acute diarrhoea becoming persistent diarrhoea for age 12 to 23 months</p></td>
+<td><p>relative rate of acute diarrhoea becoming persistent diarrhoea for children over 6 months</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_bec_persistent_age24to59</p></td>
-<td><p>REAL</p></td>
-<td><p>relative rate of acute diarrhoea becoming persistent diarrhoea for age 24 to 59 months</p></td>
-</tr>
-<tr class="row-even"><td><p>rr_bec_persistent_HIV</p></td>
+<tr class="row-odd"><td><p>rr_bec_persistent_HIV</p></td>
 <td><p>REAL</p></td>
 <td><p>relative rate of acute diarrhoea becoming persistent diarrhoea for HIV positive</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_bec_persistent_SAM</p></td>
+<tr class="row-even"><td><p>rr_bec_persistent_SAM</p></td>
 <td><p>REAL</p></td>
 <td><p>relative rate of acute diarrhoea becoming persistent diarrhoea for severely acute malnutrition</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_bec_persistent_stunted</p></td>
+<tr class="row-odd"><td><p>rr_bec_persistent_stunted</p></td>
 <td><p>REAL</p></td>
 <td><p>relative rate of acute diarrhoea becoming persistent diarrhoea for stunted children</p></td>
 </tr>
-<tr class="row-odd"><td><p>min_dur_acute</p></td>
+<tr class="row-even"><td><p>min_dur_acute</p></td>
 <td><p>INT</p></td>
 <td><p>The minimum duration (in days) for an episode that is classified as an acute episode</p></td>
 </tr>
-<tr class="row-even"><td><p>min_dur_prolonged</p></td>
+<tr class="row-odd"><td><p>min_dur_prolonged</p></td>
 <td><p>INT</p></td>
 <td><p>The minimum duration (in days) for an episode that is classified as a prolonged episode</p></td>
 </tr>
-<tr class="row-odd"><td><p>min_dur_persistent</p></td>
+<tr class="row-even"><td><p>min_dur_persistent</p></td>
 <td><p>INT</p></td>
 <td><p>The minimum duration (in days) for an episode that is classified as a persistent episode</p></td>
 </tr>
-<tr class="row-even"><td><p>max_dur_persistent</p></td>
+<tr class="row-odd"><td><p>max_dur_persistent</p></td>
 <td><p>INT</p></td>
 <td><p>The maximum duration (in days) for an episode that is classified as a persistent episode</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_fever_by_rotavirus</p></td>
+<tr class="row-even"><td><p>prob_fever_by_rotavirus</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of fever caused by rotavirus</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_fever_by_shigella</p></td>
+<tr class="row-odd"><td><p>prob_fever_by_shigella</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of fever caused by shigella</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_fever_by_adenovirus</p></td>
+<tr class="row-even"><td><p>prob_fever_by_adenovirus</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of fever caused by adenovirus</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_fever_by_cryptosporidium</p></td>
+<tr class="row-odd"><td><p>prob_fever_by_cryptosporidium</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of fever caused by cryptosporidium</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_fever_by_campylobacter</p></td>
+<tr class="row-even"><td><p>prob_fever_by_campylobacter</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of fever caused by campylobacter</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_fever_by_ETEC</p></td>
+<tr class="row-odd"><td><p>prob_fever_by_ETEC</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of fever caused by ETEC</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_fever_by_sapovirus</p></td>
+<tr class="row-even"><td><p>prob_fever_by_sapovirus</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of fever caused by sapovirus</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_fever_by_norovirus</p></td>
+<tr class="row-odd"><td><p>prob_fever_by_norovirus</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of fever caused by norovirus</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_fever_by_astrovirus</p></td>
+<tr class="row-even"><td><p>prob_fever_by_astrovirus</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of fever caused by astrovirus</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_fever_by_tEPEC</p></td>
+<tr class="row-odd"><td><p>prob_fever_by_tEPEC</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of fever caused by tEPEC</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_vomiting_by_rotavirus</p></td>
+<tr class="row-even"><td><p>prob_vomiting_by_rotavirus</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of vomiting caused by rotavirus</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_vomiting_by_shigella</p></td>
+<tr class="row-odd"><td><p>prob_vomiting_by_shigella</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of vomiting caused by shigella</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_vomiting_by_adenovirus</p></td>
+<tr class="row-even"><td><p>prob_vomiting_by_adenovirus</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of vomiting caused by adenovirus</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_vomiting_by_cryptosporidium</p></td>
+<tr class="row-odd"><td><p>prob_vomiting_by_cryptosporidium</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of vomiting caused by cryptosporidium</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_vomiting_by_campylobacter</p></td>
+<tr class="row-even"><td><p>prob_vomiting_by_campylobacter</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of vomiting caused by campylobacter</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_vomiting_by_ETEC</p></td>
+<tr class="row-odd"><td><p>prob_vomiting_by_ETEC</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of vomiting caused by ETEC</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_vomiting_by_sapovirus</p></td>
+<tr class="row-even"><td><p>prob_vomiting_by_sapovirus</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of vomiting caused by sapovirus</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_vomiting_by_norovirus</p></td>
+<tr class="row-odd"><td><p>prob_vomiting_by_norovirus</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of vomiting caused by norovirus</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_vomiting_by_astrovirus</p></td>
+<tr class="row-even"><td><p>prob_vomiting_by_astrovirus</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of vomiting caused by astrovirus</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_vomiting_by_tEPEC</p></td>
+<tr class="row-odd"><td><p>prob_vomiting_by_tEPEC</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of vomiting caused by tEPEC</p></td>
 </tr>
-<tr class="row-odd"><td><p>adjustment_factor_on_cfr</p></td>
+<tr class="row-even"><td><p>adjustment_factor_on_cfr</p></td>
 <td><p>REAL</p></td>
 <td><p>Factor by which fatality probabilities are multiplied (to be used in calibration)</p></td>
 </tr>
-<tr class="row-even"><td><p>case_fatality_rate_AWD</p></td>
+<tr class="row-odd"><td><p>case_fatality_rate_AWD</p></td>
 <td><p>REAL</p></td>
 <td><p>case fatality rate for acute watery diarrhoea cases</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_diarr_death_bloody</p></td>
+<tr class="row-even"><td><p>rr_diarr_death_bloody</p></td>
 <td><p>REAL</p></td>
 <td><p>relative risk of diarrhoea death (compared to <cite>case_fatality_rate_AWD</cite> if the diarrhoea is of type “bloody” (i.e. dyssentry).</p></td>
-</tr>
-<tr class="row-even"><td><p>rr_diarr_death_age12to23mo</p></td>
-<td><p>REAL</p></td>
-<td><p>relative risk of diarrhoea death for ages 12 to 23 months</p></td>
 </tr>
 <tr class="row-odd"><td><p>rr_diarr_death_age24to59mo</p></td>
 <td><p>REAL</p></td>
@@ -575,13 +567,13 @@ The individual may recovery naturally or die.</p>
 <td><p>REAL</p></td>
 <td><p>relative risk of diarrhoea death if caused by shigella</p></td>
 </tr>
-<tr class="row-odd"><td><p>sensitivity_danger_signs_visual_inspection</p></td>
+<tr class="row-odd"><td><p>sensitivity_severe_dehydration_visual_inspection</p></td>
 <td><p>REAL</p></td>
-<td><p>sensitivity of health care workers visual inspection of danger signs</p></td>
+<td><p>sensitivity of IMCI severe dehydration algorithm for dehydration &gt;9% loss of body weight</p></td>
 </tr>
-<tr class="row-even"><td><p>specificity_danger_signs_visual_inspection</p></td>
+<tr class="row-even"><td><p>specificity_severe_dehydration_visual_inspection</p></td>
 <td><p>REAL</p></td>
-<td><p>specificity of health care workers visual inspection of danger signs</p></td>
+<td><p>specificity of IMCI severe dehydration algorithm for dehydration &gt;9% loss of body weight</p></td>
 </tr>
 <tr class="row-odd"><td><p>prob_hospitalization_on_danger_signs</p></td>
 <td><p>REAL</p></td>
@@ -610,6 +602,14 @@ The individual may recovery naturally or die.</p>
 <tr class="row-odd"><td><p>days_between_treatment_and_cure</p></td>
 <td><p>INT</p></td>
 <td><p>number of days between any treatment being given in an HSI and the cure occurring.</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of severe dehydration with rotavirus vaccine, for under 1 years old.</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of severe dehydration with rotavirus vaccine, for those aged 1 year and older.</p></td>
 </tr>
 </tbody>
 </table>
@@ -647,33 +647,38 @@ The individual may recovery naturally or die.</p>
 <td><p>BOOL</p></td>
 <td><p>Whether the duration of the current episode would last longer than 13 days if untreated. (False if does not have current episode)</p></td>
 </tr>
-<tr class="row-odd"><td><p>gi_date_of_onset</p></td>
+<tr class="row-odd"><td><p>gi_number_of_episodes</p></td>
+<td><p>INT</p></td>
+<td><p>Number of episodes of diarrhoea caused by a pathogen</p></td>
+</tr>
+<tr class="row-even"><td><p>gi_date_of_onset</p></td>
 <td><p>DATE</p></td>
 <td><p>Date of onset of current episode of diarrhoea (pd.NaT if does not have current episode of diarrhoea).</p></td>
 </tr>
-<tr class="row-even"><td><p>gi_scheduled_date_recovery</p></td>
+<tr class="row-odd"><td><p>gi_scheduled_date_recovery</p></td>
 <td><p>DATE</p></td>
 <td><p>Scheduled date of recovery from current episode of diarrhoea (pd.NaT if does not have current episode or current episode is scheduled to result in death). This is scheduled when the episode is onset and may be revised subsequently if the episode is cured by a treatment</p></td>
 </tr>
-<tr class="row-odd"><td><p>gi_scheduled_date_death</p></td>
+<tr class="row-even"><td><p>gi_scheduled_date_death</p></td>
 <td><p>DATE</p></td>
 <td><p>Scheduled date of death caused by current episode of diarrhoea (pd.NaT if does not have current episode or if current episode will not result in death). This is scheduled when the episode is onset and may be revised subsequently if the episode is cured by a treatment.</p></td>
 </tr>
-<tr class="row-even"><td><p>gi_date_end_of_last_episode</p></td>
+<tr class="row-odd"><td><p>gi_date_end_of_last_episode</p></td>
 <td><p>DATE</p></td>
 <td><p>The date on which the last episode of diarrhoea is fully resolved, including allowing for the possibility of HSI events (pd.NaT if has never had an episode). This is used to determine when a new episode can begin and stops successive episodes interfering with one another.This is notnull when the person has ever had an episode of diarrhoea.</p></td>
 </tr>
-<tr class="row-odd"><td><p>gi_treatment_date</p></td>
+<tr class="row-even"><td><p>gi_treatment_date</p></td>
 <td><p>DATE</p></td>
 <td><p>The actual date on which treatment is first administered for the current episode (pd.NaT if does not have current episode or if no treatment has yet been provided in the current episode).</p></td>
 </tr>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘Diarrhoea_rotavirus’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39b80&gt;, ‘Diarrhoea_shigella’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39be0&gt;, ‘Diarrhoea_adenovirus’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39c40&gt;, ‘Diarrhoea_cryptosporidium’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39ca0&gt;, ‘Diarrhoea_campylobacter’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39d00&gt;, ‘Diarrhoea_ETEC’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39d60&gt;, ‘Diarrhoea_sapovirus’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39dc0&gt;, ‘Diarrhoea_norovirus’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39e20&gt;, ‘Diarrhoea_astrovirus’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39e80&gt;, ‘Diarrhoea_tEPEC’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39ee0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘Diarrhoea’: &lt;tlo.methods.causes.Cause object at 0x7f9967c39fa0&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Demography’, ‘Lifestyle’, ‘HealthSystem’, ‘DiarrhoeaPropertiesOfOtherModules’, ‘SymptomManager’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Epi’, ‘Alri’, ‘Stunting’}</p>
+<p>CAUSES_OF_DEATH : {‘Diarrhoea_rotavirus’: &lt;tlo.methods.causes.Cause object at 0x7f830aef84c0&gt;, ‘Diarrhoea_shigella’: &lt;tlo.methods.causes.Cause object at 0x7f830aef8520&gt;, ‘Diarrhoea_adenovirus’: &lt;tlo.methods.causes.Cause object at 0x7f830aef8580&gt;, ‘Diarrhoea_cryptosporidium’: &lt;tlo.methods.causes.Cause object at 0x7f830aef85e0&gt;, ‘Diarrhoea_campylobacter’: &lt;tlo.methods.causes.Cause object at 0x7f830aef8640&gt;, ‘Diarrhoea_ETEC’: &lt;tlo.methods.causes.Cause object at 0x7f830aef86a0&gt;, ‘Diarrhoea_sapovirus’: &lt;tlo.methods.causes.Cause object at 0x7f830aef8700&gt;, ‘Diarrhoea_norovirus’: &lt;tlo.methods.causes.Cause object at 0x7f830aef8760&gt;, ‘Diarrhoea_astrovirus’: &lt;tlo.methods.causes.Cause object at 0x7f830aef87c0&gt;, ‘Diarrhoea_tEPEC’: &lt;tlo.methods.causes.Cause object at 0x7f830aef8820&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Diarrhoea’: &lt;tlo.methods.causes.Cause object at 0x7f830aef88e0&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘Lifestyle’, ‘Wasting’, ‘HealthSystem’, ‘Hiv’, ‘NewbornOutcomes’, ‘Demography’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p>pathogens : [‘rotavirus’, ‘shigella’, ‘adenovirus’, ‘cryptosporidium’, ‘campylobacter’, ‘ETEC’, ‘sapovirus’, ‘norovirus’, ‘astrovirus’, ‘tEPEC’]</p>
 <p><strong>Functions (defined or overridden in class Diarrhoea):</strong></p>
@@ -1122,10 +1127,14 @@ constructor, but may also take further keyword arguments.</p>
 <td><p>CATEGORICAL</p></td>
 <td><p>temporary property.  Possible values are: [HAZ&lt;-3, -3&lt;=HAZ&lt;-2, HAZ&gt;=-2, ]</p></td>
 </tr>
+<tr class="row-even"><td><p>va_rota_all_doses</p></td>
+<td><p>BOOL</p></td>
+<td><p>temporary property</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ALTERNATIVE_TO : {‘Hiv’, ‘NewbornOutcomes’, ‘Alri’}</p>
+<p>ALTERNATIVE_TO : {‘Epi’, ‘Wasting’, ‘Alri’, ‘Stunting’, ‘Hiv’}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p><strong>Functions (defined or overridden in class DiarrhoeaPropertiesOfOtherModules):</strong></p>
 <dl class="py method">
@@ -1242,7 +1251,7 @@ It is a good place to add initial events to the event queue.</p>
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="tlo.methods.dx_algorithm_adult.html" class="btn btn-neutral float-right" title="tlo.methods.dx_algorithm_adult module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tlo.methods.dxmanager.html" class="btn btn-neutral float-right" title="tlo.methods.dxmanager module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
         <a href="tlo.methods.depression.html" class="btn btn-neutral float-left" title="tlo.methods.depression module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
@@ -1251,7 +1260,7 @@ It is a good place to add initial events to the event queue.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Sep 21, 2021.
+        Last updated on Nov 09, 2021.
       </span>
 
     </p>
