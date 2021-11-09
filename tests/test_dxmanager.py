@@ -84,8 +84,8 @@ def bundle():
     cons_items.loc[item_code_for_consumable_that_is_not_available, cons_items.columns] = False
     cons_items.loc[item_code_for_consumable_that_is_available, cons_items.columns] = True
 
-    assert hsi_event.get_all_consumables(item_codes=item_code_for_consumable_that_is_available)
-    assert not hsi_event.get_all_consumables(item_codes=item_code_for_consumable_that_is_not_available)
+    assert hsi_event.get_consumables(item_codes=item_code_for_consumable_that_is_available)
+    assert not hsi_event.get_consumables(item_codes=item_code_for_consumable_that_is_not_available)
 
     return Bundle(sim,
                   hsi_event,
@@ -160,12 +160,12 @@ def test_create_duplicate_test_that_should_be_allowed(bundle):
 
     my_test1_property_and_consumable = DxTest(
         property='mi_status',
-        cons_req_as_item_code=item_code_for_consumable_that_is_available,
+        item_codes=item_code_for_consumable_that_is_available,
     )
 
     my_test1_property_and_consumable_and_sensspec = DxTest(
         property='mi_status',
-        cons_req_as_item_code=item_code_for_consumable_that_is_available,
+        item_codes=item_code_for_consumable_that_is_available,
         sensitivity=0.99,
         specificity=0.95
     )
@@ -261,12 +261,12 @@ def test_create_dx_tests_with_consumable_useage_given_by_item_code_only(bundle):
 
     # Create the test:
     my_test1_not_available = DxTest(
-        cons_req_as_item_code=item_code_for_consumable_that_is_not_available,
+        item_codes=item_code_for_consumable_that_is_not_available,
         property='mi_status'
     )
 
     my_test2_is_available = DxTest(
-        cons_req_as_item_code=item_code_for_consumable_that_is_available,
+        item_codes=item_code_for_consumable_that_is_available,
         property='mi_status'
     )
 
@@ -301,12 +301,12 @@ def test_run_batch_of_dx_test_in_one_call(bundle):
 
     # Create the dx_test
     my_test1 = DxTest(
-        cons_req_as_item_code=item_code_for_consumable_that_is_available,
+        item_codes=item_code_for_consumable_that_is_available,
         property='mi_status'
     )
 
     my_test2 = DxTest(
-        cons_req_as_item_code=item_code_for_consumable_that_is_available,
+        item_codes=item_code_for_consumable_that_is_available,
         property='cs_has_cs'
     )
 
@@ -338,12 +338,12 @@ def test_create_tuple_of_dx_tests_which_fail_and_require_chain_execution(bundle)
 
     # Create the tests:
     my_test1_not_available = DxTest(
-        cons_req_as_item_code=item_code_for_consumable_that_is_not_available,
+        item_codes=item_code_for_consumable_that_is_not_available,
         property='mi_status'
     )
 
     my_test2_is_available = DxTest(
-        cons_req_as_item_code=item_code_for_consumable_that_is_available,
+        item_codes=item_code_for_consumable_that_is_available,
         property='mi_status'
     )
 

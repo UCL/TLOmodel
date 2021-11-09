@@ -542,7 +542,7 @@ class HSI_BcgVaccine(HsiBaseVaccine):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         if df.at[person_id, "va_bcg"] < self.module.all_doses["bcg"]:
-            if self.get_all_consumables(item_codes=self.module.cons_item_codes["bcg"]):
+            if self.get_consumables(item_codes=self.module.cons_item_codes["bcg"]):
                 self.module.increment_dose(person_id, "bcg")
 
 
@@ -552,7 +552,7 @@ class HSI_opv(HsiBaseVaccine):
         return "Epi_opv"
 
     def apply(self, person_id, squeeze_factor):
-        if self.get_all_consumables(item_codes=self.module.cons_item_codes["opv"]):
+        if self.get_consumables(item_codes=self.module.cons_item_codes["opv"]):
             self.module.increment_dose(person_id, "opv")
 
 
@@ -562,7 +562,7 @@ class HSI_DtpHibHepVaccine(HsiBaseVaccine):
         return "Epi_DtpHibHep"
 
     def apply(self, person_id, squeeze_factor):
-        if self.get_all_consumables(item_codes=self.module.cons_item_codes['pentavalent_vaccine']):
+        if self.get_consumables(item_codes=self.module.cons_item_codes['pentavalent_vaccine']):
             self.module.increment_dose(person_id, "dtp")
             self.module.increment_dose(person_id, "hib")
             self.module.increment_dose(person_id, "hep")
@@ -580,7 +580,7 @@ class HSI_RotaVaccine(HsiBaseVaccine):
         # available from 2012 onwards
         df = self.sim.population.props
         if df.at[person_id, "va_rota"] < self.module.all_doses["rota"]:
-            if self.get_all_consumables(item_codes=self.module.cons_item_codes["rota"]):
+            if self.get_consumables(item_codes=self.module.cons_item_codes["rota"]):
                 self.module.increment_dose(person_id, "rota")
 
 
@@ -590,7 +590,7 @@ class HSI_PneumoVaccine(HsiBaseVaccine):
         return "Epi_Pneumo"
 
     def apply(self, person_id, squeeze_factor):
-        if self.get_all_consumables(item_codes=self.module.cons_item_codes["pneumo"]):
+        if self.get_consumables(item_codes=self.module.cons_item_codes["pneumo"]):
             self.module.increment_dose(person_id, "pneumo")
 
 
@@ -600,7 +600,7 @@ class HSI_MeaslesRubellaVaccine(HsiBaseVaccine):
         return "Epi_MeaslesRubella"
 
     def apply(self, person_id, squeeze_factor):
-        if self.get_all_consumables(item_codes=self.module.cons_item_codes["measles_and_rubella"]):
+        if self.get_consumables(item_codes=self.module.cons_item_codes["measles_and_rubella"]):
             self.module.increment_dose(person_id, "measles")
             self.module.increment_dose(person_id, "rubella")
 
@@ -613,7 +613,7 @@ class HSI_HpvVaccine(HsiBaseVaccine):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         if df.at[person_id, "va_hpv"] < self.module.all_doses["hpv"]:
-            if self.get_all_consumables(item_codes=self.module.cons_item_codes["hpv"]):
+            if self.get_consumables(item_codes=self.module.cons_item_codes["hpv"]):
                 self.module.increment_dose(person_id, "hpv")
 
 
@@ -626,7 +626,7 @@ class HSI_TdVaccine(HsiBaseVaccine):
         return "Epi_Td"
 
     def apply(self, person_id, squeeze_factor):
-        if self.get_all_consumables(item_codes=self.modules.cons_item_codes["td"]):
+        if self.get_consumables(item_codes=self.modules.cons_item_codes["td"]):
             self.module.increment_dose(person_id, "td")
 
 

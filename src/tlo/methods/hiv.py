@@ -704,7 +704,7 @@ class Hiv(Module):
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             hiv_rapid_test=DxTest(
                 property='hv_inf',
-                cons_req_as_item_code=self.item_codes_for_consumables_required['hiv_rapid_test']
+                item_codes=self.item_codes_for_consumables_required['hiv_rapid_test']
             )
         )
 
@@ -714,7 +714,7 @@ class Hiv(Module):
                 property='hv_inf',
                 sensitivity=1.0,
                 specificity=1.0,
-                cons_req_as_item_code=self.item_codes_for_consumables_required['hiv_early_infant_test']
+                item_codes=self.item_codes_for_consumables_required['hiv_early_infant_test']
             )
         )
 
@@ -1412,7 +1412,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         # Check/log use of consumables, and do circumcision if materials available
         # NB. If materials not available, it is assumed that the procedure is not carried out for this person following
         # this particular referral.
-        if self.get_all_consumables(item_codes=self.module.item_codes_for_consumables_required['circ']):
+        if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['circ']):
             # Update circumcision state
             df.at[person_id, "li_is_circ"] = True
 
@@ -1456,7 +1456,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({"Over5OPD": 1, "VCTPositive": 1})
 
         # Check that PrEP is available and if it is, initiate or continue  PrEP:
-        if self.get_all_consumables(item_codes=self.module.item_codes_for_consumables_required['prep']):
+        if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['prep']):
             df.at[person_id, "hv_is_on_prep"] = True
 
             # Schedule 'decision about whether to continue on PrEP' for 3 months time
@@ -1584,7 +1584,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Viral Load Monitoring
         # NB. This does not have a direct effect on outcomes for the person.
-        _ = self.get_all_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
+        _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Check if drugs are available, and provide drugs:
         drugs_available = self.get_drugs(age_of_person=person['age_years'])
@@ -1615,15 +1615,15 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if age_of_person < p["ART_age_cutoff_young_child"]:
             # Formulation for children
-            drugs_available = self.get_all_consumables(
+            drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: young child'])
         elif age_of_person <= p["ART_age_cutoff_older_child"]:
             # Formulation for children
-            drugs_available = self.get_all_consumables(
+            drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: older child'])
         else:
             # Formulation for adults
-            drugs_available = self.get_all_consumables(
+            drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['First-line ART regimen: adult'])
 
         return drugs_available

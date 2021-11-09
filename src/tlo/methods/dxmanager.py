@@ -5,6 +5,7 @@ See https://github.com/UCL/TLOmodel/wiki/Diagnostic-Tests-(DxTest)-and-the-Diagn
 import json
 from typing import Dict, List, Tuple, Union
 
+import numpy as np
 import pandas as pd
 from pandas.api.types import is_bool_dtype, is_categorical_dtype, is_float_dtype
 
@@ -78,7 +79,7 @@ class DxManager:
         print(f'** {name_of_dx_test} **')
         for num, test in enumerate(the_dx_test):
             print(f'   Position in tuple #{num}')
-            print(f'consumables item_codes: {test.cons_item_codes}')
+            print(f'consumables item_codes: {test.item_codes}')
             print(f'sensitivity: {test.sensitivity}')
             print(f'specificity: {test.specificity}')
             print(f'property: {test.property}')
@@ -153,9 +154,8 @@ class DxTest:
     :param property: the column in the sim.population.props that the diagnostic will observe
     * Optional:
     Use of consumable - specify either
-        :param cons_req_as_item_code: the item code(s) (and quantities) of the consumables that are required for the
-        test to be done. This can be integer (the item_code needed [assume quantity=1]), a list (list of item_codes
-        [for each assuming quantity=1]), or a dict (of the form <item_code>:<quantity>). # todo rename this
+        :param item_codes: the item code(s) (and quantities) of the consumables that are required for the
+        test to be done (Follows same format as `get_consumables` in the HSI_Event base class.
     Performance of test:
         Specify any of the following if the property's dtype is bool
             :param sensitivity: the sensitivity of the test (probability that a true value will be observed as true)
@@ -169,7 +169,7 @@ class DxTest:
     """
     def __init__(self,
                  property: str,
-                 cons_req_as_item_code: Union[int, list, dict] = None,
+                 item_codes: Union[np.integer, int, list, dict] = None,
                  sensitivity: float = None,
                  specificity: float = None,
                  measure_error_stdev: float = None,
@@ -182,9 +182,9 @@ class DxTest:
         self.property = property
 
         # Store consumable code (None means that no consumables are required)
-        if cons_req_as_item_code is not None:
-            assert isinstance(cons_req_as_item_code, (int, list, dict))
-        self.cons_item_codes = cons_req_as_item_code
+        if item_codes is not None:
+            assert isinstance(item_codes, (np.integer, int, list, dict)), 'item_codes in incorrect format.'
+        self.item_codes = item_codes
 
         # Store performance characteristics (if sensitivity and specificity are not supplied than assume perfect)
         _assert_float_or_none(sensitivity, 'Sensitivity is given in incorrect format.')
@@ -201,7 +201,7 @@ class DxTest:
     def __hash_key(self):
         return (
             self.__class__,
-            json.dumps(self.cons_item_codes, sort_keys=True),
+            json.dumps(self.item_codes, sort_keys=True),
             self.property,
             self.sensitivity,
             self.specificity,
@@ -236,8 +236,8 @@ class DxTest:
         true_value = df.at[person_id, self.property]
 
         # If a consumable is required and it is not available, return None
-        if self.cons_item_codes is not None:
-            if not hsi_event.get_all_consumables(item_codes=self.cons_item_codes):
+        if self.item_codes is not None:
+            if not hsi_event.get_consumables(item_codes=self.item_codes):
                 return None
 
         # Apply the test:

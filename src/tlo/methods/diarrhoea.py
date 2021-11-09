@@ -736,7 +736,7 @@ class Diarrhoea(Module):
 
         # ** Implement the procedure for treatment **
         # STEP ZERO: Get the Zinc consumable (happens irrespective of whether child will die or not)
-        gets_zinc = hsi_event.get_all_consumables(
+        gets_zinc = hsi_event.get_consumables(
             item_codes=self.consumables_used_in_hsi[
                 'Zinc_Under6mo' if person.age_exact_years < 0.5 else 'Zinc_Over6mo']
         )
@@ -744,14 +744,14 @@ class Diarrhoea(Module):
         # STEP ONE: Aim to alleviate dehydration:
         prob_remove_dehydration = 0.0
         if is_in_patient:
-            if hsi_event.get_all_consumables(item_codes=self.consumables_used_in_hsi['Treatment_Severe_Dehydration']):
+            if hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['Treatment_Severe_Dehydration']):
                 # In-patient receiving IV fluids (WHO Plan C)
                 prob_remove_dehydration = \
                     p['prob_WHOPlanC_cures_dehydration_if_severe_dehydration'] if dehydration_is_severe \
                     else self.parameters['prob_ORS_cures_dehydration_if_non_severe_dehydration']
 
         else:
-            if hsi_event.get_all_consumables(item_codes=self.consumables_used_in_hsi['ORS']):
+            if hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['ORS']):
                 # Out-patient receving ORS
                 prob_remove_dehydration = \
                     self.parameters['prob_ORS_cures_dehydration_if_severe_dehydration'] if dehydration_is_severe \
@@ -761,7 +761,7 @@ class Diarrhoea(Module):
         dehydration_after_treatment = 'none' if self.rng.rand() < prob_remove_dehydration else person.gi_dehydration
 
         # STEP TWO: If has bloody diarrhoea (i.e., dysentry), then aim to clear bacterial infection
-        if type_of_diarrhoea_is_bloody and hsi_event.get_all_consumables(
+        if type_of_diarrhoea_is_bloody and hsi_event.get_consumables(
             item_codes=self.consumables_used_in_hsi['Antibiotics_for_Dysentery']
         ):
             prob_clear_bacterial_infection = self.parameters['prob_antibiotic_cures_dysentery']
