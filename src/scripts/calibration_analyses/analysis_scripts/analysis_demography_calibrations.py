@@ -26,7 +26,7 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'long_run.py'  # <-- update this to look at other results
+scenario_filename = 'long_run_no_diseases.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/tbh03@ic.ac.uk')
@@ -34,6 +34,7 @@ rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
 results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+print(f"Results folder is: {results_folder}")
 
 # If needed -- in the case that pickles were not created remotely during batch
 # create_pickles_locally(results_folder)
@@ -340,6 +341,43 @@ for tp in time_period:
     plt.tight_layout()
     plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}"))
     plt.show()
+
+
+# %% Describe patterns of contraceptive usage over time
+
+def get_annual_mean_usage(_df):
+    _x = _df \
+        .assign(year=df['date'].dt.year) \
+        .set_index('year') \
+        .drop(columns=['date']) \
+        .apply(lambda row: row / row.sum(),
+               axis=1
+               )
+    return _x.groupby(_x.index).mean().stack()
+
+
+mean_usage = summarize(extract_results(results_folder,
+                                       module="tlo.methods.contraception",
+                                       key="contraception_use_summary",
+                                       custom_generate_series=get_annual_mean_usage,
+                                       do_scaling=False),
+                       collapse_columns=True
+                       )
+
+# Plot just the means:
+mean_usage_mean = mean_usage['mean'].unstack()
+fig, ax = plt.subplots()
+spacing = (np.arange(len(mean_usage_mean)) % 5) == 0
+mean_usage_mean.loc[spacing].plot.bar(stacked=True, ax=ax, legend=False)
+plt.title('Proportion Females 15-49 Using Contraceptive Methods')
+plt.xlabel('Date')
+plt.ylabel('Proportion')
+
+fig.legend(loc=7)
+fig.tight_layout()
+fig.subplots_adjust(right=0.65)
+plt.savefig(make_graph_file_name("Contraception"))
+plt.show()
 
 # %% All-Cause Deaths
 #  todo - fix this ;only do summarize after the groupbys
