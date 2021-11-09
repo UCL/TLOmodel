@@ -140,6 +140,8 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
         if age < 5:
             # ----------------------------------- CHILD < 5 -----------------------------------
+            if 'Stunting' in self.sim.modules:
+                self.sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
 
             if "Malaria" in self.sim.modules:
                 if 'fever' in symptoms:
@@ -298,6 +300,13 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                             priority=1,
                             topen=self.sim.date,
                             tclose=None)
+
+            # ---- ASSESSEMENT FOR CARDIO-METABOLIC DISORDERS ----
+            if 'CardioMetabolicDisorders' in self.sim.modules:
+                # take a blood pressure measurement for proportion of individuals who have not been diagnosed and
+                # are either over 50 or younger than 50 but are selected to get tested
+                cmd = self.sim.modules['CardioMetabolicDisorders']
+                cmd.determine_if_will_be_investigated(person_id=person_id)
 
     def did_not_run(self):
         logger.debug(key='message',
@@ -485,6 +494,11 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                             priority=0,
                             topen=self.sim.date,
                         )
+
+        # ------ CARDIO-METABOLIC DISORDERS ------
+        if 'CardioMetabolicDisorders' in self.sim.modules:
+            cmd = self.sim.modules['CardioMetabolicDisorders']
+            cmd.determine_if_will_be_investigated_events(person_id=person_id)
 
         # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
         if 'craving_sandwiches' in symptoms:

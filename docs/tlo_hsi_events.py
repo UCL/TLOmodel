@@ -13,9 +13,9 @@ from pathlib import Path
 import tlo.methods
 from tlo import Date, Module, Simulation
 from tlo.dependencies import (
-    get_dependencies_and_initialise, get_module_class_map, is_valid_tlo_module_subclass
+    get_dependencies_and_initialise, get_init_dependencies, get_module_class_map, is_valid_tlo_module_subclass
 )
-from tlo.methods import alri, diarrhoea, healthseekingbehaviour, hiv
+from tlo.methods import alri, diarrhoea, healthseekingbehaviour, hiv, stunting
 from tlo.methods.healthsystem import HSI_Event, HSIEventDetails
 
 
@@ -92,10 +92,15 @@ def get_details_of_defined_hsi_events(
     sim.register(
         *get_dependencies_and_initialise(
             *hsi_event_classes_per_module.keys(),
-            module_class_map=get_module_class_map(excluded_modules),
-            excluded_modules=excluded_modules,
+            module_class_map=get_module_class_map(set()),
+            # Only select initialisation dependencies as we will not actually run
+            # simulation
+            get_dependencies=get_init_dependencies,
             resourcefilepath=resource_file_path
         ),
+        # As we only select initialisation dependencies, disable check that additional
+        # dependencies are present
+        check_all_dependencies=False
     )
     # Initialise a small population for events that access population dataframe
     sim.make_initial_population(n=init_population)
@@ -378,7 +383,10 @@ if __name__ == '__main__':
         }
         # Map from tlo.methods module name to Module subclass to use for HSI events in
         # module for modules with multiple Module subclasses defined
-        multiple_module_class_map = {'hiv': hiv.Hiv, 'alri': alri.Alri, 'diarrhoea': diarrhoea.Diarrhoea}
+        multiple_module_class_map = {'hiv': hiv.Hiv,
+                                     'alri': alri.Alri,
+                                     'diarrhoea': diarrhoea.Diarrhoea,
+                                     'stunting': stunting.Stunting}
         print('Getting details of defined HSI events by inspecting tlo.methods...')
         inspect_hsi_event_details = get_details_of_defined_hsi_events(
             excluded_modules=excluded_modules,
