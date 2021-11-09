@@ -445,7 +445,7 @@ def test_if_medication_prevents_all_death():
     # Make a list of all conditions and events to run this test for
     condition_list = ['diabetes', 'chronic_kidney_disease', 'chronic_ischemic_hd']
     for condition in condition_list:
-        sim = make_simulation_health_system_functional()
+        sim = make_simulation_health_system_functional(cons_availability='all')
         sim.make_initial_population(n=50)
 
         # force all individuals to have condition and be on medication
