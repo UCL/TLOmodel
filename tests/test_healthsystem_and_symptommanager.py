@@ -585,7 +585,7 @@ def test_all_appt_types_can_run():
                                            mode_appt_constraints=2,
                                            use_funded_or_actual_staffing='funded_plus'),
                  # <-- hard constraint (only HSI events with no squeeze factor can run)
-                 # <-- using the 'funded' number/distribution of officers
+                 # <-- using the 'funded_plus' number/distribution of officers
                  DummyModule()
                  )
     sim.make_initial_population(n=100)
