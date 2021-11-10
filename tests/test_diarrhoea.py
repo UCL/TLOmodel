@@ -16,7 +16,6 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    hiv,
     simplified_births,
     symptommanager,
 )
@@ -113,7 +112,6 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 hiv.DummyHivModule(),
                  )
 
     # **Zero-out incidence**:
@@ -600,7 +598,6 @@ def test_does_treatment_prevent_death():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 hiv.DummyHivModule(),
                  )
 
     # Increase incidence and risk of death in Diarrhoea episodes
@@ -765,8 +762,8 @@ def test_do_treatment_for_those_that_will_die_if_consumables_not_available():
     df = sim.population.props
 
     # Make availability of consumables zero
-    sim.modules['HealthSystem'].cons_available_today['Item_Code'] *= False
-    sim.modules['HealthSystem'].cons_available_today['Intervention_Package_Code'] *= False
+    sim.modules['HealthSystem'].cons_available_today['Item_Code'][:] = False
+    sim.modules['HealthSystem'].cons_available_today['Intervention_Package_Code'][:] = False
 
     # Set that person_id=0 is a child with bloody diarrhoea and severe dehydration:
     person_id = 0

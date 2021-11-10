@@ -300,6 +300,10 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         topen=sim.date,
                         tclose=None)
 
+        if 'CardioMetabolicDisorders' in sim.modules:
+            # Take a blood pressure measurement for proportion of individuals who have not been diagnosed and
+            # are either over 50 or younger than 50 but are selected to get tested.
+            sim.modules['CardioMetabolicDisorders'].determine_if_will_be_investigated(person_id=person_id)
 
 def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     """The actions are taken during the non-emergency generic HSI, HSI_GenericEmergencyFirstApptAtFacilityLevel1."""
@@ -404,6 +408,10 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                         priority=0,
                         topen=sim.date,
                     )
+
+    # ------ CARDIO-METABOLIC DISORDERS ------
+    if 'CardioMetabolicDisorders' in sim.modules:
+        sim.modules['CardioMetabolicDisorders'].determine_if_will_be_investigated_events(person_id=person_id)
 
     # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
     if 'craving_sandwiches' in symptoms:
