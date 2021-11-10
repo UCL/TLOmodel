@@ -12,12 +12,10 @@ from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
     diarrhoea,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    hiv,
     simplified_births,
     symptommanager,
 )
@@ -82,7 +80,6 @@ def test_basic_run_of_diarrhoea_module_with_default_params(tmpdir):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 dx_algorithm_child.DxAlgorithmChild()
                  )
 
     sim.make_initial_population(n=popsize)
@@ -115,7 +112,6 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 hiv.DummyHivModule(),
                  )
 
     # **Zero-out incidence**:
@@ -297,7 +293,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                      ),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
                      diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                     dx_algorithm_child.DxAlgorithmChild()
                      )
         # Edit rate of spurious symptoms to be limited to additional cases of diarrhoea:
         sp_symps = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
@@ -598,13 +593,11 @@ def test_does_treatment_prevent_death():
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-                 dx_algorithm_child.DxAlgorithmChild(),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 hiv.DummyHivModule(),
                  )
 
     # Increase incidence and risk of death in Diarrhoea episodes
@@ -769,8 +762,8 @@ def test_do_treatment_for_those_that_will_die_if_consumables_not_available():
     df = sim.population.props
 
     # Make availability of consumables zero
-    sim.modules['HealthSystem'].cons_available_today['Item_Code'] *= False
-    sim.modules['HealthSystem'].cons_available_today['Intervention_Package_Code'] *= False
+    sim.modules['HealthSystem'].cons_available_today['Item_Code'][:] = False
+    sim.modules['HealthSystem'].cons_available_today['Intervention_Package_Code'][:] = False
 
     # Set that person_id=0 is a child with bloody diarrhoea and severe dehydration:
     person_id = 0

@@ -2712,7 +2712,9 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
                 df.at[individual_id, 'la_intrapartum_still_birth'] = True
                 # This variable is therefore only ever true when the pregnancy has ended in stillbirth
                 df.at[individual_id, 'ps_prev_stillbirth'] = True
-                df.at[individual_id, 'is_pregnant'] = False
+
+                # Next reset pregnancy and update contraception
+                self.sim.modules['Contraception'].end_pregnancy(individual_id)
 
             # If one twin survives we store this as a property of the MNI which is reference on_birth of the newborn
             # outcomes to ensure this twin pregnancy only leads to one birth
