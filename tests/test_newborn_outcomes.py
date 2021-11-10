@@ -19,6 +19,7 @@ from tlo.methods import (
     symptommanager,
     joes_fake_props_module
 )
+from tlo.methods.hiv import DummyHivModule
 
 seed = 8974
 
@@ -63,7 +64,11 @@ def register_modules(ignore_cons_constraints):
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+
+                 # - Dummy HIV module (as contraception requires the property hv_inf)
+                 DummyHivModule()
+                 )
 
     return sim
 

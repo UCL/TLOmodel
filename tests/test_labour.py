@@ -10,8 +10,6 @@ from tlo.methods import (
     contraception,
     demography,
     depression,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -24,6 +22,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
+from tlo.methods.hiv import DummyHivModule
 
 seed = 1896
 
@@ -87,14 +86,16 @@ def register_modules(ignore_cons_constraints):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  malaria.Malaria(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+
+                 # - Dummy HIV module (as contraception requires the property hv_inf)
+                 DummyHivModule()
                  )
 
     return sim

@@ -1163,7 +1163,7 @@ class PregnancySupervisor(Module):
                                                        'type': f'{type_abortion}',
                                                        'timing': 'antenatal'})
 
-        df.at[individual_id, 'is_pregnant'] = False  # todo: this should have been replaced
+        self.sim.modules['Contraception'].end_pregnancy(individual_id)
 
         self.mother_and_newborn_info[individual_id]['delete_mni'] = True
 
@@ -1683,11 +1683,10 @@ class PregnancySupervisor(Module):
         # We reset the relevant pregnancy variables
         df.loc[women.index, 'ps_prev_stillbirth'] = True
 
-        # And reset relevant variables
-        df.loc[women.index, 'is_pregnant'] = False
-
-        # We turn the 'delete_mni' key to true- so after the next daly poll this womans entry is deleted
+        # We turn the 'delete_mni' key to true- so after the next daly poll this womans entry is deleted, and reset
+        # pregnancy status and update contraceptive status
         for person in women.index:
+            self.sim.modules['Contraception'].end_pregnancy(person)
             mni[person]['delete_mni'] = True
             logger.info(key='antenatal_stillbirth', data={'mother': person})
 
@@ -1714,9 +1713,11 @@ class PregnancySupervisor(Module):
                                          f'date {self.sim.date}')
 
         df.at[individual_id, 'ps_prev_stillbirth'] = True
-        df.at[individual_id, 'is_pregnant'] = False
         mni[individual_id]['delete_mni'] = True
         logger.info(key='antenatal_stillbirth', data={'mother': individual_id})
+
+        # Reset pregnancy and schedule possible update of contraception
+        self.sim.modules['Contraception'].end_pregnancy(individual_id)
 
         self.sim.modules['Labour'].reset_due_date(
             ind_or_df='individual', id_or_index=individual_id, new_due_date=pd.NaT)
@@ -2234,8 +2235,8 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
         if not df.at[individual_id, 'is_alive']:
             return
 
-        # reset pregnancy variables and store onset for daly calcualtion
-        df.at[individual_id, 'is_pregnant'] = False
+        # reset pregnancy variables and store onset for daly calculation
+        self.sim.modules['Contraception'].end_pregnancy(individual_id)
         self.module.store_dalys_in_mni(individual_id, 'ectopic_onset')
 
         self.sim.modules['Labour'].reset_due_date(
