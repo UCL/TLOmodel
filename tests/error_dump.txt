@@ -1,7 +1,0 @@
-"The HSI did not run: _level='1b', _appt_type='MajorSurg', _district='Likoma'"
-"The HSI did not run: _level='1b', _appt_type='MentOPD', _district='Likoma'"
-"The HSI did not run: _level='1b', _appt_type='MentClinic', _district='Likoma'"
-"The HSI did not run: _level='2', _appt_type='DentAccidEmerg', _district='Likoma'"
-"The HSI did not run: _level='2', _appt_type='DentSurg', _district='Likoma'"
-"The HSI did not run: _level='2', _appt_type='MentOPD', _district='Likoma'"
-"The HSI did not run: _level='2', _appt_type='MentClinic', _district='Likoma'"
