@@ -203,7 +203,7 @@ class HealthSystem(Module):
         self.capabilities_coefficient = capabilities_coefficient
 
         # Find which resourcefile to use - those for the actual staff available or the funded staff available
-        assert use_funded_or_actual_staffing in ['actual', 'funded']
+        assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
         self.use_funded_or_actual_staffing = use_funded_or_actual_staffing
 
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
@@ -256,7 +256,7 @@ class HealthSystem(Module):
         )
 
         # Load 'Daily_Capabilities' (for both actual and funded)
-        for _i in ['actual', 'funded']:
+        for _i in ['actual', 'funded', 'funded_plus']:
             self.parameters[f'Daily_Capabilities_{_i}'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'human_resources' / f'{_i}' / 'ResourceFile_Daily_Capabilities.csv')
 
