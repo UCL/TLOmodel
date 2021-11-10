@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -549,6 +550,7 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
 def test_all_appt_types_can_run():
     """Check that if an appointment type is declared as one that can run at a facility-type of level `x` that it can
     run at the level for persons in any district."""
+    # todo - repeat for actual and funded and see if we get the right level of appt_availability
 
     # Create Dummy Module to host the HSI
     class DummyModule(Module):
@@ -574,7 +576,10 @@ def test_all_appt_types_can_run():
             self.this_hsi_event_ran = False
 
         def apply(self, person_id, squeeze_factor):
-            self.this_hsi_event_ran = True
+            if (squeeze_factor != 99) and (squeeze_factor != np.inf):  # todo - this changed!
+                # Check that this appointment is being run and run not with a squeeze_factor that signifies that a cadre
+                # is not at all available.
+                self.this_hsi_event_ran = True
 
     sim = Simulation(start_date=start_date, seed=0)
 
@@ -582,7 +587,7 @@ def test_all_appt_types_can_run():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2,
+                                           mode_appt_constraints=1,
                                            use_funded_or_actual_staffing='funded_plus'),
                  # <-- hard constraint (only HSI events with no squeeze factor can run)
                  # <-- using the 'funded_plus' number/distribution of officers

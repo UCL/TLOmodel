@@ -278,7 +278,7 @@ class HealthSystem(Module):
         self.bed_days.pre_initialise_population()
 
     def initialise_population(self, population):
-        # todo - move this to initialis simulation
+        # todo - move this to initialise simulation
         # If capabilities coefficient was not explicitly specified, use ratio of initial
         # population size to estimated actual population in 2010
         if self.capabilities_coefficient is None:
@@ -336,7 +336,7 @@ class HealthSystem(Module):
 
         # * Define Facility Levels
         self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
-        assert self._facility_levels == set(['0', '1a', '1b', '2', '3', '4'])
+        assert self._facility_levels == {'0', '1a', '1b', '2', '3', '4'}  # todo soft code this to make refer to other files?
 
         # * Define Appointment Types
         self._appointment_types = set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
@@ -995,6 +995,7 @@ class HealthSystem(Module):
                 load_factor[officer] = float('inf')
             else:
                 load_factor[officer] = max(call / availability - 1, 0)
+            print(f"{officer}, call/availability={call / availability}")
 
         # 2) Convert these load-factors into an overall 'squeeze' signal for each HSI,
         # based on the highest load-factor of any officer required (or zero if event
