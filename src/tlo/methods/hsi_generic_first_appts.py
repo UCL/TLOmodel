@@ -305,6 +305,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
             # are either over 50 or younger than 50 but are selected to get tested.
             sim.modules['CardioMetabolicDisorders'].determine_if_will_be_investigated(person_id=person_id)
 
+
 def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     """The actions are taken during the non-emergency generic HSI, HSI_GenericEmergencyFirstApptAtFacilityLevel1."""
 
