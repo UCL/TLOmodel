@@ -13,7 +13,7 @@ from tlo import Property, Types, logging
 #   CLASS DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
-logger = logging.getLogger('tlo.method.healthsystem')
+logger = logging.getLogger('tlo.methods.healthsystem')
 
 
 class BedDays:
