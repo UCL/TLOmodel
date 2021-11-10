@@ -2410,7 +2410,7 @@ class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
         logger.info(key='msg', data='Now updating parameters in the maternal and perinatal health modules...')
 
         def switch_parameters(master_params, current_params):
-            for key, value in current_params.items():
+            for key, value in master_params.items():
                 if type(value) is list:
                     current_params[key] = master_params[key][1]
                 else:

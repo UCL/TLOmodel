@@ -157,10 +157,10 @@ def test_run_core_modules_normal_allocation_of_pregnancy():
     dtypes at the end"""
 
     sim = register_all_modules()
-    sim.make_initial_population(n=10000)
+    sim.make_initial_population(n=1000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.modules['PregnancySupervisor'].current_parameters['anc_service_structure'] = 4
-    sim.simulate(end_date=Date(2011, 1, 1))
+    sim.simulate(end_date=Date(2016, 1, 1))
     check_dtypes(sim)
 
 
