@@ -631,6 +631,7 @@ class HealthSystem(Module):
                 # (Integer or string specifying the facility level at which HSI_Event must occur)
                 # --**--
                 # To temporarily enable backward compatibility with "FacilityLevel1", automatically convert 1 to '1'
+                # todo - Remove this check after migration all HSI to the new format.
                 if hsi_event.ACCEPTED_FACILITY_LEVEL == 1:
                     hsi_event.ACCEPTED_FACILITY_LEVEL = '1a'
                 # --**--
@@ -989,7 +990,7 @@ class HealthSystem(Module):
         load_factor = {}
         for officer, call in total_footprint.items():
             availability = current_capabilities.get(officer)
-            if availability is None:
+            if availability is None:  # todo - does this ever happen, given that we structure current capabilities to be there for everyone?
                 load_factor[officer] = 99.99
             elif availability == 0:
                 load_factor[officer] = float('inf')
