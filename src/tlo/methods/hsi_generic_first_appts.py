@@ -62,9 +62,8 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
     def apply(self, person_id, squeeze_factor):
         """Run the actions required during the HSI."""
         df = self.sim.population.props
-        person = df.loc[person_id]
 
-        if not person.is_alive:
+        if not df.at[person_id, 'is_alive']:
             return
 
         do_at_generic_first_appt_non_emergency(hsi_event=self, squeeze_factor=squeeze_factor)
@@ -88,9 +87,8 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-        person = df.loc[person_id]
 
-        if not person.is_alive:
+        if not df.at[person_id, 'is_alive']:
             return
 
         do_at_generic_first_appt_emergency(hsi_event=self, squeeze_factor=squeeze_factor)
@@ -104,9 +102,8 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
     rng = hsi_event.module.rng
     person_id = hsi_event.target
     df = hsi_event.sim.population.props
-    person = df.loc[person_id]
     symptoms = hsi_event.sim.modules['SymptomManager'].has_what(person_id=person_id)
-    age = person.age_years
+    age = df.at[person_id, 'age_years']
     schedule_hsi = hsi_event.sim.modules["HealthSystem"].schedule_hsi_event
 
     # ----------------------------------- ALL AGES -----------------------------------
@@ -314,14 +311,13 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     rng = hsi_event.module.rng
     person_id = hsi_event.target
     df = hsi_event.sim.population.props
-    person = df.loc[person_id]
     symptoms = hsi_event.sim.modules['SymptomManager'].has_what(person_id=person_id)
     schedule_hsi = hsi_event.sim.modules["HealthSystem"].schedule_hsi_event
 
     if 'PregnancySupervisor' in sim.modules:
 
         # -----  ECTOPIC PREGNANCY  -----
-        if person.ps_ectopic_pregnancy != 'none':
+        if df.at[person_id, 'ps_ectopic_pregnancy'] != 'none':
             event = HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
                 module=sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
             schedule_hsi(event, priority=1, topen=sim.date)
@@ -339,8 +335,9 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
 
         # -----  COMPLICATION DURING BIRTH  -----
         if person_id in labour_list:
+            la_currently_in_labour = df.at[person_id, 'la_currently_in_labour']
             if (
-                person.la_currently_in_labour &
+                la_currently_in_labour &
                 mni[person_id]['sought_care_for_complication'] &
                 (mni[person_id]['sought_care_labour_phase'] == 'intrapartum')
             ):
@@ -351,7 +348,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
 
             # -----  COMPLICATION AFTER BIRTH  -----
             if (
-                person.la_currently_in_labour &
+                la_currently_in_labour &
                 mni[person_id]['sought_care_for_complication'] &
                 (mni[person_id]['sought_care_labour_phase'] == 'postpartum')
             ):
@@ -393,7 +390,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
             if malaria_test_result in ("severe_malaria", "clinical_malaria"):
                 # Launch the HSI for treatment for Malaria - choosing the right one for adults/children
-                if person.age_years < 5.0:
+                if df.at[person_id, 'age_years'] < 5.0:
                     schedule_hsi(
                         hsi_event=HSI_Malaria_complicated_treatment_child(
                             sim.modules["Malaria"], person_id=person_id
