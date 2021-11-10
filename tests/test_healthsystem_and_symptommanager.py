@@ -546,6 +546,7 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
     # Check that some mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
+# todo: check that can recreate daily_capabilities_table after construction of all the different data structures.
 
 def test_all_appt_types_can_run():
     """Check that if an appointment type is declared as one that can run at a facility-type of level `x` that it can
