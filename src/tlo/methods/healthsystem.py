@@ -219,7 +219,7 @@ class HealthSystem(Module):
         self.dx_manager = DxManager(self)
 
         # Create the instance of BedDays to record usage of in-patient bed days
-        self.bed_days = BedDays(self, logger)
+        self.bed_days = BedDays(self)
 
     def read_parameters(self, data_folder):
 
