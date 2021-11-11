@@ -2934,6 +2934,7 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
     def did_not_run(self, *args, **kwargs):
         pass
 
+
 class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event.
     An appointment of a person who has experienced a road traffic injury, had their injuries diagnosed through A&E
