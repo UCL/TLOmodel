@@ -1083,6 +1083,7 @@ class PregnancySupervisor(Module):
 
         # As care seeking is applied at week 8 gestational age, women who seek care within month two must attend within
         # the next week
+        # todo: is this rit???
         if anc_month == 2:
             days_until_anc = self.rng.randint(0, 6)
         else:
@@ -1924,7 +1925,7 @@ class PregnancySupervisor(Module):
         df.loc[late_initation_anc4.loc[late_initation_anc4].index, 'ps_anc4'] = True
 
         # Select any women who are not predicted to attend ANC4
-        anc_below_4 = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == 3) & \
+        anc_below_4 = df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks == gestation_of_interest) & \
                      (df.ps_ectopic_pregnancy == 'none') & ~df.ps_anc4
 
         early_initiation_anc_below_4 = pd.Series(self.rng.random_sample(len(anc_below_4.loc[anc_below_4]))
