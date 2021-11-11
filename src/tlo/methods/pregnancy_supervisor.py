@@ -421,11 +421,11 @@ class PregnancySupervisor(Module):
         self.load_parameters_from_dataframe(parameter_dataframe)
 
         # For the first period (2010-2015) we use the first value in each list as a parameter
-        for key, value in self.parameters.items():
-            if type(value) is list:
-                self.current_parameters[key] = self.parameters[key][0]
-            else:
-                self.current_parameters[key] = self.parameters[key]
+        #for key, value in self.parameters.items():
+        #    if type(value) is list:
+        #        self.current_parameters[key] = self.parameters[key][0]
+       #     else:
+       #         self.current_parameters[key] = self.parameters[key]
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module.
         # Currently this module calculates and reports all DALY weights from all maternal modules
@@ -499,12 +499,21 @@ class PregnancySupervisor(Module):
 
         previous_miscarriage = pd.Series(
             self.rng.random_sample(len(reproductive_age_women.loc[reproductive_age_women])) <
-            self.current_parameters['prob_previous_miscarriage_at_baseline'],
+            #self.current_parameters['prob_previous_miscarriage_at_baseline'],
+            self.parameters['prob_previous_miscarriage_at_baseline'][0],
             index=reproductive_age_women.loc[reproductive_age_women].index)
 
         df.loc[previous_miscarriage.loc[previous_miscarriage].index, 'ps_prev_spont_abortion'] = True
 
     def initialise_simulation(self, sim):
+
+        # TODO: triple check this is ok to live here
+        # For the first period (2010-2015) we use the first value in each list as a parameter
+        for key, value in self.parameters.items():
+            if type(value) is list:
+                self.current_parameters[key] = self.parameters[key][0]
+            else:
+                self.current_parameters[key] = self.parameters[key]
 
         # Register and schedule the PregnancySupervisorEvent
         sim.schedule_event(PregnancySupervisorEvent(self),

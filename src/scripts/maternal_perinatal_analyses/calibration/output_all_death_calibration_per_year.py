@@ -14,7 +14,7 @@ scenario_filename = 'preliminary_anc_4_test-.py'  # <-- update this to look at o
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_30k(ANC4)_preliminary_anc_4_test-2021-11-09T160903Z/death'
+graph_location = 'output_graphs_30k(ANC4TEST)_preliminary_anc_4_test-2021-11-10T153548Z/death'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)

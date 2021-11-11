@@ -2946,11 +2946,14 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             self.module.active_management_of_the_third_stage_of_labour(self)
 
         # ==== Caesarean section/AVD for un-modelled reason ======
-        # todo: still unsure if this is the right thing to do
-        if (not mni[person_id]['referred_for_cs'] and (not mni[person_id]['mode_of_delivery'] == 'instrumental')) and \
-            (self.module.rng.random_sample() < 0.02):  # todo: set as parameter
-            mni[person_id]['referred_for_cs'] = True
-            mni[person_id]['cs_indication'] = 'other'
+        # todo: check with TC if he thinks this is the right thing to do....
+        # todo: also need to link AVD to consumables use...
+        if not mni[person_id]['referred_for_cs'] and (not mni[person_id]['mode_of_delivery'] == 'instrumental'):
+            if self.module.rng.random_sample() < 0.02:  # todo: set as parameter
+                mni[person_id]['referred_for_cs'] = True
+                mni[person_id]['cs_indication'] = 'other'
+            elif self.module.rng.random_sample() < 0.008:  # todo: set as parameter
+                mni[person_id]['mode_of_delivery'] = 'instrumental'
 
         # ========================================== SCHEDULING CEMONC CARE =========================================
         # Finally women who require additional treatment have the appropriate HSI scheduled to deliver further care
