@@ -1654,6 +1654,21 @@ class RTI(Module):
                 tclose=self.sim.date + DateOffset(days=15)
             )
 
+    def rti_ask_for_imaging(self, person_id):
+        """
+        A function called by the generic emergency appointment to order imaging for diagnosis
+        :param person_id:
+        :return:
+        """
+        df = self.sim.population.props
+        if df.at[person_id, 'is_alive']:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_RTI_Imaging_Event(module=self, person_id=person_id),
+                priority=0,
+                topen=self.sim.date,
+                tclose=self.sim.date + DateOffset(days=15)
+            )
+
     def rti_ask_for_burn_treatment(self, person_id):
         """
         Function called by HSI_RTI_MedicalIntervention to centralise all burn treatment requests. This function
@@ -2897,6 +2912,27 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
 #
 #   Here are all the different Health System Interactions Events that this module will use.
 # ---------------------------------------------------------------------------------------------------------
+class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
+    """This HSI event is triggered by the generic first appointments. After first arriving into the health system at
+    either level 0 or level 1, should the injured person require a imaging to diagnose their injuries this HSI
+    event is caused and x-ray or ct scans are provided as needed"""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, RTI)
+        the_appt_footprint = module.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        road_traffic_injuries = module.sim.modules['RTI']
+        road_traffic_injuries.rti_injury_diagnosis(person_id, the_appt_footprint)
+        self.TREATMENT_ID = 'RTI_Imaging_Event'  # This must begin with the module name
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        self.sim.population.props.at[person_id, 'rt_diagnosed'] = True
+
+    def did_not_run(self, *args, **kwargs):
+        pass
 
 class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event.

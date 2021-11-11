@@ -1,8 +1,8 @@
 """This file contains the HSI events that represent the first contact with the Health System, which are triggered by
 the onset of symptoms. Non-emergency symptoms lead to `HSI_GenericFirstApptAtFacilityLevel0` and emergency symptoms
  lead to `HSI_GenericEmergencyFirstApptAtFacilityLevel1`. """
-
 import pandas as pd
+
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods.bladder_cancer import (
@@ -59,8 +59,15 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
         if 'injury' in symptoms:
             if 'RTI' in self.sim.modules:
                 # change the appointment footprint for general injuries if diagnostic equipment is needed
-                self.sim.modules['RTI'].rti_injury_diagnosis(person_id, the_appt_footprint)
                 df = self.sim.population.props
+                injuries_requiring_imaging = ['112', '113', '211', '212', '412', '414', '612', '712a', '712b', '712c',
+                                              '811', '812', '813a', '813b', '813c', '822a', '822b', '813bo', '813co',
+                                              '813do', '813eo', '673', '674', '675', '676', '322', '323', '722', '342',
+                                              '343', '441', '443', '453', '133', '134', '135', '552', '553', '554',
+                                              '342', '343', '441', '443', '453', '361', '363', '461', '463']
+                persons_injuries = df.loc[person_id, self.sim.modules['RTI'].INJURY_COLUMNS]
+                if len(set(injuries_requiring_imaging).intersection(persons_injuries)) > 0:
+                    self.sim.modules['RTI'].rti_ask_for_imaging(person_id)
                 if df.loc[person_id, 'rt_in_shock']:
                     self.sim.modules['RTI'].rti_ask_for_shock_treatment(person_id)
 
@@ -333,16 +340,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         road_traffic_injuries.rti_ask_for_shock_treatment(person_id)
 
 
-    def did_not_run(self):
-        logger.debug(key='message',
-                     data='HSI_GenericFirstApptAtFacilityLevel1: did not run')
-
-
-# ---------------------------------------------------------------------------------------------------------
-#    HSI_GenericFirstApptAtFacilityLevel0
-# ---------------------------------------------------------------------------------------------------------
-
-
 def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     """The actions are taken during the non-emergency generic HSI, HSI_GenericEmergencyFirstApptAtFacilityLevel1."""
 
@@ -494,17 +491,17 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                         'Intervention_Package_Code': dict(),
                         'Item_Code': {item_code_x_ray_film: counts}}
                     is_cons_available_1 = sim.modules['HealthSystem'].request_consumables(
-                        hsi_event=sim.modules['RTI'],
+                        hsi_event=hsi_event,
                         cons_req_as_footprint=consumables_x_ray,
                         to_log=False)
 
                     if is_cons_available_1:
-                        logger.debug('This facility has x-ray capability which has been used to diagnose person %d.',
-                                     person_id)
+                        logger.debug(
+                            'This facility has x-ray capability which has been used to diagnose person %d.',
+                            person_id)
                         logger.debug(f'Person %d had x-rays for their {counts} fractures')
                     else:
                         logger.debug('Total amount of x-rays required for person %d unavailable', person_id)
                 df.at[person_id, 'rt_diagnosed'] = True
 
                 road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)
-
