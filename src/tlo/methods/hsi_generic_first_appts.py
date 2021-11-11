@@ -86,7 +86,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        assert module.name in ['HealthSeekingBehaviour', 'Labour', 'PregnancySupervisor']
+        assert module.name in ['HealthSeekingBehaviour', 'Labour', 'PregnancySupervisor', 'RTI']
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
         the_appt_footprint = self.make_appt_footprint({
             'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
