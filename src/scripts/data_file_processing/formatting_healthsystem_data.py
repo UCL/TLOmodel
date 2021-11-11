@@ -70,14 +70,13 @@ population = pd.read_csv(
 )
 
 pop_by_district = pd.DataFrame(population.groupby('District')['Count'].sum())
-# pop_by_region = pd.DataFrame(population.groupby('Region')['Count'].sum())
 
 # Add the column of Region
 for d in pop_by_district.index:
     pop_by_district.loc[d, 'Region'] = population.loc[population['District'] == d, 'Region'].values[0]
 
 # Save
-pop_by_district.to_csv(outputlocation / 'organisation' / 'ResourceFile_District_Population_Data.csv', index=True)
+# pop_by_district.to_csv(outputlocation / 'organisation' / 'ResourceFile_District_Population_Data.csv', index=True)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** Below we generate staffing tables: fund_staffing_table for funded/established staff, and\
@@ -278,9 +277,9 @@ curr_staff_distribution.loc[idx_dcsa[1:4], 'Proportion'] = 0.00
 # curr_staff_distribution ready!
 
 # Save
-curr_staff_distribution.to_csv(
-    outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Staff_Distribution_Assumption.csv',
-    index=False)
+# curr_staff_distribution.to_csv(
+#     outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Staff_Distribution_Assumption.csv',
+#     index=False)
 
 # --- Generate assumptions of established/funded staff distribution at facility levels 0&1a&1b&2
 # Read 2018-03-09 Facility-level establishment MOH & CHAM from CHAI auxiliary datasets
@@ -464,9 +463,9 @@ fund_staff_distribution.loc[fund_idx_dcsa[1:4], 'Proportion_Fund'] = 0.00
 # fund_staff_distribution ready!
 
 # Save
-fund_staff_distribution.to_csv(
-    outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Staff_Distribution_Assumption.csv',
-    index=False)
+# fund_staff_distribution.to_csv(
+#     outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Staff_Distribution_Assumption.csv',
+#     index=False)
 
 # We read info from CHAI estimates of optimal and immediately needed workforce for comparison wherever possible
 # --- CHAI WFOM optimal workforce and immediately needed staff distribution
@@ -668,7 +667,7 @@ for i in range(63):
         )
 
 # Save
-compare_staff_distribution.to_csv(outputlocation / 'ResourceFile_Staff_Distribution_Compare.csv', index=False)
+# compare_staff_distribution.to_csv(outputlocation / 'ResourceFile_Staff_Distribution_Compare.csv', index=False)
 
 # ***
 # --- fund_staffing_table for funded/established staff
@@ -720,12 +719,12 @@ fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'].isin(['KCH',
 # Since districts Balaka,Machinga,Mwanza,Neno,Ntchisi,Salima and central hospitals have 0 C01, while C01 is \
 # required by Mental appts at level 1b, level 2 and level 3, we move some C01 from 'HQ or missing' to them. \
 # To achieve this, we evenly distribute 30 C01 at HQ to all districts and central hospitals (27 DisHos, 4 CenHos)
-# C01_at_HQ = fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'C01'].values
-# extra_C01_per_district_CenHos = C01_at_HQ / 31
-# fund_staffing_table.loc[~fund_staffing_table['District_Or_Hospital'].isin(['HQ or missing']), 'C01'] = (
-#     fund_staffing_table.loc[~fund_staffing_table['District_Or_Hospital'].isin(['HQ or missing']), 'C01'] +
-#     extra_C01_per_district_CenHos)
-# fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'C01'] = 0
+C01_at_HQ = fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'C01'].values
+extra_C01_per_district_CenHos = C01_at_HQ / 31
+fund_staffing_table.loc[~fund_staffing_table['District_Or_Hospital'].isin(['HQ or missing']), 'C01'] = (
+    fund_staffing_table.loc[~fund_staffing_table['District_Or_Hospital'].isin(['HQ or missing']), 'C01'] +
+    extra_C01_per_district_CenHos)
+fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'C01'] = 0
 
 # Sort out which are district allocations and which are central hospitals and above
 
@@ -771,7 +770,7 @@ fund_staffing_table.reset_index(drop=True, inplace=True)
 fund_staffing_table.fillna(0, inplace=True)
 
 # File 2018-03-09 Facility-level establishment MOH & CHAM indicates that ZMH is assigned to Zomba District,
-# We therefore subtract 3 C01 are from Zomba District.
+# We therefore subtract the 3 C01 staff from Zomba District.
 fund_idx_ZombaDist = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Zomba'].index
 fund_staffing_table.loc[fund_idx_ZombaDist, 'C01'] = \
     fund_staffing_table.loc[fund_idx_ZombaDist, 'C01'] - fund_ZMH.loc[0, 'C01']
@@ -873,15 +872,15 @@ fund_staffing_table = district_faclevel.merge(fund_staffing_table, how='outer')
 # Before split, update the funded C01 distributions at levels 1a, 1b and 2 using CHAI Optimal Workforce estimates. \
 # This is because funded C01 are all at level 1b (100%), meanwhile appt time base requires C01 at level 2. \
 # CHAI Optimal Workforce locates C01 47.92% at level 1b and 52.08% at level 2, which seems more sensible.
-# idx_c01_level_1b = fund_staff_distribution[
-#     (fund_staff_distribution['Cadre_Code'] == 'C01') &
-#     (fund_staff_distribution['Facility_Level'] == 'Facility_Level_1b')].index
-# fund_staff_distribution.loc[idx_c01_level_1b, 'Proportion_Fund'] = 0.4792
-#
-# idx_c01_level_2 = fund_staff_distribution[
-#     (fund_staff_distribution['Cadre_Code'] == 'C01') &
-#     (fund_staff_distribution['Facility_Level'] == 'Facility_Level_2')].index
-# fund_staff_distribution.loc[idx_c01_level_2, 'Proportion_Fund'] = 0.5208
+idx_c01_level_1b = fund_staff_distribution[
+    (fund_staff_distribution['Cadre_Code'] == 'C01') &
+    (fund_staff_distribution['Facility_Level'] == 'Facility_Level_1b')].index
+fund_staff_distribution.loc[idx_c01_level_1b, 'Proportion_Fund'] = 0.4792
+
+idx_c01_level_2 = fund_staff_distribution[
+    (fund_staff_distribution['Cadre_Code'] == 'C01') &
+    (fund_staff_distribution['Facility_Level'] == 'Facility_Level_2')].index
+fund_staff_distribution.loc[idx_c01_level_2, 'Proportion_Fund'] = 0.5208
 
 # Split
 for district in pop['District']:
@@ -913,8 +912,8 @@ fund_staffing_table.loc[128:132, 'Facility_Level'] = ['Facility_Level_5', 'Facil
 
 # Save the table without column 'Is_DistrictLevel'; staff counts in floats
 fund_staffing_table_to_save = fund_staffing_table.drop(columns='Is_DistrictLevel', inplace=False)
-fund_staffing_table_to_save.to_csv(
-    outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Staff_Table.csv', index=False)
+# fund_staffing_table_to_save.to_csv(
+#     outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Staff_Table.csv', index=False)
 # fund_staffing_table_to_save.to_csv(
 #     outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Staff_Table.csv', index=False)
 
@@ -1094,8 +1093,8 @@ curr_staffing_table.loc[128:133, 'Facility_Level'] = ['Facility_Level_5', 'Facil
 
 # Save the table without column 'Is_DistrictLevel'; staff counts in floats
 curr_staffing_table_to_save = curr_staffing_table.drop(columns='Is_DistrictLevel', inplace=False)
-curr_staffing_table_to_save.to_csv(
-    outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Staff_Table.csv', index=False)
+# curr_staffing_table_to_save.to_csv(
+#     outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Staff_Table.csv', index=False)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** Create the Master Facilities List
@@ -1194,8 +1193,8 @@ for d in pop_districts:
 assert len(facilities_by_district) == len(pop_districts) * len(Facility_Levels)
 
 # Save
-facilities_by_district.to_csv(outputlocation / 'organisation' / 'ResourceFile_Facilities_For_Each_District.csv',
-                              index=False)
+# facilities_by_district.to_csv(outputlocation / 'organisation' / 'ResourceFile_Facilities_For_Each_District.csv',
+#                               index=False)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** Now look at the types of appointments
@@ -1716,12 +1715,15 @@ curr_daily_capability_coarse.drop(columns=['Officer_Type_Code', 'Officer_Type'],
 curr_daily_capability_coarse.reset_index(drop=True, inplace=True)
 
 # Save
-HosHC_patient_facing_time.to_csv(
-    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Patient_Facing_Time.csv', index=False)
-funded_daily_capability_coarse.to_csv(
-    outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Daily_Capabilities.csv', index=False)
+# HosHC_patient_facing_time.to_csv(
+#     outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Patient_Facing_Time.csv', index=False)
+
 # funded_daily_capability_coarse.to_csv(
-#     outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv', index=False)
+#     outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Daily_Capabilities.csv', index=False)
+
+funded_daily_capability_coarse.to_csv(
+    outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv', index=False)
+
 curr_daily_capability_coarse.to_csv(
     outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Daily_Capabilities.csv', index=False)
 
@@ -1794,13 +1796,13 @@ def all_appts_can_run(capability):
 
 
 # Save results for funded
-appt_have_or_miss_capability_funded = all_appts_can_run(funded_daily_capability_coarse)
-appt_have_or_miss_capability_funded.to_csv(
-    outputlocation / 'human_resources' / 'funded' / 'appt_have_or_miss_capability.csv', index=False)
+# appt_have_or_miss_capability_funded = all_appts_can_run(funded_daily_capability_coarse)
+# appt_have_or_miss_capability_funded.to_csv(
+#     outputlocation / 'human_resources' / 'funded' / 'appt_have_or_miss_capability.csv', index=False)
 # appt_have_or_miss_capability_funded.to_csv(
 #     outputlocation / 'human_resources' / 'funded_plus' / 'appt_have_or_miss_capability.csv', index=False)
 
 # Save results for actual
-appt_have_or_miss_capability_actual = all_appts_can_run(curr_daily_capability_coarse)
-appt_have_or_miss_capability_actual.to_csv(
-    outputlocation / 'human_resources' / 'actual' / 'appt_have_or_miss_capability.csv', index=False)
+# appt_have_or_miss_capability_actual = all_appts_can_run(curr_daily_capability_coarse)
+# appt_have_or_miss_capability_actual.to_csv(
+#     outputlocation / 'human_resources' / 'actual' / 'appt_have_or_miss_capability.csv', index=False)
