@@ -716,6 +716,7 @@ fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'].isin(['KCH',
     fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']), 'D01'] + \
     extra_D01_per_referralhosp
 
+# *** Only for funded_plus ********************************************************************************************
 # Since districts Balaka,Machinga,Mwanza,Neno,Ntchisi,Salima and central hospitals have 0 C01, while C01 is \
 # required by Mental appts at level 1b, level 2 and level 3, we move some C01 from 'HQ or missing' to them. \
 # To achieve this, we evenly distribute 30 C01 at HQ to all districts and central hospitals (27 DisHos, 4 CenHos)
@@ -725,6 +726,7 @@ fund_staffing_table.loc[~fund_staffing_table['District_Or_Hospital'].isin(['HQ o
     fund_staffing_table.loc[~fund_staffing_table['District_Or_Hospital'].isin(['HQ or missing']), 'C01'] +
     extra_C01_per_district_CenHos)
 fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'C01'] = 0
+# *********************************************************************************************************************
 
 # Sort out which are district allocations and which are central hospitals and above
 
@@ -869,6 +871,7 @@ fund_staffing_table = district_faclevel.merge(fund_staffing_table, how='outer')
 
 # Split staff among levels
 
+# *** Only for funded_plus ********************************************************************************************
 # Before split, update the funded C01 distributions at levels 1a, 1b and 2 using CHAI Optimal Workforce estimates. \
 # This is because funded C01 are all at level 1b (100%), meanwhile appt time base requires C01 at level 2. \
 # CHAI Optimal Workforce locates C01 47.92% at level 1b and 52.08% at level 2, which seems more sensible.
@@ -881,6 +884,7 @@ idx_c01_level_2 = fund_staff_distribution[
     (fund_staff_distribution['Cadre_Code'] == 'C01') &
     (fund_staff_distribution['Facility_Level'] == 'Facility_Level_2')].index
 fund_staff_distribution.loc[idx_c01_level_2, 'Proportion_Fund'] = 0.5208
+# *********************************************************************************************************************
 
 # Split
 for district in pop['District']:
@@ -1718,11 +1722,14 @@ curr_daily_capability_coarse.reset_index(drop=True, inplace=True)
 # HosHC_patient_facing_time.to_csv(
 #     outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Patient_Facing_Time.csv', index=False)
 
+# Need to # two lines below when generate funded_plus capability
 # funded_daily_capability_coarse.to_csv(
 #     outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Daily_Capabilities.csv', index=False)
 
+# *** Only for funded_plus ********************************************************************************************
 funded_daily_capability_coarse.to_csv(
     outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv', index=False)
+# *********************************************************************************************************************
 
 curr_daily_capability_coarse.to_csv(
     outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Daily_Capabilities.csv', index=False)
