@@ -27,15 +27,11 @@ tlo batch-job tlo_q1_demo-123 --tasks
 Download result files for a completed job:
 tlo batch-download tlo_q1_demo-123
 
-This currently will run multiple simulations of the baseline scenario
-with all parameters set to default
-
 """
 
 from random import randint
 
-from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo import Date, logging
 from tlo.methods import (
     demography,
     dx_algorithm_child,
