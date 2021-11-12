@@ -1083,12 +1083,11 @@ class PregnancySupervisor(Module):
 
         # As care seeking is applied at week 8 gestational age, women who seek care within month two must attend within
         # the next week
-        # todo: is this rit???
         if anc_month == 2:
             days_until_anc = self.rng.randint(0, 6)
         else:
             # Otherwise we draw a week between the min max weeks for predicted month of visit, and then a random day
-            weeks_of_visit = (self.rng.randint(months_min_max[anc_month][0], months_min_max[anc_month][1]) - 3)
+            weeks_of_visit = (self.rng.randint(months_min_max[anc_month][0], months_min_max[anc_month][1]) - 8)
             days_until_anc = (weeks_of_visit * 7) + self.rng.randint(0, 6)
 
         first_anc_date = self.sim.date + DateOffset(days=days_until_anc)
