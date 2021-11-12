@@ -37,9 +37,9 @@ class TestScenario(BaseScenario):
         self.seed = 32
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2019, 12, 31)
-        self.pop_size = 150000
+        self.pop_size = 1500
         self.number_of_draws = number_of_draws
-        self.runs_per_draw = 5
+        self.runs_per_draw = 2
 
     def log_configuration(self):
         return {
