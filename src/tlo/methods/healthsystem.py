@@ -1,8 +1,9 @@
 """
+Todo:   - speed up
 Todo:   - streamline input arguments
         - let the level of the appointment be in the log
         - let the logger give times of each hcw
-        - bed days parameterisation and use of HR capacity attaching automatically to beddays
+        - bed days parameterization and use of HR capacity attaching automatically to beddays
 """
 
 import heapq as hp
@@ -622,16 +623,6 @@ class HealthSystem(Module):
                 assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT)
 
                 # That it has an 'ACCEPTED_FACILITY_LEVEL' attribute
-                # (Integer or string specifying the facility level at which HSI_Event must occur)
-                # --**--
-                # To temporarily enable backward compatibility with "FacilityLevel1", automatically convert 1 to '1'
-                # todo - Remove this check after migration all HSI to the new format.
-                if hsi_event.ACCEPTED_FACILITY_LEVEL == 1:
-                    hsi_event.ACCEPTED_FACILITY_LEVEL = '1a'
-                # --**--
-                hsi_event.ACCEPTED_FACILITY_LEVEL = str(hsi_event.ACCEPTED_FACILITY_LEVEL) \
-                    if not isinstance(hsi_event.ACCEPTED_FACILITY_LEVEL, str) \
-                    else hsi_event.ACCEPTED_FACILITY_LEVEL
                 assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels, \
                     f"In the HSI with {hsi_event.TREATMENT_ID=}, the value for {hsi_event.ACCEPTED_FACILITY_LEVEL=}" \
                     f" is not a recognised facility level."
@@ -884,7 +875,7 @@ class HealthSystem(Module):
         # Gather information about the HSI event
         the_district = self.sim.population.props.at[
             hsi_event.target, 'district_of_residence']
-        the_level = str(hsi_event.ACCEPTED_FACILITY_LEVEL)  # <-- todo: 'str' can now be removed
+        the_level = hsi_event.ACCEPTED_FACILITY_LEVEL
 
         # Return the (one) health_facility available to this person (based on their
         # district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL

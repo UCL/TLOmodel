@@ -103,7 +103,7 @@ def test_bed_days_basics(tmpdir):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = 1
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
             self.ALERT_OTHER_DISEASES = []
 
         def apply(self, person_id, squeeze_factor):
@@ -116,7 +116,7 @@ def test_bed_days_basics(tmpdir):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = 2
+            self.ACCEPTED_FACILITY_LEVEL = '2'
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({
                 'high_dependency_bed': 10,
@@ -308,7 +308,7 @@ def test_bed_days_property_is_inpatient(tmpdir):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = 2
+            self.ACCEPTED_FACILITY_LEVEL = '2'
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
 
@@ -427,7 +427,7 @@ def test_bed_days_released_on_death(tmpdir):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = 2
+            self.ACCEPTED_FACILITY_LEVEL = '2'
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 10})
 
@@ -510,7 +510,7 @@ def test_bed_days_basics_with_healthsystem_disabled():
             self.this_ran = False
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = 2
+            self.ACCEPTED_FACILITY_LEVEL = '2'
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({
                 'high_dependency_bed': 10,

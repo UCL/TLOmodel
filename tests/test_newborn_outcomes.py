@@ -440,7 +440,7 @@ def test_newborn_hsi_applies_risk_of_complications_and_delivers_treatment_to_fac
 
     # Run the newborn care event
     newborn_care = newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(
-        person_id=child_id, module=sim.modules['NewbornOutcomes'], facility_level_of_this_hsi=2)
+        person_id=child_id, module=sim.modules['NewbornOutcomes'], facility_level_of_this_hsi='2')
     newborn_care.apply(person_id=child_id, squeeze_factor=0.0)
 
     # check that the risk of complications has correctly been applied

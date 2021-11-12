@@ -633,9 +633,6 @@ def test_all_appt_types_can_run():
         else:
             return True
 
-    # Test specific cases here:
-    check_appt_works(district='Likoma', level='1b', appt_type='MajorSurg')
-
     for _district in person_for_district:
         for _facility_level_col_name in appt_types_offered.columns:
             for _appt_type in appt_types_offered[_facility_level_col_name].loc[
@@ -716,7 +713,7 @@ def test_use_of_helper_function_get_all_consumables():
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = module.sim.modules['HealthSystem'].get_blank_appt_footprint()
-            self.ACCEPTED_FACILITY_LEVEL = 0
+            self.ACCEPTED_FACILITY_LEVEL = '0'
             self.ALERT_OTHER_DISEASES = []
 
         def apply(self, person_id, squeeze_factor):
@@ -780,7 +777,7 @@ def test_speeding_up_request_consumables():
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-            self.ACCEPTED_FACILITY_LEVEL = 0
+            self.ACCEPTED_FACILITY_LEVEL = '0'
             self.ALERT_OTHER_DISEASES = []
 
         def apply(self, person_id, squeeze_factor):

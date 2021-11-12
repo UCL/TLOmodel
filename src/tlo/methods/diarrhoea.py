@@ -1519,7 +1519,7 @@ class HSI_Diarrhoea_Treatment_Outpatient(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = 'Diarrhoea_Treatment_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):

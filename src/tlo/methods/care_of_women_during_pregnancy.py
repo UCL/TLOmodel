@@ -591,7 +591,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # Use a weighted random draw to determine which level of facility the woman will be admitted too
         # facility_level = int(self.rng.choice([1, 2, 3], p=params['prob_an_ip_at_facility_level_1_2_3']))
-        facility_level = int(self.rng.choice([1, 2], p=[0.5, 0.5]))
+        facility_level = self.rng.choice(['1a', '1b'], p=[0.5, 0.5])  # todo - note choice of facility_levels
 
         # Schedule the HSI
         inpatient = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
@@ -2463,7 +2463,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
         the_appt_footprint['Over5OPD'] = 1
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2501,7 +2501,7 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
         the_appt_footprint['Over5OPD'] = 1
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2516,7 +2516,7 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
             logger.debug(key='msg', data=f'Mother {person_id} has presented at HSI_CareOfWomenDuringPregnancy_Maternal'
                                          f'EmergencyAssessment to seek care for a complication ')
 
-            facility_level = int(self.module.rng.choice([1, 2], p=[0.5, 0.5]))
+            facility_level = self.module.rng.choice(['1a', '1b'], p=[0.5, 0.5])  # todo note choice
 
             admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id,
@@ -2834,7 +2834,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_
         the_appt_footprint['ANCSubsequent'] = 1
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2861,7 +2861,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_
             # If she is determined to still be anaemic she is admitted for additional treatment via the inpatient event
             elif fbc_result == 'mild' or fbc_result == 'moderate' or fbc_result == 'severe':
 
-                facility_level = int(self.module.rng.choice([1, 2], p=[0.5, 0.5]))
+                facility_level = self.module.rng.choice(['1a', '1b'], p=[0.5, 0.5])  # todo note choice
 
                 admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
                     self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id,
@@ -2899,7 +2899,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
         the_appt_footprint['ANCSubsequent'] = 1
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -3040,7 +3040,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PostAbortionCaseManagement'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1  # any hospital?
+        self.ACCEPTED_FACILITY_LEVEL = '1a'  # any hospital?
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 3})
 
