@@ -1,9 +1,9 @@
 """
-Todo:   - speed up
-Todo:   - streamline input arguments
-        - let the level of the appointment be in the log
-        - let the logger give times of each hcw
-        - bed days parameterization and use of HR capacity attaching automatically to beddays
+Remaining to do:
+- streamline input arguments
+- let the level of the appointment be in the log
+- let the logger give times of each hcw
+- bed days parameterization and use of HR capacity attaching automatically to beddays
 """
 
 import heapq as hp
