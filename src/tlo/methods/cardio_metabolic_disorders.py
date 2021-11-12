@@ -299,17 +299,10 @@ class CardioMetabolicDisorders(Module):
         # -------------------- SYMPTOMS ---------------------------------------------------------------
         # Register symptoms for conditions and give non-generic symptom 'average' healthcare seeking
         for symptom_name in self.symptoms:
-            # Those with chronic lower back pain have a higher propensity to seek care than other conditions
-            if symptom_name == 'chronic_lower_back_pain_symptoms':
-                self.sim.modules['SymptomManager'].register_symptom(
-                    Symptom(name=symptom_name,
-                            odds_ratio_health_seeking_in_adults=0.2)
-                )
-            else:
-                self.sim.modules['SymptomManager'].register_symptom(
-                    Symptom(name=symptom_name,
-                            odds_ratio_health_seeking_in_adults=0.0001)
-                )
+            self.sim.modules['SymptomManager'].register_symptom(
+                Symptom(name=symptom_name,
+                        odds_ratio_health_seeking_in_adults=0.0001)
+            )
         # Register symptoms from events and make them emergencies
         for event in self.events:
             self.sim.modules['SymptomManager'].register_symptom(
@@ -344,7 +337,7 @@ class CardioMetabolicDisorders(Module):
                 df.loc[eligible[init_diagnosis], f'nc_{_condition}_ever_diagnosed'] = True
                 df.loc[eligible[init_diagnosis], f'nc_{_condition}_date_diagnosis'] = self.sim.date
                 df.loc[eligible[init_diagnosis], f'nc_{_condition}_date_last_test'] = self.sim.date
-                df.loc[eligible[init_diagnosis], f'nc_{_condition}_on_medication'] = self.sim.date
+                df.loc[eligible[init_diagnosis], f'nc_{_condition}_on_medication'] = True
 
         def sample_eligible_treatment_success(_filter, _p, _condition):
             """uses filter to get eligible population and samples individuals for prior diagnosis & medication use
@@ -657,7 +650,18 @@ class CardioMetabolicDisorders(Module):
             Predictor('nc_chronic_kidney_disease').when(True, p['rr_chronic_kidney_disease']),
             Predictor('nc_chronic_lower_back_pain').when(True, p['rr_chronic_lower_back_pain']),
             Predictor('nc_chronic_ischemic_hd').when(True, p['rr_chronic_ischemic_heart_disease']),
-            Predictor('nc_ever_stroke').when(True, p['rr_ever_stroke'])
+            Predictor('nc_ever_stroke').when(True, p['rr_ever_stroke']),
+            Predictor('nc_ever_heart_attack').when(True, p['rr_ever_heart_attack']),
+            Predictor('nc_diabetes_on_medication').when(True, p['rr_diabetes_on_medication']),
+            Predictor('nc_hypertension_on_medication').when(True, p['rr_hypertension_on_medication']),
+            Predictor('nc_chronic_lower_back_pain_on_medication').when(True, p[
+                'rr_chronic_lower_back_pain_on_medication']),
+            Predictor('nc_chronic_kidney_disease_on_medication').when(True, p[
+                'rr_chronic_kidney_disease_on_medication']),
+            Predictor('nc_chronic_ischemic_hd_on_medication').when(True, p[
+                'rr_chronic_ischemic_heart_disease_on_medication']),
+            Predictor('nc_ever_stroke_on_medication').when(True, p['rr_stroke_on_medication']),
+            Predictor('nc_ever_heart_attack_on_medication').when(True, p['rr_heart_attack_on_medication'])
         )
 
         return linearmodel
@@ -794,7 +798,7 @@ class CardioMetabolicDisorders(Module):
                     current_date=self.sim.date, date_of_last_test=df.at[
                         person_id, f'nc_{condition}_date_last_test']):
                     # TODO: @britta make these not arbitrary
-                    if df.at[person_id, 'age_years'] >= 50 or (self.rng.rand() < self.parameters[
+                    if (self.rng.rand() < self.parameters[
                                 f'{condition}_hsi'].get('pr_assessed_other_symptoms')):
                         # initiate HSI event
                         hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
