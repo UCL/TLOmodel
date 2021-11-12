@@ -364,6 +364,9 @@ class PregnancySupervisor(Module):
         'anc_service_structure': Parameter(
             Types.INT, 'stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysis'
                        ' scripts to change ANC structure'),
+        'switch_anc_coverage': Parameter(
+            Types.BOOL, 'used to signal if a change in parameters governing ANC coverage should be made at some '
+                        'predetermined time point'),
 
     }
 
@@ -419,13 +422,6 @@ class PregnancySupervisor(Module):
         parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
                                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
-
-        # For the first period (2010-2015) we use the first value in each list as a parameter
-        #for key, value in self.parameters.items():
-        #    if type(value) is list:
-        #        self.current_parameters[key] = self.parameters[key][0]
-       #     else:
-       #         self.current_parameters[key] = self.parameters[key]
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module.
         # Currently this module calculates and reports all DALY weights from all maternal modules
@@ -526,6 +522,10 @@ class PregnancySupervisor(Module):
         # Register and schedule the parameter update event
         sim.schedule_event(ParameterUpdateEvent(self),
                            Date(2015, 1, 1))
+
+        # Register and schedule the parameter override event
+        sim.schedule_event(OverrideKeyParameterForAnalysis(self),
+                           Date(2020, 1, 1))
 
         # ==================================== LINEAR MODEL EQUATIONS =================================================
         # Here we scale linear models according to distribution of predictors in the dataframe at baseline
@@ -2438,6 +2438,20 @@ class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
 
         switch_parameters(self.sim.modules['PostnatalSupervisor'].parameters,
                           self.sim.modules['PostnatalSupervisor'].current_parameters)
+
+
+class OverrideKeyParameterForAnalysis(Event, PopulationScopeEventMixin):
+    """"""
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+        params = self.module.current_parameters
+
+        # todo how do i set boolean properties in excel, even typing false gives a true result
+        if params['switch_anc_coverage']:
+            params['odds_early_init_anc4'] = params['odds_early_init_anc4'] * 2
+            params['prob_late_initiation_anc4'] = params['prob_late_initiation_anc4'] * 2
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):

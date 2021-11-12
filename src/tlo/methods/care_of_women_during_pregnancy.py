@@ -2506,8 +2506,11 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
             self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
                                                                 topen=visit_date,
                                                                 tclose=visit_date + DateOffset(days=7))
-            df.at[person_id, 'ps_date_of_anc1'] = visit_date
-            return
+
+            if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 0:
+                df.at[person_id, 'ps_date_of_anc1'] = visit_date
+            else:
+                df.at[person_id, 'ac_date_next_contact'] = visit_date
 
         # Finally, if the squeeze factor is too high the event wont run and she will return tomorrow
         elif squeeze_factor > params['squeeze_factor_threshold_anc']:
@@ -2517,14 +2520,15 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
             return
 
         # --------------------------------------- LOGGING AND FURTHER CHECKS.... ----------------------------------
-        anc_rows = {'ga_anc_one': df.at[person_id, 'ps_gestational_age_in_weeks'],
-                    'anc_ints': []}
-
-        self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_id].update(anc_rows)
 
         if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 0:
             logger.info(key='anc1', data={'mother': person_id,
                                           'gestation': df.at[person_id, 'ps_gestational_age_in_weeks']})
+
+            anc_rows = {'ga_anc_one': df.at[person_id, 'ps_gestational_age_in_weeks'],
+                        'anc_ints': []}
+
+            self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_id].update(anc_rows)
 
         if self.ACCEPTED_FACILITY_LEVEL == 1:
             # Assume a 50/50 chance of health centre or hospital in level 1, however this will need editing
@@ -2555,13 +2559,16 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
             self.module.point_of_care_hb_testing(hsi_event=self)
             self.module.tetanus_vaccination(hsi_event=self)
 
-        if (df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 2) or \
-            (mother.ps_gestational_age_in_weeks > 20):
+        if (
+            df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 2) or \
+            ((mother.ps_gestational_age_in_weeks > 20) and (df.at[person_id, 'ac_total_anc_visits_current_'
+                                                                            'pregnancy'] == 1)):
             self.module.albendazole_administration(hsi_event=self)
             self.module.tetanus_vaccination(hsi_event=self)
 
-        elif df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 3 or \
-            (mother.ps_gestational_age_in_weeks > 30):
+        elif df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 3 or\
+            ((mother.ps_gestational_age_in_weeks > 30) and (df.at[person_id, 'ac_total_anc_visits_current_'
+                                                                            'pregnancy'] == 1)):
             self.module.point_of_care_hb_testing(hsi_event=self)
 
         # --------------------------------------- SCHEDULE NEXT VISIT ---------------------------------------
@@ -2586,9 +2593,9 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
 
                     visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
                     self.sim.modules['HealthSystem'].schedule_hsi_event(visit,
-                                                                            priority=0,
-                                                                            topen=visit_date,
-                                                                            tclose=visit_date + DateOffset(days=7))
+                                                                        priority=0,
+                                                                        topen=visit_date,
+                                                                        tclose=visit_date + DateOffset(days=7))
 
                     df.at[person_id, 'ac_date_next_contact'] = visit_date
 
