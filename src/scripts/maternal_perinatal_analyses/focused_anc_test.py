@@ -34,7 +34,7 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'focused_anc_test_10k',
+            'filename': 'focused_anc_test_10k', 'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
