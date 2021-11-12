@@ -126,6 +126,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         # Do HIV 'automatic' testing for everyone attending care:
         #  - suppress the footprint (as it done as part of another appointment)
         #  - do not do referrals if the person is HIV negative (assumed not time for counselling etc).
+        # todo comment/uncomment
         if 'Hiv' in self.sim.modules:
             schedule_hsi(
                  HSI_Hiv_TestAndRefer(
@@ -456,6 +457,8 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         # -----  HIV  -----
         # Do HIV 'automatic' testing for everyone attending care
+        # todo comment/uncomment
+
         if 'Hiv' in self.sim.modules:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),

@@ -6,6 +6,7 @@ save outputs for plotting (file: output_plots_tb.py)
 import datetime
 import pickle
 from pathlib import Path
+import random
 
 import pandas as pd
 
@@ -36,8 +37,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2019, 1, 1)
-popsize = 15000
+end_date = Date(2017, 1, 1)
+popsize = 500
 
 # set up the log config
 log_config = {
@@ -54,7 +55,7 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 36275  # set seed for reproducibility
+seed = 320  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -90,7 +91,9 @@ sim.modules["Tb"].parameters["tb_high_risk_distr"] = pd.read_excel(
 
 # change tb mixing parameter to allow more between-district transmission
 sim.modules["Tb"].parameters["mixing_parameter"] = 1
-
+sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 2
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.99
+sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = 0.98
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

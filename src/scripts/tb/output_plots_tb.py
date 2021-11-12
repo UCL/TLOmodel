@@ -160,278 +160,278 @@ py.index = pd.to_datetime(years, format="%Y")
 
 
 # ----------------------------- TB -------------------------------------- #
-
-# Active TB incidence per 100,000 person-years - annual outputs
-TB_inc = output["tlo.methods.tb"]["tb_incidence"]
-TB_inc = TB_inc.set_index("date")
-TB_inc.index = pd.to_datetime(TB_inc.index)
-activeTB_inc_rate = (TB_inc["num_new_active_tb"] / py) * 100000
-
-make_plot(
-    title_str="Active TB Incidence (per 100k person-years)",
-    model=activeTB_inc_rate,
-    data_mid=data_tb_who["incidence_per_100k"],
-    data_low=data_tb_who["incidence_per_100k_low"],
-    data_high=data_tb_who["incidence_per_100k_high"],
-)
-plt.show()
-
-# ---------------------------------------------------------------------- #
-
-# latent TB prevalence
-latentTB_prev = output["tlo.methods.tb"]["tb_prevalence"]
-latentTB_prev = latentTB_prev.set_index("date")
-
-title_str = "Latent TB prevalence"
-make_plot(
-    title_str=title_str,
-    model=latentTB_prev["tbPrevLatent"],
-)
-plt.ylim((0, 0.4))
-# add latent TB estimate from Houben & Dodd 2016 (value for year=2014)
-plt.errorbar(
-    latentTB_prev.index[4],
-    data_tb_latent_estimate,
-    yerr=[[data_tb_latent_yerr[0]], [data_tb_latent_yerr[1]]],
-    fmt="o",
-)
-plt.legend(["Model", "Data"])
-plt.savefig(
-    outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-)
-plt.show()
-
-
-# ---------------------------------------------------------------------- #
-
-# proportion TB cases that are MDR
-mdr = output["tlo.methods.tb"]["tb_mdr"]
-mdr = mdr.set_index("date")
-
-title_str = "Proportion of active cases that are MDR"
-make_plot(
-    title_str=title_str,
-    model=mdr["tbPropActiveCasesMdr"],
-)
-# data from ResourceFile_TB sheet WHO_mdrTB2017
-plt.errorbar(mdr.index[7], 0.0075, yerr=[[0.0059], [0.0105]], fmt="o")
-plt.legend(["TLO", "WHO"])
-plt.savefig(
-    outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-)
-plt.show()
-
-
-# ---------------------------------------------------------------------- #
-
-# proportion TB cases that are HIV+
-# expect around 60% falling to 50% by 2017
-tb_hiv = output["tlo.methods.tb"]["tb_incidence"]
-tb_hiv = tb_hiv.set_index("date")
-
-title_str = "Proportion of active cases that are HIV+"
-make_plot(
-    title_str=title_str,
-    model=tb_hiv["prop_active_tb_in_plhiv"],
-)
-plt.savefig(
-    outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-)
-plt.show()
+#
+# # Active TB incidence per 100,000 person-years - annual outputs
+# TB_inc = output["tlo.methods.tb"]["tb_incidence"]
+# TB_inc = TB_inc.set_index("date")
+# TB_inc.index = pd.to_datetime(TB_inc.index)
+# activeTB_inc_rate = (TB_inc["num_new_active_tb"] / py) * 100000
+#
+# make_plot(
+#     title_str="Active TB Incidence (per 100k person-years)",
+#     model=activeTB_inc_rate,
+#     data_mid=data_tb_who["incidence_per_100k"],
+#     data_low=data_tb_who["incidence_per_100k_low"],
+#     data_high=data_tb_who["incidence_per_100k_high"],
+# )
+# plt.show()
+#
+# # ---------------------------------------------------------------------- #
+#
+# # latent TB prevalence
+# latentTB_prev = output["tlo.methods.tb"]["tb_prevalence"]
+# latentTB_prev = latentTB_prev.set_index("date")
+#
+# title_str = "Latent TB prevalence"
+# make_plot(
+#     title_str=title_str,
+#     model=latentTB_prev["tbPrevLatent"],
+# )
+# plt.ylim((0, 0.4))
+# # add latent TB estimate from Houben & Dodd 2016 (value for year=2014)
+# plt.errorbar(
+#     latentTB_prev.index[4],
+#     data_tb_latent_estimate,
+#     yerr=[[data_tb_latent_yerr[0]], [data_tb_latent_yerr[1]]],
+#     fmt="o",
+# )
+# plt.legend(["Model", "Data"])
+# # plt.savefig(
+# #     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+# # )
+# plt.show()
+#
+#
+# # ---------------------------------------------------------------------- #
+#
+# # proportion TB cases that are MDR
+# mdr = output["tlo.methods.tb"]["tb_mdr"]
+# mdr = mdr.set_index("date")
+#
+# title_str = "Proportion of active cases that are MDR"
+# make_plot(
+#     title_str=title_str,
+#     model=mdr["tbPropActiveCasesMdr"],
+# )
+# # data from ResourceFile_TB sheet WHO_mdrTB2017
+# plt.errorbar(mdr.index[7], 0.0075, yerr=[[0.0059], [0.0105]], fmt="o")
+# plt.legend(["TLO", "WHO"])
+# # plt.savefig(
+# #     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+# # )
+# plt.show()
+#
+#
+# # ---------------------------------------------------------------------- #
+#
+# # proportion TB cases that are HIV+
+# # expect around 60% falling to 50% by 2017
+# tb_hiv = output["tlo.methods.tb"]["tb_incidence"]
+# tb_hiv = tb_hiv.set_index("date")
+#
+# title_str = "Proportion of active cases that are HIV+"
+# make_plot(
+#     title_str=title_str,
+#     model=tb_hiv["prop_active_tb_in_plhiv"],
+# )
+# # plt.savefig(
+# #     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+# # )
+# plt.show()
 
 # ----------------------------- HIV -------------------------------------- #
-
-prev_and_inc_over_time = output["tlo.methods.hiv"][
-    "summary_inc_and_prev_for_adults_and_children_and_fsw"
-]
-prev_and_inc_over_time = prev_and_inc_over_time.set_index("date")
-
-# HIV - prevalence among in adults aged 15+
-# todo note other data is age 15-49
-title_str = "HIV Prevalence in Adults Aged 15+ (%)"
-make_plot(
-    title_str=title_str,
-    model=prev_and_inc_over_time["hiv_prev_adult_15plus"] * 100,
-    data_mid=data_hiv_unaids["prevalence_age15plus"],
-    data_low=data_hiv_unaids["prevalence_age15plus_lower"],
-    data_high=data_hiv_unaids["prevalence_age15plus_upper"],
-)
-
-# MPHIA
-plt.plot(
-    prev_and_inc_over_time.index[6],
-    data_hiv_mphia_prev.loc[
-        data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"
-    ].values[0],
-    "gx",
-)
-
-# DHS
-x_values = [prev_and_inc_over_time.index[0], prev_and_inc_over_time.index[5]]
-y_values = data_hiv_dhs_prev.loc[
-    (data_hiv_dhs_prev.Year >= 2010), "HIV prevalence among general population 15-49"
-]
-y_lower = abs(
-    y_values
-    - (
-        data_hiv_dhs_prev.loc[
-            (data_hiv_dhs_prev.Year >= 2010),
-            "HIV prevalence among general population 15-49 lower",
-        ]
-    )
-)
-y_upper = abs(
-    y_values
-    - (
-        data_hiv_dhs_prev.loc[
-            (data_hiv_dhs_prev.Year >= 2010),
-            "HIV prevalence among general population 15-49 upper",
-        ]
-    )
-)
-plt.errorbar(x_values, y_values, yerr=[y_lower, y_upper], fmt="o")
-plt.ylim((0, 15))
-plt.xlabel("Year")
-plt.ylabel("Prevalence (%)")
-
-# handles for legend
-red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
-blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
-green_cross = mlines.Line2D(
-    [], [], linewidth=0, color="g", marker="x", markersize=7, label="MPHIA"
-)
-orange_ci = mlines.Line2D([], [], color="C1", marker=".", markersize=15, label="DHS")
-plt.legend(handles=[red_line, blue_line, green_cross, orange_ci])
-plt.savefig(
-    outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-)
-plt.show()
-
-
-# ---------------------------------------------------------------------- #
-
-# HIV Incidence 15-49
-title_str = "HIV Incidence in Adults (15-49) (per 100 pyar)"
-make_plot(
-    title_str=title_str,
-    model=prev_and_inc_over_time["hiv_adult_inc_1549"] * 100,
-    data_mid=data_hiv_unaids["incidence_per_1000"] / 10,
-    data_low=data_hiv_unaids["incidence_per_1000_lower"] / 10,
-    data_high=data_hiv_unaids["incidence_per_1000_upper"] / 10,
-)
-
-# MPHIA
-plt.errorbar(
-    prev_and_inc_over_time.index[6],
-    data_hiv_mphia_inc_estimate,
-    yerr=[[data_hiv_mphia_inc_yerr[0]], [data_hiv_mphia_inc_yerr[1]]],
-    fmt="o",
-)
-
-# handles for legend
-red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
-blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
-orange_ci = mlines.Line2D([], [], color="C1", marker=".", markersize=15, label="MPHIA")
-plt.legend(handles=[red_line, blue_line, orange_ci])
-plt.savefig(
-    outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-)
-plt.show()
+#
+# prev_and_inc_over_time = output["tlo.methods.hiv"][
+#     "summary_inc_and_prev_for_adults_and_children_and_fsw"
+# ]
+# prev_and_inc_over_time = prev_and_inc_over_time.set_index("date")
+#
+# # HIV - prevalence among in adults aged 15+
+# # todo note other data is age 15-49
+# title_str = "HIV Prevalence in Adults Aged 15+ (%)"
+# make_plot(
+#     title_str=title_str,
+#     model=prev_and_inc_over_time["hiv_prev_adult_15plus"] * 100,
+#     data_mid=data_hiv_unaids["prevalence_age15plus"],
+#     data_low=data_hiv_unaids["prevalence_age15plus_lower"],
+#     data_high=data_hiv_unaids["prevalence_age15plus_upper"],
+# )
+#
+# # MPHIA
+# plt.plot(
+#     prev_and_inc_over_time.index[6],
+#     data_hiv_mphia_prev.loc[
+#         data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"
+#     ].values[0],
+#     "gx",
+# )
+#
+# # DHS
+# x_values = [prev_and_inc_over_time.index[0], prev_and_inc_over_time.index[5]]
+# y_values = data_hiv_dhs_prev.loc[
+#     (data_hiv_dhs_prev.Year >= 2010), "HIV prevalence among general population 15-49"
+# ]
+# y_lower = abs(
+#     y_values
+#     - (
+#         data_hiv_dhs_prev.loc[
+#             (data_hiv_dhs_prev.Year >= 2010),
+#             "HIV prevalence among general population 15-49 lower",
+#         ]
+#     )
+# )
+# y_upper = abs(
+#     y_values
+#     - (
+#         data_hiv_dhs_prev.loc[
+#             (data_hiv_dhs_prev.Year >= 2010),
+#             "HIV prevalence among general population 15-49 upper",
+#         ]
+#     )
+# )
+# plt.errorbar(x_values, y_values, yerr=[y_lower, y_upper], fmt="o")
+# plt.ylim((0, 15))
+# plt.xlabel("Year")
+# plt.ylabel("Prevalence (%)")
+#
+# # handles for legend
+# red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
+# blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
+# green_cross = mlines.Line2D(
+#     [], [], linewidth=0, color="g", marker="x", markersize=7, label="MPHIA"
+# )
+# orange_ci = mlines.Line2D([], [], color="C1", marker=".", markersize=15, label="DHS")
+# plt.legend(handles=[red_line, blue_line, green_cross, orange_ci])
+# plt.savefig(
+#     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+# )
+# plt.show()
+#
 
 # ---------------------------------------------------------------------- #
 
-# HIV Prevalence Children
-title_str = "HIV Prevalence in Children (0-14) (%)"
-make_plot(
-    title_str=title_str,
-    model=prev_and_inc_over_time["hiv_prev_child"] * 100,
-    data_mid=data_hiv_aidsinfo["prevalence_0_14"] * 100,
-    data_low=data_hiv_aidsinfo["prevalence_0_14_lower"] * 100,
-    data_high=data_hiv_aidsinfo["prevalence_0_14_upper"] * 100,
-)
-# MPHIA
-plt.plot(
-    prev_and_inc_over_time.index[6],
-    data_hiv_mphia_prev.loc[
-        data_hiv_mphia_prev.age == "Total 0-14", "total percent hiv positive"
-    ].values[0],
-    "gx",
-)
-
-# handles for legend
-red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
-blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
-green_cross = mlines.Line2D(
-    [], [], linewidth=0, color="g", marker="x", markersize=7, label="MPHIA"
-)
-plt.legend(handles=[red_line, blue_line, green_cross])
-plt.savefig(
-    outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-)
-plt.show()
-
-
-# ---------------------------------------------------------------------- #
-
-# HIV Incidence Children
-title_str = "HIV Incidence in Children (0-14) (per 100 pyar)"
-make_plot(
-    title_str=title_str,
-    model=prev_and_inc_over_time["hiv_child_inc"] * 100,
-    data_mid=data_hiv_aidsinfo["incidence0_14_per100py"],
-    data_low=data_hiv_aidsinfo["incidence0_14_per100py_lower"],
-    data_high=data_hiv_aidsinfo["incidence0_14_per100py_upper"],
-)
-plt.savefig(
-    outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-)
-plt.show()
-
-
-# ---------------------------------------------------------------------- #
-
-# HIV prevalence among female sex workers:
-
-make_plot(
-    title_str="HIV Prevalence among Female Sex Workers (%)",
-    model=prev_and_inc_over_time["hiv_prev_fsw"] * 100,
-)
-plt.show()
-
-
-# ---------------------------------------------------------------------- #
-# %%: DEATHS
-# ---------------------------------------------------------------------- #
+# # HIV Incidence 15-49
+# title_str = "HIV Incidence in Adults (15-49) (per 100 pyar)"
+# make_plot(
+#     title_str=title_str,
+#     model=prev_and_inc_over_time["hiv_adult_inc_1549"] * 100,
+#     data_mid=data_hiv_unaids["incidence_per_1000"] / 10,
+#     data_low=data_hiv_unaids["incidence_per_1000_lower"] / 10,
+#     data_high=data_hiv_unaids["incidence_per_1000_upper"] / 10,
+# )
+#
+# # MPHIA
+# plt.errorbar(
+#     prev_and_inc_over_time.index[6],
+#     data_hiv_mphia_inc_estimate,
+#     yerr=[[data_hiv_mphia_inc_yerr[0]], [data_hiv_mphia_inc_yerr[1]]],
+#     fmt="o",
+# )
+#
+# # handles for legend
+# red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
+# blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
+# orange_ci = mlines.Line2D([], [], color="C1", marker=".", markersize=15, label="MPHIA")
+# plt.legend(handles=[red_line, blue_line, orange_ci])
+# plt.savefig(
+#     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+# )
+# plt.show()
+#
+# # ---------------------------------------------------------------------- #
+#
+# # HIV Prevalence Children
+# title_str = "HIV Prevalence in Children (0-14) (%)"
+# make_plot(
+#     title_str=title_str,
+#     model=prev_and_inc_over_time["hiv_prev_child"] * 100,
+#     data_mid=data_hiv_aidsinfo["prevalence_0_14"] * 100,
+#     data_low=data_hiv_aidsinfo["prevalence_0_14_lower"] * 100,
+#     data_high=data_hiv_aidsinfo["prevalence_0_14_upper"] * 100,
+# )
+# # MPHIA
+# plt.plot(
+#     prev_and_inc_over_time.index[6],
+#     data_hiv_mphia_prev.loc[
+#         data_hiv_mphia_prev.age == "Total 0-14", "total percent hiv positive"
+#     ].values[0],
+#     "gx",
+# )
+#
+# # handles for legend
+# red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
+# blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
+# green_cross = mlines.Line2D(
+#     [], [], linewidth=0, color="g", marker="x", markersize=7, label="MPHIA"
+# )
+# plt.legend(handles=[red_line, blue_line, green_cross])
+# plt.savefig(
+#     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+# )
+# plt.show()
+#
+#
+# # ---------------------------------------------------------------------- #
+#
+# # HIV Incidence Children
+# title_str = "HIV Incidence in Children (0-14) (per 100 pyar)"
+# make_plot(
+#     title_str=title_str,
+#     model=prev_and_inc_over_time["hiv_child_inc"] * 100,
+#     data_mid=data_hiv_aidsinfo["incidence0_14_per100py"],
+#     data_low=data_hiv_aidsinfo["incidence0_14_per100py_lower"],
+#     data_high=data_hiv_aidsinfo["incidence0_14_per100py_upper"],
+# )
+# plt.savefig(
+#     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+# )
+# plt.show()
+#
+#
+# # ---------------------------------------------------------------------- #
+#
+# # HIV prevalence among female sex workers:
+#
+# make_plot(
+#     title_str="HIV Prevalence among Female Sex Workers (%)",
+#     model=prev_and_inc_over_time["hiv_prev_fsw"] * 100,
+# )
+# plt.show()
+#
+#
+# # ---------------------------------------------------------------------- #
+# # %%: DEATHS
+# # ---------------------------------------------------------------------- #
 
 
 # deaths
 deaths = output["tlo.methods.demography"]["death"].copy()  # outputs individual deaths
 deaths = deaths.set_index("date")
-
-# TB deaths will exclude TB/HIV
-# keep if cause = TB
-keep = (deaths.cause == "TB")
-deaths_TB = deaths.loc[keep].copy()
-deaths_TB["year"] = deaths_TB.index.year  # count by year
-tot_tb_non_hiv_deaths = deaths_TB.groupby(by=["year"]).size()
-tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format="%Y")
-
-# TB/HIV deaths
-keep = (deaths.cause == "AIDS_TB")
-deaths_TB_HIV = deaths.loc[keep].copy()
-deaths_TB_HIV["year"] = deaths_TB_HIV.index.year  # count by year
-tot_tb_hiv_deaths = deaths_TB_HIV.groupby(by=["year"]).size()
-tot_tb_hiv_deaths.index = pd.to_datetime(tot_tb_hiv_deaths.index, format="%Y")
-
-# total TB deaths (including HIV+)
-total_tb_deaths = tot_tb_non_hiv_deaths.add(tot_tb_hiv_deaths, fill_value=0)
-total_tb_deaths.index = pd.to_datetime(total_tb_deaths.index, format="%Y")
-
-# tb mortality rates per 100k person-years
-total_tb_deaths_rate_100kpy = (total_tb_deaths / py) * 100000
-tot_tb_hiv_deaths_rate_100kpy = (tot_tb_hiv_deaths / py) * 100000
-tot_tb_non_hiv_deaths_rate_100kpy = (tot_tb_non_hiv_deaths / py) * 100000
-
+#
+# # TB deaths will exclude TB/HIV
+# # keep if cause = TB
+# keep = (deaths.cause == "TB")
+# deaths_TB = deaths.loc[keep].copy()
+# deaths_TB["year"] = deaths_TB.index.year  # count by year
+# tot_tb_non_hiv_deaths = deaths_TB.groupby(by=["year"]).size()
+# tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format="%Y")
+#
+# # TB/HIV deaths
+# keep = (deaths.cause == "AIDS_TB")
+# deaths_TB_HIV = deaths.loc[keep].copy()
+# deaths_TB_HIV["year"] = deaths_TB_HIV.index.year  # count by year
+# tot_tb_hiv_deaths = deaths_TB_HIV.groupby(by=["year"]).size()
+# tot_tb_hiv_deaths.index = pd.to_datetime(tot_tb_hiv_deaths.index, format="%Y")
+#
+# # total TB deaths (including HIV+)
+# total_tb_deaths = tot_tb_non_hiv_deaths.add(tot_tb_hiv_deaths, fill_value=0)
+# total_tb_deaths.index = pd.to_datetime(total_tb_deaths.index, format="%Y")
+#
+# # tb mortality rates per 100k person-years
+# total_tb_deaths_rate_100kpy = (total_tb_deaths / py) * 100000
+# tot_tb_hiv_deaths_rate_100kpy = (tot_tb_hiv_deaths / py) * 100000
+# tot_tb_non_hiv_deaths_rate_100kpy = (tot_tb_non_hiv_deaths / py) * 100000
+#
 # AIDS DEATHS
 # limit to deaths among aged 15+, include HIV/TB deaths
 keep = (deaths.age >= 15) & (
@@ -444,9 +444,9 @@ tot_aids_deaths.index = pd.to_datetime(tot_aids_deaths.index, format="%Y")
 
 # aids mortality rates per 100k person-years
 total_aids_deaths_rate_100kpy = (tot_aids_deaths / py) * 100000
-
-# ---------------------------------------------------------------------- #
-
+#
+# # ---------------------------------------------------------------------- #
+#
 # AIDS deaths (including HIV/TB deaths)
 make_plot(
     title_str="Mortality to HIV-AIDS per 1000 capita",
@@ -457,146 +457,146 @@ make_plot(
 )
 
 plt.show()
-
-
-# ---------------------------------------------------------------------- #
-
-# TB deaths (excluding HIV/TB deaths)
-make_plot(
-    title_str="TB mortality rate (excl HIV) per 100,000 population",
-    model=tot_tb_non_hiv_deaths_rate_100kpy,
-    data_mid=data_tb_who["mortality_tb_excl_hiv_per_100k"],
-    data_low=data_tb_who["mortality_tb_excl_hiv_per_100k_low"],
-    data_high=data_tb_who["mortality_tb_excl_hiv_per_100k_high"],
-)
-
-plt.show()
-
-
-# ---------------------------------------------------------------------- #
-
-# HIV/TB deaths only
-make_plot(
-    title_str="TB_HIV mortality rate per 100,000 population",
-    model=tot_tb_hiv_deaths_rate_100kpy,
-    data_mid=data_tb_who["mortality_tb_hiv_per_100k"],
-    data_low=data_tb_who["mortality_tb_hiv_per_100k_low"],
-    data_high=data_tb_who["mortality_tb_hiv_per_100k_high"],
-)
-
-plt.show()
-
-
-# ---------------------------------------------------------------------- #
-# %%: DEATHS - GBD COMPARISON
-# ---------------------------------------------------------------------- #
-
-
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
-list_of_paths = outputpath.glob('*.log')
-latest_path = max(list_of_paths, key=lambda p: p.stat().st_ctime)
-
-death_compare = compare_number_of_deaths(latest_path, resourcefilepath)
-
-# include all ages and both sexes
-deaths2010 = death_compare.loc[("2010-2014", slice(None), slice(None), "AIDS")].sum()
-deaths2015 = death_compare.loc[("2015-2019", slice(None), slice(None), "AIDS")].sum()
-
-# include all ages and both sexes
-deaths2010_TB = death_compare.loc[("2010-2014", slice(None), slice(None), "non_AIDS_TB")].sum()
-deaths2015_TB = death_compare.loc[("2015-2019", slice(None), slice(None), "non_AIDS_TB")].sum()
-
-x_vals = [1, 2, 3, 4]
-labels = ["2010-2014", "2010-2014", "2015-2019", "2015-2019"]
-col = ["mediumblue", "mediumseagreen", "mediumblue", "mediumseagreen"]
-# handles for legend
-blue_patch = mpatches.Patch(color="mediumblue", label="GBD")
-green_patch = mpatches.Patch(color="mediumseagreen", label="TLO")
-
-# plot AIDS deaths
-y_vals = [
-    deaths2010["GBD_mean"],
-    deaths2010["model"],
-    deaths2015["GBD_mean"],
-    deaths2015["model"],
-]
-y_lower = [
-    abs(deaths2010["GBD_lower"] - deaths2010["GBD_mean"]),
-    np.NAN,
-    abs(deaths2015["GBD_lower"] - deaths2015["GBD_mean"]),
-    np.NAN,
-]
-y_upper = [
-    abs(deaths2010["GBD_upper"] - deaths2010["GBD_mean"]),
-    np.NAN,
-    abs(deaths2015["GBD_upper"] - deaths2015["GBD_mean"]),
-    np.NAN,
-]
-plt.bar(x_vals, y_vals, color=col)
-plt.errorbar(
-    x_vals,
-    [y_vals[0], np.NAN, y_vals[2], np.NAN],
-    yerr=[y_lower, y_upper],
-    ls="none",
-    marker="o",
-    markeredgecolor="red",
-    markerfacecolor="red",
-    ecolor="red",
-)
-plt.xticks(ticks=x_vals, labels=labels)
-plt.title("Deaths per year due to AIDS")
-plt.legend(handles=[blue_patch, green_patch])
-plt.tight_layout()
-plt.savefig(outputpath / ("HIV_TB_deaths_with_GBD" + datestamp + ".png"), format='png')
-plt.show()
-
-
-# plot TB deaths
-y_vals = [
-    deaths2010_TB["GBD_mean"],
-    deaths2010_TB["model"],
-    deaths2015_TB["GBD_mean"],
-    deaths2015_TB["model"],
-]
-y_lower = [
-    abs(deaths2010_TB["GBD_lower"] - deaths2010_TB["GBD_mean"]),
-    np.NAN,
-    abs(deaths2015_TB["GBD_lower"] - deaths2015_TB["GBD_mean"]),
-    np.NAN,
-]
-y_upper = [
-    abs(deaths2010_TB["GBD_upper"] - deaths2010_TB["GBD_mean"]),
-    np.NAN,
-    abs(deaths2015_TB["GBD_upper"] - deaths2015_TB["GBD_mean"]),
-    np.NAN,
-]
-plt.bar(x_vals, y_vals, color=col)
-plt.errorbar(
-    x_vals,
-    [y_vals[0], np.NAN, y_vals[2], np.NAN],
-    yerr=[y_lower, y_upper],
-    ls="none",
-    marker="o",
-    markeredgecolor="red",
-    markerfacecolor="red",
-    ecolor="red",
-)
-plt.xticks(ticks=x_vals, labels=labels)
-
-plt.title("Deaths per year due to non-AIDS TB")
-plt.legend(handles=[blue_patch, green_patch])
-plt.tight_layout()
-plt.savefig(outputpath / ("TB_deaths_with_GBD" + datestamp + ".png"), format='png')
-plt.show()
+#
+#
+# # ---------------------------------------------------------------------- #
+#
+# # TB deaths (excluding HIV/TB deaths)
+# make_plot(
+#     title_str="TB mortality rate (excl HIV) per 100,000 population",
+#     model=tot_tb_non_hiv_deaths_rate_100kpy,
+#     data_mid=data_tb_who["mortality_tb_excl_hiv_per_100k"],
+#     data_low=data_tb_who["mortality_tb_excl_hiv_per_100k_low"],
+#     data_high=data_tb_who["mortality_tb_excl_hiv_per_100k_high"],
+# )
+#
+# plt.show()
+#
+#
+# # ---------------------------------------------------------------------- #
+#
+# # HIV/TB deaths only
+# make_plot(
+#     title_str="TB_HIV mortality rate per 100,000 population",
+#     model=tot_tb_hiv_deaths_rate_100kpy,
+#     data_mid=data_tb_who["mortality_tb_hiv_per_100k"],
+#     data_low=data_tb_who["mortality_tb_hiv_per_100k_low"],
+#     data_high=data_tb_who["mortality_tb_hiv_per_100k_high"],
+# )
+#
+# plt.show()
+#
+#
+# # ---------------------------------------------------------------------- #
+# # %%: DEATHS - GBD COMPARISON
+# # ---------------------------------------------------------------------- #
+#
+#
+# outputpath = Path("./outputs")  # folder for convenience of storing outputs
+# list_of_paths = outputpath.glob('*.log')
+# latest_path = max(list_of_paths, key=lambda p: p.stat().st_ctime)
+#
+# death_compare = compare_number_of_deaths(latest_path, resourcefilepath)
+#
+# # include all ages and both sexes
+# deaths2010 = death_compare.loc[("2010-2014", slice(None), slice(None), "AIDS")].sum()
+# deaths2015 = death_compare.loc[("2015-2019", slice(None), slice(None), "AIDS")].sum()
+#
+# # include all ages and both sexes
+# deaths2010_TB = death_compare.loc[("2010-2014", slice(None), slice(None), "non_AIDS_TB")].sum()
+# deaths2015_TB = death_compare.loc[("2015-2019", slice(None), slice(None), "non_AIDS_TB")].sum()
+#
+# x_vals = [1, 2, 3, 4]
+# labels = ["2010-2014", "2010-2014", "2015-2019", "2015-2019"]
+# col = ["mediumblue", "mediumseagreen", "mediumblue", "mediumseagreen"]
+# # handles for legend
+# blue_patch = mpatches.Patch(color="mediumblue", label="GBD")
+# green_patch = mpatches.Patch(color="mediumseagreen", label="TLO")
+#
+# # plot AIDS deaths
+# y_vals = [
+#     deaths2010["GBD_mean"],
+#     deaths2010["model"],
+#     deaths2015["GBD_mean"],
+#     deaths2015["model"],
+# ]
+# y_lower = [
+#     abs(deaths2010["GBD_lower"] - deaths2010["GBD_mean"]),
+#     np.NAN,
+#     abs(deaths2015["GBD_lower"] - deaths2015["GBD_mean"]),
+#     np.NAN,
+# ]
+# y_upper = [
+#     abs(deaths2010["GBD_upper"] - deaths2010["GBD_mean"]),
+#     np.NAN,
+#     abs(deaths2015["GBD_upper"] - deaths2015["GBD_mean"]),
+#     np.NAN,
+# ]
+# plt.bar(x_vals, y_vals, color=col)
+# plt.errorbar(
+#     x_vals,
+#     [y_vals[0], np.NAN, y_vals[2], np.NAN],
+#     yerr=[y_lower, y_upper],
+#     ls="none",
+#     marker="o",
+#     markeredgecolor="red",
+#     markerfacecolor="red",
+#     ecolor="red",
+# )
+# plt.xticks(ticks=x_vals, labels=labels)
+# plt.title("Deaths per year due to AIDS")
+# plt.legend(handles=[blue_patch, green_patch])
+# plt.tight_layout()
+# plt.savefig(outputpath / ("HIV_TB_deaths_with_GBD" + datestamp + ".png"), format='png')
+# plt.show()
+#
+#
+# # plot TB deaths
+# y_vals = [
+#     deaths2010_TB["GBD_mean"],
+#     deaths2010_TB["model"],
+#     deaths2015_TB["GBD_mean"],
+#     deaths2015_TB["model"],
+# ]
+# y_lower = [
+#     abs(deaths2010_TB["GBD_lower"] - deaths2010_TB["GBD_mean"]),
+#     np.NAN,
+#     abs(deaths2015_TB["GBD_lower"] - deaths2015_TB["GBD_mean"]),
+#     np.NAN,
+# ]
+# y_upper = [
+#     abs(deaths2010_TB["GBD_upper"] - deaths2010_TB["GBD_mean"]),
+#     np.NAN,
+#     abs(deaths2015_TB["GBD_upper"] - deaths2015_TB["GBD_mean"]),
+#     np.NAN,
+# ]
+# plt.bar(x_vals, y_vals, color=col)
+# plt.errorbar(
+#     x_vals,
+#     [y_vals[0], np.NAN, y_vals[2], np.NAN],
+#     yerr=[y_lower, y_upper],
+#     ls="none",
+#     marker="o",
+#     markeredgecolor="red",
+#     markerfacecolor="red",
+#     ecolor="red",
+# )
+# plt.xticks(ticks=x_vals, labels=labels)
+#
+# plt.title("Deaths per year due to non-AIDS TB")
+# plt.legend(handles=[blue_patch, green_patch])
+# plt.tight_layout()
+# plt.savefig(outputpath / ("TB_deaths_with_GBD" + datestamp + ".png"), format='png')
+# plt.show()
 
 # ---------------------------------------------------------------------- #
 # %%: PROGRAM OUTPUTS
 # ---------------------------------------------------------------------- #
 
 # treatment coverage
-Tb_tx_coverage = output["tlo.methods.tb"]["tb_treatment"]
-Tb_tx_coverage = Tb_tx_coverage.set_index("date")
-Tb_tx_coverage.index = pd.to_datetime(Tb_tx_coverage.index)
+# Tb_tx_coverage = output["tlo.methods.tb"]["tb_treatment"]
+# Tb_tx_coverage = Tb_tx_coverage.set_index("date")
+# Tb_tx_coverage.index = pd.to_datetime(Tb_tx_coverage.index)
 
 cov_over_time = output["tlo.methods.hiv"]["hiv_program_coverage"]
 cov_over_time = cov_over_time.set_index("date")
@@ -689,11 +689,27 @@ plt.legend(["TLO", "MoH"])
 
 plt.show()
 
+# HIV testing yield
+# data from MoH quarterly reports, reported yields are modified using SHINY90
+testing_yield = cov_over_time["testing_yield"].copy()
+testing_yield[0] = 0
+
+make_plot(
+    title_str="HIV testing yield - all ages",
+    model=testing_yield,
+    data_mid=data_hiv_moh_tests["testing_yield"],
+)
+plt.ylim((0, 0.15))
+plt.legend(["TLO", "MoH"])
+
+plt.show()
+
+
 # ---------------------------------------------------------------------- #
 
 # Percent of all HIV+ on ART
 make_plot(
-    title_str="Percent of Adults (15+) on ART",
+    title_str="Percent of all Adults (15+) HIV+ on ART",
     model=cov_over_time["art_coverage_adult"] * 100,
     data_mid=data_hiv_unaids["ART_coverage_all_HIV_adults"],
     data_low=data_hiv_unaids["ART_coverage_all_HIV_adults_lower"],
@@ -705,62 +721,62 @@ plt.savefig(outputpath / ("HIV_Proportion_on_ART" + datestamp + ".png"), format=
 plt.show()
 
 # ---------------------------------------------------------------------- #
-
-# Circumcision
-make_plot(
-    title_str="Proportion of Men (15+) That Are Circumcised",
-    model=cov_over_time["prop_men_circ"],
-)
-plt.plot(
-    cov_over_time["prop_men_circ"].index[3], 0.23,
-    "gx",
-)
-plt.plot(
-    cov_over_time["prop_men_circ"].index[5], 0.279,
-    "bx",
-)
-# handles for legend
-red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
-green_cross = mlines.Line2D(
-    [], [], linewidth=0, color="g", marker="x", markersize=7, label="KABP"
-)
-blue_cross = mlines.Line2D(
-    [], [], linewidth=0, color="b", marker="x", markersize=7, label="MDHS"
-)
-# orange_ci = mlines.Line2D([], [], color="C1", marker=".", markersize=15, label="DHS")
-plt.legend(handles=[red_line, green_cross, blue_cross])
-plt.savefig(outputpath / ("Proportion_men_circumcised" + datestamp + ".png"), format='png')
-plt.show()
-
-
-# ---------------------------------------------------------------------- #
-
-# PrEP among FSW
-make_plot(
-    title_str="Proportion of FSW That Are On PrEP",
-    model=cov_over_time["prop_fsw_on_prep"],
-)
-plt.show()
-
-
-# ---------------------------------------------------------------------- #
-
-# Behaviour Change
-make_plot(
-    title_str="Proportion of Adults (15+) Exposed to Behaviour Change Intervention",
-    model=cov_over_time["prop_adults_exposed_to_behav_intv"],
-)
-plt.show()
-
-# ---------------------------------------------------------------------- #
-
-# TB treatment coverage
-make_plot(
-    title_str="Percent of TB cases treated",
-    model=Tb_tx_coverage["tbTreatmentCoverage"] * 100,
-    data_mid=data_tb_ntp["treatment_coverage"],
-)
-plt.legend(["TLO", "NTP"])
-plt.savefig(outputpath / ("Percent_tb_cases_treated" + datestamp + ".png"), format='png')
-
-plt.show()
+#
+# # Circumcision
+# make_plot(
+#     title_str="Proportion of Men (15+) That Are Circumcised",
+#     model=cov_over_time["prop_men_circ"],
+# )
+# plt.plot(
+#     cov_over_time["prop_men_circ"].index[3], 0.23,
+#     "gx",
+# )
+# plt.plot(
+#     cov_over_time["prop_men_circ"].index[5], 0.279,
+#     "bx",
+# )
+# # handles for legend
+# red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
+# green_cross = mlines.Line2D(
+#     [], [], linewidth=0, color="g", marker="x", markersize=7, label="KABP"
+# )
+# blue_cross = mlines.Line2D(
+#     [], [], linewidth=0, color="b", marker="x", markersize=7, label="MDHS"
+# )
+# # orange_ci = mlines.Line2D([], [], color="C1", marker=".", markersize=15, label="DHS")
+# plt.legend(handles=[red_line, green_cross, blue_cross])
+# plt.savefig(outputpath / ("Proportion_men_circumcised" + datestamp + ".png"), format='png')
+# plt.show()
+#
+#
+# # ---------------------------------------------------------------------- #
+#
+# # PrEP among FSW
+# make_plot(
+#     title_str="Proportion of FSW That Are On PrEP",
+#     model=cov_over_time["prop_fsw_on_prep"],
+# )
+# plt.show()
+#
+#
+# # ---------------------------------------------------------------------- #
+#
+# # Behaviour Change
+# make_plot(
+#     title_str="Proportion of Adults (15+) Exposed to Behaviour Change Intervention",
+#     model=cov_over_time["prop_adults_exposed_to_behav_intv"],
+# )
+# plt.show()
+#
+# # ---------------------------------------------------------------------- #
+#
+# # TB treatment coverage
+# make_plot(
+#     title_str="Percent of TB cases treated",
+#     model=Tb_tx_coverage["tbTreatmentCoverage"] * 100,
+#     data_mid=data_tb_ntp["treatment_coverage"],
+# )
+# plt.legend(["TLO", "NTP"])
+# plt.savefig(outputpath / ("Percent_tb_cases_treated" + datestamp + ".png"), format='png')
+#
+# plt.show()

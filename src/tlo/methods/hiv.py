@@ -319,6 +319,10 @@ class Hiv(Module):
             "relative likelihood of having HIV test for people with secondary or higher education compared "
             "with no education",
         ),
+        "rr_test_hiv_positive": Parameter(
+            Types.REAL,
+            "relative likelihood of having HIV test for people with HIV",
+        ),
         "prob_start_art_after_hiv_test": Parameter(
             Types.REAL,
             "Probability that a person will start treatment, if HIV-positive, following testing",
@@ -428,11 +432,12 @@ class Hiv(Module):
             self.daly_wts["aids"] = self.sim.modules["HealthBurden"].get_daly_weight(19)
 
         # 2)  Declare the Symptoms.
+        # todo reset this to appropriately high level if needed
         self.sim.modules["SymptomManager"].register_symptom(
             Symptom(
                 name="aids_symptoms",
-                odds_ratio_health_seeking_in_adults=30.0,  # High chance of seeking care when aids_symptoms onset
-                odds_ratio_health_seeking_in_children=30.0,
+                odds_ratio_health_seeking_in_adults=2.0,  # High chance of seeking care when aids_symptoms onset
+                odds_ratio_health_seeking_in_children=2.0,
             )  # High chance of seeking care when aids_symptoms onset
         )
 
@@ -501,21 +506,39 @@ class Hiv(Module):
 
         # -- Linear Models for the Uptake of Services
         # Linear model that give the increase in likelihood of seeking a 'Spontaneous' Test for HIV
+        # self.lm["lm_spontaneous_test_12m"] = LinearModel.multiplicative(
+        #     Predictor("hv_diagnosed").when(True, 0.0).otherwise(1.0),
+        #     Predictor("sex").when("F", p["rr_hiv_test_female"]),
+        #     Predictor("age_years"
+        #               ) .when("<15", 0)
+        #                 .when("<20", 1)
+        #                 .when("<25", p["rr_hiv_test_age_20_24"])
+        #                 .when("<30", p["rr_hiv_test_age_25_29"])
+        #                 .when("<35", p["rr_hiv_test_age_30_34"])
+        #                 .when("<40", p["rr_hiv_test_age_35_39"])
+        #                 .when("<45", p["rr_hiv_test_age_40_44"])
+        #                 .when(">=45", p["rr_hiv_test_age_45_49"]),
+        #     Predictor("li_is_sexworker").when(True, p["rr_hiv_test_sexworker"]),
+        #     Predictor("li_ed_lev")  .when(2, p["rr_hiv_test_primary_education"])
+        #                             .when(3, p["rr_hiv_test_secondary_education"]),
+        # )
+        # todo added condition must be not on ART for test
         self.lm["lm_spontaneous_test_12m"] = LinearModel.multiplicative(
-            Predictor("hv_diagnosed").when(True, 0.0).otherwise(1.0),
-            Predictor("sex").when("F", p["rr_hiv_test_female"]),
-            Predictor("age_years"
-                      ) .when("<15", 0)
-                        .when("<20", 1)
-                        .when("<25", p["rr_hiv_test_age_20_24"])
-                        .when("<30", p["rr_hiv_test_age_25_29"])
-                        .when("<35", p["rr_hiv_test_age_30_34"])
-                        .when("<40", p["rr_hiv_test_age_35_39"])
-                        .when("<45", p["rr_hiv_test_age_40_44"])
-                        .when(">=45", p["rr_hiv_test_age_45_49"]),
-            Predictor("li_is_sexworker").when(True, p["rr_hiv_test_sexworker"]),
-            Predictor("li_ed_lev")  .when(2, p["rr_hiv_test_primary_education"])
-                                    .when(3, p["rr_hiv_test_secondary_education"]),
+            Predictor("hv_inf").when(True, p["rr_test_hiv_positive"]).otherwise(1.0),
+            Predictor("hv_art").when("not", 1.0).otherwise(0.0),
+            Predictor("age_years").when("<15", 0.0).otherwise(1.0),
+            # Predictor("age_years"
+            #           ) .when("<15", 0)
+            #             .when("<20", 1)
+            #             .when("<25", p["rr_hiv_test_age_20_24"])
+            #             .when("<30", p["rr_hiv_test_age_25_29"])
+            #             .when("<35", p["rr_hiv_test_age_30_34"])
+            #             .when("<40", p["rr_hiv_test_age_35_39"])
+            #             .when("<45", p["rr_hiv_test_age_40_44"])
+            #             .when(">=45", p["rr_hiv_test_age_45_49"]),
+            # Predictor("li_is_sexworker").when(True, p["rr_hiv_test_sexworker"]),
+            # Predictor("li_ed_lev")  .when(2, p["rr_hiv_test_primary_education"])
+            #                         .when(3, p["rr_hiv_test_secondary_education"]),
         )
 
         # Linear model if the person will start ART, following when the person has been diagnosed:
@@ -572,6 +595,7 @@ class Hiv(Module):
         # Launch sub-routines for allocating the right number of people into each category
         self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
         self.initialise_baseline_art(population)  # allocate baseline art coverage
+        # todo remove this to get 100% linkage and adherence
         self.initialise_baseline_tested(population)  # allocate baseline art coverage
 
     def initialise_baseline_prevalence(self, population):
@@ -770,7 +794,7 @@ class Hiv(Module):
             hiv_test_deficit = testing_dict[sex] - hiv_test_coverage
 
             if hiv_test_deficit > 0:
-                # assign more tests to fill testing coverage deficit
+                # randomly assign more tests to fill testing coverage deficit
                 test_index = df.index[
                     (random_draw < hiv_test_deficit)
                     & df.is_alive
@@ -779,16 +803,17 @@ class Hiv(Module):
                     ]
 
                 # assign hiv tests to males and females
-                df.loc[test_index, "hv_number_tests"] = 1
+                # todo remove this as all historical tests counted in 2010 estimate
+                # df.loc[test_index, "hv_number_tests"] = 1
                 # dummy date for date last hiv test (before sim start), otherwise see big spike in testing 01-01-2010
                 df.loc[test_index, "hv_last_test_date"] = self.sim.date - pd.DateOffset(
                     years=3
                 )
 
-        # person assumed to be diagnosed if they have had a test and are currently HIV positive:
-        df.loc[
-            ((df.hv_number_tests > 0) & df.is_alive & df.hv_inf), "hv_diagnosed"
-        ] = True
+                # person assumed to be diagnosed if they have had a test and are currently HIV positive:
+                # select those in test_index and hv_inf
+                df.loc[df.index.isin(test_index) & df.hv_inf & df.is_alive,
+                       "hv_diagnosed"] = True
 
     def initialise_simulation(self, sim):
         """
@@ -808,7 +833,7 @@ class Hiv(Module):
         )
 
         # 2) Schedule the Logging Event
-        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=364))
 
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
@@ -865,13 +890,13 @@ class Hiv(Module):
         # Schedule the AIDS death events for those who have got AIDS already
         for person_id in has_aids_idx:
             # schedule a HSI_Test_and_Refer otherwise initial AIDS rates and deaths are far too high
-            date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 365))
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
-                priority=1,
-                topen=date_test,
-                tclose=self.sim.date + pd.DateOffset(days=365),
-            )
+            # date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 365))
+            # self.sim.modules["HealthSystem"].schedule_hsi_event(
+            #     hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
+            #     priority=1,
+            #     topen=date_test,
+            #     tclose=self.sim.date + pd.DateOffset(days=365),
+            # )
 
             date_aids_death = (
                 self.sim.date + self.get_time_from_aids_to_death()
@@ -889,6 +914,7 @@ class Hiv(Module):
 
         # 6) Define the DxTests
         # HIV Rapid Diagnostic Test:
+        # todo change to item codes
 
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
         pkg_code_hiv_rapid_test = consumables.loc[
@@ -1111,6 +1137,7 @@ class Hiv(Module):
         if "care_of_women_during_pregnancy" not in self.sim.modules:
             # if mother's HIV status not known, schedule test at delivery
             # usually performed by care_of_women_during_pregnancy module
+            # todo re-instate this
             if not mother.hv_diagnosed and mother.is_alive:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(person_id=mother_id, module=self),
@@ -1540,12 +1567,14 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         rr_of_test = self.module.lm["lm_spontaneous_test_12m"].predict(df[df.is_alive])
         mean_prob_test = (rr_of_test * testing_rate_adults).mean()
         scaled_prob_test = (rr_of_test * testing_rate_adults) / mean_prob_test
+        overall_prob_test = scaled_prob_test * testing_rate_adults
 
         random_draw = rng.random_sample(size=len(df[df.is_alive]))
-        adult_tests_idx = df.loc[df.is_alive & (random_draw < scaled_prob_test)].index
+        adult_tests_idx = df.loc[df.is_alive & (random_draw < overall_prob_test)].index
 
         idx_will_test = child_tests_idx.union(adult_tests_idx)
 
+        # todo reinstate
         for person_id in idx_will_test:
             date_test = self.sim.date + pd.DateOffset(
                 days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls)
@@ -1643,6 +1672,7 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
 
         # need to discount some AIDS cases caused by HIV only
         # as AIDS caused by TB is now modelled separately
+        # todo this should be delayed and not discounted
         if (self.cause == 'AIDS_non_TB') and (
             self.module.rng.random_sample() < self.module.parameters['discount_aids_due_to_tb']
         ):
@@ -1657,12 +1687,8 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
             disease_module=self.module,
         )
 
-        # Schedule AidsDeath, if caused by TB will occur sooner than non-TB AIDS
-        if self.cause == "AIDS_TB":
-            date_of_aids_death = self.sim.date + pd.DateOffset(
-                months=self.module.rng.randint(1, 12))
-        else:
-            date_of_aids_death = self.sim.date + self.module.get_time_from_aids_to_death()
+        # Schedule AidsDeath
+        date_of_aids_death = self.sim.date + self.module.get_time_from_aids_to_death()
 
         self.sim.schedule_event(
             event=HivAidsDeathEvent(
@@ -1845,6 +1871,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         person = df.loc[person_id]
+
 
         if not person["is_alive"]:
             return
@@ -2065,7 +2092,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if art_status_at_beginning_of_hsi == "not":
             # Do a confirmatory test and do not run the rest of the event if negative.
-            # NB. It is assumed that the sensitivity and specificiy of the raoid test is perfect.
+            # NB. It is assumed that the sensitivity and specificity of the rapid test is perfect.
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="hiv_rapid_test", hsi_event=self
             )
@@ -2380,6 +2407,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # ------------------------------------ TESTING ------------------------------------
+        # testing can happen through lm[spontaneous_testing] or symptom-driven or ANC or TB
 
         # proportion of adult population tested in past year
         n_tested = len(
@@ -2409,6 +2437,21 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # per_capita_testing_rate: number of tests administered divided by population
         current_testing_rate = self.module.per_capita_testing_rate()
+
+        # testing yield: number positive results divided by number tests performed
+        # if person has multiple tests in one year, will only count 1
+        total_tested = len(
+            df.loc[(df.hv_number_tests > 0)
+                & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
+                ]
+        )
+        total_tested_hiv_positive = len(
+            df.loc[df.hv_inf
+                & (df.hv_number_tests > 0)
+                & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
+                ]
+        )
+        testing_yield = total_tested_hiv_positive / total_tested if total_tested > 0 else 0
 
         # ------------------------------------ TREATMENT ------------------------------------
         def treatment_counts(subset):
@@ -2469,6 +2512,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "prop_tested_adult_male": testing_by_sex["M"],
                 "prop_tested_adult_female": testing_by_sex["F"],
                 "per_capita_testing_rate": current_testing_rate,
+                "testing_yield": testing_yield,
                 "dx_adult": dx_adult,
                 "dx_childen": dx_children,
                 "art_coverage_adult": art_cov_adult,

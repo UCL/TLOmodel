@@ -837,7 +837,7 @@ class Tb(Module):
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
 
         # 2) Logging
-        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=364))
 
         # 3) -------- Define the DxTests and get the consumables required --------
 
@@ -1719,6 +1719,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             # if screening indicates presumptive tb
 
             # refer for HIV testing: all ages
+            # todo reinstate
             if "Hiv" in self.sim.modules:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=hiv.HSI_Hiv_TestAndRefer(
