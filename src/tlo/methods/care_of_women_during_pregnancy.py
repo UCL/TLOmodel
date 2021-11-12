@@ -2469,6 +2469,8 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         mother = df.loc[person_id]
         params = self.module.current_parameters
 
+        if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 1:
+            x='y'
         # --------------------------------------- CHECKS... ---------------------------------------
         # todo: allow spread of weeks?
         if mother.ps_gestational_age_in_weeks < 22:
@@ -2480,7 +2482,11 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         else:
             recommended_gestation_next_anc = 50
 
-        date_difference = self.sim.date - df.at[person_id, 'ps_date_of_anc1']
+        if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 0:
+            date_difference = self.sim.date - df.at[person_id, 'ps_date_of_anc1']
+        else:
+            date_difference = self.sim.date - df.at[person_id, 'ac_date_next_contact']
+
         visit = HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
             self.sim.modules['CareOfWomenDuringPregnancy'],
             person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
@@ -2512,91 +2518,90 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
                                                                 tclose=self.sim.date + DateOffset(days=2))
             return
 
-        else:
-            # --------------------------------------- LOGGING AND FURTHER CHECKS.... ----------------------------------
-            anc_rows = {'ga_anc_one': df.at[person_id, 'ps_gestational_age_in_weeks'],
-                        'anc_ints': []}
+        # --------------------------------------- LOGGING AND FURTHER CHECKS.... ----------------------------------
+        anc_rows = {'ga_anc_one': df.at[person_id, 'ps_gestational_age_in_weeks'],
+                    'anc_ints': []}
 
-            self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_id].update(anc_rows)
+        self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_id].update(anc_rows)
 
-            if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 0:
-                logger.info(key='anc1', data={'mother': person_id,
-                                              'gestation': df.at[person_id, 'ps_gestational_age_in_weeks']})
+        if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 0:
+            logger.info(key='anc1', data={'mother': person_id,
+                                          'gestation': df.at[person_id, 'ps_gestational_age_in_weeks']})
 
-            if self.ACCEPTED_FACILITY_LEVEL == 1:
-                # Assume a 50/50 chance of health centre or hospital in level 1, however this will need editing
-                facility_type = self.module.rng.choice(['health_centre', 'hospital'], p=[0.5, 0.5])
-                df.at[person_id, 'ac_facility_type'] = facility_type
-                logger.info(key='anc_facility_type', data=f'{facility_type}')
+        if self.ACCEPTED_FACILITY_LEVEL == 1:
+            # Assume a 50/50 chance of health centre or hospital in level 1, however this will need editing
+            facility_type = self.module.rng.choice(['health_centre', 'hospital'], p=[0.5, 0.5])
+            df.at[person_id, 'ac_facility_type'] = facility_type
+            logger.info(key='anc_facility_type', data=f'{facility_type}')
 
-            elif self.ACCEPTED_FACILITY_LEVEL > 1:
-                logger.info(key='anc_facility_type', data='hospital')
-                df.at[person_id, 'ac_facility_type'] = 'hospital'
+        elif self.ACCEPTED_FACILITY_LEVEL > 1:
+            logger.info(key='anc_facility_type', data='hospital')
+            df.at[person_id, 'ac_facility_type'] = 'hospital'
 
-            # We add a visit to a rolling total of ANC visits in this pregnancy
-            df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
+        # We add a visit to a rolling total of ANC visits in this pregnancy
+        df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
-            # And ensure only women whose first contact with ANC services are attending this event
-            assert not pd.isnull(mother.ps_gestational_age_in_weeks)
-            assert mother.ps_gestational_age_in_weeks >= 7
+        # And ensure only women whose first contact with ANC services are attending this event
+        assert not pd.isnull(mother.ps_gestational_age_in_weeks)
+        assert mother.ps_gestational_age_in_weeks >= 7
 
-            # --------------------------------------- INTERVENTIONS ---------------------------------------------------
-            self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)
-            self.module.iron_and_folic_acid_supplementation(hsi_event=self)
-            self.module.iptp_administration(hsi_event=self)
+        # --------------------------------------- INTERVENTIONS ---------------------------------------------------
+        self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)
+        self.module.iron_and_folic_acid_supplementation(hsi_event=self)
+        self.module.iptp_administration(hsi_event=self)
 
-            if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 1:
-                self.module.tb_screening(hsi_event=self)
-                self.module.hiv_testing(hsi_event=self)
-                self.module.syphilis_screening_and_treatment(hsi_event=self)
-                self.module.point_of_care_hb_testing(hsi_event=self)
-                self.module.tetanus_vaccination(hsi_event=self)
+        if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 1:
+            self.module.tb_screening(hsi_event=self)
+            self.module.hiv_testing(hsi_event=self)
+            self.module.syphilis_screening_and_treatment(hsi_event=self)
+            self.module.point_of_care_hb_testing(hsi_event=self)
+            self.module.tetanus_vaccination(hsi_event=self)
 
-            if (df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 2) or \
-                (mother.ps_gestational_age_in_weeks > 20):
-                self.module.albendazole_administration(hsi_event=self)
-                self.module.tetanus_vaccination(hsi_event=self)
+        if (df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 2) or \
+            (mother.ps_gestational_age_in_weeks > 20):
+            self.module.albendazole_administration(hsi_event=self)
+            self.module.tetanus_vaccination(hsi_event=self)
 
-            elif df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 3 or \
-                (mother.ps_gestational_age_in_weeks > 30):
-                self.module.point_of_care_hb_testing(hsi_event=self)
+        elif df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 3 or \
+            (mother.ps_gestational_age_in_weeks > 30):
+            self.module.point_of_care_hb_testing(hsi_event=self)
 
-            # --------------------------------------- SCHEDULE NEXT VISIT ---------------------------------------
+        # --------------------------------------- SCHEDULE NEXT VISIT ---------------------------------------
 
-            if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] < 4:
-                if df.at[person_id, 'ps_anc4']:
-                    weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[person_id, 'ps_gestational_age_'
-                                                                                                 'in_weeks'])
+        if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] < 4:
+            if df.at[person_id, 'ps_anc4']:
+                weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[person_id, 'ps_gestational_age_'
+                                                                                             'in_weeks'])
+
+                visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(visit,
+                                                                    priority=0,
+                                                                    topen=visit_date,
+                                                                    tclose=visit_date + DateOffset(days=7))
+
+                df.at[person_id, 'ac_date_next_contact'] = visit_date
+
+            else:
+                if self. module.rng.random_sample() < params['prob_anc_continues']:
+                    weeks_due_next_visit = int(
+                        recommended_gestation_next_anc - df.at[person_id, 'ps_gestational_age_in_weeks'])
 
                     visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
                     self.sim.modules['HealthSystem'].schedule_hsi_event(visit,
-                                                                        priority=0,
-                                                                        topen=visit_date,
-                                                                        tclose=visit_date + DateOffset(days=7))
-
-                    df.at[person_id, 'ac_date_next_contact'] = visit_date
-
-                else:
-                    if self. module.rng.random_sample() < params['prob_anc_continues']:
-                        weeks_due_next_visit = int(
-                            recommended_gestation_next_anc - df.at[person_id, 'ps_gestational_age_in_weeks'])
-
-                        visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(visit,
                                                                             priority=0,
                                                                             topen=visit_date,
                                                                             tclose=visit_date + DateOffset(days=7))
 
-                        df.at[person_id, 'ac_date_next_contact'] = visit_date
+                    df.at[person_id, 'ac_date_next_contact'] = visit_date
 
-            # If the woman has had any complications detected during ANC she is admitted for treatment to be initiated
-            if df.at[person_id, 'ac_to_be_admitted']:
-                self.module.schedule_admission(person_id)
+        # If the woman has had any complications detected during ANC she is admitted for treatment to be initiated
+        if df.at[person_id, 'ac_to_be_admitted']:
+            self.module.schedule_admission(person_id)
 
-            # set the correct footprint depending on the visit number
-            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
-            if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] > 0:
-                actual_appt_footprint['AntenatalFirst'] = actual_appt_footprint['ANCSubsequent']
+        # set the correct footprint depending on the visit number
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+        if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] > 1:
+            actual_appt_footprint['AntenatalFirst'] = actual_appt_footprint['ANCSubsequent']
 
 
 class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, IndividualScopeEventMixin):
