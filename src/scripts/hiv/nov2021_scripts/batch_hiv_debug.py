@@ -11,7 +11,7 @@ or execute a single run:
 tlo scenario-run src/scripts/hiv/nov2021_scripts/batch_hiv_debug.py --draw 1 0
 
 Run on the batch system using:
-tlo batch-submit src/scripts/tb/tara_tb_hiv_calibration.py
+tlo batch-submit src/scripts/hiv/nov2021_scripts/batch_hiv_debug.py
 
 
 save Job ID:
