@@ -2,19 +2,23 @@
 This file defines a batch run through which the hiv and tb modules are run across a grid of parameter values
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/tb/tara_tb_hiv_calibration.py
+tlo scenario-run --draw-only src/scripts/hiv/nov2021_scripts/batch_hiv_debug.py
 
 Test the scenario starts running without problems:
 tlo scenario-run src/scripts/tb/tara_tb_hiv_calibration.py
 
 or execute a single run:
-tlo scenario-run src/scripts/tb/tara_tb_hiv_calibration.py --draw 1 0
+tlo scenario-run src/scripts/hiv/nov2021_scripts/batch_hiv_debug.py --draw 1 0
 
 Run on the batch system using:
 tlo batch-submit src/scripts/tb/tara_tb_hiv_calibration.py
 
 
-save Job ID: tara_tb_hiv_calibration-2021-10-06T094337Z
+save Job ID:
+all referrals:
+hiv poll only:
+hiv poll + hsi_generic_appt:
+hiv poll + ANC:
 
 
 Display information about a job:

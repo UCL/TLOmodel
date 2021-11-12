@@ -1,0 +1,12 @@
+{
+  "scenario_script_path": "src/scripts/hiv/nov2021_scripts/batch_hiv_debug.py",
+  "scenario_seed": 4672,
+  "runs_per_draw": 2,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 337836565,
+      "parameters": null
+    }
+  ]
+}
