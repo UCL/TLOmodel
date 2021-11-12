@@ -394,26 +394,35 @@ class Lifestyle(Module):
         # todo: urban rural depends on district of residence
 
         # randomly selected some individuals as urban
-        df.loc[alive_idx, 'li_urban'] = rng.random_sample(size=len(alive_idx)) < m.init_p_urban
+        df.loc[alive_idx, 'li_urban'] = (
+            rng.random_sample(size=len(alive_idx)) < m.parameters['init_p_urban']
+        )
 
         # get the indices of all individuals who are urban or rural
         urban_index = df.index[df.is_alive & df.li_urban]
         rural_index = df.index[df.is_alive & ~df.li_urban]
 
         # randomly sample wealth category according to urban/rural wealth probs
-        df.loc[urban_index, 'li_wealth'] = rng.choice([1, 2, 3, 4, 5], size=len(urban_index), p=m.init_p_wealth_urban)
-        df.loc[rural_index, 'li_wealth'] = rng.choice([1, 2, 3, 4, 5], size=len(rural_index), p=m.init_p_wealth_rural)
+        df.loc[urban_index, 'li_wealth'] = rng.choice(
+            [1, 2, 3, 4, 5], size=len(urban_index), p=m.parameters['init_p_wealth_urban']
+        )
+        df.loc[rural_index, 'li_wealth'] = rng.choice(
+            [1, 2, 3, 4, 5], size=len(rural_index), p=m.parameters['init_p_wealth_rural']
+        )
 
         # -------------------- LOW EXERCISE --------------------------------------------------------
 
         age_ge15_idx = df.index[df.is_alive & (df.age_years >= 15)]
 
-        init_odds_low_ex_urban_m = m.init_p_low_ex_urban_m / (1 - m.init_p_low_ex_urban_m)
+        init_odds_low_ex_urban_m = (
+            m.parameters['init_p_low_ex_urban_m']
+            / (1 - m.parameters['init_p_low_ex_urban_m'])
+        )
 
         odds_low_ex = pd.Series(init_odds_low_ex_urban_m, index=age_ge15_idx)
 
-        odds_low_ex.loc[df.sex == 'F'] *= m.init_or_low_ex_f
-        odds_low_ex.loc[~df.li_urban] *= m.init_or_low_ex_rural
+        odds_low_ex.loc[df.sex == 'F'] *= m.parameters['init_or_low_ex_f']
+        odds_low_ex.loc[~df.li_urban] *= m.parameters['init_or_low_ex_rural']
 
         low_ex_probs = odds_low_ex / (1 + odds_low_ex)
 
@@ -422,13 +431,20 @@ class Lifestyle(Module):
 
         # -------------------- TOBACCO USE ---------------------------------------------------------
 
-        init_odds_tob_age1519_m_wealth1 = m.init_p_tob_age1519_m_wealth1 / (1 - m.init_p_tob_age1519_m_wealth1)
+        init_odds_tob_age1519_m_wealth1 = (
+            m.parameters['init_p_tob_age1519_m_wealth1']
+            / (1 - m.parameters['init_p_tob_age1519_m_wealth1'])
+        )
 
         odds_tob = pd.Series(init_odds_tob_age1519_m_wealth1, index=age_ge15_idx)
 
-        odds_tob.loc[df.sex == 'F'] *= m.init_or_tob_f
-        odds_tob.loc[(df.sex == 'M') & (df.age_years >= 20) & (df.age_years < 40)] *= m.init_or_tob_age2039_m
-        odds_tob.loc[(df.sex == 'M') & (df.age_years >= 40)] *= m.init_or_tob_agege40_m
+        odds_tob.loc[df.sex == 'F'] *= m.parameters['init_or_tob_f']
+        odds_tob.loc[
+            (df.sex == 'M') & (df.age_years >= 20) & (df.age_years < 40)
+        ] *= m.parameters['init_or_tob_age2039_m']
+        odds_tob.loc[
+            (df.sex == 'M') & (df.age_years >= 40)
+        ] *= m.parameters['init_or_tob_agege40_m']
         odds_tob.loc[df.li_wealth == 2] *= 2
         odds_tob.loc[df.li_wealth == 3] *= 3
         odds_tob.loc[df.li_wealth == 4] *= 4
@@ -447,8 +463,12 @@ class Lifestyle(Module):
         agege15_m_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')]
         agege15_f_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'F')]
 
-        df.loc[agege15_m_idx, 'li_ex_alc'] = rng.random_sample(size=len(agege15_m_idx)) < m.init_p_ex_alc_m
-        df.loc[agege15_f_idx, 'li_ex_alc'] = rng.random_sample(size=len(agege15_f_idx)) < m.init_p_ex_alc_f
+        df.loc[agege15_m_idx, 'li_ex_alc'] = (
+            rng.random_sample(size=len(agege15_m_idx)) < m.parameters['init_p_ex_alc_m']
+        )
+        df.loc[agege15_f_idx, 'li_ex_alc'] = (
+            rng.random_sample(size=len(agege15_f_idx)) < m.parameters['init_p_ex_alc_f']
+        )
 
         # -------------------- MARITAL STATUS ------------------------------------------------------
 
@@ -459,41 +479,57 @@ class Lifestyle(Module):
         age_50_59 = df.index[df.age_years.between(50, 59) & df.is_alive]
         age_gte60 = df.index[(df.age_years >= 60) & df.is_alive]
 
-        df.loc[age_15_19, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_15_19), p=m.init_dist_mar_stat_age1520)
-        df.loc[age_20_29, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_20_29), p=m.init_dist_mar_stat_age2030)
-        df.loc[age_30_39, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_30_39), p=m.init_dist_mar_stat_age3040)
-        df.loc[age_40_49, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_40_49), p=m.init_dist_mar_stat_age4050)
-        df.loc[age_50_59, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_50_59), p=m.init_dist_mar_stat_age5060)
-        df.loc[age_gte60, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_gte60), p=m.init_dist_mar_stat_agege60)
+        df.loc[age_15_19, 'li_mar_stat'] = rng.choice(
+            [1, 2, 3], size=len(age_15_19), p=m.parameters['init_dist_mar_stat_age1520']
+        )
+        df.loc[age_20_29, 'li_mar_stat'] = rng.choice(
+            [1, 2, 3], size=len(age_20_29), p=m.parameters['init_dist_mar_stat_age2030']
+        )
+        df.loc[age_30_39, 'li_mar_stat'] = rng.choice(
+            [1, 2, 3], size=len(age_30_39), p=m.parameters['init_dist_mar_stat_age3040']
+        )
+        df.loc[age_40_49, 'li_mar_stat'] = rng.choice(
+            [1, 2, 3], size=len(age_40_49), p=m.parameters['init_dist_mar_stat_age4050']
+        )
+        df.loc[age_50_59, 'li_mar_stat'] = rng.choice(
+            [1, 2, 3], size=len(age_50_59), p=m.parameters['init_dist_mar_stat_age5060']
+        )
+        df.loc[age_gte60, 'li_mar_stat'] = rng.choice(
+            [1, 2, 3], size=len(age_gte60), p=m.parameters['init_dist_mar_stat_agege60']
+        )
 
         # -------------------- EDUCATION -----------------------------------------------------------
 
         age_gte5 = df.index[(df.age_years >= 5) & df.is_alive]
 
         # calculate the probability of education for all individuals over 5 years old
-        p_some_ed = pd.Series(m.init_age2030_w5_some_ed, index=age_gte5)
+        p_some_ed = pd.Series(m.parameters['init_age2030_w5_some_ed'], index=age_gte5)
 
         # adjust probability of some education based on age
-        p_some_ed.loc[df.age_years < 13] *= m.init_rp_some_ed_age0513
-        p_some_ed.loc[df.age_years.between(13, 19)] *= m.init_rp_some_ed_age1320
-        p_some_ed.loc[df.age_years.between(30, 39)] *= m.init_rp_some_ed_age3040
-        p_some_ed.loc[df.age_years.between(40, 49)] *= m.init_rp_some_ed_age4050
-        p_some_ed.loc[df.age_years.between(50, 59)] *= m.init_rp_some_ed_age5060
-        p_some_ed.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_agege60
+        p_some_ed.loc[df.age_years < 13] *= m.parameters['init_rp_some_ed_age0513']
+        p_some_ed.loc[df.age_years.between(13, 19)] *= m.parameters['init_rp_some_ed_age1320']
+        p_some_ed.loc[df.age_years.between(30, 39)] *= m.parameters['init_rp_some_ed_age3040']
+        p_some_ed.loc[df.age_years.between(40, 49)] *= m.parameters['init_rp_some_ed_age4050']
+        p_some_ed.loc[df.age_years.between(50, 59)] *= m.parameters['init_rp_some_ed_age5060']
+        p_some_ed.loc[(df.age_years >= 60)] *= m.parameters['init_rp_some_ed_agege60']
 
         # adjust probability of some education based on wealth
-        p_some_ed *= m.init_rp_some_ed_per_higher_wealth ** (5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
+        p_some_ed *= m.parameters['init_rp_some_ed_per_higher_wealth'] ** (
+            5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth'])
+        )
 
         # calculate baseline of education level 3, and adjust for age and wealth
-        p_ed_lev_3 = pd.Series(m.init_prop_age2030_w5_some_ed_sec, index=age_gte5)
+        p_ed_lev_3 = pd.Series(m.parameters['init_prop_age2030_w5_some_ed_sec'], index=age_gte5)
 
         p_ed_lev_3.loc[(df.age_years < 13)] = 0
-        p_ed_lev_3.loc[df.age_years.between(13, 19)] *= m.init_rp_some_ed_sec_age1320
-        p_ed_lev_3.loc[df.age_years.between(30, 39)] *= m.init_rp_some_ed_sec_age3040
-        p_ed_lev_3.loc[df.age_years.between(40, 49)] *= m.init_rp_some_ed_sec_age4050
-        p_ed_lev_3.loc[df.age_years.between(50, 59)] *= m.init_rp_some_ed_sec_age5060
-        p_ed_lev_3.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_sec_agege60
-        p_ed_lev_3 *= m.init_rp_some_ed_sec_per_higher_wealth ** (5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
+        p_ed_lev_3.loc[df.age_years.between(13, 19)] *= m.parameters['init_rp_some_ed_sec_age1320']
+        p_ed_lev_3.loc[df.age_years.between(30, 39)] *= m.parameters['init_rp_some_ed_sec_age3040']
+        p_ed_lev_3.loc[df.age_years.between(40, 49)] *= m.parameters['init_rp_some_ed_sec_age4050']
+        p_ed_lev_3.loc[df.age_years.between(50, 59)] *= m.parameters['init_rp_some_ed_sec_age5060']
+        p_ed_lev_3.loc[(df.age_years >= 60)] *= m.parameters['init_rp_some_ed_sec_agege60']
+        p_ed_lev_3 *= m.parameters['init_rp_some_ed_sec_per_higher_wealth'] ** (
+            5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth'])
+        )
 
         rnd_draw = pd.Series(rng.random_sample(size=len(age_gte5)), index=age_gte5)
 
@@ -515,14 +551,16 @@ class Lifestyle(Module):
         df.loc[df.age_years.between(13, 19) & (df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
 
         # -------------------- UNIMPROVED SANITATION ---------------------------------------------------
-        init_odds_unimproved_sanitation = m.init_p_unimproved_sanitation_urban / (
-            1 - m.init_p_unimproved_sanitation_urban)
+        init_odds_unimproved_sanitation = m.parameters['init_p_unimproved_sanitation_urban'] / (
+            1 - m.parameters['init_p_unimproved_sanitation_urban'])
 
         # create a series with odds of unimproved sanitation for base group (urban)
         odds_unimproved_sanitation = pd.Series(init_odds_unimproved_sanitation, index=alive_idx)
 
         # update odds according to determinants of unimproved sanitation (rural status the only determinant)
-        odds_unimproved_sanitation.loc[df.is_alive & ~df.li_urban] *= m.init_or_unimproved_sanitation_rural
+        odds_unimproved_sanitation.loc[df.is_alive & ~df.li_urban] *= (
+            m.parameters['init_or_unimproved_sanitation_rural']
+        )
 
         prob_unimproved_sanitation = odds_unimproved_sanitation / (1 + odds_unimproved_sanitation)
 
@@ -531,13 +569,15 @@ class Lifestyle(Module):
         df.loc[alive_idx, 'li_unimproved_sanitation'] = random_draw < prob_unimproved_sanitation
 
         # -------------------- NO CLEAN DRINKING WATER ---------------------------------------------------
-        init_odds_no_clean_drinking_water = m.init_p_no_clean_drinking_water_urban / (
-            1 - m.init_p_no_clean_drinking_water_urban
+        init_odds_no_clean_drinking_water = m.parameters['init_p_no_clean_drinking_water_urban'] / (
+            1 - m.parameters['init_p_no_clean_drinking_water_urban']
         )
 
         odds_no_clean_drinking_water = pd.Series(init_odds_no_clean_drinking_water, index=alive_idx)
 
-        odds_no_clean_drinking_water.loc[df.is_alive & ~df.li_urban] *= m.init_or_no_clean_drinking_water_rural
+        odds_no_clean_drinking_water.loc[df.is_alive & ~df.li_urban] *= (
+            m.parameters['init_or_no_clean_drinking_water_rural']
+        )
 
         prob_no_clean_drinking_water = odds_no_clean_drinking_water / (1 + odds_no_clean_drinking_water)
 
@@ -547,11 +587,16 @@ class Lifestyle(Module):
 
         # -------------------- WOOD BURN STOVE ---------------------------------------------------
 
-        init_odds_wood_burn_stove = m.init_p_wood_burn_stove_urban / (1 - m.init_p_wood_burn_stove_urban)
+        init_odds_wood_burn_stove = (
+            m.parameters['init_p_wood_burn_stove_urban']
+            / (1 - m.parameters['init_p_wood_burn_stove_urban'])
+        )
 
         odds_wood_burn_stove = pd.Series(init_odds_wood_burn_stove, index=alive_idx)
 
-        odds_wood_burn_stove.loc[df.is_alive & ~df.li_urban] *= m.init_or_wood_burn_stove_rural
+        odds_wood_burn_stove.loc[df.is_alive & ~df.li_urban] *= (
+            m.parameters['init_or_wood_burn_stove_rural']
+        )
 
         prob_wood_burn_stove = odds_wood_burn_stove / (1 + odds_wood_burn_stove)
 
@@ -566,12 +611,22 @@ class Lifestyle(Module):
         wealth4_idx = df.index[df.is_alive & (df.li_wealth == 4)]
         wealth5_idx = df.index[df.is_alive & (df.li_wealth == 5)]
 
-        odds_no_access_handwashing = pd.Series(1 / (1 - m.init_p_no_access_handwashing_wealth1), index=alive_idx)
+        odds_no_access_handwashing = pd.Series(
+            1 / (1 - m.parameters['init_p_no_access_handwashing_wealth1']), index=alive_idx
+        )
 
-        odds_no_access_handwashing.loc[wealth2_idx] *= m.init_or_no_access_handwashing_per_lower_wealth
-        odds_no_access_handwashing.loc[wealth3_idx] *= m.init_or_no_access_handwashing_per_lower_wealth ** 2
-        odds_no_access_handwashing.loc[wealth4_idx] *= m.init_or_no_access_handwashing_per_lower_wealth ** 3
-        odds_no_access_handwashing.loc[wealth5_idx] *= m.init_or_no_access_handwashing_per_lower_wealth ** 4
+        odds_no_access_handwashing.loc[wealth2_idx] *= (
+            m.parameters['init_or_no_access_handwashing_per_lower_wealth']
+        )
+        odds_no_access_handwashing.loc[wealth3_idx] *= (
+            m.parameters['init_or_no_access_handwashing_per_lower_wealth'] ** 2
+        )
+        odds_no_access_handwashing.loc[wealth4_idx] *= (
+            m.parameters['init_or_no_access_handwashing_per_lower_wealth'] ** 3
+        )
+        odds_no_access_handwashing.loc[wealth5_idx] *= (
+            m.parameters['init_or_no_access_handwashing_per_lower_wealth'] ** 4
+        )
 
         prob_no_access_handwashing = odds_no_access_handwashing / (1 + odds_no_access_handwashing)
 
@@ -582,10 +637,14 @@ class Lifestyle(Module):
         # -------------------- SALT INTAKE ----------------------------------------------------------
 
         # create a series with odds of unimproved sanitation for base group (urban)
-        odds_high_salt = pd.Series(m.init_p_high_salt_urban / (1 - m.init_p_high_salt_urban), index=alive_idx)
+        odds_high_salt = pd.Series(
+            m.parameters['init_p_high_salt_urban']
+            / (1 - m.parameters['init_p_high_salt_urban']),
+            index=alive_idx
+        )
 
         # update odds according to determinants of unimproved sanitation (rural status the only determinant)
-        odds_high_salt.loc[df.is_alive & ~df.li_urban] *= m.init_or_high_salt_rural
+        odds_high_salt.loc[df.is_alive & ~df.li_urban] *= m.parameters['init_or_high_salt_rural']
 
         prob_high_salt = (odds_high_salt / (1 + odds_high_salt))
 
@@ -599,7 +658,7 @@ class Lifestyle(Module):
 
         random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
 
-        df.loc[alive_idx, 'li_high_sugar'] = random_draw < m.init_p_high_sugar
+        df.loc[alive_idx, 'li_high_sugar'] = random_draw < m.parameters['init_p_high_sugar']
 
         # -------------------- WEALTH LEVEL ----------------------------------------------------------
 
@@ -607,10 +666,14 @@ class Lifestyle(Module):
         rural_idx = df.index[df.is_alive & ~df.li_urban]
 
         # allocate wealth level for urban
-        df.loc[urban_idx, 'li_wealth'] = rng.choice([1, 2, 3, 4, 5], size=len(urban_idx), p=m.init_p_wealth_urban)
+        df.loc[urban_idx, 'li_wealth'] = rng.choice(
+            [1, 2, 3, 4, 5], size=len(urban_idx), p=m.parameters['init_p_wealth_urban']
+        )
 
         # allocate wealth level for rural
-        df.loc[rural_idx, 'li_wealth'] = rng.choice([1, 2, 3, 4, 5], size=len(rural_idx), p=m.init_p_wealth_rural)
+        df.loc[rural_idx, 'li_wealth'] = rng.choice(
+            [1, 2, 3, 4, 5], size=len(rural_idx), p=m.parameters['init_p_wealth_rural']
+        )
 
         # -------------------- BMI CATEGORIES ----------------------------------------------------------
 
@@ -629,7 +692,7 @@ class Lifestyle(Module):
         # transform to odds, apply the odds ratio for the effect, transform back to probabilities and normalise
         # to sum to 1
         init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1 = [
-            i / (1 - i) for i in m.init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1
+            i / (1 - i) for i in m.parameters['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1']
         ]
 
         df_odds_probs_bmi_levels = pd.DataFrame(
@@ -640,20 +703,32 @@ class Lifestyle(Module):
 
         def update_df_odds_bmi(bmi: str, power: int):
             """Update specified bmi column using pattern and the power given"""
-            df_odds_probs_bmi_levels.loc[agege15_w_idx, bmi] *= m.init_or_higher_bmi_f ** power
-            df_odds_probs_bmi_levels.loc[agege15_rural_idx, bmi] *= m.init_or_higher_bmi_rural ** power
-            df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, bmi] *= m.init_or_higher_bmi_high_sugar ** power
-            df_odds_probs_bmi_levels.loc[agege3049_idx, bmi] *= m.init_or_higher_bmi_age3049 ** power
-            df_odds_probs_bmi_levels.loc[agege50_idx, bmi] *= m.init_or_higher_bmi_agege50 ** power
-            df_odds_probs_bmi_levels.loc[agege15_tob_idx, bmi] *= m.init_or_higher_bmi_tob ** power
+            df_odds_probs_bmi_levels.loc[agege15_w_idx, bmi] *= (
+                m.parameters['init_or_higher_bmi_f'] ** power
+            )
+            df_odds_probs_bmi_levels.loc[agege15_rural_idx, bmi] *= (
+                m.parameters['init_or_higher_bmi_rural'] ** power
+            )
+            df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, bmi] *= (
+                m.parameters['init_or_higher_bmi_high_sugar'] ** power
+            )
+            df_odds_probs_bmi_levels.loc[agege3049_idx, bmi] *= (
+                m.parameters['init_or_higher_bmi_age3049'] ** power
+            )
+            df_odds_probs_bmi_levels.loc[agege50_idx, bmi] *= (
+                m.parameters['init_or_higher_bmi_agege50'] ** power
+            )
+            df_odds_probs_bmi_levels.loc[agege15_tob_idx, bmi] *= (
+                m.parameters['init_or_higher_bmi_tob'] ** power
+            )
             df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, bmi] *= (
-                m.init_or_higher_bmi_per_higher_wealth_level ** 2) ** power
+                m.parameters['init_or_higher_bmi_per_higher_wealth_level'] ** 2) ** power
             df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, bmi] *= (
-                m.init_or_higher_bmi_per_higher_wealth_level ** 3) ** power
+                m.parameters['init_or_higher_bmi_per_higher_wealth_level'] ** 3) ** power
             df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, bmi] *= (
-                m.init_or_higher_bmi_per_higher_wealth_level ** 4) ** power
+                m.parameters['init_or_higher_bmi_per_higher_wealth_level'] ** 4) ** power
             df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, bmi] *= (
-                m.init_or_higher_bmi_per_higher_wealth_level ** 5) ** power
+                m.parameters['init_or_higher_bmi_per_higher_wealth_level'] ** 5) ** power
 
         update_df_odds_bmi('1', -2)
         update_df_odds_bmi('2', -1)
@@ -922,33 +997,36 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         currently_urban = df.index[df.li_urban & df.is_alive]
 
         # handle new transitions
-        rural_to_urban = currently_rural[m.rng.random_sample(size=len(currently_rural)) < m.r_urban]
+        rural_to_urban = currently_rural[m.rng.random_sample(size=len(currently_rural)) < m.parameters['r_urban']]
         df.loc[rural_to_urban, 'li_urban'] = True
 
         # handle new transitions to rural
-        urban_to_rural = currently_urban[rng.random_sample(size=len(currently_urban)) < m.r_rural]
+        urban_to_rural = currently_urban[rng.random_sample(size=len(currently_urban)) < m.parameters['r_rural']]
         df.loc[urban_to_rural, 'li_urban'] = False
 
         # -------------------- LOW EXERCISE --------------------------------------------------------
 
         adults_not_low_ex = df.index[~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
-        eff_p_low_ex = pd.Series(m.r_low_ex, index=adults_not_low_ex)
-        eff_p_low_ex.loc[df.sex == 'F'] *= m.rr_low_ex_f
-        eff_p_low_ex.loc[df.li_urban] *= m.rr_low_ex_urban
+        eff_p_low_ex = pd.Series(m.parameters['r_low_ex'], index=adults_not_low_ex)
+        eff_p_low_ex.loc[df.sex == 'F'] *= m.parameters['rr_low_ex_f']
+        eff_p_low_ex.loc[df.li_urban] *= m.parameters['rr_low_ex_urban']
         df.loc[adults_not_low_ex, 'li_low_ex'] = rng.random_sample(len(adults_not_low_ex)) < eff_p_low_ex
 
         # transition from low exercise to not low exercise
         low_ex_idx = df.index[df.li_low_ex & df.is_alive]
-        eff_rate_not_low_ex = pd.Series(m.r_not_low_ex, index=low_ex_idx)
-        eff_rate_not_low_ex.loc[df.li_exposed_to_campaign_exercise_increase] *= m.rr_not_low_ex_pop_advice_exercise
+        eff_rate_not_low_ex = pd.Series(m.parameters['r_not_low_ex'], index=low_ex_idx)
+        eff_rate_not_low_ex.loc[df.li_exposed_to_campaign_exercise_increase] *= (
+            m.parameters['rr_not_low_ex_pop_advice_exercise']
+        )
         random_draw = rng.random_sample(len(low_ex_idx))
         newly_not_low_ex_idx = low_ex_idx[random_draw < eff_rate_not_low_ex]
         df.loc[newly_not_low_ex_idx, 'li_low_ex'] = False
 
         # todo: this line below to start a general population campaign
         #  to increase exercise not working yet (same for others below)
-        all_idx_campaign_exercise_increase = df.index[df.is_alive &
-                                                      (self.sim.date == m.start_date_campaign_exercise_increase)]
+        all_idx_campaign_exercise_increase = df.index[
+            df.is_alive & (self.sim.date == m.parameters['start_date_campaign_exercise_increase'])
+        ]
         df.loc[all_idx_campaign_exercise_increase, 'li_exposed_to_campaign_exercise_increase'] = True
 
         # -------------------- TOBACCO USE ---------------------------------------------------------
@@ -956,24 +1034,28 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         adults_not_tob = df.index[(df.age_years >= 15) & df.is_alive & ~df.li_tob]
 
         # start tobacco use
-        eff_p_tob = pd.Series(m.r_tob, index=adults_not_tob)
-        eff_p_tob.loc[(df.age_years >= 20) & (df.age_years < 40)] *= m.rr_tob_age2039
-        eff_p_tob.loc[df.age_years >= 40] *= m.rr_tob_agege40
-        eff_p_tob.loc[df.sex == 'F'] *= m.rr_tob_f
-        eff_p_tob *= m.rr_tob_wealth ** (pd.to_numeric(df.loc[adults_not_tob, 'li_wealth']) - 1)
+        eff_p_tob = pd.Series(m.parameters['r_tob'], index=adults_not_tob)
+        eff_p_tob.loc[(df.age_years >= 20) & (df.age_years < 40)] *= m.parameters['rr_tob_age2039']
+        eff_p_tob.loc[df.age_years >= 40] *= m.parameters['rr_tob_agege40']
+        eff_p_tob.loc[df.sex == 'F'] *= m.parameters['rr_tob_f']
+        eff_p_tob *= m.parameters['rr_tob_wealth'] ** (pd.to_numeric(df.loc[adults_not_tob, 'li_wealth']) - 1)
 
         df.loc[adults_not_tob, 'li_tob'] = rng.random_sample(len(adults_not_tob)) < eff_p_tob
 
         # transition from tobacco to no tobacco
         tob_idx = df.index[df.li_tob & df.is_alive]
-        eff_rate_not_tob = pd.Series(m.r_not_tob, index=tob_idx)
-        eff_rate_not_tob.loc[df.li_exposed_to_campaign_quit_smoking] *= m.rr_not_tob_pop_advice_tobacco
+        eff_rate_not_tob = pd.Series(m.parameters['r_not_tob'], index=tob_idx)
+        eff_rate_not_tob.loc[df.li_exposed_to_campaign_quit_smoking] *= (
+            m.parameters['rr_not_tob_pop_advice_tobacco']
+        )
         random_draw = rng.random_sample(len(tob_idx))
         newly_not_tob_idx = tob_idx[random_draw < eff_rate_not_tob]
         df.loc[newly_not_tob_idx, 'li_tob'] = False
         df.loc[newly_not_tob_idx, 'li_date_not_tob'] = self.sim.date
 
-        all_idx_campaign_quit_smoking = df.index[df.is_alive & (self.sim.date == m.start_date_campaign_quit_smoking)]
+        all_idx_campaign_quit_smoking = df.index[
+            df.is_alive & (self.sim.date == m.parameters['start_date_campaign_quit_smoking'])
+        ]
         df.loc[all_idx_campaign_quit_smoking, 'li_exposed_to_campaign_quit_smoking'] = True
 
         # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
@@ -982,20 +1064,26 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         not_ex_alc_m = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)]
         now_ex_alc = df.index[df.li_ex_alc & df.is_alive]
 
-        df.loc[not_ex_alc_f, 'li_ex_alc'] = rng.random_sample(len(not_ex_alc_f)) < m.r_ex_alc * m.rr_ex_alc_f
-        df.loc[not_ex_alc_m, 'li_ex_alc'] = rng.random_sample(len(not_ex_alc_m)) < m.r_ex_alc
-        df.loc[now_ex_alc, 'li_ex_alc'] = ~(rng.random_sample(len(now_ex_alc)) < m.r_not_ex_alc)
+        df.loc[not_ex_alc_f, 'li_ex_alc'] = (
+            rng.random_sample(len(not_ex_alc_f))
+            < m.parameters['r_ex_alc'] * m.parameters['rr_ex_alc_f']
+        )
+        df.loc[not_ex_alc_m, 'li_ex_alc'] = rng.random_sample(len(not_ex_alc_m)) < m.parameters['r_ex_alc']
+        df.loc[now_ex_alc, 'li_ex_alc'] = ~(rng.random_sample(len(now_ex_alc)) < m.parameters['r_not_ex_alc'])
 
         # transition from excess alcohol to not excess alcohol
         ex_alc_idx = df.index[df.li_ex_alc & df.is_alive]
-        eff_rate_not_ex_alc = pd.Series(m.r_not_ex_alc, index=ex_alc_idx)
-        eff_rate_not_ex_alc.loc[df.li_exposed_to_campaign_alcohol_reduction] *= m.rr_not_ex_alc_pop_advice_alcohol
+        eff_rate_not_ex_alc = pd.Series(m.parameters['r_not_ex_alc'], index=ex_alc_idx)
+        eff_rate_not_ex_alc.loc[
+            df.li_exposed_to_campaign_alcohol_reduction
+        ] *= m.parameters['rr_not_ex_alc_pop_advice_alcohol']
         random_draw = rng.random_sample(len(ex_alc_idx))
         newly_not_ex_alc_idx = ex_alc_idx[random_draw < eff_rate_not_ex_alc]
         df.loc[newly_not_ex_alc_idx, 'li_ex_alc'] = False
 
-        all_idx_campaign_alcohol_reduction = df.index[df.is_alive
-                                                      & (self.sim.date == m.start_date_campaign_alcohol_reduction)]
+        all_idx_campaign_alcohol_reduction = df.index[
+            df.is_alive & (self.sim.date == m.parameters['start_date_campaign_alcohol_reduction'])
+        ]
         df.loc[all_idx_campaign_alcohol_reduction, 'li_exposed_to_campaign_alcohol_reduction'] = True
 
         # -------------------- MARITAL STATUS ------------------------------------------------------
@@ -1004,11 +1092,11 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         curr_mar = df.index[df.is_alive & (df.li_mar_stat == 2)]
 
         # update if now married
-        now_mar = rng.random_sample(len(curr_never_mar)) < m.r_mar
+        now_mar = rng.random_sample(len(curr_never_mar)) < m.parameters['r_mar']
         df.loc[curr_never_mar[now_mar], 'li_mar_stat'] = 2
 
         # update if now divorced/widowed
-        now_div_wid = rng.random_sample(len(curr_mar)) < m.r_div_wid
+        now_div_wid = rng.random_sample(len(curr_mar)) < m.parameters['r_div_wid']
         df.loc[curr_mar[now_div_wid], 'li_mar_stat'] = 3
 
         # -------------------- EDUCATION -----------------------------------------------------------
@@ -1026,8 +1114,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[age5, 'li_in_ed'] = False
 
         # create a series to hold the probablity of primary education for children at age 5
-        prob_primary = pd.Series(m.p_ed_primary, index=age5)
-        prob_primary *= m.rp_ed_primary_higher_wealth ** (5 - pd.to_numeric(df.loc[age5, 'li_wealth']))
+        prob_primary = pd.Series(m.parameters['p_ed_primary'], index=age5)
+        prob_primary *= m.parameters['rp_ed_primary_higher_wealth'] ** (5 - pd.to_numeric(df.loc[age5, 'li_wealth']))
 
         # randomly select some to have primary education
         age5_in_primary = rng.random_sample(len(age5)) < prob_primary
@@ -1040,8 +1128,11 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         age13_in_primary = df.index[(df.age_years == 13) & df.is_alive & df.li_in_ed & (df.li_ed_lev == 2)]
 
         # they have a probability of gaining secondary education (level 3), based on wealth
-        prob_secondary = pd.Series(m.p_ed_secondary, index=age13_in_primary)
-        prob_secondary *= m.rp_ed_secondary_higher_wealth ** (5 - pd.to_numeric(df.loc[age13_in_primary, 'li_wealth']))
+        prob_secondary = pd.Series(m.parameters['p_ed_secondary'], index=age13_in_primary)
+        prob_secondary *= (
+            m.parameters['rp_ed_secondary_higher_wealth']
+            ** (5 - pd.to_numeric(df.loc[age13_in_primary, 'li_wealth']))
+        )
 
         # randomly select some to get secondary education
         age13_to_secondary = rng.random_sample(len(age13_in_primary)) < prob_secondary
@@ -1053,8 +1144,11 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # ---- DROP OUT OF EDUCATION
 
         # baseline rate of leaving education then adjust for wealth level
-        p_leave_ed = pd.Series(m.r_stop_ed, index=in_ed)
-        p_leave_ed *= m.rr_stop_ed_lower_wealth ** (pd.to_numeric(df.loc[in_ed, 'li_wealth']) - 1)
+        p_leave_ed = pd.Series(m.parameters['r_stop_ed'], index=in_ed)
+        p_leave_ed *= (
+            m.parameters['rr_stop_ed_lower_wealth']
+            ** (pd.to_numeric(df.loc[in_ed, 'li_wealth']) - 1)
+        )
 
         # randomly select some individuals to leave education
         now_not_in_ed = rng.random_sample(len(in_ed)) < p_leave_ed
@@ -1069,7 +1163,9 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # probability of improved sanitation at all follow-up times
         unimproved_sanitaton_idx = df.index[df.li_unimproved_sanitation & df.is_alive]
 
-        eff_rate_improved_sanitation = pd.Series(m.r_improved_sanitation, index=unimproved_sanitaton_idx)
+        eff_rate_improved_sanitation = pd.Series(
+            m.parameters['r_improved_sanitation'], index=unimproved_sanitaton_idx
+        )
 
         random_draw = rng.random_sample(len(unimproved_sanitaton_idx))
 
@@ -1085,7 +1181,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         random_draw = rng.random_sample(len(unimproved_sanitation_newly_urban_idx))
 
         eff_prev_unimproved_sanitation_urban = pd.Series(
-            m.init_p_unimproved_sanitation_urban, index=unimproved_sanitation_newly_urban_idx
+            m.parameters['init_p_unimproved_sanitation_urban'], index=unimproved_sanitation_newly_urban_idx
         )
 
         df.loc[unimproved_sanitation_newly_urban_idx, 'li_unimproved_sanitation'] = (
@@ -1097,7 +1193,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # probability of moving to access to handwashing at all follow-up times
         no_access_handwashing_idx = df.index[df.li_no_access_handwashing & df.is_alive]
 
-        eff_rate_access_handwashing = pd.Series(m.r_access_handwashing, index=no_access_handwashing_idx)
+        eff_rate_access_handwashing = pd.Series(m.parameters['r_access_handwashing'], index=no_access_handwashing_idx)
 
         random_draw = rng.random_sample(len(no_access_handwashing_idx))
 
@@ -1110,7 +1206,9 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # probability of moving to clean drinking water at all follow-up times
         no_clean_drinking_water_idx = df.index[df.li_no_clean_drinking_water & df.is_alive]
 
-        eff_rate_clean_drinking_water = pd.Series(m.r_clean_drinking_water, index=no_clean_drinking_water_idx)
+        eff_rate_clean_drinking_water = pd.Series(
+            m.parameters['r_clean_drinking_water'], index=no_clean_drinking_water_idx
+        )
 
         random_draw = rng.random_sample(len(no_clean_drinking_water_idx))
 
@@ -1126,7 +1224,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         random_draw = rng.random_sample(len(no_clean_drinking_water_newly_urban_idx))
 
         eff_prev_no_clean_drinking_water_urban = pd.Series(
-            m.init_p_no_clean_drinking_water_urban, index=no_clean_drinking_water_newly_urban_idx
+            m.parameters['init_p_no_clean_drinking_water_urban'], index=no_clean_drinking_water_newly_urban_idx
         )
 
         df.loc[no_clean_drinking_water_newly_urban_idx, 'li_no_clean_drinking_water'] = (
@@ -1138,7 +1236,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # probability of moving to non wood burn stove at all follow-up times
         wood_burn_stove_idx = df.index[df.li_wood_burn_stove & df.is_alive]
 
-        eff_rate_non_wood_burn_stove = pd.Series(m.r_non_wood_burn_stove, index=wood_burn_stove_idx)
+        eff_rate_non_wood_burn_stove = pd.Series(m.parameters['r_non_wood_burn_stove'], index=wood_burn_stove_idx)
 
         random_draw = rng.random_sample(len(wood_burn_stove_idx))
 
@@ -1154,7 +1252,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         random_draw = rng.random_sample(len(wood_burn_stove_newly_urban_idx))
 
         eff_prev_wood_burn_stove_urban = pd.Series(
-            m.init_p_wood_burn_stove_urban, index=wood_burn_stove_newly_urban_idx
+            m.parameters['init_p_wood_burn_stove_urban'], index=wood_burn_stove_newly_urban_idx
         )
 
         df.loc[wood_burn_stove_newly_urban_idx, 'li_wood_burn_stove'] = random_draw < eff_prev_wood_burn_stove_urban
@@ -1162,8 +1260,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------- HIGH SALT ----------------------------------------------------------
 
         not_high_salt_idx = df.index[~df.li_high_salt & df.is_alive]
-        eff_rate_high_salt = pd.Series(m.r_high_salt_urban, index=not_high_salt_idx)
-        eff_rate_high_salt[df.li_urban] *= m.rr_high_salt_rural
+        eff_rate_high_salt = pd.Series(m.parameters['r_high_salt_urban'], index=not_high_salt_idx)
+        eff_rate_high_salt[df.li_urban] *= m.parameters['rr_high_salt_rural']
         random_draw = rng.random_sample(len(not_high_salt_idx))
         newly_high_salt = random_draw < eff_rate_high_salt
         newly_high_salt_idx = not_high_salt_idx[newly_high_salt]
@@ -1171,8 +1269,10 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # transition from high salt to not high salt
         high_salt_idx = df.index[df.li_high_salt & df.is_alive]
-        eff_rate_not_high_salt = pd.Series(m.r_not_high_salt, index=high_salt_idx)
-        eff_rate_not_high_salt.loc[df.li_exposed_to_campaign_salt_reduction] *= m.rr_not_high_salt_pop_advice_salt
+        eff_rate_not_high_salt = pd.Series(m.parameters['r_not_high_salt'], index=high_salt_idx)
+        eff_rate_not_high_salt.loc[
+            df.li_exposed_to_campaign_salt_reduction
+        ] *= m.parameters['rr_not_high_salt_pop_advice_salt']
         random_draw = rng.random_sample(len(high_salt_idx))
         newly_not_high_salt_idx = high_salt_idx[random_draw < eff_rate_not_high_salt]
         df.loc[newly_not_high_salt_idx, 'li_high_salt'] = False
@@ -1183,15 +1283,17 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------- HIGH SUGAR ----------------------------------------------------------
 
         not_high_sugar_idx = df.index[~df.li_high_sugar & df.is_alive]
-        eff_p_high_sugar = pd.Series(m.r_high_sugar, index=not_high_sugar_idx)
+        eff_p_high_sugar = pd.Series(m.parameters['r_high_sugar'], index=not_high_sugar_idx)
         random_draw = rng.random_sample(len(not_high_sugar_idx))
         newly_high_sugar_idx = not_high_sugar_idx[random_draw < eff_p_high_sugar]
         df.loc[newly_high_sugar_idx, 'li_high_sugar'] = True
 
         # transition from high sugar to not high sugar
         high_sugar_idx = df.index[df.li_high_sugar & df.is_alive]
-        eff_rate_not_high_sugar = pd.Series(m.r_not_high_sugar, index=high_sugar_idx)
-        eff_rate_not_high_sugar.loc[df.li_exposed_to_campaign_sugar_reduction] *= m.rr_not_high_sugar_pop_advice_sugar
+        eff_rate_not_high_sugar = pd.Series(m.parameters['r_not_high_sugar'], index=high_sugar_idx)
+        eff_rate_not_high_sugar.loc[
+            df.li_exposed_to_campaign_sugar_reduction
+        ] *= m.parameters['rr_not_high_sugar_pop_advice_sugar']
         random_draw = rng.random_sample(len(high_sugar_idx))
         newly_not_high_sugar_idx = high_sugar_idx[random_draw < eff_rate_not_high_sugar]
         df.loc[newly_not_high_sugar_idx, 'li_high_sugar'] = False
@@ -1209,17 +1311,17 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # possible increase in category of bmi
 
         bmi_cat_1_to_4_idx = df.index[df.is_alive & (df.age_years >= 15) & df.li_bmi.between(1, 4)]
-        eff_rate_higher_bmi = pd.Series(m.r_higher_bmi, index=bmi_cat_1_to_4_idx)
-        eff_rate_higher_bmi[df.li_urban] *= m.rr_higher_bmi_urban
-        eff_rate_higher_bmi[df.sex == 'F'] *= m.rr_higher_bmi_f
-        eff_rate_higher_bmi[df.age_years.between(30, 49)] *= m.rr_higher_bmi_age3049
-        eff_rate_higher_bmi[df.age_years >= 50] *= m.rr_higher_bmi_agege50
-        eff_rate_higher_bmi[df.li_tob] *= m.rr_higher_bmi_tob
-        eff_rate_higher_bmi[df.li_wealth == 2] *= m.rr_higher_bmi_per_higher_wealth ** 2
-        eff_rate_higher_bmi[df.li_wealth == 3] *= m.rr_higher_bmi_per_higher_wealth ** 3
-        eff_rate_higher_bmi[df.li_wealth == 4] *= m.rr_higher_bmi_per_higher_wealth ** 4
-        eff_rate_higher_bmi[df.li_wealth == 5] *= m.rr_higher_bmi_per_higher_wealth ** 5
-        eff_rate_higher_bmi[df.li_high_sugar] *= m.rr_higher_bmi_high_sugar
+        eff_rate_higher_bmi = pd.Series(m.parameters['r_higher_bmi'], index=bmi_cat_1_to_4_idx)
+        eff_rate_higher_bmi[df.li_urban] *= m.parameters['rr_higher_bmi_urban']
+        eff_rate_higher_bmi[df.sex == 'F'] *= m.parameters['rr_higher_bmi_f']
+        eff_rate_higher_bmi[df.age_years.between(30, 49)] *= m.parameters['rr_higher_bmi_age3049']
+        eff_rate_higher_bmi[df.age_years >= 50] *= m.parameters['rr_higher_bmi_agege50']
+        eff_rate_higher_bmi[df.li_tob] *= m.parameters['rr_higher_bmi_tob']
+        eff_rate_higher_bmi[df.li_wealth == 2] *= m.parameters['rr_higher_bmi_per_higher_wealth'] ** 2
+        eff_rate_higher_bmi[df.li_wealth == 3] *= m.parameters['rr_higher_bmi_per_higher_wealth'] ** 3
+        eff_rate_higher_bmi[df.li_wealth == 4] *= m.parameters['rr_higher_bmi_per_higher_wealth'] ** 4
+        eff_rate_higher_bmi[df.li_wealth == 5] *= m.parameters['rr_higher_bmi_per_higher_wealth'] ** 5
+        eff_rate_higher_bmi[df.li_high_sugar] *= m.parameters['rr_higher_bmi_high_sugar']
 
         random_draw = rng.random_sample(len(bmi_cat_1_to_4_idx))
         newly_increase_bmi_cat_idx = bmi_cat_1_to_4_idx[random_draw < eff_rate_higher_bmi]
@@ -1228,9 +1330,11 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # possible decrease in category of bmi
 
         bmi_cat_3_to_5_idx = df.index[df.is_alive & df.li_bmi.between(3, 5) & (df.age_years >= 15)]
-        eff_rate_lower_bmi = pd.Series(m.r_lower_bmi, index=bmi_cat_3_to_5_idx)
-        eff_rate_lower_bmi[df.li_urban] *= m.rr_lower_bmi_tob
-        eff_rate_lower_bmi.loc[df.li_exposed_to_campaign_weight_reduction] *= m.rr_lower_bmi_pop_advice_weight
+        eff_rate_lower_bmi = pd.Series(m.parameters['r_lower_bmi'], index=bmi_cat_3_to_5_idx)
+        eff_rate_lower_bmi[df.li_urban] *= m.parameters['rr_lower_bmi_tob']
+        eff_rate_lower_bmi.loc[
+            df.li_exposed_to_campaign_weight_reduction
+        ] *= m.parameters['rr_lower_bmi_pop_advice_weight']
         random_draw = rng.random_sample(len(bmi_cat_3_to_5_idx))
         newly_decrease_bmi_cat_idx = bmi_cat_3_to_5_idx[random_draw < eff_rate_lower_bmi]
         df.loc[newly_decrease_bmi_cat_idx, 'li_bmi'] = df['li_bmi'] - 1

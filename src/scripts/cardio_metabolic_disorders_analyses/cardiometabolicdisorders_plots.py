@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import (
     bladder_cancer,
     cardio_metabolic_disorders,
@@ -44,8 +44,8 @@ def runsim(seed=0):
     # add file handler for the purpose of logging
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2020, 12, 31)
-    popsize = 20000
+    end_date = Date(2012, 12, 31)
+    popsize = 10000
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
@@ -62,7 +62,8 @@ def runsim(seed=0):
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath,
+                                                                     do_condition_combos=True),
                  depression.Depression(resourcefilepath=resourcefilepath),
                  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
@@ -77,6 +78,47 @@ sim = runsim()
 
 output = parse_log_file(sim.log_filepath)
 
+# ---------------------------------------- COMPARE OUTPUTS OF MODEL TO DATA -------------------------------------
+
+# Get comparison
+comparison = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=resourcefilepath)
+
+# Make a simple bar chart
+comparison.loc[('2010-2014', slice(None), '50-54', 'Heart Disease')].sum().plot.bar()
+plt.title('Deaths per year due to Heart Disease, 2010-2014')
+plt.tight_layout()
+plt.show()
+
+age_cats = ['20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60-64',
+            '65-69', '70-74', '75-79', '80-84', '85-89', '90-94', '95-99']
+
+men_GBD = []
+men_model = []
+for age_cat in age_cats:
+    men_GBD.append(comparison.loc[('2015-2019', 'M', f'{age_cat}', 'Heart Disease')]['GBD_mean'])
+    men_model.append(comparison.loc[('2015-2019', 'M', f'{age_cat}', 'Heart Disease')]['model'])
+
+x = np.arange(len(age_cats))
+width = 0.35
+
+fig, ax = plt.subplots()
+rects1 = ax.bar(x - width/2, men_GBD, width, label='GBD mean')
+rects2 = ax.bar(x + width/2, men_model, width, label='Model')
+
+# Add some text for labels, title and custom x-axis tick labels, etc.
+ax.set_ylabel('Deaths')
+ax.set_title('Deaths (Men, 2015-2019)')
+ax.set_xticks(x)
+ax.set_xticklabels(age_cats, rotation=90)
+ax.legend()
+
+fig.tight_layout()
+
+plt.show()
+
+
+labels_f = ['F/20-24', 'F/25-29', 'F/30-34', 'F/35-39', 'F/40-44', 'F/45-49', 'F/50-54', 'F/55-59', 'F/60-64',
+            'F/65-69', 'F/70-74', 'F/75-79', 'F/80-84', 'F/85-89', 'F/90-94', 'F/95-99', 'F/100+']
 # ----------------------------------------------- SET UP FUNCTIONS ----------------------------------------------
 
 # list all of the conditions in the module to loop through
