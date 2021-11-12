@@ -55,7 +55,7 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
         assert module is self.sim.modules['HealthSeekingBehaviour']
 
         self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel0'
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = '0'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
         self.ALERT_OTHER_DISEASES = []
 
@@ -80,7 +80,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
             'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
 

@@ -546,7 +546,6 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
     # Check that some mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
-# todo: check that can recreate daily_capabilities_table after construction of all the different data structures.
 
 def test_all_appt_types_can_run():
     """Check that if an appointment type is declared as one that can run at a facility-type of level `x` that it can
@@ -601,14 +600,15 @@ def test_all_appt_types_can_run():
     healthsystemscheduler = sim.modules['HealthSystem'].healthsystemscheduler
 
     # Get the table showing which types of appointment can occur at which level
-    appt_types_offered = sim.modules['HealthSystem'].parameters['Appt_Offered_By_Facility_Level'].set_index('Appt_Type_Code')
+    appt_types_offered = sim.modules['HealthSystem'].parameters['Appt_Offered_By_Facility_Level'].set_index(
+        'Appt_Type_Code')
 
     # Get the all the districts in which a person could be resident, and allocate one person to each district
     person_for_district = {d: i for i, d in enumerate(sim.population.props['district_of_residence'].cat.categories)}
     sim.population.props.loc[person_for_district.values(), 'is_alive'] = True
     sim.population.props.loc[person_for_district.values(), 'district_of_residence'] = list(person_for_district.keys())
 
-    # For each type of appointment, for a person in each district, create the HSI, schedule the HSI and see if it can be run
+    # For each type of appointment, for a person in each district, create the HSI, schedule the HSI and check it runs
     error_msg = list()
 
     def check_appt_works(district, level, appt_type):
@@ -638,7 +638,9 @@ def test_all_appt_types_can_run():
 
     for _district in person_for_district:
         for _facility_level_col_name in appt_types_offered.columns:
-            for _appt_type in appt_types_offered[_facility_level_col_name].loc[appt_types_offered[_facility_level_col_name]].index:
+            for _appt_type in appt_types_offered[_facility_level_col_name].loc[
+                appt_types_offered[_facility_level_col_name]
+            ].index:
                 _level = _facility_level_col_name.split('_')[-1]
                 if not check_appt_works(district=_district, level=_level, appt_type=_appt_type):
                     error_msg.append(f"The HSI did not run: {_level=}, {_appt_type=}, {_district=}")

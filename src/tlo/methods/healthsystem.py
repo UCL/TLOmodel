@@ -1,11 +1,8 @@
 """
-Todo:   - phase-out use of facility_name and replace with facility_id ?!
-        - deprecate support for consumables packages and increase efficiency of that stuff
+Todo:   - streamline input arguments
         - let the level of the appointment be in the log
-        - bed days parameterisation
-        - move things to the hsi base class
         - let the logger give times of each hcw
-        - streamline input arguments
+        - bed days parameterisation and use of HR capacity attaching automatically to beddays
 """
 
 import heapq as hp
@@ -139,7 +136,7 @@ class HealthSystem(Module):
         ignore_cons_constraints: bool = False,
         ignore_priority: bool = False,
         capabilities_coefficient: Optional[float] = None,
-        use_funded_or_actual_staffing: Optional[str] = 'actual',
+        use_funded_or_actual_staffing: Optional[str] = 'funded_plus',
         disable: bool = False,
         disable_and_reject_all: bool = False,
         store_hsi_events_that_have_run: bool = False,
@@ -246,19 +243,23 @@ class HealthSystem(Module):
 
         # Load ResourceFiles that define appointment and officer types
         self.parameters['Officer_Types_Table'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' / 'ResourceFile_Officer_Types_Table.csv')
+            path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' /
+            'ResourceFile_Officer_Types_Table.csv')
         self.parameters['Appt_Types_Table'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv')
+            path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' /
+            'ResourceFile_Appt_Types_Table.csv')
         self.parameters['Appt_Offered_By_Facility_Level'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' / 'ResourceFile_ApptType_By_FacLevel.csv')
+            path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' /
+            'ResourceFile_ApptType_By_FacLevel.csv')
         self.parameters['Appt_Time_Table'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv'
-        )
+            path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' /
+            'ResourceFile_Appt_Time_Table.csv')
 
         # Load 'Daily_Capabilities' (for both actual and funded)
         for _i in ['actual', 'funded', 'funded_plus']:
             self.parameters[f'Daily_Capabilities_{_i}'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'human_resources' / f'{_i}' / 'ResourceFile_Daily_Capabilities.csv')
+                path_to_resourcefiles_for_healthsystem / 'human_resources' / f'{_i}' /
+                'ResourceFile_Daily_Capabilities.csv')
 
         # Read in ResourceFile_Consumables and then process it to create the data structures needed
         self.parameters['Consumables'] = pd.read_csv(
@@ -336,7 +337,7 @@ class HealthSystem(Module):
 
         # * Define Facility Levels
         self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
-        assert self._facility_levels == {'0', '1a', '1b', '2', '3', '4'}  # todo soft code this to make refer to other files?
+        assert self._facility_levels == {'0', '1a', '1b', '2', '3', '4'}  # todo soft code this?
 
         # * Define Appointment Types
         self._appointment_types = set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
@@ -492,7 +493,9 @@ class HealthSystem(Module):
 
         # Create dataframe containing background information about facility and officer types
         facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
-        officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values) # todo - avoid use of the file or define differnetly
+        officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values)
+        # todo - <-- avoid use of the file or define differnetly?
+
         # # naming to be not with _ within the name of an oficer
         facs = list()
         officers = list()
@@ -574,15 +577,6 @@ class HealthSystem(Module):
             typically performing these checks for each individual HSI event of the
             shared type will be redundant.
         """
-
-        logger.debug(
-            key='message',
-            data=(
-                "HealthSystem.schedule_event >> Logging a request for an HSI: "
-                f"{hsi_event.TREATMENT_ID} for person: {hsi_event.target}"
-            )
-        )
-
         # If there is no specified tclose time then set this to a week after topen
         if tclose is None:
             tclose = topen + DateOffset(days=7)
@@ -639,8 +633,8 @@ class HealthSystem(Module):
                     if not isinstance(hsi_event.ACCEPTED_FACILITY_LEVEL, str) \
                     else hsi_event.ACCEPTED_FACILITY_LEVEL
                 assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels, \
-                    f"In the HSI with TREATMENT_ID {hsi_event.TREATMENT_ID}, the value for ACCEPTED_FACILITY_LEVEL " \
-                    f"({hsi_event.ACCEPTED_FACILITY_LEVEL}) is not a recognised facility level."
+                    f"In the HSI with {hsi_event.TREATMENT_ID=}, the value for {hsi_event.ACCEPTED_FACILITY_LEVEL=}" \
+                    f" is not a recognised facility level."
 
                 self.bed_days.check_beddays_footprint_format(hsi_event.BEDDAYS_FOOTPRINT)
 
@@ -890,7 +884,7 @@ class HealthSystem(Module):
         # Gather information about the HSI event
         the_district = self.sim.population.props.at[
             hsi_event.target, 'district_of_residence']
-        the_level = hsi_event.ACCEPTED_FACILITY_LEVEL
+        the_level = str(hsi_event.ACCEPTED_FACILITY_LEVEL)  # <-- todo: 'str' can now be removed
 
         # Return the (one) health_facility available to this person (based on their
         # district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL
@@ -948,7 +942,7 @@ class HealthSystem(Module):
                 raise KeyError(
                     f"The time needed for this appointment is not defined for this "
                     f"specified facility level in the self._appt_times. "
-                    f"Event treatment ID: {hsi_event.TREATMENT_ID}"
+                    f"{hsi_event.TREATMENT_ID=}, {appt_type}, {the_facility_level=}"
                 ) from e
             for appt_info in appt_info_list:
                 appt_footprint_times[
@@ -990,7 +984,7 @@ class HealthSystem(Module):
         load_factor = {}
         for officer, call in total_footprint.items():
             availability = current_capabilities.get(officer)
-            if availability is None:  # todo - does this ever happen, given that we structure current capabilities to be there for everyone?
+            if availability is None:  # todo - does this ever happen?
                 load_factor[officer] = 99.99
             elif availability == 0:
                 load_factor[officer] = float('inf')
@@ -1046,7 +1040,11 @@ class HealthSystem(Module):
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Determine availability of each item and package:
-        select_col = f'Available_Facility_Level_{hsi_event.ACCEPTED_FACILITY_LEVEL}'
+        if hsi_event.ACCEPTED_FACILITY_LEVEL in ('1a', '1b'):
+            select_col = 'Available_Facility_Level_1'  # todo <-- temporary fix before the new consumables data used.
+        else:
+            select_col = f'Available_Facility_Level_{hsi_event.ACCEPTED_FACILITY_LEVEL}'
+
         available = {
             'Intervention_Package_Code': self.cons_available_today['Intervention_Package_Code'].loc[
                 cons_req_as_footprint['Intervention_Package_Code'].keys(), select_col].to_dict(),

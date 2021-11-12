@@ -1749,11 +1749,11 @@ def all_appts_can_run(capability):
     # Store the info of district (including central hospital, ZMH) that fails
     appt_have_or_miss_capability.loc[:, 'fail_district'] = ''
 
-    for I in appt_have_or_miss_capability.index:  # Loop through all appts
+    for _I in appt_have_or_miss_capability.index:  # Loop through all appts
         # Get the info of app, level and officer_category
         # the_appt = appt_have_or_miss_capability.loc[I, 'Appt_Type_Code']
-        L = appt_have_or_miss_capability.loc[I, 'Facility_Level']
-        the_officer_category = appt_have_or_miss_capability.loc[I, 'Officer_Category']
+        L = appt_have_or_miss_capability.loc[_I, 'Facility_Level']
+        the_officer_category = appt_have_or_miss_capability.loc[_I, 'Officer_Category']
 
         # Check in daily_capabilities that the required officer_category at a level is there or not, for every district
         # Store the info of district (including central hospital, ZMH) that fails
@@ -1766,11 +1766,11 @@ def all_appts_can_run(capability):
                     (capability['Officer_Category'] == the_officer_category)].index
                 if idx.size == 0:
                     # Store the district that fails to provide required officer_category
-                    appt_have_or_miss_capability.loc[I, 'fail_district'] = \
-                        appt_have_or_miss_capability.loc[I, 'fail_district'] + D + ','
+                    appt_have_or_miss_capability.loc[_I, 'fail_district'] = \
+                        appt_have_or_miss_capability.loc[_I, 'fail_district'] + D + ','
                     k += 1
             if k == 0:
-                appt_have_or_miss_capability.loc[I, 'fail_district'] = 'All districts pass'
+                appt_have_or_miss_capability.loc[_I, 'fail_district'] = 'All districts pass'
         elif L == 3:  # Level 3 central hospital
             m = 0  # Record how many regions fail
             for region in pop_regions:
@@ -1780,22 +1780,22 @@ def all_appts_can_run(capability):
                     (capability['Officer_Category'] == the_officer_category)].index
                 if idx1.size == 0:
                     # Store the regional hospital that fails
-                    appt_have_or_miss_capability.loc[I, 'fail_district'] = \
-                        appt_have_or_miss_capability.loc[I, 'fail_district'] + 'Referral Hospital_' + region + ','
+                    appt_have_or_miss_capability.loc[_I, 'fail_district'] = \
+                        appt_have_or_miss_capability.loc[_I, 'fail_district'] + 'Referral Hospital_' + region + ','
                     m += 1
             if m == 0:
-                appt_have_or_miss_capability.loc[I, 'fail_district'] = 'All districts pass'
+                appt_have_or_miss_capability.loc[_I, 'fail_district'] = 'All districts pass'
         elif L == 4:  # Zomba Mental Hospital
             n = 0  # Record is ZMH failed
             idx2 = capability[
                 (capability['Facility_Level'] == str(L)) &
                 (capability['Officer_Category'] == the_officer_category)].index
             if idx2.size == 0:
-                appt_have_or_miss_capability.loc[I, 'fail_district'] = \
-                    appt_have_or_miss_capability.loc[I, 'fail_district'] + 'Zomba Mental Hospital,'
+                appt_have_or_miss_capability.loc[_I, 'fail_district'] = \
+                    appt_have_or_miss_capability.loc[_I, 'fail_district'] + 'Zomba Mental Hospital,'
                 n += 1
             if n == 0:
-                appt_have_or_miss_capability.loc[I, 'fail_district'] = 'All districts pass'
+                appt_have_or_miss_capability.loc[_I, 'fail_district'] = 'All districts pass'
         else:
             assert 0 == 1  # There should be no 'else'; otherwise, the generated tables above is incorrect
 

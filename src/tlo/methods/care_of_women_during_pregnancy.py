@@ -1789,13 +1789,13 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             # We generate the facility type that this HSI is occurring at (dependent on facility level) - we currently
             # assume women will present to the same facility level and type for any future ANC visits
 
-            if self.ACCEPTED_FACILITY_LEVEL == 1:
+            if self.ACCEPTED_FACILITY_LEVEL in ('1a', '1b'):
                 # Assume a 50/50 chance of health centre or hospital in level 1, however this will need editing
                 facility_type = self.module.rng.choice(['health_centre', 'hospital'], p=[0.5, 0.5])
                 df.at[person_id, 'ac_facility_type'] = facility_type
                 logger.info(key='anc_facility_type', data=f'{facility_type}')
 
-            elif self.ACCEPTED_FACILITY_LEVEL > 1:
+            elif self.ACCEPTED_FACILITY_LEVEL in ('2', '3', '4'):
                 logger.info(key='anc_facility_type', data='hospital')
                 df.at[person_id, 'ac_facility_type'] = 'hospital'
 
@@ -3107,7 +3107,7 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
 
