@@ -25,11 +25,11 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 6
+        self.seed = 56
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2021, 1, 2)
-        self.pop_size = 10000
-        self.number_of_draws = 10
+        self.pop_size = 5000
+        self.number_of_draws = 5
         self.runs_per_draw = 1
 
     def log_configuration(self):
