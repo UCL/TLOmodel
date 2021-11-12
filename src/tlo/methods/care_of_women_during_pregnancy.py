@@ -2469,8 +2469,6 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         mother = df.loc[person_id]
         params = self.module.current_parameters
 
-        if df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 1:
-            x='y'
         # --------------------------------------- CHECKS... ---------------------------------------
         # todo: allow spread of weeks?
         if mother.ps_gestational_age_in_weeks < 22:
