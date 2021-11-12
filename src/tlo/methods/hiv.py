@@ -1140,7 +1140,7 @@ class Hiv(Module):
             # todo re-instate this
             if not mother.hv_diagnosed and mother.is_alive:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Hiv_TestAndRefer(person_id=mother_id, module=self),
+                    hsi_event=HSI_Hiv_TestAndRefer(person_id=mother_id, module=self, referred_from='ANC_routine'),
                     priority=1,
                     topen=self.sim.date,
                     tclose=None,
@@ -1149,7 +1149,7 @@ class Hiv(Module):
             # if mother known HIV+, schedule test for infant now and in 6 weeks (EI
             if mother.hv_diagnosed and df.at[child_id, "is_alive"]:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Hiv_TestAndRefer(person_id=child_id, module=self),
+                    hsi_event=HSI_Hiv_TestAndRefer(person_id=child_id, module=self, referred_from='Infant_testing'),
                     priority=1,
                     topen=self.sim.date + pd.DateOffset(weeks=6),
                     tclose=None,
@@ -1580,7 +1580,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls)
             )
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self.module),
+                hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self.module, referred_from='HIV_poll'),
                 priority=1,
                 topen=date_test,
                 tclose=self.sim.date + pd.DateOffset(
@@ -1849,7 +1849,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(
-        self, module, person_id, do_not_refer_if_neg=False, suppress_footprint=False
+        self, module, person_id, do_not_refer_if_neg=False, suppress_footprint=False, referred_from=None,
     ):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Hiv)
@@ -1859,6 +1859,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         assert isinstance(suppress_footprint, bool)
         self.suppress_footprint = suppress_footprint
+
+        self.referred_from = referred_from
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Hiv_TestAndRefer"
@@ -1871,7 +1873,6 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         person = df.loc[person_id]
-
 
         if not person["is_alive"]:
             return
@@ -1893,6 +1894,16 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         # Update number of tests:
         df.at[person_id, "hv_number_tests"] += 1
         df.at[person_id, "hv_last_test_date"] = self.sim.date
+
+        # Log the test: line-list of summary information about each test
+        person_details_for_test = {
+            'age': person['age_years'],
+            'hiv_status': person['hv_inf'],
+            'hiv_diagnosed': person['hv_diagnosed'],
+            'referred_from': self.referred_from,
+            'person_id': person_id
+        }
+        logger.info(key='hiv_test', data=person_details_for_test)
 
         if test_result is not None:
             # Offer services as needed:

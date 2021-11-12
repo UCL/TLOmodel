@@ -1723,7 +1723,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             if "Hiv" in self.sim.modules:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=hiv.HSI_Hiv_TestAndRefer(
-                        person_id=person_id, module=self.sim.modules["Hiv"]
+                        person_id=person_id, module=self.sim.modules["Hiv"], referred_from='Tb'
                     ),
                     priority=1,
                     topen=self.sim.date,

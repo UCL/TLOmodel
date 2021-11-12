@@ -133,7 +133,8 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                      person_id=person_id,
                      module=self.sim.modules['Hiv'],
                      suppress_footprint=True,
-                     do_not_refer_if_neg=True),
+                     do_not_refer_if_neg=True,
+                     referred_from='Generic_appt'),
                  topen=self.sim.date,
                  tclose=None,
                  priority=0)
@@ -461,7 +462,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         if 'Hiv' in self.sim.modules:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
+                HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv'], referred_from='Generic_appt'),
                 topen=self.sim.date,
                 tclose=None,
                 priority=0
