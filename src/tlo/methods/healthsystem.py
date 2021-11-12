@@ -203,7 +203,7 @@ class HealthSystem(Module):
         self.capabilities_coefficient = capabilities_coefficient
 
         # Find which resourcefile to use - those for the actual staff available or the funded staff available
-        assert use_funded_or_actual_staffing in ['actual', 'funded']
+        assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
         self.use_funded_or_actual_staffing = use_funded_or_actual_staffing
 
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
@@ -242,9 +242,7 @@ class HealthSystem(Module):
 
         # Load basic information about the organization of the HealthSystem
         self.parameters['Master_Facilities_List'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv'
-        ).iloc[:, 1:]
-        # todo can remove ".iloc[:, 1:]" when csv do not come with the index included.
+            path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
 
         # Load ResourceFiles that define appointment and officer types
         self.parameters['Officer_Types_Table'] = pd.read_csv(
@@ -258,10 +256,9 @@ class HealthSystem(Module):
         )
 
         # Load 'Daily_Capabilities' (for both actual and funded)
-        for _i in ['actual', 'funded']:
+        for _i in ['actual', 'funded', 'funded_plus']:
             self.parameters[f'Daily_Capabilities_{_i}'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'human_resources' / f'{_i}' / 'ResourceFile_Daily_Capabilities.csv'
-        ).iloc[:, 1:]  # todo can remove ".iloc[:, 1:]" when csv do not come with the index included.
+            path_to_resourcefiles_for_healthsystem / 'human_resources' / f'{_i}' / 'ResourceFile_Daily_Capabilities.csv')
 
         # Read in ResourceFile_Consumables and then process it to create the data structures needed
         self.parameters['Consumables'] = pd.read_csv(
@@ -281,7 +278,7 @@ class HealthSystem(Module):
         self.bed_days.pre_initialise_population()
 
     def initialise_population(self, population):
-        # todo - move this to initialis simulation
+        # todo - move this to initialise simulation
         # If capabilities coefficient was not explicitly specified, use ratio of initial
         # population size to estimated actual population in 2010
         if self.capabilities_coefficient is None:
@@ -339,7 +336,7 @@ class HealthSystem(Module):
 
         # * Define Facility Levels
         self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
-        assert self._facility_levels == set(['0', '1a', '1b', '2', '3', '4'])
+        assert self._facility_levels == {'0', '1a', '1b', '2', '3', '4'}  # todo soft code this to make refer to other files?
 
         # * Define Appointment Types
         self._appointment_types = set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
@@ -358,7 +355,7 @@ class HealthSystem(Module):
                 appt_time_tuple.Appt_Type_Code
             ].append(
                 AppointmentSubunit(
-                    officer_type=appt_time_tuple.Officer_Type_Code,
+                    officer_type=appt_time_tuple.Officer_Category,
                     time_taken=appt_time_tuple.Time_Taken_Mins
                 )
             )
@@ -491,11 +488,12 @@ class HealthSystem(Module):
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
         capabilities = self.parameters[f'Daily_Capabilities_{self.use_funded_or_actual_staffing}']
+        capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
 
         # Create dataframe containing background information about facility and officer types
         facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
-        officer_type_codes = self.parameters['Officer_Types_Table']['Officer_Type_Code'].values
-
+        officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values) # todo - avoid use of the file or define differnetly
+        # # naming to be not with _ within the name of an oficer
         facs = list()
         officers = list()
         for f in facility_ids:
@@ -510,8 +508,8 @@ class HealthSystem(Module):
         capabilities_ex = capabilities_ex.merge(mfl, on='Facility_ID', how='left')
 
         # Merge in information about officers
-        officer_types = self.parameters['Officer_Types_Table'][['Officer_Type_Code', 'Officer_Type']]
-        capabilities_ex = capabilities_ex.merge(officer_types, on='Officer_Type_Code', how='left')
+        # officer_types = self.parameters['Officer_Types_Table'][['Officer_Type_Code', 'Officer_Type']]
+        # capabilities_ex = capabilities_ex.merge(officer_types, on='Officer_Type_Code', how='left')
 
         # Merge in the capabilities (minutes available) for each officer type (inferring zero minutes where
         # there is no entry in the imported capabilities table)
@@ -633,6 +631,7 @@ class HealthSystem(Module):
                 # (Integer or string specifying the facility level at which HSI_Event must occur)
                 # --**--
                 # To temporarily enable backward compatibility with "FacilityLevel1", automatically convert 1 to '1'
+                # todo - Remove this check after migration all HSI to the new format.
                 if hsi_event.ACCEPTED_FACILITY_LEVEL == 1:
                     hsi_event.ACCEPTED_FACILITY_LEVEL = '1a'
                 # --**--
@@ -991,12 +990,13 @@ class HealthSystem(Module):
         load_factor = {}
         for officer, call in total_footprint.items():
             availability = current_capabilities.get(officer)
-            if availability is None:
+            if availability is None:  # todo - does this ever happen, given that we structure current capabilities to be there for everyone?
                 load_factor[officer] = 99.99
             elif availability == 0:
                 load_factor[officer] = float('inf')
             else:
                 load_factor[officer] = max(call / availability - 1, 0)
+            print(f"{officer}, call/availability={call / availability}")
 
         # 2) Convert these load-factors into an overall 'squeeze' signal for each HSI,
         # based on the highest load-factor of any officer required (or zero if event

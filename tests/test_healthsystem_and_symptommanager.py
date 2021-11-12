@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -545,10 +546,12 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
     # Check that some mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
+# todo: check that can recreate daily_capabilities_table after construction of all the different data structures.
 
 def test_all_appt_types_can_run():
     """Check that if an appointment type is declared as one that can run at a facility-type of level `x` that it can
     run at the level for persons in any district."""
+    # todo - repeat for actual and funded and see if we get the right level of appt_availability
 
     # Create Dummy Module to host the HSI
     class DummyModule(Module):
@@ -574,13 +577,10 @@ def test_all_appt_types_can_run():
             self.this_hsi_event_ran = False
 
         def apply(self, person_id, squeeze_factor):
-            self.this_hsi_event_ran = True
-
-        def did_not_run(self, *args, **kwargs):
-            print('did not run')
-
-        def never_ran(self):
-            print('never ran')
+            if (squeeze_factor != 99) and (squeeze_factor != np.inf):  # todo - this changed!
+                # Check that this appointment is being run and run not with a squeeze_factor that signifies that a cadre
+                # is not at all available.
+                self.this_hsi_event_ran = True
 
     sim = Simulation(start_date=start_date, seed=0)
 
@@ -588,10 +588,10 @@ def test_all_appt_types_can_run():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2,
-                                           use_funded_or_actual_staffing='funded'),
+                                           mode_appt_constraints=1,
+                                           use_funded_or_actual_staffing='funded_plus'),
                  # <-- hard constraint (only HSI events with no squeeze factor can run)
-                 # <-- using the 'funded' number/distribution of officers
+                 # <-- using the 'funded_plus' number/distribution of officers
                  DummyModule()
                  )
     sim.make_initial_population(n=100)
@@ -604,42 +604,46 @@ def test_all_appt_types_can_run():
     appt_types_offered = sim.modules['HealthSystem'].parameters['Appt_Offered_By_Facility_Level'].set_index('Appt_Type_Code')
 
     # Get the all the districts in which a person could be resident, and allocate one person to each district
-    person_in_district = {i: d for i, d in enumerate(sim.population.props['district_of_residence'].cat.categories)}
-    sim.population.props.loc[person_in_district.keys(), 'is_alive'] = True
-    sim.population.props.loc[person_in_district.keys(), 'district_of_residence'] = list(person_in_district.values())
+    person_for_district = {d: i for i, d in enumerate(sim.population.props['district_of_residence'].cat.categories)}
+    sim.population.props.loc[person_for_district.values(), 'is_alive'] = True
+    sim.population.props.loc[person_for_district.values(), 'district_of_residence'] = list(person_for_district.keys())
 
     # For each type of appointment, for a person in each district, create the HSI, schedule the HSI and see if it can be run
     error_msg = list()
 
-    for person_id in person_in_district:
-        for appt_type in appt_types_offered.index:
-            for level in appt_types_offered.columns:
-                if appt_types_offered.at[appt_type, level]:
-                    # This appointment type should be available at this level:
+    def check_appt_works(district, level, appt_type):
+        sim.modules['HealthSystem'].reset_queue()
 
-                    sim.modules['HealthSystem'].reset_queue()
+        hsi = DummyHSIEvent(module=sim.modules['DummyModule'],
+                            person_id=person_for_district[district],
+                            appt_type=appt_type,
+                            level=level)
 
-                    hsi = DummyHSIEvent(module=sim.modules['DummyModule'],
-                                        person_id=person_id,
-                                        appt_type=appt_type,
-                                        level=level.split('_')[-1])
+        sim.modules['HealthSystem'].schedule_hsi_event(
+            hsi,
+            topen=sim.date,
+            tclose=sim.date + pd.DateOffset(days=1),
+            priority=1
+        )
 
-                    sim.modules['HealthSystem'].schedule_hsi_event(
-                        hsi,
-                        topen=sim.date,
-                        tclose=sim.date + pd.DateOffset(days=1),
-                        priority=1
-                    )
+        healthsystemscheduler.apply(sim.population)
 
-                    healthsystemscheduler.apply(sim.population)
+        if not hsi.this_hsi_event_ran:
+            return False
+        else:
+            return True
 
-                    if not hsi.this_hsi_event_ran:
-                        error_msg.append(
-                            f"The HSI did not run: {level=}, {appt_type=}, district={person_in_district[person_id]}"
-                        )
+    # Test specific cases here:
+    check_appt_works(district='Likoma', level='1b', appt_type='MajorSurg')
+
+    for _district in person_for_district:
+        for _facility_level_col_name in appt_types_offered.columns:
+            for _appt_type in appt_types_offered[_facility_level_col_name].loc[appt_types_offered[_facility_level_col_name]].index:
+                _level = _facility_level_col_name.split('_')[-1]
+                if not check_appt_works(district=_district, level=_level, appt_type=_appt_type):
+                    error_msg.append(f"The HSI did not run: {_level=}, {_appt_type=}, {_district=}")
 
     if len(error_msg):
-        # Print any errors to screen and to file
         for _line in error_msg:
             print(_line)
         pd.DataFrame(error_msg).to_csv('error_dump.txt', index=False, header=False)
