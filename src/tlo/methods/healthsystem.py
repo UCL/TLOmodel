@@ -1,10 +1,10 @@
-"""
-Remaining to do:
-- streamline input arguments
-- let the level of the appointment be in the log
-- let the logger give times of each hcw
-- bed days parameterization and use of HR capacity attaching automatically to beddays
-"""
+# """
+# Remaining to do:
+# - streamline input arguments
+# - let the level of the appointment be in the log
+# - let the logger give times of each hcw
+# - bed days parameterization and use of HR capacity attaching automatically to beddays
+# """
 
 import heapq as hp
 from collections import Counter, defaultdict
@@ -1693,6 +1693,7 @@ class HSIEventWrapper(Event):
      2) When the healthsytsem is in mode `diable_and_reject_all=True` such that HSI are not run but the `never_ran`
      method is run on the date of `tclose`.
     """
+
     def __init__(self, hsi_event, run_hsi=True, *args, **kwargs):
         super().__init__(hsi_event.module, *args, **kwargs)
         self.hsi_event = hsi_event
@@ -1705,8 +1706,9 @@ class HSIEventWrapper(Event):
         # Check that the person is still alive (this check normally happens in the HealthSystemScheduler and silently
         # do not run the HSI event)
 
-        if isinstance(self.hsi_event.target, tlo.population.Population) \
-                or (self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']):
+        if isinstance(self.hsi_event.target, tlo.population.Population) or (
+            self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']
+        ):
 
             if self.run_hsi:
                 # Run the event (with 0 squeeze_factor) and ignore the output
