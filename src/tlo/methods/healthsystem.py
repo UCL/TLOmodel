@@ -623,10 +623,10 @@ class HealthSystem(Module):
                 # Correct formatted EXPECTED_APPT_FOOTPRINT
                 assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT)
 
-                # That it has an 'ACCEPTED_FACILITY_LEVEL' attribute
+                # That it has an acceptable 'ACCEPTED_FACILITY_LEVEL' attribute
                 assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels, \
-                    f"In the HSI with {hsi_event.TREATMENT_ID=}, the value for {hsi_event.ACCEPTED_FACILITY_LEVEL=}" \
-                    f" is not a recognised facility level."
+                    f"In the HSI with TREATMENT_ID={hsi_event.TREATMENT_ID}, the ACCEPTED_FACILITY_LEVEL (=" \
+                    f"{hsi_event.ACCEPTED_FACILITY_LEVEL}) is not recognised."
 
                 self.bed_days.check_beddays_footprint_format(hsi_event.BEDDAYS_FOOTPRINT)
 
@@ -911,9 +911,10 @@ class HealthSystem(Module):
                 appt_info_list = appt_times[the_facility_level][appt_type]
             except KeyError as e:
                 raise KeyError(
-                    f"The time needed for this appointment is not defined for this "
-                    f"specified facility level in the self._appt_times. "
-                    f"{hsi_event.TREATMENT_ID=}, {appt_type}, {the_facility_level=}"
+                    f"The time needed for this appointment is not defined for the specified facility level: "
+                    f"TREATMENT_ID={hsi_event.TREATMENT_ID}, "
+                    f"appt_type={appt_type}, "
+                    f"facility_level={the_facility_level}."
                 ) from e
             for appt_info in appt_info_list:
                 appt_footprint_times[

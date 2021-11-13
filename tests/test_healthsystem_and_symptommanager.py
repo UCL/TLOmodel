@@ -631,7 +631,8 @@ def test_all_appt_types_can_run():
             ].index:
                 _level = _facility_level_col_name.split('_')[-1]
                 if not check_appt_works(district=_district, level=_level, appt_type=_appt_type):
-                    error_msg.append(f"The HSI did not run: {_level=}, {_appt_type=}, {_district=}")
+                    error_msg.append(f"The HSI did not run: "
+                                     f"level={_level}, appt_type={_appt_type}, district={_district}")
 
     if len(error_msg):
         for _line in error_msg:
