@@ -289,7 +289,7 @@ class Malaria(Module):
 
         # replace itn coverage with projected coverage levels from 2019 onwards
         if now.year > p["data_end"]:
-            itn_irs_curr['itn_rate'] = self.itn
+            itn_irs_curr['itn_rate'] = self.parameters["itn"]
 
         month_districtnum_itn_irs_lookup = [
             tuple(r) for r in itn_irs_curr.values]  # every row is a key in incidence table

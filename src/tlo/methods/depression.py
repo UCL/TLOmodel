@@ -522,21 +522,16 @@ class Depression(Module):
             # If depressed: diagnose the person with depression
             self.sim.population.props.at[person_id, 'de_ever_diagnosed_depression'] = True
 
-            # Provide talking therapy (at the same facility level as the HSI event that is calling)
-            # (This can occur even if the person has already had talking therapy before)
+            # Provide talking therapy (This can occur even if the person has already had talking therapy before)
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Depression_TalkingTherapy(module=self,
-                                                        person_id=person_id,
-                                                        facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL),
+                hsi_event=HSI_Depression_TalkingTherapy(module=self, person_id=person_id),
                 priority=0,
                 topen=self.sim.date
             )
 
             # Initiate person on anti-depressants (at the same facility level as the HSI event that is calling)
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Depression_Start_Antidepressant(module=self,
-                                                              person_id=person_id,
-                                                              facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL),
+                hsi_event=HSI_Depression_Start_Antidepressant(module=self, person_id=person_id),
                 priority=0,
                 topen=self.sim.date
             )
@@ -752,13 +747,13 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
     The facility_level is modified as a input parameter.
     """
 
-    def __init__(self, module, person_id, facility_level):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Depression_TalkingTherapy'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -775,13 +770,13 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
     The facility_level is modified as a input parameter.
     """
 
-    def __init__(self, module, person_id, facility_level):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Depression_Antidepressant_Start'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):

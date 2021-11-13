@@ -483,10 +483,10 @@ class Hiv(Module):
         # Assign date that persons were infected by drawing from assumed distribution (for adults)
         # Clipped to prevent dates of infection before before the person was born.
         years_ago_inf = self.rng.choice(
-            self.time_inf["year"],
+            self.parameters["time_inf"]["year"],
             size=len(infec),
             replace=True,
-            p=self.time_inf["scaled_prob"],
+            p=self.parameters["time_inf"]["scaled_prob"],
         )
 
         hv_date_inf = pd.Series(self.sim.date - pd.to_timedelta(years_ago_inf * DAYS_IN_YEAR, unit="d"))

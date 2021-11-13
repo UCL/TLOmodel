@@ -28,7 +28,7 @@ from tlo.methods.diarrhoea import (
     increase_risk_of_death,
     make_treatment_perfect,
 )
-from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel1
+from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel0
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -391,7 +391,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration():
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel1(
+    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
 
     # 1) If DxTest of danger signs perfect and 100% chance of referral --> Inpatient HSI should be created
@@ -466,7 +466,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel1(
+    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
 
     # Only an out-patient appointment should be created as the DxTest for danger signs is not functional.
@@ -530,7 +530,7 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration():
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel1(
+    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
 
     # 1) Outpatient HSI should be created
