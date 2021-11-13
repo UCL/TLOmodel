@@ -507,7 +507,7 @@ class HSI_Stunting_ComplementaryFeeding(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = 'Complementary_feeding_for_stunting'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):

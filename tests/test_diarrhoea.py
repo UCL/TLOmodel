@@ -367,8 +367,8 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration():
                  )
 
     # Make DxTest for danger signs perfect:
-    sim.modules['Diarrhoea'].parameters['sensitivity_danger_signs_visual_inspection'] = 1.0
-    sim.modules['Diarrhoea'].parameters['specificity_danger_signs_visual_inspection'] = 1.0
+    sim.modules['Diarrhoea'].parameters['sensitivity_severe_dehydration_visual_inspection'] = 1.0
+    sim.modules['Diarrhoea'].parameters['specificity_severe_dehydration_visual_inspection'] = 1.0
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date)

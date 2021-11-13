@@ -1747,7 +1747,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                 # We used a weighted draw to decide what facility level this woman will seek care at, as ANC is offered
                 # at multiple levels
 
-                facility_level = int(self.module.rng.choice([1, 2], p=params['prob_anc_at_facility_level_1_2']))
+                facility_level = self.module.rng.choice(['1a', '1b'], p=params['prob_anc_at_facility_level_1_2'])
+                # todo note choice
 
                 from tlo.methods.care_of_women_during_pregnancy import (
                     HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact,

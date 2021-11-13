@@ -1101,7 +1101,7 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "CardioMetabolicDisorders_InvestigationNotFollowingSymptoms"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
         self.condition = condition
 
@@ -1162,7 +1162,7 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation_Following_Symptoms"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
         self.condition = condition
 
@@ -1217,7 +1217,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'CardioMetabolicDisorders_WeightLossAndMedication'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
         self.condition = condition
 
@@ -1276,7 +1276,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Medication_Refill'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
         self.condition = condition
 
@@ -1326,7 +1326,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 2  # Can occur at this facility level
+        self.ACCEPTED_FACILITY_LEVEL = '2'  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
         self.event = ev
 

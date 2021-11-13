@@ -409,7 +409,7 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 2  # Can occur at this facility level
+        self.ACCEPTED_FACILITY_LEVEL = '2'  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -479,7 +479,7 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         assert appt_footprint == self.make_appt_footprint({'ConWithDCSA': 0.5})
 
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 0.5})
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at facility-level 0
+        self.ACCEPTED_FACILITY_LEVEL = '0'  # Can occur at facility-level 0
         self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id, squeeze_factor):
