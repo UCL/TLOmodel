@@ -343,7 +343,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             ):
                 event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                     module=sim.modules['Labour'], person_id=person_id,
-                    facility_level_of_this_hsi=int(rng.choice([1, 2])))
+                    facility_level_of_this_hsi=rng.choice(['1a', '1b']))
                 schedule_hsi(event, priority=1, topen=sim.date)
 
             # -----  COMPLICATION AFTER BIRTH  -----
@@ -354,7 +354,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             ):
                 event = HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(
                     module=sim.modules['Labour'], person_id=person_id,
-                    facility_level_of_this_hsi=int(rng.choice([1, 2])))
+                    facility_level_of_this_hsi=rng.choice(['1a', '1b']))
                 schedule_hsi(event, priority=1, topen=sim.date)
 
     if "Depression" in sim.modules:
