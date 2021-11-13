@@ -101,7 +101,6 @@ def test_run_and_check_dtypes():
     sim = register_modules(ignore_cons_constraints=False)
     sim.make_initial_population(n=1000)
     sim.simulate(end_date=Date(2015, 1, 1))
-
     check_dtypes(sim)
 
 
