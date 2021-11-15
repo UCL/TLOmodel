@@ -110,6 +110,11 @@ class HealthSystem(Module):
             Types.DATA_FRAME, 'The capabilities (minutes of time available of each type of officer in each facility) '
                               'based on the _potential_ number and distribution of staff estimated (i.e. those '
                               'positions that can be funded).'),
+        'Daily_Capabilities_funded_plus': Parameter(
+            Types.DATA_FRAME, 'The capabilities (minutes of time available of each type of officer in each facility) '
+                              'based on the _potential_ number and distribution of staff estimated, with adjustments '
+                              'to permit each appointment type that should be run at facility level to do so in every '
+                              'district.'),
 
         # Availability of Consumables
         'Consumables': Parameter(Types.DATA_FRAME, 'List of consumables used in each intervention and their costs.'),
