@@ -11,6 +11,9 @@ from tlo.methods.bladder_cancer import (
 from tlo.methods.breast_cancer import (
     HSI_BreastCancer_Investigation_Following_breast_lump_discernible,
 )
+from tlo.methods.cardio_metabolic_disorders import (
+    HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms
+)
 from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
@@ -305,6 +308,18 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                 # are either over 50 or younger than 50 but are selected to get tested
                 cmd = self.sim.modules['CardioMetabolicDisorders']
                 cmd.determine_if_will_be_investigated(person_id=person_id)
+                # also directly take a blood pressure measurement for % of individuals who have not been diagnosed
+                # and are selected to get tested
+                if cmd.rng.rand() < cmd.parameters['hypertension_hsi']['pr_assessed_other_symptoms']:
+                    schedule_hsi(HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
+                            module=self,
+                            person_id=person_id,
+                            condition='hypertension'),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
+
 
     def did_not_run(self):
         logger.debug(key='message',

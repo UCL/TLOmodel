@@ -799,7 +799,7 @@ class CardioMetabolicDisorders(Module):
             # If the person hasn't been diagnosed and they don't have symptoms of the condition...
             if (not df.at[person_id, f'nc_{condition}_ever_diagnosed']) and (f'{condition}_symptoms' not in symptoms):
                 # If the person hasn't ever been tested for the condition or not tested within last 6 months,
-                # test them if age >= 50 or with a given probability in the params for each condition
+                # test them with a given probability in the params for each condition
                 if is_next_test_due(
                     current_date=self.sim.date, date_of_last_test=df.at[
                         person_id, f'nc_{condition}_date_last_test']):
@@ -1463,6 +1463,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
 
         df = self.sim.population.props
         person = df.loc[person_id]
+        m = self.sim.modules['CardioMetabolicDisorders']
 
         # Don't advise those with CKD to lose weight, but do so for all other conditions if BMI is higher than normal
         if self.condition != 'chronic_kidney_disease' and (df.at[person_id, 'li_bmi'] > 2):
@@ -1470,9 +1471,9 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             # Schedule a post-weight loss event for individual to potentially lose weight:
             frequency = DateOffset(
                 months=self.sim.modules['CardioMetabolicDisorders'].parameters['interval_between_polls'])
-            self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(self.module, person_id, self.condition),
+            self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(m, person_id, self.condition),
                                     random_date(self.sim.date, self.sim.date + frequency - pd.DateOffset(
-                                        days=1), self.module.rng))
+                                        days=1), m.rng))
 
         # If person is already on medication, do not do anything
         if person[f'nc_{self.condition}_on_medication']:
