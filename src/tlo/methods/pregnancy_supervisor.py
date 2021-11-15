@@ -2450,8 +2450,8 @@ class OverrideKeyParameterForAnalysis(Event, PopulationScopeEventMixin):
 
         # todo how do i set boolean properties in excel, even typing false gives a true result
         if params['switch_anc_coverage']:
-            params['odds_early_init_anc4'] = params['odds_early_init_anc4'] * 2
-            params['prob_late_initiation_anc4'] = params['prob_late_initiation_anc4'] * 2
+            params['odds_early_init_anc4'] = (params['odds_early_init_anc4'] * 10)
+            #params['prob_late_initiation_anc4'] = params['prob_late_initiation_anc4'] * 2
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
