@@ -112,8 +112,10 @@ class HealthSystem(Module):
                               'positions that can be funded).'),
 
         # Availability of Consumables
-        'Consumables': Parameter(Types.DATA_FRAME, 'List of consumables used in each intervention and their costs.'),
-        'Consumables_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
+        'Consumables_OneHealth': Parameter(Types.DATA_FRAME,
+                                           'List of consumables used in each intervention and their costs.'),
+        # todo - temporry renaming to check that it's not being accesses externally
+        'Consumables_OneHealth_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
 
         # Infrastructure and Equipment
         'BedCapacity': Parameter(Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
@@ -264,7 +266,7 @@ class HealthSystem(Module):
                 'ResourceFile_Daily_Capabilities.csv')
 
         # Read in ResourceFile_Consumables and then process it to create the data structures needed
-        self.parameters['Consumables'] = pd.read_csv(
+        self.parameters['Consumables_OneHealth'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables.csv')
 
         # Data on the number of beds available of each type by facility_id
@@ -446,7 +448,7 @@ class HealthSystem(Module):
         * Creates ```parameters['Consumables_Cost_List]```
         """
         # Load the 'raw' ResourceFile_Consumables that is loaded in to self.parameters['Consumables']
-        raw = self.parameters['Consumables']
+        raw = self.parameters['Consumables_OneHealth']
 
         # todo - temp fix to add in columns for facility 1a and 1b
         raw = raw.rename(columns={'Available_Facility_Level_1': 'Available_Facility_Level_1a'})
@@ -479,9 +481,9 @@ class HealthSystem(Module):
         # -------------------------------------------------------------------------------------------------
         # Create ```parameters['Consumables_Cost_List]```
         # This is a pd.Series, with index item_code, giving the cost of each item.
-        self.parameters['Consumables_Cost_List'] = pd.Series(
-            raw[['Item_Code', 'Unit_Cost']].drop_duplicates().set_index('Item_Code')['Unit_Cost']
-        )
+        # self.parameters['Consumables_Cost_List'] = pd.Series(
+        #     raw[['Item_Code', 'Unit_Cost']].drop_duplicates().set_index('Item_Code')['Unit_Cost']
+        # )
 
     def format_daily_capabilities(self) -> pd.Series:
         """
@@ -1183,14 +1185,14 @@ class HealthSystem(Module):
     def get_item_codes_from_package_name(self, package: str) -> dict:
         """Helper function to provide the item codes and quantities in a dict of the form {<item_code>:<quantity>} for
          a given package name."""
-        consumables = self.parameters['Consumables']
+        consumables = self.parameters['Consumables_OneHealth']
         return consumables.loc[
             consumables['Intervention_Pkg'] == package, ['Item_Code', 'Expected_Units_Per_Case']].set_index(
             'Item_Code')['Expected_Units_Per_Case'].apply(np.ceil).astype(int).to_dict()
 
     def get_item_code_from_item_name(self, item: str) -> int:
         """Helper function to provide the item_code (an int) when provided with the name of the item"""
-        consumables = self.parameters['Consumables']
+        consumables = self.parameters['Consumables_OneHealth']
         return pd.unique(consumables.loc[consumables["Items"] == item, "Item_Code"])[0]
 
 
