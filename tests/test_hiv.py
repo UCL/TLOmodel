@@ -467,7 +467,7 @@ def test_aids_symptoms_lead_to_treatment_being_initiated():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True),
+                     cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
                                                                # force symptoms to lead to health care seeking:

@@ -447,6 +447,9 @@ class HealthSystem(Module):
         """
         # Load the 'raw' ResourceFile_Consumabes that is loaded in to self.parameters['Consumables']
         raw = self.parameters['Consumables']
+        raw['Items'] = raw['Items'].str.rstrip()
+        raw['Intervention_Pkg'] = raw['Intervention_Pkg'].str.rstrip()
+
         # -------------------------------------------------------------------------------------------------
         # Create a pd.DataFrame that maps pkg code (as index) to item code:
         # This is used to quickly look-up which items are required in each package
