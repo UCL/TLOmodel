@@ -25,11 +25,11 @@ from tlo.scenario import BaseScenario
 class TestScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 298
+        self.seed = 666
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2021, 1, 2)
+        self.end_date = Date(2030, 1, 2)
         self.pop_size = 30000
-        self.number_of_draws = 10
+        self.number_of_draws = 5
         self.runs_per_draw = 1
 
     def log_configuration(self):
@@ -39,6 +39,8 @@ class TestScenario(BaseScenario):
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.contraception": logging.INFO,
+                "tlo.methods.healthsystem": logging.INFO,
+                "tlo.methods.healthburden": logging.INFO,
                 "tlo.methods.labour": logging.INFO,
                 "tlo.methods.newborn_outcomes": logging.INFO,
                 "tlo.methods.care_of_women_during_pregnancy": logging.INFO,
