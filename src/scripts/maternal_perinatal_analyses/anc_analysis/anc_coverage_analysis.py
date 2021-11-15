@@ -145,7 +145,7 @@ def get_mmr_nmr_graphs(bdata, idata, group):
         plt.ylabel("Deaths per 100,000 live births")
     plt.title(f'{group} Mortality Ratio per Year at Baseline and Under Intervention')
     plt.legend()
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{group}_mr_int.png')
+    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{group}_mr_int.png')
     plt.show()
 
 get_mmr_nmr_graphs(baseline_mmr, intervention_mmr, 'Maternal')

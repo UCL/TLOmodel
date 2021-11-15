@@ -325,14 +325,14 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
         if df.at[person_id, 'ps_ectopic_pregnancy'] != 'none':
             event = HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
                 module=sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-            schedule_hsi(event, priority=0, topen=sim.date, tcloseself.sim.date + pd.DateOffset(days=1))
+            schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
 
         # -----  COMPLICATIONS OF ABORTION  -----
         abortion_complications = sim.modules['PregnancySupervisor'].abortion_complications
         if abortion_complications.has_any([person_id], 'sepsis', 'injury', 'haemorrhage', first=True):
             event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
                 module=sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-            schedule_hsi(event, priority=0, topen=sim, tclose=self.sim.date + pd.DateOffset(days=1))
+            schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
 
     if 'Labour' in sim.modules:
         mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -349,7 +349,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                 event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                     module=sim.modules['Labour'], person_id=person_id,
                     facility_level_of_this_hsi=int(rng.choice([1, 2])))
-                schedule_hsi(event, priority=0, topen=sim.date, tclose=self.sim.date + pd.DateOffset(days=1))
+                schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
 
             # -----  COMPLICATION AFTER BIRTH  -----
             if (
@@ -357,10 +357,10 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                 mni[person_id]['sought_care_for_complication'] &
                 (mni[person_id]['sought_care_labour_phase'] == 'postpartum')
             ):
-                event = HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(
+                event = HSI_Labour_ReceivesPostnatalCheck(
                     module=sim.modules['Labour'], person_id=person_id,
                     facility_level_of_this_hsi=int(rng.choice([1, 2])))
-                schedule_hsi(event, priority=0, topen=sim.date, tclose=self.sim.date + pd.DateOffset(days=1))
+                schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
 
     if "Depression" in sim.modules:
         if 'Injuries_From_Self_Harm' in symptoms:
