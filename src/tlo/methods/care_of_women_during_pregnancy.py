@@ -25,13 +25,16 @@ class CareOfWomenDuringPregnancy(Module):
      1.) HSI_CareOfWomenDuringPregnancy_AntenatalCareContact (1-8) representing all 8 routine antenatal care contacts
         (ANC) recommended during pregnancy (with sequential scheduling of each event occurring within the HSI)
 
-     2.) HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement representing treatment for complications following
+     2.) HSI_CareOfWomenDuringPregnancy_FocusedANCVisit which replicates the pre 2016 structure of ANC (focused ANC)
+         used in some analysis scripts
+
+     3.) HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement representing treatment for complications following
          abortion (post abortion care of PAC) for women seeking care from the community
 
-     3.) HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy representing treatment for ectopic pregnancy for
+     4.) HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy representing treatment for ectopic pregnancy for
          women seeking care from the community
 
-     4.) HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare which represents antenatal inpatient care for women
+     5.) HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare which represents antenatal inpatient care for women
          who require admission following complications of pregnancy, detected via ANC or following care seeking from the
          community including treatment and/or referral for (hypertension, diabetes, antepartum haemorrhage, anaemia,
          premature of membranes, chorioamnionitis)
