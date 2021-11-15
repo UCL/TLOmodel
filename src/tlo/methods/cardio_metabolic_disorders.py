@@ -937,6 +937,13 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             idx_loses_condition = loses_condition[loses_condition].index
             df.loc[idx_loses_condition, f'nc_{condition}'] = False
             df.loc[idx_loses_condition, f'nc_{condition}_on_medication'] = False
+            if condition != 'hypertension':
+                # Remove all symptoms of event instantly
+                self.sim.modules['SymptomManager'].change_symptom(
+                    person_id=idx_loses_condition.tolist(),
+                    symptom_string=f'{condition}_symptoms',
+                    add_or_remove='-',
+                    disease_module=self.module)
 
             # -------------------- DEATH FROM CARDIO-METABOLIC CONDITION ---------------------------------------
             # There is a risk of death for those who have a cardio-metabolic condition.
@@ -1210,10 +1217,13 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
                 data=adult_prevalence
             )
 
-            diagnosed = {
-                f'{condition}_diagnosis_prevalence': len(df[df[f'nc_{condition}_ever_diagnosed'] & df.is_alive & (
-                    df.age_years >= 20)]) / len(df[df[f'nc_{condition}'] & df.is_alive & (df.age_years >= 20)])
-            }
+            if len(df[df[f'nc_{condition}'] & df.is_alive & (df.age_years >= 20)]) > 0:
+                diagnosed = {
+                    f'{condition}_diagnosis_prevalence': len(df[df[f'nc_{condition}_ever_diagnosed'] & df.is_alive & (
+                        df.age_years >= 20)]) / len(df[df[f'nc_{condition}'] & df.is_alive & (df.age_years >= 20)])
+                }
+            else:
+                diagnosed = {0}
 
             logger.info(
                 key=f'{condition}_diagnosis_prevalence',
@@ -1221,10 +1231,13 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
                 data=diagnosed
             )
 
-            on_medication = {
-                f'{condition}_medication_prevalence': len(df[df[f'nc_{condition}_on_medication'] & df.is_alive & (
-                    df.age_years >= 20)]) / len(df[df[f'nc_{condition}'] & df.is_alive & (df.age_years >= 20)])
-            }
+            if len(df[df[f'nc_{condition}'] & df.is_alive & (df.age_years >= 20)]) > 0:
+                on_medication = {
+                    f'{condition}_medication_prevalence': len(df[df[f'nc_{condition}_on_medication'] & df.is_alive & (
+                        df.age_years >= 20)]) / len(df[df[f'nc_{condition}'] & df.is_alive & (df.age_years >= 20)])
+                }
+            else:
+                on_medication = {0}
 
             logger.info(
                 key=f'{condition}_medication_prevalence',
