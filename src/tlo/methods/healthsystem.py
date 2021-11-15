@@ -445,10 +445,12 @@ class HealthSystem(Module):
         * Creates ```prob_item_code_available```
         * Creates ```parameters['Consumables_Cost_List]```
         """
-        # Load the 'raw' ResourceFile_Consumabes that is loaded in to self.parameters['Consumables']
+        # Load the 'raw' ResourceFile_Consumables that is loaded in to self.parameters['Consumables']
         raw = self.parameters['Consumables']
-        raw['Items'] = raw['Items'].str.rstrip()
-        raw['Intervention_Pkg'] = raw['Intervention_Pkg'].str.rstrip()
+
+        # todo - temp fix to add in columns for facility 1a and 1b
+        raw = raw.rename(columns={'Available_Facility_Level_1': 'Available_Facility_Level_1a'})
+        raw['Available_Facility_Level_1b'] = raw['Available_Facility_Level_1a']
 
         # -------------------------------------------------------------------------------------------------
         # Create a pd.DataFrame that maps pkg code (as index) to item code:
