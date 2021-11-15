@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
@@ -16,7 +15,7 @@ intervention_scenario_filename = 'increased_anc_scenario.py'
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'analysis_test_baseline_vs_increased_anc_scenario-2021-11-12T154552Z'
+graph_location = 'analysis_test_baseline_vs_increased_anc_scenario_(10k)-2021-11-15T140735Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -25,7 +24,7 @@ intervention_results_folder = get_scenario_outputs(intervention_scenario_filenam
 
 sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027,
              2028, 2029, 2030]
-intervention_years = [2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029]
+intervention_years = [2020, 2021, 2022, 2023, 2024, 2025]
 
 # GET BIRTHS...
 def get_total_births_per_year(folder):
@@ -126,10 +125,10 @@ def get_yearly_mmr_and_nnmr(folder, births):
                                                            intervention_years)
     return [mm, nm]
 
-baseline_mmr = get_yearly_mmr_and_nnmr(baseline_results_folder, intervention_years)[0]
-intervention_mmr = get_yearly_mmr_and_nnmr(intervention_results_folder, intervention_years)[0]
-baseline_nmr = get_yearly_mmr_and_nnmr(baseline_results_folder, intervention_years)[1]
-intervention_nmr = get_yearly_mmr_and_nnmr(intervention_results_folder, intervention_years)[1]
+baseline_mmr = get_yearly_mmr_and_nnmr(baseline_results_folder, baseline_births)[0]
+intervention_mmr = get_yearly_mmr_and_nnmr(intervention_results_folder, intervention_births)[0]
+baseline_nmr = get_yearly_mmr_and_nnmr(baseline_results_folder, baseline_births)[1]
+intervention_nmr = get_yearly_mmr_and_nnmr(intervention_results_folder, intervention_births)[1]
 
 def get_mmr_nmr_graphs(bdata, idata, group):
     fig, ax = plt.subplots()
@@ -145,7 +144,7 @@ def get_mmr_nmr_graphs(bdata, idata, group):
         plt.ylabel("Deaths per 100,000 live births")
     plt.title(f'{group} Mortality Ratio per Year at Baseline and Under Intervention')
     plt.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{group}_mr_int.png')
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{group}_mr_int.png')
     plt.show()
 
 get_mmr_nmr_graphs(baseline_mmr, intervention_mmr, 'Maternal')
@@ -192,7 +191,7 @@ plt.xlabel('Year')
 plt.ylabel("Stillbirths per 1000 live births")
 plt.title('Stillbirth Rate per Year at Baseline and Under Intervention')
 plt.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sbr_int.png')
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sbr_int.png')
 plt.show()
 
 # HEALTH CARE WORKER TIME
@@ -205,8 +204,46 @@ plt.show()
 
 # (DALYS)
 
+def get_yearly_dalys(folder):
+    dalys = extract_results(
+                folder,
+                module="tlo.methods.healthburden",
+                key="dalys",
+                custom_generate_series=(
+                    lambda df_: df_.drop(
+                        columns='date'
+                    ).rename(
+                        columns={'age_range': 'age_grp'}
+                    ).groupby(['year']).sum().stack()
+                ),
+                do_scaling=True
+            )
+    yearly_mat_dalys = list()
+    yearly_neo_dalys = list()
 
+    for year in intervention_years:
+        if year in dalys.index:
+            yearly_mat_dalys.append(dalys.loc[year, 'Maternal Disorders'].mean())
+            yearly_neo_dalys.append(dalys.loc[year, 'Neonatal Disorders'].mean())
 
+    return [yearly_mat_dalys, yearly_neo_dalys]
+
+baseline_dalys = get_yearly_dalys(baseline_results_folder)
+intervention_dalys = get_yearly_dalys(baseline_results_folder)
+
+def daly_graphs(condition, b_data, i_data):
+    fig, ax = plt.subplots()
+    ax.plot(intervention_years, b_data, label="Baseline (mean)", color='deepskyblue')
+    ax.plot(intervention_years, i_data, label="Intervention (mean)", color='olivedrab')
+    plt.xlabel('Year')
+    plt.ylabel("Disability Adjusted Life Years")
+    plt.title(f'Total DALYs per Year Attributable to {condition} disorders')
+    plt.legend()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{condition}_dalys.png')
+    plt.show()
+
+daly_graphs('Maternal', baseline_dalys[0], intervention_dalys[0])
+daly_graphs('Neonatal', baseline_dalys[1], intervention_dalys[1])
 
 # ======================================================= ANC 4 ======================================================
 
