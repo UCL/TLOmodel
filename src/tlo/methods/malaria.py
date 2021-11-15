@@ -33,7 +33,7 @@ class Malaria(Module):
         # cleaned coverage values for IRS and ITN (populated in `read_parameters`)
         self.itn_irs = None
         self.all_inc = None
-        self.footprints_for_consumables_required = dict()
+        self.item_codes_for_consumables_required = dict()
 
     INIT_DEPENDENCIES = {
         'Contraception', 'Demography', 'HealthSystem', 'SymptomManager'
@@ -422,29 +422,29 @@ class Malaria(Module):
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         # malaria treatment uncomplicated children <15kg
-        self.footprints_for_consumables_required['malaria_uncomplicated_young_children'] = {
+        self.item_codes_for_consumables_required['malaria_uncomplicated_young_children'] = {
             get_item_code("Malaria test kit (RDT)"): 1,
             get_item_code("Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST"): 1,
             get_item_code("Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST"): 18
         }
 
         # malaria treatment uncomplicated children >15kg
-        self.footprints_for_consumables_required['malaria_uncomplicated_older_children'] = {
+        self.item_codes_for_consumables_required['malaria_uncomplicated_older_children'] = {
             get_item_code("Malaria test kit (RDT)"): 1,
             get_item_code("Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST"): 3,
             get_item_code("Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST"): 18
         }
 
         # malaria treatment uncomplicated adults >36kg
-        self.footprints_for_consumables_required['malaria_uncomplicated_adult'] = {
+        self.item_codes_for_consumables_required['malaria_uncomplicated_adult'] = {
             get_item_code("Malaria test kit (RDT)"): 1,
             get_item_code("Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST"): 4,
             get_item_code("Paracetamol 500mg_1000_CMST"): 18
         }
 
         # malaria treatment complicated - same consumables for adults and children
-        self.footprints_for_consumables_required['malaria_complicated'] = {
-            get_item_code("Injectable artesunate"):1,
+        self.item_codes_for_consumables_required['malaria_complicated'] = {
+            get_item_code("Injectable artesunate"): 1,
             get_item_code("Cannula iv  (winged with injection pot) 18_each_CMST"): 3,
             get_item_code("Glove disposable latex medium_100_CMST"): 3,
             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 3,
@@ -452,7 +452,7 @@ class Malaria(Module):
         }
 
         # malaria IPTp for pregnant women
-        self.footprints_for_consumables_required['malaria_iptp'] = {
+        self.item_codes_for_consumables_required['malaria_iptp'] = {
             get_item_code("Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg"): 6
         }
 
@@ -892,7 +892,8 @@ class HSI_Malaria_non_complicated_treatment_age0_5(HSI_Event, IndividualScopeEve
                          data=f'HSI_Malaria_tx_0_5: requesting malaria treatment for child {person_id}')
 
             if self.get_consumables(
-                    footprint=self.module.footprints_for_consumables_required['malaria_uncomplicated_young_children']):
+                self.module.item_codes_for_consumables_required['malaria_uncomplicated_young_children']
+            ):
 
                 logger.debug(key='message',
                              data=f'HSI_Malaria_tx_0_5: giving malaria treatment for child {person_id}')
@@ -936,7 +937,8 @@ class HSI_Malaria_non_complicated_treatment_age5_15(HSI_Event, IndividualScopeEv
                          data=f'HSI_Malaria_tx_5_15: requesting malaria treatment for child {person_id}')
 
             if self.get_consumables(
-                    footprint=self.module.footprints_for_consumables_required['malaria_uncomplicated_older_children']):
+                self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children']
+            ):
 
                 logger.debug(key='message',
                              data=f'HSI_Malaria_tx_5_15: giving malaria treatment for child {person_id}')
@@ -979,9 +981,7 @@ class HSI_Malaria_non_complicated_treatment_adult(HSI_Event, IndividualScopeEven
             logger.debug(key='message',
                          data=f'HSI_Malaria_tx_adult: requesting malaria treatment for person {person_id}')
 
-            if self.get_consumables(
-                    footprint=self.module.footprints_for_consumables_required['malaria_uncomplicated_adult']):
-
+            if self.get_consumables(self.module.item_codes_for_consumables_required['malaria_uncomplicated_adult']):
                 logger.debug(key='message',
                              data=f'HSI_Malaria_tx_adult: giving malaria treatment for person {person_id}')
 
@@ -1023,9 +1023,7 @@ class HSI_Malaria_complicated_treatment_child(HSI_Event, IndividualScopeEventMix
                          data=f'HSI_Malaria_tx_compl_child: requesting complicated malaria treatment for '
                               f'child {person_id}')
 
-            if self.get_consumables(
-                    footprint=self.module.footprints_for_consumables_required['malaria_complicated']):
-
+            if self.get_consumables(self.module.item_codes_for_consumables_required['malaria_complicated']):
                 logger.debug(key='message',
                              data=f'HSI_Malaria_tx_compl_child: giving complicated malaria treatment for '
                                   f'child {person_id}')
@@ -1068,9 +1066,7 @@ class HSI_Malaria_complicated_treatment_adult(HSI_Event, IndividualScopeEventMix
                          data=f'HSI_Malaria_tx_compl_adult: requesting complicated malaria treatment '
                               f'for person {person_id}')
 
-            if self.get_consumables(
-                    footprint=self.module.footprints_for_consumables_required['malaria_complicated']):
-
+            if self.get_consumables(self.module.item_codes_for_consumables_required['malaria_complicated']):
                 logger.debug(key='message',
                              data=f'HSI_Malaria_tx_compl_adult: giving complicated malaria treatment '
                                   f'for person {person_id}')
@@ -1116,9 +1112,7 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
                          data=f'HSI_MalariaIPTp: requesting IPTp for person {person_id}')
 
             # request the treatment
-            if self.get_consumables(
-                    footprint=self.module.footprints_for_consumables_required['malaria_iptp']):
-
+            if self.get_consumables(self.module.item_codes_for_consumables_required['malaria_iptp']):
                 logger.debug(key='message',
                              data=f'HSI_MalariaIPTp: giving IPTp for person {person_id}')
 

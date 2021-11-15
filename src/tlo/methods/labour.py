@@ -1509,7 +1509,8 @@ class Labour(Module):
                     # If she has not already receive antibiotics, we check for consumables
                     # item_code_benpen = pd.unique(
                     #     consumables.loc[
-                    #         consumables['Items'] == 'Benzathine benzylpenicillin, powder for injection, 2.4 million IU',
+                    #         consumables['Items'] ==
+                    #         'Benzathine benzylpenicillin, powder for injection, 2.4 million IU',
                     #         'Item_Code'])[0]
                     item_code_benpen = 0
                     # item_code_wfi = pd.unique(consumables.loc[consumables['Items'] ==
@@ -1768,7 +1769,8 @@ class Labour(Module):
             # pkg_code_obstructed_labour = pd.unique(
             #     consumables.loc[consumables['Intervention_Pkg'] == 'Management of obstructed labour',
             #                     'Intervention_Pkg_Code'])[0]
-            # item_code_forceps = pd.unique(consumables.loc[consumables['Items'] == 'Forceps, obstetric', 'Item_Code'])[0]
+            # item_code_forceps = pd.unique(consumables.loc[consumables['Items'] ==
+            # 'Forceps, obstetric', 'Item_Code'])[0]
             # item_code_vacuum = pd.unique(consumables.loc[consumables['Items'] == 'Vacuum, obstetric', 'Item_Code'])[0]
             pkg_code_obstructed_labour = 0
             item_code_forceps = 0
@@ -2194,7 +2196,8 @@ class Labour(Module):
 
         # ------------------------------- Postnatal iron and folic acid ---------------------------------------------
         # item_code_iron_folic_acid = pd.unique(
-        #     consumables.loc[consumables['Items'] == 'Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg', 'Item_Code'])[0]
+        #     consumables.loc[consumables['Items'] ==
+        #     'Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg', 'Item_Code'])[0]
         item_code_iron_folic_acid = 0
 
         # consumables_iron = {

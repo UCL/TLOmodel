@@ -1976,7 +1976,7 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
             # Define the consumables and check their availability
             # item_code_methyldopa = pd.unique(
             #     consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMST', 'Item_Code'])[0]
-            item_code_methyldopa =0
+            item_code_methyldopa = 0
             # consumables_gest_htn_treatment = {
             #     'Intervention_Package_Code': {},
             #     'Item_Code': {item_code_methyldopa: 4 * approx_days_of_pn_period}}

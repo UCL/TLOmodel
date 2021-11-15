@@ -815,7 +815,7 @@ class NewbornOutcomes(Module):
         # We define the consumables
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
-        item_code_tetracycline = get_item_code('Tetracycline eye ointment 1%_3.5_CMST', 'Item_Code')
+        item_code_tetracycline = get_item_code('Tetracycline eye ointment 1%_3.5_CMST')
         item_code_vit_k = get_item_code('vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA')
         item_code_vit_k_syringe = get_item_code('Syringe,  disposable 2ml,  hypoluer with 23g needle_each_CMST')
         # consumables_vit_k_and_eye_care = {
