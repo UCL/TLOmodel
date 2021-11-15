@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 from pytest import approx
 
-from tlo import Date, Module, Simulation
+from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.methods import (
@@ -303,8 +303,8 @@ def test_arithmetic_of_disability_aggregation_calcs():
     assert yld.loc['C'] == approx(1.0 / 12)
 
 
-def test_arithmetic_of_lifeyearlost_calcs():
-    """Check that life-years lost are being computed and combined with yesars lived with disability correctly"""
+def test_arithmetic_of_dalys_calcs():
+    """Check that life-years lost are being computed and combined with years lived with disability correctly"""
 
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -363,7 +363,7 @@ def test_arithmetic_of_lifeyearlost_calcs():
     hb = sim.modules['HealthBurden']
     yld = hb.YearsLivedWithDisability.sum()
     yll = hb.YearsLifeLost.sum()
-    dalys = hb.compute_dalys().sum()
+    dalys = hb.compute_dalys()[0].sum()
 
     daly_wt = sim.modules['DiseaseThatCausesA'].daly_wt
 
@@ -410,3 +410,95 @@ def test_airthmetic_of_lifeyearslost():
     # check that age-range is correct (0.5 ly lost among 0-4 year-olds; 0.5 ly lost to 5-9 year-olds)
     assert yll.loc[('F', '0-4', 2010)].sum() == approx(0.5, abs=1/365)
     assert yll.loc[('F', '5-9', 2010)].sum() == approx(0.5, abs=1/365)
+
+
+def test_arithmetic_of_stacked_lifeyearslost(tmpdir):
+    """    #  Check that the computation of 'stacked' LifeYearsLost and DALYS is done correctly (i.e. when all the
+    future life-years lost are allocated to the year of death."""
+
+    rfp = Path(os.path.dirname(__file__)) / '../resources'
+
+    class DiseaseThatCausesA(Module):
+        """Disease that will:
+          * impose disability on person_id=0 at the point 25% through the year;
+          * cause the death of the person_id=0 at the point 50% through the year;
+        """
+        METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHBURDEN}
+        CAUSES_OF_DEATH = {'cause_of_death_A': Cause(label='Label_A')}
+        CAUSES_OF_DISABILITY = {'cause_of_disability_A': Cause(label='Label_A')}
+        daly_wt = 0.5
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            disability_onset_date = Date(2011, 1, 1)
+            death_date = Date(2012, 1, 1)
+
+            self.has_disease = False
+            sim.schedule_event(StartOfDiseaseEvent(self, 0), disability_onset_date)
+            sim.schedule_event(InstantaneousDeath(self, individual_id=0, cause='cause_of_death_A'), death_date)
+
+        def report_daly_values(self):
+            df = sim.population.props
+            return pd.Series(index=df.loc[df.is_alive].index, data=self.daly_wt * self.has_disease)
+
+    class StartOfDiseaseEvent(Event, IndividualScopeEventMixin):
+        def __init__(self, module, individual_id):
+            super().__init__(module, person_id=individual_id)
+
+        def apply(self, individual_id):
+            self.module.has_disease = True
+
+    start_date = Date(2010, 1, 1)
+    sim = Simulation(start_date=start_date, seed=0, log_config={
+        'filename': 'tmp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "tlo.methods.healthburden": logging.INFO}}
+                     )
+    sim.register(
+        demography.Demography(resourcefilepath=rfp),
+        healthburden.HealthBurden(resourcefilepath=rfp),
+        DiseaseThatCausesA()
+    )
+    sim.make_initial_population(n=1)
+
+    # To make calcs easy, set the date_of_birth of the person_id=0, to be 1st January 2010
+    df = sim.population.props
+    df.loc[0, ['is_alive', 'date_of_birth']] = (True, Date(2010, 1, 1))
+    df.loc[0, 'sex'] = 'F'
+    sim.simulate(end_date=Date(2029, 12, 31))
+    daly_wt = sim.modules['DiseaseThatCausesA'].daly_wt
+
+    # Examine YLL, YLD and DALYS for 'A' recorded at the end of the simulation
+    log = parse_log_file(sim.log_filepath)['tlo.methods.healthburden']
+
+    # Examine Years Lived with Disability
+    yld = log['yld_by_causes_of_disability']
+    marker_for_disability = (yld.year == 2011) & (yld.age_range == '0-4') & (yld.sex == 'F')
+    assert (yld.loc[marker_for_disability, 'cause_of_disability_A'] == daly_wt).all()
+    assert (yld.loc[~marker_for_disability, 'cause_of_disability_A'] == 0.0).all()
+
+    # For the Non-Stacked Results
+    # -- YLL
+    yll_not_stacked = log['yll_by_causes_of_death']
+    yll_by_year_not_stacked = yll_not_stacked.loc[
+        (yll_not_stacked.sex == 'F'),
+        ['year', 'age_range', 'cause_of_death_A']
+    ].groupby('year')['cause_of_death_A'].sum()
+    assert all([yll_by_year_not_stacked.loc[year] == approx(1.0, abs=1/364) for year in range(2012, 2029)])
+
+    # For the Non-Stacked Results
+    # -- YLL
+    yll_stacked = log['yll_by_causes_of_death_stacked']
+    yll_by_year_stacked = yll_stacked.loc[
+        (yll_not_stacked.sex == 'F'),
+        ['year', 'age_range', 'cause_of_death_A']
+    ].groupby('year')['cause_of_death_A'].sum()
+    assert all(
+        [yll_by_year_stacked.loc[year] == (approx(68.0, 1/364) if year == 2012 else 0.0) for year in range(2012, 2030)]
+    )

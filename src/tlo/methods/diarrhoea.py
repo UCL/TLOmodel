@@ -16,7 +16,7 @@ Health care seeking is prompted by the onset of the symptom diarrhoea. The indiv
  * See todo
 
 """
-from collections import Iterable
+from collections.abc import Iterable
 from pathlib import Path
 
 import numpy as np
@@ -56,15 +56,15 @@ class Diarrhoea(Module):
 
     INIT_DEPENDENCIES = {
         'Demography',
-        'Lifestyle',
         'HealthSystem',
+        'Hiv',
+        'Lifestyle',
+        'NewbornOutcomes',
         'SymptomManager',
-        # Currently need to include DiarrhoeaPropertiesOfOtherModules as there is no alternative
-        # provider of un_clinical_acute_malnutrition property at the moment. As this
-        # module also provides the required properties from NewbornOutcomes, Hiv and Epi
-        # these are also not included here to avoid duplicated property definitions
-        'DiarrhoeaPropertiesOfOtherModules'
+        'Wasting',
     }
+
+    ADDITIONAL_DEPENDENCIES = {'Alri', 'Epi', 'Stunting'}
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
@@ -468,6 +468,8 @@ class Diarrhoea(Module):
         'gi_duration_longer_than_13days': Property(Types.BOOL,
                                                    'Whether the duration of the current episode would last longer than '
                                                    '13 days if untreated. (False if does not have current episode)'),
+        'gi_number_of_episodes': Property(Types.INT,
+                                          "Number of episodes of diarrhoea caused by a pathogen"),
 
         # ---- Internal variables storing dates of scheduled events  ----
         'gi_date_of_onset': Property(Types.DATE, 'Date of onset of current episode of diarrhoea (pd.NaT if does not '
@@ -535,6 +537,7 @@ class Diarrhoea(Module):
         df.loc[df.is_alive, 'gi_type'] = np.nan
         df.loc[df.is_alive, 'gi_dehydration'] = np.nan
         df.loc[df.is_alive, 'gi_duration_longer_than_13days'] = False
+        df.loc[df.is_alive, 'gi_number_of_episodes'] = 0
 
         # ---- Internal values ----
         df.loc[df.is_alive, 'gi_date_of_onset'] = pd.NaT
@@ -598,6 +601,7 @@ class Diarrhoea(Module):
         df.at[child_id, 'gi_type'] = np.nan
         df.at[child_id, 'gi_dehydration'] = np.nan
         df.at[child_id, 'gi_duration_longer_than_13days'] = False
+        df.at[child_id, 'gi_number_of_episodes'] = 0
 
         # ---- Internal values ----
         df.at[child_id, 'gi_date_of_onset'] = pd.NaT
@@ -639,23 +643,18 @@ class Diarrhoea(Module):
         return average_daly_weight_in_last_month.reindex(index=df.loc[df.is_alive].index, fill_value=0.0)
 
     def look_up_consumables(self):
-        """Look up and store the consumables used in each of the HSI."""
+        """Look up and store the consumables item codes used in each of the HSI."""
+        get_item_codes_from_package_name = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
 
-        def get_code(package=None, item=None):
-            consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-            if package is not None:
-                condition = consumables['Intervention_Pkg'] == package
-                column = 'Intervention_Pkg_Code'
-            else:
-                condition = consumables['Items'] == item
-                column = 'Item_Code'
-            return pd.unique(consumables.loc[condition, column])[0]
-
-        self.consumables_used_in_hsi['ORS'] = get_code(package='ORS')
-        self.consumables_used_in_hsi['Treatment_Severe_Dehydration'] = get_code(package='Treatment of severe diarrhea')
-        self.consumables_used_in_hsi['Zinc_Under6mo'] = get_code(package='Zinc for Children 0-6 months')
-        self.consumables_used_in_hsi['Zinc_Over6mo'] = get_code(package='Zinc for Children 6-59 months')
-        self.consumables_used_in_hsi['Antibiotics_for_Dysentery'] = get_code(
+        self.consumables_used_in_hsi['ORS'] = get_item_codes_from_package_name(
+            package='ORS')
+        self.consumables_used_in_hsi['Treatment_Severe_Dehydration'] = get_item_codes_from_package_name(
+            package='Treatment of severe diarrhea')
+        self.consumables_used_in_hsi['Zinc_Under6mo'] = get_item_codes_from_package_name(
+            package='Zinc for Children 0-6 months')
+        self.consumables_used_in_hsi['Zinc_Over6mo'] = get_item_codes_from_package_name(
+            package='Zinc for Children 6-59 months')
+        self.consumables_used_in_hsi['Antibiotics_for_Dysentery'] = get_item_codes_from_package_name(
             package='Antibiotics for treatment of dysentery')
 
     def do_when_presentation_with_diarrhoea(self, person_id, hsi_event):
@@ -679,7 +678,6 @@ class Diarrhoea(Module):
 
         else:
             # No danger signs but not hospitalized --> Out-patient
-            # todo - Should children that have no dehydration really get an Outpatient HSI?
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Diarrhoea_Treatment_Outpatient(
                     person_id=person_id,
@@ -699,13 +697,6 @@ class Diarrhoea(Module):
         * Records that treatment is provided.
 
         NB. Provisions for cholera are not included
-
-        # todo - Zinc is provided to all persons currently. It may be that this should be changed so that it is only
-        #  provided to those persons who, at the time of the HSI, have had diarrhoea for 13 days or longer.
-
-        # todo - ORS is provided to all persons currently It may be that it should only be provided to those with
-        #  'some' dehydration. (It would have no effect -- only matters if the persons has severe dehydration).
-
         See this report:
           https://apps.who.int/iris/bitstream/handle/10665/104772/9789241506823_Chartbook_eng.pdf (page 3).
         """
@@ -737,22 +728,22 @@ class Diarrhoea(Module):
 
         # ** Implement the procedure for treatment **
         # STEP ZERO: Get the Zinc consumable (happens irrespective of whether child will die or not)
-        gets_zinc = hsi_event.get_all_consumables(
-            pkg_codes=self.consumables_used_in_hsi[
+        gets_zinc = hsi_event.get_consumables(
+            item_codes=self.consumables_used_in_hsi[
                 'Zinc_Under6mo' if person.age_exact_years < 0.5 else 'Zinc_Over6mo']
         )
 
         # STEP ONE: Aim to alleviate dehydration:
         prob_remove_dehydration = 0.0
         if is_in_patient:
-            if hsi_event.get_all_consumables(pkg_codes=self.consumables_used_in_hsi['Treatment_Severe_Dehydration']):
+            if hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['Treatment_Severe_Dehydration']):
                 # In-patient receiving IV fluids (WHO Plan C)
                 prob_remove_dehydration = \
                     p['prob_WHOPlanC_cures_dehydration_if_severe_dehydration'] if dehydration_is_severe \
                     else self.parameters['prob_ORS_cures_dehydration_if_non_severe_dehydration']
 
         else:
-            if hsi_event.get_all_consumables(pkg_codes=self.consumables_used_in_hsi['ORS']):
+            if hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['ORS']):
                 # Out-patient receving ORS
                 prob_remove_dehydration = \
                     self.parameters['prob_ORS_cures_dehydration_if_severe_dehydration'] if dehydration_is_severe \
@@ -762,8 +753,8 @@ class Diarrhoea(Module):
         dehydration_after_treatment = 'none' if self.rng.rand() < prob_remove_dehydration else person.gi_dehydration
 
         # STEP TWO: If has bloody diarrhoea (i.e., dysentry), then aim to clear bacterial infection
-        if type_of_diarrhoea_is_bloody and hsi_event.get_all_consumables(
-            pkg_codes=self.consumables_used_in_hsi['Antibiotics_for_Dysentery']
+        if type_of_diarrhoea_is_bloody and hsi_event.get_consumables(
+            item_codes=self.consumables_used_in_hsi['Antibiotics_for_Dysentery']
         ):
             prob_clear_bacterial_infection = self.parameters['prob_antibiotic_cures_dysentery']
         else:
@@ -905,6 +896,9 @@ class Diarrhoea(Module):
         # Those that do currently have diarrhoea, should have a pathogen
         in_current_episode = df.is_alive & df.gi_has_diarrhoea
         assert not pd.isnull(df.loc[in_current_episode, 'gi_pathogen']).any()
+
+        # Those that do currently have diarrhoea, should have a non-zero value for the total number of episodes
+        assert (df.loc[in_current_episode, 'gi_number_of_episodes'] > 0).all()
 
         # Those that currently have diarrhoea and have not had a treatment, should have either a recovery date or
         # a death_date (but not both)
@@ -1335,7 +1329,6 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         date_of_outcome = self.sim.date + DateOffset(days=duration_in_days)
 
         # Collected updated properties of this person
-        # Collected updated properties of this person
         props_new = {
             'gi_has_diarrhoea': True,
             'gi_pathogen': self.pathogen,
@@ -1397,6 +1390,9 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             },
             description='each incicdent case of diarrhoea'
         )
+
+        # Increment the counter for the number of cases of diarrhoea had
+        df.at[person_id, 'gi_number_of_episodes'] += 1
 
 
 class DiarrhoeaNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
@@ -1518,7 +1514,7 @@ class HSI_Diarrhoea_Treatment_Outpatient(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = 'Diarrhoea_Treatment_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1543,7 +1539,7 @@ class HSI_Diarrhoea_Treatment_Inpatient(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Diarrhoea_Treatment_Inpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 2, 'IPAdmission': 1})
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1564,7 +1560,11 @@ class DiarrhoeaPropertiesOfOtherModules(Module):
     """For the purpose of the testing, this module generates the properties upon which the Alri module relies"""
 
     INIT_DEPENDENCIES = {'Demography'}
-    ALTERNATIVE_TO = {'Hiv', 'Alri', 'NewbornOutcomes'}
+
+    # Though this module provides some properties from NewbornOutcomes we do not list
+    # NewbornOutcomes in the ALTERNATIVE_TO set to allow using in conjunction with
+    # SimplifiedBirths which can also be used as an alternative to NewbornOutcomes
+    ALTERNATIVE_TO = {'Alri', 'Epi', 'Hiv', 'Stunting', 'Wasting'}
 
     PROPERTIES = {
         'hv_inf': Property(Types.BOOL, 'temporary property for HIV infection status'),

@@ -1,18 +1,16 @@
-"""
-Todo:   - speed up
-        - phase-out use of facility_name and replace with facility_id
-        - re-organised resource files: bring in one united file, and then decompose following read_parameters
-        - bed days parameterisation
-        - let the level of the appointment be in the log
-        - move things to the hsi base class
-        - let the logger give times of each hcw
-"""
+# """
+# Remaining to do:
+# - streamline input arguments
+# - let the level of the appointment be in the log
+# - let the logger give times of each hcw
+# - bed days parameterization and use of HR capacity attaching automatically to beddays
+# """
 
 import heapq as hp
 from collections import Counter, defaultdict
 from itertools import repeat
 from pathlib import Path
-from typing import Iterable, List, NamedTuple, Optional, Sequence, Tuple
+from typing import Iterable, List, NamedTuple, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -86,41 +84,47 @@ def _accepts_argument(function: callable, argument: str) -> bool:
 
 class HealthSystem(Module):
     """
-    This is the Health System Module
-    Version: September 2019
+    This is the Health System Module.
     The execution of all health systems interactions are controlled through this module.
     """
 
     INIT_DEPENDENCIES = {'Demography'}
 
     PARAMETERS = {
-        'BedCapacity': Parameter(Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
-        'Officer_Types': Parameter(Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),
-        'Daily_Capabilities': Parameter(
-            Types.DATA_FRAME, 'The capabilities by facility and officer type available each day'
-        ),
-        'Appt_Types_Table': Parameter(Types.DATA_FRAME, 'The names of the type of appointments with the health system'),
-        'Appt_Time_Table': Parameter(
-            Types.DICT, 'The time taken for each appointment, according to officer and facility type.'
-        ),
-        'ApptType_By_FacLevel': Parameter(
-            Types.LIST, 'Indicates whether an appointment type can occur at a facility level.'
-        ),
+        # Organization of the HealthSystem
         'Master_Facilities_List': Parameter(Types.DATA_FRAME, 'Listing of all health facilities.'),
-        'Facilities_For_Each_District': Parameter(
-            Types.DICT,
-            'Mapping between a district and all of the health facilities to which its \
-                      population have access.',
-        ),
-        'Consumables': Parameter(Types.DATA_FRAME, 'List of consumables used in each intervention and their costs.'),
-        'Consumables_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
+
+        # Definitions of the officers and appointment types
+        'Officer_Types_Table': Parameter(Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),
+        'Appt_Types_Table': Parameter(Types.DATA_FRAME, 'The names of the type of appointments with the health system'),
+        'Appt_Offered_By_Facility_Level': Parameter(
+            Types.DATA_FRAME, 'Table indicating whether or not each appointment is offered at each facility level.'),
+        'Appt_Time_Table': Parameter(Types.DATA_FRAME,
+                                     'The time taken for each appointment, according to officer and facility type.'),
+
+        # Capabilities of the HealthSystem (under alternative assumptions)
+        'Daily_Capabilities_actual': Parameter(
+            Types.DATA_FRAME, 'The capabilities (minutes of time available of each type of officer in each facility) '
+                              'based on the _estimated current_ number and distribution of staff estimated.'),
+        'Daily_Capabilities_funded': Parameter(
+            Types.DATA_FRAME, 'The capabilities (minutes of time available of each type of officer in each facility) '
+                              'based on the _potential_ number and distribution of staff estimated (i.e. those '
+                              'positions that can be funded).'),
+
+        # Availability of Consumables
+        'Consumables_OneHealth': Parameter(Types.DATA_FRAME,
+                                           'List of consumables used in each intervention and their costs.'),
+        # todo - temporry renaming to check that it's not being accesses externally
+        'Consumables_OneHealth_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
+
+        # Infrastructure and Equipment
+        'BedCapacity': Parameter(Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
+
+        # Service Availability
         'Service_Availability': Parameter(Types.LIST, 'List of services to be available.')
     }
 
     PROPERTIES = {
-        'hs_dist_to_facility': Property(
-            Types.REAL, 'The distance for each person to their nearest clinic (of any type)'
-        ),
         'hs_is_inpatient': Property(
             Types.BOOL, 'Whether or not the person is currently an in-patient at any medical facility'
         ),
@@ -132,13 +136,14 @@ class HealthSystem(Module):
         resourcefilepath: Optional[Path] = None,
         service_availability: Optional[List[str]] = None,
         mode_appt_constraints: int = 0,
-        ignore_cons_constraints: bool = False,
+        cons_availability: str = 'default',
         ignore_priority: bool = False,
         capabilities_coefficient: Optional[float] = None,
+        use_funded_or_actual_staffing: Optional[str] = 'funded_plus',
         disable: bool = False,
         disable_and_reject_all: bool = False,
         store_hsi_events_that_have_run: bool = False,
-        record_hsi_event_details: bool = False,
+        record_hsi_event_details: bool = False
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -149,13 +154,17 @@ class HealthSystem(Module):
             all HSI events run with no squeeze factor, 1: elastic constraints, all HSI
             events run with squeeze factor, 2: hard constraints, only HSI events with
             no squeeze factor run.
-        :param ignore_cons_constraints: Mode for consumable constraints (if ``True``,
-            all consumables available).
+        :param cons_availability: If 'default' then use the availability specified in the ResourceFile; if 'none', then
+        let no consumable be ever be available; if 'all', then all consumables are always available. When using 'all'
+        or 'none', requests for consumables are not logged.
         :param ignore_priority: If ``True`` do not use the priority information in HSI
             event to schedule
         :param capabilities_coefficient: Multiplier for the capabilities of health
             officers, if ``None`` set to ratio of initial population to estimated 2010
             population.
+        :param use_funded_or_actual_staffing: If `actual`, then use the numbers and distribution of staff estimated to
+        be available currently; If `funded`, then use the numbers and distribution of staff that are potentially
+        available.
         :param disable: If ``True``, disables the health system (no constraints and no
             logging) and every HSI event runs.
         :param disable_and_reject_all: If ``True``, disable health system and no HSI
@@ -167,8 +176,8 @@ class HealthSystem(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        assert type(ignore_cons_constraints) is bool
-        self.ignore_cons_constraints = ignore_cons_constraints
+        assert cons_availability in ['none', 'default', 'all']
+        self.cons_availability = cons_availability
 
         assert type(disable) is bool
         assert type(disable_and_reject_all) is bool
@@ -193,6 +202,10 @@ class HealthSystem(Module):
             assert capabilities_coefficient >= 0
             assert isinstance(capabilities_coefficient, float)
         self.capabilities_coefficient = capabilities_coefficient
+
+        # Find which resourcefile to use - those for the actual staff available or the funded staff available
+        assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
+        self.use_funded_or_actual_staffing = use_funded_or_actual_staffing
 
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
         self.recognised_modules_names = []
@@ -221,31 +234,125 @@ class HealthSystem(Module):
         # Create the instance of BedDays to record usage of in-patient bed days
         self.bed_days = BedDays(self)
 
+        # Create pointer for the HealthSystemScheduler event
+        self.healthsystemscheduler = None
+
     def read_parameters(self, data_folder):
 
+        path_to_resourcefiles_for_healthsystem = Path(self.resourcefilepath) / 'healthsystem'
+
+        # Load basic information about the organization of the HealthSystem
+        self.parameters['Master_Facilities_List'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
+
+        # Load ResourceFiles that define appointment and officer types
         self.parameters['Officer_Types_Table'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_Officer_Types_Table.csv'
-        )
-
+            path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' /
+            'ResourceFile_Officer_Types_Table.csv')
         self.parameters['Appt_Types_Table'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_Appt_Types_Table.csv'
-        )
-        self._appointment_types = set(
-            self.parameters['Appt_Types_Table']['Appt_Type_Code'])
+            path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' /
+            'ResourceFile_Appt_Types_Table.csv')
+        self.parameters['Appt_Offered_By_Facility_Level'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' /
+            'ResourceFile_ApptType_By_FacLevel.csv')
+        self.parameters['Appt_Time_Table'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' /
+            'ResourceFile_Appt_Time_Table.csv')
 
-        appt_time_data = pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_Appt_Time_Table.csv'
+        # Load 'Daily_Capabilities' (for both actual and funded)
+        for _i in ['actual', 'funded', 'funded_plus']:
+            self.parameters[f'Daily_Capabilities_{_i}'] = pd.read_csv(
+                path_to_resourcefiles_for_healthsystem / 'human_resources' / f'{_i}' /
+                'ResourceFile_Daily_Capabilities.csv')
+
+        # Read in ResourceFile_Consumables and then process it to create the data structures needed
+        self.parameters['Consumables_OneHealth'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables.csv')
+
+        # Data on the number of beds available of each type by facility_id
+        self.parameters['BedCapacity'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'infrastructure_and_equipment' / 'ResourceFile_Bed_Capacity.csv')
+
+        # Set default parameter for Service Availability (everything available)
+        self.parameters['Service_Availability'] = ['*']
+
+    def pre_initialise_population(self):
+        """Do processing following `read_parameters` prior to generating the population."""
+        self.process_human_resources_files()
+        self.process_consumables_file()
+        self.bed_days.pre_initialise_population()
+
+    def initialise_population(self, population):
+        # todo - move this to initialise simulation
+        # If capabilities coefficient was not explicitly specified, use ratio of initial
+        # population size to estimated actual population in 2010
+        if self.capabilities_coefficient is None:
+            demography_module = self.sim.modules['Demography']
+            self.capabilities_coefficient = (
+                demography_module.compute_initial_population_scaling_factor(
+                    population.initial_size
+                )
+            )
+
+        self.bed_days.initialise_population(population.props)
+
+    def initialise_simulation(self, sim):
+
+        # Set the tracker in preparation for the simulation
+        self.bed_days.initialise_beddays_tracker()
+
+        # Capture list of disease modules:
+        self.recognised_modules_names = [
+            m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHSYSTEM in m.METADATA
+        ]
+
+        # Check that set of districts of residence in population are subset of districts from
+        # `self._facilities_for_each_district`, which is derived from self.parameters['Master_Facilities_List']
+        df = self.sim.population.props
+        districts_of_residence = set(df.loc[df.is_alive, "district_of_residence"].cat.categories)
+        assert all(
+            districts_of_residence.issubset(per_level_facilities.keys())
+            for per_level_facilities in self._facilities_for_each_district.values()
+        ), (
+            "At least one district_of_residence value in population not present in "
+            "self._facilities_for_each_district resource file"
         )
-        facility_levels = set(appt_time_data['Facility_Level'].unique())
-        # Check that facility levels are consecutive integers starting from 0
-        assert facility_levels == set(range(len(facility_levels)))
-        # Store facility levels in module for check in schedule_hsi_event and for
-        # check against levels in facilities per district resource file
-        self._facility_levels = facility_levels
-        # Store data as tuple of dicts, with tuple indexed by integer facility level and
-        # dict indexed by string type code with values corresponding to list of (named)
-        # tuples of appointment officer type codes and time takens
-        appt_times_per_level_and_type = tuple(defaultdict(list) for _ in facility_levels)
+
+        # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
+        if not (self.disable or self.disable_and_reject_all):
+            self.healthsystemscheduler = HealthSystemScheduler(self)
+            sim.schedule_event(self.healthsystemscheduler, sim.date)
+
+        # Update consumables available today:
+        self.determine_availability_of_consumables_today()
+
+        # Determine service_availability
+        self.set_service_availability()
+
+    def on_birth(self, mother_id, child_id):
+        self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
+
+    def on_simulation_end(self):
+        """Put out to the log the information from the tracker of the last day of the simulation"""
+        self.bed_days.on_simulation_end()
+
+    def process_human_resources_files(self):
+        """Create the data-structures needed from the information read into the parameters."""
+
+        # * Define Facility Levels
+        self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
+        assert self._facility_levels == {'0', '1a', '1b', '2', '3', '4'}  # todo soft code this?
+
+        # * Define Appointment Types
+        self._appointment_types = set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
+
+        # * Define the Officers Needed For Each Appointment
+        # (Store data as dict of dicts, with outer-dict indexed by string facility level and
+        # inner-dict indexed by string type code with values corresponding to list of (named)
+        # tuples of appointment officer type codes and time taken.)
+        appt_time_data = self.parameters['Appt_Time_Table']
+        appt_times_per_level_and_type = {_facility_level: defaultdict(list) for _facility_level in
+                                         self._facility_levels}
         for appt_time_tuple in appt_time_data.itertuples():
             appt_times_per_level_and_type[
                 appt_time_tuple.Facility_Level
@@ -253,85 +360,85 @@ class HealthSystem(Module):
                 appt_time_tuple.Appt_Type_Code
             ].append(
                 AppointmentSubunit(
-                    officer_type=appt_time_tuple.Officer_Type_Code,
-                    time_taken=appt_time_tuple.Time_Taken
+                    officer_type=appt_time_tuple.Officer_Category,
+                    time_taken=appt_time_tuple.Time_Taken_Mins
                 )
             )
         assert (
             sum(
                 len(appt_info_list)
-                for level in facility_levels
+                for level in self._facility_levels
                 for appt_info_list in appt_times_per_level_and_type[level].values()
             ) == len(appt_time_data)
         )
-        self.parameters['Appt_Time_Table'] = appt_times_per_level_and_type
+        self._appt_times = appt_times_per_level_and_type
 
-        appt_type_per_level_data = pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_ApptType_By_FacLevel.csv'
-        )
-        self.parameters['ApptType_By_FacLevel'] = [
-            set(
+        # * Define Which Appointments Are Possible At Each Facility Level
+        appt_type_per_level_data = self.parameters['Appt_Offered_By_Facility_Level']
+        self._appt_type_by_facLevel = {
+            _facility_level: set(
                 appt_type_per_level_data['Appt_Type_Code'][
-                    appt_type_per_level_data[f'Facility_Level_{i}']
+                    appt_type_per_level_data[f'Facility_Level_{_facility_level}']
                 ]
             )
-            for i in facility_levels
-        ]
+            for _facility_level in self._facility_levels
+        }
 
-        mfl = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Master_Facilities_List.csv')
-        self.parameters['Master_Facilities_List'] = mfl.iloc[:, 1:]  # get rid of extra column
-
-        facilities_per_district_data = pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_Facilities_For_Each_District.csv'
-        )
-        districts = set(facilities_per_district_data['District'].unique())
-        facility_levels = set(facilities_per_district_data['Facility_Level'].unique())
-        # Check facility levels match those from appointment time table
-        assert facility_levels == self._facility_levels, (
-            "Mismatch between facility levels in Facilities_For_Each_District "
-            "resource file and Appt_Time_Table resource files"
-        )
-        # Store data as tuple of dicts, with tuple indexed by integer facility level and
-        # dict indexed by district name with values corresponding to (named) tuples of
+        # Also store data as dict of dicts, with outer-dict indexed by string facility level and
+        # inner-dict indexed by district name with values corresponding to (named) tuples of
         # facility ID and name
-        facilities_per_level_and_district = tuple({} for _ in facility_levels)
-        for facility_tuple in facilities_per_district_data.itertuples():
-            facilities_per_level_and_district[
-                facility_tuple.Facility_Level
-            ][
-                facility_tuple.District
-            ] = FacilityInfo(
-                id=facility_tuple.Facility_ID,
-                name=facility_tuple.Facility_Name
-            )
-        assert all(d.keys() == districts for d in facilities_per_level_and_district), (
-            "Facilities_For_Each_District resource file does not contain facilities "
-            "at all levels for all districts"
-        )
-        self.parameters['Facilities_For_Each_District'] = facilities_per_level_and_district
+        # Get look-up of the districts (by name) in each region (by name)
+        districts_in_region = self.sim.modules['Demography'].parameters['districts_in_region']
+        all_districts = set(self.sim.modules['Demography'].parameters['district_num_to_district_name'].values())
 
-        caps = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Daily_Capabilities.csv')
-        self.parameters['Daily_Capabilities'] = caps.iloc[:, 1:]
-        self.reformat_daily_capabilities()  # Reformats this table to include zero where capacity is not available
-        # Store set of officers with non-zero daily availability for checking scheduled
-        # HSI events do not make appointment time requests of unavailable officers
-        self._officers_with_availability = set(
-            self.parameters['Daily_Capabilities'].index[
-                (self.parameters['Daily_Capabilities']['Total_Minutes_Per_Day'] > 0)
-            ]
-        )
+        facilities_per_level_and_district = {_facility_level: {} for _facility_level in self._facility_levels}
+        for facility_tuple in self.parameters['Master_Facilities_List'].itertuples():
 
-        # Read in ResourceFile_Consumables and then process it to create the data structures needed
-        # NB. Modules can use this to look-up what consumables they need.
-        self.parameters['Consumables'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Consumables.csv')
-        self.process_consumables_file()
+            if pd.notnull(facility_tuple.District):
+                # A facility that is specific to a district:
+                facilities_per_level_and_district[facility_tuple.Facility_Level][facility_tuple.District] = \
+                    FacilityInfo(
+                        id=facility_tuple.Facility_ID,
+                        name=facility_tuple.Facility_Name
+                    )
 
-        # Set default parameter for Service Availablity (everthing available)
-        self.parameters['Service_Availability'] = ['*']
+            elif pd.isnull(facility_tuple.District) and pd.notnull(facility_tuple.Region):
+                # A facility that is specific to region (and not a district):
+                for _district in districts_in_region[facility_tuple.Region]:
+                    facilities_per_level_and_district[facility_tuple.Facility_Level][_district] = \
+                        FacilityInfo(
+                            id=facility_tuple.Facility_ID,
+                            name=facility_tuple.Facility_Name
+                        )
 
-        # Data on the number of beds available of each type by facility_id
-        self.parameters['BedCapacity'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_Bed_Capacity.csv')
+            elif (
+                pd.isnull(facility_tuple.District) and
+                pd.isnull(facility_tuple.Region) and
+                (facility_tuple.Facility_Level != '5')
+            ):
+                # A facility that is National (not specific to a region or a district) (ignoring level 5 (headquarters))
+                for _district in all_districts:
+                    facilities_per_level_and_district[facility_tuple.Facility_Level][_district] = \
+                        FacilityInfo(
+                            id=facility_tuple.Facility_ID,
+                            name=facility_tuple.Facility_Name
+                        )
+
+        # Check that there is facility of every level for every district:
+        assert all(
+            all_districts == facilities_per_level_and_district[_facility_level].keys()
+            for _facility_level in self._facility_levels
+        ), "There is not one of each facility type available to each district."
+
+        self._facilities_for_each_district = facilities_per_level_and_district
+
+        # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
+        self._daily_capabilities = self.format_daily_capabilities()
+
+        # Also, store the set of officers with non-zero daily availability
+        # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
+        # never available.)
+        self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
 
     def process_consumables_file(self):
         """Helper function for processing the consumables data (stored as self.parameters['Consumables'])
@@ -340,8 +447,13 @@ class HealthSystem(Module):
         * Creates ```prob_item_code_available```
         * Creates ```parameters['Consumables_Cost_List]```
         """
-        # Load the 'raw' ResourceFile_Consumabes that is loaded in to self.parameters['Consumables']
-        raw = self.parameters['Consumables']
+        # Load the 'raw' ResourceFile_Consumables that is loaded in to self.parameters['Consumables']
+        raw = self.parameters['Consumables_OneHealth']
+
+        # todo - temp fix to add in columns for facility 1a and 1b
+        raw = raw.rename(columns={'Available_Facility_Level_1': 'Available_Facility_Level_1a'})
+        raw['Available_Facility_Level_1b'] = raw['Available_Facility_Level_1a']
+
         # -------------------------------------------------------------------------------------------------
         # Create a pd.DataFrame that maps pkg code (as index) to item code:
         # This is used to quickly look-up which items are required in each package
@@ -368,63 +480,76 @@ class HealthSystem(Module):
 
         # -------------------------------------------------------------------------------------------------
         # Create ```parameters['Consumables_Cost_List]```
+        # todo - drop this!
         # This is a pd.Series, with index item_code, giving the cost of each item.
-        self.parameters['Consumables_Cost_List'] = pd.Series(
-            raw[['Item_Code', 'Unit_Cost']].drop_duplicates().set_index('Item_Code')['Unit_Cost']
+        # self.parameters['Consumables_Cost_List'] = pd.Series(
+        #     raw[['Item_Code', 'Unit_Cost']].drop_duplicates().set_index('Item_Code')['Unit_Cost']
+        # )
+
+    def format_daily_capabilities(self) -> pd.Series:
+        """
+        This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
+        every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity
+        is available.
+
+        It also give the dataframe an index that is useful for merging on (based on Facility_ID and Officer Type)
+
+        (This is so that its easier to track where demands are being placed where there is no capacity)
+        """
+
+        # Get the capabilities data imported (according to the specified underlying assumptions).
+        capabilities = self.parameters[f'Daily_Capabilities_{self.use_funded_or_actual_staffing}']
+        capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
+
+        # Create dataframe containing background information about facility and officer types
+        facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
+        officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values)
+        # todo - <-- avoid use of the file or define differnetly?
+
+        # # naming to be not with _ within the name of an oficer
+        facs = list()
+        officers = list()
+        for f in facility_ids:
+            for o in officer_type_codes:
+                facs.append(f)
+                officers.append(o)
+
+        capabilities_ex = pd.DataFrame(data={'Facility_ID': facs, 'Officer_Type_Code': officers})
+
+        # Merge in information about facility from Master Facilities List
+        mfl = self.parameters['Master_Facilities_List']
+        capabilities_ex = capabilities_ex.merge(mfl, on='Facility_ID', how='left')
+
+        # Merge in information about officers
+        # officer_types = self.parameters['Officer_Types_Table'][['Officer_Type_Code', 'Officer_Type']]
+        # capabilities_ex = capabilities_ex.merge(officer_types, on='Officer_Type_Code', how='left')
+
+        # Merge in the capabilities (minutes available) for each officer type (inferring zero minutes where
+        # there is no entry in the imported capabilities table)
+        capabilities_ex = capabilities_ex.merge(
+            capabilities[['Facility_ID', 'Officer_Type_Code', 'Total_Mins_Per_Day']],
+            on=['Facility_ID', 'Officer_Type_Code'],
+            how='left',
+        )
+        capabilities_ex = capabilities_ex.fillna(0)
+
+        # Give the standard index:
+        capabilities_ex = capabilities_ex.set_index(
+            'FacilityID_'
+            + capabilities_ex['Facility_ID'].astype(str)
+            + '_Officer_'
+            + capabilities_ex['Officer_Type_Code']
         )
 
-    def pre_initialise_population(self):
-        self.bed_days.pre_initialise_population()
+        # Rename 'Total_Minutes_Per_Day'
+        capabilities_ex = capabilities_ex.rename(columns={'Total_Mins_Per_Day': 'Total_Minutes_Per_Day'})
 
-    def initialise_population(self, population):
-        # If capabilities coefficient was not explicitly specified, use ratio of initial
-        # population size to estimated actual population in 2010
-        if self.capabilities_coefficient is None:
-            demography_module = self.sim.modules['Demography']
-            self.capabilities_coefficient = (
-                demography_module.compute_initial_population_scaling_factor(
-                    population.initial_size
-                )
-            )
-        df = population.props
-        # Assign hs_dist_to_facility'
-        # (For now, let this be a random number, but in future it may be properly informed based on \
-        #  population density distribitions)
-        # Note that this characteritic is inherited from mother to child.
-        df.loc[df.is_alive, 'hs_dist_to_facility'] = self.rng.uniform(0.01, 5.00, df.is_alive.sum())
-        self.bed_days.initialise_population(df)
+        # Checks
+        assert abs(capabilities_ex['Total_Minutes_Per_Day'].sum() - capabilities['Total_Mins_Per_Day'].sum()) < 1e-7
+        assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
 
-    def initialise_simulation(self, sim):
-
-        # Set the tracker in preparation for the simulation
-        self.bed_days.initialise_beddays_tracker()
-
-        # Capture list of disease modules:
-        self.recognised_modules_names = [
-            m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHSYSTEM in m.METADATA
-        ]
-
-        # Check that set of districts of residence in population are subset o districts from
-        # Facilities_For_Each_District resource file
-        df = self.sim.population.props
-        districts_of_residence = set(df.loc[df.is_alive, "district_of_residence"].cat.categories)
-        assert all(
-            districts_of_residence.issubset(per_level_facilities.keys())
-            for per_level_facilities in self.parameters["Facilities_For_Each_District"]
-        ), (
-            "At least one district_of_residence value in population not present in "
-            "Facilities_For_Each_District resource file"
-        )
-
-        # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
-        if not (self.disable or self.disable_and_reject_all):
-            sim.schedule_event(HealthSystemScheduler(self), sim.date)
-
-        # Update consumables available today:
-        self.determine_availability_of_consumables_today()
-
-        # Determine service_availability
-        self.set_service_availability()
+        # return the pd.Series of `Total_Minutes_Per_Day' indexed for each type of officer at each facility
+        return capabilities_ex['Total_Minutes_Per_Day']
 
     def set_service_availability(self):
         """Set service availability. (Should be equal to what is specified by the parameter, but overwrite with what was
@@ -444,23 +569,6 @@ class HealthSystem(Module):
                          f"{self.service_availability}"
                     )
 
-    def on_birth(self, mother_id, child_id):
-
-        # New child inherits the hs_dist_to_facility of the mother
-        df = self.sim.population.props
-        df.at[child_id, 'hs_dist_to_facility'] = df.at[mother_id, 'hs_dist_to_facility']
-        self.bed_days.on_birth(df, mother_id, child_id)
-
-    def on_simulation_end(self):
-        """Put out to the log the information from the tracker of the last day of the simulation"""
-        self.bed_days.on_simulation_end()
-
-    def register_disease_module(self, new_disease_module):
-        """
-        This is now deprecated. Disease modules do not need to register with the health system.
-        """
-        raise NotImplementedError
-
     def schedule_hsi_event(
         self, hsi_event, priority, topen, tclose=None, do_hsi_event_checks=True
     ):
@@ -479,26 +587,6 @@ class HealthSystem(Module):
             typically performing these checks for each individual HSI event of the
             shared type will be redundant.
         """
-
-        logger.debug(
-            key='message',
-            data=(
-                "HealthSystem.schedule_event >> Logging a request for an HSI: "
-                f"{hsi_event.TREATMENT_ID} for person: {hsi_event.target}"
-            )
-        )
-
-        # Check if healthsystem is disabled
-        if self.disable and (not self.disable_and_reject_all):
-            # If healthsystem is disabled (but HSI can still run), ...
-            #   ... put this event straight into the normal simulation scheduler.
-            wrapped_hsi_event = HSIEventWrapper(hsi_event=hsi_event)
-            self.sim.schedule_event(wrapped_hsi_event, topen)
-            return  # Terminate this functional call
-        elif self.disable_and_reject_all:
-            # If healthsystem is disabled and HSI should not run, do nothing.
-            return
-
         # If there is no specified tclose time then set this to a week after topen
         if tclose is None:
             tclose = topen + DateOffset(days=7)
@@ -511,6 +599,17 @@ class HealthSystem(Module):
 
         # Check that topen is strictly before tclose
         assert topen < tclose
+
+        # Check if healthsystem is disabled/disable_and_reject_all, and scheduled a the event with appropriate wrapper.
+        if self.disable and (not self.disable_and_reject_all):
+            # If healthsystem is disabled (but HSI can still run), ...
+            #   ... put this event straight into the normal simulation scheduler.
+            self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=True), topen)
+            return
+        elif self.disable_and_reject_all:
+            # If healthsystem is disabled the HSI will never run: schedule for the "never_ran" method for `tclose`.
+            self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tclose)
+            return
 
         # Check that this is a legitimate health system interaction (HSI) event
         # These checks are only performed when the flag `do_hsi_event_checks` is set
@@ -529,13 +628,13 @@ class HealthSystem(Module):
                 # It must have EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT,
                 # ACCEPTED_FACILITY_LEVELS and ALERT_OTHER_DISEASES defined
 
-                # Correct formated EXPECTED_APPT_FOOTPRINT
+                # Correct formatted EXPECTED_APPT_FOOTPRINT
                 assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT)
 
-                # That it has an 'ACCEPTED_FACILITY_LEVEL' attribute
-                # (Integer specificying the facility level at which HSI_Event must occur)
-                assert isinstance(hsi_event.ACCEPTED_FACILITY_LEVEL, int)
-                assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels
+                # That it has an acceptable 'ACCEPTED_FACILITY_LEVEL' attribute
+                assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels, \
+                    f"In the HSI with TREATMENT_ID={hsi_event.TREATMENT_ID}, the ACCEPTED_FACILITY_LEVEL (=" \
+                    f"{hsi_event.ACCEPTED_FACILITY_LEVEL}) is not recognised."
 
                 self.bed_days.check_beddays_footprint_format(hsi_event.BEDDAYS_FOOTPRINT)
 
@@ -558,7 +657,7 @@ class HealthSystem(Module):
                 # Check that the event does not request an appointment at a facility
                 # level which is not possible
                 appt_type_to_check_list = hsi_event.EXPECTED_APPT_FOOTPRINT.keys()
-                facility_appt_types = self.parameters['ApptType_By_FacLevel'][
+                facility_appt_types = self._appt_type_by_facLevel[
                     hsi_event.ACCEPTED_FACILITY_LEVEL
                 ]
                 assert facility_appt_types.issuperset(appt_type_to_check_list), (
@@ -730,81 +829,19 @@ class HealthSystem(Module):
                         person_id=hsi_event.target, treatment_id=hsi_event.TREATMENT_ID
                     )
 
-    def reformat_daily_capabilities(self):
-        """
-        This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
-        every permutation of officer_type_code and facility_id, with zeros against permuations where no capacity
-        is available.
-
-        It also give the dataframe an index that is useful for merging on (based on Facility_ID and Officer Type)
-
-        (This is so that its easier to track where demands are being placed where there is no capacity)
-        """
-
-        # Get the capabilities data as they are imported
-        capabilities = self.parameters['Daily_Capabilities']
-
-        # Create dataframe containing background information about facility and officer types
-        facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
-        officer_type_codes = self.parameters['Officer_Types_Table']['Officer_Type_Code'].values
-
-        facs = list()
-        officers = list()
-        for f in facility_ids:
-            for o in officer_type_codes:
-                facs.append(f)
-                officers.append(o)
-
-        capabilities_ex = pd.DataFrame(data={'Facility_ID': facs, 'Officer_Type_Code': officers})
-
-        # Merge in information about facility from Master Facilities List
-        mfl = self.parameters['Master_Facilities_List']
-        capabilities_ex = capabilities_ex.merge(mfl, on='Facility_ID', how='left')
-
-        # Merge in information about officers
-        officer_types = self.parameters['Officer_Types_Table'][['Officer_Type_Code', 'Officer_Type']]
-        capabilities_ex = capabilities_ex.merge(officer_types, on='Officer_Type_Code', how='left')
-
-        # Merge in the capabilities (minutes available) for each officer type (inferring zero minutes where
-        # there is no entry in the imported capabilities table)
-        capabilities_ex = capabilities_ex.merge(
-            capabilities[['Facility_ID', 'Officer_Type_Code', 'Total_Minutes_Per_Day']],
-            on=['Facility_ID', 'Officer_Type_Code'],
-            how='left',
-        )
-        capabilities_ex = capabilities_ex.fillna(0)
-
-        # Give the standard index:
-        capabilities_ex = capabilities_ex.set_index(
-            'FacilityID_'
-            + capabilities_ex['Facility_ID'].astype(str)
-            + '_Officer_'
-            + capabilities_ex['Officer_Type_Code']
-        )
-
-        # Checks
-        assert abs(capabilities_ex['Total_Minutes_Per_Day'].sum() - capabilities['Total_Minutes_Per_Day'].sum()) < 1e-7
-        assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
-
-        # Updates the capabilities table with the reformatted version
-        self.parameters['Daily_Capabilities'] = capabilities_ex
-
     def get_capabilities_today(self) -> pd.Series:
         """
         Get the capabilities of the health system today.
-        returns: Series giving minutes available for each officer type in each facility type
+        returns: pd.Series giving minutes available for each officer type in each facility type
 
         Functions can go in here in the future that could expand the time available,
-        simulating increasing efficiency (the concept of a productivitiy ratio raised
+        simulating increasing efficiency (the concept of a productivity ratio raised
         by Martin Chalkley).
 
-        For now this method only scales by the static `capabilities_coefficient` scale
+        For now this method only multiplies the estimated minutes available by the `capabilities_coefficient` scale
         factor.
         """
-        return (
-            self.parameters['Daily_Capabilities']['Total_Minutes_Per_Day']
-            * self.capabilities_coefficient
-        )
+        return self._daily_capabilities * self.capabilities_coefficient
 
     def get_blank_appt_footprint(self):
         """
@@ -813,27 +850,6 @@ class HealthSystem(Module):
 
         """
         return Counter()
-
-    def get_blank_cons_footprint(self):
-        """
-        This is a helper function so that disease modules can easily create their cons_footprints.
-        It returns a dictionary containing the consumables information in the format that the /
-        HealthSystemScheduler expects.
-
-        Format is as follows:
-            * dict with two keys; Intervention_Package_Code and Item_Code
-            * the value for each is a dict of the form (package_code or item_code): quantity
-            * the codes within each list must be unique and valid codes; quantities must be integer values >0
-
-            e.g.
-            cons_req_as_footprint = {
-                        'Intervention_Package_Code': {my_pkg_code: 1},
-                        'Item_Code': {my_item_code: 10, another_item_code: 1}
-            }
-        """
-
-        blank_footprint = {'Intervention_Package_Code': {}, 'Item_Code': {}}
-        return blank_footprint
 
     def get_prob_seek_care(self, person_id, symptom_code=0):
         """
@@ -851,7 +867,7 @@ class HealthSystem(Module):
 
         # Return the (one) health_facility available to this person (based on their
         # district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL
-        return self.parameters["Facilities_For_Each_District"][the_level][the_district]
+        return self._facilities_for_each_district[the_level][the_district]
 
     def get_appt_footprint_as_time_request(self, hsi_event, actual_appt_footprint=None):
         """
@@ -886,7 +902,7 @@ class HealthSystem(Module):
         # No entry in cache so compute time request
 
         # Appointment times for each facility and officer combination
-        appt_times = self.parameters['Appt_Time_Table']
+        appt_times = self._appt_times
 
         # Facility level required by this event
         the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
@@ -903,9 +919,10 @@ class HealthSystem(Module):
                 appt_info_list = appt_times[the_facility_level][appt_type]
             except KeyError as e:
                 raise KeyError(
-                    f"The time needed for this appointment is not defined for this "
-                    f"specified facility level in the Appt_Time_Table. "
-                    f"Event treatment ID: {hsi_event.TREATMENT_ID}"
+                    f"The time needed for this appointment is not defined for the specified facility level: "
+                    f"TREATMENT_ID={hsi_event.TREATMENT_ID}, "
+                    f"appt_type={appt_type}, "
+                    f"facility_level={the_facility_level}."
                 ) from e
             for appt_info in appt_info_list:
                 appt_footprint_times[
@@ -947,14 +964,15 @@ class HealthSystem(Module):
         load_factor = {}
         for officer, call in total_footprint.items():
             availability = current_capabilities.get(officer)
-            if availability is None:
+            if availability is None:  # todo - does this ever happen?
                 load_factor[officer] = 99.99
             elif availability == 0:
                 load_factor[officer] = float('inf')
             else:
                 load_factor[officer] = max(call / availability - 1, 0)
+            print(f"{officer}, call/availability={call / availability}")
 
-        # 5) Convert these load-factors into an overall 'squeeze' signal for each HSI,
+        # 2) Convert these load-factors into an overall 'squeeze' signal for each HSI,
         # based on the highest load-factor of any officer required (or zero if event
         # has an empty footprint)
         squeeze_factor_per_hsi_event = np.array([
@@ -966,7 +984,49 @@ class HealthSystem(Module):
 
         return squeeze_factor_per_hsi_event
 
-    def request_consumables(self, hsi_event, cons_req_as_footprint, to_log=True):
+    def _request_consumables(self, hsi_event, item_codes: dict, to_log: bool) -> dict:
+        """
+        This is a private function called by the 'get_consumables` in the `HSI_Event` base class. It queries whether
+        item_codes are currently available for a particular `hsi_event` and logs the request.
+
+        :param hsi_event: The hsi_event from which the request for consumables originates
+        :param item_codes: dict of the form {<item_code>: <quantity>} for the items requested
+        :param to_log: whether the request is logged.
+        :return:
+        """
+
+        # If HealthSystem is 'disabled' return that all items are available (with no logging).
+        if self.disable:
+            return {k: True for k in item_codes}
+
+        # Determine availability of consumables:
+        if self.cons_availability == 'all':
+            # All item_codes available available if all consumables should be considered available by default.
+            available = {k: True for k in item_codes}
+        elif self.cons_availability == 'none':
+            # All item_codes not available if consumables should be considered not available by default.
+            available = {k: False for k in item_codes.keys()}
+        else:
+            # Determine availability of each item and package:
+            select_col = f'Available_Facility_Level_{hsi_event.ACCEPTED_FACILITY_LEVEL}'
+            available = self.cons_available_today['Item_Code'].loc[item_codes.keys(), select_col].to_dict()
+
+        # Log the request and the outcome:
+        if to_log:
+            logger.info(key='Consumables',
+                        data={
+                            'TREATMENT_ID': hsi_event.TREATMENT_ID,
+                            'Item_Available': str({k: v for k, v in item_codes.items() if v}),
+                            'Item_NotAvailable': str({k: v for k, v in item_codes.items() if not v}),
+                        },
+                        # NB. Casting the data to strings because logger complains with dict of varying sizes/keys
+                        description="Record of each consumable item that is requested."
+                        )
+
+        # Return the result of the check on availability
+        return available
+
+    def request_consumables(self, hsi_event, item_codes, to_log=True):
         """
         This is where HSI events can check access to and log use of consumables.
         The healthsystem module will check if that consumable is available
@@ -976,144 +1036,23 @@ class HealthSystem(Module):
         is used. Alternatively, HSI Events can just query if a
         consumable is available (without using it) by setting to_log=False.
 
-        :param cons_req: The consumable that is requested, in the format specified in 'get_blank_cons_footprint()'
+        :param item_codes: The consumable that is requested, in the format specified in 'get_blank_cons_footprint()'
         :param to_log: Indicator to show whether this should not be logged (defualt: True)
         :return: In the same format of the provided footprint, giving a bool for each package or item returned
         """
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Could check the format of the cons_req_as_footprint
-        # It is removed as this is a time-consuming check that is rarely required
-        # self.check_consumables_footprint_format(cons_req_as_footprint)
-
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # If the healthsystem module is disabled, return True for all consumables without checking or logging
-        if self.disable:
-            return {
-                'Intervention_Package_Code': dict(zip(
-                    cons_req_as_footprint['Intervention_Package_Code'].keys(),
-                    [True] * len(cons_req_as_footprint['Intervention_Package_Code'].keys()
-                                 ))),
-                'Item_Code': dict(zip(
-                    cons_req_as_footprint['Item_Code'].keys(),
-                    [True] * len(cons_req_as_footprint['Item_Code'].keys()
-                                 )))
-                }
-
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Determine availability of each item and package:
-        select_col = f'Available_Facility_Level_{hsi_event.ACCEPTED_FACILITY_LEVEL}'
-        available = {
-            'Intervention_Package_Code': self.cons_available_today['Intervention_Package_Code'].loc[
-                cons_req_as_footprint['Intervention_Package_Code'].keys(), select_col].to_dict(),
-            'Item_Code': self.cons_available_today['Item_Code'].loc[
-                cons_req_as_footprint['Item_Code'].keys(), select_col].to_dict()
-        }
-
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        # Logging:
-        if to_log:
-            treatment_id = hsi_event.TREATMENT_ID
-            # NB. Casting the data to strings because logger complains with dict of varying sizes/keys
-            logger.info(key='Consumables',
-                        data={
-                            'TREATMENT_ID': treatment_id,
-                            'Item_Available': str({k: v for k, v in cons_req_as_footprint['Item_Code'].items()
-                                                   if available['Item_Code'][k]}
-                                                  ),
-                            'Item_NotAvailable': str({k: v for k, v in cons_req_as_footprint['Item_Code'].items()
-                                                      if not available['Item_Code'][k]}
-                                                     ),
-                            'Package_Available': str({k: v for k, v in
-                                                      cons_req_as_footprint['Intervention_Package_Code'].items()
-                                                      if available['Intervention_Package_Code'][k]}
-                                                     ),
-                            'Package_NotAvailable': str({k: v for k, v in
-                                                         cons_req_as_footprint['Intervention_Package_Code'].items()
-                                                         if not available['Intervention_Package_Code'][k]}
-                                                        )
-                        },
-                        description="record of each consumable item that is requested by in an HSI"
-                        )
-
-        # return the result of the check on availability
-        return available
-
-    def check_consumables_footprint_format(self, cons_req_as_footprint):
-        """
-        This function runs some check on the cons_req_as_footprint to ensure its in the right format
-        :param cons_req_as_footprint:
-        :return:
-        """
-        # Format is as follows:
-        #     * dict with two keys; Intervention_Package_Code and Item_Code
-        #     * For each, there is list of dicts, each dict giving code (i.e. package_code or item_code):quantity
-        #     * the codes within each list must be unique and valid codes, quantities must be integer values >0
-        #     e.g.
-        #     cons_req_as_footprint = {
-        #                 'Intervention_Package_Code': {my_pkg_code: 1},
-        #                 'Item_Code': {my_item_code: 10}, {another_item_code: 1}
-        #     }
-
-        # check basic formatting
-        format_error_str = 'The consumable_footprint is not in the right format. ' \
-                           'See check_consumables_footprint_format.'
-        assert type(cons_req_as_footprint) is dict
-        assert 'Intervention_Package_Code' in cons_req_as_footprint, format_error_str
-        assert 'Item_Code' in cons_req_as_footprint, format_error_str
-        assert type(cons_req_as_footprint['Intervention_Package_Code']) is dict, format_error_str
-        assert type(cons_req_as_footprint['Item_Code']) is dict, format_error_str
-
-        # Check that consumables being required are in the database
-
-        # Check packages
-        all_pkgs = self.df_mapping_pkg_code_to_intv_code.index.values
-        for pkg_code, pkg_quant in cons_req_as_footprint['Intervention_Package_Code'].items():
-            assert pkg_code in all_pkgs, f'Intervention_Package_Code {pkg_code} not recognised'
-            assert pkg_code != -99, 'Intervention_Package_Code cannot be -99'
-            assert pkg_quant > 0, format_error_str
-
-        # Check items
-        all_items = pd.unique(self.df_mapping_pkg_code_to_intv_code['Item_Code'])
-        for itm_code, itm_quant in cons_req_as_footprint['Item_Code'].items():
-            assert itm_code in all_items, f'Item_Code {itm_code} not recognised'
-            assert itm_quant > 0, format_error_str
-
-    def get_consumables_as_individual_items(self, cons_req_as_footprint):
-        """
-        Helper function to decompose a ```cons_req_as_footprint``` and return a pd.Series with the individual items
-        (as the index) and the quantity needed (as the value).
-        """
-
-        # Unpack package_code (repeat package code if the package is required multiple times)
-        pkgs = list()
-        for k, v in cons_req_as_footprint['Intervention_Package_Code'].items():
-            for i in range(v):
-                pkgs.append(k)
-
-        # Get the corresponding item codes and flip in to a series with index of Item_Code
-        x = self.df_mapping_pkg_code_to_intv_code.loc[pkgs].set_index('Item_Code')['Expected_Units_Per_Case']
-
-        # Add in individual consumables in one go as a pd.Series
-        x = x.append(pd.Series(cons_req_as_footprint['Item_Code']))
-
-        # Return de-duplicated Series (index=Item_Code, value=quantity)
-        return x.groupby(x.index).sum()
+        raise NotImplementedError
 
     def determine_availability_of_consumables_today(self):
         """Helper function to determine availability of all items and packages"""
 
         # Determine the availability of the consumables *items* today
-        if not self.ignore_cons_constraints:
-            # Random draws: assume that availability of the same item is independent between different facility levels
-            random_draws = self.rng.rand(
-                len(self.prob_item_codes_available), len(self.prob_item_codes_available.columns)
-            )
-            items = self.prob_item_codes_available > random_draws
-        else:
-            # Make all true if ignoring consumables constraints
-            items = self.prob_item_codes_available > 0.0
+
+        # Random draws: assume that availability of the same item is independent between different facility levels
+        random_draws = self.rng.rand(
+            len(self.prob_item_codes_available), len(self.prob_item_codes_available.columns)
+        )
+        items = self.prob_item_codes_available > random_draws
 
         # Determine the availability of packages today
         # (packages are made-up of the individual items: if one item is not available, the package is not available)
@@ -1192,25 +1131,21 @@ class HealthSystem(Module):
         :param total_footprint: Per-officer totals of footprints of all the HSI events that ran
         """
 
-        # Combine the current_capabiliites and total_footprint per-officer totals
-        total_calls_per_officer = pd.Series(total_footprint, dtype='float64')
-        comparison = self.parameters['Daily_Capabilities'][['Facility_ID']].copy()
+        # Combine the current_capabilities and total_footprint per-officer totals
+        comparison = pd.DataFrame(index=current_capabilities.index)
         comparison['Total_Minutes_Per_Day'] = current_capabilities
-        comparison['Minutes_Used'] = total_calls_per_officer
-        comparison['Minutes_Used'].fillna(0, inplace=True)
-        total_calls = total_calls_per_officer.sum()
-
+        comparison['Minutes_Used'] = pd.Series(total_footprint, dtype='float64')
+        comparison['Minutes_Used'] = comparison['Minutes_Used'].fillna(0.0)
         assert len(comparison) == len(current_capabilities)
-        assert np.isclose(comparison['Minutes_Used'].sum(), total_calls)
 
-        # Sum within each Facility_ID using groupby (Index of 'summary' is Facility_ID)
-        summary = comparison.groupby('Facility_ID')[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
+        # Sum within each Facility_ID
+        facility_id = [_f.split('_')[1] for _f in comparison.index]
+        summary = comparison.groupby(by=facility_id)[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
 
         # Compute Fraction of Time Used Across All Facilities
         total_available = summary['Total_Minutes_Per_Day'].sum()
         fraction_time_used_across_all_facilities = (
-            total_calls / total_available if total_available > 0
-            else 0  # no capabilities or nan arising
+            summary['Minutes_Used'].sum() / total_available if total_available > 0 else 0
         )
 
         # Compute Fraction of Time Used In Each Facility
@@ -1225,6 +1160,10 @@ class HealthSystem(Module):
                     data=log_capacity,
                     description='daily summary of utilisation and capacity of health system resources')
 
+    def remove_beddays_footprint(self, person_id):
+        # removing bed_days from a particular individual if any
+        self.bed_days.remove_beddays_footprint(person_id=person_id)
+
     def find_events_for_person(self, person_id: int):
         """Find the events in the HSI_EVENT_QUEUE for a particular person.
         :param person_id: the person_id of interest
@@ -1235,7 +1174,7 @@ class HealthSystem(Module):
         list_of_events = list()
 
         for ev_tuple in self.HSI_EVENT_QUEUE:
-            date = ev_tuple[1]   # this is the 'topen' value
+            date = ev_tuple[1]  # this is the 'topen' value
             event = ev_tuple[4]
             if isinstance(event.target, (int, np.integer)):
                 if event.target == person_id:
@@ -1243,14 +1182,23 @@ class HealthSystem(Module):
 
         return list_of_events
 
-    def remove_beddays_footprint(self, person_id):
-        # removing bed_days from a particular individual if any
-        self.bed_days.remove_beddays_footprint(person_id=person_id)
-
     def reset_queue(self):
         """Set the HSI event queue to be empty"""
         self.HSI_EVENT_QUEUE = []
         self.hsi_event_queue_counter = 0
+
+    def get_item_codes_from_package_name(self, package: str) -> dict:
+        """Helper function to provide the item codes and quantities in a dict of the form {<item_code>:<quantity>} for
+         a given package name."""
+        consumables = self.parameters['Consumables_OneHealth']
+        return consumables.loc[
+            consumables['Intervention_Pkg'] == package, ['Item_Code', 'Expected_Units_Per_Case']].set_index(
+            'Item_Code')['Expected_Units_Per_Case'].apply(np.ceil).astype(int).to_dict()
+
+    def get_item_code_from_item_name(self, item: str) -> int:
+        """Helper function to provide the item_code (an int) when provided with the name of the item"""
+        consumables = self.parameters['Consumables_OneHealth']
+        return pd.unique(consumables.loc[consumables["Items"] == item, "Item_Code"])[0]
 
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
@@ -1567,48 +1515,53 @@ class HSI_Event:
         self.post_apply_hook()
         return updated_appt_footprint
 
-    def get_all_consumables(self, item_codes=None, pkg_codes=None, footprint=None):
-        """Helper function to allow for getting and checking of entire set of consumables.
-        It accepts a footprint, or an item_code, or a package_code, and returns True/False for whether all the items
-         are available. It avoids the use of consumables 'footprints'."""
+    def get_consumables(self,
+                        item_codes: Union[np.integer, int, list, set, dict],
+                        to_log=True,
+                        return_individual_results=False
+                        ) -> Union[bool, dict]:
+        """Function to allow for getting and checking of entire set of consumables. All requests for consumables should
+        use this function.
+        :param item_codes: The item code(s) (and quantities) of the consumables that are requested. This can be an `int`
+         (the item_code needed [assume quantity=1]), a `list` or `set` (the collection  of item_codes [for each assuming
+          quantity=1]), or a `dict` (of the form <item_code>:<quantity>).
+        :param return_individual_results: If True returns a `dict` giving the availability of each item_code requested
+        (otherwise gives a `bool` indicating if all the item_codes requested are available).
+        :param to_log: If True, logs the request.
+        :returns A `bool` indicating whether every item is available, or a `dict` indicating the availability of each
+         item.
+        Note that disease module can use the `get_item_codes_from_package_name` and `get_item_code_from_item_name`
+         methods in the `HealthSystem` module to find item_codes.
+        """
 
-        # Turn the input arguments into the usual consumables footprint if it's not already provided as a footprint:
-        if footprint is None:
-            # Item Codes provided:
-            if item_codes is not None:
-                if not isinstance(item_codes, list):
-                    item_codes = [item_codes]
-                # turn into 'consumable footprint':
-                footprint_items = dict(zip(item_codes, [1]*len(item_codes)))
-            else:
-                footprint_items = {}
+        # Check format of item_codes argument and construct the dict(<item_code>:quantity) if not provided directly:
+        if isinstance(item_codes, (int, np.integer)):
+            _item_codes = {int(item_codes): 1}
 
-            # Package Codes provided:
-            if pkg_codes is not None:
-                if not isinstance(pkg_codes, list):
-                    pkg_codes = [pkg_codes]
-                footprint_pkgs = dict(zip(pkg_codes, [1]*len(pkg_codes)))
-            else:
-                footprint_pkgs = {}
+        elif isinstance(item_codes, list):
+            if not all([isinstance(i, (int, np.integer)) for i in item_codes]):
+                raise ValueError("item_codes must be integers")
+            _item_codes = {int(i): 1 for i in item_codes}
 
-            # Make the total footprint
-            footprint = {
-                'Item_Code': footprint_items,
-                'Intervention_Package_Code': footprint_pkgs,
-            }
+        elif isinstance(item_codes, dict):
+            if not all(
+                [(isinstance(i, (int, np.integer)) and isinstance(item_codes[i], (int, np.integer)))
+                 for i in item_codes]
+            ):
+                raise ValueError("item_codes must be integers and quantities must be integers.")
+            _item_codes = {int(i): int(q) for i, q in item_codes.items()}
+
         else:
-            self.sim.modules['HealthSystem'].check_consumables_footprint_format(footprint)
+            raise ValueError("The item_codes are given in an unrecognised format")
 
-        # Check availability of consumables
-        rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, footprint)
+        # Checking the availability and logging:
+        rtn = self.sim.modules['HealthSystem']._request_consumables(self, item_codes=_item_codes, to_log=to_log)
 
-        all_available = all(
-            rtn_from_health_system['Intervention_Package_Code'].values()
-        ) and all(
-            rtn_from_health_system['Item_Code'].values()
-        )
-
-        return all_available
+        # Return result in expected format:
+        if not return_individual_results:
+            return all(rtn.values())
+        else:
+            return rtn
 
     def make_beddays_footprint(self, dict_of_beddays):
         """Helper function to make a correctly-formed 'bed-days footprint'"""
@@ -1657,21 +1610,32 @@ class HSI_Event:
 class HSIEventWrapper(Event):
     """This is wrapper that contains an HSI event.
 
-    It is used when the healthsystem is 'disabled' and all HSI events sent to the health system scheduler should
-    be passed to the main simulation scheduler.
-    When this event is run (by the simulation scheduler) it runs the HSI event with squeeze_factor=0.0
+    It is used:
+     1) When the healthsystem is in mode 'disabled=True' such that HSI events sent to the health system scheduler are
+     passed to the main simulation scheduler for running on the date of `topen`. (Note, it is run with
+     squeeze_factor=0.0.)
+     2) When the healthsytsem is in mode `diable_and_reject_all=True` such that HSI are not run but the `never_ran`
+     method is run on the date of `tclose`.
     """
-    def __init__(self, hsi_event, *args, **kwargs):
+
+    def __init__(self, hsi_event, run_hsi=True, *args, **kwargs):
         super().__init__(hsi_event.module, *args, **kwargs)
         self.hsi_event = hsi_event
         self.target = hsi_event.target
+        self.run_hsi = run_hsi  # True to call the HSI's `run` method; False to call the HSI's `never_ran` method
 
     def run(self):
-        # check that the person is still alive
-        # (this check normally happens in the HealthSystemScheduler and silently do not run the HSI event)
+        """Do the appropriate action on the HSI event"""
 
-        if isinstance(self.hsi_event.target, tlo.population.Population) \
-                or (self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']):
+        # Check that the person is still alive (this check normally happens in the HealthSystemScheduler and silently
+        # do not run the HSI event)
 
-            # Run the event (with 0 squeeze_factor) and ignore the output
-            _ = self.hsi_event.run(squeeze_factor=0.0)
+        if isinstance(self.hsi_event.target, tlo.population.Population) or (
+            self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']
+        ):
+
+            if self.run_hsi:
+                # Run the event (with 0 squeeze_factor) and ignore the output
+                _ = self.hsi_event.run(squeeze_factor=0.0)
+            else:
+                self.hsi_event.never_ran()

@@ -3,8 +3,9 @@ The is the Diagnostic Tests Manager (DxManager). It simplifies the process of co
 See https://github.com/UCL/TLOmodel/wiki/Diagnostic-Tests-(DxTest)-and-the-Diagnostic-Tests-Manager-(DxManager)
 """
 import json
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
+import numpy as np
 import pandas as pd
 from pandas.api.types import is_bool_dtype, is_categorical_dtype, is_float_dtype
 
@@ -78,7 +79,7 @@ class DxManager:
         print(f'** {name_of_dx_test} **')
         for num, test in enumerate(the_dx_test):
             print(f'   Position in tuple #{num}')
-            print(f'consumables: {test.cons_req_as_footprint}')
+            print(f'consumables item_codes: {test.item_codes}')
             print(f'sensitivity: {test.sensitivity}')
             print(f'specificity: {test.specificity}')
             print(f'property: {test.property}')
@@ -152,14 +153,13 @@ class DxTest:
     * Mandatory:
     :param property: the column in the sim.population.props that the diagnostic will observe
     * Optional:
-    Use of consumable - specify either:
-        :param cons_req_as_footprint: the footprint of the consumables that are required for the test to be done.
-        or:
-        :param cons_req_as_footprint: the item code of the consumables that are required for the test to be done.
+    Use of consumable - specify either
+        :param item_codes: the item code(s) (and quantities) of the consumables that are required for the
+        test to be done.(Follows same format as `get_consumables` in the HSI_Event base class.)
     Performance of test:
         Specify any of the following if the property's dtype is bool
             :param sensitivity: the sensitivity of the test (probability that a true value will be observed as true)
-            :param specificity: the specificity of the test (probabilit that a false value will be observed as false)
+            :param specificity: the specificity of the test (probability that a false value will be observed as false)
         Specify any of the following if the property's dtype is numeric
             :param measure_error_stdev: the standard deviation of the normally distributed (and zero-centered) error in
                                         the observation of a continuous property
@@ -169,8 +169,7 @@ class DxTest:
     """
     def __init__(self,
                  property: str,
-                 cons_req_as_footprint=None,
-                 cons_req_as_item_code=None,
+                 item_codes: Union[np.integer, int, list, set, dict] = None,
                  sensitivity: float = None,
                  specificity: float = None,
                  measure_error_stdev: float = None,
@@ -183,16 +182,9 @@ class DxTest:
         self.property = property
 
         # Store consumable code (None means that no consumables are required)
-        self.cons_req_as_footprint = None
-        if (cons_req_as_footprint is not None) and (cons_req_as_item_code is not None):
-            raise ValueError('Consumable requirement was provided as both item code and footprint.')
-        elif cons_req_as_footprint is not None:
-            self.cons_req_as_footprint = cons_req_as_footprint
-        elif cons_req_as_item_code is not None:
-            self.cons_req_as_footprint = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {cons_req_as_item_code: 1},
-            }
+        if item_codes is not None:
+            assert isinstance(item_codes, (np.integer, int, list, dict)), 'item_codes in incorrect format.'
+        self.item_codes = item_codes
 
         # Store performance characteristics (if sensitivity and specificity are not supplied than assume perfect)
         _assert_float_or_none(sensitivity, 'Sensitivity is given in incorrect format.')
@@ -209,7 +201,7 @@ class DxTest:
     def __hash_key(self):
         return (
             self.__class__,
-            json.dumps(self.cons_req_as_footprint, sort_keys=True),
+            json.dumps(self.item_codes, sort_keys=True),
             self.property,
             self.sensitivity,
             self.specificity,
@@ -244,14 +236,8 @@ class DxTest:
         true_value = df.at[person_id, self.property]
 
         # If a consumable is required and it is not available, return None
-        if self.cons_req_as_footprint is not None:
-            # check availability of consumable
-            rtn_from_health_system = hs_module.request_consumables(hsi_event,
-                                                                   self.cons_req_as_footprint,
-                                                                   to_log=True)
-
-            if not (all(rtn_from_health_system['Intervention_Package_Code'].values()) and
-                    all(rtn_from_health_system['Item_Code'].values())):
+        if self.item_codes is not None:
+            if not hsi_event.get_consumables(item_codes=self.item_codes):
                 return None
 
         # Apply the test:

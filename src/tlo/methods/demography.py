@@ -6,6 +6,7 @@ The core demography module and its associated events.
 """
 
 import math
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -59,6 +60,7 @@ class Demography(Module):
         'pop_2010': Parameter(Types.DATA_FRAME, 'Population in 2010 for initialising population'),
         'district_num_to_district_name': Parameter(Types.DICT, 'Mapping from district_num to district name'),
         'district_num_to_region_name': Parameter(Types.DICT, 'Mapping from district_num to region name'),
+        'districts_in_region': Parameter(Types.DICT, 'Set of districts (by name) that are within a region (by name)'),
         'all_cause_mortality_schedule': Parameter(Types.DATA_FRAME, 'All-cause age-specific mortality rates from WPP'),
         'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
         'gbd_causes_of_death_data': Parameter(Types.DATA_FRAME,
@@ -127,6 +129,11 @@ class Demography(Module):
             self.parameters['pop_2010'][['District_Num', 'Region']].drop_duplicates()\
                                                                    .set_index('District_Num')['Region']\
                                                                    .to_dict()
+
+        districts_in_region = defaultdict(set)
+        for _district in self.parameters['pop_2010'][['District', 'Region']].drop_duplicates().itertuples():
+            districts_in_region[_district.Region].add(_district.District)
+        self.parameters['districts_in_region'] = districts_in_region
 
         # Fraction of babies that are male
         self.parameters['fraction_of_births_male'] = pd.read_csv(
@@ -715,7 +722,8 @@ def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False
     print('The scaling factor can found in the log key=scaling_factor')
 
     # Get information about the real population size (Malawi Census in 2018)
-    cens_tot = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
+    cens_tot = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")[
+        'Count'].sum()
     cens_yr = 2018
 
     # Get information about the model population size in 2018 (and fail if no 2018)

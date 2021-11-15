@@ -11,7 +11,6 @@ from tlo.lm import LinearModel
 from tlo.methods import (
     care_of_women_during_pregnancy,
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
@@ -60,7 +59,6 @@ def get_sim(use_simplified_birth=True):
                      healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                      hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
                      )
     else:
@@ -74,7 +72,6 @@ def get_sim(use_simplified_birth=True):
                      healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                      hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
                      # Disable check to avoid error due to lack of Contraception module
                      check_all_dependencies=False,
@@ -92,9 +89,8 @@ def get_sim(use_simplified_birth=True):
 
 def adjust_availability_of_consumables_for_hiv(sim, available=True):
     all_item_codes = set()
-    for f in sim.modules['Hiv'].footprints_for_consumables_required.values():
-        all_item_codes = all_item_codes.union(
-            sim.modules['HealthSystem'].get_consumables_as_individual_items(f).index)
+    for f in sim.modules['Hiv'].item_codes_for_consumables_required.values():
+        all_item_codes = all_item_codes.union(f.keys())
 
     sim.modules['HealthSystem'].prob_item_codes_available.loc[all_item_codes] = 1.0 if available else 0.0
 
@@ -471,12 +467,11 @@ def test_aids_symptoms_lead_to_treatment_being_initiated():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True),
+                     cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
                                                                # force symptoms to lead to health care seeking:
                                                                force_any_symptom_to_lead_to_healthcareseeking=True),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
                  )
 
@@ -510,11 +505,11 @@ def test_aids_symptoms_lead_to_treatment_being_initiated():
     assert 'aids_symptoms' in sim.modules['SymptomManager'].has_what(person_id)
     assert 1 == len([ev[0] for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsDeathEvent)])
 
-    # Run the health-seeking poll and run the GenericFirstAppt That is Created
+    # Run the health-seeking poll and run the GenericFirstApptLevel0 that is Created
     hsp = HealthSeekingBehaviourPoll(module=sim.modules['HealthSeekingBehaviour'])
     hsp.apply(sim.population)
     ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-          isinstance(ev[1], hsi_generic_first_appts.HSI_GenericFirstApptAtFacilityLevel1)][0]
+          isinstance(ev[1], hsi_generic_first_appts.HSI_GenericFirstApptAtFacilityLevel0)][0]
     ge.apply(ge.target, squeeze_factor=0.0)
 
     # Check that the person has a TestAndReferEvent scheduled
@@ -571,7 +566,7 @@ def test_art_is_initiated_for_infants():
 
     # Define the newborn HSI and run the event
     newborn_care = newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(
-        module=sim.modules['NewbornOutcomes'], person_id=child_id, facility_level_of_this_hsi=2)
+        module=sim.modules['NewbornOutcomes'], person_id=child_id, facility_level_of_this_hsi='2')
 
     newborn_care.apply(person_id=child_id, squeeze_factor=0.0)
 
@@ -916,7 +911,6 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_and_no_restart():
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
                  )
 
@@ -1013,7 +1007,6 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_but_will_restart():
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
                  )
 
