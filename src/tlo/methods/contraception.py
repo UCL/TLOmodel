@@ -444,18 +444,16 @@ class Contraception(Module):
     def get_item_code_for_each_contraceptive(self):
         """Get the item_code for each contraceptive"""
 
-        lookup = self.sim.modules['HealthSystem'].parameters['Consumables'][
-            ['Intervention_Pkg', 'Intervention_Pkg_Code']
-        ].drop_duplicates().set_index('Intervention_Pkg')['Intervention_Pkg_Code'].to_dict()
+        get_items = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
 
         _cons_codes = dict()
-        _cons_codes['pill'] = lookup['Pill']
-        _cons_codes['IUD'] = lookup['IUD']
-        _cons_codes['injections'] = lookup['Injectable']
-        _cons_codes['implant'] = lookup['Implant']
-        _cons_codes['male_condom'] = lookup['Male condom']
-        _cons_codes['female_sterilization'] = lookup['Female sterilization']
-        _cons_codes['other_modern'] = lookup['Female Condom']  # NB. The consumable female condom is used for the
+        _cons_codes['pill'] = get_items('Pill')
+        _cons_codes['IUD'] = get_items('IUD')
+        _cons_codes['injections'] = get_items('Injectable')
+        _cons_codes['implant'] = get_items('Implant')
+        _cons_codes['male_condom'] = get_items('Male condom')
+        _cons_codes['female_sterilization'] = get_items('Female sterilization')
+        _cons_codes['other_modern'] = get_items('Female Condom')  # NB. The consumable female condom is used for the
         # contraceptive state of "other_modern method"
 
         assert set(_cons_codes.keys()) == set(self.states_that_may_require_HSI_to_switch_to)
@@ -848,9 +846,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.sim.population.props.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
 
         # Record use of consumables and default the person to "not_using" if the consumable is not available:
-        cons_available = self.get_all_consumables(
-            pkg_codes=self.module.cons_codes[self.new_contraceptive]
-        )
+        cons_available = self.get_consumables(self.module.cons_codes[self.new_contraceptive])
         _new_contraceptive = self.new_contraceptive if cons_available else "not_using"
 
         # If the old method is the same as the new method, do nothing else (not even logging)

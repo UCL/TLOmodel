@@ -58,7 +58,7 @@ def run_sim(tmpdir,
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                   disable=disable,
                                   disable_and_reject_all=healthsystem_disable_and_reject_all,
-                                  ignore_cons_constraints=consumables_available,
+                                  cons_availability='all',
                                   ),
 
         # - modules for mechanistic representation of contraception -> pregnancy -> labour -> delivery etc.
@@ -160,7 +160,6 @@ def test_starting_and_stopping_contraceptive_use():
             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-
             contraception.Contraception(resourcefilepath=resourcefilepath, use_healthsystem=False),
             contraception.SimplifiedPregnancyAndLabour(),
 
