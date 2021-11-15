@@ -10,11 +10,11 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'focused_anc_test.py'  # <-- update this to look at other results
+scenario_filename = 'baseline_anc_scenario.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_5k(anctest)_focused_anc_test-2021-11-12T094337Z'
+graph_location = 'output_graphs_15k_baseline_anc_scenario-2021-11-12T154520Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
