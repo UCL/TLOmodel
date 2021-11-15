@@ -807,10 +807,10 @@ def test_no_availability_of_consumables_for_events():
 
         # Make probability of death 100%
         p = sim.modules['CardioMetabolicDisorders'].parameters
-        p[f'{event}_death']["baseline_annual_probability"] = 1
+        p[f'{event}_death']["baseline_annual_probability"] = 1000
 
         # make initial population
-        sim.make_initial_population(n=1000)
+        sim.make_initial_population(n=100)
 
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
