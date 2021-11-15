@@ -1522,17 +1522,14 @@ class HSI_Event:
                         ) -> Union[bool, dict]:
         """Function to allow for getting and checking of entire set of consumables. All requests for consumables should
         use this function.
-
         :param item_codes: The item code(s) (and quantities) of the consumables that are requested. This can be an `int`
-         (the item_code needed [assume quantity=1]), a `list` (list of item_codes [for each assuming quantity=1]), or a
-          `dict` (of the form <item_code>:<quantity>).
+         (the item_code needed [assume quantity=1]), a `list` or `set` (the collection  of item_codes [for each assuming
+          quantity=1]), or a `dict` (of the form <item_code>:<quantity>).
         :param return_individual_results: If True returns a `dict` giving the availability of each item_code requested
         (otherwise gives a `bool` indicating if all the item_codes requested are available).
         :param to_log: If True, logs the request.
-
         :returns A `bool` indicating whether every item is available, or a `dict` indicating the availability of each
          item.
-
         Note that disease module can use the `get_item_codes_from_package_name` and `get_item_code_from_item_name`
          methods in the `HealthSystem` module to find item_codes.
         """

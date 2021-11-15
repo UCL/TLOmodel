@@ -155,11 +155,11 @@ class DxTest:
     * Optional:
     Use of consumable - specify either
         :param item_codes: the item code(s) (and quantities) of the consumables that are required for the
-        test to be done (Follows same format as `get_consumables` in the HSI_Event base class.
+        test to be done.(Follows same format as `get_consumables` in the HSI_Event base class.)
     Performance of test:
         Specify any of the following if the property's dtype is bool
             :param sensitivity: the sensitivity of the test (probability that a true value will be observed as true)
-            :param specificity: the specificity of the test (probabilit that a false value will be observed as false)
+            :param specificity: the specificity of the test (probability that a false value will be observed as false)
         Specify any of the following if the property's dtype is numeric
             :param measure_error_stdev: the standard deviation of the normally distributed (and zero-centered) error in
                                         the observation of a continuous property
@@ -169,7 +169,7 @@ class DxTest:
     """
     def __init__(self,
                  property: str,
-                 item_codes: Union[np.integer, int, list, dict] = None,
+                 item_codes: Union[np.integer, int, list, set, dict] = None,
                  sensitivity: float = None,
                  specificity: float = None,
                  measure_error_stdev: float = None,
