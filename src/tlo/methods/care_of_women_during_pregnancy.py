@@ -1652,7 +1652,6 @@ class CareOfWomenDuringPregnancy(Module):
         item_code_needle = 0
         item_code_gloves = 0
 
-
         # consumables_gest_htn_treatment = {
         #     'Intervention_Package_Code': {},
         #     'Item_Code': {item_code_hydralazine: 1,
@@ -1732,8 +1731,8 @@ class CareOfWomenDuringPregnancy(Module):
 
         # Define consumables and check their availability
         # item_code_benpen = pd.unique(
-        #     consumables.loc[consumables['Items'] == 'Benzathine benzylpenicillin, powder for injection, 2.4 million IU',
-        #                     'Item_Code'])[0]
+        #     consumables.loc[consumables['Items'] ==
+        #     'Benzathine benzylpenicillin, powder for injection, 2.4 million IU', 'Item_Code'])[0]
         # item_code_wfi = pd.unique(
         #     consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
         # item_code_needle = pd.unique(
@@ -1778,8 +1777,8 @@ class CareOfWomenDuringPregnancy(Module):
 
         # Define the consumables and check their availability
         # item_code_benpen = pd.unique(
-        #     consumables.loc[consumables['Items'] == 'Benzathine benzylpenicillin, powder for injection, 2.4 million IU',
-        #                     'Item_Code'])[0]
+        #     consumables.loc[consumables['Items'] ==
+        #     'Benzathine benzylpenicillin, powder for injection, 2.4 million IU', 'Item_Code'])[0]
         # item_code_genta = pd.unique(
         #     consumables.loc[consumables['Items'] == 'Gentamycin, injection, 40 mg/ml in 2 ml vial',
         #                     'Item_Code'])[0]
