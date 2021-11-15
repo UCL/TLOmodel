@@ -1516,7 +1516,7 @@ class HSI_Event:
         return updated_appt_footprint
 
     def get_consumables(self,
-                        item_codes: Union[np.integer, int, list, dict],
+                        item_codes: Union[np.integer, int, list, set, dict],
                         to_log=True,
                         return_individual_results=False
                         ) -> Union[bool, dict]:

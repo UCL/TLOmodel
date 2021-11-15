@@ -409,97 +409,51 @@ class Malaria(Module):
         # 2) ----------------------------------- DIAGNOSTIC TESTS -----------------------------------
         # Create the diagnostic test representing the use of RDT for malaria diagnosis
         # and registers it with the Diagnostic Test Manager
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-
-        # need to convert this from int64 to int for the dx_manager using tolist()
-        item_code_test = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Malaria test kit (RDT)",
-                "Item_Code",
-            ]
-        )[0].tolist()
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             malaria_rdt=DxTest(
                 property='ma_is_infected',
-                item_codes=item_code_test,
+                item_codes=self.sim.modules['HealthSystem'].get_item_code_from_item_name("Malaria test kit (RDT)"),
                 sensitivity=self.parameters['sensitivity_rdt'],
             )
         )
 
         # 3) ----------------------------------- CONSUMABLES -----------------------------------
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         # malaria treatment uncomplicated children <15kg
-        item_code2 = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST",
-                "Item_Code"])[0]
-        item_code3 = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST", "Item_Code"])[0]
-
         self.footprints_for_consumables_required['malaria_uncomplicated_young_children'] = {
-            "Intervention_Package_Code": {},
-            "Item_Code": {item_code_test: 1,
-                          item_code2: 1,
-                          item_code3: 18},
+            get_item_code("Malaria test kit (RDT)"): 1,
+            get_item_code("Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST"): 1,
+            get_item_code("Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST"): 18
         }
 
         # malaria treatment uncomplicated children >15kg
         self.footprints_for_consumables_required['malaria_uncomplicated_older_children'] = {
-            "Intervention_Package_Code": {},
-            "Item_Code": {item_code_test: 1,
-                          item_code2: 3,
-                          item_code3: 18},
+            get_item_code("Malaria test kit (RDT)"): 1,
+            get_item_code("Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST"): 3,
+            get_item_code("Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST"): 18
         }
 
         # malaria treatment uncomplicated adults >36kg
-        item_code4 = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Paracetamol 500mg_1000_CMST", "Item_Code"])[0]
-
         self.footprints_for_consumables_required['malaria_uncomplicated_adult'] = {
-            "Intervention_Package_Code": {},
-            "Item_Code": {item_code_test: 1,
-                          item_code2: 3.6,
-                          item_code4: 18},
+            get_item_code("Malaria test kit (RDT)"): 1,
+            get_item_code("Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST"): 4,
+            get_item_code("Paracetamol 500mg_1000_CMST"): 18
         }
 
         # malaria treatment complicated - same consumables for adults and children
-        item_code5 = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Injectable artesunate", "Item_Code"])[0]
-        item_code6 = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Cannula iv  (winged with injection pot) 18_each_CMST", "Item_Code"])[0]
-        item_code7 = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Glove disposable latex medium_100_CMST", "Item_Code"])[0]
-        item_code8 = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Gauze, swabs 8-ply 10cm x 10cm_100_CMST", "Item_Code"])[0]
-        item_code9 = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Water for injection, 10ml_Each_CMST", "Item_Code"])[0]
-
         self.footprints_for_consumables_required['malaria_complicated'] = {
-            "Intervention_Package_Code": {},
-            "Item_Code": {item_code5: 1,
-                          item_code6: 3,
-                          item_code7: 3,
-                          item_code8: 3,
-                          item_code9: 3,
-                          },
+            get_item_code("Injectable artesunate"):1,
+            get_item_code("Cannula iv  (winged with injection pot) 18_each_CMST"): 3,
+            get_item_code("Glove disposable latex medium_100_CMST"): 3,
+            get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 3,
+            get_item_code("Water for injection, 10ml_Each_CMST"): 3,
         }
 
         # malaria IPTp for pregnant women
-        item_code10 = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg", "Item_Code"])[0]
-
         self.footprints_for_consumables_required['malaria_iptp'] = {
-            "Intervention_Package_Code": {},
-            "Item_Code": {item_code10: 6},
+            get_item_code("Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg"): 6
         }
 
     def on_birth(self, mother_id, child_id):
