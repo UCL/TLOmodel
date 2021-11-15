@@ -480,6 +480,7 @@ class HealthSystem(Module):
 
         # -------------------------------------------------------------------------------------------------
         # Create ```parameters['Consumables_Cost_List]```
+        # todo - drop this!
         # This is a pd.Series, with index item_code, giving the cost of each item.
         # self.parameters['Consumables_Cost_List'] = pd.Series(
         #     raw[['Item_Code', 'Unit_Cost']].drop_duplicates().set_index('Item_Code')['Unit_Cost']
