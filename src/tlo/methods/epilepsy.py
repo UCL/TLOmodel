@@ -208,7 +208,6 @@ class Epilepsy(Module):
         self.item_codes['carbamazepine'] = hs.get_item_code_from_item_name('Carbamazepine 200mg_1000_CMST')
         self.item_codes['phenytoin'] = hs.get_item_code_from_item_name('Phenytoin sodium 100mg_1000_CMST')
 
-
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 
@@ -495,7 +494,6 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         # Define the consumables
         anti_epileptics_available = False
 

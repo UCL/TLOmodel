@@ -1046,7 +1046,7 @@ class PostnatalSupervisor(Module):
         :param hsi_event: HSI event in which this function is called
         """
         params = self.parameters
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         df = self.sim.population.props
 
         # We create a variable that will be set to true if a health work detects a complication and chooses to admit
@@ -1066,8 +1066,9 @@ class PostnatalSupervisor(Module):
                     self.sim.modules['Depression'].do_when_suspected_depression(individual_id, hsi_event)
 
         # Define the consumables
-        item_code_urine_dipstick = pd.unique(
-            consumables.loc[consumables['Items'] == 'Test strips, urine analysis', 'Item_Code'])[0]
+        # item_code_urine_dipstick = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Test strips, urine analysis', 'Item_Code'])[0]
+        item_code_urine_dipstick = 0
 
         # consumables_dipstick = {
         #     'Intervention_Package_Code': {},
@@ -1912,7 +1913,7 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         assert df.at[person_id, 'la_is_postpartum']
 
@@ -1973,9 +1974,9 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
             # approx_days_of_pn_period = (6 - df.at[person_id, 'pn_postnatal_period_in_weeks']) * 7
 
             # Define the consumables and check their availability
-            item_code_methyldopa = pd.unique(
-                consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMST', 'Item_Code'])[0]
-
+            # item_code_methyldopa = pd.unique(
+            #     consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMST', 'Item_Code'])[0]
+            item_code_methyldopa =0
             # consumables_gest_htn_treatment = {
             #     'Intervention_Package_Code': {},
             #     'Item_Code': {item_code_methyldopa: 4 * approx_days_of_pn_period}}
@@ -1999,18 +2000,22 @@ class HSI_PostnatalSupervisor_PostnatalWardInpatientCare(HSI_Event, IndividualSc
            mother.pn_htn_disorders == 'severe_gest_htn':
 
             # Define required consumables
-            item_code_hydralazine = pd.unique(
-                consumables.loc[consumables['Items'] == 'Hydralazine, powder for injection, 20 mg ampoule',
-                                'Item_Code'])[0]
-            item_code_wfi = pd.unique(
-                consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
-            item_code_needle = pd.unique(
-                consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-            item_code_gloves = pd.unique(
-                consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
-            item_code_methyldopa = pd.unique(
-                consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMST', 'Item_Code'])[0]
-
+            # item_code_hydralazine = pd.unique(
+            #     consumables.loc[consumables['Items'] == 'Hydralazine, powder for injection, 20 mg ampoule',
+            #                     'Item_Code'])[0]
+            # item_code_wfi = pd.unique(
+            #     consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
+            # item_code_needle = pd.unique(
+            #     consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+            # item_code_gloves = pd.unique(
+            #     consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+            # item_code_methyldopa = pd.unique(
+            #     consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMST', 'Item_Code'])[0]
+            item_code_hydralazine = 0
+            item_code_wfi = 0
+            item_code_needle = 0
+            item_code_gloves = 0
+            item_code_methyldopa = 0
             # As we need multiple of one consumable we use the old method to check availablity
             # consumables_gest_htn_treatment = {
             #     'Intervention_Package_Code': {},

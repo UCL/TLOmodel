@@ -805,7 +805,7 @@ class NewbornOutcomes(Module):
         df = self.sim.population.props
         nci = self.newborn_care_info
         person_id = hsi_event.target
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         # -------------------------------------- CHLORHEXIDINE CORD CARE ----------------------------------------------
         # Next we determine if cord care with chlorhexidine is applied (consumables are counted during labour)
@@ -813,14 +813,11 @@ class NewbornOutcomes(Module):
 
         # ---------------------------------- VITAMIN D AND EYE CARE -----------------------------------------------
         # We define the consumables
-        item_code_tetracycline = pd.unique(
-            consumables.loc[consumables['Items'] == 'Tetracycline eye ointment 1%_3.5_CMST', 'Item_Code'])[0]
-        item_code_vit_k = pd.unique(
-            consumables.loc[consumables['Items'] == 'vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA',
-                                                    'Item_Code'])[0]
-        item_code_vit_k_syringe = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe,  disposable 2ml,  hypoluer with 23g needle_each_'
-                                                    'CMST', 'Item_Code'])[0]
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+
+        item_code_tetracycline = get_item_code('Tetracycline eye ointment 1%_3.5_CMST', 'Item_Code')
+        item_code_vit_k = get_item_code('vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA')
+        item_code_vit_k_syringe = get_item_code('Syringe,  disposable 2ml,  hypoluer with 23g needle_each_CMST')
         # consumables_vit_k_and_eye_care = {
         #     'Intervention_Package_Code': {},
         #     'Item_Code': {item_code_tetracycline: 1, item_code_vit_k: 1, item_code_vit_k_syringe: 1}}
@@ -1013,7 +1010,7 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
         person_id = hsi_event.target
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         # We assume that only hospitals are able to deliver full supportive care for neonatal sepsis, full supportive
         # care evokes a stronger treatment effect than injectable antibiotics alone
@@ -1039,14 +1036,16 @@ class NewbornOutcomes(Module):
 
         # The same pattern is then followed for health centre care
         elif facility_type == 'hc':
-            item_code_iv_penicillin = pd.unique(
-                consumables.loc[consumables['Items'] == 'Benzylpenicillin 1g (1MU), PFR_Each_CMST', 'Item_Code'])[0]
-            item_code_iv_gentamicin = pd.unique(
-                consumables.loc[consumables['Items'] == 'Gentamicin 40mg/ml, 2ml_each_CMST', 'Item_Code'])[0]
-            item_code_giving_set = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with '
-                                                                                     'needle',
-                                                                                     'Item_Code'])[0]
-
+            # item_code_iv_penicillin = pd.unique(
+            #     consumables.loc[consumables['Items'] == 'Benzylpenicillin 1g (1MU), PFR_Each_CMST', 'Item_Code'])[0]
+            # item_code_iv_gentamicin = pd.unique(
+            #     consumables.loc[consumables['Items'] == 'Gentamicin 40mg/ml, 2ml_each_CMST', 'Item_Code'])[0]
+            # item_code_giving_set = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with '
+            #                                                                          'needle',
+            #                                                                          'Item_Code'])[0]
+            item_code_iv_penicillin = 0
+            item_code_iv_gentamicin = 0
+            item_code_giving_set = 0
             # consumables_inj_abx_sepsis = {
             #     'Intervention_Package_Code': {},
             #     'Item_Code': {item_code_iv_penicillin: 1, item_code_iv_gentamicin: 1,

@@ -474,7 +474,7 @@ def test_if_medication_prevents_all_death():
 
     for event in event_list:
         # Create the sim with an enabled healthcare system
-        sim = make_simulation_health_system_functional()
+        sim = make_simulation_health_system_functional(cons_availability='all')
         # make initial population
         sim.make_initial_population(n=50)
 

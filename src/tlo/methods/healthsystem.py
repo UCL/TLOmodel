@@ -995,32 +995,36 @@ class HealthSystem(Module):
         :return:
         """
 
-        if self.disable or (self.cons_availability == 'all'):
-            # If the HealthSystem module is disabled or all consumables should be considered available, then return
-            # `True` for all item_codes.
-            return {k: True for k in item_codes.keys()}
+        # If HealthSystem is 'disabled' return that all items are available (with no logging).
+        if self.disable:
+            return {k: True for k in item_codes}
+
+        # Determine availability of consumables:
+        if self.cons_availability == 'all':
+            # All item_codes available available if all consumables should be considered available by default.
+            available = {k: True for k in item_codes}
         elif self.cons_availability == 'none':
-            # If no consumables should ever be considered available, then return `False` for all item_codes.
-            return {k: False for k in item_codes.keys()}
+            # All item_codes not available if consumables should be considered not available by default.
+            available = {k: False for k in item_codes.keys()}
         else:
             # Determine availability of each item and package:
             select_col = f'Available_Facility_Level_{hsi_event.ACCEPTED_FACILITY_LEVEL}'
             available = self.cons_available_today['Item_Code'].loc[item_codes.keys(), select_col].to_dict()
 
-            # Logging:
-            if to_log:
-                logger.info(key='Consumables',
-                            data={
-                                'TREATMENT_ID': hsi_event.TREATMENT_ID,
-                                'Item_Available': str({k: v for k, v in item_codes.items() if v}),
-                                'Item_NotAvailable': str({k: v for k, v in item_codes.items() if not v}),
-                            },
-                            # NB. Casting the data to strings because logger complains with dict of varying sizes/keys
-                            description="Record of each consumable item that is requested by in an HSI"
-                            )
+        # Log the request and the outcome:
+        if to_log:
+            logger.info(key='Consumables',
+                        data={
+                            'TREATMENT_ID': hsi_event.TREATMENT_ID,
+                            'Item_Available': str({k: v for k, v in item_codes.items() if v}),
+                            'Item_NotAvailable': str({k: v for k, v in item_codes.items() if not v}),
+                        },
+                        # NB. Casting the data to strings because logger complains with dict of varying sizes/keys
+                        description="Record of each consumable item that is requested."
+                        )
 
-            # Return the result of the check on availability
-            return available
+        # Return the result of the check on availability
+        return available
 
     def request_consumables(self, hsi_event, item_codes, to_log=True):
         """

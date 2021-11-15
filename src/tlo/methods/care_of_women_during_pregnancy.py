@@ -621,7 +621,7 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called:
         """
         person_id = hsi_event.target
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         df = self.sim.population.props
         params = self.parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -630,8 +630,8 @@ class CareOfWomenDuringPregnancy(Module):
         proteinuria_diagnosed = False
 
         # Define the consumables
-        item_code_urine_dipstick = pd.unique(
-            consumables.loc[consumables['Items'] == 'Test strips, urine analysis', 'Item_Code'])[0]
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+        item_code_urine_dipstick = get_item_code('Test strips, urine analysis')
 
         # consumables_dipstick = {
         #     'Intervention_Package_Code': {},
@@ -707,7 +707,7 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         person_id = hsi_event.target
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         df = self.sim.population.props
         params = self.parameters
 
@@ -720,10 +720,9 @@ class CareOfWomenDuringPregnancy(Module):
 
         # Iron/folic acid & BEP supplements...
         # Define the consumables
-        item_code_iron_folic_acid = pd.unique(
-            consumables.loc[consumables['Items'] == 'Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg', 'Item_Code'])[0]
-        item_code_diet_supps = pd.unique(
-            consumables.loc[consumables['Items'] == 'Dietary supplements (country-specific)', 'Item_Code'])[0]
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+        item_code_iron_folic_acid = get_item_code('Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg')
+        item_code_diet_supps = get_item_code('Dietary supplements (country-specific)')
 
         # consumables_anc1 = {
         #     'Intervention_Package_Code': {},
@@ -752,10 +751,10 @@ class CareOfWomenDuringPregnancy(Module):
 
         # LLITN provision...
         # We define the required consumables
-        pkg_code_obstructed_llitn = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'ITN distribution to pregnant women',
-                            'Intervention_Pkg_Code'])[0]
-
+        # pkg_code_obstructed_llitn = pd.unique(
+        #     consumables.loc[consumables['Intervention_Pkg'] == 'ITN distribution to pregnant women',
+        #                     'Intervention_Pkg_Code'])[0]
+        pkg_code_obstructed_llitn = 0
         # consumables_llitn = {
         #     'Intervention_Package_Code': {pkg_code_obstructed_llitn: 1},
         #     'Item_Code': {}}
@@ -832,7 +831,7 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         params = self.parameters
         person_id = hsi_event.target
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         if ~df.at[person_id, 'ac_receiving_calcium_supplements']:
 
@@ -871,7 +870,7 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
         df = self.sim.population.props
         params = self.parameters
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         # Define the required consumables
         item_code_hb_test = pd.unique(
@@ -918,7 +917,7 @@ class CareOfWomenDuringPregnancy(Module):
          ANC
         :param hsi_event: HSI event in which the function has been called
         """
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.parameters
         person_id = hsi_event.target
 
@@ -951,7 +950,7 @@ class CareOfWomenDuringPregnancy(Module):
         B is not modelled currently this intervention just maps consumables used during ANC
         :param hsi_event: HSI event in which the function has been called
         """
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.parameters
         person_id = hsi_event.target
 
@@ -993,7 +992,7 @@ class CareOfWomenDuringPregnancy(Module):
         not modelled currently this intervention just maps consumables used during ANC
         :param hsi_event: HSI event in which the function has been called
         """
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.parameters
         person_id = hsi_event.target
 
@@ -1296,7 +1295,7 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
         person_id = hsi_event.target
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         # Define the required consumables
         item_code_hb_test = pd.unique(
@@ -1358,7 +1357,7 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.parameters
         pregnancy_deficiencies = self.sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
@@ -1454,7 +1453,7 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
         params = self.parameters
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
         # Calculate the approximate dose for the remainder of pregnancy
@@ -1505,7 +1504,7 @@ class CareOfWomenDuringPregnancy(Module):
         :param cause: (STR) cause of woman needed transfusion ['antepartum_haem', 'abortion', 'severe_anaemia']
         """
         df = self.sim.population.props
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.parameters
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
@@ -2979,7 +2978,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         mother = df.loc[person_id]
 
         from tlo.methods.pregnancy_supervisor import GestationalDiabetesGlycaemicControlEvent
