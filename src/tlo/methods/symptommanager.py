@@ -325,8 +325,7 @@ class SymptomManager(Module):
             symptom_string = [symptom_string]
 
         # Strip out the person_ids for anyone who is not alive:
-        persons = df.loc[person_id]
-        person_id = persons[persons.is_alive].index
+        person_id = df.index[df.is_alive & (df.index.isin(person_id))]
 
         # Check that all symptoms in symptom_string are legitimate
         for sym in symptom_string:
@@ -415,13 +414,12 @@ class SymptomManager(Module):
         has_all_symptoms = self.bsh.not_empty(df.is_alive, columns=sy_columns).all(axis=1)
         return has_all_symptoms[has_all_symptoms].index.tolist()
 
-    def who_not_have(self, symptom_string: str) -> pd.Series:
+    def who_not_have(self, symptom_string: str) -> pd.Index:
         """
-        Get a boolean series indicating whether individuals are alive and do not have a symptom.
+        Get person IDs of individuals who are alive and do not have a symptom.
 
         :param symptom_string: The string of the symptom.
-        :return: Boolean series that can be used to index the population dataframe to
-            select individuals which are alive and do not have symptom.
+        :return: Index corresponding to individuals which are alive and do not have symptom.
         """
 
         df = self.sim.population.props
@@ -431,10 +429,12 @@ class SymptomManager(Module):
         assert symptom_string in self.symptom_names, 'Symptom not registered'
 
         # Does not have symptom:
-        return self.bsh.is_empty(
-            df.is_alive,
-            columns=self.get_column_name_for_symptom(symptom_string)
-        )
+        return df.index[
+            df.is_alive
+            & self.bsh.is_empty(
+                slice(None), columns=self.get_column_name_for_symptom(symptom_string)
+            )
+        ]
 
     def has_what(self, person_id, disease_module=None):
         """
@@ -494,7 +494,7 @@ class SymptomManager(Module):
             )
         )
 
-    def clear_symptoms(self, person_id: Union[int, Sequence[int]], disease_module: str):
+    def clear_symptoms(self, person_id: Union[int, Sequence[int]], disease_module: Module):
         """
         Remove all the symptoms for one or more persons caused by a specified disease module
 
@@ -604,7 +604,10 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
         """Determine who will be onset which which symptoms today"""
 
         df = self.sim.population.props
-        group_selector = {'children': df.age_years < 15, 'adults': df.age_years >= 15}
+        group_indices = {
+            'children': df.index[df.is_alive & (df.age_years < 15)],
+            'adults': df.index[df.is_alive & (df.age_years >= 15)]
+        }
 
         # For each generic symptom, impose it on a random sample of persons who do not have that symptom currently:
         for symp in sorted(self.module.generic_symptoms):
@@ -614,8 +617,9 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
 
                 p = self.generic_symptoms['prob_per_day'][group][symp]
                 dur = self.generic_symptoms['duration_in_days'][group][symp]
-                eligible_to_get_symptom = group_selector[group] & do_not_have_symptom
-                persons_eligible_to_get_symptom = df.index[eligible_to_get_symptom]
+                persons_eligible_to_get_symptom = group_indices[group][
+                    group_indices[group].isin(do_not_have_symptom)
+                ]
                 persons_to_onset_with_this_symptom = persons_eligible_to_get_symptom[
                     self.rand(len(persons_eligible_to_get_symptom)) < p
                 ]
