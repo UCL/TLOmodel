@@ -1,7 +1,7 @@
 import os
-import pytest
 from pathlib import Path
 
+import pytest
 from pandas import DateOffset
 
 from tlo import Date, Simulation
