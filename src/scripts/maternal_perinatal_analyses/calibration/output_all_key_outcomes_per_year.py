@@ -10,11 +10,11 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'baseline_anc_scenario.py'  # <-- update this to look at other results
+scenario_filename = 'standard_mph_calibration.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_15k_baseline_anc_scenario-2021-11-12T154520Z'
+graph_location = 'outputs_standard_mph_calibration-2021-11-15T200744Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -23,8 +23,8 @@ results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
 
 # Enter the years the simulation has ran for here?
-sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020] #2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028,
-             #2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040]
+sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026,
+             2027, 2028,  2029]
 # todo: replace with something more clever at some point
 
 # ============================================HELPER FUNCTIONS... =====================================================

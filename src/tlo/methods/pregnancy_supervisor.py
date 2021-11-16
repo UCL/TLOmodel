@@ -5,8 +5,8 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging, util, Date
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata, labour
+from tlo.lm import LinearModel
+from tlo.methods import Metadata, labour, pregnancy_supervisor_lm
 from tlo.methods.causes import Cause
 from tlo.util import BitsetHandler
 
@@ -455,7 +455,6 @@ class PregnancySupervisor(Module):
                  'rectovaginal_fistula': self.sim.modules['HealthBurden'].get_daly_weight(350),
                  }
 
-
     def initialise_population(self, population):
 
         df = population.props
@@ -525,12 +524,78 @@ class PregnancySupervisor(Module):
         # ... and finally register and schedule the parameter override event. This is used in analysis scripts to change
         # key parameters after the simulation 'burn in' period
         sim.schedule_event(OverrideKeyParameterForAnalysis(self),
-                           Date(2020, 1, 1))
+                           Date(2021, 1, 1))
 
         # ==================================== LINEAR MODEL EQUATIONS =================================================
         # Next we scale linear models according to distribution of predictors in the dataframe at baseline
         params = self.current_parameters
+        df = self.sim.population.props
 
+        self.ps_linear_models = {
+            'early_initiation_anc4': LinearModel.custom(pregnancy_supervisor_lm.early_initiation_anc4,
+                                                        parameters=params),
+            'ectopic_pregnancy_death': LinearModel.custom(pregnancy_supervisor_lm.ectopic_pregnancy_death,
+                                                          parameters=params),
+            'spontaneous_abortion': LinearModel.custom(pregnancy_supervisor_lm.spontaneous_abortion, parameters=params),
+            'spontaneous_abortion_death': LinearModel.custom(pregnancy_supervisor_lm.spontaneous_abortion_death,
+                                                             parameters=params),
+            'induced_abortion_death': LinearModel.custom(pregnancy_supervisor_lm.induced_abortion_death,
+                                                         parameters=params),
+            'maternal_anaemia': LinearModel.custom(pregnancy_supervisor_lm.maternal_anaemia, parameters=params),
+            'early_onset_labour': LinearModel.custom(pregnancy_supervisor_lm.preterm_labour, parameters=params),
+            'placenta_praevia': LinearModel.custom(pregnancy_supervisor_lm.placenta_praevia, parameters=params),
+            'placental_abruption': LinearModel.custom(pregnancy_supervisor_lm.placental_abruption, parameters=params),
+            'antepartum_haem': LinearModel.custom(pregnancy_supervisor_lm.antepartum_haem, parameters=params),
+            'gest_diab': LinearModel.custom(pregnancy_supervisor_lm.gest_diab, parameters=params),
+            'gest_htn': LinearModel.custom(pregnancy_supervisor_lm.gest_htn, parameters=params),
+            'pre_eclampsia': LinearModel.custom(pregnancy_supervisor_lm.pre_eclampsia, parameters=params),
+            'antenatal_stillbirth': LinearModel.custom(pregnancy_supervisor_lm.antenatal_stillbirth, parameters=params),
+        }
+
+        def scale_intercepts(model, parameter_key):
+
+            def get_scaled_intercepts(target):
+                mean = model.predict(
+                    df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
+                    year=self.sim.date.year).mean()
+                scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and ~np.isnan(mean)) else 1.0
+                return scaled_intercept
+
+            target = params[parameter_key]
+
+            if (parameter_key != 'prob_spontaneous_abortion_per_month') and (parameter_key != 'baseline_prob_early_'
+                                                                                              'labour_onset'):
+                params[parameter_key] = 1
+                params[parameter_key] = get_scaled_intercepts(target)
+            else:
+                if parameter_key == 'prob_spontaneous_abortion_per_month':
+                    params[parameter_key] = [1, 1, 1, 1, 1]
+                elif parameter_key == 'baseline_prob_early_labour_onset':
+                    params[parameter_key] = [1, 1, 1, 1]
+
+                scaled_intercepts = list()
+                for item in target:
+                    intercept = get_scaled_intercepts(item)
+                    scaled_intercepts.append(intercept)
+                params[parameter_key] = scaled_intercepts
+
+        mod = self.ps_linear_models
+
+        models_to_be_scaled = {'pp': [mod['placenta_praevia'], 'prob_placenta_praevia'],
+                               'an': [mod['maternal_anaemia'], 'baseline_prob_anaemia_per_month'],
+                               'gd': [mod['gest_diab'], 'prob_gest_diab_per_month'],
+                               'gh': [mod['gest_htn'], 'prob_gest_htn_per_month'],
+                               'pe': [mod['pre_eclampsia'], 'prob_pre_eclampsia_per_month'],
+                               'pa': [mod['placental_abruption'], 'prob_placental_abruption_per_month'],
+                               'ansb': [mod['antenatal_stillbirth'], 'prob_still_birth_per_month'],
+                               'anc': [mod['early_initiation_anc4'], 'odds_early_init_anc4'],
+                               'sa': [mod['spontaneous_abortion'], 'prob_spontaneous_abortion_per_month'],
+                               'ptb': [mod['early_onset_labour'], 'baseline_prob_early_labour_onset']}
+
+        for k in models_to_be_scaled:
+            scale_intercepts(models_to_be_scaled[k][0], models_to_be_scaled[k][1])
+
+        """
         # First we define the target intercept values for each model and store as dictionaries
         target_intercepts_other = {'placenta_praevia': params['prob_placenta_praevia'],
                                    'maternal_anaemia': params['baseline_prob_anaemia_per_month'],
@@ -566,11 +631,6 @@ class PregnancySupervisor(Module):
 
         # Define functions that generate linear models with a given dictionary of intercept valyues
         def make_linear_models_standard_intercepts(intercept_dict):
-            """
-            Creates linear models with provided intercepts
-            :param intercept_dict: intercepts for models (list)
-            :return: linear_models dict.
-            """
             linear_models_standard_intercepts = {
                 # This equation calculates a womans risk of placenta praevia (placenta partially/completely covers the
                 # cervix). This risk is applied once per pregnancy
@@ -738,13 +798,6 @@ class PregnancySupervisor(Module):
         # Create a function that returns a scaled intercept from the target intercept according to the distribution of
         # predictor variables within the dataframe
         def get_scaled_intercept(model, target_intercept):
-            """
-            Function returns a scaled intercept value for some given linear model using the target intercept stored in
-            the resource file
-            :param model:
-            :param target_intercept:
-            :return:
-            """
             df = self.sim.population.props
             unscaled_lm = model
             target_mean = target_intercept
@@ -775,6 +828,7 @@ class PregnancySupervisor(Module):
                                                                                   target_intercepts_other[model_name])})
 
         scaled_linear_models = make_linear_models_standard_intercepts(scaled_intercepts_other_dict)
+
 
         # Define any models that dont need to be scaled at baseline
         models_not_needing_scaling = {
@@ -813,9 +867,11 @@ class PregnancySupervisor(Module):
                                                                       params['treatment_effect_post_abortion_care'])),
         }
 
+
         # And store all models within the same dictionary file
         for model_dict in [scaled_sa_model, scaled_ptl_model, scaled_linear_models, models_not_needing_scaling]:
             self.ps_linear_models.update(model_dict)
+        """
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -2516,11 +2572,13 @@ class OverrideKeyParameterForAnalysis(Event, PopulationScopeEventMixin):
     def apply(self, population):
         params = self.module.current_parameters
 
+        # todo: edit
+
         # When this parameter is set as True, the following paramters are overridden when the event is called. Otherwise
         # no parameters are updated.
         if params['switch_anc_coverage']:
-            params['odds_early_init_anc4'] = (params['odds_early_init_anc4'] * 10)
-            #params['prob_late_initiation_anc4'] = params['prob_late_initiation_anc4'] * 2
+            params['odds_early_init_anc4'] = params['odds_early_init_anc4'] * 10
+
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):

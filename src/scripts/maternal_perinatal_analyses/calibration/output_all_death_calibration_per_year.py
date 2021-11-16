@@ -10,11 +10,11 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-scenario_filename = 'baseline_anc_scenario.py'  # <-- update this to look at other results
+scenario_filename = 'standard_mph_calibration.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_15k_baseline_anc_scenario-2021-11-12T154520Z/death'
+graph_location = 'outputs_standard_mph_calibration-2021-11-15T200744Z/death'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -22,7 +22,8 @@ results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 #create_pickles_locally(results_folder)  # if not created via batch
 
 # Enter the years the simulation has ran for here?
-sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
+sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026,
+             2027, 2028,  2029]
 # todo: replace with something more clever at some point
 
 # ============================================HELPER FUNCTIONS... =====================================================
@@ -780,5 +781,35 @@ for cause, tr in zip(simplified_causes, trs):
 
 
 # proportion causes for preterm birth
+# DALYS
+# todo: break down into composite indicators to find out which one is raising over time (death looks stable)
+dalys = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+                key="dalys",
+                custom_generate_series=(
+                    lambda df_: df_.drop(
+                        columns='date'
+                    ).rename(
+                        columns={'age_range': 'age_grp'}
+                    ).groupby(['year']).sum().stack()
+                ),
+                do_scaling=True
+            )
+yearly_mat_dalys = list()
+yearly_neo_dalys = list()
 
+for year in sim_years:
+    if year in dalys.index:
+        yearly_mat_dalys.append(dalys.loc[year, 'Maternal Disorders'].mean())
+        yearly_neo_dalys.append(dalys.loc[year, 'Neonatal Disorders'].mean())
 
+fig, ax = plt.subplots()
+ax.plot(sim_years, yearly_mat_dalys, label="Maternal DALYs", color='deepskyblue')
+ax.plot(sim_years, yearly_neo_dalys, label="Neonatal DALYs", color='olivedrab')
+plt.xlabel('Year')
+plt.ylabel("Disability Adjusted Life Years")
+plt.title('Total DALYs per Year Attributable to Maternal/Neonatal disorders')
+plt.legend()
+plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/dalys.png')
+plt.show()
