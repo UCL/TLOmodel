@@ -542,10 +542,10 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
     # read the results
     output = parse_log_file(sim.log_filepath)
 
-    # Do the check for the occurance of the GenericFirstAppt which is created by the HSB module
-    assert 'GenericFirstApptAtFacilityLevel1' in output['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'].values
+    # Do the check for the occurrence of the GenericFirstAppt which is created by the HSB module
+    assert 'GenericFirstApptAtFacilityLevel0' in output['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'].values
 
-    # Check that some mockitis cured occured (though health system)
+    # Check that some mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 

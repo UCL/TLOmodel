@@ -144,8 +144,8 @@ def test_bed_days_basics(tmpdir):
     hs = sim.modules['HealthSystem']
 
     # 0) Check that structure of the log is as expected (if the healthsystem was not disabled)
-    log = parse_log_file(sim.log_filepath)['tlo.methods.bed_days']
-    assert set([f"bed_tracker_{bed}" for bed in hs.bed_days.bed_types]) == set(log.keys())
+    log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
+    assert set([f"bed_tracker_{bed}" for bed in hs.bed_days.bed_types]).issubset(set(log.keys()))
 
     for bed_type in [f"bed_tracker_{bed}" for bed in hs.bed_days.bed_types]:
         # Check dates are as expected:
@@ -333,7 +333,7 @@ def test_bed_days_property_is_inpatient(tmpdir):
     check_dtypes(sim)
 
     # Load the logged tracker for general beds
-    log = parse_log_file(sim.log_filepath)['tlo.methods.bed_days']
+    log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
     tracker = log['bed_tracker_general_bed'].drop(columns={'date'}).set_index('date_of_bed_occupancy')
     tracker.index = pd.to_datetime(tracker.index)
 
@@ -456,7 +456,7 @@ def test_bed_days_released_on_death(tmpdir):
     assert sim.population.props.at[1, 'is_alive']  # person 1 is alive
 
     # Load the logged tracker for general beds
-    log = parse_log_file(sim.log_filepath)['tlo.methods.bed_days']
+    log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
     tracker = log['bed_tracker_general_bed'].drop(columns={'date'}).set_index('date_of_bed_occupancy')
     tracker.index = pd.to_datetime(tracker.index)
 

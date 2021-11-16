@@ -488,17 +488,6 @@ class HealthSystem(Module):
             )
         )
 
-        # Check if healthsystem is disabled
-        if self.disable and (not self.disable_and_reject_all):
-            # If healthsystem is disabled (but HSI can still run), ...
-            #   ... put this event straight into the normal simulation scheduler.
-            wrapped_hsi_event = HSIEventWrapper(hsi_event=hsi_event)
-            self.sim.schedule_event(wrapped_hsi_event, topen)
-            return  # Terminate this functional call
-        elif self.disable_and_reject_all:
-            # If healthsystem is disabled and HSI should not run, do nothing.
-            return
-
         # If there is no specified tclose time then set this to a week after topen
         if tclose is None:
             tclose = topen + DateOffset(days=7)
@@ -511,6 +500,17 @@ class HealthSystem(Module):
 
         # Check that topen is strictly before tclose
         assert topen < tclose
+
+        # Check if healthsystem is disabled/disable_and_reject_all, and scheduled a the event with appropriate wrapper.
+        if self.disable and (not self.disable_and_reject_all):
+            # If healthsystem is disabled (but HSI can still run), ...
+            #   ... put this event straight into the normal simulation scheduler.
+            self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=True), topen)
+            return
+        elif self.disable_and_reject_all:
+            # If healthsystem is disabled the HSI will never run: schedule for the "never_ran" method for `tclose`.
+            self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tclose)
+            return
 
         # Check that this is a legitimate health system interaction (HSI) event
         # These checks are only performed when the flag `do_hsi_event_checks` is set
@@ -1657,21 +1657,30 @@ class HSI_Event:
 class HSIEventWrapper(Event):
     """This is wrapper that contains an HSI event.
 
-    It is used when the healthsystem is 'disabled' and all HSI events sent to the health system scheduler should
-    be passed to the main simulation scheduler.
-    When this event is run (by the simulation scheduler) it runs the HSI event with squeeze_factor=0.0
+    It is used:
+     1) When the healthsystem is in mode 'disabled=True' such that HSI events sent to the health system scheduler are
+     passed to the main simulation scheduler for running on the date of `topen`. (Note, it is run with
+     squeeze_factor=0.0.)
+     2) When the healthsytsem is in mode `diable_and_reject_all=True` such that HSI are not run but the `never_ran`
+     method is run on the date of `tclose`.
     """
-    def __init__(self, hsi_event, *args, **kwargs):
+    def __init__(self, hsi_event, run_hsi=True, *args, **kwargs):
         super().__init__(hsi_event.module, *args, **kwargs)
         self.hsi_event = hsi_event
         self.target = hsi_event.target
+        self.run_hsi = run_hsi  # True to call the HSI's `run` method; False to call the HSI's `never_ran` method
 
     def run(self):
-        # check that the person is still alive
-        # (this check normally happens in the HealthSystemScheduler and silently do not run the HSI event)
+        """Do the appropriate action on the HSI event"""
+
+        # Check that the person is still alive (this check normally happens in the HealthSystemScheduler and silently
+        # do not run the HSI event)
 
         if isinstance(self.hsi_event.target, tlo.population.Population) \
                 or (self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']):
 
-            # Run the event (with 0 squeeze_factor) and ignore the output
-            _ = self.hsi_event.run(squeeze_factor=0.0)
+            if self.run_hsi:
+                # Run the event (with 0 squeeze_factor) and ignore the output
+                _ = self.hsi_event.run(squeeze_factor=0.0)
+            else:
+                self.hsi_event.never_ran()

@@ -92,7 +92,7 @@ class RandomDeath(Module):
 
         Here we add our monthly event to poll the population for deaths.
         """
-        death_poll = RandomDeathEvent(self, self.death_probability)
+        death_poll = RandomDeathEvent(self, self.parameters['death_probability'])
         sim.schedule_event(death_poll, sim.date + DateOffset(months=1))
 
     def on_birth(self, mother_id, child_id):

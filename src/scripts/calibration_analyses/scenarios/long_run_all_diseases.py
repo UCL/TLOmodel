@@ -1,12 +1,12 @@
 """
-This file defines a batch run of a large population for a long time. It's used for calibrations (demographic patterns,
-health burdens and healthsytstem usage)
+This file defines a batch run of a large population for a long time with all disease modules and full use of HSIs
+It's used for calibrations (demographic patterns, health burdens and healthsytstem usage)
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/calibration_analyses/long_run/long_run.py```
+```tlo batch-submit src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py```
 
 or locally using:
-    ```tlo scenario-run src/scripts/calibration_analyses/long_run/long_run.py```
+    ```tlo scenario-run src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py```
 
 """
 
@@ -73,7 +73,7 @@ class LongRun(BaseScenario):
             epi.Epi(resourcefilepath=self.resources),
 
             # - Contraception, Pregnancy and Labour
-            contraception.Contraception(resourcefilepath=self.resources),
+            contraception.Contraception(resourcefilepath=self.resources, use_healthsystem=True),
             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
             labour.Labour(resourcefilepath=self.resources),
