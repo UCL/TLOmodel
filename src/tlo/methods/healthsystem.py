@@ -603,7 +603,8 @@ class HealthSystem(Module):
             #   ... put this event straight into the normal simulation scheduler.
             self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=True), topen)
             return
-        elif self.disable_and_reject_all:
+
+        if self.disable_and_reject_all:
             # If healthsystem is disabled the HSI will never run: schedule for the "never_ran" method for `tclose`.
             self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tclose)
             return
@@ -1427,7 +1428,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 )
 
             # 6) For each event, determine if run or not, and run if so.
-            for ev_num in range(len(list_of_individual_hsi_event_tuples_due_today)):
+            for ev_num, _ in enumerate(list_of_individual_hsi_event_tuples_due_today):
                 event = list_of_individual_hsi_event_tuples_due_today[ev_num].hsi_event
                 squeeze_factor = squeeze_factor_per_hsi_event[ev_num]
 
@@ -1557,8 +1558,8 @@ class HSI_Event:
         if self._received_info_about_bed_days is None:
             # default to the footprint if no information about bed-days is received
             return self.BEDDAYS_FOOTPRINT
-        else:
-            return self._received_info_about_bed_days
+
+        return self._received_info_about_bed_days
 
     def apply(self, squeeze_factor=0.0, *args, **kwargs):
         """Apply this event to the population.
@@ -1663,13 +1664,12 @@ class HSI_Event:
 
             return footprint
 
-        else:
-            return {}
+        return {}
 
     def is_all_beddays_allocated(self):
         """Check if the entire footprint requested is allocated"""
         return all(
-            [self.bed_days_allocated_to_this_event[k] == self.BEDDAYS_FOOTPRINT[k] for k in self.BEDDAYS_FOOTPRINT]
+            self.bed_days_allocated_to_this_event[k] == self.BEDDAYS_FOOTPRINT[k] for k in self.BEDDAYS_FOOTPRINT
         )
 
     def make_appt_footprint(self, dict_of_appts):
