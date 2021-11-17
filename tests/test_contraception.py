@@ -234,8 +234,12 @@ def test_pregnancies_and_births_occurring(tmpdir):
     # Check births
     births = logs['tlo.methods.demography']['on_birth']
     assert len(births) > 0
-    assert set(births['mother']).issubset(set(pregs['woman_id']))
 
+    # Check that, for births after 9 month, each birth is associated with a woman who was pregnant.
+    assert set(births['mother']).issubset(set(pregs['woman_id']))  # todo - do clause for after first 9mo.
+
+    # Check that births are occurring during the first 9 months of the simulation (from unidentified mothers).
+    # todo
 
 def test_woman_starting_contraceptive_after_birth(tmpdir):
     """Check that woman can start a contraceptive after birth."""
@@ -443,9 +447,12 @@ def test_defaulting_off_method_if_no_healthsystem_at_population_level(tmpdir):
     states_that_may_require_HSI_to_switch_to = sim.modules['Contraception'].states_that_may_require_HSI_to_switch_to
     changes = log["contraception_change"]
     assert not changes["switch_to"].isin(states_that_may_require_HSI_to_switch_to).any()
-    assert (changes.loc[changes["switch_from"].isin(states_that_may_require_HSI_to_switch_to), "switch_to"]
-            == "not_using"
-            ).all()
+
+    # Check that all switches from things that require an HSI are to not something that does not require HSI
+    states_that_do_require_HSI_to_switch_to = \
+        sim.modules['Contraception'].all_contraception_states - states_that_may_require_HSI_to_switch_to
+    assert changes.loc[changes["switch_from"].isin(states_that_may_require_HSI_to_maintain_on), "switch_to"].isin(
+        states_that_do_require_HSI_to_switch_to).all()
 
 
 def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir):
@@ -510,8 +517,3 @@ def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir):
             format_log(parse_log_file(sim_uses_healthsystem.log_filepath)['tlo.methods.contraception'][key]),
             format_log(parse_log_file(sim_does_not_use_healthsystem.log_filepath)['tlo.methods.contraception'][key])
         )
-
-
-def test_births_for_first_9_months():
-    # todo
-    pass
