@@ -232,7 +232,9 @@ class CardioMetabolicDisorders(Module):
         ResourceFile_cmd_condition_death.xlsx  = parameters for death rate from conditions
         ResourceFile_cmd_condition_prevalence.xlsx  = initial and target prevalence for conditions
         ResourceFile_cmd_condition_symptoms.xlsx  = symptoms for conditions
-        ResourceFile_cmd_condition_hsi.xlsx  = HSI paramseters for conditions
+        ResourceFile_cmd_condition_hsi.xlsx  = HSI parameters for conditions
+        ResourceFile_cmd_condition_testing.xlsx  = community esting parameters for conditions (currently only
+        hypertension)
         ResourceFile_cmd_events.xlsx  = parameters for occurrence of events
         ResourceFile_cmd_events_death.xlsx  = parameters for death rate from events
         ResourceFile_cmd_events_symptoms.xlsx  = symptoms for events
@@ -245,6 +247,7 @@ class CardioMetabolicDisorders(Module):
         cond_prevalence = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_prevalence.xlsx", sheet_name=None)
         cond_symptoms = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_symptoms.xlsx", sheet_name=None)
         cond_hsi = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_hsi.xlsx", sheet_name=None)
+        cond_testing = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_testing.xlsx", sheet_name=None)
         events_onset = pd.read_excel(cmd_path / "ResourceFile_cmd_events.xlsx", sheet_name=None)
         events_death = pd.read_excel(cmd_path / "ResourceFile_cmd_events_death.xlsx", sheet_name=None)
         events_symptoms = pd.read_excel(cmd_path / "ResourceFile_cmd_events_symptoms.xlsx", sheet_name=None)
@@ -265,6 +268,8 @@ class CardioMetabolicDisorders(Module):
             p[f'{condition}_initial_prev'] = get_values(cond_prevalence[condition], 0)
             p[f'{condition}_symptoms'] = get_values(cond_symptoms[condition], 1)
             p[f'{condition}_hsi'] = get_values(cond_hsi[condition], 1)
+
+        p['hypertension_testing'] = get_values(cond_testing['hypertension'], 1)
 
         for event in self.events:
             p[f'{event}_onset'] = get_values(events_onset[event], 1)
@@ -478,6 +483,7 @@ class CardioMetabolicDisorders(Module):
         self.lms_removal = dict()
         self.lms_death = dict()
         self.lms_symptoms = dict()
+        self.lms_testing = dict()
 
         # Build the LinearModel for occurrence of events
         self.lms_event_onset = dict()
@@ -493,6 +499,9 @@ class CardioMetabolicDisorders(Module):
                                                                 lm_type='death')
             self.lms_symptoms[condition] = self.build_linear_model_symptoms(condition, self.parameters[
                 'interval_between_polls'])
+
+        self.lms_testing['hypertension'] = self.build_linear_model('hypertension', self.parameters[
+                'interval_between_polls'], lm_type='testing')
 
         for event in self.events:
             self.lms_event_onset[event] = self.build_linear_model(event, self.parameters['interval_between_polls'],
@@ -882,6 +891,7 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
         :param population: the current population
         """
         df = population.props
+        fraction_of_year_between_polls = self.frequency.months / 12
         m = self.module
         rng = m.rng
 
@@ -895,6 +905,22 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
         current_incidence_df = pd.DataFrame(index=self.module.age_cats, columns=self.module.conditions)
         current_incidence_df_incident_events = pd.DataFrame(index=self.module.age_cats, columns=self.module.events)
         current_incidence_df_prevalent_events = pd.DataFrame(index=self.module.age_cats, columns=self.module.events)
+
+        # -------------------------------- COMMUNITY SCREENING FOR HYPERTENSION ---------------------------------------
+        eligible_population = df.is_alive & ~df['nc_hypertension_ever_diagnosed']
+        will_test = self.module.lms_testing['hypertension'].predict(
+            df.loc[eligible_population], rng, squeeze_single_row_output=False)
+        idx_will_test = will_test[will_test].index
+
+        for person_id in idx_will_test:
+            date_test = random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1), m.rng)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_CardioMetabolicDisorders_CommunityTestingForHypertension(person_id=person_id,
+                                                                                       module=self.module),
+                priority=1,
+                topen=date_test,
+                tclose=self.sim.date + self.frequency - pd.DateOffset(days=1)  # (to occur before next polling)
+            )
 
         # Determine onset/removal of conditions
         for condition in self.module.conditions:
@@ -1329,6 +1355,52 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
+class HSI_CardioMetabolicDisorders_CommunityTestingForHypertension(HSI_Event, IndividualScopeEventMixin):
+    """
+    This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with any symptoms.
+    This event results in a blood pressure measurement being taken that may result in diagnosis and the scheduling of
+    treatment for a condition.
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = "CardioMetabolicDisorders_CommunityTestingForHypertension"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        person = df.loc[person_id]
+        hs = self.sim.modules["HealthSystem"]
+
+        # Ignore this event if the person is no longer alive:
+        if not person.is_alive:
+            return hs.get_blank_appt_footprint()
+
+        # Run a test to diagnose whether the person has condition:
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run='assess_hypertension',
+            hsi_event=self
+        )
+        df.at[person_id, 'nc_hypertension_date_last_test'] = self.sim.date
+        if dx_result:
+            # Record date of diagnosis:
+            df.at[person_id, 'nc_hypertension_date_diagnosis'] = self.sim.date
+            df.at[person_id, 'nc_hypertension_ever_diagnosed'] = True
+            # Schedule HSI_CardioMetabolicDisorders_StartWeightLossAndMedication event
+            hs.schedule_hsi_event(
+                hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                    module=self.module,
+                    person_id=person_id,
+                    condition='hypertension'
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+            )
+
 class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
     """
     This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with any symptoms.
