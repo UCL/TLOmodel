@@ -561,23 +561,23 @@ class Contraception(Module):
 
         # determine which women will get pregnant
         give_birth_women_ids = prob_birth.index[
-            (self.module.rng.random_sample(size=len(prob_birth)) < prob_birth)
+            (self.rng.random_sample(size=len(prob_birth)) < prob_birth)
         ]
 
         # schedule births:
         for _id in give_birth_women_ids:
-            self.sim.schedule_event(DirectBirth(person_id=_id, module=self),
-                                    random_date(self.sim.date, self.sim.date + pd.DateOffset(months=9))
+            self.sim.schedule_event(DirectBirth(person_id=None, module=self),
+                                    random_date(self.sim.date, self.sim.date + pd.DateOffset(months=9), self.rng)
                                     )
 
 
 class DirectBirth(Event, IndividualScopeEventMixin):
-    """Do birth, with mother equal to the person_id"""
+    """Do birth, with the mother_id set to -1 (we do associate the birth with a particular mother)."""
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        self.sim.do_birth(person_id)
+        self.sim.do_birth(-1)
 
 
 class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):

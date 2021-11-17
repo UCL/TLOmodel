@@ -785,15 +785,19 @@ class Lifestyle(Module):
 
         df = self.sim.population.props
 
-        df.at[child_id, 'li_urban'] = df.at[mother_id, 'li_urban']
-        df.at[child_id, 'li_wealth'] = df.at[mother_id, 'li_wealth']
+        # Determine id from which characteristics that inherited (from mother, or if no mother, from a randomly
+        # selected person.)
+        _id_inherit_from = mother_id if mother_id != -1 else self.rng.choice(df.index[df.is_alive])
+
+        df.at[child_id, 'li_urban'] = df.at[_id_inherit_from, 'li_urban']
+        df.at[child_id, 'li_wealth'] = df.at[_id_inherit_from, 'li_wealth']
         df.at[child_id, 'li_bmi'] = 0
         df.at[child_id, 'li_exposed_to_campaign_weight_reduction'] = False
         df.at[child_id, 'li_low_ex'] = False
         df.at[child_id, 'li_exposed_to_campaign_exercise_increase'] = False
-        df.at[child_id, 'li_high_salt'] = df.at[mother_id, 'li_high_salt']
+        df.at[child_id, 'li_high_salt'] = df.at[_id_inherit_from, 'li_high_salt']
         df.at[child_id, 'li_exposed_to_campaign_salt_reduction'] = False
-        df.at[child_id, 'li_high_sugar'] = df.at[mother_id, 'li_high_sugar']
+        df.at[child_id, 'li_high_sugar'] = df.at[_id_inherit_from, 'li_high_sugar']
         df.at[child_id, 'li_exposed_to_campaign_sugar_reduction'] = False
         df.at[child_id, 'li_tob'] = False
         df.at[child_id, 'li_date_not_tob'] = pd.NaT
@@ -803,10 +807,10 @@ class Lifestyle(Module):
         df.at[child_id, 'li_mar_stat'] = 1
         df.at[child_id, 'li_in_ed'] = False
         df.at[child_id, 'li_ed_lev'] = 1
-        df.at[child_id, 'li_unimproved_sanitation'] = df.at[mother_id, 'li_unimproved_sanitation']
-        df.at[child_id, 'li_no_access_handwashing'] = df.at[mother_id, 'li_no_access_handwashing']
-        df.at[child_id, 'li_no_clean_drinking_water'] = df.at[mother_id, 'li_no_clean_drinking_water']
-        df.at[child_id, 'li_wood_burn_stove'] = df.at[mother_id, 'li_wood_burn_stove']
+        df.at[child_id, 'li_unimproved_sanitation'] = df.at[_id_inherit_from, 'li_unimproved_sanitation']
+        df.at[child_id, 'li_no_access_handwashing'] = df.at[_id_inherit_from, 'li_no_access_handwashing']
+        df.at[child_id, 'li_no_clean_drinking_water'] = df.at[_id_inherit_from, 'li_no_clean_drinking_water']
+        df.at[child_id, 'li_wood_burn_stove'] = df.at[_id_inherit_from, 'li_wood_burn_stove']
         df.at[child_id, 'li_date_trans_to_urban'] = pd.NaT
         df.at[child_id, 'li_date_acquire_improved_sanitation'] = pd.NaT
         df.at[child_id, 'li_date_acquire_access_handwashing'] = pd.NaT

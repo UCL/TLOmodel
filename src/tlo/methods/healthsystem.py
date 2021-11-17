@@ -448,7 +448,8 @@ class HealthSystem(Module):
 
         # New child inherits the hs_dist_to_facility of the mother
         df = self.sim.population.props
-        df.at[child_id, 'hs_dist_to_facility'] = df.at[mother_id, 'hs_dist_to_facility']
+        # df.at[child_id, 'hs_dist_to_facility'] = df.at[mother_id, 'hs_dist_to_facility']  # (this is removed in #399)
+
         self.bed_days.on_birth(df, mother_id, child_id)
 
     def on_simulation_end(self):

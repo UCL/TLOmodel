@@ -252,6 +252,12 @@ class Demography(Module):
 
         fraction_of_births_male = self.parameters['fraction_of_births_male'][self.sim.date.year]
 
+        # Determine characteristics that are inherited from mother (and if no mother, from a randomly selected person)
+        _id_inherit_from = mother_id if mother_id != -1 else rng.choice(df.index[df.is_alive])
+        _district_num_of_residence = df.at[_id_inherit_from, 'district_num_of_residence']
+        _district_of_residence = df.at[_id_inherit_from, 'district_of_residence']
+        _region_of_residence = df.at[_id_inherit_from, 'region_of_residence']
+
         child = {
             'is_alive': True,
             'date_of_birth': self.sim.date,
@@ -259,14 +265,13 @@ class Demography(Module):
             'cause_of_death': np.nan,
             'sex': 'M' if rng.random_sample() < fraction_of_births_male else 'F',
             'mother_id': mother_id,
-            'district_num_of_residence': df.at[mother_id, 'district_num_of_residence'],
-            'district_of_residence': df.at[mother_id, 'district_of_residence'],
-            'region_of_residence': df.at[mother_id, 'region_of_residence'],
+            'district_num_of_residence': _district_num_of_residence,
+            'district_of_residence': _district_of_residence,
+            'region_of_residence': _region_of_residence,
             'age_exact_years': 0.0,
             'age_years': 0,
             'age_range': self.AGE_RANGE_LOOKUP[0]
         }
-
         df.loc[child_id, child.keys()] = child.values()
 
         # Log the birth:
@@ -274,7 +279,7 @@ class Demography(Module):
             key='on_birth',
             data={'mother': mother_id,
                   'child': child_id,
-                  'mother_age': df.at[mother_id, 'age_years']}
+                  'mother_age': df.at[mother_id, 'age_years'] if mother_id != -1 else -1}
         )
 
     def on_simulation_end(self):
