@@ -125,7 +125,7 @@ class Alri(Module):
         ],
         'fungal/other': [
             'P.jirovecii',
-            'NoS'
+            'other_pathogens_NoS'
         ]
     }
 
@@ -384,6 +384,11 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'effectiveness of Hib vaccine against H. influenzae typ-b ALRI'
                       ),
+        'rr_Hib_ALRI_with_Hib_vaccine':
+            Parameter(Types.REAL,
+                      'relative rate of acquiring H. influenzae type-b Alri '
+                      'for children immunised wth Hib vaccine'
+                      ),
 
         # Probability of bacterial co- / secondary infection -----
         'prob_viral_pneumonia_bacterial_coinfection':
@@ -408,9 +413,9 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of empyema in pneumonia with pulmonary complications'
                       ),
-        'prob_lung_abcess_in_pulmonary_complicated_pneumonia':
+        'prob_lung_abscess_in_pulmonary_complicated_pneumonia':
             Parameter(Types.REAL,
-                      'probability of lung abcess in pneumonia with pulmonary complications'
+                      'probability of lung abscess in pneumonia with pulmonary complications'
                       ),
         'prob_pneumothorax_in_pulmonary_complicated_pneumonia':
             Parameter(Types.REAL,
@@ -420,7 +425,7 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of hypoxaemia in pneumonia cases'
                       ),
-        'prob_hypoxaemia_in_non_pneumonia_alri':
+        'prob_hypoxaemia_in_bronchiolitis/other_alri':
             Parameter(Types.REAL,
                       'probability of hypoxaemia in bronchiolitis and other alri cases'
                       ),
@@ -1008,13 +1013,18 @@ class Models:
 
         # apply the reduced risk of acquisition for those vaccinated
         if pathogen == "Strep_pneumoniae_PCV13":
-            baseline.loc[df['va_pneumo_all_doses']] *= p['rr_infection_strep_with_pneumococcal_vaccine']
+            baseline.loc[df['va_pneumo_all_doses'] & df['age_years'] < 2] \
+                *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y']
+            baseline.loc[df['va_pneumo_all_doses'] & df['age_years'].between(2, 5)] \
+                *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y']
         elif pathogen == "Hib":
-            baseline.loc[df['va_hib_all_doses']] *= p['rr_infection_hib_haemophilus_vaccine']
+            baseline.loc[df['va_hib_all_doses']] *= p['rr_Hib_ALRI_with_Hib_vaccine']
 
         return baseline
 
-    def determine_disease_type_and_secondary_bacterial_coinfection(self, pathogen, age, va_pneumo_all_doses):
+    def determine_disease_type_and_secondary_bacterial_coinfection(self, pathogen, age,
+                                                                   va_hib_all_doses,
+                                                                   va_pneumo_all_doses):
         """Determines:
          * the disease that is caused by infection with this pathogen (from among self.disease_types)
          * if there is a bacterial coinfection associated that will cause the dominant disease.
@@ -1023,32 +1033,36 @@ class Models:
          bacterial coinfection.
          """
         p = self.p
+        bacterial_coinfection = np.nan
 
         if pathogen in self.module.pathogens['bacterial']:
-            disease_type = 'pneumonia'
-            bacterial_coinfection = np.nan
+            if ((age < 1) and p[f'proportion_pneumonia_in_{pathogen}_ALRI'][0] > self.rng.rand()) or \
+               ((age >=1 and age < 5) and p[f'proportion_pneumonia_in_{pathogen}_ALRI'][1] > self.rng.rand()):
+                disease_type = 'pneumonia'
+                bacterial_coinfection = np.nan
+            else:
+                disease_type = 'bronchiolitis/other_alri'
+                bacterial_coinfection = np.nan
 
-        elif pathogen in self.module.pathogens['fungal']:
-            disease_type = 'pneumonia'
-            bacterial_coinfection = np.nan
+        elif pathogen in self.module.pathogens['fungal/other']:
+            if ((age < 1) and p[f'proportion_pneumonia_in_{pathogen}_ALRI'][0] > self.rng.rand()) or \
+               ((age >=1 and age < 5) and p[f'proportion_pneumonia_in_{pathogen}_ALRI'][1] > self.rng.rand()):
+                disease_type = 'pneumonia'
+                bacterial_coinfection = np.nan
+            else:
+                disease_type = 'bronchiolitis/other_alri'
+                bacterial_coinfection = np.nan
 
         elif pathogen in self.module.pathogens['viral']:
-            if (age >= 2) or (p[f'proportion_viral_pneumonia_by_{pathogen}'] > self.rng.rand()):
-                # likely to be 'viral_pneumonia' (if there is no secondary bacterial infection)
+            if ((age < 1) and p[f'proportion_pneumonia_in_{pathogen}_ALRI'][0] > self.rng.rand()) or \
+               ((age >=1 and age < 5) and p[f'proportion_pneumonia_in_{pathogen}_ALRI'][1] > self.rng.rand()):
+                disease_type = 'pneumonia'
                 if p['prob_viral_pneumonia_bacterial_coinfection'] > self.rng.rand():
-                    bacterial_coinfection = self.secondary_bacterial_infection(va_pneumo_all_doses)
-                    disease_type = 'pneumonia'
+                    bacterial_coinfection = self.secondary_bacterial_infection(va_hib_all_doses, va_pneumo_all_doses)
                 else:
                     bacterial_coinfection = np.nan
-                    disease_type = 'pneumonia'
             else:
-                # likely to be 'bronchiolitis' (if there is no secondary bacterial infection)
-                if p['prob_secondary_bacterial_infection_in_bronchiolitis'] > self.rng.rand():
-                    bacterial_coinfection = self.secondary_bacterial_infection(va_pneumo_all_doses)
-                    disease_type = 'pneumonia' if pd.notnull(bacterial_coinfection) else 'bronchiolitis'
-                else:
-                    bacterial_coinfection = np.nan
-                    disease_type = 'bronchiolitis'
+                disease_type = 'bronchiolitis/other_alri'
         else:
             raise ValueError('Pathogen is not recognised.')
 
@@ -1057,21 +1071,26 @@ class Models:
 
         return disease_type, bacterial_coinfection
 
-    def secondary_bacterial_infection(self, va_pneumo_all_doses):
+    def secondary_bacterial_infection(self, va_hib_all_doses, va_pneumo_all_doses):
         """Determine which specific bacterial pathogen causes a secondary coinfection, or if there is no secondary
         bacterial infection (due to the effects of the pneumococcal vaccine).
         """
         p = self.p
 
         # get probability of bacterial coinfection with each pathogen
+        list_bacteria_probs = []
+        for n in range(len(self.module.pathogens['bacterial'])):
+            prob_secondary_patho = 1 / len(self.module.pathogens['bacterial'])
+            list_bacteria_probs.append(prob_secondary_patho)
         probs = dict(zip(
-            self.module.pathogens['bacterial'],
-            p['proportion_bacterial_coinfection_pathogen']))
+            self.module.pathogens['bacterial'], list_bacteria_probs))
 
         # Edit the probability that the coinfection will be of `Strep_pneumoniae_PCV13` if the person has had
         #  the pneumococcal vaccine:
         if va_pneumo_all_doses:
-            probs['Strep_pneumoniae_PCV13'] *= self.p['rr_infection_strep_with_pneumococcal_vaccine']
+            probs['Strep_pneumoniae_PCV13'] *= p['rr_infection_strep_with_pneumococcal_vaccine']
+        if va_hib_all_doses:
+            probs['Hib'] *= p['rr_infection_hib_haemophilus_vaccine']
 
         # Add in the probability that there is none (to ensure that all probabilities sum to 1.0)
         probs['none'] = 1.0 - sum(probs.values())
@@ -1092,52 +1111,61 @@ class Models:
 
         probs = defaultdict(float)
 
-        if primary_path_is_bacterial or has_secondary_bacterial_inf:
-            for c in ['pneumothorax', 'pleural_effusion', 'lung_abscess', 'sepsis', 'meningitis', 'hypoxia']:
-                probs[c] += p[f"prob_{c}_by_bacterial_pneumonia"]
+        # probabilities for local pulmonary complications
+        prob_pulmonary_complications = p['prob_pulmonary_complications_in_pneumonia']
+        if disease_type == 'pneumonia' and (prob_pulmonary_complications > self.rng.rand()):
+            for c in ['pneumothorax', 'pleural_effusion', 'lung_abscess', 'empyema']:
+                probs[c] += p[f'prob_{c}_in_pulmonary_complicated_pneumonia']
+                assert any(c)  # TODO: lung abscess, empyema should only apply to bacteria ALRIs
 
-        if primary_path_is_viral and (disease_type == 'pneumonia'):
-            for c in ['pneumothorax', 'pleural_effusion', 'sepsis', 'hypoxia']:
-                probs[c] += p[f"prob_{c}_by_viral_pneumonia"]
+        # probabilities for systemic complications
+        if disease_type == 'pneumonia' and (primary_path_is_bacterial or has_secondary_bacterial_inf):
+            for c in ['sepsis']:
+                probs[c] += p['prob_bacteraemia_in_pneumonia'] * \
+                            p['prob_progression_to_sepsis_with_bacteraemia']
 
-        if primary_path_is_viral and (disease_type == 'bronchiolitis'):
-            for c in ['pneumothorax', 'pleural_effusion', 'sepsis', 'hypoxia']:
-                probs[c] += p[f"prob_{c}_by_bronchiolitis"]
+        if disease_type == 'pneumonia':
+            for c in ['hypoxaemia']:
+                probs[c] += p['prob_hypoxaemia_in_pneumonia']
+
+        if disease_type == 'bronchiolitis/other_alri':
+            for c in ['hypoxaemia']:
+                probs[c] += p['prob_hypoxaemia_in_bronchiolitis/other_alri']
 
         # determine which complications are onset:
         complications = {c for c, p in probs.items() if p > self.rng.rand()}
 
-        # Determine if repiratory failure should also be onset (this depends on whether or not hypoxia is onset):
-        if 'hypoxia' in complications:
-            if p['prob_respiratory_failure_when_SpO2<93%'] > self.rng.rand():
-                complications.add('respiratory_failure')
-
         return complications
 
-    def delayed_complications(self, person_id):
-        """Determine the set of delayed complications"""
-        p = self.p
-        person = self.module.sim.population.props.loc[person_id]
+        # # Determine if repiratory failure should also be onset (this depends on whether or not hypoxia is onset):
+        # if 'hypoxia' in complications:
+        #     if p['prob_respiratory_failure_when_SpO2<93%'] > self.rng.rand():
+        #         complications.add('respiratory_failure')
 
-        complications = set()
-
-        # 'respiratory_failure':
-        if person['ri_complication_pneumothorax'] and ~person['ri_complication_respiratory_failure']:
-            if p['prob_pneumothorax_to_respiratory_failure'] > self.rng.rand():
-                complications.add('respiratory_failure')
-
-        # 'sepsis'
-        if ~person['ri_complication_sepsis']:
-            prob_sepsis = 0.0
-            if person['ri_complication_lung_abscess']:
-                prob_sepsis += p['prob_lung_abscess_to_sepsis']
-            if person['ri_complication_empyema']:
-                prob_sepsis += p['prob_empyema_to_sepsis']
-
-            if prob_sepsis > self.rng.rand():
-                complications.add('sepsis')
-
-        return complications
+    # def delayed_complications(self, person_id):
+    #     """Determine the set of delayed complications"""
+    #     p = self.p
+    #     person = self.module.sim.population.props.loc[person_id]
+    #
+    #     complications = set()
+    #
+    #     # 'respiratory_failure':
+    #     if person['ri_complication_pneumothorax'] and ~person['ri_complication_respiratory_failure']:
+    #         if p['prob_pneumothorax_to_respiratory_failure'] > self.rng.rand():
+    #             complications.add('respiratory_failure')
+    #
+    #     # 'sepsis'
+    #     if ~person['ri_complication_sepsis']:
+    #         prob_sepsis = 0.0
+    #         if person['ri_complication_lung_abscess']:
+    #             prob_sepsis += p['prob_lung_abscess_to_sepsis']
+    #         if person['ri_complication_empyema']:
+    #             prob_sepsis += p['prob_empyema_to_sepsis']
+    #
+    #         if prob_sepsis > self.rng.rand():
+    #             complications.add('sepsis')
+    #
+    #     return complications
 
     def symptoms_for_disease(self, disease_type):
         """Determine set of symptom (before complications) for a given instance of disease"""
@@ -1160,7 +1188,6 @@ class Models:
         """Probability of each symptom for a person given a particular complication"""
         p = self.p
         df = self.module.sim.population.props
-        # probs = defaultdict(float)
 
         if not df.loc[person_id,
                       [f"ri_complication_{complication}" for complication in self.module.complications]].any():
@@ -1185,34 +1212,34 @@ class Models:
         # Baseline risk:
         risk = p[f"base_death_rate_ALRI_by_{disease_type}"]
 
-        # The effect of age:
-        if person['age_years'] == 1:
-            risk *= p['rr_death_ALRI_age12to23mo']
-        elif 2 <= person['age_years'] <= 4:
-            risk *= p['rr_death_ALRI_age24to59mo']
-
-        # The effect of complications:
-        if person['ri_complication_sepsis']:
-            risk *= p['rr_death_ALRI_sepsis']
-
-        if person['ri_complication_respiratory_failure']:
-            risk *= p['rr_death_ALRI_respiratory_failure']
-
-        if person['ri_complication_meningitis']:
-            risk *= p['rr_death_ALRI_meningitis']
-
-        # The effect of factors defined in other modules:
-        if person['hv_inf']:
-            risk *= p['rr_death_ALRI_HIV']
-
-        if person['un_clinical_acute_malnutrition'] == 'SAM':
-            risk *= p['rr_death_ALRI_SAM']
-
-        if (
-            person['nb_low_birth_weight_status'] in
-            ['extremely_low_birth_weight', 'very_low_birth_weight', 'low_birth_weight']
-        ):
-            risk *= p['rr_death_ALRI_low_birth_weight']
+        # # The effect of age:
+        # if person['age_years'] == 1:
+        #     risk *= p['rr_death_ALRI_age12to23mo']
+        # elif 2 <= person['age_years'] <= 4:
+        #     risk *= p['rr_death_ALRI_age24to59mo']
+        #
+        # # The effect of complications:
+        # if person['ri_complication_sepsis']:
+        #     risk *= p['rr_death_ALRI_sepsis']
+        #
+        # if person['ri_complication_respiratory_failure']:
+        #     risk *= p['rr_death_ALRI_respiratory_failure']
+        #
+        # if person['ri_complication_meningitis']:
+        #     risk *= p['rr_death_ALRI_meningitis']
+        #
+        # # The effect of factors defined in other modules:
+        # if person['hv_inf']:
+        #     risk *= p['rr_death_ALRI_HIV']
+        #
+        # if person['un_clinical_acute_malnutrition'] == 'SAM':
+        #     risk *= p['rr_death_ALRI_SAM']
+        #
+        # if (
+        #     person['nb_low_birth_weight_status'] in
+        #     ['extremely_low_birth_weight', 'very_low_birth_weight', 'low_birth_weight']
+        # ):
+        #     risk *= p['rr_death_ALRI_low_birth_weight']
 
         return risk > self.rng.rand()
 
@@ -1314,7 +1341,8 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         # ----------------- Determine the Alri disease type and bacterial coinfection for this case -----------------
         disease_type, bacterial_coinfection = models.determine_disease_type_and_secondary_bacterial_coinfection(
-            age=person.age_years, pathogen=self.pathogen, va_pneumo_all_doses=person.va_pneumo_all_doses)
+            age=person.age_years, pathogen=self.pathogen, va_hib_all_doses=person.va_hib_all_doses,
+            va_pneumo_all_doses=person.va_pneumo_all_doses)
 
         # ----------------------- Duration of the Alri event -----------------------
         duration_in_days_of_alri = rng.randint(1, 8)  # assumes uniform interval around mean duration with range 4 days
@@ -1395,16 +1423,16 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         if df.loc[person_id, [f"ri_complication_{complication}" for complication in complications]].any():
             m.impose_symptoms_for_complicated_alri(person_id=person_id)
 
-        # Consider delayed-onset of complications and schedule events accordingly
+        # # Consider delayed-onset of complications and schedule events accordingly
         date_of_onset_delayed_complications = random_date(self.sim.date, date_of_outcome, m.rng)
-        delayed_complications = models.delayed_complications(person_id=person_id)
-        for delayed_complication in delayed_complications:
-            self.sim.schedule_event(
-                AlriDelayedOnsetComplication(person_id=person_id,
-                                             complication=delayed_complication,
-                                             module=m),
-                date_of_onset_delayed_complications
-            )
+        # delayed_complications = models.delayed_complications(person_id=person_id)
+        # for delayed_complication in delayed_complications:
+        #     self.sim.schedule_event(
+        #         AlriDelayedOnsetComplication(person_id=person_id,
+        #                                      complication=delayed_complication,
+        #                                      module=m),
+        #         date_of_onset_delayed_complications
+        #     )
 
 
 class AlriDelayedOnsetComplication(Event, IndividualScopeEventMixin):
@@ -1758,5 +1786,6 @@ class AlriPropertiesOfOtherModules(Module):
         df.at[child, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
         df.at[child, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.at[child, 'va_pneumo_all_doses'] = False
+        df.at[child, 'va_hib_all_doses'] = False
         df.at[child, 'va_hib_all_doses'] = False
         df.at[child, 'un_clinical_acute_malnutrition'] = 'well'

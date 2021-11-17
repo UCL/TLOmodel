@@ -136,10 +136,9 @@ calibration_incidence_rate_0_year_olds = {
     'other_Strepto_Enterococci': 0.010263838875,
     'Influenza': 0.017678343875,
     'P.jirovecii': 0.0091914975,
-    'Bocavirus': 0.012776211875,
-    'Adenovirus': 0.012776211875,
     'other_viral_pathogens': 0.0001,
     'other_bacterial_pathogens': 0.042801770375,
+    'other_pathogens_NoS': 0
 }
 
 calibration_incidence_rate_1_year_olds = {
@@ -156,10 +155,9 @@ calibration_incidence_rate_1_year_olds = {
     'other_Strepto_Enterococci': 0.00364550706,
     'Influenza': 0.01204943742,
     'P.jirovecii': 0.00074779632,
-    'Bocavirus': 0.0066279141,
-    'Adenovirus': 0.0066279141,
     'other_viral_pathogens': 0.0001,
     'other_bacterial_pathogens': 0.05785196202,
+    'other_pathogens_NoS': 0
 }
 
 calibration_incidence_rate_2_to_4_year_olds = {
@@ -176,10 +174,9 @@ calibration_incidence_rate_2_to_4_year_olds = {
     'other_Strepto_Enterococci': 0.00157025078,
     'Influenza': 0.00170332288,
     'P.jirovecii': 0.00010645768,
-    'Bocavirus': 0,
-    'Adenovirus': 0,
     'other_viral_pathogens': 0.0001,
-    'other_bacterial_pathogens': 0.01501053288
+    'other_bacterial_pathogens': 0.01501053288,
+    'other_pathogens_NoS': 0
 }
 
 # Produce a set of line plot comparing to the calibration data
