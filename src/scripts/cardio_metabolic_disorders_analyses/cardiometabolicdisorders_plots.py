@@ -43,8 +43,8 @@ def runsim(seed=0):
     # add file handler for the purpose of logging
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2015, 12, 31)
-    popsize = 5000
+    end_date = Date(2019, 12, 31)
+    popsize = 10000
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
@@ -81,7 +81,24 @@ output = parse_log_file(sim.log_filepath)
 
 # Get comparison
 comparison = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=resourcefilepath)
+comparison.to_csv('GBD_and_model_Deaths.csv')
 condition_names = ["Diabetes", "Heart Disease", "Kidney Disease", "Stroke"]
+
+df_t = pd.DataFrame(index=['M', 'F'], columns=condition_names)
+age_cats = ['20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60-64',
+                '65-69', '70-74', '75-79', '80-84', '85-89', '90-94', '95-99']
+for cond in condition_names:
+    deaths_men = []
+    deaths_women = []
+    for age_cat in age_cats:
+        deaths_men.append(comparison.loc[('2015-2019', 'M', f'{age_cat}', f'{cond}')]['model'])
+        deaths_women.append(comparison.loc[('2015-2019', 'F', f'{age_cat}', f'{cond}')]['model'])
+    deaths_men_sum = sum(deaths_men)
+    deaths_women_sum = sum(deaths_women)
+    df_t.at['M', f'{cond}'] = deaths_men_sum
+    df_t.at['F', f'{cond}'] = deaths_women_sum
+
+df_t.to_csv('Sum_Deaths.csv')
 
 for cond in condition_names:
 
@@ -428,15 +445,15 @@ bar = plt.bar(diagnosis_df.index, diagnosis_df['diagnosis_prev'],
               alpha=0.25,
               color='b',
               label='Model')
-steps_data = [0.007, 0.08]
-scatter_steps = plt.scatter(['diabetes', 'hypertension'], steps_data, s=10,
-                          alpha=0.8,
+steps_data = [0.5, 0.479]
+scatter_steps = plt.scatter(['diabetes', 'hypertension'], steps_data, s=20,
+                          alpha=0.5,
                           color='#23395d',
                           label="STEPS Survey 2017")
-steps_error = [[0.001, 0.013], [0.017, 0.016]]
+steps_error = [[0.447, 0.16], [0.184, 0.207]]
 plt.errorbar(['diabetes', 'hypertension'], steps_data, yerr=steps_error,
                  fmt='o', c='#23395d')
-price_data = [0.0126, 0.0909]
+price_data = [0.3846, 0.3797]
 scatter_price = plt.scatter(['diabetes', 'hypertension'], price_data, s=20,
                           alpha=1.0,
                           color='hotpink',
@@ -646,16 +663,24 @@ def make_incidence_plot(condition, type):
         if type == 'incidence':
             plt.ylabel(f'Incidence of Incident Strokes per 100 PY')
             plt.title(f'Incidence of Incident Strokes by Age')
+            plt.legend([bar, scatter], ['Model', 'GBD 2019'])
+            plt.savefig(outputpath / f'incidence_{condition_title}_incident_cases_by_age.pdf')
+            plt.tight_layout()
+            plt.show()
         else:
             plt.ylabel(f'Incidence of Prevalent Strokes per 100 PY')
             plt.title(f'Incidence of Prevalent Strokes by Age')
+            plt.legend([bar, scatter], ['Model', 'GBD 2019'])
+            plt.savefig(outputpath / f'incidence_{condition_title}_prevalent_cases_by_age.pdf')
+            plt.tight_layout()
+            plt.show()
     else:
         plt.ylabel(f'Incidence of {condition_title} per 100 PY')
         plt.title(f'Incidence of {condition_title} by Age')
-    plt.legend([bar, scatter], ['Model', 'GBD 2019'])
-    plt.savefig(outputpath / f'incidence_{condition_title}_by_age.pdf')
-    plt.tight_layout()
-    plt.show()
+        plt.legend([bar, scatter], ['Model', 'GBD 2019'])
+        plt.savefig(outputpath / f'incidence_{condition_title}_by_age.pdf')
+        plt.tight_layout()
+        plt.show()
 
 conditions_and_events_for_incidence = ['diabetes', 'chronic_kidney_disease', 'chronic_ischemic_hd',
                                        'chronic_lower_back_pain', 'ever_stroke']
