@@ -218,6 +218,9 @@ class Contraception(Module):
         # Create second random number generator
         self.rng2 = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
 
+        # Schedule births to occur during the first 9 months of the simulation
+        self.schedule_births_for_first_9_months()
+
     def on_birth(self, mother_id, child_id):
         """
         * 1) Formally end the pregnancy
