@@ -289,7 +289,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
             person_id=person_id,
             symptom_string=active_symptoms,
             add_or_remove="+",
-            disease_module=self.sim.modules["Measles"],
+            disease_module=self.module,
             date_of_onset=symp_onset,
             duration_in_days=14,  # same duration for all symptoms
         )

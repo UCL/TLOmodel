@@ -330,7 +330,6 @@ class SymptomManager(Module):
         # Check that all symptoms in symptom_string are legitimate
         for sym in symptom_string:
             assert sym in self.symptom_names, f'Symptom {sym} is not recognised'
-            assert ('sy_' + sym) in df.columns, 'Symptom has not been declared'
 
         # Check that the add/remove signal is legitimate
         assert add_or_remove in ['+', '-']
