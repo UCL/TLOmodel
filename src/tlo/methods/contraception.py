@@ -163,7 +163,7 @@ class Contraception(Module):
 
         # Import the Age-specific fertility rate data from WPP
         self.parameters['age_specific_fertility_rates'] = \
-            pd.read_csv(self.resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+            pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
     def pre_initialise_population(self):
         """Process parameters before initialising population and simulation"""
