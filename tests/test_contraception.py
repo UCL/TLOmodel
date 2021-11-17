@@ -235,11 +235,19 @@ def test_pregnancies_and_births_occurring(tmpdir):
     births = logs['tlo.methods.demography']['on_birth']
     assert len(births) > 0
 
-    # Check that, for births after 9 month, each birth is associated with a woman who was pregnant.
-    assert set(births['mother']).issubset(set(pregs['woman_id']))  # todo - do clause for after first 9mo.
-
     # Check that births are occurring during the first 9 months of the simulation (from unidentified mothers).
-    # todo
+    after9months = pd.to_datetime(births.date) >= (sim.start_date + pd.DateOffset(months=9))
+    assert len(births[~after9months])
+
+    # Check that unidentified mothers are given as the mother for some (but not all) of the births before 9 months.
+    assert -1 in births.loc[~after9months, 'mother'].values
+
+    # Check that after 9 months, every birth has a specific mother identified (i.e. not mother_id = -1)
+    assert (births.loc[after9months, 'mother'] != -1).all()
+
+    # Check that, for any birth associated with a mother, the mother was pregnant
+    assert (set(births.loc[after9months, 'mother']) - {-1}).issubset(set(pregs['woman_id']))
+
 
 def test_woman_starting_contraceptive_after_birth(tmpdir):
     """Check that woman can start a contraceptive after birth."""
