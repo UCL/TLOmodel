@@ -573,7 +573,7 @@ class Contraception(Module):
 
 
 class DirectBirth(Event, IndividualScopeEventMixin):
-    """Do birth, with the mother_id set to -1 (we do associate the birth with a particular mother)."""
+    """Do birth, with the mother_id set to -1 (we do not associate the child with a particular mother)."""
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
