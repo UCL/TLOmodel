@@ -8,9 +8,10 @@
 
 import heapq as hp
 from collections import Counter, defaultdict
+from collections.abc import Iterable, Sequence
 from itertools import repeat
 from pathlib import Path
-from typing import Iterable, List, NamedTuple, Optional, Sequence, Tuple
+from typing import List, NamedTuple, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -178,11 +179,11 @@ class HealthSystem(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        assert type(ignore_cons_constraints) is bool
+        assert isinstance(ignore_cons_constraints, bool)
         self.ignore_cons_constraints = ignore_cons_constraints
 
-        assert type(disable) is bool
-        assert type(disable_and_reject_all) is bool
+        assert isinstance(disable, bool)
+        assert isinstance(disable_and_reject_all, bool)
         assert not (disable and disable_and_reject_all), (
             'Cannot have both disable and disable_and_reject_all selected'
         )
@@ -556,7 +557,7 @@ class HealthSystem(Module):
         else:
             service_availability = self.arg_service_availabily
 
-        assert type(service_availability) is list
+        assert isinstance(service_availability, list)
         self.service_availability = service_availability
 
         # Log the service_availability
@@ -1098,11 +1099,11 @@ class HealthSystem(Module):
         # check basic formatting
         format_error_str = 'The consumable_footprint is not in the right format. ' \
                            'See check_consumables_footprint_format.'
-        assert type(cons_req_as_footprint) is dict
+        assert isinstance(cons_req_as_footprint, dict)
         assert 'Intervention_Package_Code' in cons_req_as_footprint, format_error_str
         assert 'Item_Code' in cons_req_as_footprint, format_error_str
-        assert type(cons_req_as_footprint['Intervention_Package_Code']) is dict, format_error_str
-        assert type(cons_req_as_footprint['Item_Code']) is dict, format_error_str
+        assert isinstance(cons_req_as_footprint['Intervention_Package_Code'], dict), format_error_str
+        assert isinstance(cons_req_as_footprint['Item_Code'], dict), format_error_str
 
         # Check that consumables being required are in the database
 
@@ -1352,7 +1353,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 event.never_ran()
 
             elif not (
-                type(event.target) is tlo.population.Population
+                isinstance(event.target, tlo.population.Population)
                 or event.target in alive_persons
             ):
                 # if individual level event and the person who is the target is no longer alive, do nothing more
@@ -1373,7 +1374,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # Add it to the list of events due today (individual or population level)
                 # NB. These list is ordered by priority and then due date
 
-                is_pop_level_hsi_event = type(event.target) is tlo.population.Population
+                is_pop_level_hsi_event = isinstance(event.target, tlo.population.Population)
                 if is_pop_level_hsi_event:
                     list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
                 else:
@@ -1585,11 +1586,10 @@ class HSI_Event:
         """
         logger.debug(key="message", data=f"{self.__class__.__name__}: was not admitted to the HSI queue because the "
                                          f"service is not available.")
-        pass
 
     def post_apply_hook(self):
         """Impose the bed-days footprint (if target of the HSI is a person_id)"""
-        if type(self.target) is int:
+        if isinstance(self.target, int):
             if 'HealthSystem' in self.module.sim.modules:
                 self.module.sim.modules['HealthSystem'].bed_days.impose_beddays_footprint(
                     person_id=self.target,
@@ -1653,9 +1653,9 @@ class HSI_Event:
             footprint = self.sim.modules['HealthSystem'].bed_days.get_blank_beddays_footprint()
 
             # do checks
-            assert type(dict_of_beddays) is dict
-            assert all([(k in footprint.keys()) for k in dict_of_beddays.keys()])
-            assert all([type(v) in (float, int) for v in dict_of_beddays.values()])
+            assert isinstance(dict_of_beddays, dict)
+            assert all((k in footprint.keys()) for k in dict_of_beddays.keys())
+            assert all(isinstance(v, (float, int)) for v in dict_of_beddays.values())
 
             # make footprint (defaulting to zero where a type of bed-days is not specified)
             for k, v in dict_of_beddays.items():
@@ -1681,12 +1681,12 @@ class HSI_Event:
         health_system = self.sim.modules['HealthSystem']
         if health_system.appt_footprint_is_valid(dict_of_appts):
             return Counter(dict_of_appts)
-        else:
-            raise ValueError(
-                "Argument to make_appt_footprint should be a dictionary keyed by "
-                "appointment type code strings in Appt_Types_Table with non-negative "
-                "values"
-            )
+
+        raise ValueError(
+            "Argument to make_appt_footprint should be a dictionary keyed by "
+            "appointment type code strings in Appt_Types_Table with non-negative "
+            "values"
+        )
 
 
 class HSIEventWrapper(Event):
