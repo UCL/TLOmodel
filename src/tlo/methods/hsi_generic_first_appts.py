@@ -312,7 +312,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                 # and are selected to get tested
                 if cmd.rng.rand() < cmd.parameters['hypertension_hsi']['pr_assessed_other_symptoms']:
                     schedule_hsi(HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
-                            module=self,
+                            module=cmd,
                             person_id=person_id,
                             condition='hypertension'),
                         priority=0,

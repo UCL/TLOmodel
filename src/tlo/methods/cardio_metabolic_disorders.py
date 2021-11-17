@@ -515,7 +515,9 @@ class CardioMetabolicDisorders(Module):
         # blood pressure measurement
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             assess_hypertension=DxTest(
-                property='nc_hypertension'
+                property='nc_hypertension',
+                sensitivity=1.0,
+                specificity=1.0
             )
         )
         # Create the diagnostic representing the assessment for whether a person is diagnosed with
@@ -1440,6 +1442,32 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
                 tclose=None
             )
 
+        # Also run a test for hypertension according to some probability:
+        if self.module.rng.rand() < self.module.parameters['hypertension_hsi']['pr_assessed_other_symptoms']:
+            # Run a test to diagnose whether the person has condition:
+            dx_result = hs.dx_manager.run_dx_test(
+                dx_tests_to_run='assess_hypertension',
+                hsi_event=self
+            )
+            df.at[person_id, 'nc_hypertension_date_last_test'] = self.sim.date
+            if dx_result:
+                # Record date of diagnosis:
+                df.at[person_id, 'nc_hypertension_date_diagnosis'] = self.sim.date
+                df.at[person_id, 'nc_hypertension_ever_diagnosed'] = True
+
+                # Start weight loss treatment (except for CKD) and medication for all conditions
+                hs.schedule_hsi_event(
+                    hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                        module=self.module,
+                        person_id=person_id,
+                        condition='hypertension'
+                    ),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+                )
+
+
     def did_not_run(self):
         pass
 
@@ -1587,13 +1615,15 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             data=('This is HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: '
                   f'The squeeze-factor is {squeeze_factor}.'),
         )
+
+        df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
         # Run a test to diagnose whether the person has condition:
         dx_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
             dx_tests_to_run=f'assess_{self.event}',
             hsi_event=self
         )
         if dx_result:
-            df = self.sim.population.props
             # Record date of diagnosis
             df.at[person_id, f'nc_{self.event}_date_diagnosis'] = self.sim.date
             df.at[person_id, f'nc_{self.event}_ever_diagnosed'] = True
@@ -1634,6 +1664,31 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             else:
                 # Squeeze factor is too large
                 logger.debug(key='debug', data='Treatment will not be provided due to squeeze factor.')
+
+        # Also run a test for hypertension according to some probability:
+        if self.module.rng.rand() < self.module.parameters['hypertension_hsi']['pr_assessed_other_symptoms']:
+            # Run a test to diagnose whether the person has condition:
+            dx_result = hs.dx_manager.run_dx_test(
+                dx_tests_to_run='assess_hypertension',
+                hsi_event=self
+            )
+            df.at[person_id, 'nc_hypertension_date_last_test'] = self.sim.date
+            if dx_result:
+                # Record date of diagnosis:
+                df.at[person_id, 'nc_hypertension_date_diagnosis'] = self.sim.date
+                df.at[person_id, 'nc_hypertension_ever_diagnosed'] = True
+
+                # Start weight loss treatment (except for CKD) and medication for all conditions
+                hs.schedule_hsi_event(
+                    hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                        module=self.module,
+                        person_id=person_id,
+                        condition='hypertension'
+                    ),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+                )
 
     def did_not_run(self):
         logger.debug(key='debug', data='HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: did not run')
