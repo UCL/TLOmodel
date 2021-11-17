@@ -6,6 +6,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.simplified_births import get_medium_variant_asfr_from_wpp_resourcefile
 from tlo.util import random_date, sample_outcome, transition_states
 
 logger = logging.getLogger(__name__)
@@ -72,7 +73,10 @@ class Contraception(Module):
         'days_between_appts_for_maintenance': Parameter(Types.INT,
                                                         'The number of days between successive family planning '
                                                         'appointments for women that are maintaining the use of a '
-                                                        'method.')
+                                                        'method.'),
+        'age_specific_fertility_rates': Parameter(
+            Types.DATA_FRAME, 'Data table from official source (WPP) for age-specific fertility rates and calendar '
+                              'period'),
     }
 
     PROPERTIES = {
@@ -157,6 +161,10 @@ class Contraception(Module):
         self.parameters['rr_fail_under25'] = 2.2  # From Guttmacher analysis.
         self.parameters['days_between_appts_for_maintenance'] = 180
 
+        # Import the Age-specific fertility rate data from WPP
+        self.parameters['age_specific_fertility_rates'] = \
+            pd.read_csv(self.resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+
     def pre_initialise_population(self):
         """Process parameters before initialising population and simulation"""
         self.processed_params = self.process_params()
@@ -194,6 +202,7 @@ class Contraception(Module):
         * Schedule the ContraceptionPoll and ContraceptionLoggingEvent
         * Retrieve the consumables codes for the consumables used
         * Create second random number generator
+        * Schedule births to occur during the first 9 months of the simulation
         """
 
         # Schedule first occurrences of Contraception Poll to occur at the beginning of the simulation
@@ -530,6 +539,42 @@ class Contraception(Module):
                     },
                     description='All changes in contraception use'
                     )
+
+    def schedule_births_for_first_9_months(self):
+        """Schedule births to occur during the first 9 months of the simulation. This is necessary because at initiation
+        no women are pregnant, so the first births generated endogenously (through pregnancy -> gestation -> labour)
+        occur after 9 months of simulation time. This method examines age-specific fertility rate data and causes there
+        to be the appropriate number of births, scattered uniformly over the first 9 months of the simulation. These are
+         "direct live births" that are not subjected to any of the processes (e.g. risk of loss of pregnancy, or risk
+         of death to mother) represented in the `PregnancySupervisor`, `CareOfWomenDuringPregnancy` or `Labour`."""
+
+        risk_of_birth = get_medium_variant_asfr_from_wpp_resourcefile(
+            dat=self.parameters['age_specific_fertility_rates'], months_exposure=9)
+
+        df = self.sim.population.props
+        prob_birth = df.loc[
+            (df.sex == 'F') & df.is_alive & ~df.is_pregnant]['age_range'].map(
+            risk_of_birth[self.sim.date.year]).fillna(0)
+
+        # determine which women will get pregnant
+        give_birth_women_ids = prob_birth.index[
+            (self.module.rng.random_sample(size=len(prob_birth)) < prob_birth)
+        ]
+
+        # schedule births:
+        for _id in give_birth_women_ids:
+            self.sim.schedule_event(DirectBirth(person_id=_id, module=self),
+                                    random_date(self.sim.date, self.sim.date + pd.DateOffset(months=9))
+                                    )
+
+
+class DirectBirth(Event, IndividualScopeEventMixin):
+    """Do birth, with mother equal to the person_id"""
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        self.sim.do_birth(person_id)
 
 
 class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
