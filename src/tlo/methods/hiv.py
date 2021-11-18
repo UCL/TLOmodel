@@ -743,8 +743,10 @@ class Hiv(Module):
         assert not (df.loc[art_idx, "hv_art"] == "not").any()
 
         # for logical consistency, ensure that all persons on ART have been tested and diagnosed
-        df.loc[art_idx, "hv_number_tests"] = 1
-        df.loc[art_idx, "hv_last_test_date"] = self.sim.date
+        # todo remove this as all historical tests counted in 2010 estimate
+        # df.loc[art_idx, "hv_number_tests"] = 1
+        # todo set last test date prior to 2010 so not counted as a current new test
+        df.loc[art_idx, "hv_last_test_date"] = self.sim.date - pd.DateOffset(years=3)
         df.loc[art_idx, "hv_diagnosed"] = True
 
         # all those on ART need to have event scheduled for continuation/cessation of treatment
