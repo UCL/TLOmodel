@@ -1419,7 +1419,7 @@ class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "CardioMetabolicDisorders_InvestigationNotFollowingSymptoms"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
         self.condition = condition
 
