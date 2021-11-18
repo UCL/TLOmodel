@@ -14,7 +14,6 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     epi,
     healthburden,
@@ -38,7 +37,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 1000
+popsize = 5000
 
 # set up the log config
 log_config = {
@@ -55,7 +54,7 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 3205  # set seed for reproducibility
+seed = 323  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -75,7 +74,6 @@ sim.register(
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-    dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
     epi.Epi(resourcefilepath=resourcefilepath),
     hiv.Hiv(resourcefilepath=resourcefilepath),
     tb.Tb(resourcefilepath=resourcefilepath),
