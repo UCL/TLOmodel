@@ -449,7 +449,7 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
     assert 0 == len([v for v in output['tlo.methods.healthsystem']['Consumables']['Item_NotAvailable'] if v != '{}'])
     assert 0 < len([v for v in output['tlo.methods.healthsystem']['Consumables']['Item_Available'] if v != '{}'])
 
-    # Check that some Mockitis cured Occured (though health system)
+    # Check that some mockitis cured occured (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 

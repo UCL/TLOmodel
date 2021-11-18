@@ -11,7 +11,7 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable, Sequence
 from itertools import repeat
 from pathlib import Path
-from typing import List, NamedTuple, Optional, Tuple
+from typing import List, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -120,8 +120,9 @@ class HealthSystem(Module):
         # Availability of Consumables
         'Consumables_OneHealth': Parameter(Types.DATA_FRAME,
                                            'List of consumables used in each intervention and their costs.'),
-        # todo - temporry renaming to check that it's not being accesses externally -will be removed
-        'Consumables_OneHealth_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
+
+        # todo - will be removed/updated in next PR
+        # 'Consumables_OneHealth_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
 
         # Infrastructure and Equipment
         'BedCapacity': Parameter(Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
@@ -480,32 +481,11 @@ class HealthSystem(Module):
         self.prob_item_codes_available = prob_item_codes_available.set_index('Item_Code', drop=True)
 
         # -------------------------------------------------------------------------------------------------
-        # Create ```parameters['Consumables_Cost_List]```
-        # todo - drop this!
-        # This is a pd.Series, with index item_code, giving the cost of each item.
+        # Consumables_Cost_List: will be removed/updated in next PR
+        # # This is a pd.Series, with index item_code, giving the cost of each item.
         # self.parameters['Consumables_Cost_List'] = pd.Series(
         #     raw[['Item_Code', 'Unit_Cost']].drop_duplicates().set_index('Item_Code')['Unit_Cost']
         # )
-
-    def format_daily_capabilities(self) -> pd.Series:
-        """
-        This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
-        every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity
-        is available.
-
-        It also give the dataframe an index that is useful for merging on (based on Facility_ID and Officer Type)
-
-        (This is so that its easier to track where demands are being placed where there is no capacity)
-        """
-
-        # Get the capabilities data imported (according to the specified underlying assumptions).
-        capabilities = self.parameters[f'Daily_Capabilities_{self.use_funded_or_actual_staffing}']
-        capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
-
-        # Create dataframe containing background information about facility and officer types
-        facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
-        officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values)
-        # todo - <-- avoid use of the file or define differnetly?
 
     def format_daily_capabilities(self) -> pd.Series:
         """
