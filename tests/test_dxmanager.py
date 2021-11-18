@@ -10,7 +10,6 @@ from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
     chronicsyndrome,
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -55,7 +54,6 @@ def bundle():
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
 
                  mockitis.Mockitis(),
@@ -71,7 +69,7 @@ def bundle():
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = sim.modules['HealthSystem'].get_blank_appt_footprint()
-            self.ACCEPTED_FACILITY_LEVEL = 0
+            self.ACCEPTED_FACILITY_LEVEL = '0'
             self.ALERT_OTHER_DISEASES = []
 
         def apply(self, person_id, squeeze_factor):

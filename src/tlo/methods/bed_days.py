@@ -13,8 +13,7 @@ from tlo import Property, Types, logging
 #   CLASS DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger = logging.getLogger('tlo.methods.healthsystem')
 
 
 class BedDays:
@@ -24,7 +23,6 @@ class BedDays:
 
     def __init__(self, hs_module):
         self.hs_module = hs_module
-
         # Number of days to the last day of bed_tracker
         self.days_until_last_day_of_bed_tracker = 150
 
@@ -209,8 +207,10 @@ class BedDays:
 
         # check that the number of inpatient days does not exceed the maximum of 150 days
         if self.days_until_last_day_of_bed_tracker < sum(footprint.values()):
-            logger.warning(key='warning', data=f'the requested bed days in footprint is greater than the'
-                                               f'tracking period, {footprint}')
+            logger.warning(
+                key='warning',
+                data=f'the requested bed days in footprint is greater than the tracking period, {footprint}'
+            )
 
         df = self.hs_module.sim.population.props
 
@@ -241,7 +241,7 @@ class BedDays:
         if not hasattr(self, 'bed_tracker'):
             return
 
-        the_facility_id = self.get_persons_level2_facility_id(person_id)
+        the_facility_id = self.get_facility_id_for_beds(person_id)
         operation = -1 if add_footprint else 1
 
         for bed_type in self.bed_types:
@@ -302,15 +302,15 @@ class BedDays:
                 # NB. The '+1' accounts for the fact that 'today' is included
         return remaining_footprint
 
-    def get_persons_level2_facility_id(self, persons_id):
-        """Helper function to find the facility at which an HSI event will take place; i.e. the facility 2 facility to
-         which the person has acccess"""
+    def get_facility_id_for_beds(self, persons_id):
+        """Helper function to find the facility at which an HSI event will take place.
+        We say that all the beds are pooled at the level 3."""
 
         the_district = self.hs_module.sim.population.props.at[persons_id, 'district_of_residence']
-        facility_level = 2
+        facility_level = '3'
 
         # Return an id of the (one) health_facility available to this person (based on their district)
-        return self.hs_module.parameters["Facilities_For_Each_District"][facility_level][the_district][0]
+        return self.hs_module._facilities_for_each_district[facility_level][the_district][0]
 
     def remove_beddays_footprint(self, person_id):
         """Helper function that will remove from the bed-days tracker the days of bed-days remaining for a person.
