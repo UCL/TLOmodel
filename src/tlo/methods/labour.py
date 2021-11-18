@@ -2329,7 +2329,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             # Otherwise the appropriate HSI is scheduled
             elif mni[individual_id]['delivery_setting'] == 'health_centre':
                 health_centre_delivery = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
-                    self.module, person_id=individual_id, facility_level_of_this_hsi=1)
+                    self.module, person_id=individual_id, facility_level_of_this_hsi='1a')
                 self.sim.modules['HealthSystem'].schedule_hsi_event(health_centre_delivery, priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
@@ -2344,7 +2344,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             #  versus higher level hospitals
 
             elif mni[individual_id]['delivery_setting'] == 'hospital':
-                facility_level = int(self.module.rng.choice([1, 2]))
+                facility_level = self.module.rng.choice(['1a', '1b'])  # todo note choice
                 hospital_delivery = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                     self.module, person_id=individual_id, facility_level_of_this_hsi=facility_level)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(hospital_delivery, priority=0,
@@ -2510,11 +2510,12 @@ class BirthEvent(Event, IndividualScopeEventMixin):
                   mni[mother_id]['mode_of_delivery'] == 'instrumental':
 
                     health_centre_care = HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(
-                        self.module, person_id=mother_id, facility_level_of_this_hsi=1)
+                        self.module, person_id=mother_id, facility_level_of_this_hsi='1a')
 
                     all_facility_care = HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(
-                        self.module, person_id=mother_id, facility_level_of_this_hsi=int(
-                            self.module.rng.choice([1, 2])))
+                        self.module, person_id=mother_id,
+                        facility_level_of_this_hsi=self.module.rng.choice(['1a', '1b'])
+                    )
 
                     if mni[mother_id]['delivery_setting'] == 'health_centre':
                         logger.debug(key='message', data='This is BirthEvent scheduling HSI_Labour_ReceivesCareFor'
@@ -2537,8 +2538,8 @@ class BirthEvent(Event, IndividualScopeEventMixin):
                 else:
                     # Women who delivered via c-section are scheduled to a different HSI
                     post_cs_care = HSI_Labour_ReceivesCareFollowingCaesareanSection(
-                        self.module, person_id=mother_id, facility_level_of_this_hsi=int(
-                            self.module.rng.choice([1, 2])))
+                        self.module, person_id=mother_id,
+                        facility_level_of_this_hsi=self.module.rng.choice(['1a', '1b']))
 
                     logger.info(key='message', data='This is BirthEvent scheduling '
                                                     f'HSI_Labour_ReceivesCareFollowingCaesareanSection for person '
@@ -3099,7 +3100,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
         self.TREATMENT_ID = 'Labour_ReceivesComprehensiveEmergencyObstetricCare'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1b'  # facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
 

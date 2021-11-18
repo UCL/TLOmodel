@@ -55,7 +55,7 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
         assert module is self.sim.modules['HealthSeekingBehaviour']
 
         self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel0'
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = '0'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
         self.ALERT_OTHER_DISEASES = []
 
@@ -80,7 +80,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
             'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
 
@@ -343,7 +343,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             ):
                 event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                     module=sim.modules['Labour'], person_id=person_id,
-                    facility_level_of_this_hsi=int(rng.choice([1, 2])))
+                    facility_level_of_this_hsi=rng.choice(['1a', '1b']))
                 schedule_hsi(event, priority=1, topen=sim.date)
 
             # -----  COMPLICATION AFTER BIRTH  -----
@@ -354,7 +354,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             ):
                 event = HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(
                     module=sim.modules['Labour'], person_id=person_id,
-                    facility_level_of_this_hsi=int(rng.choice([1, 2])))
+                    facility_level_of_this_hsi=rng.choice(['1a', '1b']))
                 schedule_hsi(event, priority=1, topen=sim.date)
 
     if "Depression" in sim.modules:

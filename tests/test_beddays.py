@@ -33,7 +33,7 @@ def test_beddays_in_isolation(tmpdir):
     hs = sim.modules['HealthSystem']
 
     # Update BedCapacity data with a simple table:
-    level2_facility_ids = [64, 65, 66]  # <-- the level 2 facilities for each region
+    level2_facility_ids = [128, 129, 130]  # <-- the level 2 facilities for each region
     cap_bedtype1 = 5
     cap_bedtype2 = 100
 
@@ -61,7 +61,7 @@ def test_beddays_in_isolation(tmpdir):
 
     sim.date = start_date
     hs.bed_days.impose_beddays_footprint(person_id=person_id, footprint=footprint)
-    tracker = hs.bed_days.bed_tracker['bedtype1'][hs.bed_days.get_persons_level2_facility_id(person_id)]
+    tracker = hs.bed_days.bed_tracker['bedtype1'][hs.bed_days.get_facility_id_for_beds(person_id)]
 
     # check if impose footprint works as expected
     assert ([cap_bedtype1 - 1] * dur_bedtype1 + [cap_bedtype1] * (days_sim + 1 - dur_bedtype1) == tracker.values).all()
@@ -103,7 +103,7 @@ def test_bed_days_basics(tmpdir):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = 1
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
             self.ALERT_OTHER_DISEASES = []
 
         def apply(self, person_id, squeeze_factor):
@@ -116,7 +116,7 @@ def test_bed_days_basics(tmpdir):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = 2
+            self.ACCEPTED_FACILITY_LEVEL = '2'
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({
                 'high_dependency_bed': 10,
@@ -210,8 +210,8 @@ def test_bed_days_basics(tmpdir):
     diff = pd.DataFrame()
     for bed_type in hsi_bd.BEDDAYS_FOOTPRINT:
         diff[bed_type] = - (
-            hs.bed_days.bed_tracker[bed_type].loc[:, hs.bed_days.get_persons_level2_facility_id(person_id)] -
-            orig[bed_type].loc[:, hs.bed_days.get_persons_level2_facility_id(person_id)]
+            hs.bed_days.bed_tracker[bed_type].loc[:, hs.bed_days.get_facility_id_for_beds(person_id)] -
+            orig[bed_type].loc[:, hs.bed_days.get_facility_id_for_beds(person_id)]
         )
 
     first_day = diff[diff.sum(axis=1) > 0].index.min()
@@ -308,7 +308,7 @@ def test_bed_days_property_is_inpatient(tmpdir):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = 2
+            self.ACCEPTED_FACILITY_LEVEL = '2'
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
 
@@ -427,7 +427,7 @@ def test_bed_days_released_on_death(tmpdir):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = 2
+            self.ACCEPTED_FACILITY_LEVEL = '2'
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 10})
 
@@ -510,7 +510,7 @@ def test_bed_days_basics_with_healthsystem_disabled():
             self.this_ran = False
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = 2
+            self.ACCEPTED_FACILITY_LEVEL = '2'
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({
                 'high_dependency_bed': 10,
@@ -536,7 +536,7 @@ def test_bed_days_basics_with_healthsystem_disabled():
     # Update BedCapacity data with a simple table:
     hs.parameters['BedCapacity'] = pd.DataFrame(
         data={
-            'Facility_ID': [64, 65, 66],  # <-- the level 2 facilities for each region,
+            'Facility_ID': [128, 129, 130],  # <-- the level 2 facilities for each region,
             'high_dependency_bed': 0,
             'general_bed': 0
         }
@@ -568,7 +568,7 @@ def test_the_use_of_beds_from_multiple_facilities():
     # Create a simple bed capacity dataframe with capacity designated for two regions
     hs.parameters['BedCapacity'] = pd.DataFrame(
         data={
-            'Facility_ID': [64, 65],  # <-- facility_id for level 2 facilities in Northern (64) and Central (65)
+            'Facility_ID': [129, 130],  # <-- facility_id for level 2 facilities in Northern (129) and Central (130)
             'bedtype1': 50,
             'bedtype2': 100
         }
@@ -581,9 +581,9 @@ def test_the_use_of_beds_from_multiple_facilities():
 
     # Define the district and the facility_id to which the person will have beddays.
     person_info = [
-        ("Chitipa", 64),    # <-- in the Northern region, so use facility_id 64
-        ("Kasungu", 65),    # <-- in the Central region, so use facility_id 65
-        ("Machinga", 66)    # <-- in the Southern region, so use facility_id 66 (for which no capacity is defined)
+        ("Chitipa", 129),    # <-- in the Northern region, so use facility_id 129 (for which capacity is defined)
+        ("Kasungu", 130),    # <-- in the Central region, so use facility_id 130 (for which capacity is defined)
+        ("Machinga", 128)    # <-- in the Southern region, so use facility_id 128 (for which no capacity is defined)
     ]
 
     df = sim.population.props

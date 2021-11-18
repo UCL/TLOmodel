@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -44,7 +45,7 @@ def check_dtypes(simulation):
 def test_using_parameter_or_argument_to_set_service_availability():
     """
     Check that can set service_availability through argument or through parameter.
-    Should be equal to what is specified by the parameter, but overwrite with what was provided in arguement if an
+    Should be equal to what is specified by the parameter, but overwrite with what was provided in argument if an
     argument was specified -- provided for backward compatibility.)
     """
 
@@ -93,7 +94,8 @@ def test_run_with_healthsystem_no_disease_modules_defined():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2),
+                                           mode_appt_constraints=2,
+                                           ignore_cons_constraints=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -127,7 +129,8 @@ def test_run_no_interventions_allowed(tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2),
+                                           mode_appt_constraints=2,
+                                           ignore_cons_constraints=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
@@ -174,15 +177,13 @@ def test_run_in_mode_0_with_capacity(tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=0),
+                                           mode_appt_constraints=0,
+                                           ignore_cons_constraints=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
                  )
-
-    # Set the availability of consumables to 50% for everything
-    sim.modules['HealthSystem'].prob_item_codes_available.loc[:, :] = 0.5
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
@@ -197,16 +198,7 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
-    # Check that at least some consumables requests fail due to lack of availability
-    items_not_available = [
-        v for v in output['tlo.methods.healthsystem']['Consumables']['Item_NotAvailable'] if v != '{}'
-    ]
-    pkgs_not_available = [
-        v for v in output['tlo.methods.healthsystem']['Consumables']['Package_NotAvailable'] if v != '{}'
-    ]
-    assert 0 < len(items_not_available + pkgs_not_available)
-
-    # Check that some mockitis cured occurred (though health system)
+    # Check that some Mockitis cures occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 
@@ -226,7 +218,8 @@ def test_run_in_mode_0_no_capacity(tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
-                                           mode_appt_constraints=0),
+                                           mode_appt_constraints=0,
+                                           ignore_cons_constraints=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
@@ -247,7 +240,7 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
-    # Check that some mockitis cured occured (though health system)
+    # Check that some mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 
@@ -268,7 +261,8 @@ def test_run_in_mode_1_with_capacity(tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=1),
+                                           mode_appt_constraints=1,
+                                           ignore_cons_constraints=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
@@ -288,7 +282,7 @@ def test_run_in_mode_1_with_capacity(tmpdir):
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
-    # Check that some mockitis cured occured (though health system)
+    # Check that some mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 
@@ -309,7 +303,8 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
-                                           mode_appt_constraints=1),
+                                           mode_appt_constraints=1,
+                                           ignore_cons_constraints=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
@@ -331,7 +326,7 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
     assert (hsi_events.loc[hsi_events['Person_ID'] >= 0, 'Squeeze_Factor'] == 100.0).all()
     assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'Squeeze_Factor'] == 0.0).all()
 
-    # Check that some mockitis cured occured (though health system)
+    # Check that some Mockitis cures occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 
@@ -352,7 +347,8 @@ def test_run_in_mode_2_with_capacity(tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2),
+                                           mode_appt_constraints=2,
+                                           ignore_cons_constraints=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
@@ -372,7 +368,7 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
-    # Check that some mockitis cured occured (though health system)
+    # Check that some Mockitis cures occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 
@@ -395,7 +391,8 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
-                                           mode_appt_constraints=2),
+                                           mode_appt_constraints=2,
+                                           ignore_cons_constraints=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
@@ -417,7 +414,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'did_run']).astype(bool).all()  # all Population level events
     assert pd.isnull(sim.population.props['mi_date_cure']).all()  # No cures of mockitis occurring
 
-    # Check that no mockitis cured occured (though health system)
+    # Check that no Mockitis cures occurred (though health system)
     assert not any(sim.population.props['mi_status'] == 'P')
 
 
@@ -527,7 +524,8 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2),
+                                           mode_appt_constraints=2,
+                                           ignore_cons_constraints=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
@@ -549,8 +547,113 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+def test_all_appt_types_can_run():
+    """Check that if an appointment type is declared as one that can run at a facility-type of level `x` that it can
+    run at the level for persons in any district."""
+    # todo - repeat for actual and funded and see if we get the right level of appt_availability
+
+    # Create Dummy Module to host the HSI
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    # Create a dummy HSI event class
+    class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id, appt_type, level):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'DummyHSIEvent'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({appt_type: 1})
+            self.ACCEPTED_FACILITY_LEVEL = level
+
+            self.this_hsi_event_ran = False
+
+        def apply(self, person_id, squeeze_factor):
+            if (squeeze_factor != 99) and (squeeze_factor != np.inf):  # todo - this changed!
+                # Check that this appointment is being run and run not with a squeeze_factor that signifies that a cadre
+                # is not at all available.
+                self.this_hsi_event_ran = True
+
+    sim = Simulation(start_date=start_date, seed=0)
+
+    # Register the core modules and simulate for 0 days
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=1,
+                                           use_funded_or_actual_staffing='funded_plus'),
+                 # <-- hard constraint (only HSI events with no squeeze factor can run)
+                 # <-- using the 'funded_plus' number/distribution of officers
+                 DummyModule()
+                 )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date)
+
+    # Get pointer to the HealthSystemScheduler event
+    healthsystemscheduler = sim.modules['HealthSystem'].healthsystemscheduler
+
+    # Get the table showing which types of appointment can occur at which level
+    appt_types_offered = sim.modules['HealthSystem'].parameters['Appt_Offered_By_Facility_Level'].set_index(
+        'Appt_Type_Code')
+
+    # Get the all the districts in which a person could be resident, and allocate one person to each district
+    person_for_district = {d: i for i, d in enumerate(sim.population.props['district_of_residence'].cat.categories)}
+    sim.population.props.loc[person_for_district.values(), 'is_alive'] = True
+    sim.population.props.loc[person_for_district.values(), 'district_of_residence'] = list(person_for_district.keys())
+
+    # For each type of appointment, for a person in each district, create the HSI, schedule the HSI and check it runs
+    error_msg = list()
+
+    def check_appt_works(district, level, appt_type):
+        sim.modules['HealthSystem'].reset_queue()
+
+        hsi = DummyHSIEvent(module=sim.modules['DummyModule'],
+                            person_id=person_for_district[district],
+                            appt_type=appt_type,
+                            level=level)
+
+        sim.modules['HealthSystem'].schedule_hsi_event(
+            hsi,
+            topen=sim.date,
+            tclose=sim.date + pd.DateOffset(days=1),
+            priority=1
+        )
+
+        healthsystemscheduler.apply(sim.population)
+
+        if not hsi.this_hsi_event_ran:
+            return False
+        else:
+            return True
+
+    for _district in person_for_district:
+        for _facility_level_col_name in appt_types_offered.columns:
+            for _appt_type in appt_types_offered[_facility_level_col_name].loc[
+                appt_types_offered[_facility_level_col_name]
+            ].index:
+                _level = _facility_level_col_name.split('_')[-1]
+                if not check_appt_works(district=_district, level=_level, appt_type=_appt_type):
+                    error_msg.append(f"The HSI did not run: "
+                                     f"level={_level}, appt_type={_appt_type}, district={_district}")
+
+    if len(error_msg):
+        for _line in error_msg:
+            print(_line)
+        pd.DataFrame(error_msg).to_csv('error_dump.txt', index=False, header=False)
+
+    assert 0 == len(error_msg)
+
+
 def test_use_of_helper_function_get_all_consumables():
     """Test that the helper function 'get_all_consumables' in the base class of the HSI works as expected."""
+    # todo - check that this is coming out in log correctly
 
     # Create a dummy disease module (to be the parent of the dummy HSI)
     class DummyModule(Module):
@@ -575,6 +678,8 @@ def test_use_of_helper_function_get_all_consumables():
         sort_modules=False,
         check_all_dependencies=False
     )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=0))
 
     # Define availability of items
     item_code_is_available = [0, 1, 2, 3]
@@ -609,14 +714,12 @@ def test_use_of_helper_function_get_all_consumables():
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = module.sim.modules['HealthSystem'].get_blank_appt_footprint()
-            self.ACCEPTED_FACILITY_LEVEL = 0
+            self.ACCEPTED_FACILITY_LEVEL = '0'
             self.ALERT_OTHER_DISEASES = []
 
         def apply(self, person_id, squeeze_factor):
             pass
 
-    sim.make_initial_population(n=100)
-    sim.simulate(end_date=start_date + pd.DateOffset(days=100))
     hsi_event = HSI_Dummy(module=sim.modules['DummyModule'], person_id=0)
 
     # Test using item_codes:
@@ -675,7 +778,7 @@ def test_speeding_up_request_consumables():
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-            self.ACCEPTED_FACILITY_LEVEL = 0
+            self.ACCEPTED_FACILITY_LEVEL = '0'
             self.ALERT_OTHER_DISEASES = []
 
         def apply(self, person_id, squeeze_factor):
