@@ -1,7 +1,7 @@
 """
 Plot to demonstrate correspondence between model and data outputs wrt births, population size and total deaths.
 
-This uses the results of the Scenario defined in: src/scripts/long_run/long_run.py
+This uses the results of the Scenario defined in: src/scripts/calibration_analyses/scenarios/long_run_no_diseases.py
 """
 
 from pathlib import Path
@@ -199,7 +199,7 @@ def get_mean_pop_by_age_for_sex_and_year(sex, year):
                         module="tlo.methods.demography",
                         key=key,
                         custom_generate_series=(
-                            lambda df_: df_.loc[pd.to_datetime(df_.date).dt.year == 2010].drop(
+                            lambda df_: df_.loc[pd.to_datetime(df_.date).dt.year == year].drop(
                                 columns=['date']
                             ).melt(
                                 var_name='age_grp'
