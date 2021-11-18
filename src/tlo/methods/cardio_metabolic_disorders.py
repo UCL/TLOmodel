@@ -1582,12 +1582,10 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
                                                               "receiving an HSI."
         # Check availability of medication for condition
         if self.get_all_consumables(
-            item_codes=self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
-        ):
+            item_codes=self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')):
             # If medication is available, flag as being on medication
             df.at[person_id, f'nc_{self.condition}_on_medication'] = True
             # Determine if the medication will work to prevent death
-            # TODO: @britta change to data
             df.at[person_id, f'nc_{self.condition}_medication_prevents_death'] = \
                 self.module.rng.rand() < self.module.parameters[f'{self.condition}_hsi'].pr_treatment_works
             # Schedule their next HSI for a refill of medication in one month
@@ -1598,6 +1596,19 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
             )
+        else:
+            # If person 'decides to' seek another appointment, schedule a new HSI appointment for tomorrow.
+            # NB. With a probability of 1.0, this will keep occurring, and the person will never give-up coming back to
+            # pick-up medication.
+            if (m.rng.random_sample() <
+                m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')
+            ):
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=self,
+                    topen=self.sim.date + pd.DateOffset(days=1),
+                    tclose=self.sim.date + pd.DateOffset(days=15),
+                    priority=1
+                )
 
         #  TODO: @britta put in functionality for individuals to seek medication again if consumables not available?
 
@@ -1622,6 +1633,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         person = df.loc[person_id]
+        m = self.sim.modules['CardioMetabolicDisorders']
 
         assert person[f'nc_{self.condition}_ever_diagnosed'], "The person is not diagnosed and so should not be " \
                                                               "receiving an HSI."
@@ -1652,6 +1664,18 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         else:
             # If medication was not available, the person ceases to be taking medication
             df.at[person_id, f'nc_{self.condition}_on_medication'] = False
+            # If person 'decides to' seek another appointment, schedule a new HSI appointment for tomorrow.
+            # NB. With a probability of 1.0, this will keep occurring, and the person will never give-up coming back to
+            # pick-up medication.
+            if (m.rng.random_sample() <
+                m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')
+            ):
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=self,
+                    topen=self.sim.date + pd.DateOffset(days=1),
+                    tclose=self.sim.date + pd.DateOffset(days=15),
+                    priority=1
+                )
 
     def did_not_run(self):
         # If this HSI event did not run, then the persons ceases to be taking medication
