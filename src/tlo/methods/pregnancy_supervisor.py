@@ -367,6 +367,9 @@ class PregnancySupervisor(Module):
         'switch_anc_coverage': Parameter(
             Types.BOOL, 'used to signal if a change in parameters governing ANC coverage should be made at some '
                         'predetermined time point'),
+        'target_anc_coverage_for_analysis': Parameter(
+            Types.REAL, 'contains a target level of coverage for analysis so that a linear model of choice can be '
+                        'scaled to force set level of intervention coverage'),
 
     }
 
@@ -529,8 +532,9 @@ class PregnancySupervisor(Module):
         # ==================================== LINEAR MODEL EQUATIONS =================================================
         # Next we scale linear models according to distribution of predictors in the dataframe at baseline
         params = self.current_parameters
-        df = self.sim.population.props
 
+        # First we create all of the custom linear models used within this module and store them in
+        # pregnancy_supervisor_lm.py
         self.ps_linear_models = {
             'early_initiation_anc4': LinearModel.custom(pregnancy_supervisor_lm.early_initiation_anc4,
                                                         parameters=params),
@@ -552,35 +556,8 @@ class PregnancySupervisor(Module):
             'antenatal_stillbirth': LinearModel.custom(pregnancy_supervisor_lm.antenatal_stillbirth, parameters=params),
         }
 
-        def scale_intercepts(model, parameter_key):
-
-            def get_scaled_intercepts(target):
-                mean = model.predict(
-                    df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
-                    year=self.sim.date.year).mean()
-                scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and ~np.isnan(mean)) else 1.0
-                return scaled_intercept
-
-            target = params[parameter_key]
-
-            if (parameter_key != 'prob_spontaneous_abortion_per_month') and (parameter_key != 'baseline_prob_early_'
-                                                                                              'labour_onset'):
-                params[parameter_key] = 1
-                params[parameter_key] = get_scaled_intercepts(target)
-            else:
-                if parameter_key == 'prob_spontaneous_abortion_per_month':
-                    params[parameter_key] = [1, 1, 1, 1, 1]
-                elif parameter_key == 'baseline_prob_early_labour_onset':
-                    params[parameter_key] = [1, 1, 1, 1]
-
-                scaled_intercepts = list()
-                for item in target:
-                    intercept = get_scaled_intercepts(item)
-                    scaled_intercepts.append(intercept)
-                params[parameter_key] = scaled_intercepts
-
+        # Next we create a dict with all the models to be scaled and the 'target' rate parameter
         mod = self.ps_linear_models
-
         models_to_be_scaled = {'pp': [mod['placenta_praevia'], 'prob_placenta_praevia'],
                                'an': [mod['maternal_anaemia'], 'baseline_prob_anaemia_per_month'],
                                'gd': [mod['gest_diab'], 'prob_gest_diab_per_month'],
@@ -592,286 +569,62 @@ class PregnancySupervisor(Module):
                                'sa': [mod['spontaneous_abortion'], 'prob_spontaneous_abortion_per_month'],
                                'ptb': [mod['early_onset_labour'], 'baseline_prob_early_labour_onset']}
 
+        # Scale all models updating the parameter used as the intercept of the linear models
         for k in models_to_be_scaled:
-            scale_intercepts(models_to_be_scaled[k][0], models_to_be_scaled[k][1])
+            self.scale_linear_model_at_initialisation(models_to_be_scaled[k][0], models_to_be_scaled[k][1])
 
+    def scale_linear_model_at_initialisation(self, model, parameter_key):
         """
-        # First we define the target intercept values for each model and store as dictionaries
-        target_intercepts_other = {'placenta_praevia': params['prob_placenta_praevia'],
-                                   'maternal_anaemia': params['baseline_prob_anaemia_per_month'],
-                                   'gest_diab': params['prob_gest_diab_per_month'],
-                                   'gest_htn': params['prob_gest_htn_per_month'],
-                                   'pre_eclampsia': params['prob_pre_eclampsia_per_month'],
-                                   'placental_abruption': params['prob_placental_abruption_per_month'],
-                                   'antenatal_stillbirth': params['prob_still_birth_per_month'],
-                                   'early_initiation_anc4': params['odds_early_init_anc4']}
+        This function scales the intercept value of linear models according to the distribution of predictor values
+        within the data frame. The parameter value is then updated accordingly
+        :param model: model object to be scaled
+        :param parameter_key: key (str) relating to the parameter which holds the target rate for the model
+        :return:
+        """
 
-        target_intercepts_sa = {'ga_4': params['prob_spontaneous_abortion_per_month'][0],
-                                'ga_8': params['prob_spontaneous_abortion_per_month'][1],
-                                'ga_13': params['prob_spontaneous_abortion_per_month'][2],
-                                'ga_17': params['prob_spontaneous_abortion_per_month'][3],
-                                'ga_22': params['prob_spontaneous_abortion_per_month'][4]}
+        df = self.sim.population.props
+        params = self.current_parameters
 
-        target_intercepts_ptl = {'ga_22': params['baseline_prob_early_labour_onset'][0],
-                                 'ga_27': params['baseline_prob_early_labour_onset'][1],
-                                 'ga_31': params['baseline_prob_early_labour_onset'][2],
-                                 'ga_35': params['baseline_prob_early_labour_onset'][3]}
+        # Create a function that runs a linear model with an intercept of 1 and generates a scaled intercept
+        def return_scaled_intercept(target, logistic_model):
+            mean = model.predict(
+                df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
+                year=self.sim.date.year).mean()
 
-        # Then create dictionaries storing some non scaled intercept - i.e. 1, next to each model
-        unscaled_intercepts = dict()
-        sa_unscaled_intercepts = dict()
-        ptl_unscaled_intercepts = dict()
+            if logistic_model:
+                mean = mean / (1 - mean)
 
-        for key in target_intercepts_other.keys():
-            unscaled_intercepts.update({key: 1.0})
-        for key in target_intercepts_sa.keys():
-            sa_unscaled_intercepts.update({key: 1.0})
-        for key in target_intercepts_ptl.keys():
-            ptl_unscaled_intercepts.update({key: 1.0})
-
-        # Define functions that generate linear models with a given dictionary of intercept valyues
-        def make_linear_models_standard_intercepts(intercept_dict):
-            linear_models_standard_intercepts = {
-                # This equation calculates a womans risk of placenta praevia (placenta partially/completely covers the
-                # cervix). This risk is applied once per pregnancy
-                'placenta_praevia': LinearModel(
-                    LinearModelType.MULTIPLICATIVE,
-                    intercept_dict['placenta_praevia'],
-                    Predictor('la_previous_cs_delivery').when(True, params['rr_placenta_praevia_previous_cs'])),
-
-                # This equation calculates a womans monthly risk of developing anaemia during her pregnancy. This is
-                # currently influenced by nutritional deficiencies and malaria status
-                'maternal_anaemia': LinearModel(
-                    LinearModelType.MULTIPLICATIVE,
-                    intercept_dict['maternal_anaemia'],
-                    Predictor('ps_deficiencies_in_pregnancy').apply(
-                        lambda x: params['rr_anaemia_if_iron_deficient']
-                        if x & self.deficiencies_in_pregnancy.element_repr('iron') else 1),
-                    Predictor('ps_deficiencies_in_pregnancy').apply(
-                        lambda x: params['rr_anaemia_if_folate_deficient']
-                        if x & self.deficiencies_in_pregnancy.element_repr('folate') else 1),
-                    Predictor('ps_deficiencies_in_pregnancy').apply(
-                        lambda x: params['rr_anaemia_if_b12_deficient']
-                        if x & self.deficiencies_in_pregnancy.element_repr('b12') else 1),
-                    Predictor('ma_is_infected').when(True, params['rr_anaemia_maternal_malaria']),
-                    Predictor().when('hv_inf & (hv_art != "not")', params['rr_anaemia_hiv_no_art']),
-                    Predictor('ac_receiving_iron_folic_acid').when(True, params['treatment_effect_iron_folic_acid_'
-                                                                                'anaemia'])),
-
-                # This equation calculates a womans monthly risk of developing gestational diabetes
-                # during her pregnancy.This is currently influenced by obesity
-                'gest_diab': LinearModel(
-                    LinearModelType.MULTIPLICATIVE,
-                    intercept_dict['gest_diab'],
-                    Predictor('li_bmi', conditions_are_mutually_exclusive=True)
-                    .when('4', params['rr_gest_diab_obesity'])
-                    .when('5', params['rr_gest_diab_obesity'])),
-
-                # This equation calculates a womans monthly risk of developing gestational hypertension
-                # during her pregnancy. This is currently influenced receipt of calcium supplementation
-                'gest_htn': LinearModel(
-                    LinearModelType.MULTIPLICATIVE,
-                    intercept_dict['gest_htn'],
-                    Predictor('li_bmi', conditions_are_mutually_exclusive=True)
-                    .when('4', params['rr_gest_htn_obesity'])
-                    .when('5', params['rr_gest_htn_obesity']),
-                    Predictor('ac_receiving_calcium_supplements').when(True, params['treatment_effect_gest_htn_'
-                                                                                    'calcium'])),
-
-                # This equation calculates a womans monthly risk of developing pre-eclampsia during her pregnancy.
-                # This is
-                # currently influenced by receipt of calcium supplementation
-                'pre_eclampsia': LinearModel(
-                    LinearModelType.MULTIPLICATIVE,
-                    intercept_dict['pre_eclampsia'],
-                    Predictor('li_bmi', conditions_are_mutually_exclusive=True)
-                    .when('4', params['rr_pre_eclampsia_obesity'])
-                    .when('5', params['rr_pre_eclampsia_obesity']),
-                    Predictor('ps_multiple_pregnancy').when(True, params['rr_pre_eclampsia_multiple_pregnancy']),
-                    Predictor('nc_hypertension').when(True, params['rr_pre_eclampsia_chronic_htn']),
-                    Predictor('nc_diabetes').when(True, params['rr_pre_eclampsia_diabetes_mellitus']),
-                    Predictor('ac_receiving_calcium_supplements').when(True, params['treatment_effect_calcium_pre_'
-                                                                                    'eclamp'])),
-
-                # This equation calculates a womans monthly risk of developing placental abruption
-                # during her pregnancy.
-                'placental_abruption': LinearModel(
-                    LinearModelType.MULTIPLICATIVE,
-                    intercept_dict['placental_abruption'],
-                    Predictor('la_previous_cs_delivery').when(True, params['rr_placental_abruption_previous_cs']),
-                    Predictor('ps_htn_disorders', conditions_are_mutually_exclusive=True)
-                    .when('mild_pre_eclamp', params['rr_placental_abruption_hypertension'])
-                    .when('gest_htn', params['rr_placental_abruption_hypertension'])
-                    .when('severe_gest_htn', params['rr_placental_abruption_hypertension'])
-                    .when('severe_pre_eclamp', params['rr_placental_abruption_hypertension'])),
-
-
-                # This equation calculates a womans monthly risk of antenatal still birth
-                'antenatal_stillbirth': LinearModel(
-                    LinearModelType.MULTIPLICATIVE,
-                    intercept_dict['antenatal_stillbirth'],
-                    Predictor('ps_gestational_age_in_weeks').when('41', params['rr_still_birth_ga_41']),
-                    Predictor('ps_gestational_age_in_weeks').when('42', params['rr_still_birth_ga_42']),
-                    Predictor('ps_gestational_age_in_weeks').when('>42', params['rr_still_birth_ga_>42']),
-                    Predictor('ps_htn_disorders', conditions_are_mutually_exclusive=True)
-                        .when('mild_pre_eclamp', params['rr_still_birth_pre_eclampsia'])
-                        .when('gest_htn', params['rr_still_birth_gest_htn'])
-                        .when('severe_gest_htn', params['rr_still_birth_gest_htn'])
-                        .when('severe_pre_eclamp', params['rr_still_birth_pre_eclampsia']),
-                    Predictor('ps_antepartum_haemorrhage').when('!= "none"', params['rr_still_birth_aph']),
-                    Predictor('ps_chorioamnionitis').when(True, params['rr_still_birth_chorio']),
-                    Predictor('nc_hypertension').when(True, params['rr_still_birth_chronic_htn']),
-                    Predictor('ps_gest_diab').when('uncontrolled', params['rr_still_birth_gest_diab']),
-                    Predictor().when('(ps_gest_diab == "controlled ") & (ac_gest_diab_on_treatment != "none")',
-                                     params['rr_still_birth_gest_diab'] * params['treatment_effect_gdm_case_'
-                                                                                 'management']),
-                    Predictor('ma_is_infected').when(True, params['rr_still_birth_maternal_malaria']),
-                    Predictor('nc_diabetes').when(True, params['rr_still_birth_diab_mellitus']),
-                    Predictor('ps_syphilis').when(True, params['rr_still_birth_maternal_syphilis'])),
-
-                # This equation calculates a the probability a woman will attend at least 4 ANC contacts during her
-                # pregnancy - derived from Wingstons analysis of DHS data
-                'early_initiation_anc4': LinearModel(
-                    LinearModelType.LOGISTIC,
-                    intercept_dict['early_initiation_anc4'],
-                    Predictor('age_years').when('.between(19,25)', params['aor_early_anc4_20_24'])
-                                          .when('.between(24,30)', params['aor_early_anc4_25_29'])
-                                          .when('.between(29,35)', params['aor_early_anc4_30_34'])
-                                          .when('.between(34,40)', params['aor_early_anc4_35_39'])
-                                          .when('.between(39,45)', params['aor_early_anc4_40_44'])
-                                          .when('.between(44,50)', params['aor_early_anc4_45_49']),
-                    Predictor('year', external=True).when('.between(2009,2015)', params['aor_early_anc4_2010'])
-                                                    .when('>2014', params['aor_early_anc4_2015']),
-                    Predictor('la_parity').when('.between(1,4)', params['aor_early_anc4_parity_2_3'])
-                                          .when('.between(3,6)', params['aor_early_anc4_parity_4_5'])
-                                          .when('>5', params['aor_early_anc4_parity_6+']),
-                    Predictor('li_ed_lev').when('2', params['aor_early_anc4_primary_edu'])
-                                          .when('3', params['aor_early_anc4_secondary_edu']),
-                    Predictor('li_wealth').when('1', params['aor_early_anc4_richest_wealth'])
-                                          .when('2', params['aor_early_anc4_richer_wealth'])
-                                          .when('3', params['aor_early_anc4_middle_wealth']),
-                    Predictor('li_mar_stat').when('2', params['aor_early_anc4_married'])
-                                            .when('3', params['aor_early_anc4_previously_married']))}
-
-            return linear_models_standard_intercepts
-
-        # As some models use predictors as a proxy intercept they are defined separately
-        def make_spontaneous_abortion_linear_model(intercept_dict):
-            spontaneous_abortion_linear_model = {
-             # This equation calculates a womans monthly risk of spontaneous abortion (miscarriage) and is applied
-             # monthly until 28 weeks gestation
-             'spontaneous_abortion': LinearModel(
-                    LinearModelType.MULTIPLICATIVE,
-                    1,
-                    Predictor('ps_gestational_age_in_weeks').when(4, intercept_dict['ga_4'])
-                                                            .when(8, intercept_dict['ga_8'])
-                                                            .when(13, intercept_dict['ga_13'])
-                                                            .when(17, intercept_dict['ga_17'])
-                                                            .when(22, intercept_dict['ga_22']),
-                    Predictor('ps_prev_spont_abortion').when(True, params['rr_spont_abortion_prev_sa']),
-                    Predictor('age_years').when('>34', params['rr_spont_abortion_age_35'])
-                                          .when('.between(30,35)', params['rr_spont_abortion_age_31_34']))}
-
-            return spontaneous_abortion_linear_model
-
-        def make_ptl_linear_model(intercept_dict):
-            ptl_model = {
-                'early_onset_labour': LinearModel(
-                    LinearModelType.MULTIPLICATIVE,
-                    1,
-                    Predictor('ps_gestational_age_in_weeks').when(22, intercept_dict['ga_22'])
-                                                            .when(27, intercept_dict['ga_27'])
-                                                            .when(31, intercept_dict['ga_31'])
-                                                            .when(35, intercept_dict['ga_35']),
-                    Predictor('ps_premature_rupture_of_membranes').when(True, params['rr_preterm_labour_post_prom']),
-                    Predictor().when('ps_anaemia_in_pregnancy != "none"', params['rr_preterm_labour_anaemia']),
-                    Predictor('ma_is_infected').when(True, params['rr_preterm_labour_malaria']),
-                    Predictor('ps_multiple_pregnancy').when(True, params['rr_preterm_labour_multiple_pregnancy']))
-            }
-            return ptl_model
-
-        # Call the above functions to generate the unscaled models
-        linear_models_standard_intercepts = make_linear_models_standard_intercepts(unscaled_intercepts)
-        sa_lm = make_spontaneous_abortion_linear_model(sa_unscaled_intercepts)
-        ptl_lm = make_ptl_linear_model(ptl_unscaled_intercepts)
-
-        # Create a function that returns a scaled intercept from the target intercept according to the distribution of
-        # predictor variables within the dataframe
-        def get_scaled_intercept(model, target_intercept):
-            df = self.sim.population.props
-            unscaled_lm = model
-            target_mean = target_intercept
-            actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
-                                                     (df.age_years < 50)], year=self.sim.date.year).mean()
-            scaled_intercept = 1.0 * (target_mean / actual_mean) \
-                if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
-
+            scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and ~np.isnan(mean)) else 1.0
             return scaled_intercept
 
-        # Then we create the models with the newly scaled intercepts
-        scaled_intercepts_sa_dict = dict()
-        for k in target_intercepts_sa:
-            scaled_intercepts_sa_dict.update({k: get_scaled_intercept(sa_lm['spontaneous_abortion'],
-                                                                      target_intercepts_sa[k])})
-        scaled_sa_model = make_spontaneous_abortion_linear_model(scaled_intercepts_sa_dict)
+        # The target value is stored within the parameter
+        target = params[parameter_key]
 
-        scaled_intercepts_ptl_dict = dict()
-        for k in target_intercepts_ptl:
-            scaled_intercepts_ptl_dict.update({k: get_scaled_intercept(ptl_lm['early_onset_labour'],
-                                                                       target_intercepts_ptl[k])})
-        scaled_ptl_model = make_ptl_linear_model(scaled_intercepts_ptl_dict)
+        if (parameter_key != 'prob_spontaneous_abortion_per_month') and (parameter_key != 'baseline_prob_early_'
+                                                                                          'labour_onset'):
 
-        scaled_intercepts_other_dict = dict()
-        for model_name, model in zip(linear_models_standard_intercepts.keys(),
-                                     linear_models_standard_intercepts.values()):
-            scaled_intercepts_other_dict.update({model_name: get_scaled_intercept(model,
-                                                                                  target_intercepts_other[model_name])})
+            # Override the intercept parameter with a value of one
+            params[parameter_key] = 1
 
-        scaled_linear_models = make_linear_models_standard_intercepts(scaled_intercepts_other_dict)
+            # Function varies depending on the input/output of the model (i.e. if logistic)
+            if parameter_key == 'odds_early_init_anc4':
+                params[parameter_key] = return_scaled_intercept(target, logistic_model=True)
+            else:
+                params[parameter_key] = return_scaled_intercept(target, logistic_model=False)
 
+        else:
+            # todo: only 80% sure this is correct
+            if parameter_key == 'prob_spontaneous_abortion_per_month':
+                params[parameter_key] = [1, 1, 1, 1, 1]
+            elif parameter_key == 'baseline_prob_early_labour_onset':
+                params[parameter_key] = [1, 1, 1, 1]
 
-        # Define any models that dont need to be scaled at baseline
-        models_not_needing_scaling = {
+            scaled_intercepts = list()
+            for item in target:
+                intercept = return_scaled_intercept(item, logistic_model=False)
+                scaled_intercepts.append(intercept)
 
-            # This equation calculates a womans monthly risk of developing antepartum haemorrhage during her pregnancy.
-            # APH can only occur in the presence of one of two preceding causes (placenta praevia and placental
-            # abruption) hence the use of an additive model
-            'antepartum_haem': LinearModel(
-                LinearModelType.ADDITIVE,
-                0,
-                Predictor('ps_placenta_praevia').when(True, params['prob_aph_placenta_praevia']),
-                Predictor('ps_placental_abruption').when(True, params['prob_aph_placental_abruption'])),
-
-
-            # This equation calculates a risk of dying after ectopic pregnancy and is mitigated by treatment
-            'ectopic_pregnancy_death': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['prob_ectopic_pregnancy_death'],
-                Predictor('ac_ectopic_pregnancy_treated').when(True, params['treatment_effect_ectopic_pregnancy_'
-                                                                            'treatment'])),
-
-            # This equation calculates a risk of dying after complications following an induced abortion. It is reduced
-            # by treatment
-            'induced_abortion_death': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['prob_induced_abortion_death'],
-                Predictor('ac_post_abortion_care_interventions').when('>0',
-                                                                      params['treatment_effect_post_abortion_care'])),
-
-            # This equation calculates a risk of dying after complications following a spontaneous abortion. It is
-            # reduced by treatment
-            'spontaneous_abortion_death': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['prob_spontaneous_abortion_death'],
-                Predictor('ac_post_abortion_care_interventions').when('>0',
-                                                                      params['treatment_effect_post_abortion_care'])),
-        }
-
-
-        # And store all models within the same dictionary file
-        for model_dict in [scaled_sa_model, scaled_ptl_model, scaled_linear_models, models_not_needing_scaling]:
-            self.ps_linear_models.update(model_dict)
-        """
+            params[parameter_key] = scaled_intercepts
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -2560,6 +2313,23 @@ class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
         switch_parameters(self.sim.modules['PostnatalSupervisor'].parameters,
                           self.sim.modules['PostnatalSupervisor'].current_parameters)
 
+        # scale the linear models again according to the distribution of the population
+        mod = self.module.ps_linear_models
+
+        models_to_be_scaled = {'pp': [mod['placenta_praevia'], 'prob_placenta_praevia'],
+                               'an': [mod['maternal_anaemia'], 'baseline_prob_anaemia_per_month'],
+                               'gd': [mod['gest_diab'], 'prob_gest_diab_per_month'],
+                               'gh': [mod['gest_htn'], 'prob_gest_htn_per_month'],
+                               'pe': [mod['pre_eclampsia'], 'prob_pre_eclampsia_per_month'],
+                               'pa': [mod['placental_abruption'], 'prob_placental_abruption_per_month'],
+                               'ansb': [mod['antenatal_stillbirth'], 'prob_still_birth_per_month'],
+                               'anc': [mod['early_initiation_anc4'], 'odds_early_init_anc4'],
+                               'sa': [mod['spontaneous_abortion'], 'prob_spontaneous_abortion_per_month'],
+                               'ptb': [mod['early_onset_labour'], 'baseline_prob_early_labour_onset']}
+
+        for k in models_to_be_scaled:
+            self.module.scale_linear_model_at_initialisation(models_to_be_scaled[k][0], models_to_be_scaled[k][1])
+
 
 class OverrideKeyParameterForAnalysis(Event, PopulationScopeEventMixin):
     """
@@ -2571,14 +2341,20 @@ class OverrideKeyParameterForAnalysis(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
         params = self.module.current_parameters
-
-        # todo: edit
+        df = self.sim.population.props
 
         # When this parameter is set as True, the following paramters are overridden when the event is called. Otherwise
         # no parameters are updated.
         if params['switch_anc_coverage']:
-            params['odds_early_init_anc4'] = params['odds_early_init_anc4'] * 10
+            target = params['target_anc_coverage_for_analysis']
+            params['odds_early_init_anc4'] = 1
+            mean = self.module.ps_linear_modek['early_initiation_anc4'].predict(
+                    df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
+                    year=self.sim.date.year).mean()
 
+            mean = mean / (1 - mean)
+            scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and ~np.isnan(mean)) else 1.0
+            params['odds_early_init_anc4'] = scaled_intercept
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):

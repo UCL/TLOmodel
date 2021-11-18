@@ -171,13 +171,7 @@ def predict_placental_abruption_ip(self, df, rng=None, **externals):
 
     if person['la_previous_cs_delivery']:
         result *= params['rr_placental_abruption_previous_cs']
-    if person['ps_htn_disorders'] == 'mild_pre_eclamp':
-        result *= params['rr_placental_abruption_hypertension']
-    if person['ps_htn_disorders'] == 'gest_htn':
-        result *= params['rr_placental_abruption_hypertension']
-    if person['ps_htn_disorders'] == 'severe_gest_htn':
-        result *= params['rr_placental_abruption_hypertension']
-    if person['ps_htn_disorders'] == 'severe_pre_eclamp':
+    if person['ps_htn_disorders'] != 'none':
         result *= params['rr_placental_abruption_hypertension']
 
     # caller expects a series to be returned
@@ -452,8 +446,6 @@ def predict_postnatal_check(self, df, rng=None, **externals):
         result *= params['or_pnc_caesarean_delivery']
     if externals['delivery_setting'] != 'home_birth':
         result *= params['or_pnc_facility_delivery']
-
-
 
     result = result / (1 + result)
     return pd.Series(data=[result], index=df.index)
