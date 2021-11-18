@@ -478,6 +478,8 @@ def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir):
 
     states_that_may_require_HSI_to_switch_to = sim.modules['Contraception'].states_that_may_require_HSI_to_switch_to
     states_that_may_require_HSI_to_maintain_on = sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on
+    states_that_do_require_HSI_to_switch_to = \
+        sim.modules['Contraception'].all_contraception_states - states_that_may_require_HSI_to_switch_to
 
     # Check that, after six months of simulation time, no one is on a contraceptive that requires a consumable for
     # maintenance.
@@ -492,11 +494,10 @@ def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir):
     changes = log["contraception_change"]
     assert not changes["switch_to"].isin(states_that_may_require_HSI_to_switch_to).any()
 
-    # ... but are switching_from them to "not_using"
+    # ... but are only switching_from them to something that does not require an HSI to switch to (mostly "not_using", but others if the switch was "natural")
     assert changes["switch_from"].isin(states_that_may_require_HSI_to_maintain_on).any()
-    assert (
-        changes.loc[changes["switch_from"].isin(states_that_may_require_HSI_to_maintain_on), "switch_to"] == "not_using"
-    ).all()
+    assert changes.loc[changes["switch_from"].isin(states_that_may_require_HSI_to_maintain_on), "switch_to"].isin(
+        states_that_do_require_HSI_to_switch_to).all()
 
 
 def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir):
