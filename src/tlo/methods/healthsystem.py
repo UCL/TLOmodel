@@ -121,9 +121,6 @@ class HealthSystem(Module):
         'Consumables_OneHealth': Parameter(Types.DATA_FRAME,
                                            'List of consumables used in each intervention and their costs.'),
 
-        # todo - will be removed/updated in next PR
-        # 'Consumables_OneHealth_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and its cost'),
-
         # Infrastructure and Equipment
         'BedCapacity': Parameter(Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
 
@@ -452,7 +449,6 @@ class HealthSystem(Module):
         * Creates ```parameters['Consumables']```
         * Creates ```df_mapping_pkg_code_to_intv_code```
         * Creates ```prob_item_code_available```
-        * Creates ```parameters['Consumables_Cost_List]```
         """
         # Load the 'raw' ResourceFile_Consumabes that is loaded in to self.parameters['Consumables']
         raw = self.parameters['Consumables_OneHealth']
@@ -479,13 +475,6 @@ class HealthSystem(Module):
 
         # set the index as the Item_Code and save
         self.prob_item_codes_available = prob_item_codes_available.set_index('Item_Code', drop=True)
-
-        # -------------------------------------------------------------------------------------------------
-        # Consumables_Cost_List: will be removed/updated in next PR
-        # # This is a pd.Series, with index item_code, giving the cost of each item.
-        # self.parameters['Consumables_Cost_List'] = pd.Series(
-        #     raw[['Item_Code', 'Unit_Cost']].drop_duplicates().set_index('Item_Code')['Unit_Cost']
-        # )
 
     def format_daily_capabilities(self) -> pd.Series:
         """
