@@ -265,7 +265,7 @@ births_results = extract_results(
     do_scaling=True
 )
 
-# zero-out the valyes for 2030 (because the current mdoel run includes 2030 but this skews 5 years averages)
+# zero-out the values for 2030 (because the current mdoel run includes 2030 but this skews 5 years averages)
 births_results.loc[2030] = 0
 
 # Aggregate the model outputs into five year periods:
