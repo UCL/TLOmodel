@@ -55,7 +55,6 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
 
         assert module is self.sim.modules['HealthSeekingBehaviour']
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
-        the_appt_footprint = self.make_appt_footprint({'ConWithDCSA': 1})
         if 'injury' in symptoms:
             if 'RTI' in self.sim.modules:
                 # change the appointment footprint for general injuries if diagnostic equipment is needed
@@ -72,8 +71,8 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
                     self.sim.modules['RTI'].rti_ask_for_shock_treatment(person_id)
 
         self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel0'
-        self.ACCEPTED_FACILITY_LEVEL = 0
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = '0'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -107,7 +106,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
     def apply(self, person_id, squeeze_factor):
@@ -380,7 +379,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             ):
                 event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                     module=sim.modules['Labour'], person_id=person_id,
-                    facility_level_of_this_hsi=int(rng.choice([1, 2])))
+                    facility_level_of_this_hsi=rng.choice(['1a', '1b']))
                 schedule_hsi(event, priority=1, topen=sim.date)
 
             # -----  COMPLICATION AFTER BIRTH  -----
@@ -391,7 +390,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             ):
                 event = HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(
                     module=sim.modules['Labour'], person_id=person_id,
-                    facility_level_of_this_hsi=int(rng.choice([1, 2])))
+                    facility_level_of_this_hsi=rng.choice(['1a', '1b']))
                 schedule_hsi(event, priority=1, topen=sim.date)
 
     if "Depression" in sim.modules:

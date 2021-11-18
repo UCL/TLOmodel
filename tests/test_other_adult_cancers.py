@@ -244,7 +244,7 @@ def test_check_progression_through_stages_is_happening():
     sim = incr_rates_of_progression(sim)
 
     # make initial population
-    sim.make_initial_population(n=3000)
+    sim.make_initial_population(n=5000)
 
     # force that all persons aged over 15 are in the site_confined stage to begin with:
     sim.population.props.loc[

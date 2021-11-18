@@ -1674,7 +1674,7 @@ class HSI_Alri_GenericTreatment(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = 'Alri_GenericTreatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
