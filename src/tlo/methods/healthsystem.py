@@ -8,9 +8,10 @@
 
 import heapq as hp
 from collections import Counter, defaultdict
+from collections.abc import Iterable, Sequence
 from itertools import repeat
 from pathlib import Path
-from typing import Iterable, List, NamedTuple, Optional, Sequence, Tuple, Union
+from typing import List, NamedTuple, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -110,11 +111,16 @@ class HealthSystem(Module):
             Types.DATA_FRAME, 'The capabilities (minutes of time available of each type of officer in each facility) '
                               'based on the _potential_ number and distribution of staff estimated (i.e. those '
                               'positions that can be funded).'),
+        'Daily_Capabilities_funded_plus': Parameter(
+            Types.DATA_FRAME, 'The capabilities (minutes of time available of each type of officer in each facility) '
+                              'based on the _potential_ number and distribution of staff estimated, with adjustments '
+                              'to permit each appointment type that should be run at facility level to do so in every '
+                              'district.'),
 
         # Availability of Consumables
         'Consumables_OneHealth': Parameter(Types.DATA_FRAME,
                                            'List of consumables used in each intervention and their costs.'),
-        # todo - temporry renaming to check that it's not being accesses externally
+        # todo - temporry renaming to check that it's not being accesses externally -will be removed
         'Consumables_OneHealth_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
 
         # Infrastructure and Equipment
@@ -179,8 +185,8 @@ class HealthSystem(Module):
         assert cons_availability in ['none', 'default', 'all']
         self.cons_availability = cons_availability
 
-        assert type(disable) is bool
-        assert type(disable_and_reject_all) is bool
+        assert isinstance(disable, bool)
+        assert isinstance(disable_and_reject_all, bool)
         assert not (disable and disable_and_reject_all), (
             'Cannot have both disable and disable_and_reject_all selected'
         )
@@ -447,13 +453,8 @@ class HealthSystem(Module):
         * Creates ```prob_item_code_available```
         * Creates ```parameters['Consumables_Cost_List]```
         """
-        # Load the 'raw' ResourceFile_Consumables that is loaded in to self.parameters['Consumables']
-        raw = self.parameters['Consumables_OneHealth']
-
-        # todo - temp fix to add in columns for facility 1a and 1b
-        raw = raw.rename(columns={'Available_Facility_Level_1': 'Available_Facility_Level_1a'})
-        raw['Available_Facility_Level_1b'] = raw['Available_Facility_Level_1a']
-
+        # Load the 'raw' ResourceFile_Consumabes that is loaded in to self.parameters['Consumables']
+        raw = self.parameters['Consumables']
         # -------------------------------------------------------------------------------------------------
         # Create a pd.DataFrame that maps pkg code (as index) to item code:
         # This is used to quickly look-up which items are required in each package
@@ -485,6 +486,26 @@ class HealthSystem(Module):
         # self.parameters['Consumables_Cost_List'] = pd.Series(
         #     raw[['Item_Code', 'Unit_Cost']].drop_duplicates().set_index('Item_Code')['Unit_Cost']
         # )
+
+    def format_daily_capabilities(self) -> pd.Series:
+        """
+        This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
+        every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity
+        is available.
+
+        It also give the dataframe an index that is useful for merging on (based on Facility_ID and Officer Type)
+
+        (This is so that its easier to track where demands are being placed where there is no capacity)
+        """
+
+        # Get the capabilities data imported (according to the specified underlying assumptions).
+        capabilities = self.parameters[f'Daily_Capabilities_{self.use_funded_or_actual_staffing}']
+        capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
+
+        # Create dataframe containing background information about facility and officer types
+        facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
+        officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values)
+        # todo - <-- avoid use of the file or define differnetly?
 
     def format_daily_capabilities(self) -> pd.Series:
         """
@@ -560,7 +581,7 @@ class HealthSystem(Module):
         else:
             service_availability = self.arg_service_availabily
 
-        assert type(service_availability) is list
+        assert isinstance(service_availability, list)
         self.service_availability = service_availability
 
         # Log the service_availability
@@ -606,7 +627,8 @@ class HealthSystem(Module):
             #   ... put this event straight into the normal simulation scheduler.
             self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=True), topen)
             return
-        elif self.disable_and_reject_all:
+
+        if self.disable_and_reject_all:
             # If healthsystem is disabled the HSI will never run: schedule for the "never_ran" method for `tclose`.
             self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tclose)
             return
@@ -1026,23 +1048,6 @@ class HealthSystem(Module):
         # Return the result of the check on availability
         return available
 
-    def request_consumables(self, hsi_event, item_codes, to_log=True):
-        """
-        This is where HSI events can check access to and log use of consumables.
-        The healthsystem module will check if that consumable is available
-        at this time and at that facility and return a True/False response. If a package is requested, it is considered
-        to be available only if all of the constituent items are available.
-        All requests are logged and, by default, it is assumed that if a requested consumable is available then it
-        is used. Alternatively, HSI Events can just query if a
-        consumable is available (without using it) by setting to_log=False.
-
-        :param item_codes: The consumable that is requested, in the format specified in 'get_blank_cons_footprint()'
-        :param to_log: Indicator to show whether this should not be logged (defualt: True)
-        :return: In the same format of the provided footprint, giving a bool for each package or item returned
-        """
-
-        raise NotImplementedError
-
     def determine_availability_of_consumables_today(self):
         """Helper function to determine availability of all items and packages"""
 
@@ -1265,7 +1270,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 event.never_ran()
 
             elif not (
-                type(event.target) is tlo.population.Population
+                isinstance(event.target, tlo.population.Population)
                 or event.target in alive_persons
             ):
                 # if individual level event and the person who is the target is no longer alive, do nothing more
@@ -1286,7 +1291,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # Add it to the list of events due today (individual or population level)
                 # NB. These list is ordered by priority and then due date
 
-                is_pop_level_hsi_event = type(event.target) is tlo.population.Population
+                is_pop_level_hsi_event = isinstance(event.target, tlo.population.Population)
                 if is_pop_level_hsi_event:
                     list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
                 else:
@@ -1339,7 +1344,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 )
 
             # 6) For each event, determine if run or not, and run if so.
-            for ev_num in range(len(list_of_individual_hsi_event_tuples_due_today)):
+            for ev_num, _ in enumerate(list_of_individual_hsi_event_tuples_due_today):
                 event = list_of_individual_hsi_event_tuples_due_today[ev_num].hsi_event
                 squeeze_factor = squeeze_factor_per_hsi_event[ev_num]
 
@@ -1469,8 +1474,8 @@ class HSI_Event:
         if self._received_info_about_bed_days is None:
             # default to the footprint if no information about bed-days is received
             return self.BEDDAYS_FOOTPRINT
-        else:
-            return self._received_info_about_bed_days
+
+        return self._received_info_about_bed_days
 
     def apply(self, squeeze_factor=0.0, *args, **kwargs):
         """Apply this event to the population.
@@ -1498,11 +1503,10 @@ class HSI_Event:
         """
         logger.debug(key="message", data=f"{self.__class__.__name__}: was not admitted to the HSI queue because the "
                                          f"service is not available.")
-        pass
 
     def post_apply_hook(self):
         """Impose the bed-days footprint (if target of the HSI is a person_id)"""
-        if type(self.target) is int:
+        if isinstance(self.target, int):
             if 'HealthSystem' in self.module.sim.modules:
                 self.module.sim.modules['HealthSystem'].bed_days.impose_beddays_footprint(
                     person_id=self.target,
@@ -1571,9 +1575,9 @@ class HSI_Event:
             footprint = self.sim.modules['HealthSystem'].bed_days.get_blank_beddays_footprint()
 
             # do checks
-            assert type(dict_of_beddays) is dict
-            assert all([(k in footprint.keys()) for k in dict_of_beddays.keys()])
-            assert all([type(v) in (float, int) for v in dict_of_beddays.values()])
+            assert isinstance(dict_of_beddays, dict)
+            assert all((k in footprint.keys()) for k in dict_of_beddays.keys())
+            assert all(isinstance(v, (float, int)) for v in dict_of_beddays.values())
 
             # make footprint (defaulting to zero where a type of bed-days is not specified)
             for k, v in dict_of_beddays.items():
@@ -1581,13 +1585,12 @@ class HSI_Event:
 
             return footprint
 
-        else:
-            return {}
+        return {}
 
     def is_all_beddays_allocated(self):
         """Check if the entire footprint requested is allocated"""
         return all(
-            [self.bed_days_allocated_to_this_event[k] == self.BEDDAYS_FOOTPRINT[k] for k in self.BEDDAYS_FOOTPRINT]
+            self.bed_days_allocated_to_this_event[k] == self.BEDDAYS_FOOTPRINT[k] for k in self.BEDDAYS_FOOTPRINT
         )
 
     def make_appt_footprint(self, dict_of_appts):
@@ -1599,12 +1602,12 @@ class HSI_Event:
         health_system = self.sim.modules['HealthSystem']
         if health_system.appt_footprint_is_valid(dict_of_appts):
             return Counter(dict_of_appts)
-        else:
-            raise ValueError(
-                "Argument to make_appt_footprint should be a dictionary keyed by "
-                "appointment type code strings in Appt_Types_Table with non-negative "
-                "values"
-            )
+
+        raise ValueError(
+            "Argument to make_appt_footprint should be a dictionary keyed by "
+            "appointment type code strings in Appt_Types_Table with non-negative "
+            "values"
+        )
 
 
 class HSIEventWrapper(Event):
