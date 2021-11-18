@@ -6,6 +6,7 @@ The joint Cardio-Metabolic Disorders model determines onset, outcome and treatme
 * Chronic Ischemic Heart Disease
 * Stroke
 * Heart Attack
+
 And:
 * Chronic Lower Back Pain
 """
@@ -72,9 +73,9 @@ class CardioMetabolicDisorders(Module):
         'diabetes': Cause(
             gbd_causes='Diabetes mellitus', label='Diabetes'),
         'chronic_ischemic_hd': Cause(
-            gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
+            gbd_causes={'Ischemic heart disease', 'Hypertensive heart disease'}, label='Heart Disease'),
         'ever_heart_attack': Cause(
-            gbd_causes=['Ischemic heart disease', 'Hypertensive heart disease'], label='Heart Disease'),
+            gbd_causes={'Ischemic heart disease', 'Hypertensive heart disease'}, label='Heart Disease'),
         'ever_stroke': Cause(
             gbd_causes='Stroke', label='Stroke'),
         'chronic_kidney_disease': Cause(
@@ -721,7 +722,7 @@ class CardioMetabolicDisorders(Module):
             df.at[child_id, f'nc_{event}_ever_diagnosed'] = False
             df.at[child_id, f'nc_{event}_on_medication'] = False
             df.at[child_id, f'nc_{event}_date_diagnosis'] = pd.NaT
-            df.loc[child_id, f'nc_{event}_scheduled_date_death'] = pd.NaT
+            df.at[child_id, f'nc_{event}_scheduled_date_death'] = pd.NaT
             df.at[child_id, f'nc_{event}_medication_prevents_death'] = False
         df.at[child_id, 'nc_risk_score'] = 0
 
@@ -1371,7 +1372,7 @@ class HSI_CardioMetabolicDisorders_CommunityTestingForHypertension(HSI_Event, In
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "CardioMetabolicDisorders_CommunityTestingForHypertension"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1478,7 +1479,7 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation_Following_Symptoms"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
         self.condition = condition
 
@@ -1560,7 +1561,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'CardioMetabolicDisorders_StartWeightLossAndMedication'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
         self.condition = condition
 
@@ -1628,7 +1629,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Refill_Medication'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
         self.condition = condition
 
@@ -1699,7 +1700,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 2  # Can occur at this facility level
+        self.ACCEPTED_FACILITY_LEVEL = '2'  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
         self.event = ev
 

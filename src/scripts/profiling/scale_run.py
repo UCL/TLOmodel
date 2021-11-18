@@ -21,6 +21,7 @@ import shared
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    alri,
     bladder_cancer,
     cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
@@ -43,7 +44,9 @@ from tlo.methods import (
     other_adult_cancers,
     postnatal_supervisor,
     pregnancy_supervisor,
+    stunting,
     symptommanager,
+    wasting,
 )
 
 # Parse arguments defining run options
@@ -245,6 +248,9 @@ sim.register(
     other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
     bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
     measles.Measles(resourcefilepath=resourcefilepath),
+    alri.Alri(resourcefilepath=resourcefilepath),
+    stunting.Stunting(resourcefilepath=resourcefilepath),
+    wasting.Wasting(resourcefilepath=resourcefilepath),
 )
 
 # Run the simulation

@@ -16,7 +16,6 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    hiv,
     simplified_births,
     symptommanager,
 )
@@ -29,7 +28,7 @@ from tlo.methods.diarrhoea import (
     increase_risk_of_death,
     make_treatment_perfect,
 )
-from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel1
+from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel0
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -113,7 +112,6 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 hiv.DummyHivModule(),
                  )
 
     # **Zero-out incidence**:
@@ -369,8 +367,8 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration():
                  )
 
     # Make DxTest for danger signs perfect:
-    sim.modules['Diarrhoea'].parameters['sensitivity_danger_signs_visual_inspection'] = 1.0
-    sim.modules['Diarrhoea'].parameters['specificity_danger_signs_visual_inspection'] = 1.0
+    sim.modules['Diarrhoea'].parameters['sensitivity_severe_dehydration_visual_inspection'] = 1.0
+    sim.modules['Diarrhoea'].parameters['specificity_severe_dehydration_visual_inspection'] = 1.0
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date)
@@ -393,7 +391,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration():
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel1(
+    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
 
     # 1) If DxTest of danger signs perfect and 100% chance of referral --> Inpatient HSI should be created
@@ -468,7 +466,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel1(
+    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
 
     # Only an out-patient appointment should be created as the DxTest for danger signs is not functional.
@@ -532,7 +530,7 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration():
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel1(
+    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
 
     # 1) Outpatient HSI should be created
@@ -600,7 +598,6 @@ def test_does_treatment_prevent_death():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 hiv.DummyHivModule(),
                  )
 
     # Increase incidence and risk of death in Diarrhoea episodes
@@ -765,8 +762,8 @@ def test_do_treatment_for_those_that_will_die_if_consumables_not_available():
     df = sim.population.props
 
     # Make availability of consumables zero
-    sim.modules['HealthSystem'].cons_available_today['Item_Code'] *= False
-    sim.modules['HealthSystem'].cons_available_today['Intervention_Package_Code'] *= False
+    sim.modules['HealthSystem'].cons_available_today['Item_Code'][:] = False
+    sim.modules['HealthSystem'].cons_available_today['Intervention_Package_Code'][:] = False
 
     # Set that person_id=0 is a child with bloody diarrhoea and severe dehydration:
     person_id = 0

@@ -13,6 +13,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import (
+    bladder_cancer,
     cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
@@ -50,22 +51,21 @@ def runsim(seed=0):
 
     # run the simulation
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 #care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 #contraception.Contraception(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False,
                                            ignore_cons_constraints=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 #labour.Labour(resourcefilepath=resourcefilepath),
-                 #newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 #postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 #pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath,
+                                                                     do_condition_combos=True),
                  depression.Depression(resourcefilepath=resourcefilepath),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath, do_log_df=False,
-                                                                     do_condition_combos=True)
                  )
 
     sim.make_initial_population(n=popsize)
