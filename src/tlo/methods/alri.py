@@ -948,6 +948,12 @@ class Models:
         # set-up the linear models for the incidence risk for each pathogen
         self.make_model_for_acquisition_risk()
 
+        # dict that will hold the linear model for death
+        self.death_equation = dict()
+
+        # set-up the linear models for the death risk
+        self.make_model_for_death_risk()
+
     def make_model_for_acquisition_risk(self):
         """"Model for the acquisition of a primary pathogen that can cause ALri"""
         p = self.p
@@ -977,11 +983,13 @@ class Models:
                     .when('.between(2,4)', p[base_inc_rate][2])
                     .when('> 4', 0.0),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
+                    Predictor().when('(va_measles_all_doses == False) & (age_years > 1)',
+                                     p['rr_ALRI_incomplete_measles_immunisation']),
                     Predictor('hv_inf').when(True, p['rr_ALRI_HIV/AIDS']),
                     Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_ALRI_underweight']),
                     Predictor('nb_breastfeeding_status').when('exclusive', 1.0)
                                                         .otherwise(p['rr_ALRI_non_exclusive_breastfeeding'])
-                )
+                )  # todo: add crowding or wealth?
 
             zero_year_olds = df.is_alive & (df.age_years == 0)
             unscaled_lm = make_naive_linear_model(patho)
@@ -1137,36 +1145,6 @@ class Models:
 
         return complications
 
-        # # Determine if repiratory failure should also be onset (this depends on whether or not hypoxia is onset):
-        # if 'hypoxia' in complications:
-        #     if p['prob_respiratory_failure_when_SpO2<93%'] > self.rng.rand():
-        #         complications.add('respiratory_failure')
-
-    # def delayed_complications(self, person_id):
-    #     """Determine the set of delayed complications"""
-    #     p = self.p
-    #     person = self.module.sim.population.props.loc[person_id]
-    #
-    #     complications = set()
-    #
-    #     # 'respiratory_failure':
-    #     if person['ri_complication_pneumothorax'] and ~person['ri_complication_respiratory_failure']:
-    #         if p['prob_pneumothorax_to_respiratory_failure'] > self.rng.rand():
-    #             complications.add('respiratory_failure')
-    #
-    #     # 'sepsis'
-    #     if ~person['ri_complication_sepsis']:
-    #         prob_sepsis = 0.0
-    #         if person['ri_complication_lung_abscess']:
-    #             prob_sepsis += p['prob_lung_abscess_to_sepsis']
-    #         if person['ri_complication_empyema']:
-    #             prob_sepsis += p['prob_empyema_to_sepsis']
-    #
-    #         if prob_sepsis > self.rng.rand():
-    #             complications.add('sepsis')
-    #
-    #     return complications
-
     def symptoms_for_disease(self, disease_type):
         """Determine set of symptom (before complications) for a given instance of disease"""
         p = self.p
@@ -1212,6 +1190,56 @@ class Models:
         # Baseline risk:
         risk = p[f"base_death_rate_ALRI_by_{disease_type}"]
 
+    def make_model_for_death_risk(self):
+        """"Model for the death"""
+        p = self.p
+        df = self.module.sim.population.props
+
+        def make_scaled_linear_model_for_death():
+            """Makes the unscaled linear model with default intercept of 1. Calculates the mean incidents rate for
+            0-year-olds and then creates a new linear model with adjusted intercept so incidence in 0-year-olds
+            matches the specified value in the model when averaged across the population. This will return an unscaled
+            linear model if there are no 0-year-olds in the population.
+            """
+
+            def make_naive_linear_model_death(intercept):
+                """Make the linear model based exactly on the parameters specified"""
+
+                return LinearModel(
+                    LinearModelType.LOGISTIC,
+                    intercept,
+                    Predictor('age_exact_years').when(1/6, p['or_death_ALRI_age<2mo']),
+                    Predictor('ri_primary_pathogen').when('P.jirovecii', p['or_death_ALRI_P.jirovecii']),
+                    Predictor('un_clinical_acute_malnutrition').when('SAM', p['or_death_ALRI_SAM']),
+                    Predictor('un_clinical_acute_malnutrition').when('MAM', p['or_death_ALRI_MAM']),
+                    Predictor('sex').when('M', p['or_death_ALRI_male']),
+                    Predictor('ri_complication_hypoxaemia').when(True, p['or_death_ALRI_SpO2<=92%']),
+                    Predictor('hv_inf').when(True, p['rr_ALRI_HIV/AIDS']),
+                    Predictor('referral_type').when('hc_referral', p['or_death_ALRI_hc_referral'])
+                )
+
+            zero_year_olds = df.is_alive & (df.age_years == 0)
+            unscaled_lm = make_naive_linear_model_death(
+                intercept=(p['base_death_rate_ALRI_by_pneumonia'] / (1 - p['base_death_rate_ALRI_by_pneumonia'])))
+
+            # If not 0 year-olds then cannot do scaling, return unscaled linear model
+            if sum(zero_year_olds) == 0:
+                return unscaled_lm
+
+            # If some 0 year-olds then can do scaling:
+            target_mean = p['base_death_rate_ALRI_by_pneumonia']
+            target_mean_odds = target_mean / (1 - target_mean)
+            actual_mean = unscaled_lm.predict(df.loc[zero_year_olds]).mean()
+            actual_mean_odds = actual_mean / (1 - actual_mean)
+            scaled_intercept = target_mean_odds * (target_mean_odds / actual_mean_odds)
+            scaled_lm = make_naive_linear_model_death(intercept=scaled_intercept)
+
+            # check by applying the model to mean incidence of 0-year-olds
+            assert (target_mean - scaled_lm.predict(df.loc[zero_year_olds]).mean()) < 1e-10
+            return scaled_lm
+
+        self.death_equation = make_scaled_linear_model_for_death()
+
         # # The effect of age:
         # if person['age_years'] == 1:
         #     risk *= p['rr_death_ALRI_age12to23mo']
@@ -1241,7 +1269,7 @@ class Models:
         # ):
         #     risk *= p['rr_death_ALRI_low_birth_weight']
 
-        return risk > self.rng.rand()
+        # return risk > self.rng.rand()
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1389,7 +1417,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         # ----------------------------------- Outcome  -----------------------------------
         # Determine outcome: death or recovery
-        if models.death(person_id=person_id):
+        if models.death_equation.predict(df.loc[[person_id]]).values[0]:
             self.sim.schedule_event(AlriDeathEvent(self.module, person_id), date_of_outcome)
             df.loc[person_id, ['ri_scheduled_death_date', 'ri_scheduled_recovery_date']] = [date_of_outcome, pd.NaT]
         else:
@@ -1421,48 +1449,6 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         complications = models.complications(person_id=person_id)
         df.loc[person_id, [f"ri_complication_{complication}" for complication in complications]] = True
         if df.loc[person_id, [f"ri_complication_{complication}" for complication in complications]].any():
-            m.impose_symptoms_for_complicated_alri(person_id=person_id)
-
-        # # Consider delayed-onset of complications and schedule events accordingly
-        date_of_onset_delayed_complications = random_date(self.sim.date, date_of_outcome, m.rng)
-        # delayed_complications = models.delayed_complications(person_id=person_id)
-        # for delayed_complication in delayed_complications:
-        #     self.sim.schedule_event(
-        #         AlriDelayedOnsetComplication(person_id=person_id,
-        #                                      complication=delayed_complication,
-        #                                      module=m),
-        #         date_of_onset_delayed_complications
-        #     )
-
-
-class AlriDelayedOnsetComplication(Event, IndividualScopeEventMixin):
-    """This Event is for the delayed onset of complications from Alri. It is applicable only to a subset of
-    complications."""
-
-    def __init__(self, module, person_id, complication):
-        super().__init__(module, person_id=person_id)
-
-        assert complication in ['sepsis', 'respiratory_failure'], \
-            'Delayed onset is only possible for certain complications'
-        self.complication = complication
-
-    def apply(self, person_id):
-        """Apply the complication, if the person is still infected and not on treatment"""
-        df = self.sim.population.props  # shortcut to the dataframe
-        person = df.loc[person_id]
-        m = self.module
-
-        # Do nothing if person is not alive:
-        if not person.is_alive:
-            return
-
-        # If person is infected, not on treatment and does not already have the complication, add this complication:
-        if (
-            person.ri_current_infection_status and
-            ~person.ri_on_treatment and
-            ~person[f'ri_complication_{self.complication}']
-        ):
-            df.at[person_id, f'ri_complication_{self.complication}'] = True
             m.impose_symptoms_for_complicated_alri(person_id=person_id)
 
 
@@ -1757,9 +1743,12 @@ class AlriPropertiesOfOtherModules(Module):
         'nb_breastfeeding_status': Property(Types.CATEGORICAL, 'temporary property',
                                             categories=['none', 'non_exclusive', 'exclusive']),
         'va_pneumo_all_doses': Property(Types.BOOL, 'temporary property'),
+        'va_measles_all_doses': Property(Types.BOOL, 'temporary property'),
         'va_hib_all_doses': Property(Types.BOOL, 'temporary property'),
         'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'temporary property',
                                                    categories=['MAM', 'SAM', 'well']),
+        'referral_type': Property(Types.CATEGORICAL, 'temporary property',
+                                  categories=['self_referral', 'hc_referral']),
     }
 
     def __init__(self, name=None):
@@ -1775,7 +1764,9 @@ class AlriPropertiesOfOtherModules(Module):
         df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.loc[df.is_alive, 'va_pneumo_all_doses'] = False
         df.loc[df.is_alive, 'va_hib_all_doses'] = False
+        df.loc[df.is_alive, 'va_measles_all_doses'] = False
         df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
+        df.loc[df.is_alive, 'referral_type'] = 'self_referral'
 
     def initialise_simulation(self, sim):
         pass
@@ -1788,4 +1779,7 @@ class AlriPropertiesOfOtherModules(Module):
         df.at[child, 'va_pneumo_all_doses'] = False
         df.at[child, 'va_hib_all_doses'] = False
         df.at[child, 'va_hib_all_doses'] = False
+        df.at[child, 'va_measles_all_doses'] = False
         df.at[child, 'un_clinical_acute_malnutrition'] = 'well'
+        df.at[child, 'referral_type'] = 'self_referral'
+
