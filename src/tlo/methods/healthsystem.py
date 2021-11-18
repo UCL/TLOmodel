@@ -122,7 +122,7 @@ class HealthSystem(Module):
                                            'List of consumables used in each intervention and their costs.'),
 
         # todo - will be removed/updated in next PR
-        # 'Consumables_OneHealth_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
+        # 'Consumables_OneHealth_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and its cost'),
 
         # Infrastructure and Equipment
         'BedCapacity': Parameter(Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
@@ -455,7 +455,7 @@ class HealthSystem(Module):
         * Creates ```parameters['Consumables_Cost_List]```
         """
         # Load the 'raw' ResourceFile_Consumabes that is loaded in to self.parameters['Consumables']
-        raw = self.parameters['Consumables']
+        raw = self.parameters['Consumables_OneHealth']
         # -------------------------------------------------------------------------------------------------
         # Create a pd.DataFrame that maps pkg code (as index) to item code:
         # This is used to quickly look-up which items are required in each package
