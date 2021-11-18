@@ -391,7 +391,6 @@ class CardioMetabolicDisorders(Module):
             sample_eligible_treatment_success(on_med, p_treatment_works, condition)
 
             # ----- Impose the symptom on random sample of those with each condition to have:
-            # TODO: @britta make linear model data-specific and add in needed complexity
             for symptom in self.prob_symptoms[condition].keys():
                 lm_init_symptoms = LinearModel(
                     LinearModelType.MULTIPLICATIVE,
@@ -814,7 +813,6 @@ class CardioMetabolicDisorders(Module):
                 if is_next_test_due(
                     current_date=self.sim.date, date_of_last_test=df.at[
                         person_id, f'nc_{condition}_date_last_test']):
-                    # TODO: @britta make these not arbitrary
                     if (self.rng.rand() < self.parameters[
                                 f'{condition}_hsi'].get('pr_assessed_other_symptoms')):
                         # initiate HSI event
@@ -1080,7 +1078,6 @@ class CardioMetabolicDisordersDeathEvent(Event, IndividualScopeEventMixin):
 
             # Reduction in risk of death if being treated with regular medication for condition
             if person[f'nc_{self.originating_cause}_on_medication']:
-                # TODO: @britta replace with data specific for each condition/event
                 if not df.at[person_id, f'nc_{self.originating_cause}_medication_prevents_death']:
                     self.check_if_event_and_do_death(person_id)
 
@@ -1610,8 +1607,6 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
                     priority=1
                 )
 
-        #  TODO: @britta put in functionality for individuals to seek medication again if consumables not available?
-
 
 class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1730,7 +1725,6 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                 ):
                     logger.debug(key='debug', data='Treatment will be provided.')
                     df.at[person_id, f'nc_{self.event}_on_medication'] = True
-                    # TODO: @britta change to data
                     df.at[person_id, f'nc_{self.event}_medication_prevents_death'] = \
                         self.module.rng.rand() < self.module.parameters[f'{self.event}_hsi'].pr_treatment_works
                     if df.at[person_id, f'nc_{self.event}_medication_prevents_death']:
