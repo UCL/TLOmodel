@@ -494,7 +494,8 @@ def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir):
     changes = log["contraception_change"]
     assert not changes["switch_to"].isin(states_that_may_require_HSI_to_switch_to).any()
 
-    # ... but are only switching_from them to something that does not require an HSI to switch to (mostly "not_using", but others if the switch was "natural")
+    # ... but are only switching_from them to something that does not require an HSI to switch to (mostly "not_using",
+    # but others if the switch was "natural")
     assert changes["switch_from"].isin(states_that_may_require_HSI_to_maintain_on).any()
     assert changes.loc[changes["switch_from"].isin(states_that_may_require_HSI_to_maintain_on), "switch_to"].isin(
         states_that_do_require_HSI_to_switch_to).all()
