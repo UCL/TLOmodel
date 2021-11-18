@@ -44,7 +44,7 @@ def runsim(seed=0):
 
     start_date = Date(2010, 1, 1)
     end_date = Date(2019, 12, 31)
-    popsize = 10000
+    popsize = 100000
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
@@ -447,7 +447,7 @@ bar = plt.bar(diagnosis_df.index, diagnosis_df['diagnosis_prev'],
               label='Model')
 steps_data = [0.5, 0.479]
 scatter_steps = plt.scatter(['diabetes', 'hypertension'], steps_data, s=20,
-                          alpha=0.5,
+                          alpha=1.0,
                           color='#23395d',
                           label="STEPS Survey 2017")
 steps_error = [[0.447, 0.16], [0.184, 0.207]]
