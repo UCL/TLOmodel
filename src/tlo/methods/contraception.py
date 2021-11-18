@@ -991,7 +991,7 @@ class SimplifiedPregnancyAndLabour(Module):
 
         self.sim.schedule_event(EndOfPregnancyEvent(module=self,
                                                     person_id=person_id,
-                                                    live_birth=(self.rng.rand() > prob_live_birth)
+                                                    live_birth=(self.rng.rand() < prob_live_birth)
                                                     ),
                                 random_date(
                                     self.sim.date + pd.DateOffset(months=8, days=14),

@@ -192,7 +192,7 @@ def get_mean_pop_by_age_for_sex_and_year(sex, year):
     if sex == 'F':
         key = "age_range_f"
     else:
-        key = "age_range_f"
+        key = "age_range_m"
 
     num_by_age = summarize(
         extract_results(results_folder,
@@ -213,7 +213,7 @@ def get_mean_pop_by_age_for_sex_and_year(sex, year):
     return num_by_age
 
 
-for year in [2018, 2029]:
+for year in [2010, 2015, 2018, 2029, 2049]:
 
     # Get WPP data:
     wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
@@ -265,7 +265,7 @@ births_results = extract_results(
     do_scaling=True
 )
 
-# zero-out the values for 2030 (because the current mdoel run includes 2030 but this skews 5 years averages)
+# zero-out the values for 2030 (because the current model run includes 2030 but this skews 5 years averages)
 births_results.loc[2030] = 0
 
 # Aggregate the model outputs into five year periods:
@@ -341,6 +341,26 @@ for tp in time_period:
     plt.tight_layout()
     plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}"))
     plt.show()
+
+# %% Births: Number over time - year-by-year to examine the cause of the "dip
+
+byby = summarize(extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="on_birth",
+    custom_generate_series=(
+        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
+    ),
+    do_scaling=False,
+), collapse_columns=True)
+
+byby.plot()
+plt.ylim([0, 1200])
+plt.show()
+
+
+# get_mean_pop_by_age_for_sex_and_year(sex, year)
+
 
 
 # %% Describe patterns of contraceptive usage over time
