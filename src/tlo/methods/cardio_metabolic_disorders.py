@@ -1574,7 +1574,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         if self.condition != 'chronic_kidney_disease' and (df.at[person_id, 'li_bmi'] > 2):
             self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
             # Schedule a post-weight loss event for individual to potentially lose weight in next 6-12 months:
-            self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(m, person_id, self.condition),
+            self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(m, person_id),
                                     random_date(self.sim.date + pd.DateOffset(months=6),
                                                 self.sim.date + pd.DateOffset(months=12), m.rng))
 

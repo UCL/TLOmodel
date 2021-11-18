@@ -700,7 +700,7 @@ def test_hsi_weight_loss_and_medication():
 
             # Run the WeightLossEvent
             t = CardioMetabolicDisordersWeightLossEvent(module=sim.modules['CardioMetabolicDisorders'],
-                                                        person_id=person_id, condition=f'{condition}')
+                                                        person_id=person_id)
             t.apply(person_id=person_id)
 
             # Check that individual's BMI has reduced by 1 and they are flagged as having experienced weight loss
