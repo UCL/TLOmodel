@@ -30,7 +30,10 @@ class LongRun(BaseScenario):
             'filename': 'long_run_no_diseases',  # <- (specified only for local running)
             'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
-                '*': logging.INFO,
+                '*': logging.WARNING,
+                'tlo.methods.population': logging.INFO,
+                'tlo.methods.demography': logging.INFO,
+                'tlo.methods.contraception': logging.INFO
             }
         }
 
