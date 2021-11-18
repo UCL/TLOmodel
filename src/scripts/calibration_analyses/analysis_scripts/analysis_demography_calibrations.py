@@ -378,6 +378,7 @@ for tp in time_period:
 
 # %% Describe patterns of contraceptive usage over time
 
+
 def get_annual_mean_usage(_df):
     _x = _df \
         .assign(year=df['date'].dt.year) \

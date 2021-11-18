@@ -47,7 +47,6 @@ class Demography(Module):
         #  will store causes of death in GBD not represented in the simulation
         self.other_death_poll = None    # will hold pointer to the OtherDeathPoll object
 
-
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
         min_age=MIN_AGE_FOR_RANGE,
         max_age=MAX_AGE_FOR_RANGE,
