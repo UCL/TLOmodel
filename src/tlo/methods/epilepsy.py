@@ -481,7 +481,7 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Epilepsy_Start_Anti-Epilpetics'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1  # This enforces that the apppointment must be run at that facility-level
+        self.ACCEPTED_FACILITY_LEVEL = '1a'  # This enforces that the apppointment must be run at that facility-level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):

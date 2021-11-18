@@ -344,7 +344,7 @@ def test_event_scheduling_for_labour_onset_and_facility_delivery():
     # run the postnatal care event
     updated_id = int(mother_id)
     postpartum_labour_care = labour.HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(
-        person_id=updated_id, module=sim.modules['Labour'], facility_level_of_this_hsi=2)
+        person_id=updated_id, module=sim.modules['Labour'], facility_level_of_this_hsi='2')
     postpartum_labour_care.apply(person_id=updated_id, squeeze_factor=0.0)
 
     # check she is correctly sheduled to arrive for the first event in the postnatal supervisor
@@ -655,7 +655,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
 
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = sim.modules['HealthSystem'].get_blank_appt_footprint()
-            self.ACCEPTED_FACILITY_LEVEL = 0
+            self.ACCEPTED_FACILITY_LEVEL = '0'
             self.ALERT_OTHER_DISEASES = []
 
         def apply(self, person_id, squeeze_factor):
@@ -914,7 +914,7 @@ def test_to_check_similarly_named_and_functioning_dx_tests_work_as_expected():
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
             self.EXPECTED_APPT_FOOTPRINT = sim.modules['HealthSystem'].get_blank_appt_footprint()
-            self.ACCEPTED_FACILITY_LEVEL = 0
+            self.ACCEPTED_FACILITY_LEVEL = '0'
             self.ALERT_OTHER_DISEASES = []
 
         def apply(self, person_id, squeeze_factor):
