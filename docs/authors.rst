@@ -20,6 +20,8 @@ Epidemiologists/Modellers
 * `Robbie Manning-Smith <https://www.ucl.ac.uk/global-health/people>`_
 * `Sakshi Mohan <https://www.york.ac.uk/che/staff/research/sakshi-mohan/>`_
 * `Wingston Ng'ambi <https://www.linkedin.com/in/wingston-ng-ambi-7950707b>`_
+* `Bingling She <https://www.imperial.ac.uk/people/b.she>`_
+
 
 
 Software Developers

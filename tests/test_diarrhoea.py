@@ -12,12 +12,10 @@ from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
     diarrhoea,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    hiv,
     simplified_births,
     symptommanager,
 )
@@ -30,7 +28,7 @@ from tlo.methods.diarrhoea import (
     increase_risk_of_death,
     make_treatment_perfect,
 )
-from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel1
+from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel0
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -82,7 +80,6 @@ def test_basic_run_of_diarrhoea_module_with_default_params(tmpdir):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 dx_algorithm_child.DxAlgorithmChild()
                  )
 
     sim.make_initial_population(n=popsize)
@@ -115,7 +112,6 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 hiv.DummyHivModule(),
                  )
 
     # **Zero-out incidence**:
@@ -297,7 +293,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                      ),
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
                      diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                     dx_algorithm_child.DxAlgorithmChild()
                      )
         # Edit rate of spurious symptoms to be limited to additional cases of diarrhoea:
         sp_symps = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
@@ -372,8 +367,8 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration():
                  )
 
     # Make DxTest for danger signs perfect:
-    sim.modules['Diarrhoea'].parameters['sensitivity_danger_signs_visual_inspection'] = 1.0
-    sim.modules['Diarrhoea'].parameters['specificity_danger_signs_visual_inspection'] = 1.0
+    sim.modules['Diarrhoea'].parameters['sensitivity_severe_dehydration_visual_inspection'] = 1.0
+    sim.modules['Diarrhoea'].parameters['specificity_severe_dehydration_visual_inspection'] = 1.0
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date)
@@ -396,7 +391,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration():
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel1(
+    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
 
     # 1) If DxTest of danger signs perfect and 100% chance of referral --> Inpatient HSI should be created
@@ -471,7 +466,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel1(
+    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
 
     # Only an out-patient appointment should be created as the DxTest for danger signs is not functional.
@@ -535,7 +530,7 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration():
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel1(
+    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
 
     # 1) Outpatient HSI should be created
@@ -598,13 +593,11 @@ def test_does_treatment_prevent_death():
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-                 dx_algorithm_child.DxAlgorithmChild(),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                 hiv.DummyHivModule(),
                  )
 
     # Increase incidence and risk of death in Diarrhoea episodes
@@ -769,8 +762,8 @@ def test_do_treatment_for_those_that_will_die_if_consumables_not_available():
     df = sim.population.props
 
     # Make availability of consumables zero
-    sim.modules['HealthSystem'].cons_available_today['Item_Code'] *= False
-    sim.modules['HealthSystem'].cons_available_today['Intervention_Package_Code'] *= False
+    sim.modules['HealthSystem'].cons_available_today['Item_Code'][:] = False
+    sim.modules['HealthSystem'].cons_available_today['Intervention_Package_Code'][:] = False
 
     # Set that person_id=0 is a child with bloody diarrhoea and severe dehydration:
     person_id = 0
@@ -888,3 +881,56 @@ def test_do_treatment_for_those_that_will_not_die():
     recovery_event = DiarrhoeaNaturalRecoveryEvent(module=sim.modules['Diarrhoea'], person_id=person_id)
     recovery_event.apply(person_id=person_id)
     assert not df.at[person_id, 'gi_has_diarrhoea']
+
+
+def test_effect_of_vaccine():
+    """Check that if the vaccine is perfect, no one infected with rotavirus and who has the vaccine gets severe
+     dehydration."""
+
+    # Create dummy simulation
+    start_date = Date(2010, 1, 1)
+    popsize = 200
+
+    sim = Simulation(start_date=start_date, seed=0)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath, do_checks=True),
+                 diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
+                 )
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+
+    # Get the method that determines dehydration
+    get_dehydration = sim.modules['Diarrhoea'].models.get_dehydration
+
+    # 1) Make effect of vaccine perfect
+    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] = 0.0
+    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo'] = 0.0
+
+    # Check that if person has vaccine and is infected with rotavirus, there is never severe dehydration...
+    assert 'severe' not in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=True, age_years=1)
+                            for _ in range(100)]
+    assert 'severe' not in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=True, age_years=4)
+                            for _ in range(100)]
+
+    # ... but if no vaccine or infected with another pathogen, then sometimes it is severe dehydration.
+    assert 'severe' in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=False, age_years=1)
+                        for _ in range(100)]
+    assert 'severe' in [get_dehydration(pathogen='shigella', va_rota_all_doses=True, age_years=1)
+                        for _ in range(100)]
+
+    # 2) Make effect of vaccine imperfect
+    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] = 1.0
+    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo'] = 1.0
+
+    # Check that if the vaccine is imperfect and the person is infected with rotavirus, then there sometimes is severe
+    # dehydration.
+    assert 'severe' in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=True, age_years=1)
+                        for _ in range(100)]
+    assert 'severe' in [get_dehydration(pathogen='rotavirus', va_rota_all_doses=True, age_years=2)
+                        for _ in range(100)]

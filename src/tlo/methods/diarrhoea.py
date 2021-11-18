@@ -16,7 +16,7 @@ Health care seeking is prompted by the onset of the symptom diarrhoea. The indiv
  * See todo
 
 """
-from collections import Iterable
+from collections.abc import Iterable
 from pathlib import Path
 
 import numpy as np
@@ -56,15 +56,15 @@ class Diarrhoea(Module):
 
     INIT_DEPENDENCIES = {
         'Demography',
-        'Lifestyle',
         'HealthSystem',
+        'Hiv',
+        'Lifestyle',
+        'NewbornOutcomes',
         'SymptomManager',
-        # Currently need to include DiarrhoeaPropertiesOfOtherModules as there is no alternative
-        # provider of un_clinical_acute_malnutrition property at the moment. As this
-        # module also provides the required properties from NewbornOutcomes, Hiv and Epi
-        # these are also not included here to avoid duplicated property definitions
-        'DiarrhoeaPropertiesOfOtherModules'
+        'Wasting',
     }
+
+    ADDITIONAL_DEPENDENCIES = {'Alri', 'Epi', 'Stunting'}
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
@@ -269,13 +269,9 @@ class Diarrhoea(Module):
         'prob_prolonged_to_persistent_diarr':
             Parameter(Types.REAL, 'probability of prolonged diarrhoea becoming persistent diarrhoea'
                       ),
-        'rr_bec_persistent_age12to23':
+        'rr_bec_persistent_age>6mo':
             Parameter(Types.REAL,
-                      'relative rate of acute diarrhoea becoming persistent diarrhoea for age 12 to 23 months'
-                      ),
-        'rr_bec_persistent_age24to59':
-            Parameter(Types.REAL,
-                      'relative rate of acute diarrhoea becoming persistent diarrhoea for age 24 to 59 months'
+                      'relative rate of acute diarrhoea becoming persistent diarrhoea for children over 6 months'
                       ),
         'rr_bec_persistent_HIV':
             Parameter(Types.REAL,
@@ -380,10 +376,6 @@ class Diarrhoea(Module):
             Parameter(Types.REAL, 'relative risk of diarrhoea death (compared to `case_fatality_rate_AWD` if the '
                                   'diarrhoea is of type "bloody" (i.e. dyssentry).'
                       ),
-        'rr_diarr_death_age12to23mo':
-            Parameter(Types.REAL,
-                      'relative risk of diarrhoea death for ages 12 to 23 months'
-                      ),
         'rr_diarr_death_age24to59mo':
             Parameter(Types.REAL,
                       'relative risk of diarrhoea death for ages 24 to 59 months'
@@ -412,13 +404,13 @@ class Diarrhoea(Module):
                       ),
 
         # Parameters governing the care provided to those that present with Diarrhoea
-        'sensitivity_danger_signs_visual_inspection':
+        'sensitivity_severe_dehydration_visual_inspection':
             Parameter(Types.REAL,
-                      'sensitivity of health care workers visual inspection of danger signs'
+                      'sensitivity of IMCI severe dehydration algorithm for dehydration >9% loss of body weight'
                       ),
-        'specificity_danger_signs_visual_inspection':
+        'specificity_severe_dehydration_visual_inspection':
             Parameter(Types.REAL,
-                      'specificity of health care workers visual inspection of danger signs'
+                      'specificity of IMCI severe dehydration algorithm for dehydration >9% loss of body weight'
                       ),
         'prob_hospitalization_on_danger_signs':
             Parameter(Types.REAL,
@@ -441,7 +433,15 @@ class Diarrhoea(Module):
         'number_of_days_reduced_duration_with_zinc':
             Parameter(Types.INT, 'number of days reduced duration with zinc'),
         'days_between_treatment_and_cure':
-            Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.')
+            Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'),
+
+        # Parameters describing efficacy of the monovalent rotavirus vaccine (R1)
+        'rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo':
+            Parameter(Types.REAL,
+                      'relative risk of severe dehydration with rotavirus vaccine, for under 1 years old.'),
+        'rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo':
+            Parameter(Types.REAL,
+                      'relative risk of severe dehydration with rotavirus vaccine, for those aged 1 year and older.'),
     }
 
     PROPERTIES = {
@@ -468,6 +468,8 @@ class Diarrhoea(Module):
         'gi_duration_longer_than_13days': Property(Types.BOOL,
                                                    'Whether the duration of the current episode would last longer than '
                                                    '13 days if untreated. (False if does not have current episode)'),
+        'gi_number_of_episodes': Property(Types.INT,
+                                          "Number of episodes of diarrhoea caused by a pathogen"),
 
         # ---- Internal variables storing dates of scheduled events  ----
         'gi_date_of_onset': Property(Types.DATE, 'Date of onset of current episode of diarrhoea (pd.NaT if does not '
@@ -535,6 +537,7 @@ class Diarrhoea(Module):
         df.loc[df.is_alive, 'gi_type'] = np.nan
         df.loc[df.is_alive, 'gi_dehydration'] = np.nan
         df.loc[df.is_alive, 'gi_duration_longer_than_13days'] = False
+        df.loc[df.is_alive, 'gi_number_of_episodes'] = 0
 
         # ---- Internal values ----
         df.loc[df.is_alive, 'gi_date_of_onset'] = pd.NaT
@@ -578,11 +581,11 @@ class Diarrhoea(Module):
         # The danger signs are classified collectively and are based on the result of a DxTest representing the ability
         # of the clinician to correctly determine the true value of the property 'gi_dehydration' being 'severe'.=
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            danger_signs_visual_inspection=DxTest(
+            imci_severe_dehydration_visual_inspection=DxTest(
                 property='gi_dehydration',
                 target_categories=['severe'],
-                sensitivity=self.parameters['sensitivity_danger_signs_visual_inspection'],
-                specificity=self.parameters['specificity_danger_signs_visual_inspection']
+                sensitivity=self.parameters['sensitivity_severe_dehydration_visual_inspection'],
+                specificity=self.parameters['specificity_severe_dehydration_visual_inspection']
             )
         )
 
@@ -598,6 +601,7 @@ class Diarrhoea(Module):
         df.at[child_id, 'gi_type'] = np.nan
         df.at[child_id, 'gi_dehydration'] = np.nan
         df.at[child_id, 'gi_duration_longer_than_13days'] = False
+        df.at[child_id, 'gi_number_of_episodes'] = 0
 
         # ---- Internal values ----
         df.at[child_id, 'gi_date_of_onset'] = pd.NaT
@@ -664,7 +668,7 @@ class Diarrhoea(Module):
 
         # 1) Assessment of danger signs
         danger_signs = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run="danger_signs_visual_inspection", hsi_event=hsi_event)
+            dx_tests_to_run="imci_severe_dehydration_visual_inspection", hsi_event=hsi_event)
 
         # 2) Determine which HSI to use:
         if danger_signs and (self.rng.rand() < self.parameters['prob_hospitalization_on_danger_signs']):
@@ -679,7 +683,6 @@ class Diarrhoea(Module):
 
         else:
             # No danger signs but not hospitalized --> Out-patient
-            # todo - Should children that have no dehydration really get an Outpatient HSI?
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Diarrhoea_Treatment_Outpatient(
                     person_id=person_id,
@@ -699,13 +702,6 @@ class Diarrhoea(Module):
         * Records that treatment is provided.
 
         NB. Provisions for cholera are not included
-
-        # todo - Zinc is provided to all persons currently. It may be that this should be changed so that it is only
-        #  provided to those persons who, at the time of the HSI, have had diarrhoea for 13 days or longer.
-
-        # todo - ORS is provided to all persons currently It may be that it should only be provided to those with
-        #  'some' dehydration. (It would have no effect -- only matters if the persons has severe dehydration).
-
         See this report:
           https://apps.who.int/iris/bitstream/handle/10665/104772/9789241506823_Chartbook_eng.pdf (page 3).
         """
@@ -906,6 +902,9 @@ class Diarrhoea(Module):
         in_current_episode = df.is_alive & df.gi_has_diarrhoea
         assert not pd.isnull(df.loc[in_current_episode, 'gi_pathogen']).any()
 
+        # Those that do currently have diarrhoea, should have a non-zero value for the total number of episodes
+        assert (df.loc[in_current_episode, 'gi_number_of_episodes'] > 0).all()
+
         # Those that currently have diarrhoea and have not had a treatment, should have either a recovery date or
         # a death_date (but not both)
         has_recovery_date = ~pd.isnull(df.loc[in_current_episode & pd.isnull(df.gi_treatment_date),
@@ -1035,7 +1034,7 @@ class Models:
         return _incidence_equations_by_pathogen
 
     def get_prob_persisent_if_prolonged(self,
-                                        age_years,
+                                        age_exact_years,
                                         un_HAZ_category,
                                         un_clinical_acute_malnutrition,
                                         untreated_hiv,
@@ -1043,10 +1042,8 @@ class Models:
         # Baseline prob:
         prob_persistent_if_prolonged = self.p['prob_prolonged_to_persistent_diarr']
 
-        if age_years == 1:
-            prob_persistent_if_prolonged *= self.p['rr_bec_persistent_age12to23']
-        elif age_years < 5:
-            prob_persistent_if_prolonged *= self.p['rr_diarr_death_age24to59mo']
+        if age_exact_years > 0.5:
+            prob_persistent_if_prolonged *= self.p['rr_bec_persistent_age>6mo']
 
         if un_HAZ_category == 'HAZ<-3':
             prob_persistent_if_prolonged *= self.p['rr_bec_persistent_stunted']
@@ -1061,7 +1058,7 @@ class Models:
 
     def get_duration(self,
                      pathogen,
-                     age_years,
+                     age_exact_years,
                      un_HAZ_category,
                      un_clinical_acute_malnutrition,
                      untreated_hiv,
@@ -1075,10 +1072,10 @@ class Models:
 
         # Get probability of this episode being "persistent" if it is "prolonged"
         prob_persistent_if_prolonged = self.get_prob_persisent_if_prolonged(
-            age_years,
-            un_HAZ_category,
-            un_clinical_acute_malnutrition,
-            untreated_hiv,
+            age_exact_years=age_exact_years,
+            un_HAZ_category=un_HAZ_category,
+            un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
+            untreated_hiv=untreated_hiv,
         )
 
         if self.rng.rand() < prob_prolonged:
@@ -1094,10 +1091,22 @@ class Models:
         """For new incident case of diarrhoea, determine the type - 'watery' or 'bloody'"""
         return 'watery' if self.rng.rand() < self.p[f'proportion_AWD_in_{pathogen}'] else 'bloody'
 
-    def get_dehydration(self, pathogen):
-        """For new incident case of diarrhoea, determine the degree of dehydration - 'none', 'some' or 'severe'"""
+    def get_dehydration(self, pathogen, va_rota_all_doses, age_years):
+        """For new incident case of diarrhoea, determine the degree of dehydration - 'none', 'some' or 'severe'.
+        The effect of the R1 vaccine is to reduce the probability of severe dehydration."""
+
+        if (pathogen == "rotavirus") and va_rota_all_doses:
+            relative_prob_severe_dehydration_due_to_vaccine = \
+                self.p['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] if age_years < 1 \
+                else self.p['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo']
+        else:
+            relative_prob_severe_dehydration_due_to_vaccine = 1.0
+
         if self.rng.rand() < self.p[f'prob_dehydration_by_{pathogen}']:
-            if self.rng.rand() < self.p['probability_of_severe_dehydration_if_some_dehydration']:
+            if self.rng.rand() < (
+                self.p['probability_of_severe_dehydration_if_some_dehydration']
+                * relative_prob_severe_dehydration_due_to_vaccine
+            ):
                 return 'severe'
             return 'some'
         return 'none'
@@ -1132,9 +1141,9 @@ class Models:
         if dehydration == 'severe':
             risk *= self.p['rr_diarr_death_severe_dehydration']
 
-        if 1.0 <= age_exact_years < 2.0:
-            risk *= self.p['rr_diarr_death_age12to23mo']
-        elif age_exact_years < 5.0:
+        if age_exact_years < 2.0:
+            pass
+        elif (2.0 <= age_exact_years < 5.0):
             risk *= self.p['rr_diarr_death_age24to59mo']
         else:
             risk *= 0.0
@@ -1317,7 +1326,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         # Determine the duration of the dirarrhoea, the date of outcome and the end of episode (the date when this
         # episode ends. It is the last possible data that any HSI could affect this episode.)
         duration_in_days = m.models.get_duration(pathogen=self.pathogen,
-                                                 age_years=person.age_years,
+                                                 age_exact_years=person.age_exact_years,
                                                  un_HAZ_category=person.un_HAZ_category,
                                                  un_clinical_acute_malnutrition=person.un_clinical_acute_malnutrition,
                                                  untreated_hiv=untreated_hiv,
@@ -1325,12 +1334,13 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         date_of_outcome = self.sim.date + DateOffset(days=duration_in_days)
 
         # Collected updated properties of this person
-        # Collected updated properties of this person
         props_new = {
             'gi_has_diarrhoea': True,
             'gi_pathogen': self.pathogen,
             'gi_type': m.models.get_type(self.pathogen),
-            'gi_dehydration': m.models.get_dehydration(self.pathogen),
+            'gi_dehydration': m.models.get_dehydration(pathogen=self.pathogen,
+                                                       va_rota_all_doses=person.va_rota_all_doses,
+                                                       age_years=person.age_years),
             'gi_duration_longer_than_13days': duration_in_days >= 13,
             'gi_date_of_onset': self.sim.date,
             'gi_date_end_of_last_episode': date_of_outcome + DateOffset(days=p['days_between_treatment_and_cure']),
@@ -1385,6 +1395,9 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             },
             description='each incicdent case of diarrhoea'
         )
+
+        # Increment the counter for the number of cases of diarrhoea had
+        df.at[person_id, 'gi_number_of_episodes'] += 1
 
 
 class DiarrhoeaNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
@@ -1506,7 +1519,7 @@ class HSI_Diarrhoea_Treatment_Outpatient(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = 'Diarrhoea_Treatment_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1531,7 +1544,7 @@ class HSI_Diarrhoea_Treatment_Inpatient(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Diarrhoea_Treatment_Inpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 2, 'IPAdmission': 1})
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1552,7 +1565,11 @@ class DiarrhoeaPropertiesOfOtherModules(Module):
     """For the purpose of the testing, this module generates the properties upon which the Alri module relies"""
 
     INIT_DEPENDENCIES = {'Demography'}
-    ALTERNATIVE_TO = {'Hiv', 'Alri', 'NewbornOutcomes'}
+
+    # Though this module provides some properties from NewbornOutcomes we do not list
+    # NewbornOutcomes in the ALTERNATIVE_TO set to allow using in conjunction with
+    # SimplifiedBirths which can also be used as an alternative to NewbornOutcomes
+    ALTERNATIVE_TO = {'Alri', 'Epi', 'Hiv', 'Stunting', 'Wasting'}
 
     PROPERTIES = {
         'hv_inf': Property(Types.BOOL, 'temporary property for HIV infection status'),
@@ -1565,7 +1582,7 @@ class DiarrhoeaPropertiesOfOtherModules(Module):
                                                    categories=['MAM', 'SAM', 'well']),
         'un_HAZ_category': Property(Types.CATEGORICAL, 'temporary property',
                                     categories=['HAZ<-3', '-3<=HAZ<-2', 'HAZ>=-2']),
-
+        'va_rota_all_doses': Property(Types.BOOL, 'temporary property')
     }
 
     def __init__(self, name=None):
@@ -1582,6 +1599,7 @@ class DiarrhoeaPropertiesOfOtherModules(Module):
         df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
         df.loc[df.is_alive, 'un_HAZ_category'] = 'HAZ>=-2'
+        df.loc[df.is_alive, 'va_rota_all_doses'] = False
 
     def initialise_simulation(self, sim):
         pass
@@ -1594,6 +1612,7 @@ class DiarrhoeaPropertiesOfOtherModules(Module):
         df.at[child, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.at[child, 'un_clinical_acute_malnutrition'] = 'well'
         df.at[child, 'un_HAZ_category'] = 'HAZ>=-2'
+        df.at[child, 'va_rota_all_doses'] = False
 
 
 class DiarrhoeaCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1640,7 +1659,6 @@ def increase_risk_of_death(diarrhoea_module):
     diarrhoea_module.parameters['case_fatality_rate_AWD'] = 0.0001
     diarrhoea_module.parameters['rr_diarr_death_bloody'] = 1000
     diarrhoea_module.parameters['rr_diarr_death_severe_dehydration'] = 1000
-    diarrhoea_module.parameters['rr_diarr_death_age12to23mo'] = 1.0
     diarrhoea_module.parameters['rr_diarr_death_age24to59mo'] = 1.0
     diarrhoea_module.parameters['rr_diarr_death_if_duration_longer_than_13_days'] = 1.0
     diarrhoea_module.parameters['rr_diarr_death_untreated_HIV'] = 1.0
@@ -1659,5 +1677,5 @@ def make_treatment_perfect(diarrhoea_module):
 
     # Apply perfect assessment and referral
     diarrhoea_module.parameters['prob_hospitalization_referral_for_severe_diarrhoea'] = 1.0
-    diarrhoea_module.parameters['sensitivity_danger_signs_visual_inspection'] = 1.0
-    diarrhoea_module.parameters['specificity_danger_signs_visual_inspection'] = 1.0
+    diarrhoea_module.parameters['sensitivity_severe_dehydration_visual_inspection'] = 1.0
+    diarrhoea_module.parameters['specificity_severe_dehydration_visual_inspection'] = 1.0
