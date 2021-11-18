@@ -39,12 +39,14 @@ class Demography(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.initial_model_to_data_popsize_ratio = None  # will store scaling factor
         self.popsize_by_year = dict()  # will store total population size each year
         self.causes_of_death = dict()  # will store all the causes of death that are possible in the simulation
         self.gbd_causes_of_death = set()  # will store all the causes of death defined in the GBD data
         self.gbd_causes_of_death_not_represented_in_disease_modules = set()
         #  will store causes of death in GBD not represented in the simulation
         self.other_death_poll = None    # will hold pointer to the OtherDeathPoll object
+
 
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
         min_age=MIN_AGE_FOR_RANGE,
@@ -183,13 +185,12 @@ class Demography(Module):
         )
 
     def initialise_population(self, population):
-        """Set our property values for the initial population.
-        This method is called by the simulation when creating the initial population, and is
-        responsible for assigning initial values, for every individual, of those properties
-        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-        :param population: the population of individuals
-        """
+        """Set properties for this module and compute the initial population scaling factor"""
         df = population.props
+
+        # Compute the initial population scaling factor
+        self.initial_model_to_data_popsize_ratio = \
+            self.compute_initial_model_to_data_popsize_ratio(population.initial_size)
 
         init_pop = self.parameters['pop_2010']
         init_pop['prob'] = init_pop['Count'] / init_pop['Count'].sum()
@@ -229,20 +230,26 @@ class Demography(Module):
 
     def initialise_simulation(self, sim):
         """
-        * Schedule the age updating
-        * Output to the log the dicts that can be used for mapping from causes of death defined here, and those defined
-        in the GBD datasets, to a common 'label'.
+        * Schedule the AgeUpdateEvent, the OtherDeathPoll and the DemographyLoggingEvent
+        * Output to the log the initial population scaling factor.
         """
-        # Update age information every day
+        # Update age information every day (first time after one day)
         sim.schedule_event(AgeUpdateEvent(self, self.AGE_RANGE_LOOKUP), sim.date + DateOffset(days=1))
 
-        # check all population to determine if person should die (from causes other than those
-        # explicitly modelled) (repeats every month)
-        self.other_death_poll = OtherDeathPoll(self)
-        sim.schedule_event(self.other_death_poll, sim.date + DateOffset(months=1))
-
         # Launch the repeating event that will store statistics about the population structure
-        sim.schedule_event(DemographyLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(DemographyLoggingEvent(self), sim.date)
+
+        # Create (and store pointer to) the OtherDeathPoll and schedule first occurrence immediately
+        self.other_death_poll = OtherDeathPoll(self)
+        sim.schedule_event(self.other_death_poll, sim.date)
+
+        # Log the initial population scaling-factor
+        logger.info(
+            key='scaling_factor',
+            data={'scaling_factor': 1.0 / self.initial_model_to_data_popsize_ratio},
+            description='The data-to-model scaling factor (based on the initial population size, used to multiply-up'
+                        'results so that they correspond to the real population size'
+        )
 
         # Check that the simulation does not run too long
         if self.sim.end_date.year >= 2100:
@@ -288,18 +295,6 @@ class Demography(Module):
                   'child': child_id,
                   'mother_age': df.at[mother_id, 'age_years'] if mother_id != -1 else -1}
         )
-
-    def on_simulation_end(self):
-        """Things to do at end of the simulation:
-        * Compute and log the scaling-factor
-        """
-        sf = self.compute_scaling_factor()
-        if not np.isnan(sf):
-            logger.info(
-                key='scaling_factor',
-                data={'scaling_factor': sf},
-                description='The scaling factor (if can be computed)'
-            )
 
     def process_causes_of_death(self):
         """
@@ -469,37 +464,8 @@ class Demography(Module):
 
         return py
 
-    def compute_scaling_factor(self):
-        """
-        Compute the scaling factor, if it is possible to do so.
-
-        The scaling factor is the ratio of {Real Population} to {Model Pop Size}. It is used to multiply model outputs
-        in order to produce statistics that will be of the same scale as the real population.
-
-        It is estimated by comparing the population size with the national census in the year that the census was
-        conducted.
-
-        If the simulation does not include that year, the scaling factor cannot be computed (in which case, np.nan is
-        returned).
-
-        :return: floating point number that is the scaling factor, or np.nan if it cannot be computed.
-        """
-
-        # Get Census data
-        year_of_census = 2018
-        census_popsize = pd.read_csv(
-            Path(self.resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv"
-        )['Count'].sum()
-
-        # Get model total population size in that same year
-        if year_of_census not in self.popsize_by_year:
-            return np.nan
-        else:
-            model_popsize_in_year_of_census = self.popsize_by_year[year_of_census]
-            return census_popsize / model_popsize_in_year_of_census
-
-    def compute_initial_population_scaling_factor(self, initial_population):
-        """Compute ratio of initial population to estimated population in 2010.
+    def compute_initial_model_to_data_popsize_ratio(self, initial_population_size):
+        """Compute ratio of initial model population size to estimated population size in 2010.
 
         Uses the total of the per-region estimated populations in 2010 used to
         initialise the simulation population as the baseline figure, with this value
@@ -509,12 +475,11 @@ class Demography(Module):
         Economic and Social Affairs. URL:
         https://population.un.org/wpp/Download/Standard/Population/
 
-        :param initial_population: Initial population to calculate ratio for.
+        :param initial_population_size: Initial population size to calculate ratio for.
 
         :returns: Ratio of ``initial_population`` to 2010 baseline population.
         """
-        baseline_total_population = self.parameters['pop_2010']['Count'].sum()
-        return initial_population / baseline_total_population
+        return initial_population_size / self.parameters['pop_2010']['Count'].sum()
 
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
