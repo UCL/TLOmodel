@@ -6,7 +6,7 @@ save outputs for plotting (file: output_plots_tb.py)
 import datetime
 import pickle
 from pathlib import Path
-import random
+# import random
 
 import pandas as pd
 
@@ -37,8 +37,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2017, 1, 1)
-popsize = 500
+end_date = Date(2020, 1, 1)
+popsize = 1000
 
 # set up the log config
 log_config = {
@@ -55,7 +55,7 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 320  # set seed for reproducibility
+seed = 3205  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -65,8 +65,8 @@ sim.register(
         resourcefilepath=resourcefilepath,
         service_availability=["*"],  # all treatment allowed
         mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
-        ignore_cons_constraints=False,  # mode for consumable constraints (if ignored, all consumables available)
-        ignore_priority=False,  # do not use the priority information in HSI event to schedule
+        ignore_cons_constraints=True,  # mode for consumable constraints (if ignored, all consumables available)
+        ignore_priority=True,  # do not use the priority information in HSI event to schedule
         capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
         disable=True,  # disables the healthsystem (no constraints and no logging) and every HSI runs
         disable_and_reject_all=False,  # disable healthsystem and no HSI runs
@@ -91,9 +91,11 @@ sim.modules["Tb"].parameters["tb_high_risk_distr"] = pd.read_excel(
 
 # change tb mixing parameter to allow more between-district transmission
 sim.modules["Tb"].parameters["mixing_parameter"] = 1
-sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 2
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.99
-sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = 0.98
+sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 0.5
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 1
+sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = 1
+sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1
+sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_appointment_not_available"] = 1
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
@@ -104,5 +106,9 @@ output = parse_log_file(sim.log_filepath)
 
 # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
 with open(outputpath / "default_run.pickle", "wb") as f:
+# with open(outputpath / "poll_plus_hsi_generic.pickle", "wb") as f:
+# with open(outputpath / "poll_plus_anc.pickle", "wb") as f:
+# with open(outputpath / "only_hiv_poll.pickle", "wb") as f:
+# with open(outputpath / "schedule_2010_tests.pickle", "wb") as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(output, f, pickle.HIGHEST_PROTOCOL)

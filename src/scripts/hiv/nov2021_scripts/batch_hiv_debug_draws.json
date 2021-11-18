@@ -1,14 +1,12 @@
 {
   "scenario_script_path": "src/scripts/hiv/nov2021_scripts/batch_hiv_debug.py",
-  "scenario_seed": 68,
+  "scenario_seed": 4284,
   "runs_per_draw": 2,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 1113991999,
+      "draw_seed": 2135804270,
       "parameters": null
     }
-  ],
-  "commit": "4d1b389906fbae97e3a34ea72d1d45c99f196dd2",
-  "github": "https://github.com/UCL/TLOmodel/blob/4d1b389906fbae97e3a34ea72d1d45c99f196dd2/src/scripts/hiv/nov2021_scripts/batch_hiv_debug.py"
+  ]
 }

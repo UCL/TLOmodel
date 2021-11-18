@@ -523,22 +523,11 @@ class Hiv(Module):
         #                             .when(3, p["rr_hiv_test_secondary_education"]),
         # )
         # todo added condition must be not on ART for test
+        # this only applies to adult testing
         self.lm["lm_spontaneous_test_12m"] = LinearModel.multiplicative(
             Predictor("hv_inf").when(True, p["rr_test_hiv_positive"]).otherwise(1.0),
             Predictor("hv_art").when("not", 1.0).otherwise(0.0),
             Predictor("age_years").when("<15", 0.0).otherwise(1.0),
-            # Predictor("age_years"
-            #           ) .when("<15", 0)
-            #             .when("<20", 1)
-            #             .when("<25", p["rr_hiv_test_age_20_24"])
-            #             .when("<30", p["rr_hiv_test_age_25_29"])
-            #             .when("<35", p["rr_hiv_test_age_30_34"])
-            #             .when("<40", p["rr_hiv_test_age_35_39"])
-            #             .when("<45", p["rr_hiv_test_age_40_44"])
-            #             .when(">=45", p["rr_hiv_test_age_45_49"]),
-            # Predictor("li_is_sexworker").when(True, p["rr_hiv_test_sexworker"]),
-            # Predictor("li_ed_lev")  .when(2, p["rr_hiv_test_primary_education"])
-            #                         .when(3, p["rr_hiv_test_secondary_education"]),
         )
 
         # Linear model if the person will start ART, following when the person has been diagnosed:
@@ -597,6 +586,7 @@ class Hiv(Module):
         self.initialise_baseline_art(population)  # allocate baseline art coverage
         # todo remove this to get 100% linkage and adherence
         self.initialise_baseline_tested(population)  # allocate baseline art coverage
+        # self.schedule_baseline_tests(population)  # schedule hiv tests to occur in first year (2010)
 
     def initialise_baseline_prevalence(self, population):
         """
@@ -815,6 +805,58 @@ class Hiv(Module):
                 df.loc[df.index.isin(test_index) & df.hv_inf & df.is_alive,
                        "hv_diagnosed"] = True
 
+    # def schedule_baseline_tests(self, population):
+    #     """ schedule hiv tests to occur in the baseline year 2010
+    #     """
+    #     df = population.props
+    #     p = self.parameters
+    #     # ----------------------------------- SPONTANEOUS TESTING -----------------------------------
+    #     # extract annual testing rates from MoH Reports
+    #     test_rates = p["hiv_testing_rates"]
+    #
+    #     current_year = 2010
+    #
+    #     # multiply rates by 0.9 to account for additional testing through ANC/symptoms
+    #     testing_rate_children = test_rates.loc[
+    #         test_rates.year == current_year, "annual_testing_rate_children"
+    #     ].values[0] * 0.6
+    #     testing_rate_adults = test_rates.loc[
+    #         test_rates.year == current_year, "annual_testing_rate_adults"
+    #     ].values[0] * 0.6
+    #     random_draw = self.rng.random_sample(size=len(df))
+    #
+    #     child_tests_idx = df.loc[
+    #         df.is_alive
+    #         & ~df.hv_diagnosed
+    #         & (df.age_years < 15)
+    #         & (random_draw < testing_rate_children)
+    #         ].index
+    #
+    #     # adult testing trends also informed by demographic characteristics
+    #     # relative probability of testing - this may skew testing rates higher or lower than moh reports
+    #     rr_of_test = self.lm["lm_spontaneous_test_12m"].predict(df[df.is_alive])
+    #     mean_prob_test = (rr_of_test * testing_rate_adults).mean()
+    #     scaled_prob_test = (rr_of_test * testing_rate_adults) / mean_prob_test
+    #     overall_prob_test = scaled_prob_test * testing_rate_adults
+    #
+    #     random_draw = self.rng.random_sample(size=len(df[df.is_alive]))
+    #     adult_tests_idx = df.loc[df.is_alive & (random_draw < overall_prob_test)].index
+    #
+    #     idx_will_test = child_tests_idx.union(adult_tests_idx)
+    #
+    #     # todo reinstate
+    #     for person_id in idx_will_test:
+    #         date_test = self.sim.date + pd.DateOffset(
+    #             days=self.rng.randint(0, 365))
+    #         self.sim.modules["HealthSystem"].schedule_hsi_event(
+    #             hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self, referred_from='HIV_poll'),
+    #             priority=1,
+    #             topen=date_test,
+    #             tclose=self.sim.date + pd.DateOffset(
+    #                 months=12
+    #             ),
+    #         )
+
     def initialise_simulation(self, sim):
         """
         * 1) Schedule the Main HIV Regular Polling Event
@@ -829,7 +871,7 @@ class Hiv(Module):
 
         # 1) Schedule the Main HIV Regular Polling Event
         sim.schedule_event(
-            HivRegularPollingEvent(self), sim.date + DateOffset(days=365.25)
+            HivRegularPollingEvent(self), sim.date + DateOffset(days=0)
         )
 
         # 2) Schedule the Logging Event
@@ -888,15 +930,16 @@ class Hiv(Module):
             )
 
         # Schedule the AIDS death events for those who have got AIDS already
+        # todo this may need to be removed - check death rates
         for person_id in has_aids_idx:
             # schedule a HSI_Test_and_Refer otherwise initial AIDS rates and deaths are far too high
-            # date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 365))
-            # self.sim.modules["HealthSystem"].schedule_hsi_event(
-            #     hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
-            #     priority=1,
-            #     topen=date_test,
-            #     tclose=self.sim.date + pd.DateOffset(days=365),
-            # )
+            date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 365))
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
+                priority=1,
+                topen=date_test,
+                tclose=self.sim.date + pd.DateOffset(days=365),
+            )
 
             date_aids_death = (
                 self.sim.date + self.get_time_from_aids_to_death()
@@ -1547,12 +1590,13 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             current_year = 2020
 
+        # reduce testing rates by 0.8 to account for additional testing through ANC/symptoms
         testing_rate_children = test_rates.loc[
             test_rates.year == current_year, "annual_testing_rate_children"
-        ].values[0]
+        ].values[0] * 0.6
         testing_rate_adults = test_rates.loc[
             test_rates.year == current_year, "annual_testing_rate_adults"
-        ].values[0]
+        ].values[0] * 0.6
         random_draw = rng.random_sample(size=len(df))
 
         child_tests_idx = df.loc[

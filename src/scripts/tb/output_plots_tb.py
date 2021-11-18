@@ -137,8 +137,11 @@ data_hiv_moh_art = pd.read_excel(xls, sheet_name="MoH_number_art")
 # ---------------------------------------------------------------------- #
 
 # load the results
+# with open(outputpath / "default_run.pickle", "rb") as f:
+#     output = pickle.load(f)
 with open(outputpath / "default_run.pickle", "rb") as f:
     output = pickle.load(f)
+
 
 # person-years all ages (irrespective of HIV status)
 py_ = output["tlo.methods.demography"]["person_years"]
@@ -674,6 +677,7 @@ plt.errorbar(
     markerfacecolor="g",
     ecolor="g",
 )
+plt.ylim((20, 100))
 
 plt.show()
 
@@ -686,6 +690,7 @@ make_plot(
     data_mid=data_hiv_moh_tests["annual_testing_rate_all_ages"],
 )
 plt.legend(["TLO", "MoH"])
+plt.ylim((0, 1))
 
 plt.show()
 
@@ -699,7 +704,7 @@ make_plot(
     model=testing_yield,
     data_mid=data_hiv_moh_tests["testing_yield"],
 )
-plt.ylim((0, 0.15))
+plt.ylim((0, 0.06))
 plt.legend(["TLO", "MoH"])
 
 plt.show()
@@ -780,3 +785,19 @@ plt.show()
 # plt.savefig(outputpath / ("Percent_tb_cases_treated" + datestamp + ".png"), format='png')
 #
 # plt.show()
+
+
+# # ---------------------------------------------------------------------- #
+# HIV test logger
+
+# test = output["tlo.methods.hiv"]["hiv_test"].copy()
+# test = test.set_index("date")
+# test["year"] = test.index.year
+# agg_tests = test.groupby(by=["year", "referred_from"]).size()
+# total_tests_per_year = test.groupby(by=["year"]).size()
+# referral_type_proportion = agg_tests.div(total_tests_per_year, level="year") * 100
+#
+# writer = pd.ExcelWriter(outputpath / ("hiv_tests_inc_2010_testing" + datestamp + ".xlsx"))
+# agg_tests.to_excel(writer, sheet_name="numbers_tests")
+# referral_type_proportion.to_excel(writer, sheet_name="proportion_tests")
+# writer.save()

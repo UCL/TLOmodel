@@ -1,7 +1,7 @@
 {
   "scenario_script_path": "src/scripts/hiv/hiv_tb_analyses/baseline_scenario.py",
   "scenario_seed": 32,
-  "runs_per_draw": 5,
+  "runs_per_draw": 2,
   "draws": [
     {
       "draw_number": 0,
@@ -1204,6 +1204,6 @@
       }
     }
   ],
-  "commit": "ee0aba3832f734fc6b5b0b4ba5f5a687238880b6",
-  "github": "https://github.com/UCL/TLOmodel/blob/ee0aba3832f734fc6b5b0b4ba5f5a687238880b6/src/scripts/hiv/hiv_tb_analyses/baseline_scenario.py"
+  "commit": "0f83f4b3808426221a2c7c3fa4d083cb71a23d47",
+  "github": "https://github.com/UCL/TLOmodel/blob/0f83f4b3808426221a2c7c3fa4d083cb71a23d47/src/scripts/hiv/hiv_tb_analyses/baseline_scenario.py"
 }

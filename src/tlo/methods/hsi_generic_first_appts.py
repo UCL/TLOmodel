@@ -127,17 +127,17 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         #  - suppress the footprint (as it done as part of another appointment)
         #  - do not do referrals if the person is HIV negative (assumed not time for counselling etc).
         # todo comment/uncomment
-        if 'Hiv' in self.sim.modules:
-            schedule_hsi(
-                 HSI_Hiv_TestAndRefer(
-                     person_id=person_id,
-                     module=self.sim.modules['Hiv'],
-                     suppress_footprint=True,
-                     do_not_refer_if_neg=True,
-                     referred_from='Generic_appt'),
-                 topen=self.sim.date,
-                 tclose=None,
-                 priority=0)
+        # if 'Hiv' in self.sim.modules:
+        #     schedule_hsi(
+        #          HSI_Hiv_TestAndRefer(
+        #              person_id=person_id,
+        #              module=self.sim.modules['Hiv'],
+        #              suppress_footprint=True,
+        #              do_not_refer_if_neg=True,
+        #              referred_from='Generic_appt'),
+        #          topen=self.sim.date,
+        #          tclose=None,
+        #          priority=0)
 
         if age <= 5:
             # ----------------------------------- CHILD <=5 -----------------------------------
