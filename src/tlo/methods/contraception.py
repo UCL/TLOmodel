@@ -430,6 +430,7 @@ class Contraception(Module):
         processed_params['p_stop_per_month'] = contraception_stop()
         processed_params['p_start_after_birth'] = contraception_initiation_after_birth()
 
+        # todo - soft code this coefficient and manipulate to be closer to 1.0 (now that we have removed bug about the oproportion of surviving childen)
         processed_params['p_pregnancy_no_contraception_per_month'] = 1.75 * pregnancy_no_contraception()
         processed_params['p_pregnancy_with_contraception_per_month'] = 1.75 * pregnancy_with_contraception()
 

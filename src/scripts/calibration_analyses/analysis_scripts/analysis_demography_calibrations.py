@@ -1,7 +1,14 @@
 """
 Plot to demonstrate correspondence between model and data outputs wrt births, population size and total deaths.
 
-This uses the results of the Scenario defined in: src/scripts/calibration_analyses/scenarios/long_run_no_diseases.py
+This uses the results of the Scenario defined in:
+
+src/scripts/calibration_analyses/scenarios/long_run_no_diseases.py
+
+or
+
+src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py
+
 """
 
 from pathlib import Path
@@ -265,9 +272,6 @@ births_results = extract_results(
     do_scaling=True
 )
 
-# zero-out the values for 2030 (because the current model run includes 2030 but this skews 5 years averages)
-births_results.loc[2030] = 0
-
 # Aggregate the model outputs into five year periods:
 calperiods, calperiodlookup = make_calendar_period_lookup()
 births_results.index = births_results.index.map(calperiodlookup).astype(make_calendar_period_type())
@@ -343,25 +347,34 @@ for tp in time_period:
     plt.show()
 
 # %% Births: Number over time - year-by-year to examine the cause of the "dip
-
-byby = summarize(extract_results(
-    results_folder,
-    module="tlo.methods.demography",
-    key="on_birth",
-    custom_generate_series=(
-        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
-    ),
-    do_scaling=False,
-), collapse_columns=True)
-
-byby.plot()
-plt.ylim([0, 1200])
-plt.show()
-
-
-# get_mean_pop_by_age_for_sex_and_year(sex, year)
-
-
+#
+# byby = summarize(extract_results(
+#     results_folder,
+#     module="tlo.methods.demography",
+#     key="on_birth",
+#     custom_generate_series=(
+#         lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
+#     ),
+#     do_scaling=True,
+# ), collapse_columns=True)
+#
+# byby.plot()
+# plt.show()
+#
+# bbyp = byby.groupby(by= np.floor((byby.index - 2010) / 5).astype(int)).sum()
+#
+# # the calperiods routine from above:
+# calpers = byby.index.map(calperiodlookup).astype(make_calendar_period_type())
+# b_by_calpers = byby.groupby(by=calpers).sum()
+# b_by_calpers = b_by_calpers.replace({0: np.nan})  #<-?
+#
+# # Plot Comparison:
+# bbyp.plot(marker='x')
+# plt.plot(range(8), births_model.Model_mean.dropna())
+# plt.plot(range(8), b_by_calpers.loc[b_by_calpers.index.isin([
+#     '2010-2014','2015-2019','2020-2024','2025-2029','2030-2034','2035-2039','2040-2044','2045-2049'])],
+#          '--')
+# plt.show()
 
 # %% Describe patterns of contraceptive usage over time
 
