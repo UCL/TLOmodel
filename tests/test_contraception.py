@@ -400,12 +400,16 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
         sim.simulate(end_date=sim.start_date + pd.DateOffset(months=3))
         __check_no_illegal_switches(sim)
 
-        # Those on a contraceptive that requires HSI for maintenance should have defaulted to "not_using"
+        # Those on a contraceptive that requires HSI for maintenance should have defaulted to "not_using" (or another
+        # method that does not require an HSI switch to, in case there is a "natural choice" to switch to it).
+        states_that_do_require_HSI_to_switch_to = (sim.modules['Contraception'].all_contraception_states -
+                                                   sim.modules['Contraception'].states_that_may_require_HSI_to_switch_to
+                                                   )
         for i, _c in enumerate(contraceptives):
             # These due an appointment will have defaulted if they are on a contraceptive that requires HSI/consumables
 
             if _c in sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on:
-                assert df.at[person_ids_due_appt[i], "co_contraception"] == 'not_using'
+                assert df.at[person_ids_due_appt[i], "co_contraception"] in states_that_do_require_HSI_to_switch_to
             else:
                 assert df.at[person_ids_due_appt[i], "co_contraception"] == _c
 
