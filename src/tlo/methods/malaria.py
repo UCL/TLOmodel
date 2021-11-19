@@ -1057,7 +1057,7 @@ class HSI_Malaria_complicated_treatment_child(HSI_Event, IndividualScopeEventMix
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Malaria_treatment_complicated_child"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1102,7 +1102,7 @@ class HSI_Malaria_complicated_treatment_adult(HSI_Event, IndividualScopeEventMix
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Malaria_treatment_complicated_adult"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
