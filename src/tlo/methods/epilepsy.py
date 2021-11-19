@@ -362,7 +362,6 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 # todo - this below should be instead dealt with by people with seizures presenting and then being
 # todo   diagnosed and put on anti-epileptics
 
-
         # def start_antiep(ep_seiz_stat, probability):
         #     """start individuals with seiz status on antiep with given probability"""
         #     idx = df.index[df.is_alive & (df.ep_seiz_stat == ep_seiz_stat) & ~df.ep_antiep]
@@ -418,7 +417,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         dfg = df.index[df.is_alive & ((df.ep_seiz_stat == '2') | (df.ep_seiz_stat == '3'))]
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=dfg,
+            person_id=dfg.to_list(),
             symptom_string='seizures',
             add_or_remove='+',
             disease_module=self.module
@@ -426,7 +425,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         dfh = df.index[df.is_alive & ((df.ep_seiz_stat == '0') | (df.ep_seiz_stat == '1'))]
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=dfh,
+            person_id=dfh.to_list(),
             symptom_string='seizures',
             add_or_remove='-',
             disease_module=self.module
