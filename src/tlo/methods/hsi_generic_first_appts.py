@@ -262,16 +262,6 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                             topen=self.sim.date,
                             tclose=None)
 
-               # If the symptoms include seizures then aim to initiate antiepileptics
-                    if 'seizures' in symptoms:
-                        schedule_hsi(
-                            HSI_Epilepsy_Start_Anti_Epileptic(
-                                person_id=person_id,
-                                module=self.sim.modules['seizures']),
-                            priority=0,
-                            topen=self.sim.date,
-                            tclose=None)
-
             # ----- OAC
             # If the symptoms include OtherAdultCancer_Investigation_Following_other_adult_ca_symptom,
             # then begin investigation for other adult cancer:
@@ -517,6 +507,15 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         # else:
             # treat symptoms acidosis, coma_convulsions, renal_failure, shock, jaundice, anaemia
 
+        if "Epilepsy" in self.sim.modules:
+            if 'seizures' in symptoms:
+                health_system.schedule_hsi_event(
+                    HSI_Epilepsy_Start_Anti_Epileptic(
+                        person_id=person_id,
+                        module=self.sim.modules['Epilepsy']),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None)
         # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
         if 'craving_sandwiches' in symptoms:
             event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
