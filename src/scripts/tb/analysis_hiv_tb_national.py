@@ -37,7 +37,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 5000
+popsize = 1000
 
 # set up the log config
 log_config = {
@@ -54,7 +54,7 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 323  # set seed for reproducibility
+seed = 500  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -90,8 +90,8 @@ sim.modules["Tb"].parameters["tb_high_risk_distr"] = pd.read_excel(
 # change tb mixing parameter to allow more between-district transmission
 sim.modules["Tb"].parameters["mixing_parameter"] = 1
 sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 0.5
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 1
-sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = 1
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.98
+sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = 0.98
 sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1
 sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_appointment_not_available"] = 1
 

@@ -121,6 +121,7 @@ class Hiv(Module):
             Types.REAL,
             "Fraction of persons living with HIV at baseline that have developed AIDS",
         ),
+        "treatment_cascade": Parameter(Types.DATA_FRAME, "spectrum estimates of treatment cascade"),
         "testing_coverage_male": Parameter(
             Types.REAL, "proportion of adult male population tested"
         ),
@@ -419,6 +420,9 @@ class Hiv(Module):
         # Load assumed ART coverage at baseline (year 2010)
         p["art_coverage"] = workbook["art_coverage"]
 
+        # Load spectrum estimates of treatment cascade
+        p["treatment_cascade"] = workbook["spectrum_treatment_cascade"]
+
         # DALY weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if "HealthBurden" in self.sim.modules.keys():
@@ -586,7 +590,6 @@ class Hiv(Module):
         self.initialise_baseline_art(population)  # allocate baseline art coverage
         # todo remove this to get 100% linkage and adherence
         self.initialise_baseline_tested(population)  # allocate baseline art coverage
-        # self.schedule_baseline_tests(population)  # schedule hiv tests to occur in first year (2010)
 
     def initialise_baseline_prevalence(self, population):
         """
@@ -760,105 +763,79 @@ class Hiv(Module):
 
     def initialise_baseline_tested(self, population):
         """assign initial hiv testing levels, only for adults
-        all who have been allocated ART will already have property hv_number_tests=1
-        use the hiv testing coverage levels to assign any remaining hiv tests
+        all who have been allocated ART will already have property hv_diagnosed=True
+        use the spectrum proportion PLHIV who know status to assign remaining tests
         """
+
         df = population.props
         p = self.parameters
 
+        # get proportion plhiv who know staus from spectum estimates
+        worksheet = p["treatment_cascade"]
+        testing_data = worksheet.loc[
+            worksheet.year == 2010, ["year", "age", "know_status"]
+        ]
+        adult_know_status = testing_data.loc[(testing_data.age == "adults"), "know_status"].values[0] / 100
+        children_know_status = testing_data.loc[(testing_data.age == "children"), "know_status"].values[0] / 100
+
         random_draw = self.rng.random_sample(size=len(df))
-        testing_dict = {
-            "F": p["testing_coverage_female"],
-            "M": p["testing_coverage_male"],
-        }
 
-        # test_index = {}
-        for sex in ["F", "M"]:
-            hiv_test = len(
-                df[
-                    df.is_alive
-                    & (df.hv_number_tests > 0)
-                    & (df.sex == sex)
-                    & (df.age_years >= 15)
-                    ]
+        # ADULTS
+        # find proportion of adult PLHIV diagnosed (currently on ART)
+        adults_diagnosed = len(df[df.is_alive
+                                  & df.hv_diagnosed
+                                  & (df.age_years >= 15)])
+
+        adults_infected = len(df[df.is_alive
+                                  & df.hv_inf
+                                  & (df.age_years >= 15)])
+
+        prop_currently_diagnosed = adults_diagnosed / adults_infected
+        hiv_test_deficit = adult_know_status - prop_currently_diagnosed
+
+        adult_test_index = []
+        if hiv_test_deficit > 0:
+            # assign more tests to fill testing coverage deficit
+            adult_test_index = (
+                df[df.is_alive
+                & df.hv_inf
+                & ~df.hv_diagnosed
+                & (df.age_years >= 15)].sample(frac=hiv_test_deficit, random_state=self.rng)
+                    .index
             )
-            pop = len(df[df.is_alive & (df.sex == sex) & (df.age_years >= 15)])
-            hiv_test_coverage = hiv_test / pop
-            hiv_test_deficit = testing_dict[sex] - hiv_test_coverage
 
-            if hiv_test_deficit > 0:
-                # randomly assign more tests to fill testing coverage deficit
-                test_index = df.index[
-                    (random_draw < hiv_test_deficit)
-                    & df.is_alive
-                    & (df.sex == sex)
-                    & (df.age_years >= 15)
-                    ]
+        # CHILDREN
+        # find proportion of adult PLHIV diagnosed (currently on ART)
+        children_diagnosed = len(df[df.is_alive
+                                  & df.hv_diagnosed
+                                  & (df.age_years < 15)])
 
-                # assign hiv tests to males and females
-                # todo remove this as all historical tests counted in 2010 estimate
-                # df.loc[test_index, "hv_number_tests"] = 1
-                # dummy date for date last hiv test (before sim start), otherwise see big spike in testing 01-01-2010
-                df.loc[test_index, "hv_last_test_date"] = self.sim.date - pd.DateOffset(
-                    years=3
-                )
+        children_infected = len(df[df.is_alive
+                                  & df.hv_inf
+                                  & (df.age_years < 15)])
 
-                # person assumed to be diagnosed if they have had a test and are currently HIV positive:
-                # select those in test_index and hv_inf
-                df.loc[df.index.isin(test_index) & df.hv_inf & df.is_alive,
-                       "hv_diagnosed"] = True
+        prop_currently_diagnosed = children_diagnosed / children_infected
+        hiv_test_deficit = children_know_status - prop_currently_diagnosed
 
-    # def schedule_baseline_tests(self, population):
-    #     """ schedule hiv tests to occur in the baseline year 2010
-    #     """
-    #     df = population.props
-    #     p = self.parameters
-    #     # ----------------------------------- SPONTANEOUS TESTING -----------------------------------
-    #     # extract annual testing rates from MoH Reports
-    #     test_rates = p["hiv_testing_rates"]
-    #
-    #     current_year = 2010
-    #
-    #     # multiply rates by 0.9 to account for additional testing through ANC/symptoms
-    #     testing_rate_children = test_rates.loc[
-    #         test_rates.year == current_year, "annual_testing_rate_children"
-    #     ].values[0] * 0.6
-    #     testing_rate_adults = test_rates.loc[
-    #         test_rates.year == current_year, "annual_testing_rate_adults"
-    #     ].values[0] * 0.6
-    #     random_draw = self.rng.random_sample(size=len(df))
-    #
-    #     child_tests_idx = df.loc[
-    #         df.is_alive
-    #         & ~df.hv_diagnosed
-    #         & (df.age_years < 15)
-    #         & (random_draw < testing_rate_children)
-    #         ].index
-    #
-    #     # adult testing trends also informed by demographic characteristics
-    #     # relative probability of testing - this may skew testing rates higher or lower than moh reports
-    #     rr_of_test = self.lm["lm_spontaneous_test_12m"].predict(df[df.is_alive])
-    #     mean_prob_test = (rr_of_test * testing_rate_adults).mean()
-    #     scaled_prob_test = (rr_of_test * testing_rate_adults) / mean_prob_test
-    #     overall_prob_test = scaled_prob_test * testing_rate_adults
-    #
-    #     random_draw = self.rng.random_sample(size=len(df[df.is_alive]))
-    #     adult_tests_idx = df.loc[df.is_alive & (random_draw < overall_prob_test)].index
-    #
-    #     idx_will_test = child_tests_idx.union(adult_tests_idx)
-    #
-    #     # todo reinstate
-    #     for person_id in idx_will_test:
-    #         date_test = self.sim.date + pd.DateOffset(
-    #             days=self.rng.randint(0, 365))
-    #         self.sim.modules["HealthSystem"].schedule_hsi_event(
-    #             hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self, referred_from='HIV_poll'),
-    #             priority=1,
-    #             topen=date_test,
-    #             tclose=self.sim.date + pd.DateOffset(
-    #                 months=12
-    #             ),
-    #         )
+        child_test_index = []
+        if hiv_test_deficit > 0:
+            # assign more tests to fill testing coverage deficit
+            child_test_index = (
+                df[df.is_alive
+                & df.hv_inf
+                & ~df.hv_diagnosed
+                & (df.age_years < 15)].sample(frac=hiv_test_deficit, random_state=self.rng)
+                    .index
+            )
+
+        # join indices
+        test_index = adult_test_index.join(child_test_index) if child_test_index else adult_test_index
+
+        df.loc[df.index.isin(test_index), "hv_diagnosed"] = True
+        # dummy date for date last hiv test (before sim start), otherwise see big spike in testing 01-01-2010
+        df.loc[test_index, "hv_last_test_date"] = self.sim.date - pd.DateOffset(
+            years=3
+        )
 
     def initialise_simulation(self, sim):
         """
