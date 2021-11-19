@@ -1264,7 +1264,7 @@ class NewbornOutcomes(Module):
             # same level of facility that they were delivered in
             if m['delivery_setting'] == 'health_centre':
                 event = HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(
-                    self, person_id=child_id, facility_level_of_this_hsi=1)
+                    self, person_id=child_id, facility_level_of_this_hsi='1a')
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
@@ -1275,7 +1275,7 @@ class NewbornOutcomes(Module):
 
             elif m['delivery_setting'] == 'hospital':
                 event = HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(
-                    self, person_id=child_id, facility_level_of_this_hsi=int(self.rng.choice([1, 2])))
+                    self, person_id=child_id, facility_level_of_this_hsi=self.rng.choice(['1a', '1b']))  # todo note
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
@@ -1326,7 +1326,7 @@ class NewbornOutcomes(Module):
                     nci[child_id]['sought_care_for_complication'] = True
 
                     event = HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(
-                        self, person_id=child_id, facility_level_of_this_hsi=int(self.rng.choice([1, 2])))
+                        self, person_id=child_id, facility_level_of_this_hsi=self.rng.choice(['1a', '1b']))  # todo note
 
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         event, priority=0, topen=self.sim.date, tclose=self.sim.date + DateOffset(days=1))
