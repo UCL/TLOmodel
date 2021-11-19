@@ -27,8 +27,8 @@ def run():
 
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
-    end_date = Date(2029, 12, 31)
-    pop_size = 10_000
+    end_date = Date(2099, 12, 31)
+    pop_size = 20_000
 
     sim = Simulation(start_date=start_date, log_config=log_config)
 
@@ -44,7 +44,8 @@ def run():
 
 
 def get_scaling_ratio(sim):
-    cens_tot = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
+    cens_tot = pd.read_csv(Path(resourcefilepath) / 'demography' / "ResourceFile_PopulationSize_2018Census.csv")[
+        'Count'].sum()
     cens_yr = 2018
     cens_date = Date(cens_yr, 7, 1)  # notional date for census at midpoint of the census year.
     assert sim.date >= cens_date, "Cannot scale if simulation does not include the census date"
@@ -96,13 +97,13 @@ births_model = births_model.groupby(by='Period')['total_births'].sum()
 births_model.index = births_model.index.astype(make_calendar_period_type())
 
 # Births over time (WPP)
-wpp = pd.read_csv(Path(resourcefilepath) / "ResourceFile_TotalBirths_WPP.csv")
+wpp = pd.read_csv(Path(resourcefilepath) / 'demography' / "ResourceFile_TotalBirths_WPP.csv")
 wpp = wpp.groupby(['Period', 'Variant'])['Total_Births'].sum().unstack()
 wpp.index = wpp.index.astype(make_calendar_period_type())
 wpp.columns = 'WPP_' + wpp.columns
 
 # Births in 2018 Census
-cens = pd.read_csv(Path(resourcefilepath) / "ResourceFile_Births_2018Census.csv")
+cens = pd.read_csv(Path(resourcefilepath) / 'demography' / "ResourceFile_Births_2018Census.csv")
 cens_per_5y = cens['Count'].sum() * 5
 
 # Merge in model results
