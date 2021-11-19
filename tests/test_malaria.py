@@ -109,7 +109,7 @@ def test_remove_malaria_test(tmpdir):
 
     service_availability = list([" "])  # no treatments available
 
-    end_date = Date(2011, 1, 1)
+    end_date = Date(2014, 12, 31)
     sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
