@@ -18,6 +18,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
+from tlo.methods.hiv import DummyHivModule
 
 seed = 8974
 
@@ -86,7 +87,11 @@ def register_modules(ignore_cons_constraints):
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+
+                 # - Dummy HIV module (as contraception requires the property hv_inf)
+                 DummyHivModule()
+                 )
 
     return sim
 
@@ -96,7 +101,6 @@ def test_run_and_check_dtypes():
     sim = register_modules(ignore_cons_constraints=False)
     sim.make_initial_population(n=1000)
     sim.simulate(end_date=Date(2015, 1, 1))
-
     check_dtypes(sim)
 
 
@@ -435,7 +439,7 @@ def test_newborn_hsi_applies_risk_of_complications_and_delivers_treatment_to_fac
 
     # Run the newborn care event
     newborn_care = newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(
-        person_id=child_id, module=sim.modules['NewbornOutcomes'], facility_level_of_this_hsi=2)
+        person_id=child_id, module=sim.modules['NewbornOutcomes'], facility_level_of_this_hsi='2')
     newborn_care.apply(person_id=child_id, squeeze_factor=0.0)
 
     # check that the risk of complications has correctly been applied

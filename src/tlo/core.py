@@ -171,9 +171,7 @@ class Module:
 
     `parameters`
         A dictionary of module parameters, derived from specifications in the PARAMETERS
-        class attribute on a subclass. These parameters are also available as object
-        attributes in their own right(where their names do not clash) so you can do both
-        `m.parameters['name']` and `m.name`.
+        class attribute on a subclass.
 
     `rng`
         A random number generator specific to this module, with its own internal state.
@@ -357,28 +355,3 @@ class Module:
         """This is called after the simulation has ended.
         Modules do not need to declare this."""
         pass
-
-    def __getattr__(self, name):
-        """Look up a module parameter as though it is an object property.
-
-        :param name: the parameter name
-        """
-        try:
-            return self.parameters[name]
-        except KeyError:
-            raise AttributeError('Attribute %s not found' % name)
-
-    def __setattr__(self, name, value):
-        """Set a module parameter as though it is an object property.
-
-        :param name: the parameter name
-        :param value: the new value for the parameter
-        """
-        try:
-            super().__setattr__(name, value)
-        except AttributeError:
-            if name in self.PARAMETERS:
-                assert isinstance(value, self.PARAMETERS[name].python_type)
-                self.parameters[name] = value
-            else:
-                raise
