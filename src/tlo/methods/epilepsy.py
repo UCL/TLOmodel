@@ -362,27 +362,26 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 # todo - this below should be instead dealt with by people with seizures presenting and then being
 # todo   diagnosed and put on anti-epileptics
 
-        def start_antiep(ep_seiz_stat, probability):
-            """start individuals with seiz status on antiep with given probability"""
-            idx = df.index[df.is_alive & (df.ep_seiz_stat == ep_seiz_stat) & ~df.ep_antiep]
-            selected = probability > self.module.rng.random_sample(size=len(idx))
-            df.loc[idx, 'ep_antiep'] = selected
-            return idx[selected]
 
-        # update ep_antiep if ep_seiz_stat = 2 & ep_seiz_stat = 3
-        now_on_antiep1 = start_antiep('2', self.base_prob_3m_antiepileptic * self.rr_antiepileptic_seiz_infreq)
-        now_on_antiep2 = start_antiep('3', self.base_prob_3m_antiepileptic)
-
-        # start on treatment if health system has capacity
-        # create a df with one row per person needing to start treatment - this is only way I have
-        # managed to get query access to service code to work properly here (should be possible to remove
-        # relevant rows from dfx rather than create dfxx
-        for person_id_to_start_treatment in now_on_antiep1.append(now_on_antiep2):
-            event = HSI_Epilepsy_Start_Anti_Epileptic(self.module, person_id=person_id_to_start_treatment)
-            target_date = self.sim.date + DateOffset(days=int(self.module.rng.rand() * 30))
-            self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=target_date, tclose=None)
-
-
+        # def start_antiep(ep_seiz_stat, probability):
+        #     """start individuals with seiz status on antiep with given probability"""
+        #     idx = df.index[df.is_alive & (df.ep_seiz_stat == ep_seiz_stat) & ~df.ep_antiep]
+        #     selected = probability > self.module.rng.random_sample(size=len(idx))
+        #     df.loc[idx, 'ep_antiep'] = selected
+        #     return idx[selected]
+        #
+        # # update ep_antiep if ep_seiz_stat = 2 & ep_seiz_stat = 3
+        # now_on_antiep1 = start_antiep('2', self.base_prob_3m_antiepileptic * self.rr_antiepileptic_seiz_infreq)
+        # now_on_antiep2 = start_antiep('3', self.base_prob_3m_antiepileptic)
+        #
+        # # start on treatment if health system has capacity
+        # # create a df with one row per person needing to start treatment - this is only way I have
+        # # managed to get query access to service code to work properly here (should be possible to remove
+        # # relevant rows from dfx rather than create dfxx
+        # for person_id_to_start_treatment in now_on_antiep1.append(now_on_antiep2):
+        #     event = HSI_Epilepsy_Start_Anti_Epileptic(self.module, person_id=person_id_to_start_treatment)
+        #     target_date = self.sim.date + DateOffset(days=int(self.module.rng.rand() * 30))
+        #     self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=target_date, tclose=None)
 
 
         def stop_antiep(indices, probability):
