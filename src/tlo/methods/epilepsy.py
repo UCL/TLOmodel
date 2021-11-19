@@ -359,30 +359,6 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         alive_seiz_stat_1_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
         alive_seiz_stat_2_or_3_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3'])) & df.ep_antiep]
 
-# todo - this below should be instead dealt with by people with seizures presenting and then being
-# todo   diagnosed and put on anti-epileptics
-
-        # def start_antiep(ep_seiz_stat, probability):
-        #     """start individuals with seiz status on antiep with given probability"""
-        #     idx = df.index[df.is_alive & (df.ep_seiz_stat == ep_seiz_stat) & ~df.ep_antiep]
-        #     selected = probability > self.module.rng.random_sample(size=len(idx))
-        #     df.loc[idx, 'ep_antiep'] = selected
-        #     return idx[selected]
-        #
-        # # update ep_antiep if ep_seiz_stat = 2 & ep_seiz_stat = 3
-        # now_on_antiep1 = start_antiep('2', self.base_prob_3m_antiepileptic * self.rr_antiepileptic_seiz_infreq)
-        # now_on_antiep2 = start_antiep('3', self.base_prob_3m_antiepileptic)
-        #
-        # # start on treatment if health system has capacity
-        # # create a df with one row per person needing to start treatment - this is only way I have
-        # # managed to get query access to service code to work properly here (should be possible to remove
-        # # relevant rows from dfx rather than create dfxx
-        # for person_id_to_start_treatment in now_on_antiep1.append(now_on_antiep2):
-        #     event = HSI_Epilepsy_Start_Anti_Epileptic(self.module, person_id=person_id_to_start_treatment)
-        #     target_date = self.sim.date + DateOffset(days=int(self.module.rng.rand() * 30))
-        #     self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=target_date, tclose=None)
-
-
         def stop_antiep(indices, probability):
             """stop individuals on antiep with given probability"""
             df.loc[indices, 'ep_antiep'] = probability < self.module.rng.random_sample(size=len(indices))
@@ -492,9 +468,9 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'n_antiep': n_antiep
                     })
 
-        individual = df.loc[[18]]
+#       individual = df.loc[[18]]
 
-        logger.info(key='individual_check', data=individual, description='following an individual through simulation')
+#       logger.info(key='individual_check', data=individual, description='following an individual through simulation')
 
 
 class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
