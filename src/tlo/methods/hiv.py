@@ -587,9 +587,10 @@ class Hiv(Module):
 
         # Launch sub-routines for allocating the right number of people into each category
         self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
+
         self.initialise_baseline_art(population)  # allocate baseline art coverage
         # todo remove this to get 100% linkage and adherence
-        self.initialise_baseline_tested(population)  # allocate baseline art coverage
+        self.initialise_baseline_tested(population)  # allocate baseline testing coverage
 
     def initialise_baseline_prevalence(self, population):
         """
@@ -688,7 +689,7 @@ class Hiv(Module):
             how="left",
         )["prop_coverage"]
 
-        # make a series with relative risks of art which depends on >10 years infected
+        # make a series with relative risks of art which depends on >10 years infected (5x higher)
         rr_art = pd.Series(1, index=df.index)
         rr_art.loc[
             df.is_alive & (df.hv_date_inf < (self.sim.date - pd.DateOffset(years=10)))
@@ -766,7 +767,6 @@ class Hiv(Module):
         all who have been allocated ART will already have property hv_diagnosed=True
         use the spectrum proportion PLHIV who know status to assign remaining tests
         """
-
         df = population.props
         p = self.parameters
 
@@ -777,8 +777,6 @@ class Hiv(Module):
         ]
         adult_know_status = testing_data.loc[(testing_data.age == "adults"), "know_status"].values[0] / 100
         children_know_status = testing_data.loc[(testing_data.age == "children"), "know_status"].values[0] / 100
-
-        random_draw = self.rng.random_sample(size=len(df))
 
         # ADULTS
         # find proportion of adult PLHIV diagnosed (currently on ART)
@@ -792,17 +790,18 @@ class Hiv(Module):
 
         prop_currently_diagnosed = adults_diagnosed / adults_infected
         hiv_test_deficit = adult_know_status - prop_currently_diagnosed
+        number_deficit = int(hiv_test_deficit * adults_infected)
 
         adult_test_index = []
         if hiv_test_deficit > 0:
-            # assign more tests to fill testing coverage deficit
-            adult_test_index = (
-                df[df.is_alive
+
+            # sample number_deficit from remaining undiagnosed pop
+            adult_undiagnosed = df.loc[df.is_alive
                 & df.hv_inf
                 & ~df.hv_diagnosed
-                & (df.age_years >= 15)].sample(frac=hiv_test_deficit, random_state=self.rng)
-                    .index
-            )
+                & (df.age_years >= 15)].index
+
+            adult_test_index = self.rng.choice(adult_undiagnosed, size=number_deficit, replace=False)
 
         # CHILDREN
         # find proportion of adult PLHIV diagnosed (currently on ART)
@@ -816,20 +815,19 @@ class Hiv(Module):
 
         prop_currently_diagnosed = children_diagnosed / children_infected
         hiv_test_deficit = children_know_status - prop_currently_diagnosed
+        number_deficit = int(hiv_test_deficit * children_infected)
 
         child_test_index = []
         if hiv_test_deficit > 0:
-            # assign more tests to fill testing coverage deficit
-            child_test_index = (
-                df[df.is_alive
+            child_undiagnosed = df.loc[df.is_alive
                 & df.hv_inf
                 & ~df.hv_diagnosed
-                & (df.age_years < 15)].sample(frac=hiv_test_deficit, random_state=self.rng)
-                    .index
-            )
+                & (df.age_years < 15)].index
+
+            child_test_index = self.rng.choice(child_undiagnosed, size=number_deficit, replace=False)
 
         # join indices
-        test_index = adult_test_index.join(child_test_index) if child_test_index else adult_test_index
+        test_index = list(adult_test_index) + list(child_test_index)
 
         df.loc[df.index.isin(test_index), "hv_diagnosed"] = True
         # dummy date for date last hiv test (before sim start), otherwise see big spike in testing 01-01-2010
@@ -911,15 +909,15 @@ class Hiv(Module):
 
         # Schedule the AIDS death events for those who have got AIDS already
         # todo this may need to be removed - check death rates
-        for person_id in has_aids_idx:
-            # schedule a HSI_Test_and_Refer otherwise initial AIDS rates and deaths are far too high
-            date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 365))
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
-                priority=1,
-                topen=date_test,
-                tclose=self.sim.date + pd.DateOffset(days=365),
-            )
+        # for person_id in has_aids_idx:
+        #     # schedule a HSI_Test_and_Refer otherwise initial AIDS rates and deaths are far too high
+        #     date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 365))
+        #     self.sim.modules["HealthSystem"].schedule_hsi_event(
+        #         hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
+        #         priority=1,
+        #         topen=date_test,
+        #         tclose=self.sim.date + pd.DateOffset(days=365),
+        #     )
 
             date_aids_death = (
                 self.sim.date + self.get_time_from_aids_to_death()

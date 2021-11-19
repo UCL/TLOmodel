@@ -54,7 +54,7 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 500  # set seed for reproducibility
+seed = 200  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
