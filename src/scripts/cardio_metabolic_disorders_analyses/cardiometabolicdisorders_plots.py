@@ -37,8 +37,8 @@ def runsim(seed=0):
     # add file handler for the purpose of logging
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2025, 12, 31)
-    popsize = 40000
+    end_date = Date(2019, 12, 31)
+    popsize = 10000
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
@@ -72,27 +72,10 @@ comparison = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath
 comparison.to_csv('GBD_and_model_Deaths.csv')
 condition_names = ["Diabetes", "Heart Disease", "Kidney Disease", "Stroke"]
 
-df_t = pd.DataFrame(index=['M', 'F'], columns=condition_names)
 age_cats = ['20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60-64',
             '65-69', '70-74', '75-79', '80-84', '85-89', '90-94', '95-99']
-for cond in condition_names:
-    deaths_men = []
-    deaths_women = []
-    for age_cat in age_cats:
-        deaths_men.append(comparison.loc[('2015-2019', 'M', f'{age_cat}', f'{cond}')]['model'])
-        deaths_women.append(comparison.loc[('2015-2019', 'F', f'{age_cat}', f'{cond}')]['model'])
-    deaths_men_sum = sum(deaths_men)
-    deaths_women_sum = sum(deaths_women)
-    df_t.at['M', f'{cond}'] = deaths_men_sum
-    df_t.at['F', f'{cond}'] = deaths_women_sum
-
-df_t.to_csv('Sum_Deaths.csv')
 
 for cond in condition_names:
-
-    age_cats = ['20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60-64',
-                '65-69', '70-74', '75-79', '80-84', '85-89', '90-94', '95-99']
-
     men_GBD = []
     men_GBD_lower = []
     men_GBD_upper = []
