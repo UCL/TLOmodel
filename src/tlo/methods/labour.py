@@ -2782,7 +2782,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         self.TREATMENT_ID = 'Labour_ReceivesSkilledBirthAttendanceDuringLabour'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'NormalDelivery': 1})
         self.ALERT_OTHER_DISEASES = []
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi  # '1a'
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 1})
 
     def apply(self, person_id, squeeze_factor):
@@ -2982,7 +2982,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(HSI_Event, Indivi
         self.TREATMENT_ID = 'Labour_ReceivesSkilledBirthAttendanceFollowingLabour'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
         self.ALERT_OTHER_DISEASES = []
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi  # '1a'
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
 
     def apply(self, person_id, squeeze_factor):
@@ -3268,7 +3268,7 @@ class HSI_Labour_ReceivesCareFollowingCaesareanSection(HSI_Event, IndividualScop
 
         self.TREATMENT_ID = 'Labour_ReceivesCareFollowingCaesareanSection'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi  # '1a'
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
 

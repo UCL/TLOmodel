@@ -1767,7 +1767,7 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FirstAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AntenatalFirst': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi  # '1a'
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         assert self.ACCEPTED_FACILITY_LEVEL not in {'0'}  # TODO: also not None, but that causes error in doc build
         self.ALERT_OTHER_DISEASES = []
 
@@ -1878,7 +1878,7 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_SecondAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi  # '1a'
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1978,7 +1978,7 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_ThirdAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi  # '1a'
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2072,7 +2072,7 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
         the_appt_footprint['ANCSubsequent'] = 1
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi  # '1a'
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2158,7 +2158,7 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FifthAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi  # '1a'
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2244,7 +2244,7 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
         the_appt_footprint['ANCSubsequent'] = 1
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi  # '1a'
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2323,7 +2323,7 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_SeventhAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi  # '1a'
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2399,7 +2399,7 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
         the_appt_footprint['ANCSubsequent'] = 1
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi  # '1a'
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2552,7 +2552,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_AntenatalWardInpatientCare'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_this_hsi  # '1a'
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_this_hsi
         self.ALERT_OTHER_DISEASES = []
 
         beddays = self.module.calculate_beddays(person_id)
