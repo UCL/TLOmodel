@@ -2791,7 +2791,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
                     mni[mother_id]['will_receive_pnc'] = 'early'
 
                     early_event = HSI_Labour_ReceivesPostnatalCheck(
-                        module=self.module, person_id=mother_id, facility_level_of_this_hsi=1)
+                        module=self.module, person_id=mother_id)
 
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         early_event,
@@ -3000,14 +3000,14 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
     delivery and includes assessment and treatment of severe pre-eclampsia, hypertension, sepsis and postpartum
     bleeding. In addition woman are scheduled HIV screening if appropriate and started on postnatal iron tablets
     """
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Labour)
 
         self.TREATMENT_ID = 'Labour_ReceivesPostnatalCheck'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})  # todo: OPA?
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})  # todo: OPA?
         self.ALERT_OTHER_DISEASES = []
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})  # todo: seperate event for admission
 
     def apply(self, person_id, squeeze_factor):

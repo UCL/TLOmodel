@@ -791,7 +791,7 @@ class PostnatalSupervisor(Module):
             from tlo.methods.labour import HSI_Labour_ReceivesPostnatalCheck
 
             postnatal_check = HSI_Labour_ReceivesPostnatalCheck(
-                self.sim.modules['Labour'], person_id=person, facility_level_of_this_hsi=1)
+                self.sim.modules['Labour'], person_id=person)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(postnatal_check,
                                                                 priority=0,
@@ -1287,7 +1287,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
             from tlo.methods.labour import HSI_Labour_ReceivesPostnatalCheck
 
             pnc_one_maternal = HSI_Labour_ReceivesPostnatalCheck(
-                self.sim.modules['Labour'], person_id=individual_id, facility_level_of_this_hsi=1)
+                self.sim.modules['Labour'], person_id=individual_id)
 
             # If a mother has developed complications in the first week after birth and has been predicted to attend PNC
             # anyway she will attend now. If she was not predicted to attend but now develops complications she may
@@ -1388,8 +1388,8 @@ class HSI_PostnatalSupervisor_TreatmentForObstetricFistula(HSI_Event, Individual
         assert isinstance(module, PostnatalSupervisor)
 
         self.TREATMENT_ID = 'PostnatalSupervisor_TreatmentForObstetricFistula'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 5})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
 

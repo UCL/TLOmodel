@@ -160,8 +160,6 @@ class CareOfWomenDuringPregnancy(Module):
     PROPERTIES = {
         'ac_total_anc_visits_current_pregnancy': Property(Types.INT, 'rolling total of antenatal visits this woman has '
                                                                      'attended during her pregnancy'),
-        'ac_facility_type': Property(Types.CATEGORICAL, 'Type of facility that a woman will receive ANC in for her '
-                                                        'pregnancy', categories=['none', 'health_centre', 'hospital']),
         'ac_date_next_contact': Property(Types.DATE, 'Date on which this woman is scheduled to return for her next '
                                                      'ANC contact'),
         'ac_to_be_admitted': Property(Types.BOOL, 'Whether this woman requires admission following an ANC visit'),
@@ -215,7 +213,6 @@ class CareOfWomenDuringPregnancy(Module):
         df = population.props
 
         df.loc[df.is_alive, 'ac_total_anc_visits_current_pregnancy'] = 0
-        df.loc[df.is_alive, 'ac_facility_type'] = 'none'
         df.loc[df.is_alive, 'ac_date_next_contact'] = pd.NaT
         df.loc[df.is_alive, 'ac_to_be_admitted'] = False
         df.loc[df.is_alive, 'ac_receiving_iron_folic_acid'] = False
@@ -636,7 +633,6 @@ class CareOfWomenDuringPregnancy(Module):
         set[id_or_index, 'ac_total_anc_visits_current_pregnancy'] = 0
         set[id_or_index, 'ac_to_be_admitted'] = False
         set[id_or_index, 'ac_date_next_contact'] = pd.NaT
-        set[id_or_index, 'ac_facility_type'] = 'none'
         set[id_or_index, 'ac_receiving_iron_folic_acid'] = False
         set[id_or_index, 'ac_receiving_bep_supplements'] = False
         set[id_or_index, 'ac_receiving_calcium_supplements'] = False
@@ -659,7 +655,6 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[child_id, 'ac_total_anc_visits_current_pregnancy'] = 0
         df.at[child_id, 'ac_to_be_admitted'] = False
         df.at[child_id, 'ac_date_next_contact'] = pd.NaT
-        df.at[child_id, 'ac_facility_type'] = 'none'
         df.at[child_id, 'ac_receiving_iron_folic_acid'] = False
         df.at[child_id, 'ac_receiving_bep_supplements'] = False
         df.at[child_id, 'ac_receiving_calcium_supplements'] = False
@@ -770,8 +765,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         return recommended_gestation_next_anc
 
-    def antenatal_care_scheduler(self, individual_id, visit_to_be_scheduled, recommended_gestation_next_anc,
-                                 facility_level):
+    def antenatal_care_scheduler(self, individual_id, visit_to_be_scheduled, recommended_gestation_next_anc):
         """
         This function is responsible for scheduling a womans next ANC contact in the schedule if she chooses to seek
         care again.  It is called by each of the ANC HSIs.
@@ -779,7 +773,6 @@ class CareOfWomenDuringPregnancy(Module):
         :param visit_to_be_scheduled: Number if next visit in the schedule (2-8)
         :param recommended_gestation_next_anc: Gestational age in weeks a woman should be for the next visit in her
         schedule
-        :param facility_level: facility level that the next ANC contact in the schedule will occur at
         """
         df = self.sim.population.props
         params = self.current_parameters
@@ -799,31 +792,31 @@ class CareOfWomenDuringPregnancy(Module):
             # level)
             if visit_to_be_scheduled == 2:
                 visit = HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(
-                    self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
+                    self, person_id=individual_id)
 
             elif visit_to_be_scheduled == 3:
                 visit = HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(
-                    self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
+                    self, person_id=individual_id)
 
             elif visit_to_be_scheduled == 4:
                 visit = HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(
-                    self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
+                    self, person_id=individual_id)
 
             elif visit_to_be_scheduled == 5:
                 visit = HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(
-                    self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
+                    self, person_id=individual_id)
 
             elif visit_to_be_scheduled == 6:
                 visit = HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(
-                    self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
+                    self, person_id=individual_id)
 
             elif visit_to_be_scheduled == 7:
                 visit = HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(
-                    self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
+                    self, person_id=individual_id)
 
             elif visit_to_be_scheduled == 8:
                 visit = HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(
-                    self, person_id=individual_id, facility_level_of_this_hsi=facility_level)
+                    self, person_id=individual_id)
 
             # This function uses a womans gestation age to determine when the next visit should occur and schedules it
             # accordingly
@@ -887,14 +880,8 @@ class CareOfWomenDuringPregnancy(Module):
         assert df.at[individual_id, 'ac_to_be_admitted']
         logger.info(key='anc_interventions', data={'mother': individual_id, 'intervention': 'admission'})
 
-        # Use a weighted random draw to determine which level of facility the woman will be admitted too
-        # facility_level = int(self.rng.choice([1, 2, 3], p=params['prob_an_ip_at_facility_level_1_2_3']))
-        facility_level = self.rng.choice(['1a', '1b'], p=[0.5, 0.5])  # todo - note choice of facility_levels
-
-        # Schedule the HSI
         inpatient = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
-            self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id,
-            facility_level_this_hsi=facility_level)
+            self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id)
 
         self.sim.modules['HealthSystem'].schedule_hsi_event(inpatient, priority=0,
                                                             topen=self.sim.date,
@@ -1427,8 +1414,7 @@ class CareOfWomenDuringPregnancy(Module):
             logger.debug(key='msg', data=f'Mother {individual_id} was due to receive ANC today but she is an inpatient'
                                          f'- we will now determine if she will return for this visit in the future')
             self.antenatal_care_scheduler(individual_id, visit_to_be_scheduled=this_visit_number,
-                                          recommended_gestation_next_anc=gest_age_next_contact,
-                                          facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL)
+                                          recommended_gestation_next_anc=gest_age_next_contact)
             return False
 
         # If the squeeze factor is too high she will return tomorrow
@@ -1796,13 +1782,13 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
     the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient ward in the
     case of complications """
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FirstAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AntenatalFirst': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         assert self.ACCEPTED_FACILITY_LEVEL not in {'0'}  # TODO: also not None, but that causes error in doc build
         self.ALERT_OTHER_DISEASES = []
 
@@ -1827,23 +1813,6 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
 
             logger.info(key='anc1', data={'mother': person_id,
                                           'gestation': df.at[person_id, 'ps_gestational_age_in_weeks']})
-
-            # We generate the facility type that this HSI is occurring at (dependent on facility level) - we currently
-            # assume women will present to the same facility level and type for any future ANC visits
-
-            if self.ACCEPTED_FACILITY_LEVEL in ('1a', '1b'):
-                # Assume a 50/50 chance of health centre or hospital in level 1, however this will need editing
-                facility_type = self.module.rng.choice(['health_centre', 'hospital'], p=[0.5, 0.5])
-                df.at[person_id, 'ac_facility_type'] = facility_type
-                logger.info(key='anc_facility_type', data=f'{facility_type}')
-
-            elif self.ACCEPTED_FACILITY_LEVEL in ('2', '3', '4'):
-                logger.info(key='anc_facility_type', data='hospital')
-                df.at[person_id, 'ac_facility_type'] = 'hospital'
-
-            logger.debug(key='message', data=f'mother {person_id} presented for ANC1 at a '
-                                             f'{df.at[person_id, "ac_facility_type"]} at gestation '
-                                             f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
 
             # We add a visit to a rolling total of ANC visits in this pregnancy
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
@@ -1883,8 +1852,7 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             # Then we determine if this woman will return for her next ANC visit
             if mother.ps_gestational_age_in_weeks < 40:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
+                                                     recommended_gestation_next_anc=gest_age_next_contact)
 
             # If the woman has had any complications detected during ANC she is admitted for treatment to be initiated
             if df.at[person_id, 'ac_to_be_admitted']:
@@ -1911,13 +1879,13 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_SecondAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1927,7 +1895,7 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
         # Here we define variables used within the function that checks in this ANC visit can run
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
         this_contact = HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(
-            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
+            self.module, person_id=person_id)
 
         # Run the check
         can_anc_run = self.module.check_subsequent_anc_can_run(self, individual_id=person_id, this_contact=this_contact,
@@ -1935,11 +1903,6 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
                                                                gest_age_next_contact=gest_age_next_contact)
 
         if can_anc_run:
-            logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
-            logger.debug(key='msg', data=f'mother {person_id}presented for ANC 2 at a '
-                                         f'{df.at[person_id, "ac_facility_type"]} at gestation '
-                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
-
             assert mother.ac_total_anc_visits_current_pregnancy == 1
             assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 19
@@ -1955,8 +1918,7 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
             # And we schedule the next ANC appointment
             if mother.ps_gestational_age_in_weeks < 40:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=3,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
+                                                     recommended_gestation_next_anc=gest_age_next_contact)
 
             # Then we administer interventions that are due to be delivered at this womans gestational age, which may be
             # in addition to intervention delivered in ANC2
@@ -2008,13 +1970,13 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_ThirdAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2023,20 +1985,13 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
 
         # Here we define variables used within the function that checks in this ANC visit can run
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(
-            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
+        this_contact = HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(self.module, person_id=person_id)
 
         # Run the check
         can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 3, squeeze_factor,
                                                                gest_age_next_contact)
 
         if can_anc_run:
-
-            logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
-            logger.debug(key='message', data=f'mother {person_id}presented for ANC 3 at a '
-                                             f'{df.at[person_id, "ac_facility_type"]} at gestation '
-                                             f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
-
             assert mother.ac_total_anc_visits_current_pregnancy == 2
             assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 25
@@ -2049,8 +2004,7 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
 
             if mother.ps_gestational_age_in_weeks < 40:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=4,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
+                                                     recommended_gestation_next_anc=gest_age_next_contact)
 
             if mother.ps_gestational_age_in_weeks < 30:
                 self.module.iptp_administration(hsi_event=self)
@@ -2093,13 +2047,13 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FourthAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2108,20 +2062,13 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
 
         # Here we define variables used within the function that checks in this ANC visit can run
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(
-            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
+        this_contact = HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(self.module, person_id=person_id)
 
         # Run the check
         can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 4, squeeze_factor,
                                                                gest_age_next_contact)
 
         if can_anc_run:
-
-            logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
-            logger.debug(key='message', data=f'mother {person_id}presented for ANC 4 at a '
-                                             f'{df.at[person_id, "ac_facility_type"]} at gestation '
-                                             f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
-
             assert mother.ac_total_anc_visits_current_pregnancy == 3
             assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 29
@@ -2177,13 +2124,13 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FifthAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2192,19 +2139,13 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
 
         # Here we define variables used within the function that checks in this ANC visit can run
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(
-            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
+        this_contact = HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(self.module, person_id=person_id)
 
         # Run the check
         can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 5, squeeze_factor,
                                                                gest_age_next_contact)
 
         if can_anc_run:
-            logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
-            logger.debug(key='msg', data=f'mother {person_id}presented for ANC 5 at a '
-                                         f'{df.at[person_id, "ac_facility_type"]} at gestation '
-                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
-
             assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 33
             assert mother.ac_total_anc_visits_current_pregnancy == 4
@@ -2217,8 +2158,7 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
 
             if mother.ps_gestational_age_in_weeks < 40:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=6,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
+                                                     recommended_gestation_next_anc=gest_age_next_contact)
 
             if mother.ps_gestational_age_in_weeks < 36:
                 self.module.iptp_administration(hsi_event=self)
@@ -2257,13 +2197,13 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_SixthAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2272,20 +2212,13 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
 
         # Here we define variables used within the function that checks in this ANC visit can run
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(
-            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
+        this_contact = HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(self.module, person_id=person_id)
 
         # Run the check
         can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 6, squeeze_factor,
                                                                gest_age_next_contact)
 
         if can_anc_run:
-
-            logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
-            logger.debug(key='msg', data=f'mother {person_id}presented for ANC 6 at a '
-                                         f'{df.at[person_id, "ac_facility_type"]} at gestation '
-                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
-
             assert mother.ac_total_anc_visits_current_pregnancy == 5
             assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 35
@@ -2299,8 +2232,7 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
 
             if mother.ps_gestational_age_in_weeks < 40:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=7,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
+                                                     recommended_gestation_next_anc=gest_age_next_contact)
 
             if mother.ps_gestational_age_in_weeks < 38:
                 self.module.point_of_care_hb_testing(hsi_event=self)
@@ -2334,13 +2266,13 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_SeventhAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2349,19 +2281,13 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
 
         # Here we define variables used within the function that checks in this ANC visit can run
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(
-            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
+        this_contact = HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(self.module, person_id=person_id)
 
         # Run the check
         can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 7, squeeze_factor,
                                                                gest_age_next_contact)
 
         if can_anc_run:
-            logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
-            logger.debug(key='msg', data=f'mother {person_id}presented for ANC 7 at a '
-                                         f'{df.at[person_id, "ac_facility_type"]} at gestation '
-                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
-
             assert mother.ac_total_anc_visits_current_pregnancy == 6
             assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 37
@@ -2375,8 +2301,7 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
             if mother.ps_gestational_age_in_weeks < 40:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=8,
-                                                     recommended_gestation_next_anc=gest_age_next_contact,
-                                                     facility_level=self.ACCEPTED_FACILITY_LEVEL)
+                                                     recommended_gestation_next_anc=gest_age_next_contact)
 
             elif df.at[person_id, 'ps_gestational_age_in_weeks'] >= 40:
                 pass
@@ -2404,13 +2329,13 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_EighthAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2419,20 +2344,13 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
 
         # Here we define variables used within the function that checks in this ANC visit can run
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(
-            self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
+        this_contact = HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(self.module, person_id=person_id)
 
         # Run the check
         can_anc_run = self.module.check_subsequent_anc_can_run(self, person_id, this_contact, 8, squeeze_factor,
                                                                gest_age_next_contact)
 
         if can_anc_run:
-
-            logger.info(key='anc_facility_type', data=f'{df.at[person_id, "ac_facility_type"]}')
-            logger.debug(key='msg', data=f'mother {person_id}presented for ANC 7 at a'
-                                         f' {df.at[person_id, "ac_facility_type"]} at gestation '
-                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]} ')
-
             assert mother.ac_total_anc_visits_current_pregnancy == 7
             assert not pd.isnull(mother.ps_gestational_age_in_weeks)
             assert mother.ps_gestational_age_in_weeks >= 39
@@ -2457,13 +2375,13 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
 
 class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeEventMixin):
     """  """
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FocusedANCVisit'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AntenatalFirst': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         assert self.ACCEPTED_FACILITY_LEVEL != 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -2489,8 +2407,7 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
             date_difference = self.sim.date - df.at[person_id, 'ac_date_next_contact']
 
         visit = HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
-            self.sim.modules['CareOfWomenDuringPregnancy'],
-            person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
+            self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
 
         # Only women who are alive, still pregnant and not in labour can attend ANC1
         if (
@@ -2533,15 +2450,6 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
 
             self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_id].update(anc_rows)
 
-        if self.ACCEPTED_FACILITY_LEVEL == 1:
-            # Assume a 50/50 chance of health centre or hospital in level 1, however this will need editing
-            facility_type = self.module.rng.choice(['health_centre', 'hospital'], p=[0.5, 0.5])
-            df.at[person_id, 'ac_facility_type'] = facility_type
-            logger.info(key='anc_facility_type', data=f'{facility_type}')
-
-        elif self.ACCEPTED_FACILITY_LEVEL > 1:
-            logger.info(key='anc_facility_type', data='hospital')
-            df.at[person_id, 'ac_facility_type'] = 'hospital'
 
         # We add a visit to a rolling total of ANC visits in this pregnancy
         df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
@@ -2565,13 +2473,13 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         if (
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 2) or \
             ((mother.ps_gestational_age_in_weeks > 20) and (df.at[person_id, 'ac_total_anc_visits_current_'
-                                                                            'pregnancy'] == 1)):
+                                                                             'pregnancy'] == 1)):
             self.module.albendazole_administration(hsi_event=self)
             self.module.tetanus_vaccination(hsi_event=self)
 
         elif df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 3 or\
             ((mother.ps_gestational_age_in_weeks > 30) and (df.at[person_id, 'ac_total_anc_visits_current_'
-                                                                            'pregnancy'] == 1)):
+                                                                             'pregnancy'] == 1)):
             self.module.point_of_care_hb_testing(hsi_event=self)
 
         # --------------------------------------- SCHEDULE NEXT VISIT ---------------------------------------
@@ -2658,7 +2566,7 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_MaternalEmergencyAssessment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2673,11 +2581,8 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
             logger.debug(key='msg', data=f'Mother {person_id} has presented at HSI_CareOfWomenDuringPregnancy_Maternal'
                                          f'EmergencyAssessment to seek care for a complication ')
 
-            facility_level = self.module.rng.choice(['1a', '1b'], p=[0.5, 0.5])  # todo note choice
-
             admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
-                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id,
-                facility_level_this_hsi=facility_level)
+                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(admission, priority=0,
                                                                 topen=self.sim.date,
@@ -2692,6 +2597,7 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
 
     def not_available(self):
         self.module.call_if_maternal_emergency_assessment_cant_run(self)
+
 
 class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
     """
@@ -2711,7 +2617,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_AntenatalWardInpatientCare'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_this_hsi
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
         beddays = self.module.calculate_beddays(person_id)
@@ -3030,11 +2936,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_
             # If she is determined to still be anaemic she is admitted for additional treatment via the inpatient event
             elif fbc_result == 'mild' or fbc_result == 'moderate' or fbc_result == 'severe':
 
-                facility_level = self.module.rng.choice(['1a', '1b'], p=[0.5, 0.5])  # todo note choice
-
                 admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
-                    self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id,
-                    facility_level_this_hsi=facility_level)
+                    self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(admission, priority=0,
                                                                     topen=self.sim.date,
@@ -3069,7 +2972,6 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         mother = df.loc[person_id]
         module_cons = self.module.item_codes_for_consumables_required_pregnancy
 
@@ -3196,7 +3098,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PostAbortionCaseManagement'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'  # any hospital?
+        self.ACCEPTED_FACILITY_LEVEL = '1b'  # any hospital?
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 3})
 

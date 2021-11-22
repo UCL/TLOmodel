@@ -358,8 +358,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                 (mni[person_id]['sought_care_labour_phase'] == 'postpartum')
             ):
                 event = HSI_Labour_ReceivesPostnatalCheck(
-                    module=sim.modules['Labour'], person_id=person_id,
-                    facility_level_of_this_hsi=rng.choice(['1a', '1b']))
+                    module=sim.modules['Labour'], person_id=person_id)
                 schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
 
     if "Depression" in sim.modules:

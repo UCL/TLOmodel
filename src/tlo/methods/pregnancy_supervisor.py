@@ -920,11 +920,6 @@ class PregnancySupervisor(Module):
         # We store that date as a property which is used by the HSI to ensure the event only runs when it should
         df.at[individual_id, 'ps_date_of_anc1'] = first_anc_date
 
-        # TODO: updated according to binglings new HSI structure
-        # We used a weighted draw to decide what facility level this woman will seek care at, as ANC is offered
-        # at multiple levels
-        facility_level = int(self.rng.choice([1, 2], p=params['prob_early_anc_at_facility_level_1_2']))
-
         # We allow for two possible structure of ANC service delivery, focused ANC (4 visits recommended) or 8 contact
         # scheduled (8 visits recommended). This is to perform comparative analysis.
 
@@ -938,13 +933,11 @@ class PregnancySupervisor(Module):
         # the first visit
         if params['anc_service_structure'] == 8:
             first_anc_appt = HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
-                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id,
-                facility_level_of_this_hsi=facility_level)
+                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id)
 
         elif params['anc_service_structure'] == 4:
             first_anc_appt = HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
-                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id,
-                facility_level_of_this_hsi=facility_level)
+                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id)
 
         self.sim.modules['HealthSystem'].schedule_hsi_event(first_anc_appt, priority=0,
                                                             topen=first_anc_date,
