@@ -677,7 +677,7 @@ plt.errorbar(
     markerfacecolor="g",
     ecolor="g",
 )
-plt.ylim((20, 100))
+plt.ylim((0, 100))
 
 plt.show()
 
