@@ -78,7 +78,6 @@ def test_run_and_check_dtypes():
     sim = register_modules(ignore_cons_constraints=False)
     sim.make_initial_population(n=1000)
     sim.simulate(end_date=Date(2015, 1, 1))
-
     check_dtypes(sim)
 
 
@@ -400,8 +399,9 @@ def test_newborn_sba_hsi_deliveries_resuscitation_treatment_as_expected():
     # Ensure PNC isnt sought so risk of death is applied
     sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['will_receive_pnc'] = 'none'
 
-    newborn_care = newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(
-        person_id=child_id, module=sim.modules['NewbornOutcomes'], facility_level_of_this_hsi=2)
+    # Run the newborn care event
+    newborn_care = newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(
+        person_id=child_id, module=sim.modules['NewbornOutcomes'], facility_level_of_this_hsi='2')
     newborn_care.apply(person_id=child_id, squeeze_factor=0.0)
 
     assert (sim.population.props.at[child_id, 'nb_encephalopathy'] == 'severe_enceph')

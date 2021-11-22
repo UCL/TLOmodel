@@ -1277,9 +1277,9 @@ class NewbornOutcomes(Module):
             # If delivered in a health facility schedule immediate post-delivery care
             if m['delivery_setting'] != 'home_birth':
                 if m['delivery_setting'] == 'health_centre':
-                    f_level = 1
+                    f_level = '1a'
                 elif m['delivery_setting'] == 'hospital':
-                    f_level = int(self.rng.choice([1, 2]))
+                    f_level = int(self.rng.choice(['1a', '1b']))
 
                 event = HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(
                     self, person_id=child_id, facility_level_of_this_hsi=f_level)

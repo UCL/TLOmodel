@@ -209,7 +209,7 @@ def test_dx_algorithm_for_malaria_outcomes():
                 the_appt_footprint["Under5OPD"] = 1  # This requires one out patient
 
                 self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-                self.ACCEPTED_FACILITY_LEVEL = 1
+                self.ACCEPTED_FACILITY_LEVEL = '1a'
                 self.ALERT_OTHER_DISEASES = []
 
             def apply(self, person_id, squeeze_factor):
@@ -329,7 +329,7 @@ def test_dx_algorithm_for_non_malaria_outcomes():
                 the_appt_footprint["Under5OPD"] = 1  # This requires one out patient
 
                 self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-                self.ACCEPTED_FACILITY_LEVEL = 1
+                self.ACCEPTED_FACILITY_LEVEL = '1a'
                 self.ALERT_OTHER_DISEASES = []
 
             def apply(self, person_id, squeeze_factor):

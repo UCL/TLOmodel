@@ -566,8 +566,8 @@ def test_art_is_initiated_for_infants():
         'cause_of_death_after_birth': []}
 
     # Define the newborn HSI and run the event
-    newborn_care = newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(
-        module=sim.modules['NewbornOutcomes'], person_id=child_id, facility_level_of_this_hsi=2)
+    newborn_care = newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(
+        module=sim.modules['NewbornOutcomes'], person_id=child_id, facility_level_of_this_hsi='2')
 
     newborn_care.apply(person_id=child_id, squeeze_factor=0.0)
 
