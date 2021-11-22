@@ -1486,7 +1486,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = "Hiv_Circumcision"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MinorSurg": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MaleCirc": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'  # The appt footprint needs to be changed to MaleCirc
         self.ALERT_OTHER_DISEASES = []
 
