@@ -505,19 +505,23 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir):
     )
 
     # Check dalys is as expected:
-    dalys_by_year_not_stacked = log['dalys'].loc[(log['dalys'].sex == 'F'), ['year', 'age_range', 'Label_A']].groupby('year')['Label_A'].sum()
+    dalys_by_year_not_stacked = log['dalys'].loc[
+        (log['dalys'].sex == 'F'), ['year', 'age_range', 'Label_A']
+    ].groupby('year')['Label_A'].sum()
     assert dalys_by_year_not_stacked.at[2010] == 0.0
     assert dalys_by_year_not_stacked.at[2011] == approx(0.5, 1/364)
     assert all([dalys_by_year_not_stacked.at[year] == (approx(1.0, 1/364)) for year in range(2012, 2030)])
 
     # Check dalys_stacked is as expected:
-    dalys_by_year_stacked = log['dalys_stacked'].loc[(log['dalys'].sex == 'F'), ['year', 'age_range', 'Label_A']].groupby('year')['Label_A'].sum()
+    dalys_by_year_stacked = log['dalys_stacked'].loc[
+        (log['dalys'].sex == 'F'), ['year', 'age_range', 'Label_A']
+    ].groupby('year')['Label_A'].sum()
     assert dalys_by_year_stacked.at[2010] == 0.0
     assert dalys_by_year_stacked.at[2011] == approx(0.5, 1/364)
     assert dalys_by_year_stacked.at[2012] == approx(68.0, 1/364)
     assert all([dalys_by_year_stacked.at[year] == (approx(0.0, 1/364)) for year in range(2013, 2030)])
 
-    # Check that results from daly_stacked can be extract into pd.Series:
+    # Check that results from daly_stacked can be extract into pd.Series (for use in `extract_results`)
     def fn(df_):
         return df_.drop(columns='date').groupby(['year']).sum().stack()
 
