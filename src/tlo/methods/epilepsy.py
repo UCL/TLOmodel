@@ -446,7 +446,7 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_antiepilep_seiz_stat_2 = n_antiepilep_seiz_stat_2 / n_seiz_stat_2
         prop_antiepilep_seiz_stat_3 = n_antiepilep_seiz_stat_3 / n_seiz_stat_3
 
-        epi_death_rate = (n_epi_death * 4 * 100) / (n_seiz_stat_2 + n_seiz_stat_3)
+        epi_death_rate = (n_epi_death * 4 * 1000) / (n_seiz_stat_2 + n_seiz_stat_3)
 
         cum_deaths = (~df.is_alive).sum()
 
