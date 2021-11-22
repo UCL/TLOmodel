@@ -1603,7 +1603,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             # NB. With a probability of 1.0, this will keep occurring, and the person will never give up coming back to
             # pick up medication.
             if (m.rng.random_sample() <
-                m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
+                    m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=self,
                     topen=self.sim.date + pd.DateOffset(days=1),
@@ -1668,7 +1668,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
             # NB. With a probability of 1.0, this will keep occurring, and the person will never give-up coming back to
             # pick-up medication.
             if (m.rng.random_sample() <
-                m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
+                    m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=self,
                     topen=self.sim.date + pd.DateOffset(days=1),
