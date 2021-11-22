@@ -663,8 +663,7 @@ def test_bed_days_allocation_to_one_bed_type():
     sim = Simulation(start_date=start_date, seed=0)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  disable=True),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
         DummyModule(),
     )
 
@@ -891,8 +890,7 @@ def test_multiple_bed_types_allocation_with_lower_class_bed_always_available():
     sim = Simulation(start_date=start_date, seed=0)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  disable=True),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
         DummyModule(),
     )
 
@@ -1205,8 +1203,7 @@ def test_multiple_bed_types_allocation_with_lower_class_bed_never_available():
     sim = Simulation(start_date=start_date, seed=0)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  disable=True),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
         DummyModule(),
     )
 
