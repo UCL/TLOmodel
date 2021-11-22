@@ -446,8 +446,6 @@ class CardioMetabolicDisorders(Module):
                 self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=970)
             self.daly_wts['daly_chronic_kidney_disease_moderate'] = \
                 self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=978)
-            self.daly_wts['daly_chronic_kidney_disease_severe'] = \
-                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=976)
             self.daly_wts['daly_chronic_ischemic_hd'] = \
                 self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=697)
             self.daly_wts['daly_chronic_lower_back_pain'] = \
@@ -755,13 +753,10 @@ class CardioMetabolicDisorders(Module):
         dalys.loc[
             self.sim.modules['SymptomManager'].who_has('chronic_lower_back_pain_symptoms')] = self.daly_wts[
             'daly_chronic_lower_back_pain']
-        # Chronic Kidney Disease: give those who are diagnosed or on medication moderate CKD daly weight
-        dalys.loc[df['nc_chronic_kidney_disease_ever_diagnosed' or 'nc_chronic_kidney_disease_on_medication']] = \
-            self.daly_wts['daly_chronic_kidney_disease_moderate']
-        # Chronic Kidney Disease: overwrite those who have symptoms to have severe CKD
+        # Chronic Kidney Disease: give those who have symptoms moderate weight
         dalys.loc[
             self.sim.modules['SymptomManager'].who_has('chronic_kidney_disease_symptoms')] = self.daly_wts[
-            'daly_chronic_kidney_disease_severe']
+            'daly_chronic_kidney_disease_moderate']
         # Chronic Ischemic Heart Disease: give everyone with CIHD symptoms moderate CIHD daly weight
         dalys.loc[
             self.sim.modules['SymptomManager'].who_has('chronic_ischemic_hd_symptoms')] = self.daly_wts[
@@ -894,7 +889,6 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
         :param population: the current population
         """
         df = population.props
-        fraction_of_year_between_polls = self.frequency.months / 12
         m = self.module
         rng = m.rng
 
@@ -1348,13 +1342,17 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
         # If param do_log_df = True, output entire dataframe for use in a logistic regression
         if self.module.do_log_df:
             df = population.props
-            columns_of_interest = ['sex', 'age_range', 'li_urban', 'li_wealth', 'li_bmi', 'li_low_ex', 'li_high_salt',
-                                   'li_high_sugar', 'li_ex_alc', 'li_tob', 'nc_diabetes', 'nc_hypertension']
-            logger.info(key='df_snapshot', data=df.loc[df.is_alive, [columns_of_interest]],
+            columns_of_interest = ['is_alive', 'sex', 'age_range', 'li_urban', 'li_wealth', 'li_bmi', 'li_low_ex',
+                                   'li_high_salt', 'li_high_sugar', 'li_ex_alc', 'li_tob', 'nc_diabetes',
+                                   'nc_hypertension']
+            logger.info(key='df_snapshot', data=df[columns_of_interest],
                         message='dataframe of CMD variables for logistic regression')
 
         # Update the risk score for everyone
         self.module.update_risk_score()
+
+        df = population.props
+        df.to_csv('df_for_regression_malawi.csv')
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1405,6 +1403,7 @@ class HSI_CardioMetabolicDisorders_CommunityTestingForHypertension(HSI_Event, In
                 topen=self.sim.date,
                 tclose=None
             )
+
 
 class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1544,7 +1543,6 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
                     tclose=None
                 )
 
-
     def did_not_run(self):
         pass
 
@@ -1585,8 +1583,8 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         assert person[f'nc_{self.condition}_ever_diagnosed'], "The person is not diagnosed and so should not be " \
                                                               "receiving an HSI."
         # Check availability of medication for condition
-        if self.get_all_consumables(
-            item_codes=self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')):
+        if self.get_all_consumables(item_codes=self.module.parameters[
+                f'{self.condition}_hsi'].get('medication_item_code')):
             # If medication is available, flag as being on medication
             df.at[person_id, f'nc_{self.condition}_on_medication'] = True
             # Determine if the medication will work to prevent death
@@ -1605,8 +1603,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             # NB. With a probability of 1.0, this will keep occurring, and the person will never give up coming back to
             # pick up medication.
             if (m.rng.random_sample() <
-                m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')
-            ):
+                m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=self,
                     topen=self.sim.date + pd.DateOffset(days=1),
@@ -1671,8 +1668,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
             # NB. With a probability of 1.0, this will keep occurring, and the person will never give-up coming back to
             # pick-up medication.
             if (m.rng.random_sample() <
-                m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')
-            ):
+                m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=self,
                     topen=self.sim.date + pd.DateOffset(days=1),
