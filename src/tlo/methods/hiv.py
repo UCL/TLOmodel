@@ -561,7 +561,7 @@ class Hiv(Module):
             LinearModelType.ADDITIVE,
             0.0,
             Predictor("age_years").when("<15", p["vls_child"]).otherwise(p["baseline_viral_suppression_adult_2010"]),
-            Predictor("years_since_2009", external=True).apply(lambda x: (x+p["temporal_trend_vl"]))
+            Predictor("years_since_2010", external=True).apply(lambda x: (x*p["temporal_trend_vl"]))
         )
 
         # Linear model for changing behaviour following an HIV-negative test
@@ -2231,9 +2231,16 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             # Assign person to be have suppressed or un-suppressed viral load
             # (If person is VL suppressed This will prevent the Onset of AIDS, or an AIDS death if AIDS has already
             # onset,)
-            vl_status = self.determine_vl_status(
-                sex_of_person=person["sex"], age_of_person=person["age_years"]
-            )
+            # vl_status = self.determine_vl_status(
+            #     sex_of_person=person["sex"], age_of_person=person["age_years"]
+            # )
+            years_since_2010 = self.sim.date.year - 2010
+            # todo replace determine_vl_status with lm
+            if self.module.lm["lm_vl"].predict(person, years_since_2010=years_since_2010, rng=self.module.rng).values[0]:
+                vl_status = "on_VL_suppressed"
+            else:
+                vl_status = "on_not_VL_suppressed"
+
             df.at[person_id, "hv_art"] = vl_status
 
             # If VL suppressed, remove any symptoms caused by this module
@@ -2264,35 +2271,35 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         return drugs_available
 
-    # def determine_vl_status(self, sex_of_person, age_of_person):
-    def determine_vl_status(self, person_id):
-        """Helper function to determine the VL status that the person will have.
-        Return what will be the status of "hv_art"
-        """
-        p = self.module.parameters
-
-        # todo added linear model for vl
-        # if age_of_person < 15:
-        #     prob_vs = p["vls_child"]
-        # else:
-        #     if sex_of_person == "M":
-        #         prob_vs = p["vls_m"]
-        #     else:
-        #         prob_vs = p["vls_f"]
-        #
-        # return (
-        #     "on_VL_suppressed"
-        #     if (self.module.rng.random_sample() < prob_vs)
-        #     else "on_not_VL_suppressed"
-        # )
-
-        prob_vl_status = self.module.lm["lm_vl"].predict(self.sim.population.props.loc[[person_id]]).values[0]
-
-        return (
-            "on_VL_suppressed"
-            if (self.module.rng.random_sample() < prob_vl_status)
-            else "on_not_VL_suppressed"
-        )
+    # # def determine_vl_status(self, sex_of_person, age_of_person):
+    # def determine_vl_status(self, person_id, years_since_2009):
+    #     """Helper function to determine the VL status that the person will have.
+    #     Return what will be the status of "hv_art"
+    #     """
+    #     p = self.module.parameters
+    #
+    #     # todo added linear model for vl
+    #     # if age_of_person < 15:
+    #     #     prob_vs = p["vls_child"]
+    #     # else:
+    #     #     if sex_of_person == "M":
+    #     #         prob_vs = p["vls_m"]
+    #     #     else:
+    #     #         prob_vs = p["vls_f"]
+    #     #
+    #     # return (
+    #     #     "on_VL_suppressed"
+    #     #     if (self.module.rng.random_sample() < prob_vs)
+    #     #     else "on_not_VL_suppressed"
+    #     # )
+    #
+    #     prob_vl_status = self.module.lm["lm_vl"].predict(self.sim.population.props.loc[[person_id]]).values[0]
+    #
+    #     return (
+    #         "on_VL_suppressed"
+    #         if (self.module.rng.random_sample() < prob_vl_status)
+    #         else "on_not_VL_suppressed"
+    #     )
 
     def get_drugs(self, age_of_person):
         """Helper function to get the ART according to the age of the person being treated. Returns bool to indicate
