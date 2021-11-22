@@ -324,6 +324,9 @@ class Hiv(Module):
             Types.REAL,
             "relative likelihood of having HIV test for people with HIV",
         ),
+        "prob_art_start": Parameter(
+            Types.DATA_FRAME, "annual rates of starting ART following positive HIV test"
+        ),
         "prob_start_art_after_hiv_test": Parameter(
             Types.REAL,
             "Probability that a person will start treatment, if HIV-positive, following testing",
@@ -373,6 +376,9 @@ class Hiv(Module):
         "vls_f": Parameter(Types.REAL, "Rates of viral load suppression males"),
         "vls_child": Parameter(
             Types.REAL, "Rates of viral load suppression in children 0-14 years"
+        ),
+        "prob_viral_suppression": Parameter(
+            Types.DATA_FRAME, "probability of viral suppression each year"
         ),
         "baseline_viral_suppression_adult_2010": Parameter(
             Types.REAL, "rates of viral suppression in baseline population 2010"
@@ -430,6 +436,12 @@ class Hiv(Module):
         # Load assumed ART coverage at baseline (year 2010)
         p["art_coverage"] = workbook["art_coverage"]
 
+        # Load probability of art start after positive HIV test
+        p["prob_start_art_after_hiv_test"] = workbook["prob_art_start_if_dx"]
+
+        # Load probability art start after hiv test
+        p["prob_viral_suppression"] = workbook["vs"]
+
         # Load spectrum estimates of treatment cascade
         p["treatment_cascade"] = workbook["spectrum_treatment_cascade"]
 
@@ -450,8 +462,8 @@ class Hiv(Module):
         self.sim.modules["SymptomManager"].register_symptom(
             Symptom(
                 name="aids_symptoms",
-                odds_ratio_health_seeking_in_adults=2.0,  # High chance of seeking care when aids_symptoms onset
-                odds_ratio_health_seeking_in_children=2.0,
+                odds_ratio_health_seeking_in_adults=10.0,  # High chance of seeking care when aids_symptoms onset
+                odds_ratio_health_seeking_in_children=10.0,
             )  # High chance of seeking care when aids_symptoms onset
         )
 
@@ -548,21 +560,63 @@ class Hiv(Module):
         # Baseline probability here is the probability of starting art after positive hiv test in 2010
         # baseline_probability_art_after_test = p["prob_start_art_after_hiv_test"]
 
-        self.lm["lm_art"] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p["prob_start_art_after_hiv_test"],
-            Predictor("hv_inf").when(True, 1.0).otherwise(0.0),
-            Predictor("has_aids_symptoms", external=True).when(
-                True, p["rr_start_art_if_aids_symptoms"]),
-            Predictor("years_since_2009", external=True).apply(lambda x: (x*p["temporal_trend_art_initiation"]))
-        )
+        # self.lm["lm_art"] = LinearModel(
+        #     LinearModelType.MULTIPLICATIVE,
+        #     p["prob_start_art_after_hiv_test"],
+        #     Predictor("hv_inf").when(True, 1.0).otherwise(0.0),
+        #     Predictor("has_aids_symptoms", external=True).when(
+        #         True, p["rr_start_art_if_aids_symptoms"]),
+        #     Predictor("years_since_2009", external=True).apply(lambda x: (x*p["temporal_trend_art_initiation"]))
+        # )
 
-        self.lm["lm_vl"] = LinearModel(
-            LinearModelType.ADDITIVE,
-            0.0,
-            Predictor("age_years").when("<15", p["vls_child"]).otherwise(p["baseline_viral_suppression_adult_2010"]),
-            Predictor("years_since_2010", external=True).apply(lambda x: (x*p["temporal_trend_vl"]))
-        )
+        # todo just use annual values for this
+        # this is the probability of starting art after a positive hiv test for adults
+        # no difference if experiencing symptoms (aids) - hsb will increase their odds of tx
+        # prob_art = self.parameters["prob_start_art_after_hiv_test"]
+        # self.lm["lm_art"] = LinearModel(
+        #     LinearModelType.MULTIPLICATIVE,
+        #     1.0,
+        #     Predictor(
+        #         "year",
+        #         conditions_are_mutually_exclusive=True,
+        #         conditions_are_exhaustive=True,
+        #         external=True
+        #     )   .when(2010, prob_art.loc[(prob_art.year == 2010), "value"])
+        #         .when(2011, prob_art.loc[(prob_art.year == 2011), "value"])
+        #         .when(2012, prob_art.loc[(prob_art.year == 2012), "value"])
+        #         .when(2013, prob_art.loc[(prob_art.year == 2013), "value"])
+        #         .when(2014, prob_art.loc[(prob_art.year == 2014), "value"])
+        #         .when(2015, prob_art.loc[(prob_art.year == 2015), "value"])
+        #         .when(2016, prob_art.loc[(prob_art.year == 2016), "value"])
+        #         .when(2017, prob_art.loc[(prob_art.year == 2017), "value"])
+        #         .when(2018, prob_art.loc[(prob_art.year == 2018), "value"])
+        #         .when(2019, prob_art.loc[(prob_art.year == 2019), "value"])
+        #         .otherwise(prob_art.loc[(prob_art.year == 2020), "value"])
+        # )
+
+
+        # # todo separate values for child??
+        # prob_vs = self.parameters["prob_viral_suppression"]
+        # self.lm["lm_vl"] = LinearModel(
+        #     LinearModelType.MULTIPLICATIVE,
+        #     1.0,
+        #     Predictor(
+        #         "year",
+        #         conditions_are_mutually_exclusive=True,
+        #         conditions_are_exhaustive=True,
+        #         external=True
+        #     )   .when(2010, prob_vs.loc[(prob_vs.year == 2010), "value"])
+        #         .when(2011, prob_vs.loc[(prob_vs.year == 2011), "value"])
+        #         .when(2012, prob_vs.loc[(prob_vs.year == 2012), "value"])
+        #         .when(2013, prob_vs.loc[(prob_vs.year == 2013), "value"])
+        #         .when(2014, prob_vs.loc[(prob_vs.year == 2014), "value"])
+        #         .when(2015, prob_vs.loc[(prob_vs.year == 2015), "value"])
+        #         .when(2016, prob_vs.loc[(prob_vs.year == 2016), "value"])
+        #         .when(2017, prob_vs.loc[(prob_vs.year == 2017), "value"])
+        #         .when(2018, prob_vs.loc[(prob_vs.year == 2018), "value"])
+        #         .when(2019, prob_vs.loc[(prob_vs.year == 2019), "value"])
+        #         .otherwise(prob_vs.loc[(prob_vs.year == 2020), "value"])
+        # )
 
         # Linear model for changing behaviour following an HIV-negative test
         self.lm["lm_behavchg"] = LinearModel(
@@ -757,8 +811,11 @@ class Hiv(Module):
             notsuppr.extend(all_idx[~vl_suppr])
 
         # todo this is changed to a lower baseline vl for 2010
-        split_into_vl_and_notvl(adult_f_art_idx, self.parameters["baseline_viral_suppression_adult_2010"])
-        split_into_vl_and_notvl(adult_m_art_idx, self.parameters["baseline_viral_suppression_adult_2010"])
+        # todo m/f could be merged
+        prob_vs = self.prob_viral_suppression(self.sim.date.year)
+
+        split_into_vl_and_notvl(adult_f_art_idx, prob_vs)
+        split_into_vl_and_notvl(adult_m_art_idx, prob_vs)
         split_into_vl_and_notvl(child_art_idx, self.parameters["vls_child"])
 
         # Set ART status:
@@ -834,7 +891,7 @@ class Hiv(Module):
                                   & df.hv_inf
                                   & (df.age_years < 15)])
 
-        prop_currently_diagnosed = children_diagnosed / children_infected
+        prop_currently_diagnosed = children_diagnosed / children_infected if children_infected > 0 else 0
         hiv_test_deficit = children_know_status - prop_currently_diagnosed
         number_deficit = int(hiv_test_deficit * children_infected)
 
@@ -1373,13 +1430,7 @@ class Hiv(Module):
             "SymptomManager"
         ].has_what(person_id)
 
-        years_since_2009 = self.sim.date.year - 2009
-
-        starts_art = self.lm["lm_art"].predict(
-            df=df.loc[[person_id]], rng=self.rng,
-            has_aids_symptoms=has_aids_symptoms,
-            years_since_2009=years_since_2009
-        )
+        starts_art = self.rng.random_sample() < self.prob_art_start_after_test(self.sim.date.year)
 
         if starts_art:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -1388,6 +1439,27 @@ class Hiv(Module):
                 tclose=None,
                 priority=0,
             )
+
+    def prob_art_start_after_test(self, year):
+        """ returns the probability of starting ART after a positive HIV test
+        """
+        prob_art = self.parameters["prob_start_art_after_hiv_test"]
+        current_year = year
+
+        # use iloc to index by position as index will change by year
+        return_prob = prob_art.loc[(prob_art.year == current_year), "value"].iloc[0]
+
+        return return_prob
+
+    def prob_viral_suppression(self, year):
+        """ returns the probability of starting ART after a positive HIV test
+        """
+        prob_vs = self.parameters["prob_viral_suppression"]
+        current_year = year
+
+        return_prob = prob_vs.loc[(prob_vs.year == current_year), "value"].iloc[0]
+
+        return return_prob
 
     def stops_treatment(self, person_id):
         """Helper function that is called when someone stops being on ART.
@@ -2231,15 +2303,9 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             # Assign person to be have suppressed or un-suppressed viral load
             # (If person is VL suppressed This will prevent the Onset of AIDS, or an AIDS death if AIDS has already
             # onset,)
-            # vl_status = self.determine_vl_status(
-            #     sex_of_person=person["sex"], age_of_person=person["age_years"]
-            # )
-            years_since_2010 = self.sim.date.year - 2010
-            # todo replace determine_vl_status with lm
-            if self.module.lm["lm_vl"].predict(person, years_since_2010=years_since_2010, rng=self.module.rng).values[0]:
-                vl_status = "on_VL_suppressed"
-            else:
-                vl_status = "on_not_VL_suppressed"
+            vl_status = self.determine_vl_status(
+                age_of_person=person["age_years"]
+            )
 
             df.at[person_id, "hv_art"] = vl_status
 
@@ -2271,35 +2337,22 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         return drugs_available
 
-    # # def determine_vl_status(self, sex_of_person, age_of_person):
-    # def determine_vl_status(self, person_id, years_since_2009):
-    #     """Helper function to determine the VL status that the person will have.
-    #     Return what will be the status of "hv_art"
-    #     """
-    #     p = self.module.parameters
-    #
-    #     # todo added linear model for vl
-    #     # if age_of_person < 15:
-    #     #     prob_vs = p["vls_child"]
-    #     # else:
-    #     #     if sex_of_person == "M":
-    #     #         prob_vs = p["vls_m"]
-    #     #     else:
-    #     #         prob_vs = p["vls_f"]
-    #     #
-    #     # return (
-    #     #     "on_VL_suppressed"
-    #     #     if (self.module.rng.random_sample() < prob_vs)
-    #     #     else "on_not_VL_suppressed"
-    #     # )
-    #
-    #     prob_vl_status = self.module.lm["lm_vl"].predict(self.sim.population.props.loc[[person_id]]).values[0]
-    #
-    #     return (
-    #         "on_VL_suppressed"
-    #         if (self.module.rng.random_sample() < prob_vl_status)
-    #         else "on_not_VL_suppressed"
-    #     )
+    def determine_vl_status(self, age_of_person):
+        """Helper function to determine the VL status that the person will have.
+        Return what will be the status of "hv_art"
+        """
+        p = self.module.parameters
+
+        if age_of_person < 15:
+            prob_vs = p["vls_child"]
+        else:
+            prob_vs = self.module.prob_viral_suppression(self.sim.date.year)
+
+        return (
+            "on_VL_suppressed"
+            if (self.module.rng.random_sample() < prob_vs)
+            else "on_not_VL_suppressed"
+        )
 
     def get_drugs(self, age_of_person):
         """Helper function to get the ART according to the age of the person being treated. Returns bool to indicate

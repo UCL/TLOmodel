@@ -6,7 +6,7 @@ save outputs for plotting (file: output_plots_tb.py)
 import datetime
 import pickle
 from pathlib import Path
-# import random
+import random
 
 import pandas as pd
 
@@ -37,7 +37,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 1000
+popsize = 10000
 
 # set up the log config
 log_config = {
@@ -53,8 +53,8 @@ log_config = {
 
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
-# seed = random.randint(0, 50000)
-seed = 4  # set seed for reproducibility
+seed = random.randint(0, 50000)
+# seed = 4  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -90,11 +90,15 @@ sim.modules["Tb"].parameters["tb_high_risk_distr"] = pd.read_excel(
 # change tb mixing parameter to allow more between-district transmission
 sim.modules["Tb"].parameters["mixing_parameter"] = 1
 sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 0.5
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.98
-sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = 0.3
-sim.modules["Hiv"].parameters["temporal_trend_art_initiation"] = 1.5
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.99
+# sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = 0.3
+# sim.modules["Hiv"].parameters["temporal_trend_art_initiation"] = 3.5  # multipl model 0.3 * (yr*param)
 
+sim.modules["Hiv"].parameters["rr_start_art_if_aids_symptoms"] = 5
 
+# sim.modules["Hiv"].parameters["temporal_trend_vl"] = 0.55  # additive model 0.42 + (yr*param)
+
+# drugs and appts should always be available as health system disabled to remove constraints
 sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1
 sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_appointment_not_available"] = 1
 
@@ -107,9 +111,5 @@ output = parse_log_file(sim.log_filepath)
 
 # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
 with open(outputpath / "default_run.pickle", "wb") as f:
-# with open(outputpath / "poll_plus_hsi_generic.pickle", "wb") as f:
-# with open(outputpath / "poll_plus_anc.pickle", "wb") as f:
-# with open(outputpath / "only_hiv_poll.pickle", "wb") as f:
-# with open(outputpath / "schedule_2010_tests.pickle", "wb") as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(output, f, pickle.HIGHEST_PROTOCOL)

@@ -437,29 +437,29 @@ deaths = deaths.set_index("date")
 #
 # AIDS DEATHS
 # limit to deaths among aged 15+, include HIV/TB deaths
-keep = (deaths.age >= 15) & (
-    (deaths.cause == "AIDS_TB") | (deaths.cause == "AIDS_non_TB")
-)
-deaths_AIDS = deaths.loc[keep].copy()
-deaths_AIDS["year"] = deaths_AIDS.index.year
-tot_aids_deaths = deaths_AIDS.groupby(by=["year"]).size()
-tot_aids_deaths.index = pd.to_datetime(tot_aids_deaths.index, format="%Y")
-
-# aids mortality rates per 100k person-years
-total_aids_deaths_rate_100kpy = (tot_aids_deaths / py) * 100000
+# keep = (deaths.age >= 15) & (
+#     (deaths.cause == "AIDS_TB") | (deaths.cause == "AIDS_non_TB")
+# )
+# deaths_AIDS = deaths.loc[keep].copy()
+# deaths_AIDS["year"] = deaths_AIDS.index.year
+# tot_aids_deaths = deaths_AIDS.groupby(by=["year"]).size()
+# tot_aids_deaths.index = pd.to_datetime(tot_aids_deaths.index, format="%Y")
 #
-# # ---------------------------------------------------------------------- #
+# # aids mortality rates per 100k person-years
+# total_aids_deaths_rate_100kpy = (tot_aids_deaths / py) * 100000
+# #
+# # # ---------------------------------------------------------------------- #
+# #
+# # AIDS deaths (including HIV/TB deaths)
+# make_plot(
+#     title_str="Mortality to HIV-AIDS per 1000 capita",
+#     model=total_aids_deaths_rate_100kpy,
+#     data_mid=data_hiv_unaids_deaths["AIDS_mortality_per_100k"],
+#     data_low=data_hiv_unaids_deaths["AIDS_mortality_per_100k_lower"],
+#     data_high=data_hiv_unaids_deaths["AIDS_mortality_per_100k_upper"],
+# )
 #
-# AIDS deaths (including HIV/TB deaths)
-make_plot(
-    title_str="Mortality to HIV-AIDS per 1000 capita",
-    model=total_aids_deaths_rate_100kpy,
-    data_mid=data_hiv_unaids_deaths["AIDS_mortality_per_100k"],
-    data_low=data_hiv_unaids_deaths["AIDS_mortality_per_100k_lower"],
-    data_high=data_hiv_unaids_deaths["AIDS_mortality_per_100k_upper"],
-)
-
-plt.show()
+# plt.show()
 #
 #
 # # ---------------------------------------------------------------------- #
@@ -677,7 +677,7 @@ plt.errorbar(
     markerfacecolor="g",
     ecolor="g",
 )
-plt.ylim((0, 100))
+plt.ylim((20, 100))
 
 plt.show()
 
