@@ -169,6 +169,36 @@ class BedDays:
         assert all([((v >= 0) and (type(v) is int)) for v in beddays_footprint.values()])
         assert beddays_footprint['non_bed_space'] == 0, "A request cannot be made for this type of bed"
 
+    def issue_bed_days_according_to_availability(self, person_id, footprint):
+        get_bed_types = self.get_bed_types()
+        counter = 0  # for indexing purposes
+
+        for bed_type in footprint.keys():
+            # find all required bed days per each bed type
+            get_number_of_days = [self.hs_module.sim.date + pd.DateOffset(days=_d) for _d in range(footprint[bed_type])]
+
+            # check the availability of beds for a requested period in bed tracker
+            availability_of_beds = self.bed_tracker[bed_type].loc[
+                (day_of_bed_use for day_of_bed_use in get_number_of_days),
+                self.get_persons_level2_facility_id(person_id)]
+
+            if (availability_of_beds == 0).any():
+                for key, value in availability_of_beds.items():
+                    if value == 0:
+                        print(f'ignoring allocation to {bed_type}, taking this and other remaining days to a lower '
+                              f'class bed if any')
+                        days_to_be_assigned_to_next_low_class_bed = 1 + (max(availability_of_beds.index - key)).days
+
+                        # subtract the requested days with available days
+                        footprint[get_bed_types[counter]] -= days_to_be_assigned_to_next_low_class_bed
+
+                        # add the remaining days to another bed type of a lower class if any
+                        if not bed_type == get_bed_types[-1]:
+                            footprint[self.get_bed_types()[counter + 1]] += days_to_be_assigned_to_next_low_class_bed
+                        break
+            counter += 1
+        return footprint
+
     def impose_beddays_footprint(self, person_id, footprint):
         """This is called to reflect that a new occupancy of bed-days should be recorded:
         * Cause to be reflected in the bed_tracker that an hsi_event is being run that will cause bed to be
@@ -211,34 +241,6 @@ class BedDays:
         if self.days_until_last_day_of_bed_tracker < sum(footprint.values()):
             logger.warning(key='warning', data=f'the requested bed days in footprint is greater than the'
                                                f'tracking period, {footprint}')
-
-        get_bed_types = self.get_bed_types()
-        counter = 0  # for indexing purposes
-
-        for bed_type in footprint.keys():
-            # find all required bed days per each bed type
-            get_number_of_days = [self.hs_module.sim.date + pd.DateOffset(days=_d) for _d in range(footprint[bed_type])]
-
-            # check the availability of beds for a requested period in bed tracker
-            availability_of_beds = self.bed_tracker[bed_type].loc[
-                (day_of_bed_use for day_of_bed_use in get_number_of_days),
-                self.get_persons_level2_facility_id(person_id)]
-
-            if (availability_of_beds == 0).any():
-                for key, value in availability_of_beds.items():
-                    if value == 0:
-                        print(f'ignoring allocation to {bed_type}, taking this and other remaining days to a lower '
-                              f'class bed if any')
-                        days_to_be_assigned_to_next_low_class_bed = 1 + (max(availability_of_beds.index - key)).days
-
-                        # subtract the requested days with available days
-                        footprint[get_bed_types[counter]] -= days_to_be_assigned_to_next_low_class_bed
-
-                        # add the remaining days to another bed type of a lower class if any
-                        if not bed_type == get_bed_types[-1]:
-                            footprint[self.get_bed_types()[counter + 1]] += days_to_be_assigned_to_next_low_class_bed
-                        break
-            counter += 1
 
         df = self.hs_module.sim.population.props
         # reset all internal properties about dates of transition between bed use states:

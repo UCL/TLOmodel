@@ -1,10 +1,9 @@
-"""Test file for the bed-days"""
+"""Test file for the bed-days class"""
 import copy
 import os
 from pathlib import Path
 
 import pandas as pd
-import random as rm
 import pytest
 
 from tlo import Date, Module, Simulation, logging
@@ -24,6 +23,7 @@ popsize = 200
 
 
 def test_beddays_in_isolation(tmpdir):
+    """Test the functionalities of BedDays class in the absence of HSI_Events"""
     sim = Simulation(start_date=start_date)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
@@ -557,6 +557,7 @@ def test_bed_days_basics_with_healthsystem_disabled():
 
 
 def test_the_use_of_beds_from_multiple_facilities():
+    """Test the functionalities of BedDays class when multiple facilities are defined"""
     sim = Simulation(start_date=start_date)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
@@ -622,505 +623,856 @@ def test_the_use_of_beds_from_multiple_facilities():
 
 
 def test_bed_days_allocation_to_one_bed_type():
-    sim = Simulation(start_date=start_date)
+    """This test checks the integrity of bed days allocation algorithm with only one bed-type defined and given
+     different scenarios i.e. when the bed is available for all requested days, available for the first but
+     not all of the days requested, not available on the first day, but available on later days and available
+     on 1st, 3rd and 5th day"""
+
+    class DummyModule(Module):
+        METADATA = {Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    # Create a dummy HSI with one type of Bed Day specified
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.this_ran = False
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = 2
+            self.ALERT_OTHER_DISEASES = []
+            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({
+                'high_dependency_bed': 5
+            })
+
+        def apply(self, person_id, squeeze_factor):
+            self.this_ran = (self.bed_days_allocated_to_this_event == self.BEDDAYS_FOOTPRINT)
+            print(f'squeeze-factor is {squeeze_factor}')
+            print(f'Bed-days allocated to this event: {self.bed_days_allocated_to_this_event}')
+
+    # Create simulation:
+    sim = Simulation(start_date=start_date, seed=0)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  disable=True),
+        DummyModule(),
     )
 
-    # call HealthSystem Module to initialise BedDays class
     hs = sim.modules['HealthSystem']
 
     # Update BedCapacity data with a simple table:
-    level2_facility_ids = [64, 65, 66]  # <-- the level 2 facilities for each region
-    cap_bedtype1 = 1
-
-    # create a simple bed capacity dataframe
     hs.parameters['BedCapacity'] = pd.DataFrame(
         data={
-            'Facility_ID': level2_facility_ids,
-            'bedtype1': cap_bedtype1,
+            'Facility_ID': [64, 65, 66],  # <-- the level 2 facilities for each region,
+            'high_dependency_bed': 0,     # make bed-type unavailable - to be reset later based on the given scenario
         }
     )
 
-    # Create a 21 day simulation
-    days_sim = hs.bed_days.days_until_last_day_of_bed_tracker
+    # Create a 21 days simulation
+    days_sim = 21
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=days_sim))
 
     # reset bed days tracker to the start_date of the simulation
     hs.bed_days.initialise_beddays_tracker()
 
-    footprint = {'bedtype1': 5}  # a sample footprint
     sim.date = start_date
 
     """ 1) test bed available for all requested days"""
-    personal_id = 0  # individual id in population
-    # impose footprint on person_id 0 starting from the first day of simulation
-    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+    person_id = 0  # individual id in population
 
-    # check that all requested days of bedTypeA are given
-    assert 5 == footprint['bedtype1'], "not all days have been assigned"
+    # get bed days dataframe
+    beds_days_df = hs.bed_days.bed_tracker["high_dependency_bed"]
 
-    # check that all days are allocated
-    assert 0 == hs.bed_days.bed_tracker["bedtype1"][hs.bed_days.get_persons_level2_facility_id(personal_id)].head(
-        5).sum(), f'equating different values'
+    # initialise bed available days
+    bed_available_days = [sim.date + pd.DateOffset(days=_d) for _d in range(5)]
+
+    # check bed is not available before reset tracker
+    assert all(0 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days])
+
+    # reset bed tracker to make bed available for all requested days - 5 days
+    beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days] = 1
+
+    # check all requested days are now available
+    assert all(1 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days])
+
+    # run HSI_Dummy Event and check whether days are allocated as expected - all days should be allocated
+    hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
+
+    hsi_bd.apply(person_id=person_id, squeeze_factor=0.0)
+    assert hsi_bd.this_ran, "the event did not run"  # check the event run
+
+    # check bed days are allocated as expected - 1. check all days of bed-type A are allocated
+    #                                            2. check total allocation equates to 5 (bed-type A allocation)
+    assert 5 == hsi_bd.bed_days_allocated_to_this_event['high_dependency_bed'], "not all days are allocated"
+    assert 5 == sum(hsi_bd.bed_days_allocated_to_this_event.values()), "not all days are allocated"
+
+    # impose footprint
+    hsi_bd.post_apply_hook()
+
+    # check impose footprint works
+    assert 0 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].sum(), f'equating different values'
 
     """ 2) test Bed available for the first but not all of the days requested """
-    # reset variables
-    personal_id = 1
-    footprint = {'bedtype1': 5}
-    hs.bed_days.initialise_beddays_tracker()
+    # ------------- reset variables --------------
+    person_id = 1  # person id
+    hs.bed_days.initialise_beddays_tracker()  # bed tracker
+    beds_days_df = hs.bed_days.bed_tracker["high_dependency_bed"]  # bed days dataframe
 
-    # make bed available for the first day only
-    hs.bed_days.bed_tracker["bedtype1"][hs.bed_days.get_persons_level2_facility_id(personal_id)].mask(
-        hs.bed_days.bed_tracker["bedtype1"].index > sim.date, 0, inplace=True)
+    # initialise bed available days
+    bed_available_days = [sim.date]
+    # --------------------------------------------
 
-    # impose footprint on person_id 0 starting from the first day of simulation
-    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+    # check bed is not available before reset tracker
+    assert all(0 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days])
 
-    # check that only one day of bedTypeA is given
-    assert 1 == footprint['bedtype1'], "not more or less than 1 day should be assigned"
+    # reset bed tracker to make bed available only on first day
+    beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days] = 1
 
-    #  check that only first day is allocated in tracker
-    assert 0 == hs.bed_days.bed_tracker["bedtype1"][hs.bed_days.get_persons_level2_facility_id(personal_id)].head(
-        5).sum(), f'equating different values'
+    # check tracker is reset as expected - only 1 day should be available and it should be sim.date
+    assert 1 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].loc[sim.date]
+    assert 1 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].sum(), "bed tracker is" \
+                                                                                           "not properly reset"
+
+    # run HSI_Dummy Event and check whether days are allocated as expected
+    hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
+
+    hsi_bd.apply(person_id=person_id, squeeze_factor=0.0)
+    assert hsi_bd.this_ran, "the event did not run"  # check the event run
+
+    # check bed days are allocated as expected - 1. check only one day of bed-type A is allocated
+    #                                            2. check total allocation equates to 1 (bed-type A allocation)
+    assert 1 == hsi_bd.bed_days_allocated_to_this_event['high_dependency_bed'], "not all days are allocated"
+    assert 1 == sum(hsi_bd.bed_days_allocated_to_this_event.values()), "days are not properly allocated"
+
+    # impose footprint on person_id 1 starting from the first day of simulation
+    hsi_bd.post_apply_hook()
+
+    # check impose footprint works
+    assert 0 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].sum(), f'equating different values'
 
     """ 3) test Bed not available on the first day, but available on later days """
-    # reset variables
-    personal_id = 2
-    footprint = {'bedtype1': 5}
-    hs.bed_days.initialise_beddays_tracker()
+    # ------------- reset variables --------------
+    person_id = 2  # person id
+    hs.bed_days.initialise_beddays_tracker()  # bed tracker
+    beds_days_df = hs.bed_days.bed_tracker["high_dependency_bed"]  # bed days dataframe
 
-    # make bed unavailable on the first day
-    hs.bed_days.bed_tracker["bedtype1"][hs.bed_days.get_persons_level2_facility_id(personal_id)].mask(
-        hs.bed_days.bed_tracker["bedtype1"].index == sim.date, 0, inplace=True)
+    # initialise bed available days
+    bed_available_days = [sim.date + pd.DateOffset(days=_d) for _d in range(1, days_sim)]
+    # --------------------------------------------
 
-    sum_tracker_values_before_impose_footprint = hs.bed_days.bed_tracker["bedtype1"][
-        hs.bed_days.get_persons_level2_facility_id(personal_id)].head(
-        5).sum()
+    # check bed is not available before reset tracker
+    assert all(0 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days])
 
-    # impose footprint on person_id 0 starting from the  first day of simulation
-    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+    # make bed unavailable on the first day but available on following days
+    beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days] = 1
 
-    sum_tracker_values_after_impose_footprint = hs.bed_days.bed_tracker["bedtype1"][
-        hs.bed_days.get_persons_level2_facility_id(personal_id)].head(
-        5).sum()
+    # check tracker is reset as expected (1. the bed unavailable date should be the start_date or sim.date
+    #                                     2. all other days should be available
+    #                                     3. a sum of available days should be equal to 20 (days_sim which is 21 - 1)
+    assert 0 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].loc[sim.date]
+    assert all(1 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days])
+    assert 20 == beds_days_df[
+        hs.bed_days.get_persons_level2_facility_id(person_id)].sum(), "bed tracker is not properly reset"
 
-    # check that no bed day of bedTypeA is given
-    assert 0 == footprint['bedtype1'], "no bed day should be given"
+    # run HSI_Dummy Event and check whether days are allocated as expected
+    hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
 
-    #  check that no bed day is allocated
-    assert sum_tracker_values_before_impose_footprint == sum_tracker_values_after_impose_footprint, \
-        f'equating different values'
+    hsi_bd.apply(person_id=person_id, squeeze_factor=0.0)
+    assert hsi_bd.this_ran, "the event did not run"  # check the event run
+
+    # check bed days are allocated as expected - 1. check no day of bed-type A is allocated
+    #                                            2. check total allocation equates to 0 (no day is allocated)
+    assert 0 == hsi_bd.bed_days_allocated_to_this_event['high_dependency_bed'], "no day should be allocated"
+    assert 0 == sum(hsi_bd.bed_days_allocated_to_this_event.values()), "days are not properly allocated"
+
+    # impose footprint on person_id 2 starting from the first day of simulation
+    hsi_bd.post_apply_hook()
+
+    # check that nothing happens - 1. check that the start date is still unavailable
+    #                              2. check that all other days remain available as before
+    assert 0 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].loc[sim.date]
+    assert all(1 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days])
 
     """4) test Bed available on 1st, 3rd and 5th day"""
-    # reset variables
-    personal_id = 3
-    footprint = {'bedtype1': 5}
+    # ------------- reset variables --------------
+    person_id = 3  # person id
+    hs.bed_days.initialise_beddays_tracker()  # bed tracker
+    beds_days_df = hs.bed_days.bed_tracker["high_dependency_bed"]  # bed days dataframe
 
-    hs.parameters['BedCapacity'] = pd.DataFrame(
-        data={
-            'Facility_ID': level2_facility_ids,
-            'bedtype1': 0,
-        }
-    )
+    # initialise bed available days
+    bed_available_days = [sim.date + pd.DateOffset(days=_d) for _d in range(0, 5, 2)]
+    # --------------------------------------------
 
-    hs.bed_days.initialise_beddays_tracker()  # reset bed days tracker
+    # check bed is not available before reset tracker
+    assert all(0 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days])
 
     # make bed available on 1st, 3rd and 5th day
-    bed_available_days = [0, 2, 4]
-    for bed_available_day in bed_available_days:
-        hs.bed_days.bed_tracker["bedtype1"][hs.bed_days.get_persons_level2_facility_id(personal_id)].mask(
-            hs.bed_days.bed_tracker["bedtype1"].index == sim.date + pd.DateOffset(days=bed_available_day), 1,
-            inplace=True)
+    beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days] = 1
 
-    sum_tracker_values_before_impose_footprint = hs.bed_days.bed_tracker["bedtype1"][
-        hs.bed_days.get_persons_level2_facility_id(personal_id)].head(
-        5).sum()
+    # check tracker is reset as expected - only 3 days should be available
+    assert all(1 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days])
+    assert 3 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].sum(), "bed tracker is" \
+                                                                                           "not properly reset"
 
-    # impose footprint on person_id 0 starting from the first day of simulation
-    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+    # run HSI_Dummy Event and check whether days are allocated as expected
+    hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
 
-    sum_tracker_values_after_impose_footprint = hs.bed_days.bed_tracker["bedtype1"][
-        hs.bed_days.get_persons_level2_facility_id(personal_id)].head(
-        5).sum()
+    hsi_bd.apply(person_id=person_id, squeeze_factor=0.0)
+    assert hsi_bd.this_ran, "the event did not run"  # check the event run
 
-    # check that only one day of bedTypeA is given
-    assert 1 == footprint['bedtype1'], "not more or less than 1 day should be assigned"
+    # check bed days are allocated as expected - 1. check only one day of bed-type A is allocated
+    #                                            2. check total allocation equates to 1 (bed-type A allocation)
+    assert 1 == hsi_bd.bed_days_allocated_to_this_event['high_dependency_bed'], "not all days are allocated"
+    assert 1 == sum(hsi_bd.bed_days_allocated_to_this_event.values()), "days are not properly allocated"
 
-    #  check that only first day is allocated
-    assert sum_tracker_values_before_impose_footprint - 1 == sum_tracker_values_after_impose_footprint, \
-        f'equating different values'
+    # impose footprint on person_id 3 starting from the first day of simulation
+    hsi_bd.post_apply_hook()
+
+    # check that impose footprint works - 1. check that the footprint is imposed only on sim.date
+    #                                     2. check that the other 2 available days are still available
+    #                                     3. check that sum tracker is now 2 instead of previous 3
+
+    assert 0 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].loc[sim.date]
+    assert all(1 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days[1:]])
+    assert 2 == beds_days_df[hs.bed_days.get_persons_level2_facility_id(person_id)].sum(), "bed tracker is" \
+                                                                                           "not properly reset"
 
 
 def test_multiple_bed_types_allocation_with_lower_class_bed_always_available():
-    sim = Simulation(start_date=start_date)
+    """This test checks the integrity of bed days allocation algorithm with lower class bed always available and given
+    different scenarios i.e. when bed of both types available for all days requested, bed A available for the first
+    but not all of the days requested (but bed B available), bed A not available on the first day, but available on
+    later days (bed B available) and bed A available on 1st, 3rd and 5th day """
+
+    class DummyModule(Module):
+        METADATA = {Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    # Create a dummy HSI with one type of Bed Day specified
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.this_ran = False
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = 2
+            self.ALERT_OTHER_DISEASES = []
+            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({
+                'high_dependency_bed': 5,
+                'general_bed': 5
+            })
+
+        def apply(self, person_id, squeeze_factor):
+            self.this_ran = (self.bed_days_allocated_to_this_event == self.BEDDAYS_FOOTPRINT)
+            print(f'squeeze-factor is {squeeze_factor}')
+            print(f'Bed-days allocated to this event: {self.bed_days_allocated_to_this_event}')
+
+    # Create simulation:
+    sim = Simulation(start_date=start_date, seed=0)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  disable=True),
+        DummyModule(),
     )
 
-    # call HealthSystem Module to initialise BedDays class
     hs = sim.modules['HealthSystem']
 
     # Update BedCapacity data with a simple table:
-    level2_facility_ids = [64, 65, 66]  # <-- the level 2 facilities for each region
-    cap_bedtype1 = 1
-    cap_bedtype2 = 1
-
-    # create a simple bed capacity dataframe
     hs.parameters['BedCapacity'] = pd.DataFrame(
         data={
-            'Facility_ID': level2_facility_ids,
-            'bedtypeA': cap_bedtype1,
-            'bedtypeB': cap_bedtype2
+            'Facility_ID': [64, 65, 66],  # <-- the level 2 facilities for each region,
+            'high_dependency_bed': 0,
+            'general_bed': 1    # make general_bed always available
         }
     )
 
-    # Create a 21 day simulation
-    days_sim = hs.bed_days.days_until_last_day_of_bed_tracker
+    # Create a 21 days simulation
+    days_sim = 21
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=days_sim))
+
+    sim.date = start_date
+
+    """1) test Bed of both types available for all days requested (bed-type B available)"""
+    person_id = 0  # person id in population
 
     # reset bed days tracker to the start_date of the simulation
     hs.bed_days.initialise_beddays_tracker()
 
-    sim.date = start_date
-    footprint = {'bedtypeA': 5, 'bedtypeB': 5}  # a sample footprint
-    footprint_before_impose_bed_days = copy.deepcopy(footprint)  # copy footprint
+    # get bed days dataframe
+    beds_days_df = hs.bed_days.bed_tracker
 
-    """1) test Bed of both types available for all days requested"""
-    personal_id = 0  # person id in population
+    # initialise bed available days
+    bed_available_days = [sim.date + pd.DateOffset(days=_d) for _d in range(5)]
 
-    beddays_dataframe_before_apply_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
+    # check bed type A is not available before tracker is reset
+    assert all(0 == beds_days_df["high_dependency_bed"][
+        hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days])
 
-    # impose footprint on person_id 0 starting from the first day of simulation
-    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+    # reset bed tracker to make bed type A available for all requested days - 5 days
+    beds_days_df['high_dependency_bed'][hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days] = 1
 
-    beddays_dataframe_after_apply_footprint = hs.bed_days.bed_tracker
+    # copy bed days dataframe
+    tracker_before_impose_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
 
+    # check bed type A is now available after tracker is reset
+    assert all(1 == beds_days_df["high_dependency_bed"][
+        hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days])
+
+    # run HSI_Dummy Event and check whether days are allocated as expected
+    hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
+
+    hsi_bd.apply(person_id=person_id, squeeze_factor=0.0)
+    # check HSI_Dummy event run
+    assert hsi_bd.this_ran, "the event did not run"
+
+    # check bed days are allocated as expected - 1. check all days of bed-type A are allocated
+    #                                            2. check all days of bed-type B are allocated
+    #                                            3. check total allocated days equates to a total of bed type A plus B
+    assert 5 == hsi_bd.bed_days_allocated_to_this_event['high_dependency_bed']
+    assert 5 == hsi_bd.bed_days_allocated_to_this_event['general_bed']
+    assert 10 == sum(hsi_bd.bed_days_allocated_to_this_event.values()), "not all days are allocated"
+
+    # impose footprint
+    hsi_bd.post_apply_hook()
+
+    tracker_after_impose_footprint = hs.bed_days.bed_tracker
+
+    # check impose footprint works - 1. check all days of bed-type A are imposed
+    #                                2. check all days of bed-type B are imposed
+    #                                3. check total imposed days equates to a total of bed type A plus B
     total_allocation = 0
-    # check that all days are allocated
-    for bed_type in footprint.keys():
-        total_bed_allocation = beddays_dataframe_before_apply_footprint[bed_type].subtract(
-            beddays_dataframe_after_apply_footprint[bed_type])
+    for bed_type in hs.bed_days.bed_types:
+        total_bed_allocation = tracker_before_impose_footprint[bed_type].subtract(
+                tracker_after_impose_footprint[bed_type])
 
         total_allocation += total_bed_allocation.sum(axis=1).sum()
 
-    # check that all requested days of bedtypeA are given
-    assert 5 == footprint['bedtypeA']
+    assert 5 == tracker_before_impose_footprint['high_dependency_bed'].subtract(
+                                                tracker_after_impose_footprint['high_dependency_bed']).sum(axis=1).sum()
+    assert 5 == tracker_before_impose_footprint['general_bed'].subtract(
+                                                tracker_after_impose_footprint['general_bed']).sum(axis=1).sum()
+    assert 10 == total_allocation, "not all bed days were allocated"
 
-    # check that all requested days of bedtypeB are given
-    assert 5 == footprint['bedtypeB']
+    """2) test Bed A available for the first but not all of the days requested (bed-type B available)"""
+    # ------------- reset variables --------------
+    person_id = 1  # person id
+    hs.bed_days.initialise_beddays_tracker()  # bed tracker
+    beds_days_df = hs.bed_days.bed_tracker  # bed days dataframe
 
-    # check that all days have been allocated to bed days tracker
-    assert total_allocation == sum(footprint.values()), "not all bed days were allocated"
+    # initialise bed available days
+    bed_available_days = [sim.date]
+    # --------------------------------------------
 
-    """2) test Bed A available for the first but not all of the days requested (but bed B available)"""
-    # reset some variables
-    personal_id = 1
-    footprint = {'bedtypeA': 5, 'bedtypeB': 5}
-    hs.bed_days.initialise_beddays_tracker()
+    # check bed type A is not available before tracker is reset
+    assert 0 == beds_days_df["high_dependency_bed"][hs.bed_days.get_persons_level2_facility_id(person_id)].sum()
 
-    # make bedtypeA available for the first day only
-    hs.bed_days.bed_tracker["bedtypeA"][hs.bed_days.get_persons_level2_facility_id(personal_id)].mask(
-        hs.bed_days.bed_tracker["bedtypeA"].index > sim.date, 0, inplace=True)
+    # reset bed tracker to make bed type A available for the first but not all of the days requested
+    beds_days_df['high_dependency_bed'][hs.bed_days.get_persons_level2_facility_id(person_id)].loc[
+        bed_available_days] = 1
 
-    # copy the contents of bed tracker dictionary
-    beddays_dataframe_before_apply_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
+    # check reset bed tracker works as expected - bed type A should be available only on sim.date
+    assert 1 == beds_days_df["high_dependency_bed"][hs.bed_days.get_persons_level2_facility_id(person_id)].loc[sim.date]
+    assert 1 == beds_days_df["high_dependency_bed"][hs.bed_days.get_persons_level2_facility_id(person_id)].sum()
 
-    # impose footprint on person_id 1 starting from the first day of simulation
-    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+    # copy bed days dataframe
+    tracker_before_impose_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
 
-    beddays_dataframe_after_apply_footprint = hs.bed_days.bed_tracker
+    # run HSI_Dummy Event and check whether days are allocated as expected
+    hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
 
+    hsi_bd.apply(person_id=person_id, squeeze_factor=0.0)
+    # check HSI_Dummy event run
+    assert hsi_bd.this_ran, "the event did not run"
+
+    # check bed days are allocated as expected - 1. check only one day of bed-type A is allocated
+    #                                            2. check the remaining days from bed-type A have been allocated
+    #                                               to bed type B
+    #                                            3. check total allocation equates to a total of bed type A plus B
+    assert 1 == hsi_bd.bed_days_allocated_to_this_event['high_dependency_bed']
+    assert 9 == hsi_bd.bed_days_allocated_to_this_event['general_bed']
+    assert 10 == sum(hsi_bd.bed_days_allocated_to_this_event.values()), "not all days are allocated"
+
+    # impose footprint
+    hsi_bd.post_apply_hook()
+
+    tracker_after_impose_footprint = hs.bed_days.bed_tracker
+
+    # check impose footprint works - 1. check only one day of bed-type A is imposed
+    #                                2. check the remaining days from bed-type A have been imposed to bed type B
+    #                                3. check total imposed days equates to a total of bed type A plus B
     total_allocation = 0
-    # check that all days are allocated
-    for bed_type in footprint.keys():
-        total_bed_allocation = beddays_dataframe_before_apply_footprint[bed_type].subtract(
-            beddays_dataframe_after_apply_footprint[bed_type])
+    for bed_type in hs.bed_days.bed_types:
+        total_bed_allocation = tracker_before_impose_footprint[bed_type].subtract(
+            tracker_after_impose_footprint[bed_type])
 
         total_allocation += total_bed_allocation.sum(axis=1).sum()
 
-    # check that only one days of bedtypeA is given
-    assert 1 == footprint['bedtypeA']
+    assert 1 == tracker_before_impose_footprint['high_dependency_bed'].subtract(
+        tracker_after_impose_footprint['high_dependency_bed']).sum(axis=1).sum()
 
-    # check that bedtypeB has equal or greater than number of requested days given
-    assert 5 <= footprint['bedtypeB']
+    assert 9 == tracker_before_impose_footprint['general_bed'].subtract(
+        tracker_after_impose_footprint['general_bed']).sum(axis=1).sum()
 
-    # since bedtypeB is always available, check that all requested days are allocated
-    assert total_allocation == sum(footprint.values()), "not all bed days were allocated"
+    assert 10 == total_allocation, "not all bed days were allocated"
 
-    # check that the remaining bed days from bed A are assigned to bed B
-    assert footprint_before_impose_bed_days['bedtypeB'] + (footprint_before_impose_bed_days['bedtypeB'] -
-                                                           footprint['bedtypeA']) == footprint[
-               list(footprint.keys())[1]]
+    """3) test Bed not available on the first day, but available on later days (bed-type B available)"""
+    # ------------- reset variables --------------
+    person_id = 2  # person id
+    hs.bed_days.initialise_beddays_tracker()  # bed tracker
+    beds_days_df = hs.bed_days.bed_tracker  # bed days dataframe
 
-    """3) test Bed not available on the first day, but available on later days (bed B available)"""
-    # reset some variables
-    personal_id = 2
-    footprint = {'bedtypeA': 5, 'bedtypeB': 5}
-    hs.bed_days.initialise_beddays_tracker()
+    # initialise bed available days
+    bed_available_days = [sim.date + pd.DateOffset(days=_d) for _d in range(1, days_sim)]
+    # --------------------------------------------
 
-    # make bedtypeA not available on the first day, but available on later days
-    hs.bed_days.bed_tracker["bedtypeA"][hs.bed_days.get_persons_level2_facility_id(personal_id)].mask(
-        hs.bed_days.bed_tracker["bedtypeA"].index == sim.date, 0, inplace=True)
+    # check bed type A is not available before tracker is reset
+    assert 0 == beds_days_df["high_dependency_bed"][hs.bed_days.get_persons_level2_facility_id(person_id)].sum()
 
-    # copy the contents of bed tracker dictionary
-    beddays_dataframe_before_apply_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
+    # reset bed tracker to make bed type A not available on the first day, but available on later days
+    beds_days_df['high_dependency_bed'][hs.bed_days.get_persons_level2_facility_id(person_id)].loc[
+        bed_available_days] = 1
 
-    # impose footprint on person_id 2 starting from the first day of simulation
-    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+    # check reset bed tracker works as expected - bed type A should not be available on the first day but available
+    # on later days
+    assert 0 == beds_days_df["high_dependency_bed"][hs.bed_days.get_persons_level2_facility_id(person_id)].loc[sim.date]
+    assert all(1 == beds_days_df[
+        "high_dependency_bed"][hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days])
 
-    beddays_dataframe_after_apply_footprint = hs.bed_days.bed_tracker
+    # copy bed days dataframe
+    tracker_before_impose_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
 
+    # run HSI_Dummy Event and check whether days are allocated as expected
+    hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
+
+    hsi_bd.apply(person_id=person_id, squeeze_factor=0.0)
+    # check HSI_Dummy event run
+    assert hsi_bd.this_ran, "the event did not run"
+
+    # check bed days are allocated as expected - 1. check no bed day is allocated to bed-type A
+    #                                            2. check all days of bed-type A have been allocated to bed type B
+    #                                            3. check total allocation equates to a total of bed type A plus B
+    assert 0 == hsi_bd.bed_days_allocated_to_this_event['high_dependency_bed']
+    assert 10 == hsi_bd.bed_days_allocated_to_this_event['general_bed']
+    assert 10 == sum(hsi_bd.bed_days_allocated_to_this_event.values()), "not all days are allocated"
+
+    # impose footprint
+    hsi_bd.post_apply_hook()
+
+    tracker_after_impose_footprint = hs.bed_days.bed_tracker
+
+    # check impose footprint works - 1. check no bed day is imposed on bed-type A
+    #                                2. check all days from bed-type A have been imposed to bed type B
+    #                                3. check total imposed days equates to a total of bed type A plus B
     total_allocation = 0
-    # check that all days are allocated
-    for bed_type in footprint.keys():
-        total_bed_allocation = beddays_dataframe_before_apply_footprint[bed_type].subtract(
-            beddays_dataframe_after_apply_footprint[bed_type])
+    for bed_type in hs.bed_days.bed_types:
+        total_bed_allocation = tracker_before_impose_footprint[bed_type].subtract(
+            tracker_after_impose_footprint[bed_type])
 
         total_allocation += total_bed_allocation.sum(axis=1).sum()
 
-    # check that no bed day is assigned to bedtypeA
-    assert 0 == footprint[list(footprint.keys())[0]]
+    assert 0 == tracker_before_impose_footprint['high_dependency_bed'].subtract(
+        tracker_after_impose_footprint['high_dependency_bed']).sum(axis=1).sum()
 
-    # check that bedtypeB has equal or greater than number of requested days given
-    assert 5 <= footprint['bedtypeB']
+    assert 10 == tracker_before_impose_footprint['general_bed'].subtract(
+        tracker_after_impose_footprint['general_bed']).sum(axis=1).sum()
 
-    # since bedtypeB is always available, check that all requested days are allocated
-    assert total_allocation == sum(footprint.values()), "not all bed days were allocated"
+    assert 10 == total_allocation, "not all bed days were imposed"
 
-    # check that all bed days from bed A are assigned to bed B
-    assert footprint_before_impose_bed_days['bedtypeB'] + (footprint_before_impose_bed_days['bedtypeB'] -
-                                                           footprint['bedtypeA']) == footprint[
-               list(footprint.keys())[1]]
+    """4) test Bed available on 1st, 3rd and 5th day (bed-type B available)"""
+    # ------------- reset variables --------------
+    person_id = 3  # person id
+    hs.bed_days.initialise_beddays_tracker()  # bed tracker
+    beds_days_df = hs.bed_days.bed_tracker  # bed days dataframe
 
-    """4) test Bed available on 1st, 3rd and 5th day"""
-    # reset some few variables
-    personal_id = 3
-    footprint = {'bedtypeA': 5, 'bedtypeB': 5}
-    hs.parameters['BedCapacity'] = pd.DataFrame(
-        data={
-            'Facility_ID': level2_facility_ids,
-            'bedtypeA': 0,
-            'bedtypeB': 1
-        }
-    )
-    hs.bed_days.initialise_beddays_tracker()
+    # initialise bed available days
+    bed_available_days = [sim.date + pd.DateOffset(days=_d) for _d in range(0, 5, 2)]
+    # --------------------------------------------
 
-    # make bedtypeA available on 1st, 3rd and 5th day
-    bed_available_days = [0, 2, 4]
-    for bed_available_day in bed_available_days:
-        hs.bed_days.bed_tracker["bedtypeA"][hs.bed_days.get_persons_level2_facility_id(personal_id)].mask(
-            hs.bed_days.bed_tracker["bedtypeA"].index == sim.date + pd.DateOffset(days=bed_available_day), 1,
-            inplace=True)
+    # check bed type A is not available before tracker is reset
+    assert 0 == beds_days_df["high_dependency_bed"][hs.bed_days.get_persons_level2_facility_id(person_id)].sum()
 
-    # copy the contents of bed tracker dictionary
-    beddays_dataframe_before_apply_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
+    # reset bed tracker to make bed-typeA available on 1st, 3rd and 5th day
+    beds_days_df['high_dependency_bed'][hs.bed_days.get_persons_level2_facility_id(person_id)].loc[
+        bed_available_days] = 1
 
-    # impose footprint on person_id 3 starting from the first day of simulation
-    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+    # check reset bed tracker works as expected - bed type A should be available on 1st, 3rd and 5th day
+    assert all(1 == beds_days_df[
+        "high_dependency_bed"][hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days])
 
-    beddays_dataframe_after_apply_footprint = hs.bed_days.bed_tracker
+    # copy bed days dataframe
+    tracker_before_impose_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
 
+    # run HSI_Dummy Event and check whether days are allocated as expected
+    hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
+
+    hsi_bd.apply(person_id=person_id, squeeze_factor=0.0)
+    # check HSI_Dummy event run
+    assert hsi_bd.this_ran, "the event did not run"
+
+    # check bed days are allocated as expected - 1. check only one day of bed-type A is allocated
+    #                                            2. check the remaining days from bed-type A have been allocated
+    #                                               to bed type B
+    #                                            3. check total allocation equates to a total of bed type A plus B
+    assert 1 == hsi_bd.bed_days_allocated_to_this_event['high_dependency_bed']
+    assert 9 == hsi_bd.bed_days_allocated_to_this_event['general_bed']
+    assert 10 == sum(hsi_bd.bed_days_allocated_to_this_event.values()), "not all days are allocated"
+
+    # impose footprint
+    hsi_bd.post_apply_hook()
+
+    tracker_after_impose_footprint = hs.bed_days.bed_tracker
+
+    # check impose footprint works - 1. check only one day of bed-type A is imposed
+    #                                2. check the remaining days from bed-type A have been imposed to bed type B
+    #                                3. check total imposed days equates to a total of bed type A plus B
     total_allocation = 0
-    # check that all days are allocated
-    for bed_type in footprint.keys():
-        total_bed_allocation = beddays_dataframe_before_apply_footprint[bed_type].subtract(
-            beddays_dataframe_after_apply_footprint[bed_type])
+    for bed_type in hs.bed_days.bed_types:
+        total_bed_allocation = tracker_before_impose_footprint[bed_type].subtract(
+            tracker_after_impose_footprint[bed_type])
 
         total_allocation += total_bed_allocation.sum(axis=1).sum()
 
-    # check that only one day of bedtypeA is given
-    assert 1 == footprint[list(footprint.keys())[0]]
+    assert 1 == tracker_before_impose_footprint['high_dependency_bed'].subtract(
+        tracker_after_impose_footprint['high_dependency_bed']).sum(axis=1).sum()
 
-    # check that all days are assigned to bedtypeB (days might even be greater but not less than the requested)
-    assert 5 <= footprint[list(footprint.keys())[-1]]
+    assert 9 == tracker_before_impose_footprint['general_bed'].subtract(
+        tracker_after_impose_footprint['general_bed']).sum(axis=1).sum()
 
-    # since bedtypeB is always available, check that all requested days are allocated
-    assert total_allocation == sum(footprint.values()), "not all bed days were allocated"
-
-    # check that the remaining bed days from bed A are assigned to bed B
-    assert footprint_before_impose_bed_days['bedtypeB'] + (footprint_before_impose_bed_days['bedtypeB'] -
-                                                           footprint['bedtypeA']) == footprint[
-               list(footprint.keys())[1]]
+    assert 10 == total_allocation, "not all bed days were allocated"
 
 
 def test_multiple_bed_types_allocation_with_lower_class_bed_never_available():
-    sim = Simulation(start_date=start_date)
+    """This test checks the integrity of bed days allocation algorithm with lower class bed never available and given
+        different scenarios i.e. when bed-type A is available for all days requested, bed A available for the first
+        but not all of the days requested (bed-type B not available), bed A not available on the first day, but available on
+        later days (bed-type B not available) and bed A available on 1st, 3rd and 5th day """
+
+    class DummyModule(Module):
+        METADATA = {Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    # Create a dummy HSI with one type of Bed Day specified
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.this_ran = False
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = 2
+            self.ALERT_OTHER_DISEASES = []
+            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({
+                'high_dependency_bed': 5,
+                'general_bed': 5
+            })
+
+        def apply(self, person_id, squeeze_factor):
+            self.this_ran = (self.bed_days_allocated_to_this_event == self.BEDDAYS_FOOTPRINT)
+            print(f'squeeze-factor is {squeeze_factor}')
+            print(f'Bed-days allocated to this event: {self.bed_days_allocated_to_this_event}')
+
+    # Create simulation:
+    sim = Simulation(start_date=start_date, seed=0)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  disable=True),
+        DummyModule(),
     )
 
-    # call HealthSystem Module to initialise BedDays class
     hs = sim.modules['HealthSystem']
 
     # Update BedCapacity data with a simple table:
-    level2_facility_ids = [64, 65, 66]  # <-- the level 2 facilities for each region
-    cap_bedtypeA = 1
-    cap_bedtypeB = 0
-
-    # create a simple bed capacity dataframe
     hs.parameters['BedCapacity'] = pd.DataFrame(
         data={
-            'Facility_ID': level2_facility_ids,
-            'bedtypeA': cap_bedtypeA,
-            'bedtypeB': cap_bedtypeB
+            'Facility_ID': [64, 65, 66],  # <-- the level 2 facilities for each region,
+            'high_dependency_bed': 0,
+            'general_bed': 0  # make general_bed never available
         }
     )
 
-    # Create a 21 day simulation
-    days_sim = hs.bed_days.days_until_last_day_of_bed_tracker
+    # Create a 21 days simulation
+    days_sim = 21
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=days_sim))
+
+    sim.date = start_date
+
+    """1) test Bed-type A available for all days requested (bed-type B never available)"""
+    person_id = 0  # person id in population
 
     # reset bed days tracker to the start_date of the simulation
     hs.bed_days.initialise_beddays_tracker()
 
-    sim.date = start_date
-    footprint = {'bedtypeA': 5, 'bedtypeB': 5}  # a sample footprint
+    # get bed days dataframe
+    beds_days_df = hs.bed_days.bed_tracker
 
-    """1) test Bed bedTypeA available for all days requested"""
-    personal_id = 0  # person id in population
+    # initialise bed available days
+    bed_available_days = [sim.date + pd.DateOffset(days=_d) for _d in range(5)]
 
-    beddays_dataframe_before_apply_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
+    # check bed type A is not available before tracker is reset
+    assert all(0 == beds_days_df["high_dependency_bed"][
+        hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days])
 
-    # impose footprint on person_id 0 starting from the first day of simulation
-    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+    # reset bed tracker to make bed type A available for all requested days - 5 days
+    beds_days_df['high_dependency_bed'][hs.bed_days.get_persons_level2_facility_id(person_id)].loc[
+        bed_available_days] = 1
 
-    beddays_dataframe_after_apply_footprint = hs.bed_days.bed_tracker
+    # check bed type A is now available after tracker is reset
+    assert all(1 == beds_days_df["high_dependency_bed"][
+        hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days])
 
+    # copy bed days dataframe
+    tracker_before_impose_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
+
+    # run HSI_Dummy Event and check whether days are allocated as expected
+    hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
+
+    hsi_bd.apply(person_id=person_id, squeeze_factor=0.0)
+    # check HSI_Dummy event run
+    assert hsi_bd.this_ran, "the event did not run"
+
+    # check bed days allocation is as expected - 1. check all days of bed-type A are allocated
+    #                                            2. check no day of bed-type B is allocated
+    #                                            3. check total allocated days equates to a total of bed type A(5)
+    assert 5 == hsi_bd.bed_days_allocated_to_this_event['high_dependency_bed']
+    assert 0 == hsi_bd.bed_days_allocated_to_this_event['general_bed']
+    assert 5 == sum(hsi_bd.bed_days_allocated_to_this_event.values()), "not all days are allocated"
+
+    # impose footprint
+    hsi_bd.post_apply_hook()
+
+    tracker_after_impose_footprint = hs.bed_days.bed_tracker
+
+    # check impose footprint works - 1. check all days of bed-type A are imposed
+    #                                2. check no day of bed-type B is imposed
+    #                                3. check total imposed days equates to a total of bed type A(5)
     total_allocation = 0
-    # check that all days are allocated
-    for bed_type in footprint.keys():
-        total_bed_allocation = beddays_dataframe_before_apply_footprint[bed_type].subtract(
-            beddays_dataframe_after_apply_footprint[bed_type])
+    for bed_type in hs.bed_days.bed_types:
+        total_bed_allocation = tracker_before_impose_footprint[bed_type].subtract(
+            tracker_after_impose_footprint[bed_type])
 
         total_allocation += total_bed_allocation.sum(axis=1).sum()
 
-    # check that all days of bedtypeA are given
-    assert 5 == footprint['bedtypeA']
+    assert 5 == tracker_before_impose_footprint['high_dependency_bed'].subtract(
+        tracker_after_impose_footprint['high_dependency_bed']).sum(axis=1).sum()
+    assert 0 == tracker_before_impose_footprint['general_bed'].subtract(
+        tracker_after_impose_footprint['general_bed']).sum(axis=1).sum()
+    assert 5 == total_allocation, "not all bed days were allocated"
 
-    # since B is never available, check that no bed day of bedtypeB is given
-    assert 0 == footprint['bedtypeB']
+    """2) test Bed-type A available for the first but not all of the days requested (bed-type B never available)"""
+    # ------------- reset variables --------------
+    person_id = 1  # person id
+    hs.bed_days.initialise_beddays_tracker()  # bed tracker
+    beds_days_df = hs.bed_days.bed_tracker  # bed days dataframe
 
-    # check only available days(bedtypeA) are allocated
-    assert 5 == total_allocation
+    # initialise bed available days
+    bed_available_days = [sim.date]
+    # --------------------------------------------
 
-    """2) test Bed A available for the first but not all of the days requested"""
-    # reset some variables
-    personal_id = 1
-    footprint = {'bedtypeA': 5, 'bedtypeB': 5}
-    hs.bed_days.initialise_beddays_tracker()
+    # check bed type A is not available before tracker is reset
+    assert 0 == beds_days_df["high_dependency_bed"][hs.bed_days.get_persons_level2_facility_id(person_id)].sum()
 
-    # make bedtypeA available for the first day only
-    hs.bed_days.bed_tracker["bedtypeA"][hs.bed_days.get_persons_level2_facility_id(personal_id)].mask(
-        hs.bed_days.bed_tracker["bedtypeA"].index > sim.date, 0, inplace=True)
+    # reset bed tracker to make bed type A for the first but not all of the days requested
+    beds_days_df['high_dependency_bed'][hs.bed_days.get_persons_level2_facility_id(person_id)].loc[
+        bed_available_days] = 1
 
-    # copy the contents of bed tracker dictionary
-    beddays_dataframe_before_apply_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
+    # check reset bed tracker works as expected - bed type A should now be available on the first day only
+    assert 1 == beds_days_df["high_dependency_bed"][hs.bed_days.get_persons_level2_facility_id(person_id)].loc[sim.date]
+    assert 1 == beds_days_df["high_dependency_bed"][hs.bed_days.get_persons_level2_facility_id(person_id)].sum()
 
-    # impose footprint on person_id 1 starting from the first day of simulation
-    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+    # copy bed days dataframe
+    tracker_before_impose_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
 
-    beddays_dataframe_after_apply_footprint = hs.bed_days.bed_tracker
+    # run HSI_Dummy Event and check whether days are allocated as expected
+    hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
 
+    hsi_bd.apply(person_id=person_id, squeeze_factor=0.0)
+    # check HSI_Dummy event run
+    assert hsi_bd.this_ran, "the event did not run"
+
+    # check bed days are allocated as expected - 1. check only one day of bed-type A is allocated
+    #                                            2. check no bed day is transferred or allocated to bed-type B
+    #                                            3. check total allocation equates to 1 (bed-type A allocation)
+    assert 1 == hsi_bd.bed_days_allocated_to_this_event['high_dependency_bed']
+    assert 0 == hsi_bd.bed_days_allocated_to_this_event['general_bed']
+    assert 1 == sum(hsi_bd.bed_days_allocated_to_this_event.values()), "not all days are allocated"
+
+    # impose footprint
+    hsi_bd.post_apply_hook()
+
+    tracker_after_impose_footprint = hs.bed_days.bed_tracker
+
+    # check impose footprint works - 1. check only one day of bed-type A is imposed
+    #                                2. check no bed day is transferred or imposed to bed-type B
+    #                                3. check total imposed days equates to 1 (bed-type A allocation)
     total_allocation = 0
-    # check that all days are allocated
-    for bed_type in footprint.keys():
-        total_bed_allocation = beddays_dataframe_before_apply_footprint[bed_type].subtract(
-            beddays_dataframe_after_apply_footprint[bed_type])
+    for bed_type in hs.bed_days.bed_types:
+        total_bed_allocation = tracker_before_impose_footprint[bed_type].subtract(
+            tracker_after_impose_footprint[bed_type])
 
         total_allocation += total_bed_allocation.sum(axis=1).sum()
 
-    # check that only one day is assigned to bedtypeA
-    assert 1 == footprint['bedtypeA']
+    assert 1 == tracker_before_impose_footprint['high_dependency_bed'].subtract(
+        tracker_after_impose_footprint['high_dependency_bed']).sum(axis=1).sum()
 
-    # since B is never available, check that no bed day of bedtypeB has been assigned
-    assert 0 == footprint['bedtypeB']
+    assert 0 == tracker_before_impose_footprint['general_bed'].subtract(
+        tracker_after_impose_footprint['general_bed']).sum(axis=1).sum()
 
-    # check that the total allocation is equal to 1(bedtypeA)
-    assert 1 == total_allocation
+    assert 1 == total_allocation, "not all bed days were allocated"
 
-    """3) test Bed not available on the first day, but available on later days"""
-    # reset some variables
-    personal_id = 2
-    footprint = {'bedtypeA': 5, 'bedtypeB': 5}
-    hs.bed_days.initialise_beddays_tracker()
+    """3) test Bed-type A not available on the first day, but available on later days (bed-type B never available)"""
+    # ------------- reset variables --------------
+    person_id = 2  # person id
+    hs.bed_days.initialise_beddays_tracker()  # bed tracker
+    beds_days_df = hs.bed_days.bed_tracker  # bed days dataframe
 
-    # make bedtypeA not available on the first day, but available on later days
-    hs.bed_days.bed_tracker["bedtypeA"][hs.bed_days.get_persons_level2_facility_id(personal_id)].mask(
-        hs.bed_days.bed_tracker["bedtypeA"].index == sim.date, 0, inplace=True)
+    # initialise bed available days
+    bed_available_days = [sim.date + pd.DateOffset(days=_d) for _d in range(1, days_sim)]
+    # --------------------------------------------
 
-    # copy the contents of bed tracker dictionary
-    beddays_dataframe_before_apply_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
+    # check bed type A is not available before tracker is reset
+    assert 0 == beds_days_df["high_dependency_bed"][hs.bed_days.get_persons_level2_facility_id(person_id)].sum()
 
-    # impose footprint on person_id 2 starting from the first day of simulation
-    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+    # reset bed tracker to make bed type A not available on the first day, but available on later days
+    beds_days_df['high_dependency_bed'][hs.bed_days.get_persons_level2_facility_id(person_id)].loc[
+        bed_available_days] = 1
 
-    beddays_dataframe_after_apply_footprint = hs.bed_days.bed_tracker
+    # check reset bed tracker works as expected - bed type A should not be available on the first day but available
+    # on later days
+    assert 0 == beds_days_df["high_dependency_bed"][hs.bed_days.get_persons_level2_facility_id(person_id)].loc[sim.date]
+    assert all(1 == beds_days_df[
+        "high_dependency_bed"][hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days])
 
+    # copy bed days dataframe
+    tracker_before_impose_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
+
+    # run HSI_Dummy Event and check whether days are allocated as expected
+    hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
+
+    hsi_bd.apply(person_id=person_id, squeeze_factor=0.0)
+    # check HSI_Dummy event run
+    assert hsi_bd.this_ran, "the event did not run"
+
+    # check bed days are allocated as expected - 1. check no bed day is allocated to bed-type A
+    #                                            2. check no bed day is transferred or allocated to bed type B
+    #                                            3. check total allocation equates to 0(since there's no
+    #                                            allocation from both bed-types)
+    assert 0 == hsi_bd.bed_days_allocated_to_this_event['high_dependency_bed']
+    assert 0 == hsi_bd.bed_days_allocated_to_this_event['general_bed']
+    assert 0 == sum(hsi_bd.bed_days_allocated_to_this_event.values()), "not all days are allocated"
+
+    # impose footprint
+    hsi_bd.post_apply_hook()
+
+    tracker_after_impose_footprint = hs.bed_days.bed_tracker
+
+    # check impose footprint works - 1. check no bed day is imposed on bed-type A
+    #                                2. check no bed day is transferred or imposed to bed type B
+    #                                3. check total imposed days equates to 0(since there's no
+    #                                   allocation from both bed-types)
     total_allocation = 0
-    # check that all days are allocated
-    for bed_type in footprint.keys():
-        total_bed_allocation = beddays_dataframe_before_apply_footprint[bed_type].subtract(
-            beddays_dataframe_after_apply_footprint[bed_type])
+    for bed_type in hs.bed_days.bed_types:
+        total_bed_allocation = tracker_before_impose_footprint[bed_type].subtract(
+            tracker_after_impose_footprint[bed_type])
 
         total_allocation += total_bed_allocation.sum(axis=1).sum()
 
-    # check that no bed day is assigned to bedtypeA
-    assert 0 == footprint['bedtypeA'], "no allocation should happen since no bed days are available"
+    assert 0 == tracker_before_impose_footprint['high_dependency_bed'].subtract(
+        tracker_after_impose_footprint['high_dependency_bed']).sum(axis=1).sum()
 
-    # check that no bed day is assigned to bedtypeB
-    assert 0 == footprint['bedtypeB'], "no allocation should happen since no bed days are available"
+    assert 0 == tracker_before_impose_footprint['general_bed'].subtract(
+        tracker_after_impose_footprint['general_bed']).sum(axis=1).sum()
 
-    # since both bedtypeA and bedtypeB are never available, check that no bed days are allocated
-    assert 0 == total_allocation, "no allocation should happen since no bed days is available"
+    assert 0 == total_allocation, "not all bed days were allocated"
 
-    """4) test Bed available on 1st, 3rd and 5th day"""
-    # reset some few variables
-    personal_id = 3
-    footprint = {'bedtypeA': 5, 'bedtypeB': 5}
-    hs.parameters['BedCapacity'] = pd.DataFrame(
-        data={
-            'Facility_ID': level2_facility_ids,
-            'bedtypeA': 0,
-            'bedtypeB': 0
-        }
-    )
-    hs.bed_days.initialise_beddays_tracker()
+    """4) test Bed-type A available on 1st, 3rd and 5th day (bed-type B never available)"""
+    # ------------- reset variables --------------
+    person_id = 3  # person id
+    hs.bed_days.initialise_beddays_tracker()  # bed tracker
+    beds_days_df = hs.bed_days.bed_tracker  # bed days dataframe
 
-    # make bedtypeA available on 1st, 3rd and 5th day
-    bed_available_days = [0, 2, 4]
-    for bed_available_day in bed_available_days:
-        hs.bed_days.bed_tracker["bedtypeA"][hs.bed_days.get_persons_level2_facility_id(personal_id)].mask(
-            hs.bed_days.bed_tracker["bedtypeA"].index == sim.date + pd.DateOffset(days=bed_available_day), 1,
-            inplace=True)
+    # initialise bed available days
+    bed_available_days = [sim.date + pd.DateOffset(days=_d) for _d in range(0, 5, 2)]
+    # --------------------------------------------
 
-    # copy the contents of bed tracker dictionary
-    beddays_dataframe_before_apply_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
+    # check bed type A is not available before tracker is reset
+    assert 0 == beds_days_df["high_dependency_bed"][hs.bed_days.get_persons_level2_facility_id(person_id)].sum()
 
-    # impose footprint on person_id 3 starting from the first day of simulation
-    hs.bed_days.impose_beddays_footprint(person_id=personal_id, footprint=footprint)
+    # reset bed tracker to make bed-typeA available on 1st, 3rd and 5th day
+    beds_days_df['high_dependency_bed'][hs.bed_days.get_persons_level2_facility_id(person_id)].loc[
+        bed_available_days] = 1
 
-    beddays_dataframe_after_apply_footprint = hs.bed_days.bed_tracker
+    # check reset bed tracker works as expected - bed type A should now be available on 1st, 3rd and 5th day
+    assert all(1 == beds_days_df[
+        "high_dependency_bed"][hs.bed_days.get_persons_level2_facility_id(person_id)].loc[bed_available_days])
 
+    # copy bed days dataframe
+    tracker_before_impose_footprint = copy.deepcopy(hs.bed_days.bed_tracker)
+
+    # run HSI_Dummy Event and check whether days are allocated as expected
+    hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
+
+    hsi_bd.apply(person_id=person_id, squeeze_factor=0.0)
+    # check HSI_Dummy event run
+    assert hsi_bd.this_ran, "the event did not run"
+
+    # check bed days are allocated as expected - 1. check only one day of bed-type A is allocated
+    #                                            2. check no bed day is transferred or allocated to bed type B
+    #                                            3. check total allocation equates to 1 (bed-type A allocation)
+    assert 1 == hsi_bd.bed_days_allocated_to_this_event['high_dependency_bed']
+    assert 0 == hsi_bd.bed_days_allocated_to_this_event['general_bed']
+    assert 1 == sum(hsi_bd.bed_days_allocated_to_this_event.values()), "not all days are allocated"
+
+    # impose footprint
+    hsi_bd.post_apply_hook()
+
+    tracker_after_impose_footprint = hs.bed_days.bed_tracker
+
+    # check impose footprint works - 1. check only one day of bed-type A is imposed
+    #                                2. check no bed day is transferred or imposed to bed type B
+    #                                3. check total imposed days equates to 1 (bed-type A allocation)
     total_allocation = 0
-    # check that all days are allocated
-    for bed_type in footprint.keys():
-        total_bed_allocation = beddays_dataframe_before_apply_footprint[bed_type].subtract(
-            beddays_dataframe_after_apply_footprint[bed_type])
+    for bed_type in hs.bed_days.bed_types:
+        total_bed_allocation = tracker_before_impose_footprint[bed_type].subtract(
+            tracker_after_impose_footprint[bed_type])
 
         total_allocation += total_bed_allocation.sum(axis=1).sum()
 
-    # check that only one day is assigned to bedtypeA
-    assert 1 == footprint['bedtypeA']
+    assert 1 == tracker_before_impose_footprint['high_dependency_bed'].subtract(
+        tracker_after_impose_footprint['high_dependency_bed']).sum(axis=1).sum()
 
-    # since B is never available, check that no bed day of bedtypeB has been assigned
-    assert 0 == footprint['bedtypeB']
+    assert 0 == tracker_before_impose_footprint['general_bed'].subtract(
+        tracker_after_impose_footprint['general_bed']).sum(axis=1).sum()
 
-    # check that the total allocation is equal to 1(bedtypeA)
     assert 1 == total_allocation

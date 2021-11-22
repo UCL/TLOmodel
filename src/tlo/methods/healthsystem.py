@@ -1235,7 +1235,7 @@ class HealthSystem(Module):
         list_of_events = list()
 
         for ev_tuple in self.HSI_EVENT_QUEUE:
-            date = ev_tuple[1]   # this is the 'topen' value
+            date = ev_tuple[1]  # this is the 'topen' value
             event = ev_tuple[4]
             if isinstance(event.target, (int, np.integer)):
                 if event.target == person_id:
@@ -1579,7 +1579,7 @@ class HSI_Event:
                 if not isinstance(item_codes, list):
                     item_codes = [item_codes]
                 # turn into 'consumable footprint':
-                footprint_items = dict(zip(item_codes, [1]*len(item_codes)))
+                footprint_items = dict(zip(item_codes, [1] * len(item_codes)))
             else:
                 footprint_items = {}
 
@@ -1587,7 +1587,7 @@ class HSI_Event:
             if pkg_codes is not None:
                 if not isinstance(pkg_codes, list):
                     pkg_codes = [pkg_codes]
-                footprint_pkgs = dict(zip(pkg_codes, [1]*len(pkg_codes)))
+                footprint_pkgs = dict(zip(pkg_codes, [1] * len(pkg_codes)))
             else:
                 footprint_pkgs = {}
 
@@ -1626,7 +1626,8 @@ class HSI_Event:
             for k, v in dict_of_beddays.items():
                 footprint[k] = v
 
-            return footprint
+            return self.sim.modules['HealthSystem'].bed_days.issue_bed_days_according_to_availability(self.target,
+                                                                                                      footprint)
 
         else:
             return {}
@@ -1661,6 +1662,7 @@ class HSIEventWrapper(Event):
     be passed to the main simulation scheduler.
     When this event is run (by the simulation scheduler) it runs the HSI event with squeeze_factor=0.0
     """
+
     def __init__(self, hsi_event, *args, **kwargs):
         super().__init__(hsi_event.module, *args, **kwargs)
         self.hsi_event = hsi_event
@@ -1671,7 +1673,6 @@ class HSIEventWrapper(Event):
         # (this check normally happens in the HealthSystemScheduler and silently do not run the HSI event)
 
         if isinstance(self.hsi_event.target, tlo.population.Population) \
-                or (self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']):
-
+            or (self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']):
             # Run the event (with 0 squeeze_factor) and ignore the output
             _ = self.hsi_event.run(squeeze_factor=0.0)
