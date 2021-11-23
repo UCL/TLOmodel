@@ -646,7 +646,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "BreastCancer_Investigation_Following_breast_lump_discernible"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):

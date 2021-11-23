@@ -646,7 +646,6 @@ def test_all_appt_types_can_run():
     if len(error_msg):
         for _line in error_msg:
             print(_line)
-        pd.DataFrame(error_msg).to_csv('error_dump.txt', index=False, header=False)
 
     assert 0 == len(error_msg)
 

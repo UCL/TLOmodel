@@ -989,7 +989,6 @@ class HealthSystem(Module):
                 load_factor[officer] = float('inf')
             else:
                 load_factor[officer] = max(call / availability - 1, 0)
-            print(f"{officer}, call/availability={call / availability}")
 
         # 2) Convert these load-factors into an overall 'squeeze' signal for each HSI,
         # based on the highest load-factor of any officer required (or zero if event
