@@ -273,27 +273,26 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
             ref_age = 30
 
         # read probabilities of symptoms by age
-        symptom_prob = symptom_prob.loc[symptom_prob.age == ref_age]
+        symptom_prob = symptom_prob.loc[symptom_prob.age == ref_age, ["symptom", "probability"]]
+        # map to a series of probabilities indexed by symptom key
+        symptom_prob = symptom_prob.set_index("symptom").probability
 
         # symptom onset
         symp_onset = self.sim.date + DateOffset(days=rng.randint(7, 21))
 
         # everybody gets rash, fever and eye complaint, other symptoms assigned with age-specific probability
-        for symptom in symptom_list:
 
-            specific_symptom_prob = symptom_prob.loc[symptom_prob.symptom == symptom, "probability"].values[0]
-
-            # random sample whether person will have symptom
-            if rng.random_sample(size=1) < specific_symptom_prob:
-                # schedule symptom onset
-                self.sim.modules["SymptomManager"].change_symptom(
-                    person_id=person_id,
-                    symptom_string=symptom,
-                    add_or_remove="+",
-                    disease_module=self.sim.modules["Measles"],
-                    date_of_onset=symp_onset,
-                    duration_in_days=14,  # same duration for all symptoms
-                )
+        # random sample which symptoms a person will have
+        active_symptoms = [sym for sym in symptom_list if rng.uniform() < symptom_prob[sym]]
+        # schedule symptoms onset
+        self.sim.modules["SymptomManager"].change_symptom(
+            person_id=person_id,
+            symptom_string=active_symptoms,
+            add_or_remove="+",
+            disease_module=self.module,
+            date_of_onset=symp_onset,
+            duration_in_days=14,  # same duration for all symptoms
+        )
 
         # schedule symptom resolution without treatment - this only occurs if death doesn't happen first
         symp_resolve = symp_onset + DateOffset(days=rng.randint(7, 14))
@@ -302,7 +301,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         # todo separate probability for people with HIV
 
         # probability of death
-        if rng.random_sample(size=1) < symptom_prob.loc[symptom_prob.symptom == "death", "probability"].values[0]:
+        if rng.uniform() < symptom_prob["death"]:
             logger.debug(key="MeaslesOnsetEvent",
                          data=f"This is MeaslesOnsetEvent, scheduling measles death for {person_id}")
 

@@ -1372,13 +1372,12 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         df.loc[person_id, props_new.keys()] = props_new.values()
 
         # Apply symptoms for this episode (these do not affect the course of disease)
-        for symptom in m.models.get_symptoms(self.pathogen):
-            self.sim.modules['SymptomManager'].change_symptom(
-                person_id=person_id,
-                symptom_string=symptom,
-                add_or_remove='+',
-                disease_module=self.module
-            )
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=person_id,
+            symptom_string=m.models.get_symptoms(self.pathogen),
+            add_or_remove='+',
+            disease_module=self.module
+        )
 
         # Log this incident case:
         logger.info(
