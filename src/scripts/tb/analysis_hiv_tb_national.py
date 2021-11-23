@@ -89,8 +89,8 @@ sim.modules["Tb"].parameters["tb_high_risk_distr"] = pd.read_excel(
 
 # change tb mixing parameter to allow more between-district transmission
 sim.modules["Tb"].parameters["mixing_parameter"] = 1
-sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 0.5
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.99
+sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 1.5
+sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.998
 # sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = 0.3
 # sim.modules["Hiv"].parameters["temporal_trend_art_initiation"] = 3.5  # multipl model 0.3 * (yr*param)
 

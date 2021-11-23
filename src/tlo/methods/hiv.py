@@ -549,11 +549,12 @@ class Hiv(Module):
         #                             .when(3, p["rr_hiv_test_secondary_education"]),
         # )
         # todo added condition must be not on ART for test
-        # this only applies to adult testing
+        # todo allow children to be tested without symptoms
+        # previously diagnosed can be re-tested
         self.lm["lm_spontaneous_test_12m"] = LinearModel.multiplicative(
             Predictor("hv_inf").when(True, p["rr_test_hiv_positive"]).otherwise(1.0),
             Predictor("hv_art").when("not", 1.0).otherwise(0.0),
-            Predictor("age_years").when("<15", 0.0).otherwise(1.0),
+            # Predictor("age_years").when("<15", 0.0).otherwise(1.0),
         )
 
         # Linear model if the person will start ART, following when the person has been diagnosed:
@@ -931,7 +932,7 @@ class Hiv(Module):
         )
 
         # 2) Schedule the Logging Event
-        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=364))
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=0))
 
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
@@ -1414,7 +1415,7 @@ class Hiv(Module):
 
     def do_when_hiv_diagnosed(self, person_id):
         """Things to do when a person has been tested and found (newly) be be HIV-positive:.
-        * Consier if ART should be initiated, and schedule HSI if so.
+        * Consider if ART should be initiated, and schedule HSI if so.
         The person should not yet be on ART.
         """
         df = self.sim.population.props
@@ -1425,17 +1426,29 @@ class Hiv(Module):
                 data="This event should not be running. do_when_diagnosed is for newly diagnosed persons.",
             )
 
+        # todo pass this to prob_art_start_after_test if need to reduce mortality
         # Consider if the person will be referred to start ART
         has_aids_symptoms = "aids_symptoms" in self.sim.modules[
             "SymptomManager"
         ].has_what(person_id)
 
+        # todo figure out who is NOT starting art
         starts_art = self.rng.random_sample() < self.prob_art_start_after_test(self.sim.date.year)
 
+        # todo could log who is NOT starting art
         if starts_art:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Hiv_StartOrContinueTreatment(person_id=person_id, module=self),
                 topen=self.sim.date,
+                tclose=None,
+                priority=0,
+            )
+
+        else:
+            # refer for another test in 6 months
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
+                topen=self.sim.date + pd.DateOffset(months=6),
                 tclose=None,
                 priority=0,
             )
@@ -1449,6 +1462,15 @@ class Hiv(Module):
         # use iloc to index by position as index will change by year
         return_prob = prob_art.loc[(prob_art.year == current_year), "value"].iloc[0]
 
+        # todo adjustments to compensate for historical low art coverage
+        # the reported art coverage reflects current situation, not jus new initiations
+        # so new initiations must be even higher to result in overall reported level
+        # adjust new initiations to reflect current estimates
+        # may return prob > 1
+        # return_prob = return_prob * 1.95
+        # todo set this dx->tx very high, people can drop-out / have poor vs
+        return_prob = 0.99
+
         return return_prob
 
     def prob_viral_suppression(self, year):
@@ -1458,6 +1480,11 @@ class Hiv(Module):
         current_year = year
 
         return_prob = prob_vs.loc[(prob_vs.year == current_year), "value"].iloc[0]
+
+        # todo adjustments to compensate for historical viral suppression rates
+        # adjust new initiations to reflect current estimates
+        # may return prob > 1
+        return_prob = return_prob * 1.75
 
         return return_prob
 
@@ -1484,6 +1511,14 @@ class Hiv(Module):
 
         # Set that the person is no longer on ART
         df.at[person_id, "hv_art"] = "not"
+
+        # refer for another test adn referral in 6 months
+        self.sim.modules["HealthSystem"].schedule_hsi_event(
+            HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
+            topen=self.sim.date + pd.DateOffset(months=6),
+            tclose=None,
+            priority=0,
+        )
 
     def per_capita_testing_rate(self):
         """this calculates the numbers of hiv tests performed in each time period
@@ -1697,7 +1732,6 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             idx_will_test = child_tests_idx.union(adult_tests_idx)
 
-            # todo reinstate
             for person_id in idx_will_test:
                 date_test = self.sim.date + pd.DateOffset(
                     days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls)
@@ -2596,6 +2630,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             # proportions of subset living with HIV on treatment:
             art = sum(subset & (df.hv_art != "not"))
             art_cov = art / count if count > 0 else 0
+
             # proportion of subset on treatment that have good VL suppression
             art_vs = sum(subset & (df.hv_art == "on_VL_suppressed"))
             art_cov_vs = art_vs / art if art > 0 else 0
