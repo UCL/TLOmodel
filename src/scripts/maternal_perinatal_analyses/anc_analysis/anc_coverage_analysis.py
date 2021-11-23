@@ -1,13 +1,18 @@
 from pathlib import Path
+import pickle
 
 import pandas as pd
+import numpy as np
 from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import (
     extract_results,
-    get_scenario_outputs,
+    get_scenario_outputs, load_pickled_dataframes
 )
 from scripts.maternal_perinatal_analyses import analysis_utility_functions
+from datetime import datetime
+#from tlo.methods.demography import get_scaling_factor
+
 
 # %% Declare the name of the file that specified the scenarios used in this run.
 baseline_scenario_filename = 'baseline_anc_scenario.py'
@@ -196,11 +201,104 @@ plt.show()
 
 # HEALTH CARE WORKER TIME
 # todo: not sure if we can extract this yet from master....
+capacity = extract_results(
+        baseline_results_folder,
+        module="tlo.methods.healthsystem",
+        key="Capacity",
+        custom_generate_series=(
+            lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['Frac_Time_Used_Overall'].mean()
+        ),
+    )
 
 
-# CONSUMABLES
 
-# todo: need to use the to_log function for each consumable?
+#
+# cap = output['tlo.methods.healthsystem']['Capacity'].copy()
+# cap["date"] = pd.to_datetime(cap["date"])
+# cap = cap.set_index('date')
+#
+# frac_time_used = cap['Frac_Time_Used_Overall']
+# cap = cap.drop(columns=['Frac_Time_Used_Overall'])
+#
+# # Plot Fraction of total time of health-care-workers being used
+# frac_time_used.plot()
+# plt.title("Fraction of total health-care worker time being used")
+# plt.xlabel("Date")
+# plt.savefig(make_file_name('HSI_Frac_time_used'))
+# plt.show()
+#
+# # %% Breakdowns by HSI:
+# hsi = output['tlo.methods.healthsystem']['HSI_Event'].copy()
+# hsi["date"] = pd.to_datetime(hsi["date"])
+# hsi["month"] = hsi["date"].dt.month
+# # Reduce TREATMENT_ID to the originating module
+# hsi["Module"] = hsi["TREATMENT_ID"].str.split('_').apply(lambda x: x[0])
+#
+# # Plot the HSI that are taking place, by month, in a a particular year
+# year = 2012
+# evs = hsi.loc[hsi.date.dt.year == year]\
+#     .groupby(by=['month', 'Module'])\
+#     .size().reset_index().rename(columns={0: 'count'})\
+#     .pivot_table(index='month', columns='Module', values='count', fill_value=0)
+# evs *= scaling_factor
+#
+# evs.plot.bar(stacked=True)
+# plt.title(f"HSI by Module, per Month (year {year})")
+# plt.ylabel('Total per month')
+# plt.savefig(make_file_name('HSI_per_module_per_month'))
+# plt.show()
+#
+# # Plot the breakdown of all HSI, over all the years
+# evs = hsi.groupby(by=['Module'])\
+#     .size().rename(columns={0: 'count'}) * scaling_factor
+# evs.plot.pie()
+# plt.title(f"HSI by Module")
+# plt.savefig(make_file_name('HSI_per_module'))
+# plt.show()
+
+# CONSUMABLE COST
+draws = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+mean_anc_cost_per_year = list()
+
+def unpack(in_dict_as_string):
+    in_dict = eval(in_dict_as_string)
+    l = list()
+    for k, v in in_dict.items():
+        v = int(v)
+        for _v in range(v):
+            l.append(k)
+    return l
+
+resourcefilepath = Path("./resources/healthsystem/consumables/")
+consumables_df = pd.read_excel(Path(resourcefilepath) / 'ResourceFile_Consumables.xlsx')
+
+for draw in draws:
+    draw_df = load_pickled_dataframes(baseline_results_folder, draw=draw)
+    cons = draw_df['tlo.methods.healthsystem']['Consumables']
+    cons['year'] = cons['date'].dt.year
+    cons = cons.set_index('year')
+    anc_cons = cons.loc[cons.TREATMENT_ID.str.contains('Antenatal')]
+
+    for year in intervention_years:
+        year_df = anc_cons.loc[anc_cons.index == year]
+        item_counts = year_df['Item_Available'].apply(unpack).apply(pd.Series)
+        for row in item_counts.index:
+            x='y'
+
+# TODO: what i want is each year as the index, each consumable item code as the columns, with the data being the number
+#  of items used per item code per year
+
+        #.dropna().astype(int)[0].value_counts()
+
+    #for year in intervention_years:
+    #    yearly_cons = anc_cons.loc[anc_cons.Item_Available]
+    #    item_counts = anc_cons['Item_Available'].apply(unpack).apply(pd.Series).dropna().astype(int)[0].value_counts()
+
+
+
+
+pkg_counts = cons['Package_Available'].apply(unpack).apply(pd.Series).dropna().astype(int)[0].value_counts()
+
 
 # (DALYS)
 
