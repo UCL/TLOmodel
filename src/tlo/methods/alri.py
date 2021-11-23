@@ -664,7 +664,7 @@ class Alri(Module):
     def define_symptoms(self):
         """Define the symptoms that this module will use"""
         all_symptoms = {
-            'cough', 'difficult_breathing', 'tachypnoea', 'chest_indrawing', 'hypoxaemia', 'danger_signs'
+            'cough', 'difficult_breathing', 'tachypnoea', 'chest_indrawing', 'danger_signs'
         }
 
         for symptom_name in all_symptoms:
@@ -920,10 +920,10 @@ class Alri(Module):
         # If person is on treatment, they should have a treatment start date
         assert (df.loc[curr_inf, 'ri_on_treatment'] != df.loc[curr_inf, 'ri_ALRI_tx_start_date'].isna()).all()
 
-    def impose_symptoms_for_complicated_alri(self, person_id):
-        """Impose symptoms for a complication."""
+    def impose_symptoms_for_complicated_alri(self, person_id, complication):
+        """Impose symptoms for ALRI with any complication."""
         df = self.sim.population.props
-        if df.loc[person_id, [f"ri_complication_{complication}" for complication in self.complications]].any():
+        if complication == any(self.complications):
             symptoms = self.models.symptoms_for_complicated_alri(person_id=person_id)
             for symptom in symptoms:
                 self.sim.modules['SymptomManager'].change_symptom(
@@ -949,7 +949,7 @@ class Models:
         self.make_model_for_acquisition_risk()
 
         # dict that will hold the linear model for death
-        self.death_equation = dict()
+        self.death_equation = None
 
         # set-up the linear models for the death risk
         self.make_model_for_death_risk()
@@ -1001,11 +1001,13 @@ class Models:
             # If some 0 year-olds then can do scaling:
             target_mean = p[f'base_inc_rate_ALRI_by_{patho}'][0]
             actual_mean = unscaled_lm.predict(df.loc[zero_year_olds]).mean()
-            scaled_intercept = 1.0 * (target_mean / actual_mean)
+            scaled_intercept = 1.0 * (target_mean / actual_mean) \
+                if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
             scaled_lm = make_naive_linear_model(patho, intercept=scaled_intercept)
 
             # check by applying the model to mean incidence of 0-year-olds
-            assert (target_mean - scaled_lm.predict(df.loc[zero_year_olds]).mean()) < 1e-10
+            if (df.is_alive & (df.age_years == 0)).sum() > 0:
+                assert (target_mean - scaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
             return scaled_lm
 
         for patho in self.module.all_pathogens:
@@ -1094,11 +1096,14 @@ class Models:
             self.module.pathogens['bacterial'], list_bacteria_probs))
 
         # Edit the probability that the coinfection will be of `Strep_pneumoniae_PCV13` if the person has had
-        #  the pneumococcal vaccine:
+        # the pneumococcal vaccine:
         if va_pneumo_all_doses:
-            probs['Strep_pneumoniae_PCV13'] *= p['rr_infection_strep_with_pneumococcal_vaccine']
+            probs['Strep_pneumoniae_PCV13'] *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y']
+
+        # Edit the probability that the coinfection will be of `Hib` if the person has had
+        # the hib vaccine:
         if va_hib_all_doses:
-            probs['Hib'] *= p['rr_infection_hib_haemophilus_vaccine']
+            probs['Hib'] *= p['rr_Hib_ALRI_with_Hib_vaccine']
 
         # Add in the probability that there is none (to ensure that all probabilities sum to 1.0)
         probs['none'] = 1.0 - sum(probs.values())
@@ -1163,35 +1168,23 @@ class Models:
         return symptoms
 
     def symptoms_for_complicated_alri(self, person_id):
-        """Probability of each symptom for a person given a particular complication"""
+        """Probability of each symptom for a person given any complication"""
         p = self.p
         df = self.module.sim.population.props
 
-        if not df.loc[person_id,
-                      [f"ri_complication_{complication}" for complication in self.module.complications]].any():
-            return
+        for complication in self.module.complications:
+            if df.at[person_id, f"ri_complication_{complication}"]:
+                probs = {
+                    'danger_signs': p['prob_danger_signs_complicated_alri']
+                }
 
-        probs = {
-            'danger_signs': p['prob_danger_signs_complicated_alri']
-        }
+                # determine which symptoms are onset:
+                symptoms = {s for s, p in probs.items() if p > self.rng.rand()}
 
-        # determine which symptoms are onset:
-        symptoms = {s for s, p in probs.items() if p > self.rng.rand()}
-
-        return symptoms
-
-    def death(self, person_id):
-        """Determine if person will die from Alri. Returns True/False"""
-        p = self.p
-        person = self.module.sim.population.props.loc[person_id]
-
-        disease_type = person['ri_disease_type']
-
-        # Baseline risk:
-        risk = p[f"base_death_rate_ALRI_by_{disease_type}"]
+                return symptoms
 
     def make_model_for_death_risk(self):
-        """"Model for the death"""
+        """"Model for the death risk"""
         p = self.p
         df = self.module.sim.population.props
 
@@ -1228,10 +1221,10 @@ class Models:
 
             # If some 0 year-olds then can do scaling:
             target_mean = p['base_death_rate_ALRI_by_pneumonia']
-            target_mean_odds = target_mean / (1 - target_mean)
+            target_odds = target_mean / (1.0 - target_mean)
             actual_mean = unscaled_lm.predict(df.loc[zero_year_olds]).mean()
-            actual_mean_odds = actual_mean / (1 - actual_mean)
-            scaled_intercept = target_mean_odds * (target_mean_odds / actual_mean_odds)
+            actual_odds = actual_mean / (1.0 - actual_mean)
+            scaled_intercept = target_odds / actual_odds if not np.isnan(actual_mean) else target_odds
             scaled_lm = make_naive_linear_model_death(intercept=scaled_intercept)
 
             # check by applying the model to mean incidence of 0-year-olds
@@ -1240,36 +1233,12 @@ class Models:
 
         self.death_equation = make_scaled_linear_model_for_death()
 
-        # # The effect of age:
-        # if person['age_years'] == 1:
-        #     risk *= p['rr_death_ALRI_age12to23mo']
-        # elif 2 <= person['age_years'] <= 4:
-        #     risk *= p['rr_death_ALRI_age24to59mo']
-        #
-        # # The effect of complications:
-        # if person['ri_complication_sepsis']:
-        #     risk *= p['rr_death_ALRI_sepsis']
-        #
-        # if person['ri_complication_respiratory_failure']:
-        #     risk *= p['rr_death_ALRI_respiratory_failure']
-        #
-        # if person['ri_complication_meningitis']:
-        #     risk *= p['rr_death_ALRI_meningitis']
-        #
-        # # The effect of factors defined in other modules:
-        # if person['hv_inf']:
-        #     risk *= p['rr_death_ALRI_HIV']
-        #
-        # if person['un_clinical_acute_malnutrition'] == 'SAM':
-        #     risk *= p['rr_death_ALRI_SAM']
-        #
-        # if (
-        #     person['nb_low_birth_weight_status'] in
-        #     ['extremely_low_birth_weight', 'very_low_birth_weight', 'low_birth_weight']
-        # ):
-        #     risk *= p['rr_death_ALRI_low_birth_weight']
-
-        # return risk > self.rng.rand()
+    # def compute_death_risk(self, person_id):
+    #     """Determine if person will die from Alri. Returns True/False"""
+    #     df = self.module.sim.population.props
+    #     lm = self.death_equation
+    #
+    #     return lm.predict(df.loc[[person_id]]).values[0] > self.rng.rand()
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1373,7 +1342,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             va_pneumo_all_doses=person.va_pneumo_all_doses)
 
         # ----------------------- Duration of the Alri event -----------------------
-        duration_in_days_of_alri = rng.randint(1, 8)  # assumes uniform interval around mean duration with range 4 days
+        duration_in_days_of_alri = rng.randint(1, 14)  # assumes uniform interval around mean duration with range 7 days
 
         # Date for outcome (either recovery or death) with uncomplicated Alri
         date_of_outcome = self.module.sim.date + DateOffset(days=duration_in_days_of_alri)
@@ -1413,11 +1382,11 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         self.impose_symptoms_for_uncomplicated_disease(person_id=person_id, disease_type=disease_type)
 
         # ----------------------------------- Complications  -----------------------------------
-        self.impose_complications(person_id=person_id, date_of_outcome=date_of_outcome)
+        self.impose_complications(person_id=person_id)
 
         # ----------------------------------- Outcome  -----------------------------------
         # Determine outcome: death or recovery
-        if models.death_equation.predict(df.loc[[person_id]]).values[0]:
+        if models.death_equation.predict(df.loc[[person_id]]).values[0] > rng.rand():
             self.sim.schedule_event(AlriDeathEvent(self.module, person_id), date_of_outcome)
             df.loc[person_id, ['ri_scheduled_death_date', 'ri_scheduled_recovery_date']] = [date_of_outcome, pd.NaT]
         else:
@@ -1439,8 +1408,8 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
                 disease_module=m,
             )
 
-    def impose_complications(self, person_id, date_of_outcome):
-        """Choose a set of complications for this person and onset these all instantanesouly."""
+    def impose_complications(self, person_id):
+        """Choose a set of complications for this person and onset these all instantaneously."""
 
         df = self.sim.population.props
         m = self.module
@@ -1448,8 +1417,8 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         complications = models.complications(person_id=person_id)
         df.loc[person_id, [f"ri_complication_{complication}" for complication in complications]] = True
-        if df.loc[person_id, [f"ri_complication_{complication}" for complication in complications]].any():
-            m.impose_symptoms_for_complicated_alri(person_id=person_id)
+        for complication in complications:
+            m.impose_symptoms_for_complicated_alri(person_id=person_id, complication=complication)
 
 
 class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
