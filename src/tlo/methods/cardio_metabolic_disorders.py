@@ -737,7 +737,7 @@ class CardioMetabolicDisorders(Module):
         """Report DALY values to the HealthBurden module"""
 
         def left_censor(obs, window_open):
-            return obs.apply(lambda x: max(x, window_open) if ~pd.isnull(x) else pd.NaT)
+            return obs.apply(lambda x: max(x, window_open) if pd.notnull(x) else pd.NaT)
 
         df = self.sim.population.props
 
