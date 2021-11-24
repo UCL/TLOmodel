@@ -38,9 +38,9 @@ def runsim(seed=0):
 
     start_date = Date(2010, 1, 1)
     end_date = Date(2019, 12, 31)
-    popsize = 10000
+    popsize = 10_000
 
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
 
     # run the simulation
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -189,7 +189,7 @@ for condition in conditions:
     )
 
     # get prevalence + lower and upper values
-    prev_range = pd.read_excel("resources/cmd/ResourceFile_cmd_condition_prevalence.xlsx", sheet_name=None)
+    prev_range = pd.read_excel(resourcefilepath / "cmd" / "ResourceFile_cmd_condition_prevalence.xlsx", sheet_name=None)
     baseline_error = [(prev_range[f'{condition}']['value'].values - prev_range[f'{condition}']['lower'].values),
                       (prev_range[f'{condition}']['upper'].values - prev_range[f'{condition}']['value'].values)]
     if 'gbd_value' in prev_range[f'{condition}']:
@@ -494,9 +494,10 @@ def make_incidence_plot(condition, type):
     condition_title = condition_title.title()
 
     if type == 'incidence':
-        inc_range = pd.read_excel(f"resources/cmd/ResourceFile_cmd_condition_and_events_{type}.xlsx", sheet_name=None)
+        inc_range = pd.read_excel(resourcefilepath / "cmd" / f"ResourceFile_cmd_condition_and_events_{type}.xlsx",
+                                  sheet_name=None)
     else:
-        inc_range = pd.read_excel(f"resources/cmd/ResourceFile_cmd_event_{type}.xlsx", sheet_name=None)
+        inc_range = pd.read_excel(resourcefilepath / "cmd" / f"ResourceFile_cmd_event_{type}.xlsx", sheet_name=None)
     asymptomatic_error = [(inc_range[f'{condition}']['value'].values - inc_range[f'{condition}']['lower'].values),
                           (inc_range[f'{condition}']['upper'].values - inc_range[f'{condition}']['value'].values)]
 
