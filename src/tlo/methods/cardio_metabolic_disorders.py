@@ -233,6 +233,18 @@ class CardioMetabolicDisorders(Module):
         # Dict to hold trackers for counting events
         self.trackers = None
 
+        # Dicts of linear models
+        self.lms_onset = dict()
+        self.lms_removal = dict()
+        self.lms_death = dict()
+        self.lms_symptoms = dict()
+        self.lms_testing = dict()
+
+        # Build the LinearModel for occurrence of events
+        self.lms_event_onset = dict()
+        self.lms_event_death = dict()
+        self.lms_event_symptoms = dict()
+
     def read_parameters(self, data_folder):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
         ResourceFile_cmd_condition_onset.xlsx = parameters for onset of conditions
@@ -241,7 +253,7 @@ class CardioMetabolicDisorders(Module):
         ResourceFile_cmd_condition_prevalence.xlsx  = initial and target prevalence for conditions
         ResourceFile_cmd_condition_symptoms.xlsx  = symptoms for conditions
         ResourceFile_cmd_condition_hsi.xlsx  = HSI parameters for conditions
-        ResourceFile_cmd_condition_testing.xlsx  = community esting parameters for conditions (currently only
+        ResourceFile_cmd_condition_testing.xlsx  = community testing parameters for conditions (currently only
         hypertension)
         ResourceFile_cmd_events.xlsx  = parameters for occurrence of events
         ResourceFile_cmd_events_death.xlsx  = parameters for death rate from events
@@ -478,17 +490,6 @@ class CardioMetabolicDisorders(Module):
         # Build the LinearModel for onset/removal/deaths for each condition
         # Baseline probability of condition onset, removal, and death are annual; in LinearModel, rates are adjusted to
         # be consistent with the polling interval
-        self.lms_onset = dict()
-        self.lms_removal = dict()
-        self.lms_death = dict()
-        self.lms_symptoms = dict()
-        self.lms_testing = dict()
-
-        # Build the LinearModel for occurrence of events
-        self.lms_event_onset = dict()
-        self.lms_event_death = dict()
-        self.lms_event_symptoms = dict()
-
         for condition in self.conditions:
             self.lms_onset[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'],
                                                                 lm_type='onset')
@@ -809,7 +810,7 @@ class CardioMetabolicDisorders(Module):
                     current_date=self.sim.date, date_of_last_test=df.at[
                         person_id, f'nc_{condition}_date_last_test']
                 ):
-                    if self.rng.rand() < self.parameters[f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
+                    if self.rng.random_sample() < self.parameters[f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
                         # Schedule HSI event
                         hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
                             module=self,
@@ -876,7 +877,7 @@ class Tracker:
         for _a in _to_add:
             self._tracker[condition][_a] += _to_add[_a]
 
-    def report(self, condition: str = None):
+    def report(self):
         return self._tracker
 
 
@@ -919,7 +920,7 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             )
 
         # -------------------------------- COMMUNITY SCREENING FOR HYPERTENSION ---------------------------------------
-        # A subset of individuals aged >= 50 will receive a blood pressure meaasurement without directly presenting to
+        # A subset of individuals aged >= 50 will receive a blood pressure measurement without directly presenting to
         # the healthcare system
         eligible_population = df.is_alive & ~df['nc_hypertension_ever_diagnosed']
         will_test = self.module.lms_testing['hypertension'].predict(
@@ -1122,7 +1123,7 @@ class CardioMetabolicDisordersWeightLossEvent(Event, IndividualScopeEventMixin):
         if not person.is_alive:
             return
         else:
-            if self.module.rng.rand() < self.module.parameters['pr_bmi_reduction']:
+            if self.module.rng.random_sample() < self.module.parameters['pr_bmi_reduction']:
                 df.at[person_id, 'li_bmi'] -= 1
                 df.at[person_id, 'nc_weight_loss_worked'] = True
 
@@ -1146,6 +1147,8 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
         assert isinstance(module, CardioMetabolicDisorders)
 
     def apply(self, population):
+        # Create shortcut to the Demography module
+        demog_module = self.sim.modules['Demography']
 
         # Log counts in the trackers
         logger.info(key='incidence_count_by_condition',
@@ -1176,16 +1179,16 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
             return _age_cats
 
         # Function to prepare a groupby for logging
-        def proportion_of_something_in_a_groupby_ready_for_logging(df, something, groupbylist):
-            dfx = df.groupby(groupbylist).apply(lambda dft: pd.Series(
+        def proportion_of_something_in_a_groupby_ready_for_logging(_df, something, groupbylist):
+            dfx = _df.groupby(groupbylist).apply(lambda dft: pd.Series(
                 {'something': dft[something].sum(), 'not_something': (~dft[something]).sum()}))
             pr = dfx['something'] / dfx.sum(axis=1)
 
             # create into a dict with keys as strings
             pr = pr.reset_index()
             pr['flat_index'] = ''
-            for i in range(len(pr)):
-                pr.at[i, 'flat_index'] = '__'.join([f"{col}={pr.at[i, col]}" for col in groupbylist])
+            for _i in range(len(pr)):
+                pr.at[_i, 'flat_index'] = '__'.join([f"{_col}={pr.at[_i, _col]}" for _col in groupbylist])
             pr = pr.set_index('flat_index', drop=True)
             pr = pr.drop(columns=groupbylist)
             return pr[0].to_dict()
@@ -1197,7 +1200,7 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
             # mask is a Series restricting dataframe to individuals who do not have the condition, which is passed to
             # demography module to calculate person-years lived without the condition
             mask = (df.is_alive & ~df[f'nc_{cond}'])
-            py = de.Demography.calc_py_lived_in_last_year(self, delta, mask)
+            py = de.Demography.calc_py_lived_in_last_year(demog_module, delta, mask)
             py['age_range'] = age_cats(py.index)
             py = py.groupby('age_range').sum()
             logger.info(key=f'person_years_{cond}', data=py.to_dict())
@@ -1206,7 +1209,7 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
             # mask is a Series restricting dataframe to individuals who do not have the condition, which is passed to
             # demography module to calculate person-years lived without the condition
             mask = (df.is_alive & ~df[f'nc_{event}'])
-            py = de.Demography.calc_py_lived_in_last_year(self, delta, mask)
+            py = de.Demography.calc_py_lived_in_last_year(demog_module, delta, mask)
             py['age_range'] = age_cats(py.index)
             py = py.groupby('age_range').sum()
             logger.info(key=f'person_years_{event}', data=py.to_dict())
