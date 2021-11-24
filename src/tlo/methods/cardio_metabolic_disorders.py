@@ -84,15 +84,19 @@ class CardioMetabolicDisorders(Module):
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        'any_cmd':
-            Cause(gbd_causes=[
-                'Diabetes mellitus',
-                'Ischemic heart disease',
-                'Hypertensive heart disease',
-                'Stroke',
-                'Chronic kidney disease'
-            ],
-                label='CMD')
+        'diabetes': Cause(
+            gbd_causes='Diabetes mellitus', label='Diabetes'),
+        'chronic_ischemic_hd': Cause(
+            gbd_causes={'Ischemic heart disease', 'Hypertensive heart disease'}, label='Heart Disease'),
+        'heart_attack': Cause(
+            gbd_causes={'Ischemic heart disease', 'Hypertensive heart disease'}, label='Heart Disease'),
+        'stroke': Cause(
+            gbd_causes='Stroke', label='Stroke'),
+        'chronic_kidney_disease': Cause(
+            gbd_causes='Chronic kidney disease', label='Kidney Disease'),
+        'lower_back_pain': Cause(
+            gbd_causes={}, label='Lower Back Pain'  # <-- todo: fill in gbd_causes for "Lower Back Pain"
+        )
     }
 
     # Create separate dicts for params for conditions and events which are read in via excel documents in resources/cmd
@@ -734,56 +738,53 @@ class CardioMetabolicDisorders(Module):
         df.loc[df['li_bmi'] >= 3, ['nc_risk_score']] += 1
 
     def report_daly_values(self):
-        """Report DALY values to the HealthBurden module"""
+        """Report disability weight (average values for the last month) to the HealthBurden module"""
 
         def left_censor(obs, window_open):
             return obs.apply(lambda x: max(x, window_open) if pd.notnull(x) else pd.NaT)
 
         df = self.sim.population.props
 
-        dalys = pd.Series(data=0.0, index=df.index[df.is_alive])
+        dw = pd.DataFrame(data=0.0, index=df.index[df.is_alive], columns=self.CAUSES_OF_DISABILITY.keys())
+
         # Diabetes: give everyone who is diagnosed or on medication uncomplicated diabetes daly weight
-        dalys.loc[df['nc_diabetes_ever_diagnosed' or 'nc_diabetes_on_medication']] = self.daly_wts[
+        dw['diabetes'].loc[df['nc_diabetes_ever_diagnosed'] | df['nc_diabetes_on_medication']] = self.daly_wts[
             'daly_diabetes_uncomplicated']
         # Diabetes: overwrite those with symptoms to have complicated diabetes daly weight
-        dalys.loc[
+        dw['diabetes'].loc[
             self.sim.modules['SymptomManager'].who_has('diabetes_symptoms')] = self.daly_wts[
             'daly_diabetes_complicated']
+
         # Chronic Lower Back Pain: give those who have symptoms moderate weight
-        dalys.loc[
+        dw['lower_back_pain'].loc[
             self.sim.modules['SymptomManager'].who_has('chronic_lower_back_pain_symptoms')] = self.daly_wts[
             'daly_chronic_lower_back_pain']
+
         # Chronic Kidney Disease: give those who have symptoms moderate weight
-        dalys.loc[
+        dw['chronic_kidney_disease'].loc[
             self.sim.modules['SymptomManager'].who_has('chronic_kidney_disease_symptoms')] = self.daly_wts[
             'daly_chronic_kidney_disease_moderate']
+
+        # Stroke: give everyone moderate long-term consequences daly weight
+        dw['stroke'].loc[df.nc_ever_stroke] = self.daly_wts['daly_stroke']
+
         # Chronic Ischemic Heart Disease: give everyone with CIHD symptoms moderate CIHD daly weight
-        dalys.loc[
+        dw['chronic_ischemic_hd'].loc[
             self.sim.modules['SymptomManager'].who_has('chronic_ischemic_hd_symptoms')] = self.daly_wts[
             'daly_chronic_ischemic_hd']
-        # Stroke: give everyone moderate long-term consequences daly weight
-        dalys.loc[df.nc_ever_stroke] = self.daly_wts['daly_stroke']
+
         # Heart Attack: first calculate proportion of month spent following heart attack, then attach weighted daly
         # Calculate fraction of the last month that was spent after having a heart attack
-        any_heart_attack_in_the_last_month = (df['is_alive']) & (~pd.isnull(df['nc_ever_heart_attack_date_last_event'])
-                                                                 & (df['nc_ever_heart_attack_date_last_event'] <=
-                                                                    self.sim.date)) & (
-                                                 (df['nc_ever_heart_attack_date_last_event'] >=
-                                                  (self.sim.date - DateOffset(months=1)))
-                                             )
-
-        start_heart_attack = left_censor(df.loc[any_heart_attack_in_the_last_month,
-                                                'nc_ever_heart_attack_date_last_event'], self.sim.date -
-                                         DateOffset(months=1))
-        dur_heart_attack_in_days = (self.sim.date - start_heart_attack).dt.days.clip(0).fillna(0)
-        # If duration longer than 28 days, replace with 28 days
-        dur_heart_attack_in_days = dur_heart_attack_in_days.replace([29, 30, 31], 28)
         days_in_last_month = (self.sim.date - (self.sim.date - DateOffset(months=1))).days
+        start_heart_attack = left_censor(
+            df.loc[df.is_alive, 'nc_ever_heart_attack_date_last_event'], self.sim.date - DateOffset(months=1)
+        )
+        dur_heart_attack_in_days = (self.sim.date - start_heart_attack).dt.days.clip(
+            lower=0, upper=days_in_last_month).fillna(0.0)
         fraction_of_month_heart_attack = dur_heart_attack_in_days / days_in_last_month
-        dalys.loc[any_heart_attack_in_the_last_month] = fraction_of_month_heart_attack * self.daly_wts[
-            'daly_heart_attack_avg']
+        dw['heart_attack'] = fraction_of_month_heart_attack * self.daly_wts['daly_heart_attack_avg']
 
-        return dalys
+        return dw
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
