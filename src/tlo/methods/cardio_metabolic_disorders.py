@@ -95,7 +95,7 @@ class CardioMetabolicDisorders(Module):
         'chronic_kidney_disease': Cause(
             gbd_causes='Chronic kidney disease', label='Kidney Disease'),
         'lower_back_pain': Cause(
-            gbd_causes={}, label='Lower Back Pain'  # <-- todo: fill in gbd_causes for "Lower Back Pain"
+            gbd_causes={'Low back pain'}, label='Lower Back Pain'
         )
     }
 
