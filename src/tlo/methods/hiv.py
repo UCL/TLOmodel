@@ -532,92 +532,13 @@ class Hiv(Module):
 
         # -- Linear Models for the Uptake of Services
         # Linear model that give the increase in likelihood of seeking a 'Spontaneous' Test for HIV
-        # self.lm["lm_spontaneous_test_12m"] = LinearModel.multiplicative(
-        #     Predictor("hv_diagnosed").when(True, 0.0).otherwise(1.0),
-        #     Predictor("sex").when("F", p["rr_hiv_test_female"]),
-        #     Predictor("age_years"
-        #               ) .when("<15", 0)
-        #                 .when("<20", 1)
-        #                 .when("<25", p["rr_hiv_test_age_20_24"])
-        #                 .when("<30", p["rr_hiv_test_age_25_29"])
-        #                 .when("<35", p["rr_hiv_test_age_30_34"])
-        #                 .when("<40", p["rr_hiv_test_age_35_39"])
-        #                 .when("<45", p["rr_hiv_test_age_40_44"])
-        #                 .when(">=45", p["rr_hiv_test_age_45_49"]),
-        #     Predictor("li_is_sexworker").when(True, p["rr_hiv_test_sexworker"]),
-        #     Predictor("li_ed_lev")  .when(2, p["rr_hiv_test_primary_education"])
-        #                             .when(3, p["rr_hiv_test_secondary_education"]),
-        # )
-        # todo added condition must be not on ART for test
-        # todo allow children to be tested without symptoms
+        # condition must be not on ART for test
+        # allow children to be tested without symptoms
         # previously diagnosed can be re-tested
         self.lm["lm_spontaneous_test_12m"] = LinearModel.multiplicative(
             Predictor("hv_inf").when(True, p["rr_test_hiv_positive"]).otherwise(1.0),
             Predictor("hv_art").when("not", 1.0).otherwise(0.0),
-            # Predictor("age_years").when("<15", 0.0).otherwise(1.0),
         )
-
-        # Linear model if the person will start ART, following when the person has been diagnosed:
-        # Baseline probability here is the probability of starting art after positive hiv test in 2010
-        # baseline_probability_art_after_test = p["prob_start_art_after_hiv_test"]
-
-        # self.lm["lm_art"] = LinearModel(
-        #     LinearModelType.MULTIPLICATIVE,
-        #     p["prob_start_art_after_hiv_test"],
-        #     Predictor("hv_inf").when(True, 1.0).otherwise(0.0),
-        #     Predictor("has_aids_symptoms", external=True).when(
-        #         True, p["rr_start_art_if_aids_symptoms"]),
-        #     Predictor("years_since_2009", external=True).apply(lambda x: (x*p["temporal_trend_art_initiation"]))
-        # )
-
-        # todo just use annual values for this
-        # this is the probability of starting art after a positive hiv test for adults
-        # no difference if experiencing symptoms (aids) - hsb will increase their odds of tx
-        # prob_art = self.parameters["prob_start_art_after_hiv_test"]
-        # self.lm["lm_art"] = LinearModel(
-        #     LinearModelType.MULTIPLICATIVE,
-        #     1.0,
-        #     Predictor(
-        #         "year",
-        #         conditions_are_mutually_exclusive=True,
-        #         conditions_are_exhaustive=True,
-        #         external=True
-        #     )   .when(2010, prob_art.loc[(prob_art.year == 2010), "value"])
-        #         .when(2011, prob_art.loc[(prob_art.year == 2011), "value"])
-        #         .when(2012, prob_art.loc[(prob_art.year == 2012), "value"])
-        #         .when(2013, prob_art.loc[(prob_art.year == 2013), "value"])
-        #         .when(2014, prob_art.loc[(prob_art.year == 2014), "value"])
-        #         .when(2015, prob_art.loc[(prob_art.year == 2015), "value"])
-        #         .when(2016, prob_art.loc[(prob_art.year == 2016), "value"])
-        #         .when(2017, prob_art.loc[(prob_art.year == 2017), "value"])
-        #         .when(2018, prob_art.loc[(prob_art.year == 2018), "value"])
-        #         .when(2019, prob_art.loc[(prob_art.year == 2019), "value"])
-        #         .otherwise(prob_art.loc[(prob_art.year == 2020), "value"])
-        # )
-
-
-        # # todo separate values for child??
-        # prob_vs = self.parameters["prob_viral_suppression"]
-        # self.lm["lm_vl"] = LinearModel(
-        #     LinearModelType.MULTIPLICATIVE,
-        #     1.0,
-        #     Predictor(
-        #         "year",
-        #         conditions_are_mutually_exclusive=True,
-        #         conditions_are_exhaustive=True,
-        #         external=True
-        #     )   .when(2010, prob_vs.loc[(prob_vs.year == 2010), "value"])
-        #         .when(2011, prob_vs.loc[(prob_vs.year == 2011), "value"])
-        #         .when(2012, prob_vs.loc[(prob_vs.year == 2012), "value"])
-        #         .when(2013, prob_vs.loc[(prob_vs.year == 2013), "value"])
-        #         .when(2014, prob_vs.loc[(prob_vs.year == 2014), "value"])
-        #         .when(2015, prob_vs.loc[(prob_vs.year == 2015), "value"])
-        #         .when(2016, prob_vs.loc[(prob_vs.year == 2016), "value"])
-        #         .when(2017, prob_vs.loc[(prob_vs.year == 2017), "value"])
-        #         .when(2018, prob_vs.loc[(prob_vs.year == 2018), "value"])
-        #         .when(2019, prob_vs.loc[(prob_vs.year == 2019), "value"])
-        #         .otherwise(prob_vs.loc[(prob_vs.year == 2020), "value"])
-        # )
 
         # Linear model for changing behaviour following an HIV-negative test
         self.lm["lm_behavchg"] = LinearModel(
@@ -677,14 +598,15 @@ class Hiv(Module):
         df = population.props
 
         # prob of infection based on age and sex in baseline year (2010:
+        # todo use updated values from spectrum: simplified to m/f, adult and child
         prevalence_db = params["hiv_prev"]
         prev_2010 = prevalence_db.loc[
-            prevalence_db.year == 2010, ["age_from", "sex", "prev_prop"]
+            prevalence_db.year == 2010, ["age_from", "sex", "prevalence_simplified"]
         ]
         prev_2010 = prev_2010.rename(columns={"age_from": "age_years"})
         prob_of_infec = df.loc[df.is_alive, ["age_years", "sex"]].merge(
             prev_2010, on=["age_years", "sex"], how="left"
-        )["prev_prop"]
+        )["prevalence_simplified"]
 
         # probability based on risk factors
         rel_prob_by_risk_factor = LinearModel.multiplicative(
@@ -827,9 +749,8 @@ class Hiv(Module):
         assert not (df.loc[art_idx, "hv_art"] == "not").any()
 
         # for logical consistency, ensure that all persons on ART have been tested and diagnosed
-        # todo remove this as all historical tests counted in 2010 estimate
-        # df.loc[art_idx, "hv_number_tests"] = 1
-        # todo set last test date prior to 2010 so not counted as a current new test
+        # set last test date prior to 2010 so not counted as a current new test
+        # don't record individual property hv_number_tests for logging (occurred prior to 2010)
         df.loc[art_idx, "hv_last_test_date"] = self.sim.date - pd.DateOffset(years=3)
         df.loc[art_idx, "hv_diagnosed"] = True
 
@@ -932,7 +853,7 @@ class Hiv(Module):
         )
 
         # 2) Schedule the Logging Event
-        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
@@ -987,7 +908,6 @@ class Hiv(Module):
             )
 
         # Schedule the AIDS death events for those who have got AIDS already
-        # todo this may need to be removed - check death rates
         for person_id in has_aids_idx:
             # schedule a HSI_Test_and_Refer otherwise initial AIDS rates and deaths are far too high
             date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 365))
@@ -1017,13 +937,18 @@ class Hiv(Module):
         # todo change to item codes
 
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-        pkg_code_hiv_rapid_test = consumables.loc[
-            consumables["Intervention_Pkg"] == "HIV Testing Services",
-            "Intervention_Pkg_Code",
-        ].values[0]
+        # pkg_code_hiv_rapid_test = consumables.loc[
+        #     consumables["Intervention_Pkg"] == "HIV Testing Services",
+        #     "Intervention_Pkg_Code",
+        # ].values[0]
+        item1 = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "Test, HIV EIA Elisa", "Item_Code"
+            ]
+        )[0]
         hiv_rapid_test_cons_footprint = {
-            "Intervention_Package_Code": {pkg_code_hiv_rapid_test: 1},
-            "Item_Code": {},
+            "Intervention_Package_Code": {},
+            "Item_Code": {item1: 1},
         }
 
         # NB. The rapid test is assumed to be 100% specific and sensitive. This is used to guarantee that all persons
@@ -1077,15 +1002,29 @@ class Hiv(Module):
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
         # Circumcision:
-        pkg_codes_for_circ = pd.unique(
+        # pkg_codes_for_circ = pd.unique(
+        #     consumables.loc[
+        #         consumables["Intervention_Pkg"] == "Male circumcision ",
+        #         "Intervention_Pkg_Code",
+        #     ]
+        # )[0]
+        item1_circ = pd.unique(
             consumables.loc[
-                consumables["Intervention_Pkg"] == "Male circumcision ",
-                "Intervention_Pkg_Code",
+                consumables["Items"]
+                == "Test, HIV EIA Elisa",
+                "Item_Code",
+            ]
+        )[0]
+        item2_circ = pd.unique(
+            consumables.loc[
+                consumables["Items"]
+                == "male circumcision kit, consumables (10 procedures)_1_IDA",
+                "Item_Code",
             ]
         )[0]
         self.footprints_for_consumables_required["circ"] = {
-            "Intervention_Package_Code": {pkg_codes_for_circ: 1},
-            "Item_Code": {},
+            "Intervention_Package_Code": {},
+            "Item_Code": {item1_circ: 1, item2_circ: 1},
         }
 
         # PrEP:
@@ -1102,7 +1041,7 @@ class Hiv(Module):
         }
 
         # First-line ART for adults (age > "ART_age_cutoff_older_child")
-        item_code_for_art_adult = pd.unique(
+        item_code_for_art_adult = pd.uniqgue(
             consumables.loc[
                 consumables["Items"] == "First-line ART regimen: adult", "Item_Code"
             ]
@@ -1127,17 +1066,17 @@ class Hiv(Module):
                 "Item_Code",
             ]
         )[0]
-        pkg_code_for_cotrim_child = pd.unique(
+        item_cotrim = pd.unique(
             consumables.loc[
-                consumables["Intervention_Pkg"] == "Cotrimoxazole for children",
-                "Intervention_Pkg_Code",
+                consumables["Items"] == "Cotrimoxazole 120mg_1000_CMST",
+                "Item_code",
             ]
         )[0]
         self.footprints_for_consumables_required[
             "First line ART regimen: older child"
         ] = {
-            "Intervention_Package_Code": {pkg_code_for_cotrim_child: 1},
-            "Item_Code": {item_code_for_art_older_child: 1},
+            "Intervention_Package_Code": {},
+            "Item_Code": {item_code_for_art_older_child: 1, item_cotrim: 1},
         }
 
         # ART for younger children aged (age < "ART_age_cutoff_younger_child"):
@@ -1150,8 +1089,8 @@ class Hiv(Module):
         self.footprints_for_consumables_required[
             "First line ART regimen: young child"
         ] = {
-            "Intervention_Package_Code": {pkg_code_for_cotrim_child: 1},
-            "Item_Code": {item_code_for_art_younger_child: 1},
+            "Intervention_Package_Code": {},
+            "Item_Code": {item_code_for_art_younger_child: 1, item_cotrim: 1},
         }
 
         # Viral Load monitoring
@@ -1531,7 +1470,7 @@ class Hiv(Module):
         df = self.sim.population.props
 
         # get number of tests performed in last time period
-        if self.sim.date.year == 2010:
+        if self.sim.date.year == 2011:
             number_tests_new = df.hv_number_tests.sum()
             previous_test_numbers = 0
 
