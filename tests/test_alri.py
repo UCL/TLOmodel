@@ -96,7 +96,7 @@ def test_integrity_of_linear_models(tmpdir):
             pathogen=pathogen,
             df=df.loc[df.is_alive & (df.age_years < 5)]
         )
-        # assert (res > 0).all() and (res <= 1.0).all()
+        # assert (res > 0).all() and (res <= 1.0).all()   # Todo: error on res<=1.0
         assert not res.isna().any()
         assert 'float64' == res.dtype.name
 
@@ -164,29 +164,6 @@ def test_integrity_of_linear_models(tmpdir):
                 assert isinstance(res, set)
                 assert all([c in alri.complications for c in res])
 
-    # # --- delayed_complications
-    # for ri_complication_sepsis in [True, False]:
-    #     for ri_complication_pneumothorax in [True, False]:
-    #         for ri_complication_respiratory_failure in [True, False]:
-    #             for ri_complication_lung_abscess in [True, False]:
-    #                 for ri_complication_empyema in [True, False]:
-    #                     df.loc[person_id, [
-    #                         'ri_complication_sepsis',
-    #                         'ri_complication_pneumothorax',
-    #                         'ri_complication_respiratory_failure',
-    #                         'ri_complication_lung_abscess',
-    #                         'ri_complication_empyema']
-    #                     ] = (
-    #                         ri_complication_sepsis,
-    #                         ri_complication_pneumothorax,
-    #                         ri_complication_respiratory_failure,
-    #                         ri_complication_lung_abscess,
-    #                         ri_complication_empyema
-    #                     )
-    #                     res = models.delayed_complications(person_id=person_id)
-    #                     assert isinstance(res, set)
-    #                     assert all([c in ['sepsis', 'respiratory_failure'] for c in res])
-
     # --- symptoms_for_disease
     for disease_type in alri.disease_types:
         res = models.symptoms_for_disease(disease_type)
@@ -206,19 +183,20 @@ def test_integrity_of_linear_models(tmpdir):
             'ri_disease_type',
             'age_years',
             'hv_inf',
+            'ri_complication_hypoxaemia',
             'un_clinical_acute_malnutrition',
             'nb_low_birth_weight_status']
         ] = (
             disease_type,
             0,
             True,
+            True,
             'SAM',
             'low_birth_weight'
         )
 
-        res = models.make_model_for_death_risk()
-        # res = models.make_model_for_death_risk(person_id)
-        # assert isinstance(res, bool)
+        res = models.compute_death_risk(person_id)
+        assert isinstance(res, np.bool_)
 
 
 def test_basic_run(tmpdir):
@@ -288,8 +266,10 @@ def test_nat_hist_recovery(tmpdir):
     sim.event_queue.queue = []  # clear the queue
 
     # make probability of death 0%
-    sim.modules['Alri'].models.death_equation = LinearModel(
-        LinearModelType.MULTIPLICATIVE, 0.0)
+    def death(person_id):
+        return False
+
+    sim.modules['Alri'].models.death_risk = death
 
     # make probability of symptoms very high
     params = sim.modules['Alri'].parameters
@@ -366,8 +346,9 @@ def test_nat_hist_death(tmpdir):
     sim.event_queue.queue = []  # clear the queue
 
     # make probability of death 100%
-    sim.modules['Alri'].models.death_equation = LinearModel(
-        LinearModelType.MULTIPLICATIVE, 1.0)
+    def death(person_id):
+        return True
+    sim.modules['Alri'].models.compute_death_risk = death
 
     # Get person to use:
     df = sim.population.props
@@ -424,8 +405,10 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
     sim.event_queue.queue = []  # clear the queue
 
     # make probability of death 0%
-    sim.modules['Alri'].models.death_equation = LinearModel(
-        LinearModelType.MULTIPLICATIVE, 0.0)
+    def death(person_id):
+        return False
+
+    sim.modules['Alri'].models.compute_death_risk = death
 
     # Get person to use:
     df = sim.population.props
@@ -498,8 +481,10 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     sim.event_queue.queue = []  # clear the queue
 
     # make probability of death 100%
-    sim.modules['Alri'].models.death_equation = LinearModel(
-        LinearModelType.MULTIPLICATIVE, 1.0)
+    def death(person_id):
+        return True
+
+    sim.modules['Alri'].models.compute_death_risk = death
 
     # Get person to use:
     df = sim.population.props
@@ -635,71 +620,6 @@ def test_no_immediate_onset_complications(tmpdir):
     assert not df.loc[person_id, complications_cols].any()
 
 
-# def test_delayed_onset_complications(tmpdir):
-#     """Check that if the probability of each delayed onset complications is 100%, then a person will have all of those
-#     complications onset with a delay.
-#     """
-#     dur = pd.DateOffset(days=0)
-#     popsize = 100
-#     sim = get_sim(tmpdir)
-#
-#     # make risk of immediate-onset complications be 100% for those complications that are required for onset of
-#     # other delayed complications (and 0% for immediate onset of the complications that will be delayed onset)
-#     params = sim.modules['Alri'].parameters
-#     for p in params:
-#         if any([p.startswith(f'prob_{c}') for c in {'pneumothorax', 'lung_abscess', 'empyema'}]):
-#             params[p] = 1.0
-#         elif any([p.startswith(f'prob_{c}') for c in {'respiratory_failure', 'sepsis'}]):
-#             params[p] = 0.0
-#
-#     # make risk of delayed-onset complications be 100%
-#     params['prob_pneumothorax_to_respiratory_failure'] = 1.0
-#     params['prob_lung_abscess_to_sepsis'] = 1.0
-#     params['prob_empyema_to_sepsis'] = 1.0
-#
-#     sim.make_initial_population(n=popsize)
-#     sim.simulate(end_date=start_date + dur)
-#     sim.event_queue.queue = []  # clear the queue
-#
-#     # Get person to use:
-#     df = sim.population.props
-#     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-#     person_id = under5s.index[0]
-#     assert not df.loc[person_id, 'ri_current_infection_status']
-#
-#     # Run incident case:
-#     pathogen = 'other_Strepto_Enterococci'
-#     # <-- a bacterial infection can lead to delayed symptoms of sepsis and respiratory_failure
-#     incidentcase = AlriIncidentCase(module=sim.modules['Alri'], person_id=person_id, pathogen=pathogen)
-#     incidentcase.apply(person_id=person_id)
-#
-#     # Check has does not have the complications that will be delayed onset
-#     person = df.loc[person_id]
-#     assert not person['ri_complication_respiratory_failure']
-#     assert not person['ri_complication_sepsis']
-#
-#     # Check has delayed onset complication events scheduled (total of two) and at an appropriate time
-#     delayed_onset_event_tuples = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-#                                   isinstance(event_tuple[1], AlriDelayedOnsetComplication)]
-#     assert 2 == len(delayed_onset_event_tuples)
-#     dates_of_delayedonset = [event_tuple[0] for event_tuple in delayed_onset_event_tuples]
-#     assert all([d == dates_of_delayedonset[0] for d in dates_of_delayedonset])
-#
-#     date_of_outcome = person[['ri_scheduled_recovery_date', 'ri_scheduled_death_date']][
-#         ~person[['ri_scheduled_recovery_date', 'ri_scheduled_death_date']].isna()].values[0]
-#     assert sim.date <= dates_of_delayedonset[0] <= date_of_outcome
-#
-#     # run the delayed onset event
-#     sim.date = dates_of_delayedonset[0]
-#     for event_tuple in delayed_onset_event_tuples:
-#         event_tuple[1].apply(person_id=person_id)
-#
-#     # check that they now have delayed onset complications (respiratory_failure and sepsis)
-#     person = df.loc[person_id]
-#     assert person['ri_complication_respiratory_failure']
-#     assert person['ri_complication_sepsis']
-
-
 def test_treatment(tmpdir):
     """Test that providing a treatment prevent death and causes there to be a CureEvent Scheduled"""
 
@@ -712,8 +632,10 @@ def test_treatment(tmpdir):
     sim.event_queue.queue = []  # clear the queue
 
     # make probability of death 100%
-    sim.modules['Alri'].models.death_equation = LinearModel(
-        LinearModelType.MULTIPLICATIVE, 1.0)
+    def death(person_id):
+        return True
+
+    sim.modules['Alri'].models.compute_death_risk = death
 
     # Get person to use:
     df = sim.population.props
@@ -786,7 +708,10 @@ def test_use_of_HSI(tmpdir):
     sim.event_queue.queue = []  # clear the queue
 
     # make probability of death 100%
-    sim.modules['Alri'].p_death = LinearModel.multiplicative()
+    def death(person_id):
+        return True
+
+    sim.modules['Alri'].models.compute_death_risk = death
 
     # Get person to use:
     df = sim.population.props

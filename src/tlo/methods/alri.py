@@ -168,7 +168,7 @@ class Alri(Module):
                               'meningitis',
                               'respiratory_failure'}
 
-    oxygen_exchange_complications = {'hypoxia'}
+    oxygen_exchange_complications = {'hypoxaemia'}
 
     PARAMETERS = {
         # Incidence rate by pathogens  -----
@@ -444,9 +444,9 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'baseline death rate from bacterial pneumonia, base age 0-11 months'
                       ),
-        'base_death_rate_ALRI_by_bronchiolitis/other_alri':
+        'baseline_odds_alri_death':
             Parameter(Types.REAL,
-                      'baseline death rate from bronchiolitis or other alri, base age 0-11 months'
+                      'baseline odds of alri death, no risk factors'
                       ),
         'or_death_ALRI_age<2mo':
             Parameter(Types.REAL,
@@ -483,6 +483,10 @@ class Alri(Module):
         'or_death_ALRI_severe_underweight':
             Parameter(Types.REAL,
                       'odds ratio of ALRI death for severely underweight children'
+                      ),
+        'or_death_ALRI_danger_signs':
+            Parameter(Types.REAL,
+                      'odds ratio of ALRI death for very severe pneumonia (presenting danger signs)'
                       ),
 
 
@@ -766,7 +770,7 @@ class Alri(Module):
 
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
         total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has('tachypnoea')] = self.daly_wts['daly_non_severe_ALRI']
+            self.sim.modules['SymptomManager'].who_has('tachypnoea' or 'chest_indrawing')] = self.daly_wts['daly_non_severe_ALRI']
         total_daly_values.loc[
             self.sim.modules['SymptomManager'].who_has('danger_signs')] = self.daly_wts['daly_severe_ALRI']
 
@@ -922,16 +926,17 @@ class Alri(Module):
 
     def impose_symptoms_for_complicated_alri(self, person_id, complication):
         """Impose symptoms for ALRI with any complication."""
-        df = self.sim.population.props
+
         if complication == any(self.complications):
-            symptoms = self.models.symptoms_for_complicated_alri(person_id=person_id)
-            for symptom in symptoms:
+            for symptom in self.models.symptoms_for_complicated_alri(person_id):
                 self.sim.modules['SymptomManager'].change_symptom(
                     person_id=person_id,
                     symptom_string=symptom,
                     add_or_remove='+',
                     disease_module=self,
                 )
+
+        df = self.sim.population.props
 
 
 class Models:
@@ -948,11 +953,10 @@ class Models:
         # set-up the linear models for the incidence risk for each pathogen
         self.make_model_for_acquisition_risk()
 
-        # dict that will hold the linear model for death
-        self.death_equation = None
-
-        # set-up the linear models for the death risk
-        self.make_model_for_death_risk()
+        # set-up the linear model for the death risk
+        # self.death_equation = self.make_scaled_linear_model_for_death()
+        # self.compute_death_risk(self, person_id)
+        self.death_risk = None
 
     def make_model_for_acquisition_risk(self):
         """"Model for the acquisition of a primary pathogen that can cause ALri"""
@@ -1183,62 +1187,30 @@ class Models:
 
                 return symptoms
 
-    def make_model_for_death_risk(self):
-        """"Model for the death risk"""
+    def compute_death_risk(self, person_id):
+        """Determine if person will die from Alri."""
         p = self.p
         df = self.module.sim.population.props
 
-        def make_scaled_linear_model_for_death():
-            """Makes the unscaled linear model with default intercept of 1. Calculates the mean incidents rate for
-            0-year-olds and then creates a new linear model with adjusted intercept so incidence in 0-year-olds
-            matches the specified value in the model when averaged across the population. This will return an unscaled
-            linear model if there are no 0-year-olds in the population.
-            """
+        def set_lm_death():
+            """ Linear Model for ALRI death (Logistic regression)"""
 
-            def make_naive_linear_model_death(intercept):
-                """Make the linear model based exactly on the parameters specified"""
+            return LinearModel(
+                LinearModelType.LOGISTIC,
+                p['baseline_odds_alri_death'],
+                Predictor('age_exact_years').when(1/6, p['or_death_ALRI_age<2mo']),
+                Predictor('ri_primary_pathogen').when('P.jirovecii', p['or_death_ALRI_P.jirovecii']),
+                Predictor('un_clinical_acute_malnutrition').when('SAM', p['or_death_ALRI_SAM']),
+                Predictor('un_clinical_acute_malnutrition').when('MAM', p['or_death_ALRI_MAM']),
+                # Predictor('sy_danger_signs').when(2, p['or_death_ALRI_danger_signs']),
+                Predictor('sex').when('M', p['or_death_ALRI_male']),
+                Predictor('ri_complication_hypoxaemia').when(True, p['or_death_ALRI_SpO2<=92%']),
+                Predictor('hv_inf').when(True, p['rr_ALRI_HIV/AIDS']),
+                Predictor('referral_type').when('hc_referral', p['or_death_ALRI_hc_referral'])
+            )
 
-                return LinearModel(
-                    LinearModelType.LOGISTIC,
-                    intercept,
-                    Predictor('age_exact_years').when(1/6, p['or_death_ALRI_age<2mo']),
-                    Predictor('ri_primary_pathogen').when('P.jirovecii', p['or_death_ALRI_P.jirovecii']),
-                    Predictor('un_clinical_acute_malnutrition').when('SAM', p['or_death_ALRI_SAM']),
-                    Predictor('un_clinical_acute_malnutrition').when('MAM', p['or_death_ALRI_MAM']),
-                    Predictor('sex').when('M', p['or_death_ALRI_male']),
-                    Predictor('ri_complication_hypoxaemia').when(True, p['or_death_ALRI_SpO2<=92%']),
-                    Predictor('hv_inf').when(True, p['rr_ALRI_HIV/AIDS']),
-                    Predictor('referral_type').when('hc_referral', p['or_death_ALRI_hc_referral'])
-                )
-
-            zero_year_olds = df.is_alive & (df.age_years == 0)
-            unscaled_lm = make_naive_linear_model_death(
-                intercept=(p['base_death_rate_ALRI_by_pneumonia'] / (1 - p['base_death_rate_ALRI_by_pneumonia'])))
-
-            # If not 0 year-olds then cannot do scaling, return unscaled linear model
-            if sum(zero_year_olds) == 0:
-                return unscaled_lm
-
-            # If some 0 year-olds then can do scaling:
-            target_mean = p['base_death_rate_ALRI_by_pneumonia']
-            target_odds = target_mean / (1.0 - target_mean)
-            actual_mean = unscaled_lm.predict(df.loc[zero_year_olds]).mean()
-            actual_odds = actual_mean / (1.0 - actual_mean)
-            scaled_intercept = target_odds / actual_odds if not np.isnan(actual_mean) else target_odds
-            scaled_lm = make_naive_linear_model_death(intercept=scaled_intercept)
-
-            # check by applying the model to mean incidence of 0-year-olds
-            assert (target_mean - scaled_lm.predict(df.loc[zero_year_olds]).mean()) < 1e-10
-            return scaled_lm
-
-        self.death_equation = make_scaled_linear_model_for_death()
-
-    # def compute_death_risk(self, person_id):
-    #     """Determine if person will die from Alri. Returns True/False"""
-    #     df = self.module.sim.population.props
-    #     lm = self.death_equation
-    #
-    #     return lm.predict(df.loc[[person_id]]).values[0] > self.rng.rand()
+        self.death_risk = set_lm_death()
+        return self.death_risk.predict(df.loc[[person_id]]).values[0] > self.rng.rand()
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1385,13 +1357,30 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         self.impose_complications(person_id=person_id)
 
         # ----------------------------------- Outcome  -----------------------------------
-        # Determine outcome: death or recovery
-        if models.death_equation.predict(df.loc[[person_id]]).values[0] > rng.rand():
+        if models.compute_death_risk(person_id=person_id):
             self.sim.schedule_event(AlriDeathEvent(self.module, person_id), date_of_outcome)
             df.loc[person_id, ['ri_scheduled_death_date', 'ri_scheduled_recovery_date']] = [date_of_outcome, pd.NaT]
         else:
             self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id), date_of_outcome)
             df.loc[person_id, ['ri_scheduled_recovery_date', 'ri_scheduled_death_date']] = [date_of_outcome, pd.NaT]
+
+        # check_death = False
+        #
+        # # death only applies to those with complications
+        # for complication in self.module.complications:
+        #     if df.loc[person_id, f"ri_complication_{complication}"]:
+        #         check_death = True
+        #
+        # if check_death:
+        #     if models.compute_death_risk(person_id):
+        #         self.sim.schedule_event(AlriDeathEvent(self.module, person_id), date_of_outcome)
+        #         df.loc[person_id, ['ri_scheduled_death_date', 'ri_scheduled_recovery_date']] = [date_of_outcome, pd.NaT]
+        #     else:
+        #         self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id), date_of_outcome)
+        #         df.loc[person_id, ['ri_scheduled_recovery_date', 'ri_scheduled_death_date']] = [date_of_outcome, pd.NaT]
+        # else:
+        #     self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id), date_of_outcome)
+        #     df.loc[person_id, ['ri_scheduled_recovery_date', 'ri_scheduled_death_date']] = [date_of_outcome, pd.NaT]
 
     def impose_symptoms_for_uncomplicated_disease(self, person_id, disease_type):
         """
