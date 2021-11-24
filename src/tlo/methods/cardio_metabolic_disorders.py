@@ -810,10 +810,10 @@ class CardioMetabolicDisorders(Module):
                 # then test them with a given probability in the params for each condition
                 if is_next_test_due(
                     current_date=self.sim.date, date_of_last_test=df.at[
-                        person_id, f'nc_{condition}_date_last_test']):
-                    if (self.rng.rand() < self.parameters[
-                                f'{condition}_hsi'].get('pr_assessed_other_symptoms')):
-                        # Initiate HSI event
+                        person_id, f'nc_{condition}_date_last_test']
+                ):
+                    if self.rng.rand() < self.parameters[f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
+                        # Schedule HSI event
                         hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
                             module=self,
                             person_id=person_id,
@@ -914,12 +914,11 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
 
         # Schedule persons for community testing before next polling event
         for person_id in idx_will_test:
-            date_test = random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1), m.rng)
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_CardioMetabolicDisorders_CommunityTestingForHypertension(person_id=person_id,
                                                                                        module=self.module),
                 priority=1,
-                topen=date_test,
+                topen=random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=2), m.rng),
                 tclose=self.sim.date + self.frequency - pd.DateOffset(days=1)  # (to occur before next polling)
             )
 
@@ -1250,7 +1249,7 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
                         df.age_years >= 20)]) / len(df[df[f'nc_{condition}'] & df.is_alive & (df.age_years >= 20)])
                 }
             else:
-                diagnosed = {0}
+                diagnosed = {0.0}
 
             logger.info(
                 key=f'{condition}_diagnosis_prevalence',
@@ -1264,7 +1263,7 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
                         df.age_years >= 20)]) / len(df[df[f'nc_{condition}'] & df.is_alive & (df.age_years >= 20)])
                 }
             else:
-                on_medication = {0}
+                on_medication = {0.0}
 
             logger.info(
                 key=f'{condition}_medication_prevalence',
@@ -1787,4 +1786,3 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
 
     def did_not_run(self):
         logger.debug(key='debug', data='HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: did not run')
-        pass
