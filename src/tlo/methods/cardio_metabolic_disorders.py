@@ -230,6 +230,9 @@ class CardioMetabolicDisorders(Module):
         self.do_log_df = do_log_df
         self.do_condition_combos = do_condition_combos
 
+        # Dict to hold trackers for counting events
+        self.trackers = None
+
     def read_parameters(self, data_folder):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
         ResourceFile_cmd_condition_onset.xlsx = parameters for onset of conditions
@@ -466,18 +469,11 @@ class CardioMetabolicDisorders(Module):
                 + (26 / 28) * self.daly_wts['daly_heart_attack_acute_days_3_28']
             )
 
-        # Dict to hold counters for the number of episodes by condition-type and age-group
-        self.df_incidence_tracker_zeros = pd.DataFrame(0, index=self.age_cats, columns=self.conditions)
-        self.df_incidence_tracker = self.df_incidence_tracker_zeros.copy()
-
-        # Create tracker for the number of different types of events
-        self.df_incidence_tracker_incident_events_zeros = pd.DataFrame(0, index=self.age_cats, columns=self.events)
-        self.df_incidence_tracker_incident_events = self.df_incidence_tracker_incident_events_zeros.copy()
-        self.df_incidence_tracker_prevalent_events_zeros = pd.DataFrame(0, index=self.age_cats, columns=self.events)
-        self.df_incidence_tracker_prevalent_events = self.df_incidence_tracker_prevalent_events_zeros.copy()
-        self.events_tracker = dict()
-        for event in self.events:
-            self.events_tracker[f'{event}_events'] = 0
+        self.trackers = {
+            'onset_condition': Tracker(conditions=self.conditions, age_groups=self.age_cats),
+            'incident_event': Tracker(conditions=self.events, age_groups=self.age_cats),
+            'prevalent_event': Tracker(conditions=self.events, age_groups=self.age_cats),
+        }
 
         # Build the LinearModel for onset/removal/deaths for each condition
         # Baseline probability of condition onset, removal, and death are annual; in LinearModel, rates are adjusted to
@@ -862,6 +858,28 @@ class CardioMetabolicDisorders(Module):
                 health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
 
+class Tracker:
+    """Helper class for keeping a count with respect to some conditions and some age-groups"""
+
+    def __init__(self, conditions: list, age_groups: list):
+        self._conditions = conditions
+        self._age_groups = age_groups
+        self._tracker = self._make_new_tracker()
+
+    def _make_new_tracker(self):
+        return {c: {a: 0.0 for a in self._age_groups} for c in self._conditions}
+
+    def reset(self):
+        self._tracker = self._make_new_tracker()
+
+    def add(self, condition: str, _to_add: dict):
+        for _a in _to_add:
+            self._tracker[condition][_a] += _to_add[_a]
+
+    def report(self, condition: str = None):
+        return self._tracker
+
+
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
 #
@@ -900,11 +918,6 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                 random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1), m.rng)
             )
 
-        # Set up incidence dfs for calculating incidence (+ incident events and prevalent events)
-        current_incidence_df = pd.DataFrame(index=self.module.age_cats, columns=self.module.conditions)
-        current_incidence_df_incident_events = pd.DataFrame(index=self.module.age_cats, columns=self.module.events)
-        current_incidence_df_prevalent_events = pd.DataFrame(index=self.module.age_cats, columns=self.module.events)
-
         # -------------------------------- COMMUNITY SCREENING FOR HYPERTENSION ---------------------------------------
         # A subset of individuals aged >= 50 will receive a blood pressure meaasurement without directly presenting to
         # the healthcare system
@@ -934,7 +947,9 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             df.loc[idx_acquires_condition, f'nc_{condition}'] = True
 
             # Add incident cases to the tracker
-            current_incidence_df[condition] = df.loc[idx_acquires_condition].groupby('age_range').size()
+            self.module.trackers['onset_condition'].add(
+                condition, df.loc[idx_acquires_condition].groupby('age_range').size().to_dict()
+            )
 
             # Schedule symptom onset for both those with new onset of condition and those who already have condition,
             # among those who do not have the symptom already
@@ -984,9 +999,6 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             for person_id in idx_selected_to_die:
                 schedule_death_to_occur_before_next_poll(person_id, condition)
 
-        # Add the new incidence numbers to tracker
-        self.module.df_incidence_tracker = self.module.df_incidence_tracker.add(current_incidence_df)
-
         # ---------------------------------- DETERMINE OCCURRENCE OF EVENTS  ------------------------------------------
         for event in self.module.events:
 
@@ -994,10 +1006,6 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
             has_event = self.module.lms_event_onset[event].predict(df.loc[eligible_population_for_event], rng)
             if has_event.any():  # catch in case no one has an event
                 idx_has_event = has_event[has_event].index
-
-                incident_cases = []
-                prevalent_cases = []
-
                 for person_id in idx_has_event:
                     self.sim.schedule_event(CardioMetabolicDisordersEvent(self.module, person_id, event),
                                             random_date(self.sim.date, self.sim.date + self.frequency -
@@ -1005,19 +1013,9 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
 
                     # Add cases to either incident or prevalent list of cases
                     if df.at[person_id, f'nc_{event}']:
-                        prevalent_cases.append(person_id)
+                        self.module.trackers['prevalent_event'].add(event, {df.at[person_id, 'age_range']: 1})
                     else:
-                        incident_cases.append(person_id)
-
-                    # Add incident cases to the correct tracker for incident or prevalent events
-                current_incidence_df_incident_events[event] = df.loc[incident_cases].groupby('age_range').size()
-                current_incidence_df_prevalent_events[event] = df.loc[prevalent_cases].groupby('age_range').size()
-
-        # Add the new incidence numbers to tracker
-        self.module.df_incidence_tracker_incident_events = self.module.df_incidence_tracker_incident_events.add(
-            current_incidence_df_incident_events)
-        self.module.df_incidence_tracker_prevalent_events = self.module.df_incidence_tracker_prevalent_events.add(
-            current_incidence_df_prevalent_events)
+                        self.module.trackers['incident_event'].add(event, {df.at[person_id, 'age_range']: 1})
 
 
 class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
@@ -1036,7 +1034,6 @@ class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
-        self.module.events_tracker[f'{self.event}_events'] += 1
         df.at[person_id, f'nc_{self.event}'] = True
         df.at[person_id, f'nc_{self.event}_date_last_event'] = self.sim.date
 
@@ -1150,27 +1147,23 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
 
     def apply(self, population):
 
-        # Convert incidence tracker to dict to pass through logger
-        logger.info(key='incidence_count_by_condition', data=self.module.df_incidence_tracker.to_dict(),
+        # Log counts in the trackers
+        logger.info(key='incidence_count_by_condition',
+                    data=self.module.trackers['onset_condition'].report(),
                     description=f"count of events occurring between each successive poll of logging event every "
                                 f"{self.repeat} months")
-        # Reset the counter
-        self.module.df_incidence_tracker = self.module.df_incidence_tracker_zeros.copy()
-
-        # Convert incidence tracker for events to dict to pass through logger
         logger.info(key='incidence_count_by_incident_event',
-                    data=self.module.df_incidence_tracker_incident_events.to_dict(),
+                    data=self.module.trackers['incident_event'].report(),
                     description=f"count of incident events occurring between each successive poll of logging event "
                                 f"every "f"{self.repeat} months")
-        # Convert prevalence tracker to dict to pass through logger
         logger.info(key='incidence_count_by_prevalent_event',
-                    data=self.module.df_incidence_tracker_prevalent_events.to_dict(),
+                    data=self.module.trackers['prevalent_event'].report(),
                     description=f"count of prevalent events occurring between each successive poll of logging event "
                                 f"every "f"{self.repeat} months")
-        # Reset the counters
-        self.module.df_incidence_tracker_incident_events = self.module.df_incidence_tracker_incident_events_zeros.copy()
-        self.module.df_incidence_tracker_prevalent_events = \
-            self.module.df_incidence_tracker_prevalent_events_zeros.copy()
+
+        # Reset trackers
+        for _tracker in self.module.trackers:
+            self.module.trackers[_tracker].reset()
 
         def age_cats(ages_in_years):
             AGE_RANGE_CATEGORIES = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
