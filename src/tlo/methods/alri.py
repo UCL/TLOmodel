@@ -1202,7 +1202,7 @@ class Models:
                 Predictor('ri_primary_pathogen').when('P.jirovecii', p['or_death_ALRI_P.jirovecii']),
                 Predictor('un_clinical_acute_malnutrition').when('SAM', p['or_death_ALRI_SAM']),
                 Predictor('un_clinical_acute_malnutrition').when('MAM', p['or_death_ALRI_MAM']),
-                # Predictor('sy_danger_signs').when(2, p['or_death_ALRI_danger_signs']),
+                Predictor('sy_danger_signs').when(2, p['or_death_ALRI_danger_signs']),
                 Predictor('sex').when('M', p['or_death_ALRI_male']),
                 Predictor('ri_complication_hypoxaemia').when(True, p['or_death_ALRI_SpO2<=92%']),
                 Predictor('hv_inf').when(True, p['rr_ALRI_HIV/AIDS']),
@@ -1363,24 +1363,6 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         else:
             self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id), date_of_outcome)
             df.loc[person_id, ['ri_scheduled_recovery_date', 'ri_scheduled_death_date']] = [date_of_outcome, pd.NaT]
-
-        # check_death = False
-        #
-        # # death only applies to those with complications
-        # for complication in self.module.complications:
-        #     if df.loc[person_id, f"ri_complication_{complication}"]:
-        #         check_death = True
-        #
-        # if check_death:
-        #     if models.compute_death_risk(person_id):
-        #         self.sim.schedule_event(AlriDeathEvent(self.module, person_id), date_of_outcome)
-        #         df.loc[person_id, ['ri_scheduled_death_date', 'ri_scheduled_recovery_date']] = [date_of_outcome, pd.NaT]
-        #     else:
-        #         self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id), date_of_outcome)
-        #         df.loc[person_id, ['ri_scheduled_recovery_date', 'ri_scheduled_death_date']] = [date_of_outcome, pd.NaT]
-        # else:
-        #     self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id), date_of_outcome)
-        #     df.loc[person_id, ['ri_scheduled_recovery_date', 'ri_scheduled_death_date']] = [date_of_outcome, pd.NaT]
 
     def impose_symptoms_for_uncomplicated_disease(self, person_id, disease_type):
         """
