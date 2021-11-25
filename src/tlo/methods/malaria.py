@@ -33,6 +33,7 @@ class Malaria(Module):
         # cleaned coverage values for IRS and ITN (populated in `read_parameters`)
         self.itn_irs = None
         self.all_inc = None
+        self.footprints_for_consumables_required = dict()
 
     INIT_DEPENDENCIES = {
         'Contraception', 'Demography', 'HealthSystem', 'SymptomManager'
@@ -288,7 +289,7 @@ class Malaria(Module):
 
         # replace itn coverage with projected coverage levels from 2019 onwards
         if now.year > p["data_end"]:
-            itn_irs_curr['itn_rate'] = self.itn
+            itn_irs_curr['itn_rate'] = self.parameters["itn"]
 
         month_districtnum_itn_irs_lookup = [
             tuple(r) for r in itn_irs_curr.values]  # every row is a key in incidence table
@@ -383,6 +384,13 @@ class Malaria(Module):
             )  # schedule the death
 
     def initialise_simulation(self, sim):
+        """
+        * 1) Schedule the Main Regular Polling Events
+        * 2) Define the DxTests
+        * 3) Look-up and save the codes for consumables
+        """
+
+        # 1) ----------------------------------- REGULAR EVENTS -----------------------------------
 
         sim.schedule_event(MalariaPollingEventDistrict(self), sim.date + DateOffset(months=1))
 
@@ -398,13 +406,13 @@ class Malaria(Module):
         sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(days=364))
         sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(days=30.5))
 
-        # ----------------------------------- DIAGNOSTIC TESTS -----------------------------------
+        # 2) ----------------------------------- DIAGNOSTIC TESTS -----------------------------------
         # Create the diagnostic test representing the use of RDT for malaria diagnosis
         # and registers it with the Diagnostic Test Manager
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
         # need to convert this from int64 to int for the dx_manager using tolist()
-        item_code1 = pd.unique(
+        item_code_test = pd.unique(
             consumables.loc[
                 consumables["Items"] == "Malaria test kit (RDT)",
                 "Item_Code",
@@ -414,10 +422,85 @@ class Malaria(Module):
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             malaria_rdt=DxTest(
                 property='ma_is_infected',
-                cons_req_as_item_code=item_code1,
+                cons_req_as_item_code=item_code_test,
                 sensitivity=self.parameters['sensitivity_rdt'],
             )
         )
+
+        # 3) ----------------------------------- CONSUMABLES -----------------------------------
+
+        # malaria treatment uncomplicated children <15kg
+        item_code2 = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST",
+                "Item_Code"])[0]
+        item_code3 = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST", "Item_Code"])[0]
+
+        self.footprints_for_consumables_required['malaria_uncomplicated_young_children'] = {
+            "Intervention_Package_Code": {},
+            "Item_Code": {item_code_test: 1,
+                          item_code2: 1,
+                          item_code3: 18},
+        }
+
+        # malaria treatment uncomplicated children >15kg
+        self.footprints_for_consumables_required['malaria_uncomplicated_older_children'] = {
+            "Intervention_Package_Code": {},
+            "Item_Code": {item_code_test: 1,
+                          item_code2: 3,
+                          item_code3: 18},
+        }
+
+        # malaria treatment uncomplicated adults >36kg
+        item_code4 = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "Paracetamol 500mg_1000_CMST", "Item_Code"])[0]
+
+        self.footprints_for_consumables_required['malaria_uncomplicated_adult'] = {
+            "Intervention_Package_Code": {},
+            "Item_Code": {item_code_test: 1,
+                          item_code2: 3.6,
+                          item_code4: 18},
+        }
+
+        # malaria treatment complicated - same consumables for adults and children
+        item_code5 = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "Injectable artesunate", "Item_Code"])[0]
+        item_code6 = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "Cannula iv  (winged with injection pot) 18_each_CMST", "Item_Code"])[0]
+        item_code7 = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "Glove disposable latex medium_100_CMST", "Item_Code"])[0]
+        item_code8 = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "Gauze, swabs 8-ply 10cm x 10cm_100_CMST", "Item_Code"])[0]
+        item_code9 = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "Water for injection, 10ml_Each_CMST", "Item_Code"])[0]
+
+        self.footprints_for_consumables_required['malaria_complicated'] = {
+            "Intervention_Package_Code": {},
+            "Item_Code": {item_code5: 1,
+                          item_code6: 3,
+                          item_code7: 3,
+                          item_code8: 3,
+                          item_code9: 3,
+                          },
+        }
+
+        # malaria IPTp for pregnant women
+        item_code10 = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg", "Item_Code"])[0]
+
+        self.footprints_for_consumables_required['malaria_iptp'] = {
+            "Intervention_Package_Code": {},
+            "Item_Code": {item_code10: 6},
+        }
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -481,15 +564,14 @@ class Malaria(Module):
 
         symptom_list = {"fever", "headache", "vomiting", "stomachache"}
 
-        for symptom in symptom_list:
-            # this also schedules symptom resolution in 5 days
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(clinical_index),
-                symptom_string=symptom,
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=p["dur_clin"],
-            )
+        # this also schedules symptom resolution in 5 days
+        self.sim.modules["SymptomManager"].change_symptom(
+            person_id=list(clinical_index),
+            symptom_string=symptom_list,
+            add_or_remove="+",
+            disease_module=self,
+            duration_in_days=p["dur_clin"],
+        )
 
         # additional risk of severe anaemia in pregnancy
         pregnant_infected = df.is_alive & (df.ma_inf_type == "clinical") & (df.ma_date_infected == now) & df.is_pregnant
@@ -513,6 +595,10 @@ class Malaria(Module):
         :param severe_index: the indices of new clinical cases
         :param child: to apply severe symptoms to children (otherwise applied to adults)
         """
+        # If no indices specified exit straight away
+        if (len(severe_index) == 0):
+            return
+
         df = population
         p = self.parameters
         rng = self.rng
@@ -523,14 +609,13 @@ class Malaria(Module):
         # general symptoms - applied to all
         symptom_list = {"fever", "headache", "vomiting", "stomachache"}
 
-        for symptom in symptom_list:
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(severe_index),
-                symptom_string=symptom,
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=None,
-            )
+        self.sim.modules["SymptomManager"].change_symptom(
+            person_id=list(severe_index),
+            symptom_string=symptom_list,
+            add_or_remove="+",
+            disease_module=self,
+            duration_in_days=None,
+        )
 
         # symptoms specific to severe cases
         # get range of probabilities of each symptom for severe cases for children and adults
@@ -540,30 +625,55 @@ class Malaria(Module):
             range_symp = range_symp.loc[range_symp.age_group == "0_5"]
         else:
             range_symp = range_symp.loc[range_symp.age_group == "5_60"]
-
-        symptom_list_severe = list(range_symp.symptom)
+        range_symp = range_symp.set_index("symptom")
+        symptom_list_severe = list(range_symp.index)
 
         # assign symptoms
-        for person in severe_index:
 
-            for symptom in symptom_list_severe:
+        for symptom in symptom_list_severe:
+            # Let u ~ Uniform(0, 1) and p ~ Uniform(prop_lower, prop_upper),
+            # then the probability of the event (u < p) is (prop_lower + prop_upper) / 2
+            # That is the probability of b == True in the following code snippet
+            #     b = rng.uniform() < rng.uniform(low=prop_lower, high=prop_upper)
+            # and this one
+            #     b = rng.uniform() < (prop_lower + prop_upper) / 2
+            # are equivalent.
+            persons_gaining_symptom = severe_index[
+                rng.uniform(size=len(severe_index))
+                < (
+                    range_symp.at[symptom, "prop_lower"]
+                    + range_symp.at[symptom, "prop_upper"]
+                ) / 2
+            ]
+            # schedule symptom onset
+            self.sim.modules["SymptomManager"].change_symptom(
+                person_id=persons_gaining_symptom,
+                symptom_string=symptom,
+                add_or_remove="+",
+                disease_module=self,
+                duration_in_days=None,
+            )
 
-                # random sample whether child will have symptom
-                symptom_probability = rng.uniform(
-                    low=range_symp.loc[range_symp.symptom == symptom, "prop_lower"],
-                    high=range_symp.loc[range_symp.symptom == symptom, "prop_upper"],
-                    size=1
-                )[0]
+    def check_if_fever_is_caused_by_malaria(self, person_id, hsi_event):
+        """Run by an HSI when an adult presents with fever"""
 
-                if self.rng.random_sample(size=1) < symptom_probability:
-                    # schedule symptom onset
-                    self.sim.modules["SymptomManager"].change_symptom(
-                        person_id=person,
-                        symptom_string=symptom,
-                        add_or_remove="+",
-                        disease_module=self,
-                        duration_in_days=None,
-                    )
+        # Call the DxTest RDT to diagnose malaria
+        dx_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+            dx_tests_to_run='malaria_rdt',
+            hsi_event=hsi_event
+        )
+
+        true_malaria_infection_type = self.sim.population.props.at[person_id, "ma_inf_type"]
+
+        if dx_result:
+            if true_malaria_infection_type == "severe":
+                return "severe_malaria"
+
+            elif true_malaria_infection_type in ("clinical", "asym"):
+                return "clinical_malaria"
+
+        else:
+            return "negative_malaria_test"
 
 
 class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
@@ -694,7 +804,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Malaria_RDT"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -822,7 +932,7 @@ class HSI_Malaria_non_complicated_treatment_age0_5(HSI_Event, IndividualScopeEve
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Malaria_treatment_child0_5"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -833,30 +943,8 @@ class HSI_Malaria_non_complicated_treatment_age0_5(HSI_Event, IndividualScopeEve
             logger.debug(key='message',
                          data=f'HSI_Malaria_tx_0_5: requesting malaria treatment for child {person_id}')
 
-            consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-            pkg_code1 = pd.unique(
-                consumables.loc[
-                    consumables["Intervention_Pkg"]
-                    == "Uncomplicated (children, <15 kg)",
-                    "Intervention_Pkg_Code",
-                ]
-            )[
-                0
-            ]  # this pkg_code includes another rdt
-
-            the_cons_footprint = {
-                "Intervention_Package_Code": {pkg_code1: 1},
-                "Item_Code": {},
-            }
-
-            # request the treatment
-            outcome_of_request_for_consumables = self.sim.modules[
-                "HealthSystem"
-            ].request_consumables(
-                hsi_event=self, cons_req_as_footprint=the_cons_footprint
-            )
-
-            if outcome_of_request_for_consumables:
+            if self.get_all_consumables(
+                    footprint=self.module.footprints_for_consumables_required['malaria_uncomplicated_young_children']):
 
                 logger.debug(key='message',
                              data=f'HSI_Malaria_tx_0_5: giving malaria treatment for child {person_id}')
@@ -888,7 +976,7 @@ class HSI_Malaria_non_complicated_treatment_age5_15(HSI_Event, IndividualScopeEv
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Malaria_treatment_child5_15"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -899,30 +987,8 @@ class HSI_Malaria_non_complicated_treatment_age5_15(HSI_Event, IndividualScopeEv
             logger.debug(key='message',
                          data=f'HSI_Malaria_tx_5_15: requesting malaria treatment for child {person_id}')
 
-            consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-            pkg_code1 = pd.unique(
-                consumables.loc[
-                    consumables["Intervention_Pkg"]
-                    == "Uncomplicated (children, >15 kg)",
-                    "Intervention_Pkg_Code",
-                ]
-            )[
-                0
-            ]  # this pkg_code includes another rdt
-
-            the_cons_footprint = {
-                "Intervention_Package_Code": {pkg_code1: 1},
-                "Item_Code": {},
-            }
-
-            # request the treatment
-            outcome_of_request_for_consumables = self.sim.modules[
-                "HealthSystem"
-            ].request_consumables(
-                hsi_event=self, cons_req_as_footprint=the_cons_footprint
-            )
-
-            if outcome_of_request_for_consumables:
+            if self.get_all_consumables(
+                    footprint=self.module.footprints_for_consumables_required['malaria_uncomplicated_older_children']):
 
                 logger.debug(key='message',
                              data=f'HSI_Malaria_tx_5_15: giving malaria treatment for child {person_id}')
@@ -954,48 +1020,26 @@ class HSI_Malaria_non_complicated_treatment_adult(HSI_Event, IndividualScopeEven
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Malaria_treatment_adult"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-        if not df.at[person_id, "ma_tx"]:
+        if not df.at[person_id, "ma_tx"] and df.at[person_id, "is_alive"]:
 
             logger.debug(key='message',
                          data=f'HSI_Malaria_tx_adult: requesting malaria treatment for person {person_id}')
 
-            consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-            pkg_code1 = pd.unique(
-                consumables.loc[
-                    consumables["Intervention_Pkg"] == "Uncomplicated (adult, >36 kg)",
-                    "Intervention_Pkg_Code",
-                ]
-            )[
-                0
-            ]  # this pkg_code includes another rdt
-
-            the_cons_footprint = {
-                "Intervention_Package_Code": {pkg_code1: 1},
-                "Item_Code": {},
-            }
-
-            # request the treatment
-            outcome_of_request_for_consumables = self.sim.modules[
-                "HealthSystem"
-            ].request_consumables(
-                hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=False
-            )
-
-            if outcome_of_request_for_consumables:
+            if self.get_all_consumables(
+                    footprint=self.module.footprints_for_consumables_required['malaria_uncomplicated_adult']):
 
                 logger.debug(key='message',
                              data=f'HSI_Malaria_tx_adult: giving malaria treatment for person {person_id}')
 
-                if df.at[person_id, "is_alive"]:
-                    df.at[person_id, "ma_tx"] = True
-                    df.at[person_id, "ma_date_tx"] = self.sim.date
-                    df.at[person_id, "ma_tx_counter"] += 1
+                df.at[person_id, "ma_tx"] = True
+                df.at[person_id, "ma_date_tx"] = self.sim.date
+                df.at[person_id, "ma_tx_counter"] += 1
 
     def did_not_run(self):
         logger.debug(key='message',
@@ -1019,49 +1063,28 @@ class HSI_Malaria_complicated_treatment_child(HSI_Event, IndividualScopeEventMix
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Malaria_treatment_complicated_child"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-        if not df.at[person_id, "ma_tx"]:
+        if not df.at[person_id, "ma_tx"] and df.at[person_id, "is_alive"]:
 
             logger.debug(key='message',
                          data=f'HSI_Malaria_tx_compl_child: requesting complicated malaria treatment for '
                               f'child {person_id}')
 
-            consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-            pkg_code1 = pd.unique(
-                consumables.loc[
-                    consumables["Intervention_Pkg"]
-                    == "Complicated (children, injectable artesunate)",
-                    "Intervention_Pkg_Code",
-                ]
-            )[0]
-
-            the_cons_footprint = {
-                "Intervention_Package_Code": {pkg_code1: 1},
-                "Item_Code": {},
-            }
-
-            # request the treatment
-            outcome_of_request_for_consumables = self.sim.modules[
-                "HealthSystem"
-            ].request_consumables(
-                hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=False
-            )
-
-            if outcome_of_request_for_consumables:
+            if self.get_all_consumables(
+                    footprint=self.module.footprints_for_consumables_required['malaria_complicated']):
 
                 logger.debug(key='message',
                              data=f'HSI_Malaria_tx_compl_child: giving complicated malaria treatment for '
                                   f'child {person_id}')
 
-                if df.at[person_id, "is_alive"]:
-                    df.at[person_id, "ma_tx"] = True
-                    df.at[person_id, "ma_date_tx"] = self.sim.date
-                    df.at[person_id, "ma_tx_counter"] += 1
+                df.at[person_id, "ma_tx"] = True
+                df.at[person_id, "ma_date_tx"] = self.sim.date
+                df.at[person_id, "ma_tx_counter"] += 1
 
     def did_not_run(self):
         logger.debug(key='message',
@@ -1085,49 +1108,28 @@ class HSI_Malaria_complicated_treatment_adult(HSI_Event, IndividualScopeEventMix
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Malaria_treatment_complicated_adult"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-        if not df.at[person_id, "ma_tx"]:
+        if not df.at[person_id, "ma_tx"] and df.at[person_id, "is_alive"]:
 
             logger.debug(key='message',
                          data=f'HSI_Malaria_tx_compl_adult: requesting complicated malaria treatment '
                               f'for person {person_id}')
 
-            consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-            pkg_code1 = pd.unique(
-                consumables.loc[
-                    consumables["Intervention_Pkg"]
-                    == "Complicated (adults, injectable artesunate)",
-                    "Intervention_Pkg_Code",
-                ]
-            )[0]
-
-            the_cons_footprint = {
-                "Intervention_Package_Code": {pkg_code1: 1},
-                "Item_Code": {},
-            }
-
-            # request the treatment
-            outcome_of_request_for_consumables = self.sim.modules[
-                "HealthSystem"
-            ].request_consumables(
-                hsi_event=self, cons_req_as_footprint=the_cons_footprint
-            )
-
-            if outcome_of_request_for_consumables:
+            if self.get_all_consumables(
+                    footprint=self.module.footprints_for_consumables_required['malaria_complicated']):
 
                 logger.debug(key='message',
                              data=f'HSI_Malaria_tx_compl_adult: giving complicated malaria treatment '
                                   f'for person {person_id}')
 
-                if df.at[person_id, "is_alive"]:
-                    df.at[person_id, "ma_tx"] = True
-                    df.at[person_id, "ma_date_tx"] = self.sim.date
-                    df.at[person_id, "ma_tx_counter"] += 1
+                df.at[person_id, "ma_tx"] = True
+                df.at[person_id, "ma_date_tx"] = self.sim.date
+                df.at[person_id, "ma_tx_counter"] += 1
 
     def did_not_run(self):
         logger.debug("HSI_Malaria_tx_compl_adult: did not run")
@@ -1150,44 +1152,25 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Malaria_IPTp"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
 
-        if not df.at[person_id, "is_alive"]:
+        if not df.at[person_id, "is_alive"] or df.at[person_id, "ma_tx"]:
             return
 
-        elif (
-            not df.at[person_id, "ma_tx"]
-        ):
+        else:
 
             logger.debug(key='message',
                          data=f'HSI_MalariaIPTp: requesting IPTp for person {person_id}')
 
-            consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-            pkg_code1 = pd.unique(
-                consumables.loc[
-                    consumables["Intervention_Pkg"] == "IPT (pregnant women)",
-                    "Intervention_Pkg_Code",
-                ]
-            )[0]
-
-            the_cons_footprint = {
-                "Intervention_Package_Code": {pkg_code1: 1},
-                "Item_Code": {},
-            }
-
             # request the treatment
-            outcome_of_request_for_consumables = self.sim.modules[
-                "HealthSystem"
-            ].request_consumables(
-                hsi_event=self, cons_req_as_footprint=the_cons_footprint
-            )
+            if self.get_all_consumables(
+                    footprint=self.module.footprints_for_consumables_required['malaria_iptp']):
 
-            if outcome_of_request_for_consumables:
                 logger.debug(key='message',
                              data=f'HSI_MalariaIPTp: giving IPTp for person {person_id}')
 
@@ -1225,10 +1208,9 @@ class MalariaCureEvent(RegularEvent, PopulationScopeEventMixin):
         # clear symptoms
         all_cured = clinical_inf.union(severe_inf) if len(severe_inf) else clinical_inf
 
-        for idx in all_cured:
-            self.sim.modules["SymptomManager"].clear_symptoms(
-                person_id=idx, disease_module=self.module
-            )
+        self.sim.modules["SymptomManager"].clear_symptoms(
+            person_id=all_cured, disease_module=self.module
+        )
 
         # change properties
         df.loc[all_cured, "ma_tx"] = False

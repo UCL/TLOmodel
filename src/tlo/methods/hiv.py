@@ -483,10 +483,10 @@ class Hiv(Module):
         # Assign date that persons were infected by drawing from assumed distribution (for adults)
         # Clipped to prevent dates of infection before before the person was born.
         years_ago_inf = self.rng.choice(
-            self.time_inf["year"],
+            self.parameters["time_inf"]["year"],
             size=len(infec),
             replace=True,
-            p=self.time_inf["scaled_prob"],
+            p=self.parameters["time_inf"]["scaled_prob"],
         )
 
         hv_date_inf = pd.Series(self.sim.date - pd.to_timedelta(years_ago_inf * DAYS_IN_YEAR, unit="d"))
@@ -1390,7 +1390,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Hiv_TestAndRefer"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'VCTNegative': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1486,8 +1486,8 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = "Hiv_Circumcision"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MinorSurg": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MaleCirc": 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1516,7 +1516,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "Hiv_StartOrContinueOnPrep"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1574,7 +1574,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "Hiv_Treatment_InitiationOrContinuation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "NewAdult": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
         self.counter_for_did_not_run = 0

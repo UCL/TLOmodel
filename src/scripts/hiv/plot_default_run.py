@@ -12,7 +12,6 @@ from tlo.methods import (
     care_of_women_during_pregnancy,
     contraception,
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -65,7 +64,6 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
              postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
              healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-             dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
              hiv.Hiv(resourcefilepath=resourcefilepath)
              )
 
