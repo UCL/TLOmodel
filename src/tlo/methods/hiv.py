@@ -480,7 +480,7 @@ class Hiv(Module):
         self.lm["rr_of_infection"] = LinearModel.multiplicative(
             Predictor("age_years").when("<15", 0.0).when("<49", 1.0).otherwise(0.0),
             Predictor("sex").when("F", p["rr_sex_f"]),
-            Predictor("li_is_sexworker").when(True, p["rr_fsw"]),
+            # Predictor("li_is_sexworker").when(True, p["rr_fsw"]),
             Predictor("li_is_circ").when(True, p["rr_circumcision"]),
             Predictor("hv_is_on_prep").when(
                 True, 1.0 - p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]
@@ -934,13 +934,7 @@ class Hiv(Module):
 
         # 6) Define the DxTests
         # HIV Rapid Diagnostic Test:
-        # todo change to item codes
-
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-        # pkg_code_hiv_rapid_test = consumables.loc[
-        #     consumables["Intervention_Pkg"] == "HIV Testing Services",
-        #     "Intervention_Pkg_Code",
-        # ].values[0]
         item1 = pd.unique(
             consumables.loc[
                 consumables["Items"] == "Test, HIV EIA Elisa", "Item_Code"
@@ -1002,12 +996,6 @@ class Hiv(Module):
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
         # Circumcision:
-        # pkg_codes_for_circ = pd.unique(
-        #     consumables.loc[
-        #         consumables["Intervention_Pkg"] == "Male circumcision ",
-        #         "Intervention_Pkg_Code",
-        #     ]
-        # )[0]
         item1_circ = pd.unique(
             consumables.loc[
                 consumables["Items"]
@@ -1041,7 +1029,7 @@ class Hiv(Module):
         }
 
         # First-line ART for adults (age > "ART_age_cutoff_older_child")
-        item_code_for_art_adult = pd.uniqgue(
+        item_code_for_art_adult = pd.unique(
             consumables.loc[
                 consumables["Items"] == "First-line ART regimen: adult", "Item_Code"
             ]
@@ -1069,7 +1057,7 @@ class Hiv(Module):
         item_cotrim = pd.unique(
             consumables.loc[
                 consumables["Items"] == "Cotrimoxazole 120mg_1000_CMST",
-                "Item_code",
+                "Item_Code",
             ]
         )[0]
         self.footprints_for_consumables_required[
@@ -1611,6 +1599,29 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 self.module.rng.random_sample(len(p_infection)) < p_infection
             )
             idx_new_infection = will_be_infected[will_be_infected].index
+
+            idx_new_infection_fsw = []
+            # additional risk for fsw
+            if to_sex == "F":
+                fsw_at_risk = df.loc[
+                    df.is_alive
+                    & ~df.hv_inf
+                    & df.li_is_sexworker
+                    & df.age_years.between(15, 80)
+                    & (df.sex == to_sex)
+                    ].index
+
+                #  - probability of infection - relative risk applies only to fsw
+                p_infection_fsw = (
+                    self.module.parameters["rr_fsw"] * beta * (n_infectious / (n_infectious + n_susceptible))
+                )
+
+                fsw_infected = (
+                    self.module.rng.random_sample(len(fsw_at_risk)) < p_infection_fsw
+                )
+                idx_new_infection_fsw = fsw_at_risk[fsw_infected]
+
+            idx_new_infection = list(idx_new_infection)  + list(idx_new_infection_fsw)
 
             # Schedule the date of infection for each new infection:
             for idx in idx_new_infection:
