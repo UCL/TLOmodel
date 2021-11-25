@@ -863,14 +863,20 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = population.props
 
-        # Make value_counts (NB. sort_index ensures the resulting dict has keys in the same order,
-        # which is requirement of the logging.)
-        value_counts = df.loc[df.is_alive & (df.sex == 'F'), 'co_contraception'].value_counts().sort_index().to_dict()
-
-        # Log summary of usage of contraceptives
+        # Log summary of usage of contraceptives (without age-breakdown)
+        # (NB. sort_index ensures the resulting dict has keys in the same order, which is requirement of the logging.)
         logger.info(key='contraception_use_summary',
-                    data=value_counts,
-                    description='Counts of women on each type of contraceptive at a point each time (yearly).')
+                    data=df.loc[
+                        df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49), 'co_contraception'
+                    ].value_counts().sort_index().to_dict(),
+                    description='Counts of women on each type of contraceptive at a point in time.')
+
+        # Log summary of usage of contraceptives (with age-breakdown)
+        logger.info(key='contraception_use_summary_by_age',
+                    data=df.loc[
+                        df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)
+                        ].groupby(by=['co_contraception', 'age_range']).size().sort_index(),
+                    description='Counts of women, by age-range, on each type of contraceptive at a point in time.')
 
 
 class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin):

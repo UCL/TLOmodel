@@ -376,8 +376,7 @@ for tp in time_period:
 #          '--')
 # plt.show()
 
-# %% Describe patterns of contraceptive usage over time
-
+# %% Describe patterns of contraceptive usage over age and time
 
 def get_annual_mean_usage(_df):
     _x = _df \
@@ -389,6 +388,8 @@ def get_annual_mean_usage(_df):
                )
     return _x.groupby(_x.index).mean().stack()
 
+y = log['tlo.methods.contraception']["contraception_use_summary"]
+x = get_annual_mean_usage(y)
 
 mean_usage = summarize(extract_results(results_folder,
                                        module="tlo.methods.contraception",
