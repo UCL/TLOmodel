@@ -33,6 +33,8 @@ from tlo.analysis.utils import (
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
+from tlo.methods.contraception import unflatten_dict_from_logging_into_multi_index
+
 scenario_filename = 'long_run_no_diseases.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
@@ -397,19 +399,14 @@ def get_usage_by_age_and_year(_df):
         .drop(columns=['date'])
 
     # restore the multi-index that had to be flattened to pass through the logger"
-    cols = _x.columns
-    index_value_list = list()
-    for col in cols.str.split('|'):
-        index_value_list.append(tuple(component.split('=')[1] for component in col))
-    index_name_list = tuple(component.split('=')[0] for component in cols[0].split('|'))
-    _x.columns = pd.MultiIndex.from_tuples(index_value_list, names=index_name_list)
+    _x = unflatten_dict_from_logging_into_multi_index(_x)
 
     # For each age-range, find distribution across method, and mean of that distribution over the months in the year
     out = list()
     for _age in adult_age_groups:
-        q=_x.loc[:, (slice(None), _age)].copy()
+        q = _x.loc[:, (slice(None), _age)].copy()
         q.columns = q.columns.droplevel(1)
-        q=pd.DataFrame(q.apply(lambda row: row / row.sum(),axis=1).groupby(q.index).mean().stack())
+        q = pd.DataFrame(q.apply(lambda row: row / row.sum(), axis=1).groupby(q.index).mean().stack())
         q['age_range'] = _age
         out.append(q)
 
@@ -506,7 +503,7 @@ for _age in adult_age_groups:
 
 # %% All-Cause Deaths
 #  todo - fix this -- only do summarize after the groupbys
-#  Get Model ouput (aggregating by year before doing the summarize)
+#  Get Model output (aggregating by year before doing the summarize)
 
 results_deaths = extract_results(
     results_folder,
