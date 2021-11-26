@@ -43,7 +43,9 @@ class LongRun(BaseScenario):
             demography.Demography(resourcefilepath=self.resources),
 
             # - Contraception and replacement for Labour etc.
-            contraception.Contraception(resourcefilepath=self.resources, use_healthsystem=False),
+            contraception.Contraception(resourcefilepath=self.resources,
+                                        use_healthsystem=False,
+                                        run_do_pregnancy=False),  # todo - for debugging stop pregnancy
             contraception.SimplifiedPregnancyAndLabour(),
 
             # - Supporting Modules required by Contraception

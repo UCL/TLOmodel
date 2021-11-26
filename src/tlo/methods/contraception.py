@@ -110,7 +110,7 @@ class Contraception(Module):
                                             )
     }
 
-    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True):
+    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True, run_do_pregnancy=True):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
@@ -127,6 +127,8 @@ class Contraception(Module):
         self.processed_params = dict()  # (Will store the processed data for rates/probabilities of outcomes).
         self.cons_codes = dict()  # (Will store the consumables codes for use in the HSI)
         self.rng2 = None  # (Will be a second random number generator, used for things to do with scheduling HSI)
+
+        self.run_do_pregnancy = run_do_pregnancy  # todo - Should the Poll cause women to become pregnant (for debugging)
 
     def read_parameters(self, data_folder):
         """Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters.
@@ -203,7 +205,7 @@ class Contraception(Module):
         """
 
         # Schedule first occurrences of Contraception Poll to occur at the beginning of the simulation
-        sim.schedule_event(ContraceptionPoll(self), sim.date)
+        sim.schedule_event(ContraceptionPoll(self, run_do_pregnancy=self.run_do_pregnancy), sim.date)
 
         # Schedule the first occurrence of the Logging event to occur at the beginning of the simulation
         sim.schedule_event(ContraceptionLoggingEvent(self), sim.date)
@@ -908,14 +910,14 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         pp = self.module.processed_params
 
         # Expected number of births (by mother age) if no contraception:
-        q = df.loc[(df.sex == "F") & df.age_years.between(15,49) & df.is_alive].merge(
+        q = df.loc[(df.sex == "F") & df.age_years.between(15,49) & df.is_alive & ~df.is_pregnant].merge(
             pp['p_pregnancy_no_contraception_per_month'], left_on='age_years', right_on='age_years'
         )[['age_range', 'hv_inf', 'hv_inf_False', 'hv_inf_True']]
         q['prob'] = q.apply(lambda row: row.hv_inf_True if row.hv_inf else row.hv_inf_False, axis=1)
         expected_births_no_contraception = q.groupby('age_range')['prob'].sum()[adult_age_groups].to_dict()
 
         # Expected number of births (by mother age) if on contraception:
-        q = df.loc[(df.sex == "F") & df.age_years.between(15, 49) & df.is_alive].merge(
+        q = df.loc[(df.sex == "F") & df.age_years.between(15, 49) & df.is_alive & ~df.is_pregnant].merge(
             pp['p_pregnancy_with_contraception_per_month'].iloc[[0]].T, left_on='co_contraception', right_index=True
         )[[15, 'age_range']]
         expected_births_on_contraception = q.groupby('age_range')[15].sum()[adult_age_groups].to_dict()

@@ -227,43 +227,45 @@ def get_mean_pop_by_age_for_sex_and_year(sex, year):
 
 
 for year in [2010, 2015, 2018, 2029, 2049]:
+    try:
+        # Get WPP data:
+        wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
 
-    # Get WPP data:
-    wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
+        pops = dict()
+        for sex in ['M', 'F']:
+            # Import model results and scale:
+            model = get_mean_pop_by_age_for_sex_and_year(sex, year)
 
-    pops = dict()
-    for sex in ['M', 'F']:
-        # Import model results and scale:
-        model = get_mean_pop_by_age_for_sex_and_year(sex, year)
+            # Make into dataframes for plotting:
+            pops[sex] = {
+                'Model': model,
+                'WPP': wpp_thisyr.loc[sex]
+            }
 
-        # Make into dataframes for plotting:
-        pops[sex] = {
-            'Model': model,
-            'WPP': wpp_thisyr.loc[sex]
-        }
+            if year == 2018:
+                # Import and format Census data, and add to the comparison if the year is 2018 (year of census)
+                pops[sex]['Census'] = cens.loc[cens['Sex'] == sex].groupby(by='Age_Grp')['Count'].sum()
 
-        if year == 2018:
-            # Import and format Census data, and add to the comparison if the year is 2018 (year of census)
-            pops[sex]['Census'] = cens.loc[cens['Sex'] == sex].groupby(by='Age_Grp')['Count'].sum()
+        # Simple plot of population pyramid
+        fig, axes = plt.subplots(ncols=1, nrows=2, sharey=True, sharex=True)
+        labels = ['F', 'M']
+        width = 0.2
+        x = np.arange(len(list(make_age_grp_types().categories)))  # the label locations
+        for i, sex in enumerate(labels):
+            for t, key in enumerate(pops[sex]):
+                axes[i].bar(x=x + (t - 1) * width * 1.2, label=key, height=pops[sex][key] / 1e6, color=colors[key],
+                            width=width)
+            axes[i].set_title(f"{sexname(sex)}: {str(year)}")
+            axes[i].set_ylabel('Population Size (millions)')
 
-    # Simple plot of population pyramid
-    fig, axes = plt.subplots(ncols=1, nrows=2, sharey=True, sharex=True)
-    labels = ['F', 'M']
-    width = 0.2
-    x = np.arange(len(list(make_age_grp_types().categories)))  # the label locations
-    for i, sex in enumerate(labels):
-        for t, key in enumerate(pops[sex]):
-            axes[i].bar(x=x + (t - 1) * width * 1.2, label=key, height=pops[sex][key] / 1e6, color=colors[key],
-                        width=width)
-        axes[i].set_title(f"{sexname(sex)}: {str(year)}")
-        axes[i].set_ylabel('Population Size (millions)')
-
-    axes[1].set_xlabel('Age Group')
-    plt.xticks(x, list(make_age_grp_types().categories), rotation=90)
-    axes[1].legend()
-    fig.tight_layout()
-    plt.savefig(make_graph_file_name(f"Pop_Size_{year}"))
-    plt.show()
+        axes[1].set_xlabel('Age Group')
+        plt.xticks(x, list(make_age_grp_types().categories), rotation=90)
+        axes[1].legend()
+        fig.tight_layout()
+        plt.savefig(make_graph_file_name(f"Pop_Size_{year}"))
+        plt.show()
+    except:
+        pass
 
 # %% Births: Number over time
 
@@ -456,7 +458,7 @@ births_by_mother_age = extract_results(
     module="tlo.methods.demography",
     key="on_birth",
     custom_generate_series=get_births_by_year_and_age_range_of_mother,
-    do_scaling=True
+    do_scaling=False
 )
 
 
@@ -475,11 +477,26 @@ num_adult_women = extract_results(
     module="tlo.methods.demography",
     key="age_range_f",
     custom_generate_series=get_num_adult_women_by_age_range,
-    do_scaling=True
+    do_scaling=False
 )
 
 # Compute age-specific fertility rates
 asfr = summarize(births_by_mother_age.div(num_adult_women))
+
+def get_expected_asfr(_df):
+    _df = _df.assign(year=_df['date'].dt.year)
+    _df = _df.set_index(_df['year'], drop=True)
+    _df = _df.drop(columns=['date', 'year'])
+    return _df.stack()
+
+expected_asfr = summarize(extract_results(
+    results_folder,
+    module="tlo.methods.contraception",
+    key="expected_asfr",
+    custom_generate_series=get_expected_asfr,
+    do_scaling=False
+))
+
 
 # Get the age-specific fertility rates of the WPP source
 wpp = pd.read_csv(rfp / 'demography' / 'ResourceFile_ASFR_WPP.csv')
@@ -499,10 +516,16 @@ for _age in adult_age_groups:
     ]
     data_year, data_asfr = expand_by_year(data.Period, data.asfr)
 
+    _expected_asfr = expected_asfr.loc[(slice(2011, 2049), _age), (0, 'mean')]
+    _expected_asfr.index = _expected_asfr.index.droplevel(1)
+    _expected_asfr = _expected_asfr.groupby(_expected_asfr.index).sum()  #sum over the year (poll runs mothly to compute births that month)
+
     plt.plot(data_year, data_asfr, color='k', label='WPP')
     plt.plot(model.index, model[(0, 'mean', _age)], color='r', label='Model')
     plt.fill_between(model.index, model[(0, 'lower', _age)], model[(0, 'upper', _age)],
                      color='r', alpha=0.2)
+    plt.plot(_expected_asfr.index, _expected_asfr.values, color='b', label='Expected ASFR')
+
     plt.title(f'{_age}')
     plt.ylim(0, 0.50)
     plt.legend()
