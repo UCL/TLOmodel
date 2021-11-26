@@ -13,6 +13,7 @@ from tlo.util import random_date, sample_outcome, transition_states
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+#todo - if we keep the method of determining method after pregnancy, we can remove that parameter that isn't used.
 
 class Contraception(Module):
     """Contraception module covering baseline contraception methods use, failure (i.e., pregnancy),
@@ -457,7 +458,8 @@ class Contraception(Module):
         # )
 
         # Let the new contraceptive be equal to the one being used prior to the pregnancy
-        new_contraceptive = self.sim.population.props.at[mother_id, 'co_contraception_before_pregnancy']
+        method_before_pregnancy = self.sim.population.props.at[mother_id, 'co_contraception_before_pregnancy']
+        new_contraceptive = method_before_pregnancy if pd.notnull(method_before_pregnancy) else 'not_using'
 
         # ... but don't allow female sterilization to any woman below 30: reset to 'not_using'
         if (self.sim.population.props.at[mother_id, 'age_years'] < 30) and (

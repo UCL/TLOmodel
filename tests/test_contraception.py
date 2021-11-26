@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation, logging
@@ -250,7 +251,7 @@ def test_pregnancies_and_births_occurring(tmpdir):
 
 
 def test_woman_starting_contraceptive_after_birth(tmpdir):
-    """Check that woman can start a contraceptive after birth."""
+    """Check that woman re-start the same contraceptive after birth."""
     sim = run_sim(tmpdir=tmpdir, run=False)
 
     # Select a woman to be a mother
@@ -264,21 +265,21 @@ def test_woman_starting_contraceptive_after_birth(tmpdir):
         "F",
         30
     )
+    methods = list(sim.modules['Contraception'].all_contraception_states)
 
     # Run `select_contraceptive_following_birth` for the woman many times
-    co_after_birth = list()
     for _ in range(1000):
         # Reset woman to be "not_using"
         sim.population.props.at[person_id, 'co_contraception'] = "not_using"
 
+        # Select a method that was used before the pregnancy
+        method_before_pregnancy = np.random.choice(methods)
+        sim.population.props.at[person_id, 'co_contraception_before_pregnancy'] = method_before_pregnancy
+
         # Run `select_contraceptive_following_birth`
         sim.modules['Contraception'].select_contraceptive_following_birth(person_id)
 
-        # Get new status
-        co_after_birth.append(sim.population.props.at[person_id, 'co_contraception'])
-
-    # Check that updated contraceptive status is not "not_using" on at least some occasions
-    assert any([x != "not_using" for x in co_after_birth])
+        assert sim.population.props.at[person_id, 'co_contraception'] == method_before_pregnancy
 
 
 def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir):
