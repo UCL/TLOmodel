@@ -716,7 +716,8 @@ class Alri(Module):
 
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
         total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has('tachypnoea' or 'chest_indrawing')] = self.daly_wts['daly_non_severe_ALRI']
+            self.sim.modules['SymptomManager'].who_has('tachypnoea' or 'chest_indrawing')] = \
+            self.daly_wts['daly_non_severe_ALRI']  # TODO: AND no danger_signs
         total_daly_values.loc[
             self.sim.modules['SymptomManager'].who_has('danger_signs')] = self.daly_wts['daly_severe_ALRI']
 
