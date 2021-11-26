@@ -497,6 +497,9 @@ class Contraception(Module):
 
         for _woman_id, _old, _new in zip(ids, old, new):
 
+            if (_woman_id == 15) & (_new == "not_using"):
+                print("them")
+
             # Does this change require an HSI?
             is_a_switch = _old != _new
             reqs_appt = _new in self.states_that_may_require_HSI_to_switch_to if is_a_switch \
@@ -533,6 +536,9 @@ class Contraception(Module):
         """Implement and then log a start / stop / switch of contraception. """
         assert old in self.all_contraception_states
         assert new in self.all_contraception_states
+
+        if woman_id == 15:
+            print('them')
 
         df = self.sim.population.props
 
@@ -604,6 +610,8 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         """Determine who will become pregnant and update contraceptive method."""
 
+        print(f"person 15 current contraception = {self.sim.population.props.loc[15, 'co_contraception']}")
+
         # Determine who will become pregnant, given current contraceptive method
         if self.run_do_pregnancy:
             self.update_pregnancy()
@@ -611,6 +619,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # Update contraception method
         if self.run_update_contraceptive:
             self.update_contraceptive()
+
 
     def update_contraceptive(self):
         """ Determine women that will start, stop or switch contraceptive method."""
@@ -676,6 +685,9 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         """Check all females currently using contraception to determine if they discontinue it, switch to a different
         one, or keep using the same one."""
 
+        if 15 in individuals_using:
+            print("its them - they are using!")
+
         # Exit if there are no individuals currently using a contraceptive:
         if not len(individuals_using):
             return
@@ -692,6 +704,9 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
         # Determine if each individual will discontinue
         will_stop_idx = prob.index[prob > rng.rand(len(prob))]
+
+        if 15 in will_stop_idx:
+            print("its them!")
 
         # Do the contraceptive change
         if len(will_stop_idx) > 0:
