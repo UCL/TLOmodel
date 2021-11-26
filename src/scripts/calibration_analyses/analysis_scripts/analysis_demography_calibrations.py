@@ -10,7 +10,6 @@ or
 src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py
 
 """
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -30,10 +29,10 @@ from tlo.analysis.utils import (
     make_calendar_period_lookup,
     make_calendar_period_type,
     summarize,
+    unflatten_flattened_multi_index_in_logging,
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
-from tlo.methods.contraception import unflatten_dict_from_logging_into_multi_index
 
 scenario_filename = 'long_run_no_diseases.py'  # <-- update this to look at other results
 
@@ -353,7 +352,9 @@ for tp in time_period:
     plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}"))
     plt.show()
 
+
 # %% Describe patterns of contraceptive usage over time
+
 
 def get_annual_mean_usage(_df):
     _x = _df \
@@ -364,6 +365,7 @@ def get_annual_mean_usage(_df):
                axis=1
                )
     return _x.groupby(_x.index).mean().stack()
+
 
 mean_usage = summarize(extract_results(results_folder,
                                        module="tlo.methods.contraception",
@@ -399,7 +401,7 @@ def get_usage_by_age_and_year(_df):
         .drop(columns=['date'])
 
     # restore the multi-index that had to be flattened to pass through the logger"
-    _x = unflatten_dict_from_logging_into_multi_index(_x)
+    _x = unflatten_flattened_multi_index_in_logging(_x)
 
     # For each age-range, find distribution across method, and mean of that distribution over the months in the year
     out = list()
@@ -412,15 +414,15 @@ def get_usage_by_age_and_year(_df):
 
     return pd.concat(out).set_index('age_range', append=True)[0]
 
+
 mean_usage_by_age = summarize(extract_results(results_folder,
-                                       module="tlo.methods.contraception",
-                                       key="contraception_use_summary_by_age",
-                                       custom_generate_series=get_usage_by_age_and_year,
-                                       do_scaling=False),
+                                              module="tlo.methods.contraception",
+                                              key="contraception_use_summary_by_age",
+                                              custom_generate_series=get_usage_by_age_and_year,
+                                              do_scaling=False),
                               collapse_columns=True,
                               only_mean=True
                               ).unstack()
-
 
 # Plot distribution for each age group:
 for _age in adult_age_groups:
@@ -439,6 +441,7 @@ for _age in adult_age_groups:
     plt.savefig(make_graph_file_name(f"Contraception_{_age}"))
     plt.show()
 
+
 # %% Age-specific fertility todo - improve formatting
 
 def get_births_by_year_and_age_range_of_mother(_df):
@@ -446,6 +449,7 @@ def get_births_by_year_and_age_range_of_mother(_df):
     _df = _df.assign(year=_df['date'].dt.year)
     _df['mother_age_range'] = _df['mother_age'].map(agegrplookup)
     return _df.groupby(['year', 'mother_age_range'])['year'].count()
+
 
 births_by_mother_age = extract_results(
     results_folder,
@@ -455,6 +459,7 @@ births_by_mother_age = extract_results(
     do_scaling=True
 )
 
+
 def get_num_adult_women_by_age_range(_df):
     _df = _df.assign(year=_df['date'].dt.year)
     _df = _df.set_index(_df['year'], drop=True)
@@ -463,6 +468,7 @@ def get_num_adult_women_by_age_range(_df):
     ser = _df[select_col].stack()
     ser.index.names = ['year', 'mother_age_range']
     return ser
+
 
 num_adult_women = extract_results(
     results_folder,
@@ -478,20 +484,24 @@ asfr = summarize(births_by_mother_age.div(num_adult_women))
 # Get the age-specific fertility rates of the WPP source
 wpp = pd.read_csv(rfp / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
+
 def expand_by_year(periods, vals, years=range(2010, 2050)):
     _ser = dict()
     for y in years:
-       _ser[y] = vals.loc[(periods == calperiodlookup[y])].values[0]
+        _ser[y] = vals.loc[(periods == calperiodlookup[y])].values[0]
     return _ser.keys(), _ser.values()
+
 
 for _age in adult_age_groups:
     model = asfr.loc[(slice(2011, 2049), _age), :].unstack()
-    data = wpp.loc[(wpp.Age_Grp == _age) & wpp.Variant.isin(['WPP_Estimates', 'WPP_Medium variant']), ['Period', 'asfr']]
+    data = wpp.loc[
+        (wpp.Age_Grp == _age) & wpp.Variant.isin(['WPP_Estimates', 'WPP_Medium variant']), ['Period', 'asfr']
+    ]
     data_year, data_asfr = expand_by_year(data.Period, data.asfr)
 
     plt.plot(data_year, data_asfr, color='k', label='WPP')
-    plt.plot(model.index, model[(0,  'mean', _age)], color='r', label='Model')
-    plt.fill_between(model.index, model[(0, 'lower', _age)],  model[(0, 'upper', _age)],
+    plt.plot(model.index, model[(0, 'mean', _age)], color='r', label='Model')
+    plt.fill_between(model.index, model[(0, 'lower', _age)], model[(0, 'upper', _age)],
                      color='r', alpha=0.2)
     plt.title(f'{_age}')
     plt.ylim(0, 0.50)
@@ -499,7 +509,6 @@ for _age in adult_age_groups:
     plt.tight_layout()
     plt.savefig(make_graph_file_name(f"asfr_{_age}"))
     plt.show()
-
 
 # %% All-Cause Deaths
 #  todo - fix this -- only do summarize after the groupbys

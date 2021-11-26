@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.simplified_births import get_medium_variant_asfr_from_wpp_resourcefile
@@ -873,7 +874,7 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Log summary of usage of contraceptives (with age-breakdown)
         logger.info(key='contraception_use_summary_by_age',
-                    data=flatten_multi_index_df_into_dict_for_logging(
+                    data=flatten_multi_index_series_into_dict_for_logging(
                         df.loc[
                             df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)
                             ].groupby(by=['co_contraception', 'age_range']).size().sort_index()
@@ -1024,26 +1025,3 @@ class EndOfPregnancyEvent(Event, IndividualScopeEventMixin):
             self.sim.do_birth(person_id)
         else:
             self.sim.modules['Contraception'].end_pregnancy(person_id)
-
-
-# todo - refactor this to analysis.utils
-def flatten_multi_index_df_into_dict_for_logging(df: pd.DataFrame):
-    """Helper function that converts a dataframe with multi-index into a dict format that is loggable."""
-    names_of_multi_index = df.index.names
-    _df = df.reset_index()
-    _df['flat_index'] = ''
-    for i in range(len(_df)):
-        _df.at[i, 'flat_index'] = '|'.join([f"{col}={_df.at[i, col]}" for col in names_of_multi_index])
-    _df = _df.drop(columns=names_of_multi_index).set_index('flat_index', drop=True)
-    return _df[0].to_dict()
-
-def unflatten_dict_from_logging_into_multi_index(_x: pd.DataFrame):
-    """FILL IN"""
-    cols = _x.columns
-    index_value_list = list()
-    for col in cols.str.split('|'):
-        index_value_list.append(tuple(component.split('=')[1] for component in col))
-    index_name_list = tuple(component.split('=')[0] for component in cols[0].split('|'))
-    _y = _x.copy()
-    _y.columns = pd.MultiIndex.from_tuples(index_value_list, names=index_name_list)
-    return _y
