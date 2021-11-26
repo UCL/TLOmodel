@@ -5,15 +5,13 @@ Overview
 --------
 Individuals are exposed to the risk of infection by a pathogen (and potentially also with a secondary bacterial
 infection) that can cause one of several type of acute lower respiratory infection (Alri).
-The disease is manifested as either viral pneumonia, bacterial pneumonia or bronchiolitis.
+The disease is manifested as either Pneumonia, or Bronchiolitis/other ALRI.
 
 During an episode (prior to recovery - either naturally or cured with treatment), symptom are manifest and there may be
 complications (e.g. local pulmonary complication: pleural effusuion, empyema, lung abscess, pneumothorax; and/or
-systemic complications: sepsis, meningitis, and respiratory failure). There is a risk that some of these complications
-are onset after a delay.
+systemic complications: sepsis, and hypoxaemia). All these complication are set at onset of disease, for simplicity.
 
-The individual may recover naturally or die. The risk of death depends on the type of disease and the presence of some
-of the complications.
+The individual may recover naturally or die. The risk of death is applied to those who develop complications.
 
 Health care seeking is prompted by the onset of the symptom. The individual can be treated; if successful the risk of
 death is lowered and they are cured (symptom resolved) some days later.
@@ -25,31 +23,6 @@ Outstanding issues
 * Double check parameters and consumables codes for the HSI events.
 * Duration of Alri Event is not informed by data
 
-Questions
-----------
-
-#1:
-'daly_very_severe_ALRI' is never used: is that right?
-
-#2:
-There are no probabilities describing the risk of onset of the complication "empyema". There is the risk of empyema
-being delayed onset (i.e. prob_pleural_effusion_to_empyema) and also the risk that "empyema" leads to sepsis
-(prob_empyema_to_sepsis). However, for simplicity  we only have two phases of complication (initial and delayed), so
-this is not represented at the moment. I am not sure if it should be or not.
-
-#3:
-The risk of death is not affected by delayed-onset complications: should it be?
-
-#4:
-Check that every parameter is used and remove those not used (from definition and from excel). I think that are several
-not being used (e.g prob_respiratory_failure_to_multiorgan_dysfunction and r_progress_to_severe_ALRI) -- perhaps left
- over from an earlier version? Also, please could you tidy-up ResourceFile_Alri.xlsx? If there are sheets that need to
-  remain in there, it would be good if you can explain what each is for on the sheet (and delete anything that is not
-   needed).
-
-#5:
-Is it right that 'danger_signs' is an indepednet symptom? It seems like this is something that is determined in the
- course of a diagnosis (like in diarrhoea module).
 """
 
 from collections import defaultdict
@@ -157,18 +130,6 @@ class Alri(Module):
                      'sepsis',
                      'hypoxaemia'  # <-- Low implies Sp02<93%'
                      }
-
-    pulmonary_complications = {'pneumothorax',
-                               'pleural_effusion',
-                               'empyema',
-                               'lung_abscess'
-                               }
-
-    systemic_complications = {'sepsis',
-                              'meningitis',
-                              'respiratory_failure'}
-
-    oxygen_exchange_complications = {'hypoxaemia'}
 
     PARAMETERS = {
         # Incidence rate by pathogens  -----
@@ -364,31 +325,7 @@ class Alri(Module):
         'rr_ALRI_underweight':
             Parameter(Types.REAL,
                       'relative rate of acquiring Alri for underweight children'
-                      ),  # TODO: change to SAM/MAM
-        'rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y':
-            Parameter(Types.REAL,
-                      'relative rate of acquiring S. pneumoniae vaccine-type Alri '
-                      'for children under 2 years of age immunised wth PCV13'
-                      ),
-        'rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y':
-            Parameter(Types.REAL,
-                      'relative rate of acquiring S. pneumoniae vaccine-type Alri '
-                      'for children aged 2 to 5 immunised wth PCV13'
-                      ),
-        'rr_all_strains_Strep_pneum_ALRI_with_PCV13':
-            Parameter(Types.REAL,
-                      'relative rate of acquiring S. pneumoniae all types Alri '
-                      'for children immunised wth PCV13'
-                      ),
-        'effectiveness_Hib_vaccine_on_Hib_strains':
-            Parameter(Types.REAL,
-                      'effectiveness of Hib vaccine against H. influenzae typ-b ALRI'
-                      ),
-        'rr_Hib_ALRI_with_Hib_vaccine':
-            Parameter(Types.REAL,
-                      'relative rate of acquiring H. influenzae type-b Alri '
-                      'for children immunised wth Hib vaccine'
-                      ),
+                      ),  # TODO: change to SAM/MAM?
 
         # Probability of bacterial co- / secondary infection -----
         'prob_viral_pneumonia_bacterial_coinfection':
@@ -440,9 +377,9 @@ class Alri(Module):
                       ),
 
         # Risk of death parameters -----
-        'base_death_rate_ALRI_by_pneumonia':
+        'overall_CFR_ALRI':
             Parameter(Types.REAL,
-                      'baseline death rate from bacterial pneumonia, base age 0-11 months'
+                      'overall case-fatality rate of ALRI (calibration value)'
                       ),
         'baseline_odds_alri_death':
             Parameter(Types.REAL,
@@ -489,10 +426,6 @@ class Alri(Module):
                       'odds ratio of ALRI death for very severe pneumonia (presenting danger signs)'
                       ),
 
-
-
-
-
         # Probability of symptom development -----
         'prob_cough_in_pneumonia':
             Parameter(Types.REAL,
@@ -532,16 +465,29 @@ class Alri(Module):
                       ),
 
         # Parameters governing the effects of vaccine ----------------
-        'rr_infection_strep_with_pneumococcal_vaccine':
+        'rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y':
             Parameter(Types.REAL,
-                      'relative risk of acquiring the pathogen=="Strep_pneumoniae_PCV13" if has had all doses of '
-                      'pneumonococcal vaccine (i.e., `va_pneumo_all_doses`==True), either as a primary pathogen or'
-                      'as a secondary bacterial coinfection.'
+                      'relative rate of acquiring S. pneumoniae vaccine-type Alri '
+                      'for children under 2 years of age immunised wth PCV13'
                       ),
-        'rr_infection_hib_haemophilus_vaccine':
+        'rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y':
             Parameter(Types.REAL,
-                      'relaitve risk of acquiring the pathogen=="Hib" if has had all doses of Haemophilus vaccine'
-                      ' (i.e., `va_hib_all_doses`==Tue)'
+                      'relative rate of acquiring S. pneumoniae vaccine-type Alri '
+                      'for children aged 2 to 5 immunised wth PCV13'
+                      ),
+        'rr_all_strains_Strep_pneum_ALRI_with_PCV13':
+            Parameter(Types.REAL,
+                      'relative rate of acquiring S. pneumoniae all types Alri '
+                      'for children immunised wth PCV13'
+                      ),
+        'effectiveness_Hib_vaccine_on_Hib_strains':
+            Parameter(Types.REAL,
+                      'effectiveness of Hib vaccine against H. influenzae typ-b ALRI'
+                      ),
+        'rr_Hib_ALRI_with_Hib_vaccine':
+            Parameter(Types.REAL,
+                      'relative rate of acquiring H. influenzae type-b Alri '
+                      'for children immunised wth Hib vaccine'
                       ),
 
         # Parameters governing treatment effectiveness and assoicated behaviours ----------------
@@ -1042,9 +988,6 @@ class Models:
         """Determines:
          * the disease that is caused by infection with this pathogen (from among self.disease_types)
          * if there is a bacterial coinfection associated that will cause the dominant disease.
-
-         Note that the disease_type is 'bacterial_pneumonia' if primary pathogen is viral and there is a secondary
-         bacterial coinfection.
          """
         p = self.p
         bacterial_coinfection = np.nan
@@ -1053,6 +996,7 @@ class Models:
             if ((age < 1) and p[f'proportion_pneumonia_in_{pathogen}_ALRI'][0] > self.rng.rand()) or \
                ((age >=1 and age < 5) and p[f'proportion_pneumonia_in_{pathogen}_ALRI'][1] > self.rng.rand()):
                 disease_type = 'pneumonia'
+                # No bacterial co-infection in primary bacterial cause
                 bacterial_coinfection = np.nan
             else:
                 disease_type = 'bronchiolitis/other_alri'
@@ -1062,6 +1006,7 @@ class Models:
             if ((age < 1) and p[f'proportion_pneumonia_in_{pathogen}_ALRI'][0] > self.rng.rand()) or \
                ((age >=1 and age < 5) and p[f'proportion_pneumonia_in_{pathogen}_ALRI'][1] > self.rng.rand()):
                 disease_type = 'pneumonia'
+                # No bacterial co-infection in primary fungal or NoS pathogens cause (assumption)
                 bacterial_coinfection = np.nan
             else:
                 disease_type = 'bronchiolitis/other_alri'
@@ -1094,7 +1039,7 @@ class Models:
         # get probability of bacterial coinfection with each pathogen
         list_bacteria_probs = []
         for n in range(len(self.module.pathogens['bacterial'])):
-            prob_secondary_patho = 1 / len(self.module.pathogens['bacterial'])
+            prob_secondary_patho = 1 / len(self.module.pathogens['bacterial'])  # assume equal distribution
             list_bacteria_probs.append(prob_secondary_patho)
         probs = dict(zip(
             self.module.pathogens['bacterial'], list_bacteria_probs))
@@ -1133,7 +1078,7 @@ class Models:
         if disease_type == 'pneumonia' and (prob_pulmonary_complications > self.rng.rand()):
             for c in ['pneumothorax', 'pleural_effusion', 'lung_abscess', 'empyema']:
                 probs[c] += p[f'prob_{c}_in_pulmonary_complicated_pneumonia']
-                assert any(c)  # TODO: lung abscess, empyema should only apply to bacteria ALRIs
+                assert any(c)  # TODO: lung abscess, empyema should only apply to (primary or secondary) bacteria ALRIs
 
         # probabilities for systemic complications
         if disease_type == 'pneumonia' and (primary_path_is_bacterial or has_secondary_bacterial_inf):
@@ -1188,7 +1133,7 @@ class Models:
                 return symptoms
 
     def compute_death_risk(self, person_id):
-        """Determine if person will die from Alri."""
+        """Determine if person will die from Alri. Returns True/False"""
         p = self.p
         df = self.module.sim.population.props
 
@@ -1363,6 +1308,8 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         else:
             self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id), date_of_outcome)
             df.loc[person_id, ['ri_scheduled_recovery_date', 'ri_scheduled_death_date']] = [date_of_outcome, pd.NaT]
+
+        # TODO: death should only be applied to those with any complication, currently applies to all ALRIs
 
     def impose_symptoms_for_uncomplicated_disease(self, person_id, disease_type):
         """
