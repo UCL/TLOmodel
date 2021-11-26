@@ -82,28 +82,18 @@ class Contraception(Module):
     }
 
     all_contraception_states = {
-        'not_using',
-        'pill',
-        'IUD',
-        'injections',
-        'implant',
-        'male_condom',
-        'female_sterilization',
-        'other_modern',
-        'periodic_abstinence',
-        'withdrawal',
-        'other_traditional'
+        'not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
+        'periodic_abstinence', 'withdrawal', 'other_traditional'
     }
+    # These are the 11 categories of contraception ('not_using' + 10 methods) from the DHS analysis of initiation,
+    # discontinuation, failure and switching rates.
+    # 'other modern' includes Male sterilization, Female Condom, Emergency contraception;
+    # 'other traditional' includes lactational amenohroea (LAM),  standard days method (SDM), 'other traditional
+    #  method').
 
     PROPERTIES = {
         'co_contraception': Property(Types.CATEGORICAL, 'Current contraceptive method',
                                      categories=sorted(all_contraception_states)),
-        # These are the 11 categories of contraception ('not_using' + 10 methods) from the DHS analysis of initiation,
-        # discontinuation, failure and switching rates.
-        # 'other modern' includes Male sterilization, Female Condom, Emergency contraception;
-        # 'other traditional' includes lactational amenohroea (LAM),  standard days method (SDM), 'other traditional
-        #  method').
-
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
         'date_of_last_pregnancy': Property(Types.DATE, 'Date that the most recent or current pregnancy began.'),
         'co_unintended_preg': Property(Types.BOOL, 'Whether the most recent or current pregnancy was unintended.'),

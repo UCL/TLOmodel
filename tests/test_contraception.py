@@ -532,3 +532,8 @@ def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir):
             format_log(parse_log_file(sim_uses_healthsystem.log_filepath)['tlo.methods.contraception'][key]),
             format_log(parse_log_file(sim_does_not_use_healthsystem.log_filepath)['tlo.methods.contraception'][key])
         )
+
+    # -- DEBUG
+    # examine different in the contraceptive changes
+    set(format_log(parse_log_file(sim_uses_healthsystem.log_filepath)['tlo.methods.contraception']['contraception_change'])['woman_id']) - set(format_log(parse_log_file(sim_does_not_use_healthsystem.log_filepath)['tlo.methods.contraception']['contraception_change'])['woman_id'])
+    # person 15 makes a switch when healthsystem is used and not otherwise
