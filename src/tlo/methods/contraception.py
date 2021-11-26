@@ -898,6 +898,35 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     ),
                     description='Counts of women, by age-range, on each type of contraceptive at a point in time.')
 
+        # todo: For DEBUGGING - log the expected number of births by age of mother for the given pattern of contraceptive use
+        adult_age_groups = ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']
+        pp = self.module.processed_params
+
+        # Expected number of births (by mother age) if no contraception:
+        q = df.loc[(df.sex == "F") & df.age_years.between(15,49) & df.is_alive].merge(
+            pp['p_pregnancy_no_contraception_per_month'], left_on='age_years', right_on='age_years'
+        )[['age_range', 'hv_inf', 'hv_inf_False', 'hv_inf_True']]
+        q['prob'] = q.apply(lambda row: row.hv_inf_True if row.hv_inf else row.hv_inf_False, axis=1)
+        expected_births_no_contraception = q.groupby('age_range')['prob'].sum()[adult_age_groups].to_dict()
+
+        # Expected number of births (by mother age) if on contraception:
+        q = df.loc[(df.sex == "F") & df.age_years.between(15, 49) & df.is_alive].merge(
+            pp['p_pregnancy_with_contraception_per_month'].iloc[[0]].T, left_on='co_contraception', right_index=True
+        )[[15, 'age_range']]
+        expected_births_on_contraception = q.groupby('age_range')[15].sum()[adult_age_groups].to_dict()
+
+        # Total expected births for those not on contraceptives and those on contraceptives
+        expected_births = {
+            k: expected_births_no_contraception[k] + expected_births_on_contraception[k] for k in adult_age_groups
+        }
+        # Expected ASFR births for those not on contraceptives and those on contraceptives
+        expected_asfr = {
+            k: expected_births[k] / len(df.loc[df.is_alive & (df.sex == "F") & (df.age_range == '15-19')]) for k in adult_age_groups
+        }
+        logger.info(key='expected_asfr',
+                    data=expected_asfr,
+                    description='Expected age-specific fertility rate, given usage of contraceptives.')
+
 
 class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin):
     """HSI event for the starting a contraceptive method, maintaining use of a method of a contraceptive, or switching
