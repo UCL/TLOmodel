@@ -178,7 +178,7 @@ class BedDays:
             # check the availability of beds for a requested period in bed tracker
             availability_of_beds = self.bed_tracker[bed_type].loc[
                 (day_of_bed_use for day_of_bed_use in get_number_of_days),
-                self.get_persons_level2_facility_id(person_id)]
+                self.get_facility_id_for_beds(person_id)]
 
             if (availability_of_beds == 0).any():
                 for key, value in availability_of_beds.items():

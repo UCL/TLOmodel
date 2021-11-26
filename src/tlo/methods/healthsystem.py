@@ -1661,7 +1661,8 @@ class HSI_Event:
             for k, v in dict_of_beddays.items():
                 footprint[k] = v
 
-            return footprint
+            return self.sim.modules['HealthSystem'].bed_days.issue_bed_days_according_to_availability(self.target,
+                                                                                                      footprint)
 
         return {}
 
