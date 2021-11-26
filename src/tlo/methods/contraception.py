@@ -80,21 +80,23 @@ class Contraception(Module):
                               'period'),
     }
 
+    all_contraception_states = {
+        'not_using',
+        'pill',
+        'IUD',
+        'injections',
+        'implant',
+        'male_condom',
+        'female_sterilization',
+        'other_modern',
+        'periodic_abstinence',
+        'withdrawal',
+        'other_traditional'
+    }
+
     PROPERTIES = {
         'co_contraception': Property(Types.CATEGORICAL, 'Current contraceptive method',
-                                     categories=[
-                                         'not_using',
-                                         'pill',
-                                         'IUD',
-                                         'injections',
-                                         'implant',
-                                         'male_condom',
-                                         'female_sterilization',
-                                         'other_modern',
-                                         'periodic_abstinence',
-                                         'withdrawal',
-                                         'other_traditional'
-                                     ]),
+                                     categories=sorted(all_contraception_states)),
         # These are the 11 categories of contraception ('not_using' + 10 methods) from the DHS analysis of initiation,
         # discontinuation, failure and switching rates.
         # 'other modern' includes Male sterilization, Female Condom, Emergency contraception;
@@ -104,6 +106,9 @@ class Contraception(Module):
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
         'date_of_last_pregnancy': Property(Types.DATE, 'Date that the most recent or current pregnancy began.'),
         'co_unintended_preg': Property(Types.BOOL, 'Whether the most recent or current pregnancy was unintended.'),
+        'co_contraception_before_pregnancy': Property(Types.CATEGORICAL, "Method used prior to current pregnancy "
+                                                                         "(np.nan if not pregnant).",
+                                                      categories=sorted(all_contraception_states)),
         'co_date_of_last_fp_appt': Property(Types.DATE,
                                             'The date of the most recent Family Planning appointment. This is used to '
                                             'determine if a Family Planning appointment is needed to maintain the '
@@ -118,10 +123,9 @@ class Contraception(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        self.use_healthsystem = use_healthsystem  # True: initiation and switches to contraception require an HSI;
-        # False: initiation and switching do not occur through an HSI
+        self.use_healthsystem = use_healthsystem  # if True: initiation and switches to contraception require an HSI;
+        # if False: initiation and switching do not occur through an HSI
 
-        self.all_contraception_states = set(self.PROPERTIES['co_contraception'].categories)
         self.states_that_may_require_HSI_to_switch_to = {'male_condom', 'injections', 'other_modern', 'IUD', 'pill',
                                                          'female_sterilization', 'implant'}
         self.states_that_may_require_HSI_to_maintain_on = {'injections', 'other_modern', 'IUD', 'pill', 'implant'}
@@ -180,6 +184,7 @@ class Contraception(Module):
         df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
         df.loc[df.is_alive, 'co_unintended_preg'] = False
         df.loc[df.is_alive, 'co_date_of_last_fp_appt'] = pd.NaT
+        df.loc[df.is_alive, 'co_contraception_before_pregnancy'] = np.nan
 
         # 2) Assign contraception method
         # Select females aged 15-49 from population, for current year
@@ -238,14 +243,16 @@ class Contraception(Module):
             'is_pregnant',
             'date_of_last_pregnancy',
             'co_unintended_preg',
-            'co_date_of_last_fp_appt'
+            'co_date_of_last_fp_appt',
+            'co_contraception_before_pregnancy'
         )
         ] = (
             'not_using',
             False,
             pd.NaT,
             False,
-            pd.NaT
+            pd.NaT,
+            np.nan
         )
 
     def end_pregnancy(self, person_id):
@@ -255,6 +262,7 @@ class Contraception(Module):
 
         self.sim.population.props.at[person_id, 'is_pregnant'] = False
         self.select_contraceptive_following_birth(person_id)
+        self.sim.population.props.at[person_id, 'co_contraception_before_pregnancy'] = np.nan
 
     def process_params(self):
         """Process parameters that have been read-in."""
@@ -442,11 +450,14 @@ class Contraception(Module):
         """Initiation of mother's contraception after birth."""
 
         # Allocate the woman to a contraceptive status
-        probs = self.processed_params['p_start_after_birth']
-        new_contraceptive = self.rng.choice(
-            probs.index,
-            p=probs.values
-        )
+        # probs = self.processed_params['p_start_after_birth']
+        # new_contraceptive = self.rng.choice(
+        #     probs.index,
+        #     p=probs.values
+        # )
+
+        # Let the new contraceptive be equal to the one being used prior to the pregnancy
+        new_contraceptive = self.sim.population.props.at[mother_id, 'co_contraception_before_pregnancy']
 
         # ... but don't allow female sterilization to any woman below 30: reset to 'not_using'
         if (self.sim.population.props.at[mother_id, 'age_years'] < 30) and (
@@ -823,23 +834,27 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
 
         for w in women_id:
-            woman = df.loc[w]
+            woman = df.loc[w, ['co_contraception', 'age_years']]
+            method_before_pregnancy = woman['co_contraception']
 
             # Determine if this is unintended or not. (We say that it is 'unintended' if the women is using a
             # contraceptive when she becomes pregnant.)
-            unintended = (woman['co_contraception'] != 'not_using')
+            unintended = (method_before_pregnancy != 'not_using')
 
-            # Update properties (including that she is no longer on any contraception)
+            # Update properties (including that she is no longer on any contraception; and store the method used prior
+            # pregnancy).
             df.loc[w, (
                 'co_contraception',
                 'is_pregnant',
                 'date_of_last_pregnancy',
-                'co_unintended_preg'
+                'co_unintended_preg',
+                'co_contraception_before_pregnancy'
             )] = (
                 'not_using',
                 True,
                 self.sim.date,
-                unintended
+                unintended,
+                method_before_pregnancy
             )
 
             # Set date of labour in the Labour module
@@ -850,7 +865,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
                         data={
                             'woman_id': w,
                             'age_years': woman['age_years'],
-                            'contraception': woman['co_contraception'],
+                            'contraception': method_before_pregnancy,
                             'unintended': unintended
                         },
                         description='pregnancy following the failure of contraceptive method')
