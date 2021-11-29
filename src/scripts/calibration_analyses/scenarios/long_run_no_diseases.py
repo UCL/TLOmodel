@@ -44,8 +44,7 @@ class LongRun(BaseScenario):
 
             # - Contraception and replacement for Labour etc.
             contraception.Contraception(resourcefilepath=self.resources,
-                                        use_healthsystem=False,
-                                        run_do_pregnancy=False),  # todo - for debugging stop pregnancy
+                                        use_healthsystem=False),
             contraception.SimplifiedPregnancyAndLabour(),
 
             # - Supporting Modules required by Contraception

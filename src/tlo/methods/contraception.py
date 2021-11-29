@@ -13,7 +13,7 @@ from tlo.util import random_date, sample_outcome, transition_states
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-#todo - if we keep the method of determining method after pregnancy, we can remove that parameter that isn't used.
+# todo - if we keep the method of determining method after pregnancy, we can remove that parameter that isn't used; or we reverse it.
 
 class Contraception(Module):
     """Contraception module covering baseline contraception methods use, failure (i.e., pregnancy),
@@ -110,7 +110,7 @@ class Contraception(Module):
                                             )
     }
 
-    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True, run_do_pregnancy=True):
+    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
@@ -127,8 +127,6 @@ class Contraception(Module):
         self.processed_params = dict()  # (Will store the processed data for rates/probabilities of outcomes).
         self.cons_codes = dict()  # (Will store the consumables codes for use in the HSI)
         self.rng2 = None  # (Will be a second random number generator, used for things to do with scheduling HSI)
-
-        self.run_do_pregnancy = run_do_pregnancy  # todo - Should the Poll cause women to become pregnant (for debugging)
 
     def read_parameters(self, data_folder):
         """Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters.
@@ -204,11 +202,11 @@ class Contraception(Module):
         * Schedule births to occur during the first 9 months of the simulation
         """
 
-        # Schedule first occurrences of Contraception Poll to occur at the beginning of the simulation
-        sim.schedule_event(ContraceptionPoll(self, run_do_pregnancy=self.run_do_pregnancy), sim.date)
-
         # Schedule the first occurrence of the Logging event to occur at the beginning of the simulation
         sim.schedule_event(ContraceptionLoggingEvent(self), sim.date)
+
+        # Schedule first occurrences of Contraception Poll to occur at the beginning of the simulation
+        sim.schedule_event(ContraceptionPoll(self), sim.date)
 
         # Retrieve the consumables codes for the consumables used
         if self.use_healthsystem:
@@ -432,10 +430,9 @@ class Contraception(Module):
         processed_params['p_stop_per_month'] = contraception_stop()
         processed_params['p_start_after_birth'] = contraception_initiation_after_birth()
 
-        # todo - soft code this coefficient and manipulate to be closer to 1.0 (now that we have removed bug about the
-        #  proportion of surviving childen)
-        processed_params['p_pregnancy_no_contraception_per_month'] = 1.00 * pregnancy_no_contraception()
-        processed_params['p_pregnancy_with_contraception_per_month'] = 1.00 * pregnancy_with_contraception()
+        # todo - soft code this coefficient - determined empirically for calibration in 2010
+        processed_params['p_pregnancy_no_contraception_per_month'] = 0.81 * pregnancy_no_contraception()
+        processed_params['p_pregnancy_with_contraception_per_month'] = 0.81 * pregnancy_with_contraception()
 
         return processed_params
 
@@ -498,10 +495,6 @@ class Contraception(Module):
         date_of_last_appt = df.loc[ids, "co_date_of_last_fp_appt"].to_dict()
 
         for _woman_id, _old, _new in zip(ids, old, new):
-
-            if (_woman_id == 15) & (_new == "not_using"):
-                print("them")
-
             # Does this change require an HSI?
             is_a_switch = _old != _new
             reqs_appt = _new in self.states_that_may_require_HSI_to_switch_to if is_a_switch \
@@ -538,9 +531,6 @@ class Contraception(Module):
         """Implement and then log a start / stop / switch of contraception. """
         assert old in self.all_contraception_states
         assert new in self.all_contraception_states
-
-        if woman_id == 15:
-            print('them')
 
         df = self.sim.population.props
 
@@ -611,8 +601,6 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         """Determine who will become pregnant and update contraceptive method."""
-
-        print(f"person 15 current contraception = {self.sim.population.props.loc[15, 'co_contraception']}")
 
         # Determine who will become pregnant, given current contraceptive method
         if self.run_do_pregnancy:
@@ -687,9 +675,6 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         """Check all females currently using contraception to determine if they discontinue it, switch to a different
         one, or keep using the same one."""
 
-        if 15 in individuals_using:
-            print("its them - they are using!")
-
         # Exit if there are no individuals currently using a contraceptive:
         if not len(individuals_using):
             return
@@ -706,9 +691,6 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
         # Determine if each individual will discontinue
         will_stop_idx = prob.index[prob > rng.rand(len(prob))]
-
-        if 15 in will_stop_idx:
-            print("its them!")
 
         # Do the contraceptive change
         if len(will_stop_idx) > 0:
@@ -905,34 +887,6 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     ),
                     description='Counts of women, by age-range, on each type of contraceptive at a point in time.')
 
-        # todo: For DEBUGGING - log the expected number of births by age of mother for the given pattern of contraceptive use
-        adult_age_groups = ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']
-        pp = self.module.processed_params
-
-        # Expected number of births (by mother age) if no contraception:
-        q = df.loc[(df.sex == "F") & df.age_years.between(15,49) & df.is_alive & ~df.is_pregnant].merge(
-            pp['p_pregnancy_no_contraception_per_month'], left_on='age_years', right_on='age_years'
-        )[['age_range', 'hv_inf', 'hv_inf_False', 'hv_inf_True']]
-        q['prob'] = q.apply(lambda row: row.hv_inf_True if row.hv_inf else row.hv_inf_False, axis=1)
-        expected_births_no_contraception = q.groupby('age_range')['prob'].sum()[adult_age_groups].to_dict()
-
-        # Expected number of births (by mother age) if on contraception:
-        q = df.loc[(df.sex == "F") & df.age_years.between(15, 49) & df.is_alive & ~df.is_pregnant].merge(
-            pp['p_pregnancy_with_contraception_per_month'].iloc[[0]].T, left_on='co_contraception', right_index=True
-        )[[15, 'age_range']]
-        expected_births_on_contraception = q.groupby('age_range')[15].sum()[adult_age_groups].to_dict()
-
-        # Total expected births for those not on contraceptives and those on contraceptives
-        expected_births = {
-            k: expected_births_no_contraception[k] + expected_births_on_contraception[k] for k in adult_age_groups
-        }
-        # Expected ASFR births for those not on contraceptives and those on contraceptives
-        expected_asfr = {
-            k: expected_births[k] / len(df.loc[df.is_alive & (df.sex == "F") & (df.age_range == '15-19')]) for k in adult_age_groups
-        }
-        logger.info(key='expected_asfr',
-                    data=expected_asfr,
-                    description='Expected age-specific fertility rate, given usage of contraceptives.')
 
 
 class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin):
@@ -1009,7 +963,9 @@ class SimplifiedPregnancyAndLabour(Module):
 
     METADATA = {}
 
-    PARAMETERS = {}
+    PARAMETERS = {
+        'prob_live_birth': Parameter(Types.REAL, 'Probability that a pregnancy results in a live birth.')
+    }
 
     PROPERTIES = {
         'la_currently_in_labour': Property(Types.BOOL, 'whether this woman is currently in labour'),
@@ -1027,7 +983,8 @@ class SimplifiedPregnancyAndLabour(Module):
         super().__init__(name='Labour')
 
     def read_parameters(self, *args):
-        pass
+        self.parameters['prob_live_birth'] = 0.67
+        # This is a reasonable estimate for the current versions of the Labour and other modules
 
     def initialise_population(self, population):
         df = population.props
@@ -1048,14 +1005,11 @@ class SimplifiedPregnancyAndLabour(Module):
 
     def set_date_of_labour(self, person_id):
         """This is a drop-in replacement for the method in Labour that triggers the processes that determine the outcome
-        of a pregnancy. The probability of a live birth is hard-coded at 67%, which is a reasonable estimate for the
-        current versions of the Labour and other modules."""
-
-        prob_live_birth = 0.67
+        of a pregnancy."""
 
         self.sim.schedule_event(EndOfPregnancyEvent(module=self,
                                                     person_id=person_id,
-                                                    live_birth=(self.rng.rand() < prob_live_birth)
+                                                    live_birth=(self.rng.rand() < self.parameters['prob_live_birth'])
                                                     ),
                                 random_date(
                                     self.sim.date + pd.DateOffset(months=8, days=14),

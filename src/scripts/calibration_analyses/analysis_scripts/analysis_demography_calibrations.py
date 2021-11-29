@@ -527,7 +527,7 @@ for _age in adult_age_groups:
     plt.plot(_expected_asfr.index, _expected_asfr.values, color='b', label='Expected ASFR')
 
     plt.title(f'{_age}')
-    plt.ylim(0, 0.50)
+    plt.ylim(0, 1.0)
     plt.legend()
     plt.tight_layout()
     plt.savefig(make_graph_file_name(f"asfr_{_age}"))

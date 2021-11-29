@@ -8,6 +8,7 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import contraception, demography, enhanced_lifestyle, healthsystem, symptommanager
 from tlo.methods.hiv import DummyHivModule
+from tlo.methods.simplified_births import get_medium_variant_asfr_from_wpp_resourcefile
 
 
 def run_sim(tmpdir,
@@ -407,7 +408,7 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
                                                    sim.modules['Contraception'].states_that_may_require_HSI_to_switch_to
                                                    )
         for i, _c in enumerate(contraceptives):
-            # These due an appointment will have defaulted if they are on a contraceptive that requires HSI/consumables
+            # Those due an appointment will have defaulted if they are on a contraceptive that requires HSI/consumables
 
             if _c in sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on:
                 assert df.at[person_ids_due_appt[i], "co_contraception"] in states_that_do_require_HSI_to_switch_to
@@ -533,7 +534,68 @@ def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir):
             format_log(parse_log_file(sim_does_not_use_healthsystem.log_filepath)['tlo.methods.contraception'][key])
         )
 
-    # -- DEBUG
-    # examine different in the contraceptive changes
-    set(format_log(parse_log_file(sim_uses_healthsystem.log_filepath)['tlo.methods.contraception']['contraception_change'])['woman_id']) - set(format_log(parse_log_file(sim_does_not_use_healthsystem.log_filepath)['tlo.methods.contraception']['contraception_change'])['woman_id'])
-    # person 15 makes a switch when healthsystem is used and not otherwise
+
+def test_initial_distribution_of_contraception_and_implied_asfr(tmpdir):
+    """Check that the initial population distribution has the expected distribution of use of contraceptive methods and
+    that this induces an age-specific fertility rate that is consistent with the WPP calibration data in that year."""
+
+    sim = run_sim(tmpdir, end_date=Date(2010, 1, 1), popsize=100_000)
+    df = sim.population.props
+    contraception = sim.modules['Contraception']
+    pp = contraception.processed_params
+    states = contraception.all_contraception_states
+    prob_live_births = sim.modules['Labour'].parameters['prob_live_birth']
+
+    adult_age_groups = ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']
+    age_group_lookup = sim.modules['Demography'].AGE_RANGE_LOOKUP
+
+    # 1) Check that initial distribution of use of contraceptives matches the parameters for initial distribution
+    expected = pp['initial_method_use']
+    expected_by_age_range = expected.groupby(expected.index.map(age_group_lookup)).mean()
+
+    actual = df.loc[df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)
+                    ].groupby(by=['co_contraception', 'age_range']).size().sort_index().unstack().T.apply(
+        lambda row: row / row.sum(), axis=1
+    ).loc[adult_age_groups]
+
+    assert (abs(actual - expected_by_age_range) < 0.03).all().all()
+
+    # 2) Check that the induced age-specific fertility rates match expected number of births per month (by mother age)
+
+    # - pregnancies for those not on contraception
+    prob_preg_no_contraception = df.loc[(df.sex == "F") & df.age_years.between(15, 49) & df.is_alive & ~df.is_pregnant & (
+            df.co_contraception == 'not_using')].merge(
+        pp['p_pregnancy_no_contraception_per_month'], left_on='age_years', right_on='age_years'
+    )[['age_range', 'hv_inf', 'hv_inf_False', 'hv_inf_True']]
+    prob_preg_no_contraception['prob'] = prob_preg_no_contraception.apply(lambda row: row.hv_inf_True if row.hv_inf else row.hv_inf_False, axis=1)
+    expected_pregs_no_contraception = prob_preg_no_contraception.groupby('age_range')['prob'].sum()[adult_age_groups].to_dict()
+
+    # - pregnancies for those on contraception
+    prob_preg_on_contraception = df.loc[(df.sex == "F") & df.age_years.between(15, 49) & df.is_alive & ~df.is_pregnant & (
+            df.co_contraception != 'not_using')].merge(
+        pp['p_pregnancy_with_contraception_per_month'].stack().reset_index(),
+        left_on=['co_contraception', 'age_years'], right_on=['level_1', 'level_0']
+    )
+    expected_preg_on_contraception = prob_preg_on_contraception.groupby('age_range')[0].sum()[adult_age_groups].to_dict()
+
+    # Expected Age-Specific Fertility Rates (per month)
+    model_asfr = {
+        k: prob_live_births * (
+            (expected_pregs_no_contraception[k] + expected_preg_on_contraception[k])
+            / len(df.loc[df.is_alive & (df.sex == "F") & (df.age_range == k)])
+        ) for k in adult_age_groups
+    }
+
+    # Get the "expected" age-specific fertility rates (per month) implied deterministically by the parameters
+    assumption_init_use = pp['initial_method_use'].groupby(by=pp['initial_method_use'].index.map(age_group_lookup)).mean()
+    ex_preg_per_month = pd.DataFrame(index=range(15, 50), columns=sorted(states))
+    ex_preg_per_month['not_using'] = pp['p_pregnancy_no_contraception_per_month']['hv_inf_False']  # (for simplicity, assume all persons HIV-negative)
+    ex_preg_per_month.loc[:, sorted(states - {'not_using'})] = pp['p_pregnancy_with_contraception_per_month'].loc[:, sorted(states - {'not_using'})]
+    ex_preg_per_month = ex_preg_per_month.groupby(by=ex_preg_per_month.index.map(age_group_lookup)).mean()
+    ex_asfr_per_month = ((assumption_init_use * ex_preg_per_month).sum(axis=1) * prob_live_births).to_dict()
+
+    # Check that model approximately matches the deterministic expectation
+    assert all([np.isclose(model_asfr[k], ex_asfr_per_month[k], rtol=0.10) for k in adult_age_groups])
+    assert 0.05 > (
+       abs(sum(model_asfr.values()) - sum(ex_asfr_per_month.values())) / sum(ex_asfr_per_month.values())
+    )

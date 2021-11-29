@@ -236,6 +236,7 @@ def get_medium_variant_asfr_from_wpp_resourcefile(dat: pd.DataFrame, months_expo
     years = range(min(dat['Period-Start'].values), 1 + max(dat['Period-End'].values))
 
     # Convert the rates for asfr (rate of live-birth per year) to a rate per the frequency of this event repeating
+    # todo - do this properly and using helper functions
     dat['asfr_per_period'] = 1 - np.exp(np.log(1-dat['asfr']) * (months_exposure / 12))
 
     asfr = dict()  # format is {year: {age-range: asfr}}
