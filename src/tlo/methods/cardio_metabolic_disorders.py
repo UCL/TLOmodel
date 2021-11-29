@@ -1110,7 +1110,8 @@ class CardioMetabolicDisordersDeathEvent(Event, IndividualScopeEventMixin):
 
 class CardioMetabolicDisordersWeightLossEvent(Event, IndividualScopeEventMixin):
     """
-    Gives an individual a probability of losing weight (via a reduction in li_bmi) and logs it.
+    Gives an individual a probability of losing weight (via a reduction in li_bmi) and records the change in
+    population.props
     """
 
     def __init__(self, module, person_id):
