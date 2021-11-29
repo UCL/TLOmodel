@@ -56,7 +56,7 @@ data_dict["dhs_prev_2015"] = data_hiv_dhs_prev.loc[
 
 # UNAIDS AIDS deaths data: 2010-
 data_hiv_unaids_deaths = pd.read_excel(xls, sheet_name="unaids_mortality_dalys2021")
-data_dict["unaids_deaths_per_1000"] = data_hiv_unaids_deaths["AIDS_mortality_per_1000"]
+data_dict["unaids_deaths_per_100k"] = data_hiv_unaids_deaths["AIDS_mortality_per_100k"]
 
 # TB
 # TB WHO data: 2010-
@@ -127,72 +127,72 @@ def weighted_mean(model_dict, data_dict):
     # aids deaths unaids 2010-2019
     hiv_deaths_unaids = (
         deviance_function(
-            data_dict["unaids_deaths_per_1000"][0],
-            model_dict["AIDS_mortality_per_1000"][0],
+            data_dict["unaids_deaths_per_100k"][0],
+            model_dict["AIDS_mortality_per_100k"][0],
         )
         + deviance_function(
-            data_dict["unaids_deaths_per_1000"][1],
-            model_dict["AIDS_mortality_per_1000"][1],
+            data_dict["unaids_deaths_per_100k"][1],
+            model_dict["AIDS_mortality_per_100k"][1],
         )
         + deviance_function(
-            data_dict["unaids_deaths_per_1000"][2],
-            model_dict["AIDS_mortality_per_1000"][2],
+            data_dict["unaids_deaths_per_100k"][2],
+            model_dict["AIDS_mortality_per_100k"][2],
         )
         + deviance_function(
-            data_dict["unaids_deaths_per_1000"][3],
-            model_dict["AIDS_mortality_per_1000"][3],
+            data_dict["unaids_deaths_per_100k"][3],
+            model_dict["AIDS_mortality_per_100k"][3],
         )
         + deviance_function(
-            data_dict["unaids_deaths_per_1000"][4],
-            model_dict["AIDS_mortality_per_1000"][4],
+            data_dict["unaids_deaths_per_100k"][4],
+            model_dict["AIDS_mortality_per_100k"][4],
         )
         + deviance_function(
-            data_dict["unaids_deaths_per_1000"][5],
-            model_dict["AIDS_mortality_per_1000"][5],
+            data_dict["unaids_deaths_per_100k"][5],
+            model_dict["AIDS_mortality_per_100k"][5],
         )
         + deviance_function(
-            data_dict["unaids_deaths_per_1000"][6],
-            model_dict["AIDS_mortality_per_1000"][6],
+            data_dict["unaids_deaths_per_100k"][6],
+            model_dict["AIDS_mortality_per_100k"][6],
         )
         + deviance_function(
-            data_dict["unaids_deaths_per_1000"][7],
-            model_dict["AIDS_mortality_per_1000"][7],
+            data_dict["unaids_deaths_per_100k"][7],
+            model_dict["AIDS_mortality_per_100k"][7],
         )
         + deviance_function(
-            data_dict["unaids_deaths_per_1000"][8],
-            model_dict["AIDS_mortality_per_1000"][8],
+            data_dict["unaids_deaths_per_100k"][8],
+            model_dict["AIDS_mortality_per_100k"][8],
         )
         + deviance_function(
-            data_dict["unaids_deaths_per_1000"][9],
-            model_dict["AIDS_mortality_per_1000"][9],
+            data_dict["unaids_deaths_per_100k"][9],
+            model_dict["AIDS_mortality_per_100k"][9],
         )
     ) / 10
 
     # tb active incidence (WHO estimates) 2010 -2017
     tb_incidence_who = (
         deviance_function(
-            data_dict["who_tb_inc_per_100k"][0], model_dict["TB_active_inc_per100k"][0]
+            data_dict["who_tb_inc_per_100k"].values[0], model_dict["TB_active_inc_per100k"][0]
         )
         + deviance_function(
-            data_dict["who_tb_inc_per_100k"][1], model_dict["TB_active_inc_per100k"][1]
+            data_dict["who_tb_inc_per_100k"].values[1], model_dict["TB_active_inc_per100k"][1]
         )
         + deviance_function(
-            data_dict["who_tb_inc_per_100k"][2], model_dict["TB_active_inc_per100k"][2]
+            data_dict["who_tb_inc_per_100k"].values[2], model_dict["TB_active_inc_per100k"][2]
         )
         + deviance_function(
-            data_dict["who_tb_inc_per_100k"][3], model_dict["TB_active_inc_per100k"][3]
+            data_dict["who_tb_inc_per_100k"].values[3], model_dict["TB_active_inc_per100k"][3]
         )
         + deviance_function(
-            data_dict["who_tb_inc_per_100k"][4], model_dict["TB_active_inc_per100k"][4]
+            data_dict["who_tb_inc_per_100k"].values[4], model_dict["TB_active_inc_per100k"][4]
         )
         + deviance_function(
-            data_dict["who_tb_inc_per_100k"][5], model_dict["TB_active_inc_per100k"][5]
+            data_dict["who_tb_inc_per_100k"].values[5], model_dict["TB_active_inc_per100k"][5]
         )
         + deviance_function(
-            data_dict["who_tb_inc_per_100k"][6], model_dict["TB_active_inc_per100k"][6]
+            data_dict["who_tb_inc_per_100k"].values[6], model_dict["TB_active_inc_per100k"][6]
         )
         + deviance_function(
-            data_dict["who_tb_inc_per_100k"][7], model_dict["TB_active_inc_per100k"][7]
+            data_dict["who_tb_inc_per_100k"].values[7], model_dict["TB_active_inc_per100k"][7]
         )
     ) / 8
 
@@ -204,35 +204,35 @@ def weighted_mean(model_dict, data_dict):
     # tb case notification rate per 100k: 2012-2019
     tb_cnr_ntp = (
         deviance_function(
-            data_dict["ntp_case_notification_per_100k"][0],
+            data_dict["ntp_case_notification_per_100k"].values[0],
             model_dict["TB_case_notifications_per100k"][2],
         )
         + deviance_function(
-            data_dict["ntp_case_notification_per_100k"][1],
+            data_dict["ntp_case_notification_per_100k"].values[1],
             model_dict["TB_case_notifications_per100k"][3],
         )
         + deviance_function(
-            data_dict["ntp_case_notification_per_100k"][2],
+            data_dict["ntp_case_notification_per_100k"].values[2],
             model_dict["TB_case_notifications_per100k"][4],
         )
         + deviance_function(
-            data_dict["ntp_case_notification_per_100k"][3],
+            data_dict["ntp_case_notification_per_100k"].values[3],
             model_dict["TB_case_notifications_per100k"][5],
         )
         + deviance_function(
-            data_dict["ntp_case_notification_per_100k"][4],
+            data_dict["ntp_case_notification_per_100k"].values[4],
             model_dict["TB_case_notifications_per100k"][6],
         )
         + deviance_function(
-            data_dict["ntp_case_notification_per_100k"][5],
+            data_dict["ntp_case_notification_per_100k"].values[5],
             model_dict["TB_case_notifications_per100k"][7],
         )
         + deviance_function(
-            data_dict["ntp_case_notification_per_100k"][6],
+            data_dict["ntp_case_notification_per_100k"].values[6],
             model_dict["TB_case_notifications_per100k"][8],
         )
         + deviance_function(
-            data_dict["ntp_case_notification_per_100k"][7],
+            data_dict["ntp_case_notification_per_100k"].values[7],
             model_dict["TB_case_notifications_per100k"][9],
         )
     ) / 8
@@ -240,35 +240,35 @@ def weighted_mean(model_dict, data_dict):
     # tb death rate who 2010-2017
     tb_mortality_who = (
         deviance_function(
-            data_dict["who_tb_deaths_per_100k"][0],
+            data_dict["who_tb_deaths_per_100k"].values[0],
             model_dict["TB_mortality_per_100k"][0],
         )
         + deviance_function(
-            data_dict["who_tb_deaths_per_100k"][1],
+            data_dict["who_tb_deaths_per_100k"].values[1],
             model_dict["TB_mortality_per_100k"][1],
         )
         + deviance_function(
-            data_dict["who_tb_deaths_per_100k"][2],
+            data_dict["who_tb_deaths_per_100k"].values[2],
             model_dict["TB_mortality_per_100k"][2],
         )
         + deviance_function(
-            data_dict["who_tb_deaths_per_100k"][3],
+            data_dict["who_tb_deaths_per_100k"].values[3],
             model_dict["TB_mortality_per_100k"][3],
         )
         + deviance_function(
-            data_dict["who_tb_deaths_per_100k"][4],
+            data_dict["who_tb_deaths_per_100k"].values[4],
             model_dict["TB_mortality_per_100k"][4],
         )
         + deviance_function(
-            data_dict["who_tb_deaths_per_100k"][5],
+            data_dict["who_tb_deaths_per_100k"].values[5],
             model_dict["TB_mortality_per_100k"][5],
         )
         + deviance_function(
-            data_dict["who_tb_deaths_per_100k"][6],
+            data_dict["who_tb_deaths_per_100k"].values[6],
             model_dict["TB_mortality_per_100k"][6],
         )
         + deviance_function(
-            data_dict["who_tb_deaths_per_100k"][7],
+            data_dict["who_tb_deaths_per_100k"].values[7],
             model_dict["TB_mortality_per_100k"][7],
         )
     ) / 8
@@ -305,7 +305,7 @@ model_hiv_prev = output["tlo.methods.hiv"][
 ]
 model_dict["hiv_prev_adult_2010"] = (
     model_hiv_prev.loc[
-        (model_hiv_prev.date == "2010-01-01"), "hiv_prev_adult_1549"
+        (model_hiv_prev.date == "2011-01-01"), "hiv_prev_adult_1549"
     ].values[0]
 ) * 100
 model_dict["hiv_prev_adult_2015"] = (
@@ -351,7 +351,7 @@ tot_aids_deaths = deaths_AIDS.groupby(by=["year"]).size()
 tot_aids_deaths.index = pd.to_datetime(tot_aids_deaths.index, format="%Y")
 
 # aids mortality rates per 1000 person-years
-model_dict["AIDS_mortality_per_1000"] = (tot_aids_deaths / py) * 1000
+model_dict["AIDS_mortality_per_100k"] = (tot_aids_deaths / py) * 100000
 
 # tb active incidence per 100k - all ages
 TB_inc = output["tlo.methods.tb"]["tb_incidence"]
@@ -362,8 +362,7 @@ model_dict["TB_active_inc_per100k"] = (TB_inc["num_new_active_tb"] / py) * 10000
 # tb latent prevalence
 latentTB_prev = output["tlo.methods.tb"]["tb_prevalence"]
 model_dict["TB_latent_prev"] = latentTB_prev.loc[
-    ["2014-01-01"], ["tbPrevLatent"]
-].values[0][0]
+    (latentTB_prev.date == "2014-01-01"), "tbPrevLatent"].values[0]
 
 # tb case notifications
 tb_notifications = output["tlo.methods.tb"]["tb_treatment"]
@@ -385,6 +384,6 @@ model_dict["TB_mortality_per_100k"] = (tot_tb_non_hiv_deaths / py) * 100000
 # -------------------------------- CALIBRATION RESULTS -------------------------------- #
 
 # compute calibration score for each
-calibration_score = weighted_mean(data_dict, model_dict)
+calibration_score = weighted_mean(model_dict=model_dict, data_dict=data_dict)
 
 # select best-fitting model
