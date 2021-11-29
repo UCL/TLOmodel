@@ -24,7 +24,7 @@ class BedDays:
     def __init__(self, hs_module):
         self.hs_module = hs_module
         # Number of days to the last day of bed_tracker
-        self.days_until_last_day_of_bed_tracker = 150
+        self.days_until_last_day_of_bed_tracker = 300
 
         # a dictionary to create a footprint according to facility bed days capacity
         self.available_footprint = {}
@@ -168,18 +168,32 @@ class BedDays:
         assert beddays_footprint['non_bed_space'] == 0, "A request cannot be made for this type of bed"
 
     def issue_bed_days_according_to_availability(self, person_id, footprint):
-        get_bed_types = self.get_bed_types()
+        """check the requested bed days footprint against available days in tracker. final footprint is constructed
+        according to bed days availability in tracker i.e. if 10 bed days of bed type A are requested and only 5 days
+        are available, 5 instead of 10 bed days will be issued. It looks further in situations where a high level bed
+        is unavailable whilst a lower class bed is available, in such scenarios all requests to the high class bed
+        are transferred to the lower class bed. an empty footprint will be issued where there are no beds of all
+        classes available on all requested days """
+        # do nothing on footprint if empty
+        if footprint == self.get_blank_beddays_footprint():
+            return footprint
+
+        get_bed_types = self.get_bed_types()    # get a list of all available beds types
         counter = 0  # for indexing purposes
 
+        # the section below checks the footprint against available days in tracker
         for bed_type in footprint.keys():
-            # find all required bed days per each bed type
+            # find all requested bed days per each bed type
             get_number_of_days = [self.hs_module.sim.date + pd.DateOffset(days=_d) for _d in range(footprint[bed_type])]
 
             # check the availability of beds for a requested period in bed tracker
             availability_of_beds = self.bed_tracker[bed_type].loc[
-                (day_of_bed_use for day_of_bed_use in get_number_of_days),
+                get_number_of_days,
                 self.get_facility_id_for_beds(person_id)]
 
+            # if any day is unavailable  - 1) subtract that day to all requested days
+            #                              2) add that day to requested days of a lower class bed if available else
+            #                                 ignore it
             if (availability_of_beds == 0).any():
                 for key, value in availability_of_beds.items():
                     if value == 0:
