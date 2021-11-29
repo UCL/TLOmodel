@@ -564,15 +564,14 @@ class Malaria(Module):
 
         symptom_list = {"fever", "headache", "vomiting", "stomachache"}
 
-        for symptom in symptom_list:
-            # this also schedules symptom resolution in 5 days
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(clinical_index),
-                symptom_string=symptom,
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=p["dur_clin"],
-            )
+        # this also schedules symptom resolution in 5 days
+        self.sim.modules["SymptomManager"].change_symptom(
+            person_id=list(clinical_index),
+            symptom_string=symptom_list,
+            add_or_remove="+",
+            disease_module=self,
+            duration_in_days=p["dur_clin"],
+        )
 
         # additional risk of severe anaemia in pregnancy
         pregnant_infected = df.is_alive & (df.ma_inf_type == "clinical") & (df.ma_date_infected == now) & df.is_pregnant
@@ -596,6 +595,10 @@ class Malaria(Module):
         :param severe_index: the indices of new clinical cases
         :param child: to apply severe symptoms to children (otherwise applied to adults)
         """
+        # If no indices specified exit straight away
+        if (len(severe_index) == 0):
+            return
+
         df = population
         p = self.parameters
         rng = self.rng
@@ -606,14 +609,13 @@ class Malaria(Module):
         # general symptoms - applied to all
         symptom_list = {"fever", "headache", "vomiting", "stomachache"}
 
-        for symptom in symptom_list:
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(severe_index),
-                symptom_string=symptom,
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=None,
-            )
+        self.sim.modules["SymptomManager"].change_symptom(
+            person_id=list(severe_index),
+            symptom_string=symptom_list,
+            add_or_remove="+",
+            disease_module=self,
+            duration_in_days=None,
+        )
 
         # symptoms specific to severe cases
         # get range of probabilities of each symptom for severe cases for children and adults
@@ -623,30 +625,34 @@ class Malaria(Module):
             range_symp = range_symp.loc[range_symp.age_group == "0_5"]
         else:
             range_symp = range_symp.loc[range_symp.age_group == "5_60"]
-
-        symptom_list_severe = list(range_symp.symptom)
+        range_symp = range_symp.set_index("symptom")
+        symptom_list_severe = list(range_symp.index)
 
         # assign symptoms
-        for person in severe_index:
 
-            for symptom in symptom_list_severe:
-
-                # random sample whether child will have symptom
-                symptom_probability = rng.uniform(
-                    low=range_symp.loc[range_symp.symptom == symptom, "prop_lower"],
-                    high=range_symp.loc[range_symp.symptom == symptom, "prop_upper"],
-                    size=1
-                )[0]
-
-                if self.rng.random_sample(size=1) < symptom_probability:
-                    # schedule symptom onset
-                    self.sim.modules["SymptomManager"].change_symptom(
-                        person_id=person,
-                        symptom_string=symptom,
-                        add_or_remove="+",
-                        disease_module=self,
-                        duration_in_days=None,
-                    )
+        for symptom in symptom_list_severe:
+            # Let u ~ Uniform(0, 1) and p ~ Uniform(prop_lower, prop_upper),
+            # then the probability of the event (u < p) is (prop_lower + prop_upper) / 2
+            # That is the probability of b == True in the following code snippet
+            #     b = rng.uniform() < rng.uniform(low=prop_lower, high=prop_upper)
+            # and this one
+            #     b = rng.uniform() < (prop_lower + prop_upper) / 2
+            # are equivalent.
+            persons_gaining_symptom = severe_index[
+                rng.uniform(size=len(severe_index))
+                < (
+                    range_symp.at[symptom, "prop_lower"]
+                    + range_symp.at[symptom, "prop_upper"]
+                ) / 2
+            ]
+            # schedule symptom onset
+            self.sim.modules["SymptomManager"].change_symptom(
+                person_id=persons_gaining_symptom,
+                symptom_string=symptom,
+                add_or_remove="+",
+                disease_module=self,
+                duration_in_days=None,
+            )
 
     def check_if_fever_is_caused_by_malaria(self, person_id, hsi_event):
         """Run by an HSI when an adult presents with fever"""
@@ -1202,10 +1208,9 @@ class MalariaCureEvent(RegularEvent, PopulationScopeEventMixin):
         # clear symptoms
         all_cured = clinical_inf.union(severe_inf) if len(severe_inf) else clinical_inf
 
-        for idx in all_cured:
-            self.sim.modules["SymptomManager"].clear_symptoms(
-                person_id=idx, disease_module=self.module
-            )
+        self.sim.modules["SymptomManager"].clear_symptoms(
+            person_id=all_cured, disease_module=self.module
+        )
 
         # change properties
         df.loc[all_cured, "ma_tx"] = False
