@@ -1348,9 +1348,6 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
         # Update the risk score for everyone
         self.module.update_risk_score()
 
-        df = population.props
-        df.to_csv('df_for_regression_malawi.csv')
-
 
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
