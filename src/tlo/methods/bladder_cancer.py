@@ -657,7 +657,7 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "BladderCancer_Investigation_Following_blood_urine"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -725,7 +725,7 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "BladderCancer_Investigation_Following_pelvic_pain"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):

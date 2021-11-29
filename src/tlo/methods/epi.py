@@ -493,7 +493,7 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = self.treatment_id()
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '0'  # Can occur at this facility level
+        self.ACCEPTED_FACILITY_LEVEL = '0'
         self.ALERT_OTHER_DISEASES = []
 
     def treatment_id(self):

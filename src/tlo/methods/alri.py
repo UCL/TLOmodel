@@ -1002,14 +1002,13 @@ class Alri(Module):
 
     def impose_symptoms_for_complication(self, complication, person_id):
         """Impose symptoms for a complication."""
-        symptoms = self.models.symptoms_for_complication(complication=complication)
-        for symptom in sorted(symptoms):
-            self.sim.modules['SymptomManager'].change_symptom(
-                person_id=person_id,
-                symptom_string=symptom,
-                add_or_remove='+',
-                disease_module=self,
-            )
+        symptoms = sorted(self.models.symptoms_for_complication(complication=complication))
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=person_id,
+            symptom_string=symptoms,
+            add_or_remove='+',
+            disease_module=self,
+        )
 
 
 class Models:
@@ -1496,14 +1495,13 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         """
         m = self.module
         models = m.models
-
-        for symptom in sorted(models.symptoms_for_disease(disease_type=disease_type)):
-            m.sim.modules['SymptomManager'].change_symptom(
-                person_id=person_id,
-                symptom_string=symptom,
-                add_or_remove='+',
-                disease_module=m,
-            )
+        symptoms = sorted(models.symptoms_for_disease(disease_type=disease_type))
+        m.sim.modules['SymptomManager'].change_symptom(
+            person_id=person_id,
+            symptom_string=symptoms,
+            add_or_remove='+',
+            disease_module=m,
+        )
 
     def impose_complications(self, person_id, date_of_outcome):
         """Choose a set of complications for this person and onset these all instantanesouly."""

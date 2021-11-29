@@ -1372,13 +1372,12 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         df.loc[person_id, props_new.keys()] = props_new.values()
 
         # Apply symptoms for this episode (these do not affect the course of disease)
-        for symptom in m.models.get_symptoms(self.pathogen):
-            self.sim.modules['SymptomManager'].change_symptom(
-                person_id=person_id,
-                symptom_string=symptom,
-                add_or_remove='+',
-                disease_module=self.module
-            )
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=person_id,
+            symptom_string=m.models.get_symptoms(self.pathogen),
+            add_or_remove='+',
+            disease_module=self.module
+        )
 
         # Log this incident case:
         logger.info(
@@ -1544,7 +1543,7 @@ class HSI_Diarrhoea_Treatment_Inpatient(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Diarrhoea_Treatment_Inpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 2, 'IPAdmission': 1})
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
