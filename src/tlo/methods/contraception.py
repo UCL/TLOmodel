@@ -4,10 +4,10 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
+from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging, \
+    get_medium_variant_asfr_from_wpp_resourcefile
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.simplified_births import get_medium_variant_asfr_from_wpp_resourcefile
 from tlo.util import random_date, sample_outcome, transition_states
 
 logger = logging.getLogger(__name__)
@@ -79,6 +79,12 @@ class Contraception(Module):
         'age_specific_fertility_rates': Parameter(
             Types.DATA_FRAME, 'Data table from official source (WPP) for age-specific fertility rates and calendar '
                               'period'),
+
+        'scaling_factor_on_monthly_risk_of_pregnancy': Parameter(
+            Types.REAL, "Scaling factor on the monthly risk of pregnancy and contraceptive failure rate. This value is"
+                        "found through calibration so that, at the beginning of the simulation, the age-specific "
+                        "monthly probability of a woman having a live birth matches the WPP age-specific fertility rate"
+                        " value for the same year.")
     }
 
     all_contraception_states = {
@@ -153,13 +159,13 @@ class Contraception(Module):
         for sheet in sheet_names:
             self.parameters[sheet] = workbook[sheet]
 
-        # Declare values for additional parameters (hard-coded for now)
-        self.parameters['rr_fail_under25'] = 2.2  # From Guttmacher analysis.
-        self.parameters['days_between_appts_for_maintenance'] = 180
+        # Declare values for other parameters
+        self.load_parameters_from_dataframe(workbook['Parameters'])
 
         # Import the Age-specific fertility rate data from WPP
         self.parameters['age_specific_fertility_rates'] = \
             pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+
 
     def pre_initialise_population(self):
         """Process parameters before initialising population and simulation"""
@@ -376,6 +382,7 @@ class Contraception(Module):
             """
 
             def convert_annual_prob_to_monthly_prob(p_annual):
+                # todo - do this properly and using helper function
                 return 1 - np.exp(np.log(1 - p_annual) / 12)
 
             # Get the probability of being pregnant if not HIV-positive
@@ -400,7 +407,7 @@ class Contraception(Module):
                 1.0 - np.power(1.0 - p_pregnancy_no_contraception_per_month['hv_inf_False'], 12)
             ).all()
 
-            return p_pregnancy_no_contraception_per_month
+            return self.parameters['scaling_factor_on_monthly_risk_of_pregnancy'] * p_pregnancy_no_contraception_per_month
 
         def pregnancy_with_contraception():
             """Get the probability per month of a woman becoming pregnant if she is using a contraceptive method."""
@@ -422,7 +429,7 @@ class Contraception(Module):
                 self.all_contraception_states - {"not_using"})
             assert (0.0 == p_pregnancy_with_contraception_per_month['female_sterilization']).all()
 
-            return p_pregnancy_with_contraception_per_month
+            return self.parameters['scaling_factor_on_monthly_risk_of_pregnancy'] * p_pregnancy_with_contraception_per_month
 
         processed_params['initial_method_use'] = initial_method_use()
         processed_params['p_start_per_month'] = contraception_initiation()
@@ -430,9 +437,8 @@ class Contraception(Module):
         processed_params['p_stop_per_month'] = contraception_stop()
         processed_params['p_start_after_birth'] = contraception_initiation_after_birth()
 
-        # todo - soft code this coefficient - determined empirically for calibration in 2010
-        processed_params['p_pregnancy_no_contraception_per_month'] = 0.81 * pregnancy_no_contraception()
-        processed_params['p_pregnancy_with_contraception_per_month'] = 0.81 * pregnancy_with_contraception()
+        processed_params['p_pregnancy_no_contraception_per_month'] = pregnancy_no_contraception()
+        processed_params['p_pregnancy_with_contraception_per_month'] = pregnancy_with_contraception()
 
         return processed_params
 

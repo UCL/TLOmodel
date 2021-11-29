@@ -523,3 +523,29 @@ def unflatten_flattened_multi_index_in_logging(_x: pd.DataFrame) -> pd.DataFrame
     _y = _x.copy()
     _y.columns = pd.MultiIndex.from_tuples(index_value_list, names=index_name_list)
     return _y
+
+
+def get_medium_variant_asfr_from_wpp_resourcefile(dat: pd.DataFrame, months_exposure: int) -> dict:
+    """Process the data on age-specific fertility rates into a form that can be used to quickly map
+    age-ranges to an age-specific fertility rate (for the "Medium Variant" in the WPP data source).
+    :param dat: Raw form of the data in `ResourceFile_ASFR_WPP.csv`
+    :param months_exposure: The time (in integer number of months) over which the risk of pregnancy should be
+    computed.
+    :returns: a dict, keyed by year, giving a dataframe of risk of pregnancy over a the period, by age """
+
+    dat = dat.drop(dat[~dat.Variant.isin(['WPP_Estimates', 'WPP_Medium variant'])].index)
+    dat['Period-Start'] = dat['Period'].str.split('-').str[0].astype(int)
+    dat['Period-End'] = dat['Period'].str.split('-').str[1].astype(int)
+    years = range(min(dat['Period-Start'].values), 1 + max(dat['Period-End'].values))
+
+    # Convert the rates for asfr (rate of live-birth per year) to a rate per the frequency of this event repeating
+    # todo - do this properly and using helper functions
+    dat['asfr_per_period'] = 1 - np.exp(np.log(1-dat['asfr']) * (months_exposure / 12))
+
+    asfr = dict()  # format is {year: {age-range: asfr}}
+    for year in years:
+        asfr[year] = dat.loc[
+            (year >= dat['Period-Start']) & (year <= dat['Period-End'])
+            ].set_index('Age_Grp')['asfr_per_period'].to_dict()
+
+    return asfr

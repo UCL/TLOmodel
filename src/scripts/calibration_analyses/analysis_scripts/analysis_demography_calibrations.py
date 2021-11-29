@@ -444,7 +444,7 @@ for _age in adult_age_groups:
     plt.show()
 
 
-# %% Age-specific fertility todo - improve formatting
+# %% Age-specific fertility
 
 def get_births_by_year_and_age_range_of_mother(_df):
     _df = _df.drop(_df.index[_df.mother_age == -1])
@@ -461,7 +461,6 @@ births_by_mother_age = extract_results(
     do_scaling=False
 )
 
-
 def get_num_adult_women_by_age_range(_df):
     _df = _df.assign(year=_df['date'].dt.year)
     _df = _df.set_index(_df['year'], drop=True)
@@ -470,7 +469,6 @@ def get_num_adult_women_by_age_range(_df):
     ser = _df[select_col].stack()
     ser.index.names = ['year', 'mother_age_range']
     return ser
-
 
 num_adult_women = extract_results(
     results_folder,
@@ -483,24 +481,8 @@ num_adult_women = extract_results(
 # Compute age-specific fertility rates
 asfr = summarize(births_by_mother_age.div(num_adult_women))
 
-def get_expected_asfr(_df):
-    _df = _df.assign(year=_df['date'].dt.year)
-    _df = _df.set_index(_df['year'], drop=True)
-    _df = _df.drop(columns=['date', 'year'])
-    return _df.stack()
-
-expected_asfr = summarize(extract_results(
-    results_folder,
-    module="tlo.methods.contraception",
-    key="expected_asfr",
-    custom_generate_series=get_expected_asfr,
-    do_scaling=False
-))
-
-
 # Get the age-specific fertility rates of the WPP source
 wpp = pd.read_csv(rfp / 'demography' / 'ResourceFile_ASFR_WPP.csv')
-
 
 def expand_by_year(periods, vals, years=range(2010, 2050)):
     _ser = dict()
@@ -508,30 +490,31 @@ def expand_by_year(periods, vals, years=range(2010, 2050)):
         _ser[y] = vals.loc[(periods == calperiodlookup[y])].values[0]
     return _ser.keys(), _ser.values()
 
+fig, ax = plt.subplots(2, 4)
+ax = ax.reshape(-1)
+years = range(2010, 2049)
+for i, _agegrp in enumerate(adult_age_groups):
 
-for _age in adult_age_groups:
-    model = asfr.loc[(slice(2011, 2049), _age), :].unstack()
+    model = asfr.loc[(slice(years[0], years[-1]), _age), :].unstack()
     data = wpp.loc[
         (wpp.Age_Grp == _age) & wpp.Variant.isin(['WPP_Estimates', 'WPP_Medium variant']), ['Period', 'asfr']
     ]
-    data_year, data_asfr = expand_by_year(data.Period, data.asfr)
+    data_year, data_asfr = expand_by_year(data.Period, data.asfr, years)
 
-    _expected_asfr = expected_asfr.loc[(slice(2011, 2049), _age), (0, 'mean')]
-    _expected_asfr.index = _expected_asfr.index.droplevel(1)
-    _expected_asfr = _expected_asfr.groupby(_expected_asfr.index).sum()  #sum over the year (poll runs mothly to compute births that month)
+    l1 = ax[i].plot(data_year, data_asfr, 'k-', label='WPP')
+    l2 = ax[i].plot(model.index, model[(0, 'mean', _age)], 'r-', label='Model')
+    ax[i].fill_between(model.index, model[(0, 'lower', _age)], model[(0, 'upper', _age)],
+                       color='r', alpha=0.2)
 
-    plt.plot(data_year, data_asfr, color='k', label='WPP')
-    plt.plot(model.index, model[(0, 'mean', _age)], color='r', label='Model')
-    plt.fill_between(model.index, model[(0, 'lower', _age)], model[(0, 'upper', _age)],
-                     color='r', alpha=0.2)
-    plt.plot(_expected_asfr.index, _expected_asfr.values, color='b', label='Expected ASFR')
+    ax[i].set_title(f'{_agegrp}')
 
-    plt.title(f'{_age}')
-    plt.ylim(0, 1.0)
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(make_graph_file_name(f"asfr_{_age}"))
-    plt.show()
+ax[-1].set_axis_off()
+fig.legend((l1[0], l2[0]), ('WPP', 'Model'), 'lower right')
+fig.tight_layout()
+fig.savefig(make_graph_file_name(f"asfr_model_vs_data"))
+fig.show()
+
+
 
 # %% All-Cause Deaths
 #  todo - fix this -- only do summarize after the groupbys

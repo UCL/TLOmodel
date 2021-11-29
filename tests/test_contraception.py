@@ -5,10 +5,9 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import parse_log_file, get_medium_variant_asfr_from_wpp_resourcefile
 from tlo.methods import contraception, demography, enhanced_lifestyle, healthsystem, symptommanager
 from tlo.methods.hiv import DummyHivModule
-from tlo.methods.simplified_births import get_medium_variant_asfr_from_wpp_resourcefile
 
 
 def run_sim(tmpdir,
