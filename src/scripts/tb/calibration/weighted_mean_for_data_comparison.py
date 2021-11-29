@@ -102,7 +102,7 @@ def weighted_mean(model_dict, data_dict):
     # then weighted sum of all components -> calibration score
 
     def deviance_function(data, model):
-        deviance = math.sqrt(((data - model) ** 2) / data)
+        deviance = math.sqrt((data - model) ** 2) / data
 
         return deviance
 
@@ -170,10 +170,11 @@ def weighted_mean(model_dict, data_dict):
 
     # tb active incidence (WHO estimates) 2010 -2017
     tb_incidence_who = (
+        # deviance_function(
+        #     data_dict["who_tb_inc_per_100k"].values[0], model_dict["TB_active_inc_per100k"][0]
+        # )
+        # +
         deviance_function(
-            data_dict["who_tb_inc_per_100k"].values[0], model_dict["TB_active_inc_per100k"][0]
-        )
-        + deviance_function(
             data_dict["who_tb_inc_per_100k"].values[1], model_dict["TB_active_inc_per100k"][1]
         )
         + deviance_function(
