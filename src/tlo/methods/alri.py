@@ -459,9 +459,17 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of chest wall indrawing in bronchiolitis or other alri'
                       ),
-        'prob_danger_signs_complicated_alri':
+        'prob_danger_signs_in_sepsis':
             Parameter(Types.REAL,
                       'probability of any danger signs in complicated ALRI'
+                      ),
+        'prob_danger_signs_in_SpO2<90%':
+            Parameter(Types.REAL,
+                      'probability of any danger signs in children with SpO2 <90%'
+                      ),
+        'prob_danger_signs_in_SpO2_90-92%':
+            Parameter(Types.REAL,
+                      'probability of any danger signs in children with SpO2 <90%'
                       ),
 
         # Parameters governing the effects of vaccine ----------------
@@ -540,6 +548,11 @@ class Alri(Module):
         'ri_disease_type':
             Property(Types.CATEGORICAL, 'If infected, what disease type is the person currently suffering from.',
                      categories=list(disease_types)
+                     ),
+        # ---- The peripheral oxygen saturation level ----
+        'ri_SpO2_level':
+            Property(Types.CATEGORICAL, 'Peripheral oxygen saturation level (Sp02), measure for hypoxaemia',
+                     categories=['90%', '90-92%', '>=93%']
                      ),
 
         # ---- Treatment Status ----
@@ -645,6 +658,7 @@ class Alri(Module):
         df.loc[df.is_alive, [
             f"ri_complication_{complication}" for complication in self.complications]
         ] = False
+        df.loc[df.is_alive, 'ri_SpO2_level'] = '>=93%'
 
         # ---- Internal values ----
         df.loc[df.is_alive, 'ri_start_of_current_episode'] = pd.NaT
@@ -703,6 +717,7 @@ class Alri(Module):
                           'ri_secondary_bacterial_pathogen',
                           'ri_disease_type']] = np.nan
         df.at[child_id, [f"ri_complication_{complication}" for complication in self.complications]] = False
+        df.at[child_id, 'ri_SpO2_level'] = '>=93%'
 
         # ---- Internal values ----
         df.loc[child_id, ['ri_start_of_current_episode',
@@ -742,6 +757,7 @@ class Alri(Module):
             'ri_primary_pathogen',
             'ri_secondary_bacterial_pathogen',
             'ri_disease_type',
+            'ri_SpO2_level',
             'ri_on_treatment',
             'ri_start_of_current_episode',
             'ri_scheduled_recovery_date',
@@ -749,6 +765,7 @@ class Alri(Module):
             'ri_ALRI_tx_start_date']
         ] = [
             False,
+            np.nan,
             np.nan,
             np.nan,
             np.nan,
@@ -821,6 +838,7 @@ class Alri(Module):
             'ri_primary_pathogen',
             'ri_secondary_bacterial_pathogen',
             'ri_disease_type',
+            'ri_SpO2_level',
             'ri_start_of_current_episode',
             'ri_scheduled_recovery_date',
             'ri_scheduled_death_date']
@@ -849,7 +867,7 @@ class Alri(Module):
         # For those with current infection, variables about the current infection should not be null
         assert not df.loc[curr_inf, [
             'ri_primary_pathogen',
-            'ri_disease_type']
+            'ri_disease_type', 'ri_SpO2_level']
         ].isna().any().any()
 
         # For those with current infection, dates relating to this episode should make sense
@@ -874,14 +892,13 @@ class Alri(Module):
     def impose_symptoms_for_complicated_alri(self, person_id, complication):
         """Impose symptoms for ALRI with any complication."""
 
-        if complication == any(self.complications):
-            for symptom in self.models.symptoms_for_complicated_alri(person_id):
-                self.sim.modules['SymptomManager'].change_symptom(
-                    person_id=person_id,
-                    symptom_string=symptom,
-                    add_or_remove='+',
-                    disease_module=self,
-                )
+        for symptom in self.models.symptoms_for_complicated_alri(person_id, complication):
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=person_id,
+                symptom_string=symptom,
+                add_or_remove='+',
+                disease_module=self,
+            )
 
         df = self.sim.population.props
 
@@ -1117,21 +1134,41 @@ class Models:
 
         return symptoms
 
-    def symptoms_for_complicated_alri(self, person_id):
-        """Probability of each symptom for a person given any complication"""
+    def symptoms_for_complicated_alri(self, person_id, complication):
+        """Probability of each symptom for a person given a complication"""
         p = self.p
         df = self.module.sim.population.props
 
-        for complication in self.module.complications:
-            if df.at[person_id, f"ri_complication_{complication}"]:
-                probs = {
-                    'danger_signs': p['prob_danger_signs_complicated_alri']
-                }
+        lung_complications = ['pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess']
 
-                # determine which symptoms are onset:
-                symptoms = {s for s, p in probs.items() if p > self.rng.rand()}
+        probs = defaultdict(float)
 
-                return symptoms
+        if complication == 'sepsis':
+            probs = {
+                'danger_signs': p['prob_danger_signs_in_sepsis']
+            }
+
+        if complication == any(lung_complications):
+            probs = {
+                'danger_signs': p['prob_danger_signs_in_pulmonary_complications'],
+                'chest_indrawing': p['prob_chest_indrawing_in_pulmonary_complications']
+            }
+
+        if complication == 'hypoxaemia' and (df.at[person_id, 'ri_SpO2_level'] == '<90%'):
+            probs = {
+                'danger_signs': p['prob_danger_signs_in_SpO2<90%'],
+                'chest_indrawing': p['prob_chest_indrawing_in_SpO2<90%']
+            }
+        if complication == 'hypoxaemia' and (df.at[person_id, 'ri_SpO2_level'] == '90-92%'):
+            probs = {
+                'danger_signs': p['prob_danger_signs_in_SpO2_90-92%'],
+                'chest_indrawing': p['prob_chest_indrawing_in_SpO2_90-92%']
+            }
+
+        # determine which symptoms are onset:
+        symptoms = {s for s, p in probs.items() if p > self.rng.rand()}
+
+        return symptoms
 
     def compute_death_risk(self, person_id):
         """Determine if person will die from Alri. Returns True/False"""
