@@ -50,10 +50,6 @@ class Contraception(Module):
         'Initiation_ByAge': Parameter(Types.DATA_FRAME,
                                       'The effect of age on the probability of starting use of contraceptive (add one '
                                       'for multiplicative effect).'),
-        'Initiation_ByYear': Parameter(Types.DATA_FRAME,
-                                       'The age-specific effect of calendar year on the probability of starting use of'
-                                       ' contraceptive (multiplicative effect). Values are chosen so as to induce a '
-                                       'trend in age-specific fertility consistent with the WPP estimates.'),
         'Initiation_AfterBirth': Parameter(Types.DATA_FRAME,
                                            'The probability of a woman starting a contraceptive immidiately after birth'
                                            ', by method.'),
@@ -62,11 +58,7 @@ class Contraception(Module):
         'Discontinuation_ByAge': Parameter(Types.DATA_FRAME,
                                            'The effect of age on the probability of discontinuing use of contraceptive '
                                            '(add one for multiplicative effect).'),
-        'Discontinuation_ByYear': Parameter(Types.DATA_FRAME,
-                                            'The age-specific effect of calendar year on the probability of '
-                                            'discontinuing use of contraceptive (multiplicative effect). Values are '
-                                            'chosen so as to induce a trend in age-specific fertility consistent with '
-                                            'the WPP estimates.'),
+
         'Prob_Switch_From': Parameter(Types.DATA_FRAME,
                                       'The probability per month that a women switches from one form of contraceptive '
                                       'to another, conditional that she will not discontinue use of the method.'),
@@ -82,10 +74,10 @@ class Contraception(Module):
                               'period'),
 
         'scaling_factor_on_monthly_risk_of_pregnancy': Parameter(
-            Types.REAL, "Scaling factor on the monthly risk of pregnancy and contraceptive failure rate. This value is"
-                        "found through calibration so that, at the beginning of the simulation, the age-specific "
-                        "monthly probability of a woman having a live birth matches the WPP age-specific fertility rate"
-                        " value for the same year.")
+            Types.LIST, "Scaling factor (by age-group: 15-19, 20-24, ..., 45-49) on the monthly risk of pregnancy and "
+                        "contraceptive failure rate. This value is found through calibration so that, at the beginning "
+                        "of the simulation, the age-specific monthly probability of a woman having a live birth matches"
+                        " the WPP age-specific fertility rate value for the same year.")
     }
 
     all_contraception_states = {
@@ -266,6 +258,12 @@ class Contraception(Module):
 
         processed_params = dict()
 
+        def expand_to_age_years(values_by_age_groups, ages_by_year):
+            _d = dict(zip(['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49'], values_by_age_groups))
+            return np.array(
+                [_d[self.sim.modules['Demography'].AGE_RANGE_LOOKUP[_age_year]] for _age_year in ages_by_year]
+            )
+
         def initial_method_use():
             """Generate the distribution of method use by age for the start of the simulation."""
             p_method = self.parameters['Method_Use_In_2010'].set_index('age').rename_axis('age_years')
@@ -293,8 +291,7 @@ class Contraception(Module):
                 "age_years")
 
             # Year effect
-            year_effect = self.parameters['Initiation_ByYear'].set_index('year')
-            assert set(year_effect.columns) == set(range(15, 50))
+            year_effect = time_age_trend_in_initiation()
 
             # Assemble into age-specific data-frame:
             p_init = dict()
@@ -343,8 +340,7 @@ class Contraception(Module):
             p_stop_by_method = self.parameters['Discontinuation_ByMethod'].loc[0]
             age_effect = 1.0 + self.parameters['Discontinuation_ByAge'].set_index('age')['r_discont_age'].rename_axis(
                 "age_years")
-            year_effect = self.parameters['Discontinuation_ByYear'].set_index('year')
-            assert set(year_effect.columns) == set(range(15, 50))
+            year_effect = time_age_trend_in_stopping()
 
             # Probability of initiation by age for each method
             p_stop = dict()
@@ -363,6 +359,34 @@ class Contraception(Module):
 
             return p_stop
 
+        def time_age_trend_in_initiation():
+            """The age-specific effect of calendar year on the probability of starting use of contraceptive
+            (multiplicative effect). Values are chosen so as to induce a trend in age-specific fertility consistent with
+             the WPP estimates."""
+            _years = np.arange(2010, 2101)
+            _ages = np.arange(15, 50)
+
+            _init_over_time = np.exp(+0.05 * np.minimum(2020 - 2010, (_years - 2010))) * np.maximum(1.0, np.exp(
+                +0.01 * (_years - 2020)))
+            _init_over_time_modification_by_age = 1.0 / expand_to_age_years([1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], _ages)
+            _init = np.outer(_init_over_time, _init_over_time_modification_by_age)
+
+            return pd.DataFrame(index=_years, columns=_ages, data=_init)
+
+        def time_age_trend_in_stopping():
+            """The age-specific effect of calendar year on the probability of discontinuing use of contraceptive
+            (multiplicative effect). Values are chosen so as to induce a trend in age-specific fertility consistent with
+            the WPP estimates."""
+            _years = np.arange(2010, 2101)
+            _ages = np.arange(15, 50)
+
+            _discont_over_time = np.exp(-0.05 * np.minimum(2020 - 2010, (_years - 2010))) * np.minimum(1.0, np.exp(
+                -0.01 * (_years - 2020)))
+            _discont_over_time_modification_by_age = expand_to_age_years([1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], _ages)
+            _discont = np.outer(_discont_over_time, _discont_over_time_modification_by_age)
+
+            return pd.DataFrame(index=_years, columns=_ages, data=_discont)
+
         def contraception_initiation_after_birth():
             """Get the probability of a woman starting a contraceptive following giving birth."""
 
@@ -376,6 +400,15 @@ class Contraception(Module):
             assert np.isclose(1.0, p_start_after_birth.sum())
 
             return p_start_after_birth
+
+        def scaling_factor_on_monthly_risk_of_pregnancy():
+            _d = dict(zip(
+                ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49'],
+                self.parameters['scaling_factor_on_monthly_risk_of_pregnancy']
+            ))
+            AGE_RANGE_LOOKUP = self.sim.modules['Demography'].AGE_RANGE_LOOKUP
+            _ages = range(15, 50)
+            return pd.Series(index=_ages, data=[_d[AGE_RANGE_LOOKUP[_age_year]] for _age_year in _ages])
 
         def pregnancy_no_contraception():
             """Get the probability per month of a woman becoming pregnant if she is not using any contraceptive method.
@@ -407,8 +440,7 @@ class Contraception(Module):
                 1.0 - np.power(1.0 - p_pregnancy_no_contraception_per_month['hv_inf_False'], 12)
             ).all()
 
-            return self.parameters[
-                       'scaling_factor_on_monthly_risk_of_pregnancy'] * p_pregnancy_no_contraception_per_month
+            return p_pregnancy_no_contraception_per_month.mul(scaling_factor_on_monthly_risk_of_pregnancy(), axis=0)
 
         def pregnancy_with_contraception():
             """Get the probability per month of a woman becoming pregnant if she is using a contraceptive method."""
@@ -430,8 +462,7 @@ class Contraception(Module):
                 self.all_contraception_states - {"not_using"})
             assert (0.0 == p_pregnancy_with_contraception_per_month['female_sterilization']).all()
 
-            return self.parameters[
-                       'scaling_factor_on_monthly_risk_of_pregnancy'] * p_pregnancy_with_contraception_per_month
+            return p_pregnancy_with_contraception_per_month.mul(scaling_factor_on_monthly_risk_of_pregnancy(), axis=0)
 
         processed_params['initial_method_use'] = initial_method_use()
         processed_params['p_start_per_month'] = contraception_initiation()

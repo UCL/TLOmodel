@@ -17,6 +17,8 @@ from tlo.analysis.utils import (
 from tlo.methods import contraception, demography, enhanced_lifestyle, healthsystem, symptommanager
 from tlo.methods.hiv import DummyHivModule
 
+do_plots = False
+
 # %% Create dummy simulation object
 resourcefilepath = Path('resources')
 start_date = Date(2010, 1, 1)
@@ -77,30 +79,35 @@ def get_asfr_per_month_implied_by_contraceptive_use(contraceptive_use: pd.DataFr
 
 # %% Compare the induced the age-specific fertility rates with the WPP data
 
-# Get initial distribution of contraception use
 assumption_init_use = pp['initial_method_use'].groupby(by=pp['initial_method_use'].index.map(AGE_RANGE_LOOKUP)).mean()
 assert np.isclose(1.0, assumption_init_use.sum(axis=1)).all()
 
 # Get the model-induced age-specific fertility rate, per month
-asfr_per_month = get_asfr_per_month_implied_by_contraceptive_use(assumption_init_use)
+asfr_per_month_init = get_asfr_per_month_implied_by_contraceptive_use(assumption_init_use)
 
 # Get the WPP age-specific fertility rates, adjusted to risk per woman per month.
 wpp_fert_per_month_2010 = get_medium_variant_asfr_from_wpp_resourcefile(wpp, months_exposure=1)[2010]
 
-# Plot
-plt.plot(asfr_per_month.keys(), asfr_per_month.values(), 'k', label='Model (Expectation)')
-plt.plot(wpp_fert_per_month_2010.keys(), wpp_fert_per_month_2010.values(), 'r-', label='WPP')
-plt.title("Age-specific fertility per month in 2010")
-plt.xlabel('Age-group')
-plt.ylabel('Live-births per month per woman')
-plt.legend()
-plt.tight_layout()
-plt.show()
+if do_plots:
+    # Plot
+    plt.plot(asfr_per_month_init.keys(), asfr_per_month_init.values(), 'k', label='Model (Expectation)')
+    plt.plot(wpp_fert_per_month_2010.keys(), wpp_fert_per_month_2010.values(), 'r-', label='WPP')
+    plt.title("Age-specific fertility per month in 2010")
+    plt.xlabel('Age-group')
+    plt.ylabel('Live-births per month per woman')
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+current_sf = (sim.modules['Contraception']).parameters['scaling_factor_on_monthly_risk_of_pregnancy']
+y = np.array(list(wpp_fert_per_month_2010.values())) / (np.array(list(asfr_per_month_init.values())) / current_sf)
+print(f'Scaling_Factor should be (constant over age): {y.mean}')
+print(f'Scaling_Factor should be (by age_group): {[round(_x, 2) for _x in y]}')
 
 
 # %% Define the simulation runner
 
-def run_sim(_init_over_age_and_time=None, _discont_over_age_and_time=None):
+def run_sim(_init_over_age_and_time=None, _discont_over_age_and_time=None, end_date=Date(2029, 12, 31)):
     # Overwrite 'Initiation_ByYear' and 'Discontinuation_ByYear' so that we can find good values for these:
     years_index = sim.modules['Contraception'].parameters['Initiation_ByYear']['year']
     if _init_over_age_and_time is not None:
@@ -110,14 +117,14 @@ def run_sim(_init_over_age_and_time=None, _discont_over_age_and_time=None):
             years_index.isin(_years), _ages] = _discont
 
     # Run the ContraceptivePoll (with the option `run_do_pregnancy`=False to prevent pregnancies)
-    popsize = 8_000  # size of population for simulation
+    popsize = 5_000  # size of population for simulation
     sim.make_initial_population(n=popsize)
     poll = contraception.ContraceptionPoll(module=sim.modules['Contraception'], run_do_pregnancy=False)
     age_update_event = demography.AgeUpdateEvent(sim.modules['Demography'], sim.modules['Demography'].AGE_RANGE_LOOKUP)
 
     _usage_by_age = dict()
     sim.date = sim.start_date
-    for date in pd.date_range(sim.date, Date(2029, 12, 1), freq=pd.DateOffset(months=1)):
+    for date in pd.date_range(sim.date, end_date, freq=pd.DateOffset(months=1)):
         sim.date = date
         age_update_event.apply(sim.population)
         _usage_by_age[date] = sim.population.props.loc[(sim.population.props.sex == 'F') & (
@@ -139,32 +146,39 @@ def run_sim(_init_over_age_and_time=None, _discont_over_age_and_time=None):
 _years = np.arange(2010, 2101)
 _ages = np.arange(15, 50)
 
+def expand_to_age_years(values_by_age_groups):
+    _d = dict(zip(adult_age_groups, values_by_age_groups))
+    return np.array([_d[AGE_RANGE_LOOKUP[_age_year]] for _age_year in _ages])
+
 # Let discontinuation converge for all ages to a very low value for all (0.01)
-# _discont_over_time = np.maximum(0.05, np.exp(-0.10 * (_years - 2010)))  # no change over time
-_discont_over_time = np.ones(_years.shape)
-_discont_over_time_modification_by_age = np.ones(_ages.shape)
+_discont_over_time = np.exp(-0.05 * np.minimum(2020 - 2010, (_years - 2010))) * np.minimum(1.0, np.exp(-0.01 * (_years - 2020)))
+_discont_over_time_modification_by_age = expand_to_age_years([1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
 _discont = np.outer(_discont_over_time, _discont_over_time_modification_by_age)
 
-plt.plot(_years, _discont)
-plt.ylim(0, 1)
-plt.xlim(2010, 2100)
-plt.show()
+if do_plots:
+    plt.plot(_years, _discont)
+    plt.ylim(0, 1)
+    plt.xlim(2010, 2050)
+    plt.show()
 
 # Let initiation increase over time for all ages
-# _init_over_time = np.minimum(5, np.exp(+0.05 * (_years - 2010)))
-_init_over_time = np.ones(_years.shape)  # no change over time
-_init_over_time_modification_by_age = np.ones(_ages.shape)
+_init_over_time = np.exp(+0.05 * np.minimum(2020 - 2010, (_years - 2010))) * np.maximum(1.0, np.exp(+0.01 * (_years - 2020)))
+_init_over_time_modification_by_age = 1.0 / _discont_over_time_modification_by_age
 _init = np.outer(_init_over_time, _init_over_time_modification_by_age)
 
-plt.plot(_years, _discont)
-plt.ylim(0, 10)
-plt.xlim(2010, 2100)
-plt.show()
+if do_plots:
+    plt.plot(_years, _init)
+    plt.ylim(0, 10)
+    plt.xlim(2010, 2030)
+    plt.show()
 
 # %% Run simulation
-# usage_by_age = run_sim(_init_over_age_and_time=_init, _discont_over_age_and_time=_discont)
-usage_by_age = run_sim()  # with default values
+end_date_simulation = Date(2099, 12, 31)
 
+usage_by_age = run_sim(_init_over_age_and_time=_init,
+                       _discont_over_age_and_time=_discont,
+                       end_date=end_date_simulation
+                       )
 
 # %% Inspect Results
 
@@ -182,13 +196,13 @@ def plot(df, title=''):
     fig.subplots_adjust(right=0.65)
     plt.show()
 
-
-for age_grp in ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']:
-    plot(
-        pd.DataFrame.from_dict({_date.date(): usage_by_age[_date].unstack()[age_grp] for _date in usage_by_age},
-                               orient='index'),
-        title=age_grp
-    )
+if do_plots:
+    for age_grp in ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']:
+        plot(
+            pd.DataFrame.from_dict({_date.date(): usage_by_age[_date].unstack()[age_grp] for _date in usage_by_age},
+                                   orient='index'),
+            title=age_grp
+        )
 
 # %% Get the approximate implied "age-specific fertility" rates (per month) by this changing pattern of contraceptive
 # use
@@ -215,10 +229,17 @@ for i, agegrp in enumerate(adult_age_groups):
     l2 = ax[i].plot(wpp_this_agegrp.index, wpp_this_agegrp.values, 'k-', label='WPP')
     ax[i].plot((2010, 2010), (0, 0.03), 'b--')
     ax[i].set_title(f"{agegrp}")
-    ax[i].set_xlim(2005, 2029)
+    ax[i].set_xlim(2005, end_date_simulation.date().year)
     plt.setp(ax[i].get_xticklabels(), rotation=90, ha='right')
 
-ax[-1].set_axis_off()
+# Plot mean of all ages in last panel
+l1 = ax[-1].plot(model_this_agegrp.index.year, model.mean(), 'r-', label='Model')
+l2 = ax[-1].plot(wpp_this_agegrp.index, wpp_fert_per_month.mean(), 'k-', label='WPP')
+ax[-1].plot((2010, 2010), (0, 0.03), 'b--')
+ax[-1].set_title(f"* 15-49 *")
+ax[-1].set_xlim(2005, 2030)
+plt.setp(ax[-1].get_xticklabels(), rotation=90, ha='right')
+
 fig.legend((l1[0], l2[0]), ('Model', 'WPP'), 'lower right')
 fig.tight_layout()
 fig.subplots_adjust(right=0.90)
@@ -226,13 +247,13 @@ fig.show()
 
 # %% Check that initial usage by age matches the input assumption (initial_method_use)
 
-actual_init_use = format_usage_results(usage_by_age[Date(2010, 1, 1)])
-
-for i, agegrp in enumerate(actual_init_use.index):
-    pd.concat({
-        'actual': actual_init_use.loc[agegrp],
-        'expected': assumption_init_use.loc[agegrp]
-    }, axis=1).plot.bar()
-    plt.title(f"Contraception use in 2010: {agegrp}")
-    plt.tight_layout()
-    plt.show()
+if do_plots:
+    actual_init_use = format_usage_results(usage_by_age[Date(2010, 1, 1)])
+    for i, agegrp in enumerate(actual_init_use.index):
+        pd.concat({
+            'actual': actual_init_use.loc[agegrp],
+            'expected': assumption_init_use.loc[agegrp]
+        }, axis=1).plot.bar()
+        plt.title(f"Contraception use in 2010: {agegrp}")
+        plt.tight_layout()
+        plt.show()
