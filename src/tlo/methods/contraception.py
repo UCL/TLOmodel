@@ -4,8 +4,10 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging, \
-    get_medium_variant_asfr_from_wpp_resourcefile
+from tlo.analysis.utils import (
+    flatten_multi_index_series_into_dict_for_logging,
+    get_medium_variant_asfr_from_wpp_resourcefile,
+)
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
 from tlo.util import random_date, sample_outcome, transition_states
@@ -13,7 +15,6 @@ from tlo.util import random_date, sample_outcome, transition_states
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# todo - if we keep the method of determining method after pregnancy, we can remove that parameter that isn't used; or we reverse it.
 
 class Contraception(Module):
     """Contraception module covering baseline contraception methods use, failure (i.e., pregnancy),
@@ -165,7 +166,6 @@ class Contraception(Module):
         # Import the Age-specific fertility rate data from WPP
         self.parameters['age_specific_fertility_rates'] = \
             pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
-
 
     def pre_initialise_population(self):
         """Process parameters before initialising population and simulation"""
@@ -386,7 +386,7 @@ class Contraception(Module):
                 return 1 - np.exp(np.log(1 - p_annual) / 12)
 
             # Get the probability of being pregnant if not HIV-positive
-            p_pregnancy_no_contraception_per_month_nohiv = self.parameters['Pregnancy_NotUsing_In_2010']\
+            p_pregnancy_no_contraception_per_month_nohiv = self.parameters['Pregnancy_NotUsing_In_2010'] \
                 .set_index('age')['AnnualProb'].rename_axis('age_years').apply(convert_annual_prob_to_monthly_prob)
 
             # Compute the probability of being pregnant if HIV-positive
@@ -407,7 +407,8 @@ class Contraception(Module):
                 1.0 - np.power(1.0 - p_pregnancy_no_contraception_per_month['hv_inf_False'], 12)
             ).all()
 
-            return self.parameters['scaling_factor_on_monthly_risk_of_pregnancy'] * p_pregnancy_no_contraception_per_month
+            return self.parameters[
+                       'scaling_factor_on_monthly_risk_of_pregnancy'] * p_pregnancy_no_contraception_per_month
 
         def pregnancy_with_contraception():
             """Get the probability per month of a woman becoming pregnant if she is using a contraceptive method."""
@@ -429,7 +430,8 @@ class Contraception(Module):
                 self.all_contraception_states - {"not_using"})
             assert (0.0 == p_pregnancy_with_contraception_per_month['female_sterilization']).all()
 
-            return self.parameters['scaling_factor_on_monthly_risk_of_pregnancy'] * p_pregnancy_with_contraception_per_month
+            return self.parameters[
+                       'scaling_factor_on_monthly_risk_of_pregnancy'] * p_pregnancy_with_contraception_per_month
 
         processed_params['initial_method_use'] = initial_method_use()
         processed_params['p_start_per_month'] = contraception_initiation()
@@ -584,6 +586,7 @@ class Contraception(Module):
 
 class DirectBirth(Event, IndividualScopeEventMixin):
     """Do birth, with the mother_id set to -1 (we do not associate the child with a particular mother)."""
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -615,7 +618,6 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # Update contraception method
         if self.run_update_contraceptive:
             self.update_contraceptive()
-
 
     def update_contraceptive(self):
         """ Determine women that will start, stop or switch contraceptive method."""
@@ -894,7 +896,6 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     description='Counts of women, by age-range, on each type of contraceptive at a point in time.')
 
 
-
 class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin):
     """HSI event for the starting a contraceptive method, maintaining use of a method of a contraceptive, or switching
      between contraceptives."""
@@ -999,7 +1000,7 @@ class SimplifiedPregnancyAndLabour(Module):
         df.loc[df.is_alive, 'la_is_postpartum'] = False
         df.loc[df.is_alive, 'ps_ectopic_pregnancy'] = np.NAN
 
-    def initialise_simulation(self,  *args):
+    def initialise_simulation(self, *args):
         pass
 
     def on_birth(self, mother_id, child_id):

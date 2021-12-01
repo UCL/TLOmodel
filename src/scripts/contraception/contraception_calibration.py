@@ -10,7 +10,10 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation
-from tlo.analysis.utils import make_calendar_period_lookup, get_medium_variant_asfr_from_wpp_resourcefile
+from tlo.analysis.utils import (
+    get_medium_variant_asfr_from_wpp_resourcefile,
+    make_calendar_period_lookup,
+)
 from tlo.methods import contraception, demography, enhanced_lifestyle, healthsystem, symptommanager
 from tlo.methods.hiv import DummyHivModule
 
@@ -51,8 +54,10 @@ _, period_lookup = make_calendar_period_lookup()
 # Load WPP data on live births (age-specific fertility rates)
 wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
+
 def format_usage_results(_df):
     return _df.unstack().T.apply(lambda row: row / row.sum(), axis=1).dropna()
+
 
 def get_asfr_per_month_implied_by_contraceptive_use(contraceptive_use: pd.DataFrame) -> dict:
     """Compute the age-specific fertility rate per month that is implied by a pattern of contraceptive use, given
@@ -60,12 +65,15 @@ def get_asfr_per_month_implied_by_contraceptive_use(contraceptive_use: pd.DataFr
 
     # Number of pregnancies per month per method
     preg_per_month = pd.DataFrame(index=range(15, 50), columns=sorted(states))
-    preg_per_month['not_using'] = pp['p_pregnancy_no_contraception_per_month']['hv_inf_False']  # (for simplicity, assume all persons HIV-negative)
-    preg_per_month.loc[:, sorted(states - {'not_using'})] = pp['p_pregnancy_with_contraception_per_month'].loc[:, sorted(states - {'not_using'})]
+    preg_per_month['not_using'] = pp['p_pregnancy_no_contraception_per_month'][
+        'hv_inf_False']  # (for simplicity, assume all persons HIV-negative)
+    preg_per_month.loc[:, sorted(states - {'not_using'})] = \
+        pp['p_pregnancy_with_contraception_per_month'].loc[:, sorted(states - {'not_using'})]
     preg_per_month = preg_per_month.groupby(by=preg_per_month.index.map(AGE_RANGE_LOOKUP)).mean()
 
     # Total live births per month: sum across risk of pregnancy from all births and multiply by prob of live birth.
     return ((contraceptive_use * preg_per_month).sum(axis=1) * prob_live_births).to_dict()
+
 
 # %% Compare the induced the age-specific fertility rates with the WPP data
 
@@ -89,24 +97,28 @@ plt.legend()
 plt.tight_layout()
 plt.show()
 
+
 # %% Define the simulation runner
 
-def run_sim(_init_over_age_and_time, _discont_over_age_and_time):
+def run_sim(_init_over_age_and_time=None, _discont_over_age_and_time=None):
     # Overwrite 'Initiation_ByYear' and 'Discontinuation_ByYear' so that we can find good values for these:
     years_index = sim.modules['Contraception'].parameters['Initiation_ByYear']['year']
-    sim.modules['Contraception'].parameters['Initiation_ByYear'].loc[years_index.isin(_years), _ages] = _init
-    sim.modules['Contraception'].parameters['Discontinuation_ByYear'].loc[years_index.isin(_years), _ages] = _discont
+    if _init_over_age_and_time is not None:
+        sim.modules['Contraception'].parameters['Initiation_ByYear'].loc[years_index.isin(_years), _ages] = _init
+    if _discont_over_age_and_time is not None:
+        sim.modules['Contraception'].parameters['Discontinuation_ByYear'].loc[
+            years_index.isin(_years), _ages] = _discont
 
     # Run the ContraceptivePoll (with the option `run_do_pregnancy`=False to prevent pregnancies)
-    popsize = 5_000  # size of population for simulation
+    popsize = 8_000  # size of population for simulation
     sim.make_initial_population(n=popsize)
     poll = contraception.ContraceptionPoll(module=sim.modules['Contraception'], run_do_pregnancy=False)
     age_update_event = demography.AgeUpdateEvent(sim.modules['Demography'], sim.modules['Demography'].AGE_RANGE_LOOKUP)
 
     _usage_by_age = dict()
-    for date in pd.date_range(sim.date, Date(2099, 12, 1), freq=pd.DateOffset(months=1)):
+    sim.date = sim.start_date
+    for date in pd.date_range(sim.date, Date(2029, 12, 1), freq=pd.DateOffset(months=1)):
         sim.date = date
-
         age_update_event.apply(sim.population)
         _usage_by_age[date] = sim.population.props.loc[(sim.population.props.sex == 'F') & (
             sim.population.props.age_years.between(15, 49))].groupby(by=['co_contraception', 'age_range']).size()
@@ -128,7 +140,8 @@ _years = np.arange(2010, 2101)
 _ages = np.arange(15, 50)
 
 # Let discontinuation converge for all ages to a very low value for all (0.01)
-_discont_over_time = np.maximum(0.05, np.exp(-0.10 * (_years - 2010)))
+# _discont_over_time = np.maximum(0.05, np.exp(-0.10 * (_years - 2010)))  # no change over time
+_discont_over_time = np.ones(_years.shape)
 _discont_over_time_modification_by_age = np.ones(_ages.shape)
 _discont = np.outer(_discont_over_time, _discont_over_time_modification_by_age)
 
@@ -138,17 +151,20 @@ plt.xlim(2010, 2100)
 plt.show()
 
 # Let initiation increase over time for all ages
-_init_over_time = np.minimum(5, np.exp(+0.05 * (_years - 2010)))
+# _init_over_time = np.minimum(5, np.exp(+0.05 * (_years - 2010)))
+_init_over_time = np.ones(_years.shape)  # no change over time
 _init_over_time_modification_by_age = np.ones(_ages.shape)
 _init = np.outer(_init_over_time, _init_over_time_modification_by_age)
 
-plt.plot(_years, _init)
+plt.plot(_years, _discont)
 plt.ylim(0, 10)
 plt.xlim(2010, 2100)
 plt.show()
 
 # %% Run simulation
-usage_by_age = run_sim(_init_over_age_and_time=_init, _discont_over_age_and_time=_discont)
+# usage_by_age = run_sim(_init_over_age_and_time=_init, _discont_over_age_and_time=_discont)
+usage_by_age = run_sim()  # with default values
+
 
 # %% Inspect Results
 
@@ -166,13 +182,16 @@ def plot(df, title=''):
     fig.subplots_adjust(right=0.65)
     plt.show()
 
+
 for age_grp in ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']:
     plot(
-        pd.DataFrame.from_dict({_date.date(): usage_by_age[_date].unstack()[age_grp] for _date in usage_by_age}, orient='index'),
+        pd.DataFrame.from_dict({_date.date(): usage_by_age[_date].unstack()[age_grp] for _date in usage_by_age},
+                               orient='index'),
         title=age_grp
     )
 
-# %% Get the approximate implied "age-specific fertility" rates (per month) by this changing pattern of contraceptive use
+# %% Get the approximate implied "age-specific fertility" rates (per month) by this changing pattern of contraceptive
+# use
 
 #  WPP ASFR per month:
 wpp_fert_per_month = pd.DataFrame(get_medium_variant_asfr_from_wpp_resourcefile(wpp, months_exposure=1))
@@ -187,7 +206,6 @@ model = pd.DataFrame(model)
 fig, ax = plt.subplots(2, 4)
 ax = ax.reshape(-1)
 for i, agegrp in enumerate(adult_age_groups):
-
     # Get average fertility in the model:
     model_this_agegrp = model.loc[agegrp]
     wpp_this_agegrp = wpp_fert_per_month.loc[agegrp]
@@ -197,7 +215,7 @@ for i, agegrp in enumerate(adult_age_groups):
     l2 = ax[i].plot(wpp_this_agegrp.index, wpp_this_agegrp.values, 'k-', label='WPP')
     ax[i].plot((2010, 2010), (0, 0.03), 'b--')
     ax[i].set_title(f"{agegrp}")
-    ax[i].set_xlim(2005, 2015)
+    ax[i].set_xlim(2005, 2029)
     plt.setp(ax[i].get_xticklabels(), rotation=90, ha='right')
 
 ax[-1].set_axis_off()
@@ -205,9 +223,6 @@ fig.legend((l1[0], l2[0]), ('Model', 'WPP'), 'lower right')
 fig.tight_layout()
 fig.subplots_adjust(right=0.90)
 fig.show()
-
-# todo- why increase initially? is it to do with contraceptive patterns leading it to and being out of euqilbirum - how to fix?
-
 
 # %% Check that initial usage by age matches the input assumption (initial_method_use)
 
@@ -221,4 +236,3 @@ for i, agegrp in enumerate(actual_init_use.index):
     plt.title(f"Contraception use in 2010: {agegrp}")
     plt.tight_layout()
     plt.show()
-

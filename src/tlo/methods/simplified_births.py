@@ -220,4 +220,3 @@ class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
 
         # 2) Update for those aged 24+ months ('none' for all, per the Newborn module)
         df.loc[df.is_alive & (df.age_exact_years >= 2.0), 'nb_breastfeeding_status'] = 'none'
-

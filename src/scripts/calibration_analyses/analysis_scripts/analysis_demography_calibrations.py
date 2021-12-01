@@ -264,7 +264,7 @@ for year in [2010, 2015, 2018, 2029, 2049]:
         fig.tight_layout()
         plt.savefig(make_graph_file_name(f"Pop_Size_{year}"))
         plt.show()
-    except:
+    except KeyError:
         pass
 
 # %% Births: Number over time
@@ -461,6 +461,7 @@ births_by_mother_age = extract_results(
     do_scaling=False
 )
 
+
 def get_num_adult_women_by_age_range(_df):
     _df = _df.assign(year=_df['date'].dt.year)
     _df = _df.set_index(_df['year'], drop=True)
@@ -469,6 +470,7 @@ def get_num_adult_women_by_age_range(_df):
     ser = _df[select_col].stack()
     ser.index.names = ['year', 'mother_age_range']
     return ser
+
 
 num_adult_women = extract_results(
     results_folder,
@@ -484,17 +486,18 @@ asfr = summarize(births_by_mother_age.div(num_adult_women))
 # Get the age-specific fertility rates of the WPP source
 wpp = pd.read_csv(rfp / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
+
 def expand_by_year(periods, vals, years=range(2010, 2050)):
     _ser = dict()
     for y in years:
         _ser[y] = vals.loc[(periods == calperiodlookup[y])].values[0]
     return _ser.keys(), _ser.values()
 
+
 fig, ax = plt.subplots(2, 4)
 ax = ax.reshape(-1)
 years = range(2010, 2049)
 for i, _agegrp in enumerate(adult_age_groups):
-
     model = asfr.loc[(slice(years[0], years[-1]), _age), :].unstack()
     data = wpp.loc[
         (wpp.Age_Grp == _age) & wpp.Variant.isin(['WPP_Estimates', 'WPP_Medium variant']), ['Period', 'asfr']
@@ -511,10 +514,8 @@ for i, _agegrp in enumerate(adult_age_groups):
 ax[-1].set_axis_off()
 fig.legend((l1[0], l2[0]), ('WPP', 'Model'), 'lower right')
 fig.tight_layout()
-fig.savefig(make_graph_file_name(f"asfr_model_vs_data"))
+fig.savefig(make_graph_file_name("asfr_model_vs_data"))
 fig.show()
-
-
 
 # %% All-Cause Deaths
 #  todo - fix this -- only do summarize after the groupbys

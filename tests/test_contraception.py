@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file, get_medium_variant_asfr_from_wpp_resourcefile
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import contraception, demography, enhanced_lifestyle, healthsystem, symptommanager
 from tlo.methods.hiv import DummyHivModule
 
@@ -562,20 +562,28 @@ def test_initial_distribution_of_contraception_and_implied_asfr(tmpdir):
     # 2) Check that the induced age-specific fertility rates match expected number of births per month (by mother age)
 
     # - pregnancies for those not on contraception
-    prob_preg_no_contraception = df.loc[(df.sex == "F") & df.age_years.between(15, 49) & df.is_alive & ~df.is_pregnant & (
-            df.co_contraception == 'not_using')].merge(
-        pp['p_pregnancy_no_contraception_per_month'], left_on='age_years', right_on='age_years'
-    )[['age_range', 'hv_inf', 'hv_inf_False', 'hv_inf_True']]
-    prob_preg_no_contraception['prob'] = prob_preg_no_contraception.apply(lambda row: row.hv_inf_True if row.hv_inf else row.hv_inf_False, axis=1)
-    expected_pregs_no_contraception = prob_preg_no_contraception.groupby('age_range')['prob'].sum()[adult_age_groups].to_dict()
+    prob_preg_no_contraception = df.loc[(df.sex == "F")
+                                        & df.age_years.between(15, 49)
+                                        & df.is_alive
+                                        & ~df.is_pregnant
+                                        & (df.co_contraception == 'not_using')
+                                        ].merge(
+        pp['p_pregnancy_no_contraception_per_month'], left_on='age_years', right_on='age_years')
+    [['age_range', 'hv_inf', 'hv_inf_False', 'hv_inf_True']]
+    prob_preg_no_contraception['prob'] = prob_preg_no_contraception.apply(
+        lambda row: row.hv_inf_True if row.hv_inf else row.hv_inf_False, axis=1)
+    expected_pregs_no_contraception = prob_preg_no_contraception.groupby('age_range')['prob'].sum()[
+        adult_age_groups].to_dict()
 
     # - pregnancies for those on contraception
-    prob_preg_on_contraception = df.loc[(df.sex == "F") & df.age_years.between(15, 49) & df.is_alive & ~df.is_pregnant & (
+    prob_preg_on_contraception = df.loc[
+        (df.sex == "F") & df.age_years.between(15, 49) & df.is_alive & ~df.is_pregnant & (
             df.co_contraception != 'not_using')].merge(
         pp['p_pregnancy_with_contraception_per_month'].stack().reset_index(),
         left_on=['co_contraception', 'age_years'], right_on=['level_1', 'level_0']
     )
-    expected_preg_on_contraception = prob_preg_on_contraception.groupby('age_range')[0].sum()[adult_age_groups].to_dict()
+    expected_preg_on_contraception = prob_preg_on_contraception.groupby('age_range')[0].sum()[
+        adult_age_groups].to_dict()
 
     # Expected Age-Specific Fertility Rates (per month)
     model_asfr = {
@@ -586,15 +594,18 @@ def test_initial_distribution_of_contraception_and_implied_asfr(tmpdir):
     }
 
     # Get the "expected" age-specific fertility rates (per month) implied deterministically by the parameters
-    assumption_init_use = pp['initial_method_use'].groupby(by=pp['initial_method_use'].index.map(age_group_lookup)).mean()
+    assumption_init_use = pp['initial_method_use'].groupby(
+        by=pp['initial_method_use'].index.map(age_group_lookup)).mean()
     ex_preg_per_month = pd.DataFrame(index=range(15, 50), columns=sorted(states))
-    ex_preg_per_month['not_using'] = pp['p_pregnancy_no_contraception_per_month']['hv_inf_False']  # (for simplicity, assume all persons HIV-negative)
-    ex_preg_per_month.loc[:, sorted(states - {'not_using'})] = pp['p_pregnancy_with_contraception_per_month'].loc[:, sorted(states - {'not_using'})]
+    ex_preg_per_month['not_using'] = \
+        pp['p_pregnancy_no_contraception_per_month']['hv_inf_False']  # (for simplicity, assume all HIV-negative)
+    ex_preg_per_month.loc[:, sorted(states - {'not_using'})] = \
+        pp['p_pregnancy_with_contraception_per_month'].loc[:, sorted(states - {'not_using'})]
     ex_preg_per_month = ex_preg_per_month.groupby(by=ex_preg_per_month.index.map(age_group_lookup)).mean()
     ex_asfr_per_month = ((assumption_init_use * ex_preg_per_month).sum(axis=1) * prob_live_births).to_dict()
 
     # Check that model approximately matches the deterministic expectation
     assert all([np.isclose(model_asfr[k], ex_asfr_per_month[k], rtol=0.10) for k in adult_age_groups])
     assert 0.05 > (
-       abs(sum(model_asfr.values()) - sum(ex_asfr_per_month.values())) / sum(ex_asfr_per_month.values())
+        abs(sum(model_asfr.values()) - sum(ex_asfr_per_month.values())) / sum(ex_asfr_per_month.values())
     )
