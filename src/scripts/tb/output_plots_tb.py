@@ -137,11 +137,8 @@ data_hiv_moh_art = pd.read_excel(xls, sheet_name="MoH_number_art")
 # ---------------------------------------------------------------------- #
 
 # load the results
-# with open(outputpath / "default_run.pickle", "rb") as f:
-#     output = pickle.load(f)
 with open(outputpath / "default_run.pickle", "rb") as f:
     output = pickle.load(f)
-
 
 # person-years all ages (irrespective of HIV status)
 py_ = output["tlo.methods.demography"]["person_years"]
