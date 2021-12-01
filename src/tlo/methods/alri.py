@@ -366,7 +366,6 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of hypoxaemia in bronchiolitis and other alri cases'
                       ),
-
         'prob_bacteraemia_in_pneumonia':
             Parameter(Types.REAL,
                       'probability of bacteraemia in pneumonia'
@@ -374,6 +373,10 @@ class Alri(Module):
         'prob_progression_to_sepsis_with_bacteraemia':
             Parameter(Types.REAL,
                       'probability of progression to sepsis from bactereamia'
+                      ),
+        'proportion_hypoxaemia_with_SpO2<90%':
+            Parameter(Types.REAL,
+                      'proportion of hypoxaemic children with SpO2 <90%'
                       ),
 
         # Risk of death parameters -----
@@ -469,8 +472,25 @@ class Alri(Module):
                       ),
         'prob_danger_signs_in_SpO2_90-92%':
             Parameter(Types.REAL,
-                      'probability of any danger signs in children with SpO2 <90%'
+                      'probability of any danger signs in children with SpO2 between 90-92%'
                       ),
+        'prob_chest_indrawing_in_SpO2<90%':
+            Parameter(Types.REAL,
+                      'probability of chest indrawing in children with SpO2 <90%'
+                      ),
+        'prob_chest_indrawing_in_SpO2_90-92%':
+            Parameter(Types.REAL,
+                      'probability of chest indrawing in children with SpO2 between 90-92%'
+                      ),
+        'prob_danger_signs_in_pulmonary_complications':
+            Parameter(Types.REAL,
+                      'probability of danger signs in children with pulmonary complications'
+                      ),
+        'prob_chest_indrawing_in_pulmonary_complications':
+            Parameter(Types.REAL,
+                      'probability of chest indrawing in children with pulmonary complications'
+                      ),
+
 
         # Parameters governing the effects of vaccine ----------------
         'rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y':
@@ -658,7 +678,7 @@ class Alri(Module):
         df.loc[df.is_alive, [
             f"ri_complication_{complication}" for complication in self.complications]
         ] = False
-        df.loc[df.is_alive, 'ri_SpO2_level'] = '>=93%'
+        df.loc[df.is_alive, 'ri_SpO2_level'] = np.nan
 
         # ---- Internal values ----
         df.loc[df.is_alive, 'ri_start_of_current_episode'] = pd.NaT
@@ -717,7 +737,7 @@ class Alri(Module):
                           'ri_secondary_bacterial_pathogen',
                           'ri_disease_type']] = np.nan
         df.at[child_id, [f"ri_complication_{complication}" for complication in self.complications]] = False
-        df.at[child_id, 'ri_SpO2_level'] = '>=93%'
+        df.at[child_id, 'ri_SpO2_level'] = np.nan
 
         # ---- Internal values ----
         df.loc[child_id, ['ri_start_of_current_episode',
@@ -838,7 +858,6 @@ class Alri(Module):
             'ri_primary_pathogen',
             'ri_secondary_bacterial_pathogen',
             'ri_disease_type',
-            'ri_SpO2_level',
             'ri_start_of_current_episode',
             'ri_scheduled_recovery_date',
             'ri_scheduled_death_date']
@@ -867,7 +886,7 @@ class Alri(Module):
         # For those with current infection, variables about the current infection should not be null
         assert not df.loc[curr_inf, [
             'ri_primary_pathogen',
-            'ri_disease_type', 'ri_SpO2_level']
+            'ri_disease_type']
         ].isna().any().any()
 
         # For those with current infection, dates relating to this episode should make sense
@@ -1116,6 +1135,16 @@ class Models:
         complications = {c for c, p in probs.items() if p > self.rng.rand()}
 
         return complications
+
+    def hypoxaemia_severity(self, person_id):
+        """ Determine the level of severity of hypoxaemia by SpO2 measurement"""
+        p = self.p
+        df = self.module.sim.population.props
+
+        if p['proportion_hypoxaemia_with_SpO2<90%'] < self.rng():
+            df.at[person_id, 'ri_SpO2_level'] = '<90%'
+        else:
+            df.at[person_id, 'ri_SpO2_level'] = '90-92%'
 
     def symptoms_for_disease(self, disease_type):
         """Determine set of symptom (before complications) for a given instance of disease"""
@@ -1373,9 +1402,11 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         complications = models.complications(person_id=person_id)
         df.loc[person_id, [f"ri_complication_{complication}" for complication in complications]] = True
+        if complications == 'hypoxaemia':
+            models.hypoxaemia_severity(person_id=person_id)
+
         for complication in complications:
             m.impose_symptoms_for_complicated_alri(person_id=person_id, complication=complication)
-
 
 class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
     """
