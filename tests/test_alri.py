@@ -158,7 +158,7 @@ def test_integrity_of_linear_models(tmpdir):
                     patho,
                     coinf,
                     disease_type
-                )
+                )  # TODO: this loop allows for bacterial primary infection have bacterial co-infection - is it OK?
                 res = models.complications(person_id)
 
                 assert isinstance(res, set)
@@ -172,10 +172,9 @@ def test_integrity_of_linear_models(tmpdir):
 
     # --- symptoms_for_complication
     for complication in alri.complications:
-        df.loc[person_id, [f'ri_complication_{complication}']] = True
-    res = models.symptoms_for_complicated_alri(person_id)
-    assert isinstance(res, set)
-    assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
+        res = models.symptoms_for_complicated_alri(person_id, complication=complication)
+        assert isinstance(res, set)
+        assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
 
     # --- death
     for disease_type in alri.disease_types:
@@ -549,18 +548,12 @@ def test_immediate_onset_complications(tmpdir):
 
     # make risk of immediate onset complications be 100% (so that person has all the complications)
     params = sim.modules['Alri'].parameters
+    params['prob_pulmonary_complications_in_pneumonia'] = 1.0
+    params['prob_bacteraemia_in_pneumonia'] = 1.0
+    params['prob_progression_to_sepsis_with_bacteraemia'] = 1.0
     for p in params:
         if any([p.startswith(f'prob_{c}') for c in sim.modules['Alri'].complications]):
             params[p] = 1.0
-    params['prob_pulmonary_complications_in_pneumonia'] = 1.0
-    # params['prob_pleural_effusion_in_pulmonary_complicated_pneumonia'] = 1.0
-    # params['prob_empyema_in_pulmonary_complicated_pneumonia'] = 1.0
-    # params['prob_lung_abscess_in_pulmonary_complicated_pneumonia'] = 1.0
-    # params['prob_pneumothorax_in_pulmonary_complicated_pneumonia'] = 1.0
-    params['prob_bacteraemia_in_pneumonia'] = 1.0
-    params['prob_progression_to_sepsis_with_bacteraemia'] = 1.0
-    # params['prob_hypoxaemia_in_pneumonia'] = 1.0
-    # params['prob_hypoxaemia_in_bronchiolitis/other_alri'] = 1.0
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
@@ -584,6 +577,10 @@ def test_immediate_onset_complications(tmpdir):
             f"ri_complication_{complication}" for complication in ['pneumothorax', 'pleural_effusion', 'hypoxaemia']
         ]
         assert df.loc[person_id, complications_cols].all()
+
+    # Check SpO2<93% if hypoxaemia is present
+    if df.loc[person_id, 'ri_complication_hypoxaemia']:
+        assert df.loc[person_id, 'ri_SpO2_level'] != '>=93%'
 
 
 def test_no_immediate_onset_complications(tmpdir):

@@ -1408,6 +1408,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         for complication in complications:
             m.impose_symptoms_for_complicated_alri(person_id=person_id, complication=complication)
 
+
 class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
     """
     This is the Natural Recovery event. It is scheduled by the AlriIncidentCase Event for someone who will recover
