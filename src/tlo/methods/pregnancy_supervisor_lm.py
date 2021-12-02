@@ -98,8 +98,6 @@ def maternal_anaemia(self, df, rng=None, **externals):
     result[df.hv_inf & (df.hv_art != 'not')] *= params['rr_anaemia_maternal_malaria']
     result[df.ac_receiving_iron_folic_acid] *= params['treatment_effect_iron_folic_acid_anaemia']
 
-    # todo: deficiencies have been removed
-
     return result
 
 

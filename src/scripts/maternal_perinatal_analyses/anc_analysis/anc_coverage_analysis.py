@@ -149,7 +149,7 @@ def get_mmr_nmr_graphs(bdata, idata, group):
         plt.ylabel("Deaths per 100,000 live births")
     plt.title(f'{group} Mortality Ratio per Year at Baseline and Under Intervention')
     plt.legend()
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{group}_mr_int.png')
+    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{group}_mr_int.png')
     plt.show()
 
 get_mmr_nmr_graphs(baseline_mmr, intervention_mmr, 'Maternal')
@@ -196,7 +196,7 @@ plt.xlabel('Year')
 plt.ylabel("Stillbirths per 1000 live births")
 plt.title('Stillbirth Rate per Year at Baseline and Under Intervention')
 plt.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sbr_int.png')
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sbr_int.png')
 plt.show()
 
 # HEALTH CARE WORKER TIME
@@ -224,7 +224,7 @@ capacity = extract_results(
 # frac_time_used.plot()
 # plt.title("Fraction of total health-care worker time being used")
 # plt.xlabel("Date")
-# plt.savefig(make_file_name('HSI_Frac_time_used'))
+# #plt.savefig(make_file_name('HSI_Frac_time_used'))
 # plt.show()
 #
 # # %% Breakdowns by HSI:
@@ -245,7 +245,7 @@ capacity = extract_results(
 # evs.plot.bar(stacked=True)
 # plt.title(f"HSI by Module, per Month (year {year})")
 # plt.ylabel('Total per month')
-# plt.savefig(make_file_name('HSI_per_module_per_month'))
+# #plt.savefig(make_file_name('HSI_per_module_per_month'))
 # plt.show()
 #
 # # Plot the breakdown of all HSI, over all the years
@@ -253,51 +253,97 @@ capacity = extract_results(
 #     .size().rename(columns={0: 'count'}) * scaling_factor
 # evs.plot.pie()
 # plt.title(f"HSI by Module")
-# plt.savefig(make_file_name('HSI_per_module'))
+# #plt.savefig(make_file_name('HSI_per_module'))
 # plt.show()
 
-# CONSUMABLE COST
-draws = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-mean_anc_cost_per_year = list()
+# =================================================== CONSUMABLE COST =================================================
+def get_mean_and_quants(df, sim_years):
+    year_means = list()
+    lower_quantiles = list()
+    upper_quantiles = list()
 
-def unpack(in_dict_as_string):
-    in_dict = eval(in_dict_as_string)
-    l = list()
-    for k, v in in_dict.items():
-        v = int(v)
-        for _v in range(v):
-            l.append(k)
-    return l
+    for year in sim_years:
+        if year in df.index:
+            year_means.append(df.loc[year].mean(axis=1).iloc[0])
+            lower_quantiles.append(df.loc[year].iloc[0].quantile(0.025))
+            upper_quantiles.append(df.loc[year].iloc[0].quantile(0.925))
+        else:
+            year_means.append(0)
+            lower_quantiles.append(0)
+            lower_quantiles.append(0)
 
+    return [year_means, lower_quantiles, upper_quantiles]
+
+draws = [0, 1, 2, 3, 4]
 resourcefilepath = Path("./resources/healthsystem/consumables/")
-consumables_df = pd.read_excel(Path(resourcefilepath) / 'ResourceFile_Consumables.xlsx')
+consumables_df = pd.read_csv(Path(resourcefilepath) / 'ResourceFile_Consumables.csv')
 
-for draw in draws:
-    draw_df = load_pickled_dataframes(baseline_results_folder, draw=draw)
-    cons = draw_df['tlo.methods.healthsystem']['Consumables']
-    cons['year'] = cons['date'].dt.year
-    cons = cons.set_index('year')
-    anc_cons = cons.loc[cons.TREATMENT_ID.str.contains('Antenatal')]
+# TODO: this should be scaled to the correct population size?
+# todo: also so slow...
 
-    for year in intervention_years:
-        year_df = anc_cons.loc[anc_cons.index == year]
-        item_counts = year_df['Item_Available'].apply(unpack).apply(pd.Series)
-        for row in item_counts.index:
-            x='y'
+def get_cons_cost_per_year(results_folder):
+    # Create df that replicates the 'extracted' df
+    total_cost_per_draw_per_year = pd.DataFrame(columns=[draws], index=[intervention_years])
 
-# TODO: what i want is each year as the index, each consumable item code as the columns, with the data being the number
-#  of items used per item code per year
+    # Loop over each draw
+    for draw in draws:
+        # Load df, add year column and select only ANC interventions
+        draw_df = load_pickled_dataframes(results_folder, draw=draw)
 
-        #.dropna().astype(int)[0].value_counts()
+        cons = draw_df['tlo.methods.healthsystem']['Consumables']
+        cons['year'] = cons['date'].dt.year
+        total_anc_cons = cons.loc[cons.TREATMENT_ID.str.contains('AntenatalCare')]
+        anc_cons = total_anc_cons.loc[total_anc_cons.year >= intervention_years[0]]
 
-    #for year in intervention_years:
-    #    yearly_cons = anc_cons.loc[anc_cons.Item_Available]
-    #    item_counts = anc_cons['Item_Available'].apply(unpack).apply(pd.Series).dropna().astype(int)[0].value_counts()
+        cons_df_for_this_draw = pd.DataFrame(index=[intervention_years])
 
+        # Loop over each year
+        for year in intervention_years:
+            # Select the year of interest
+            year_df = anc_cons.loc[anc_cons.year == year]
 
+            # For each row (hsi) in that year we unpack the dictionary
+            for row in year_df.index:
+                cons_dict = year_df.at[row, 'Item_Available']
+                cons_dict = eval(cons_dict)
 
+                # todo: check this works where there are muliple dicts
+                # For each dictionary
+                for k, v in cons_dict.items():
+                    if k in cons_df_for_this_draw.columns:
+                        cons_df_for_this_draw.at[year, k] += v
+                    elif k not in cons_df_for_this_draw.columns:
+                        cons_df_for_this_draw[k] = v
 
-pkg_counts = cons['Package_Available'].apply(unpack).apply(pd.Series).dropna().astype(int)[0].value_counts()
+        for row in cons_df_for_this_draw.index:
+            for column in cons_df_for_this_draw.columns:
+                cons_df_for_this_draw.at[row, column] = (cons_df_for_this_draw.at[row, column] *
+                                          (consumables_df[consumables_df.Item_Code == 0]['Unit_Cost'].iloc[0]))
+                cons_df_for_this_draw.at[row, column] = cons_df_for_this_draw.at[row, column] * 0.0014
+                # todo: this is usd conversion
+                # todo: account for inflation, and use 2010 rate
+
+        for index in total_cost_per_draw_per_year.index:
+            total_cost_per_draw_per_year.at[index, draw] = cons_df_for_this_draw.loc[index].sum()
+
+    final_cost_data = get_mean_and_quants(total_cost_per_draw_per_year, intervention_years)
+    return final_cost_data
+
+baseline_cost_data = get_cons_cost_per_year(baseline_results_folder)
+intervention_cost_data = get_cons_cost_per_year(intervention_results_folder)
+
+fig, ax = plt.subplots()
+ax.plot(intervention_years, baseline_cost_data[0], label="Baseline (mean)", color='deepskyblue')
+ax.fill_between(intervention_years, baseline_cost_data[1], baseline_cost_data[2], color='b', alpha=.1)
+ax.plot(intervention_years, intervention_cost_data[0], label="Intervention (mean)", color='olivedrab')
+ax.fill_between(intervention_years, intervention_cost_data[1], intervention_cost_data[2], color='g', alpha=.1)
+plt.xlabel('Year')
+plt.ylabel("Total Cost (USD)")
+plt.title('Total Cost Attributable To Antenatal Care Per Year (in USD) (unscaled)')
+plt.legend()
+#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/COST.png')
+plt.show()
+
 
 
 # (DALYS)
@@ -337,7 +383,7 @@ def daly_graphs(condition, b_data, i_data):
     plt.ylabel("Disability Adjusted Life Years")
     plt.title(f'Total DALYs per Year Attributable to {condition} disorders')
     plt.legend()
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{condition}_dalys.png')
+    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{condition}_dalys.png')
     plt.show()
 
 daly_graphs('Maternal', baseline_dalys[0], intervention_dalys[0])

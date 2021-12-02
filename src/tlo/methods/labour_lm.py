@@ -28,7 +28,10 @@ def predict_parity(self, df, rng=None, **externals):
     params = self.parameters
     result = pd.Series(data=params['intercept_parity_lr2010'], index=df.index)
 
-    result += (df.age_years * 0.21)  #todo: should that start at 15 or 0?
+    # todo: unsure which of these is correct currently
+    # result += (df.age_years * 0.21)
+    result += (df.age_years - 14) * 0.21
+
     result[df.li_mar_stat == 2] += params['effect_mar_stat_2_parity_lr2010']
     result[df.li_mar_stat == 3] += params['effect_mar_stat_3_parity_lr2010']
     result[df.li_wealth == 1] += params['effect_wealth_lev_1_parity_lr2010']
@@ -55,13 +58,13 @@ def predict_obstruction_cpd_ip(self, df, rng=None, **externals):
     params = self.parameters
     result = params['prob_obstruction_cpd']
 
-    # TODO: update with stunting and macrosomia properties
+    # TODO: update with stunting properties
 
     # if person['stunting_property']:
     #    result *= params['rr_obstruction_cpd_stunted_mother']
     if externals['macrosomia']:
         result *= params['rr_obstruction_foetal_macrosomia']
-    # caller expects a series to be returned
+
     return pd.Series(data=[result], index=df.index)
 
 
@@ -124,12 +127,7 @@ def predict_sepsis_death(self, df, rng=None, **externals):
     params = self.parameters
     result = params['cfr_pp_sepsis']
 
-    # todo: wont this give a treatment effect to postpartum women who develop a different kind of sepsis
-    # todo: ? remove call to ac_received_abx_for_chorioamnionitis as i've now simplified and all treatment is delivered
-    #  in the labour module
-    if ((externals['chorio_in_preg'] or person['ps_chorioamnionitis']) and person['ac_received_abx_'
-                                                                                  'for_chorioamnionitis'])\
-       or person['la_sepsis_treatment']:
+    if person['la_sepsis_treatment']:
         result *= params['sepsis_treatment_effect_md']
 
     return pd.Series(data=[result], index=df.index)
@@ -262,12 +260,11 @@ def predict_uterine_rupture_ip(self, df, rng=None, **externals):
 
     if person['la_parity'] == 2:
         result *= params['rr_ur_parity_2']
-    if person['la_parity'] == 3:
-        result *= params['rr_ur_parity_3_or_4']
-    if person['la_parity'] == 4:
+    if 5 > person['la_parity'] > 2:
         result *= params['rr_ur_parity_3_or_4']
     if person['la_parity'] >= 5:
         result *= params['rr_ur_parity_5+']
+
     if person['la_previous_cs_delivery']:
         result *= params['rr_ur_prev_cs']
     if person['la_obstructed_labour']:
@@ -306,7 +303,6 @@ def predict_intrapartum_still_birth(self, df, rng=None, **externals):
         result *= params['rr_still_birth_aph']
     if person['ps_antepartum_haemorrhage'] != 'none':
         result *= params['rr_still_birth_aph']
-    # todo: risk should modify with severity- placeholder
 
     if person['ps_htn_disorders'] != 'none':
         result *= params['rr_still_birth_hypertension']
