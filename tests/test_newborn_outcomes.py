@@ -49,6 +49,8 @@ def find_and_return_hsi_events_list(sim, individual_id):
 
 def register_modules(ignore_cons_constraints):
     """Register all modules that are required for newborn outcomes to run"""
+    _cons_availability = 'all' if ignore_cons_constraints else 'none'
+
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
@@ -56,7 +58,7 @@ def register_modules(ignore_cons_constraints):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
-                                           ignore_cons_constraints=ignore_cons_constraints),
+                                           ignore_cons_constraints=_cons_availability),
                  joes_fake_props_module.JoesFakePropsModule(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
