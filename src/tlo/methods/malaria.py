@@ -1132,7 +1132,8 @@ class HSI_Malaria_complicated_treatment_adult(HSI_Event, IndividualScopeEventMix
                 df.at[person_id, "ma_tx_counter"] += 1
 
     def did_not_run(self):
-        logger.debug("HSI_Malaria_tx_compl_adult: did not run")
+        logger.debug(key='message',
+                     data='HSI_Malaria_tx_compl_adult: did not run')
         pass
 
 
