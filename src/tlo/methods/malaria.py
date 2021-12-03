@@ -798,13 +798,13 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["LabPOC"] = 1
+        the_appt_footprint["ConWithDCSA"] = 1
         # print(the_appt_footprint)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Malaria_RDT"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '0'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -927,12 +927,12 @@ class HSI_Malaria_non_complicated_treatment_age0_5(HSI_Event, IndividualScopeEve
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Under5OPD"] = 1  # This requires one out patient
+        the_appt_footprint["ConWithDCSA"] = 1  # This requires one out patient
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Malaria_treatment_child0_5"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '0'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
