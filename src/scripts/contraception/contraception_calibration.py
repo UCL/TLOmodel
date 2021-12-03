@@ -107,15 +107,7 @@ print(f'Scaling_Factor should be (by age_group): {[round(_x, 2) for _x in y]}')
 
 # %% Define the simulation runner
 
-def run_sim(_init_over_age_and_time=None, _discont_over_age_and_time=None, end_date=Date(2029, 12, 31)):
-    # Overwrite 'Initiation_ByYear' and 'Discontinuation_ByYear' so that we can find good values for these:
-    years_index = sim.modules['Contraception'].parameters['Initiation_ByYear']['year']
-    if _init_over_age_and_time is not None:
-        sim.modules['Contraception'].parameters['Initiation_ByYear'].loc[years_index.isin(_years), _ages] = _init
-    if _discont_over_age_and_time is not None:
-        sim.modules['Contraception'].parameters['Discontinuation_ByYear'].loc[
-            years_index.isin(_years), _ages] = _discont
-
+def run_sim(end_date=Date(2029, 12, 31)):
     # Run the ContraceptivePoll (with the option `run_do_pregnancy`=False to prevent pregnancies)
     popsize = 5_000  # size of population for simulation
     sim.make_initial_population(n=popsize)
@@ -142,45 +134,12 @@ def run_sim(_init_over_age_and_time=None, _discont_over_age_and_time=None, end_d
 # %% Simulate the changes in contraceptive use to get an idea of how age-specific fertility will change over
 # time, and so calibrate the temporal changes in initiation/discontinuation
 
-# Examine different patterns of initiation and discontinuation changing over time:
-_years = np.arange(2010, 2101)
-_ages = np.arange(15, 50)
-
-def expand_to_age_years(values_by_age_groups):
-    _d = dict(zip(adult_age_groups, values_by_age_groups))
-    return np.array([_d[AGE_RANGE_LOOKUP[_age_year]] for _age_year in _ages])
-
-# Let discontinuation converge for all ages to a very low value for all (0.01)
-_discont_over_time = np.exp(-0.05 * np.minimum(2020 - 2010, (_years - 2010))) * np.minimum(1.0, np.exp(-0.01 * (_years - 2020)))
-_discont_over_time_modification_by_age = expand_to_age_years([1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
-_discont = np.outer(_discont_over_time, _discont_over_time_modification_by_age)
-
-if do_plots:
-    plt.plot(_years, _discont)
-    plt.ylim(0, 1)
-    plt.xlim(2010, 2050)
-    plt.show()
-
-# Let initiation increase over time for all ages
-_init_over_time = np.exp(+0.05 * np.minimum(2020 - 2010, (_years - 2010))) * np.maximum(1.0, np.exp(+0.01 * (_years - 2020)))
-_init_over_time_modification_by_age = 1.0 / _discont_over_time_modification_by_age
-_init = np.outer(_init_over_time, _init_over_time_modification_by_age)
-
-if do_plots:
-    plt.plot(_years, _init)
-    plt.ylim(0, 10)
-    plt.xlim(2010, 2030)
-    plt.show()
-
-# %% Run simulation
 end_date_simulation = Date(2099, 12, 31)
 
-usage_by_age = run_sim(_init_over_age_and_time=_init,
-                       _discont_over_age_and_time=_discont,
-                       end_date=end_date_simulation
-                       )
+usage_by_age = run_sim(end_date=end_date_simulation)
 
 # %% Inspect Results
+
 
 def plot(df, title=''):
     spacing = (np.arange(len(df)) % 60) == 0
@@ -195,6 +154,7 @@ def plot(df, title=''):
     fig.tight_layout()
     fig.subplots_adjust(right=0.65)
     plt.show()
+
 
 if do_plots:
     for age_grp in ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']:
@@ -236,7 +196,7 @@ for i, agegrp in enumerate(adult_age_groups):
 l1 = ax[-1].plot(model_this_agegrp.index.year, model.mean(), 'r-', label='Model')
 l2 = ax[-1].plot(wpp_this_agegrp.index, wpp_fert_per_month.mean(), 'k-', label='WPP')
 ax[-1].plot((2010, 2010), (0, 0.03), 'b--')
-ax[-1].set_title(f"* 15-49 *")
+ax[-1].set_title("* 15-49 *")
 ax[-1].set_xlim(2005, 2030)
 plt.setp(ax[-1].get_xticklabels(), rotation=90, ha='right')
 

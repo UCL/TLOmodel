@@ -10,6 +10,7 @@ or
 src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py
 
 """
+
 from pathlib import Path
 
 import numpy as np
@@ -264,7 +265,7 @@ for year in [2010, 2015, 2018, 2029, 2049]:
         fig.tight_layout()
         plt.savefig(make_graph_file_name(f"Pop_Size_{year}"))
         plt.show()
-    except KeyError:
+    except pd.core.base.DataError:
         pass
 
 # %% Births: Number over time
@@ -308,10 +309,11 @@ births = wpp_births.merge(births_model, right_index=True, left_index=True, how='
 births['Census'] = np.nan
 births.at[cens['Period'][0], 'Census'] = cens_births_per_5y_per
 
-# Limit births.index between 2010 and 2030
+# Create a variety of time periods for the plot
 time_period = {
     '1950-2099': births.index,
-    '2010-2030': [(2010 <= int(x[0])) & (int(x[1]) < 2030) for x in births.index.str.split('-')]
+    '2010-2029': [(2010 <= int(x[0])) & (int(x[1]) < 2030) for x in births.index.str.split('-')],
+    '2010-2049': [(2010 <= int(x[0])) & (int(x[1]) < 2050) for x in births.index.str.split('-')]
 }
 
 # Plot:
@@ -446,18 +448,18 @@ for _age in adult_age_groups:
 
 # %% Age-specific fertility
 
-def get_births_by_year_and_age_range_of_mother(_df):
-    _df = _df.drop(_df.index[_df.mother_age == -1])
+def get_births_by_year_and_age_range_of_mother_at_pregnancy(_df):
+    _df = _df.drop(_df.index[_df.mother == -1])
     _df = _df.assign(year=_df['date'].dt.year)
-    _df['mother_age_range'] = _df['mother_age'].map(agegrplookup)
+    _df['mother_age_range'] = _df['mother_age_at_pregnancy'].map(agegrplookup)
     return _df.groupby(['year', 'mother_age_range'])['year'].count()
 
 
-births_by_mother_age = extract_results(
+births_by_mother_age_at_pregnancy = extract_results(
     results_folder,
     module="tlo.methods.demography",
     key="on_birth",
-    custom_generate_series=get_births_by_year_and_age_range_of_mother,
+    custom_generate_series=get_births_by_year_and_age_range_of_mother_at_pregnancy,
     do_scaling=False
 )
 
@@ -481,7 +483,7 @@ num_adult_women = extract_results(
 )
 
 # Compute age-specific fertility rates
-asfr = summarize(births_by_mother_age.div(num_adult_women))
+asfr = summarize(births_by_mother_age_at_pregnancy.div(num_adult_women))
 
 # Get the age-specific fertility rates of the WPP source
 wpp = pd.read_csv(rfp / 'demography' / 'ResourceFile_ASFR_WPP.csv')
@@ -494,28 +496,31 @@ def expand_by_year(periods, vals, years=range(2010, 2050)):
     return _ser.keys(), _ser.values()
 
 
-fig, ax = plt.subplots(2, 4)
+fig, ax = plt.subplots(2, 4, sharex=True, sharey=True)
 ax = ax.reshape(-1)
 years = range(2010, 2049)
 for i, _agegrp in enumerate(adult_age_groups):
-    model = asfr.loc[(slice(years[0], years[-1]), _age), :].unstack()
+    model = asfr.loc[(slice(2011, years[-1]), _agegrp), :].unstack()
     data = wpp.loc[
-        (wpp.Age_Grp == _age) & wpp.Variant.isin(['WPP_Estimates', 'WPP_Medium variant']), ['Period', 'asfr']
+        (wpp.Age_Grp == _agegrp) & wpp.Variant.isin(['WPP_Estimates', 'WPP_Medium variant']), ['Period', 'asfr']
     ]
     data_year, data_asfr = expand_by_year(data.Period, data.asfr, years)
 
     l1 = ax[i].plot(data_year, data_asfr, 'k-', label='WPP')
-    l2 = ax[i].plot(model.index, model[(0, 'mean', _age)], 'r-', label='Model')
-    ax[i].fill_between(model.index, model[(0, 'lower', _age)], model[(0, 'upper', _age)],
+    l2 = ax[i].plot(model.index, model[(0, 'mean', _agegrp)], 'r-', label='Model')
+    ax[i].fill_between(model.index, model[(0, 'lower', _agegrp)], model[(0, 'upper', _agegrp)],
                        color='r', alpha=0.2)
-
-    ax[i].set_title(f'{_agegrp}')
+    ax[i].set_ylim(0, 0.4)
+    ax[i].set_title(f'Age at Pregnancy: {_agegrp}y', fontsize=6)
+    ax[i].set_xlabel('Year')
+    ax[i].set_ylabel('Live births per woman')
 
 ax[-1].set_axis_off()
 fig.legend((l1[0], l2[0]), ('WPP', 'Model'), 'lower right')
 fig.tight_layout()
 fig.savefig(make_graph_file_name("asfr_model_vs_data"))
 fig.show()
+
 
 # %% All-Cause Deaths
 #  todo - fix this -- only do summarize after the groupbys

@@ -140,11 +140,9 @@ class Contraception(Module):
             'Failure_ByMethod',
             'Initiation_ByAge',
             'Initiation_ByMethod',
-            'Initiation_ByYear',
             'Initiation_AfterBirth',
             'Discontinuation_ByMethod',
             'Discontinuation_ByAge',
-            'Discontinuation_ByYear',
             'Prob_Switch_From',
             'Prob_Switch_From_And_To',
         ]
@@ -402,13 +400,34 @@ class Contraception(Module):
             return p_start_after_birth
 
         def scaling_factor_on_monthly_risk_of_pregnancy():
-            _d = dict(zip(
+            # first scaling factor is that worked out from the calibration script
+            _first_scaling_factor_as_dict = dict(zip(
                 ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49'],
                 self.parameters['scaling_factor_on_monthly_risk_of_pregnancy']
             ))
+
+            # second calibration factor is worked out from comparison in real model run (in test) todo- combine these.
+            _second_scaling_factor_as_dict = {
+                '15-19': 1.1527232462304295,
+                '20-24': 1.1590288550036147,
+                '25-29': 1.1353718581445968,
+                '30-34': 1.126416628978486,
+                '35-39': 1.1313056773435877,
+                '40-44': 1.0019264980655145,
+                '45-49': 1.201926971328496
+            }
+
+            # Combine these to scaling factors and expand to single years of age
             AGE_RANGE_LOOKUP = self.sim.modules['Demography'].AGE_RANGE_LOOKUP
             _ages = range(15, 50)
-            return pd.Series(index=_ages, data=[_d[AGE_RANGE_LOOKUP[_age_year]] for _age_year in _ages])
+            return pd.Series(
+                index=_ages,
+                data=[
+                    (_first_scaling_factor_as_dict[AGE_RANGE_LOOKUP[_age_year]]
+                     * _second_scaling_factor_as_dict[AGE_RANGE_LOOKUP[_age_year]])
+                    for _age_year in _ages]
+            )
+
 
         def pregnancy_no_contraception():
             """Get the probability per month of a woman becoming pregnant if she is not using any contraceptive method.
@@ -801,16 +820,17 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # Get the women who are using a contraceptive that may fail and who may become pregnant (i.e., women who
         # are not in labour, have been pregnant in the last month, have previously had a hysterectomy, can get
         # pregnant.)
-        possible_to_fail = ((df.sex == 'F') &
-                            df.is_alive &
-                            ~df.is_pregnant &
-                            ~df.la_currently_in_labour &
-                            ~df.la_has_had_hysterectomy &
-                            df.age_years.between(self.age_low, self.age_high) &
-                            ~df.co_contraception.isin(['not_using', 'female_sterilization']) &
-                            ~df.la_is_postpartum &
-                            ~df.ps_ectopic_pregnancy.isin(['not_ruptured', 'ruptured'])
-                            )
+        possible_to_fail = (
+            df.is_alive
+            & (df.sex == 'F')
+            & ~df.is_pregnant
+            & df.age_years.between(self.age_low, self.age_high)
+            & ~df.co_contraception.isin(['not_using', 'female_sterilization'])
+            & ~df.la_currently_in_labour
+            & ~df.la_has_had_hysterectomy
+            & ~df.la_is_postpartum
+            & ~df.ps_ectopic_pregnancy.isin(['not_ruptured', 'ruptured'])
+        )
 
         if possible_to_fail.sum():
             # Get probability of method failure for each individual
@@ -834,15 +854,15 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
         # Get the subset of women who are not using a contraceptive and who may become pregnant
         subset = (
-            (df.sex == 'F') &
-            df.is_alive &
-            df.age_years.between(self.age_low, self.age_high) &
-            ~df.is_pregnant &
-            (df.co_contraception == 'not_using') &
-            ~df.la_currently_in_labour &
-            ~df.la_has_had_hysterectomy &
-            ~df.la_is_postpartum &
-            ~df.ps_ectopic_pregnancy.isin(['not_ruptured', 'ruptured'])
+            df.is_alive
+            & (df.sex == 'F')
+            & ~df.is_pregnant
+            & df.age_years.between(self.age_low, self.age_high)
+            & (df.co_contraception == 'not_using')
+            & ~df.la_currently_in_labour
+            & ~df.la_has_had_hysterectomy
+            & ~df.la_is_postpartum
+            & ~df.ps_ectopic_pregnancy.isin(['not_ruptured', 'ruptured'])
         )
 
         if subset.sum():
