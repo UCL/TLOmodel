@@ -347,7 +347,7 @@ class Contraception(Module):
                 for a in age_effect.index:
                     p_stop_this_year[a] = p_stop_by_method * age_effect.at[a] * year_effect.at[year, a]
                 p_stop_this_year_df = pd.DataFrame.from_dict(p_stop_this_year, orient='index')
-
+                # todo soft-code this
                 # Check correct format of age/method data-frame
                 assert set(p_stop_this_year_df.columns) == set(self.all_contraception_states - {'not_using'})
                 assert (p_stop_this_year_df.index == range(15, 50)).all()
@@ -361,9 +361,10 @@ class Contraception(Module):
             """The age-specific effect of calendar year on the probability of starting use of contraceptive
             (multiplicative effect). Values are chosen so as to induce a trend in age-specific fertility consistent with
              the WPP estimates."""
+            # todo soft-code this
+
             _years = np.arange(2010, 2101)
             _ages = np.arange(15, 50)
-
             _init_over_time = np.exp(+0.05 * np.minimum(2020 - 2010, (_years - 2010))) * np.maximum(1.0, np.exp(
                 +0.01 * (_years - 2020)))
             _init_over_time_modification_by_age = 1.0 / expand_to_age_years([1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], _ages)
@@ -406,7 +407,8 @@ class Contraception(Module):
                 self.parameters['scaling_factor_on_monthly_risk_of_pregnancy']
             ))
 
-            # second calibration factor is worked out from comparison in real model run (in test) todo- combine these.
+            # second calibration factor is worked out from comparison in real model run (in test)
+            # todo- combine these into a single set of "magic number"
             _second_scaling_factor_as_dict = {
                 '15-19': 1.1527232462304295,
                 '20-24': 1.1590288550036147,
@@ -427,7 +429,6 @@ class Contraception(Module):
                      * _second_scaling_factor_as_dict[AGE_RANGE_LOOKUP[_age_year]])
                     for _age_year in _ages]
             )
-
 
         def pregnancy_no_contraception():
             """Get the probability per month of a woman becoming pregnant if she is not using any contraceptive method.

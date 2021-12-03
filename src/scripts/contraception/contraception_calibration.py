@@ -2,6 +2,7 @@
 poll and age-update event in order to construct an age-time trend of the usage of each contraceptive. This is combined
 with the assumption of fertility and failure rates and compared with the WPP estimates of age-specific fertility rates.
 """
+# todo - this needs updating to reflect the way it was used and to note that a lot of the functionality is now in tests
 
 from pathlib import Path
 

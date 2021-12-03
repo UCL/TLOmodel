@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file, get_medium_variant_asfr_from_wpp_resourcefile
+from tlo.analysis.utils import get_medium_variant_asfr_from_wpp_resourcefile, parse_log_file
 from tlo.methods import contraception, demography, enhanced_lifestyle, healthsystem, symptommanager
 from tlo.methods.hiv import DummyHivModule
 
@@ -637,7 +637,7 @@ def test_initial_distribution_of_contraception_and_implied_asfr(tmpdir):
     wpp_fert_per_month_2010 = get_medium_variant_asfr_from_wpp_resourcefile(
         sim.modules['Contraception'].parameters['age_specific_fertility_rates'], months_exposure=1)[2010]
     # assert all([np.isclose(model_asfr[k], wpp_fert_per_month_2010[k], rtol=0.10) for k in adult_age_groups])
-    #todo - put this back!
+    # todo - put this back to working :-)
 
     # 3) Check that the actual number of births simulated over 2010-2014 matches expectations:
     sim_run_to_end_2014 = run_sim(tmpdir,
@@ -688,15 +688,14 @@ def test_initial_distribution_of_contraception_and_implied_asfr(tmpdir):
     plt.legend()
     plt.show()
 
-    correction_factor = {
-        _age:  model_asfr[_age] / asfr_sim_per_month[_age] for _age in asfr_sim_per_month
-    }
+    # correction_factor = {
+    #     _age:  model_asfr[_age] / asfr_sim_per_month[_age] for _age in asfr_sim_per_month
+    # }
 
     # todo - we need a further correction because the calibration factor is from the script which doesn't recognise that
     #  people become pregnant.... putting this in heuristically for now
 
     # todo remove plot and make into a formal test.
-
 
     # todo (when gestation doesn't last very long, we see another bias --- to solve!)
     # todo - do it when there is a constant asfr and we can test if the number of births in all age-groups matches it.
