@@ -1512,7 +1512,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         complications = models.complications(person_id=person_id)
         df.loc[person_id, [f"ri_complication_{complication}" for complication in complications]] = True
-        for complication in complications:
+        for complication in sorted(complications):
             m.impose_symptoms_for_complication(person_id=person_id, complication=complication)
 
         # Consider delayed-onset of complications and schedule events accordingly
