@@ -206,7 +206,7 @@ class HealthBurden(Module):
             columns={c: self.sim.modules['Demography'].causes_of_death[c].label for c in self.YearsLifeLost.columns}
         )
 
-        return yld.add(yll, fill_value=0), yll_stacked.add(yll, fill_value=0)
+        return yld.add(yll, fill_value=0), yld.add(yll_stacked, fill_value=0)
 
     def get_daly_weight(self, sequlae_code):
         """
