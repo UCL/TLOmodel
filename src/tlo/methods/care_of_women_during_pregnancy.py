@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -620,7 +621,7 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called:
         """
         person_id = hsi_event.target
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         df = self.sim.population.props
         params = self.parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -629,17 +630,20 @@ class CareOfWomenDuringPregnancy(Module):
         proteinuria_diagnosed = False
 
         # Define the consumables
-        item_code_urine_dipstick = pd.unique(
-            consumables.loc[consumables['Items'] == 'Test strips, urine analysis', 'Item_Code'])[0]
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+        item_code_urine_dipstick = get_item_code('Test strips, urine analysis')
 
-        consumables_dipstick = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_urine_dipstick: 1}}
+        # consumables_dipstick = {
+        #     'Intervention_Package_Code': {},
+        #     'Item_Code': {item_code_urine_dipstick: 1}}
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_dipstick)
-
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event,
+        #     cons_req_as_footprint=consumables_dipstick)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
         # Delivery of the intervention is conditioned on the availability of the consumable and a random draw against a
         # probability that the intervention would be delivered (used to calibrate to SPA data- acts as proxy for
         # clinical quality)
@@ -703,33 +707,35 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         person_id = hsi_event.target
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         df = self.sim.population.props
         params = self.parameters
 
         # We calculate an approximate number of days left of a womans pregnancy to capture the consumables required for
         # daily iron/folic acid tablets
-        if df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
-            approx_days_of_pregnancy = (40 - df.at[person_id, 'ps_gestational_age_in_weeks']) * 7
-        else:
-            approx_days_of_pregnancy = 14
+        # if df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
+        #     approx_days_of_pregnancy = (40 - df.at[person_id, 'ps_gestational_age_in_weeks']) * 7
+        # else:
+        #     approx_days_of_pregnancy = 14
 
         # Iron/folic acid & BEP supplements...
         # Define the consumables
-        item_code_iron_folic_acid = pd.unique(
-            consumables.loc[consumables['Items'] == 'Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg', 'Item_Code'])[0]
-        item_code_diet_supps = pd.unique(
-            consumables.loc[consumables['Items'] == 'Dietary supplements (country-specific)', 'Item_Code'])[0]
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+        item_code_iron_folic_acid = get_item_code('Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg')
+        item_code_diet_supps = get_item_code('Dietary supplements (country-specific)')
 
-        consumables_anc1 = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_iron_folic_acid: approx_days_of_pregnancy,
-                          item_code_diet_supps: approx_days_of_pregnancy}}
+        # consumables_anc1 = {
+        #     'Intervention_Package_Code': {},
+        #     'Item_Code': {item_code_iron_folic_acid: approx_days_of_pregnancy,
+        #                   item_code_diet_supps: approx_days_of_pregnancy}}
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_anc1)
-
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event,
+        #     cons_req_as_footprint=consumables_anc1)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
         # As with previous interventions - condition on consumables and probability intervention is delivered
         if outcome_of_request_for_consumables['Item_Code'][item_code_iron_folic_acid] and (self.rng.random_sample() <
                                                                                            params['prob_intervention_'
@@ -745,17 +751,25 @@ class CareOfWomenDuringPregnancy(Module):
 
         # LLITN provision...
         # We define the required consumables
-        pkg_code_obstructed_llitn = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'ITN distribution to pregnant women',
-                            'Intervention_Pkg_Code'])[0]
+        # pkg_code_obstructed_llitn = pd.unique(
+        #     consumables.loc[consumables['Intervention_Pkg'] == 'ITN distribution to pregnant women',
+        #                     'Intervention_Pkg_Code'])[0]
+        pkg_code_obstructed_llitn = 0
+        # consumables_llitn = {
+        #     'Intervention_Package_Code': {pkg_code_obstructed_llitn: 1},
+        #     'Item_Code': {}}
+        # remove use of package_codes
+        # consumables_llitn = {
+        #     'Intervention_Package_Code': {},
+        #     'Item_Code': {}}
 
-        consumables_llitn = {
-            'Intervention_Package_Code': {pkg_code_obstructed_llitn: 1},
-            'Item_Code': {}}
-
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_llitn)
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event,
+        #     cons_req_as_footprint=consumables_llitn)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
 
         # If available, women are provided with a bed net at ANC1. The effect of these nets is determined
         # through the malaria module - not yet coded. n.b any interventions involving non-obstetric diseases have been
@@ -791,17 +805,18 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         person_id = hsi_event.target
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         df = self.sim.population.props
         params = self.parameters
 
         # Define required consumables
-        pkg_code_tet = pd.unique(
-            consumables.loc[consumables["Intervention_Pkg"] == "Tetanus toxoid (pregnant women)",
-                            "Intervention_Pkg_Code"])[0]
-
-        all_available = hsi_event.get_all_consumables(
-            pkg_codes=[pkg_code_tet])
+        # pkg_code_tet = pd.unique(
+        #     consumables.loc[consumables["Intervention_Pkg"] == "Tetanus toxoid (pregnant women)",
+        #                     "Intervention_Pkg_Code"])[0]
+        #
+        # all_available = hsi_event.get_all_consumables(
+        #     pkg_codes=[pkg_code_tet])
+        all_available = True
 
         # If the consumables are available and the HCW will deliver the vaccine, the intervention is given
         if self.rng.random_sample() < params['prob_intervention_delivered_tt']:
@@ -816,25 +831,30 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         params = self.parameters
         person_id = hsi_event.target
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         if ~df.at[person_id, 'ac_receiving_calcium_supplements']:
 
             # Define consumables
-            item_code_calcium_supp = pd.unique(
-                consumables.loc[consumables['Items'] == 'Calcium, tablet, 600 mg', 'Item_Code'])[0]
+            # item_code_calcium_supp = pd.unique(
+            #     consumables.loc[consumables['Items'] == 'Calcium, tablet, 600 mg', 'Item_Code'])[0]
+            item_code_calcium_supp = 0
 
             # Calculate the approximate dose for the remainder of pregnancy
-            approx_days_of_pregnancy = (40 - df.at[person_id, 'ps_gestational_age_in_weeks']) * 7
-            dose = approx_days_of_pregnancy * 3
+            # approx_days_of_pregnancy = (40 - df.at[person_id, 'ps_gestational_age_in_weeks']) * 7
+            # dose = approx_days_of_pregnancy * 3
 
-            consumables_calcium = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {item_code_calcium_supp: dose}}
+            # consumables_calcium = {
+            #     'Intervention_Package_Code': {},
+            #     'Item_Code': {item_code_calcium_supp: dose}}
 
-            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=hsi_event,
-                cons_req_as_footprint=consumables_calcium)
+            # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            #     hsi_event=hsi_event,
+            #     cons_req_as_footprint=consumables_calcium)
+            outcome_of_request_for_consumables = {
+                'Intervention_Package_Code': defaultdict(lambda: True),
+                'Item_Code': defaultdict(lambda: True)
+            }
 
             # If the consumables are available and the HCW will provide the tablets, the intervention is given
             if outcome_of_request_for_consumables['Item_Code'][item_code_calcium_supp] and \
@@ -851,26 +871,33 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
         df = self.sim.population.props
         params = self.parameters
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         # Define the required consumables
-        item_code_hb_test = pd.unique(
-            consumables.loc[consumables['Items'] == 'Haemoglobin test (HB)', 'Item_Code'])[0]
-        item_code_blood_tube = pd.unique(
-            consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
-        item_code_needle = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-        item_code_gloves = pd.unique(
-            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
-
-        consumables_hb_test = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_hb_test: 1, item_code_blood_tube: 1, item_code_needle: 1, item_code_gloves: 1}}
+        # item_code_hb_test = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Haemoglobin test (HB)', 'Item_Code'])[0]
+        # item_code_blood_tube = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
+        # item_code_needle = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+        # item_code_gloves = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+        item_code_hb_test = 0
+        item_code_blood_tube = 0
+        item_code_needle = 0
+        item_code_gloves = 0
+        # consumables_hb_test = {
+        #     'Intervention_Package_Code': {},
+        #     'Item_Code': {item_code_hb_test: 1, item_code_blood_tube: 1, item_code_needle: 1, item_code_gloves: 1}}
 
         # Confirm their availability
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_hb_test)
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event,
+        #     cons_req_as_footprint=consumables_hb_test)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
 
         # If the consumables are available and the HCW will provide the test, the test is given
         if (outcome_of_request_for_consumables['Item_Code'][item_code_hb_test]) and \
@@ -894,22 +921,27 @@ class CareOfWomenDuringPregnancy(Module):
          ANC
         :param hsi_event: HSI event in which the function has been called
         """
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.parameters
         person_id = hsi_event.target
 
         # We run this function to store the associated consumables with albendazole administration. This intervention
         # has no effect in the model due to limited evidence
-        item_code_albendazole = pd.unique(
-            consumables.loc[consumables['Items'] == 'Albendazole 200mg_1000_CMST', 'Item_Code'])[0]
+        # item_code_albendazole = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Albendazole 200mg_1000_CMST', 'Item_Code'])[0]
+        item_code_albendazole = 0
 
-        consumables_albendazole = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_albendazole: 2}}
+        # consumables_albendazole = {
+        #     'Intervention_Package_Code': {},
+        #     'Item_Code': {item_code_albendazole: 2}}
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_albendazole)
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event,
+        #     cons_req_as_footprint=consumables_albendazole)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
 
         # If the consumables are available and the HCW will provide the tablets, the intervention is given
         if outcome_of_request_for_consumables['Item_Code'][item_code_albendazole] and (self.rng.random_sample() <
@@ -923,28 +955,36 @@ class CareOfWomenDuringPregnancy(Module):
         B is not modelled currently this intervention just maps consumables used during ANC
         :param hsi_event: HSI event in which the function has been called
         """
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.parameters
         person_id = hsi_event.target
 
         # This intervention is a place holder prior to the Hepatitis B module being coded
         # Define the consumables
-        item_code_hep_test = pd.unique(
-            consumables.loc[consumables['Items'] == 'Hepatitis B test kit-Dertemine_100 tests_CMST', 'Item_Code'])[0]
-        item_code_blood_tube = pd.unique(
-            consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
-        item_code_needle = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-        item_code_gloves = pd.unique(
-            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+        # item_code_hep_test = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Hepatitis B test kit-Dertemine_100 tests_CMST', 'Item_Code'])[0]
+        # item_code_blood_tube = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
+        # item_code_needle = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+        # item_code_gloves = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+        item_code_hep_test = 0
+        item_code_blood_tube = 0
+        item_code_needle = 0
+        item_code_gloves = 0
 
-        consumables_hep_b_test = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_hep_test: 1, item_code_blood_tube: 1, item_code_needle: 1, item_code_gloves: 1}}
+        # consumables_hep_b_test = {
+        #     'Intervention_Package_Code': {},
+        #     'Item_Code': {item_code_hep_test: 1, item_code_blood_tube: 1, item_code_needle: 1, item_code_gloves: 1}}
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_hep_b_test)
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event,
+        #     cons_req_as_footprint=consumables_hep_b_test)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
 
         # If the consumables are available and the HCW will provide the test, the test is delivered
         if (outcome_of_request_for_consumables['Item_Code'][item_code_hep_test]) and \
@@ -961,28 +1001,36 @@ class CareOfWomenDuringPregnancy(Module):
         not modelled currently this intervention just maps consumables used during ANC
         :param hsi_event: HSI event in which the function has been called
         """
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.parameters
         person_id = hsi_event.target
 
         # Define the consumables
-        item_code_syphilis_test = pd.unique(
-            consumables.loc[consumables['Items'] == 'Test, Rapid plasma reagin (RPR)', 'Item_Code'])[0]
-        item_code_blood_tube = pd.unique(
-            consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
-        item_code_needle = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-        item_code_gloves = pd.unique(
-            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+        # item_code_syphilis_test = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Test, Rapid plasma reagin (RPR)', 'Item_Code'])[0]
+        # item_code_blood_tube = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
+        # item_code_needle = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+        # item_code_gloves = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+        item_code_syphilis_test = 0
+        item_code_blood_tube = 0
+        item_code_needle = 0
+        item_code_gloves = 0
 
-        consumables_syphilis = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_syphilis_test: 1, item_code_blood_tube: 1, item_code_needle: 1,
-                          item_code_gloves: 1}}
+        # consumables_syphilis = {
+        #     'Intervention_Package_Code': {},
+        #     'Item_Code': {item_code_syphilis_test: 1, item_code_blood_tube: 1, item_code_needle: 1,
+        #                   item_code_gloves: 1}}
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_syphilis)
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event,
+        #     cons_req_as_footprint=consumables_syphilis)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
 
         # If the consumables are available and the HCW will provide the test, the test is delivered
         if (outcome_of_request_for_consumables['Item_Code'][item_code_syphilis_test]) and \
@@ -1020,7 +1068,7 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         params = self.parameters
         person_id = hsi_event.target
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        # consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
         if 'Malaria' in self.sim.modules:
             if not df.at[person_id, "ma_tx"] and df.at[person_id, "is_alive"]:
@@ -1029,12 +1077,13 @@ class CareOfWomenDuringPregnancy(Module):
                 assert df.at[person_id, 'ac_doses_of_iptp_received'] < 6
 
                 # Define and check the availability of consumables
-                pkg_code_iptp = pd.unique(
-                    consumables.loc[consumables["Intervention_Pkg"] == "IPT (pregnant women)",
-                                    "Intervention_Pkg_Code"])[0]
+                # pkg_code_iptp = pd.unique(
+                #     consumables.loc[consumables["Intervention_Pkg"] == "IPT (pregnant women)",
+                #                     "Intervention_Pkg_Code"])[0]
 
-                all_available = hsi_event.get_all_consumables(
-                    pkg_codes=[pkg_code_iptp])
+                # all_available = hsi_event.get_all_consumables(
+                #     pkg_codes=[pkg_code_iptp])
+                all_available = True
 
                 if self.rng.random_sample() < params['prob_intervention_delivered_iptp']:
                     if all_available:
@@ -1053,31 +1102,39 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         params = self.parameters
         person_id = hsi_event.target
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        # consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
         # We check if this women has any of the key risk factors, if so they are sent for additional blood tests
         if df.at[person_id, 'li_bmi'] >= 4 or df.at[person_id, 'ps_prev_gest_diab'] or df.at[person_id,
                                                                                              'ps_prev_stillbirth']:
 
             # We define the required consumables for testing
-            item_code_glucose_test = pd.unique(
-                consumables.loc[consumables['Items'] == 'Blood glucose level test', 'Item_Code'])[0]
-            item_code_blood_tube = pd.unique(
-                consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
-            item_code_needle = pd.unique(
-                consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-            item_code_gloves = pd.unique(
-                consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+            # item_code_glucose_test = pd.unique(
+            #     consumables.loc[consumables['Items'] == 'Blood glucose level test', 'Item_Code'])[0]
+            # item_code_blood_tube = pd.unique(
+            #     consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
+            # item_code_needle = pd.unique(
+            #     consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+            # item_code_gloves = pd.unique(
+            #     consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+            item_code_glucose_test = 0
+            item_code_blood_tube = 0
+            item_code_needle = 0
+            item_code_gloves = 0
 
-            consumables_gdm_testing = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {item_code_glucose_test: 1, item_code_blood_tube: 1, item_code_needle: 1,
-                              item_code_gloves: 1}}
+            # consumables_gdm_testing = {
+            #     'Intervention_Package_Code': {},
+            #     'Item_Code': {item_code_glucose_test: 1, item_code_blood_tube: 1, item_code_needle: 1,
+            #                   item_code_gloves: 1}}
 
             # Then query if these consumables are available during this HSI
-            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=hsi_event,
-                cons_req_as_footprint=consumables_gdm_testing)
+            # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            #     hsi_event=hsi_event,
+            #     cons_req_as_footprint=consumables_gdm_testing)
+            outcome_of_request_for_consumables = {
+                'Intervention_Package_Code': defaultdict(lambda: True),
+                'Item_Code': defaultdict(lambda: True)
+            }
 
             # If they are available, the test is conducted
             if (outcome_of_request_for_consumables['Item_Code'][item_code_glucose_test]) and \
@@ -1255,26 +1312,35 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
         person_id = hsi_event.target
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         # Define the required consumables
-        item_code_hb_test = pd.unique(
-            consumables.loc[consumables['Items'] == 'Haemoglobin test (HB)', 'Item_Code'])[0]
-        item_code_blood_tube = pd.unique(
-            consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
-        item_code_needle = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-        item_code_gloves = pd.unique(
-            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+        # item_code_hb_test = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Haemoglobin test (HB)', 'Item_Code'])[0]
+        # item_code_blood_tube = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
+        # item_code_needle = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+        # item_code_gloves = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
 
-        consumables_hb_test = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_hb_test: 1, item_code_blood_tube: 1, item_code_needle: 1, item_code_gloves: 1}}
+        item_code_hb_test = 0
+        item_code_blood_tube = 0
+        item_code_needle = 0
+        item_code_gloves = 0
+
+        # consumables_hb_test = {
+        #     'Intervention_Package_Code': {},
+        #     'Item_Code': {item_code_hb_test: 1, item_code_blood_tube: 1, item_code_needle: 1, item_code_gloves: 1}}
 
         # Confirm their availability
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_hb_test)
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event,
+        #     cons_req_as_footprint=consumables_hb_test)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
 
         # Check consumables
         if (outcome_of_request_for_consumables['Item_Code'][item_code_hb_test]) and \
@@ -1313,42 +1379,54 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.parameters
         pregnancy_deficiencies = self.sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
         # Calculate the approximate dose for the remainder of pregnancy
-        approx_days_of_pregnancy = (40 - df.at[individual_id, 'ps_gestational_age_in_weeks']) * 7
+        # approx_days_of_pregnancy = (40 - df.at[individual_id, 'ps_gestational_age_in_weeks']) * 7
+
+        # # Check and request consumables
+        # item_code_elemental_iron = pd.unique(
+        #     consumables.loc[
+        #         consumables['Items'] ==
+        #         'ferrous sulphate 200 mg, coated (65 mg iron)_1000_IDA', 'Item_Code'])[0]
+        #
+        # # n.b. folate doesnt have a specific consumable so this is a place holder
+        # item_code_folate = pd.unique(
+        #     consumables.loc[
+        #         consumables['Items'] ==
+        #         'Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg', 'Item_Code'])[0]
+        #
+        # item_code_b12 = pd.unique(
+        #     consumables.loc[
+        #         consumables['Items'] ==
+        #         'vitamin B12 (cyanocobalamine) 1 mg/ml, 1 ml, inj._100_IDA', 'Item_Code'])[0]
 
         # Check and request consumables
-        item_code_elemental_iron = pd.unique(
-            consumables.loc[
-                consumables['Items'] ==
-                'ferrous sulphate 200 mg, coated (65 mg iron)_1000_IDA', 'Item_Code'])[0]
+        item_code_elemental_iron = 0
 
         # n.b. folate doesnt have a specific consumable so this is a place holder
-        item_code_folate = pd.unique(
-            consumables.loc[
-                consumables['Items'] ==
-                'Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg', 'Item_Code'])[0]
+        item_code_folate = 0
 
-        item_code_b12 = pd.unique(
-            consumables.loc[
-                consumables['Items'] ==
-                'vitamin B12 (cyanocobalamine) 1 mg/ml, 1 ml, inj._100_IDA', 'Item_Code'])[0]
+        item_code_b12 = 0
 
         # If iron or folate deficient, a woman will need to take additional daily supplements. If B12 deficient this
         # should occur monthly
-        consumables_ifa = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_elemental_iron: approx_days_of_pregnancy,
-                          item_code_folate: approx_days_of_pregnancy,
-                          item_code_b12: np.ceil(approx_days_of_pregnancy / 31)}}
+        # consumables_ifa = {
+        #     'Intervention_Package_Code': {},
+        #     'Item_Code': {item_code_elemental_iron: approx_days_of_pregnancy,
+        #                   item_code_folate: approx_days_of_pregnancy,
+        #                   item_code_b12: np.ceil(approx_days_of_pregnancy / 31)}}
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_ifa)
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event,
+        #     cons_req_as_footprint=consumables_ifa)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
 
         # Treatment is provided dependent on deficiencies present
         if pregnancy_deficiencies.has_any([individual_id], 'iron', first=True):
@@ -1405,25 +1483,30 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
         params = self.parameters
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
         # Calculate the approximate dose for the remainder of pregnancy
-        approx_days_of_pregnancy = (40 - df.at[individual_id, 'ps_gestational_age_in_weeks']) * 7
+        # approx_days_of_pregnancy = (40 - df.at[individual_id, 'ps_gestational_age_in_weeks']) * 7
 
         # Check availability of consumables
-        item_code_iron_folic_acid = pd.unique(
-            consumables.loc[
-                consumables['Items'] ==
-                'Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg', 'Item_Code'])[0]
+        # item_code_iron_folic_acid = pd.unique(
+        #     consumables.loc[
+        #         consumables['Items'] ==
+        #         'Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg', 'Item_Code'])[0]
+        item_code_iron_folic_acid = 0
 
-        consumables_ifa = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_iron_folic_acid: approx_days_of_pregnancy}}
+        # consumables_ifa = {
+        #     'Intervention_Package_Code': {},
+        #     'Item_Code': {item_code_iron_folic_acid: approx_days_of_pregnancy}}
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_ifa)
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event,
+        #     cons_req_as_footprint=consumables_ifa)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
 
         # Start iron and folic acid treatment
         if outcome_of_request_for_consumables['Item_Code'][item_code_iron_folic_acid]:
@@ -1452,24 +1535,32 @@ class CareOfWomenDuringPregnancy(Module):
         :param cause: (STR) cause of woman needed transfusion ['antepartum_haem', 'abortion', 'severe_anaemia']
         """
         df = self.sim.population.props
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.parameters
         store_dalys_in_mni = self.sim.modules['PregnancySupervisor'].store_dalys_in_mni
 
         # Check for consumables
-        item_code_blood = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
-        item_code_needle = pd.unique(consumables.loc[consumables['Items'] == 'Lancet, blood, disposable',
-                                                     'Item_Code'])[0]
-        item_code_test = pd.unique(consumables.loc[consumables['Items'] == 'Test, hemoglobin', 'Item_Code'])[0]
-        item_code_giving_set = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with needle',
-                                                         'Item_Code'])[0]
+        # item_code_blood = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
+        # item_code_needle = pd.unique(consumables.loc[consumables['Items'] == 'Lancet, blood, disposable',
+        #                                              'Item_Code'])[0]
+        # item_code_test = pd.unique(consumables.loc[consumables['Items'] == 'Test, hemoglobin', 'Item_Code'])[0]
+        # item_code_giving_set = pd.unique(consumables.loc[consumables['Items'] ==
+        # 'IV giving/infusion set, with needle','Item_Code'])[0]
+        item_code_blood = 0
+        item_code_needle = 0
+        item_code_test = 0
+        item_code_giving_set = 0
 
-        consumables_needed_bt = {'Intervention_Package_Code': {},
-                                 'Item_Code': {item_code_blood: 2, item_code_needle: 1, item_code_test: 1,
-                                               item_code_giving_set: 2}}
+        # consumables_needed_bt = {'Intervention_Package_Code': {},
+        #                          'Item_Code': {item_code_blood: 2, item_code_needle: 1, item_code_test: 1,
+        #                                        item_code_giving_set: 2}}
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event, cons_req_as_footprint=consumables_needed_bt)
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event, cons_req_as_footprint=consumables_needed_bt)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
 
         # If the consumables are available the intervention is delivered
         if (outcome_of_request_for_consumables['Item_Code'][item_code_blood]) and \
@@ -1506,22 +1597,27 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        # consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
         # Calculate the approximate dose for the remainder of pregnancy
-        approx_days_of_pregnancy = (40 - df.at[individual_id, 'ps_gestational_age_in_weeks']) * 7
+        # approx_days_of_pregnancy = (40 - df.at[individual_id, 'ps_gestational_age_in_weeks']) * 7
 
         # Define the consumables and check their availability
-        item_code_methyldopa = pd.unique(
-            consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMST', 'Item_Code'])[0]
+        # item_code_methyldopa = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMST', 'Item_Code'])[0]
+        item_code_methyldopa = 0
 
-        consumables_gest_htn_treatment = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_methyldopa: 4 * approx_days_of_pregnancy}}
+        # consumables_gest_htn_treatment = {
+        #     'Intervention_Package_Code': {},
+        #     'Item_Code': {item_code_methyldopa: 4 * approx_days_of_pregnancy}}
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_gest_htn_treatment)
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event,
+        #     cons_req_as_footprint=consumables_gest_htn_treatment)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
 
         # If they are available then the woman is started on treatment
         if outcome_of_request_for_consumables['Item_Code'][item_code_methyldopa]:
@@ -1539,30 +1635,38 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        # consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
         # Define the consumables and check their availability
-        item_code_hydralazine = pd.unique(
-            consumables.loc[consumables['Items'] == 'Hydralazine, powder for injection, 20 mg ampoule',
-                            'Item_Code'])[0]
-        item_code_wfi = pd.unique(
-            consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
-        item_code_needle = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-        item_code_gloves = pd.unique(
-            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+        # item_code_hydralazine = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Hydralazine, powder for injection, 20 mg ampoule',
+        #                     'Item_Code'])[0]
+        # item_code_wfi = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
+        # item_code_needle = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+        # item_code_gloves = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+        item_code_hydralazine = 0
+        item_code_wfi = 0
+        item_code_needle = 0
+        item_code_gloves = 0
 
-        consumables_gest_htn_treatment = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_hydralazine: 1,
-                          item_code_wfi: 1,
-                          item_code_gloves: 1,
-                          item_code_needle: 1}}
+        # consumables_gest_htn_treatment = {
+        #     'Intervention_Package_Code': {},
+        #     'Item_Code': {item_code_hydralazine: 1,
+        #                   item_code_wfi: 1,
+        #                   item_code_gloves: 1,
+        #                   item_code_needle: 1}}
 
         # Then query if these consumables are available during this HSI
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_gest_htn_treatment)
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event,
+        #     cons_req_as_footprint=consumables_gest_htn_treatment)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
 
         # If they are available then the woman is started on treatment
         if (outcome_of_request_for_consumables['Item_Code'][item_code_hydralazine]) and \
@@ -1597,15 +1701,17 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
+        # consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
         # Define the consumable package code
-        pkg_code_eclampsia_and_spe = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
-                            'Intervention_Pkg_Code'])[0]
-
-        all_available = hsi_event.get_all_consumables(
-            pkg_codes=[pkg_code_eclampsia_and_spe])
+        # # pkg_code_eclampsia_and_spe = pd.unique(
+        # #     consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
+        # #                     'Intervention_Pkg_Code'])[0]
+        #
+        # all_available = hsi_event.get_all_consumables(
+        #     pkg_codes=[pkg_code_eclampsia_and_spe])
+        # remove use of package_codes
+        all_available = True
 
         # If available deliver the treatment
         if all_available:
@@ -1621,28 +1727,35 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        # consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
         # Define consumables and check their availability
-        item_code_benpen = pd.unique(
-            consumables.loc[consumables['Items'] == 'Benzathine benzylpenicillin, powder for injection, 2.4 million IU',
-                            'Item_Code'])[0]
-        item_code_wfi = pd.unique(
-            consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
-        item_code_needle = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-        item_code_gloves = pd.unique(
-            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
-
-        consumables_abx_for_prom = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_benpen: 4, item_code_wfi: 1, item_code_needle: 1,
-                          item_code_gloves: 1}}
+        # item_code_benpen = pd.unique(
+        #     consumables.loc[consumables['Items'] ==
+        #     'Benzathine benzylpenicillin, powder for injection, 2.4 million IU', 'Item_Code'])[0]
+        # item_code_wfi = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
+        # item_code_needle = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+        # item_code_gloves = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+        item_code_benpen = 0
+        item_code_wfi = 0
+        item_code_needle = 0
+        item_code_gloves = 0
+        # consumables_abx_for_prom = {
+        #     'Intervention_Package_Code': {},
+        #     'Item_Code': {item_code_benpen: 4, item_code_wfi: 1, item_code_needle: 1,
+        #                   item_code_gloves: 1}}
 
         # Then query if these consumables are available during this HSI
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_abx_for_prom)
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event,
+        #     cons_req_as_footprint=consumables_abx_for_prom)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
 
         if (outcome_of_request_for_consumables['Item_Code'][item_code_benpen]) and \
             (outcome_of_request_for_consumables['Item_Code'][item_code_wfi]) and \
@@ -1660,31 +1773,39 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         df = self.sim.population.props
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        # consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
         # Define the consumables and check their availability
-        item_code_benpen = pd.unique(
-            consumables.loc[consumables['Items'] == 'Benzathine benzylpenicillin, powder for injection, 2.4 million IU',
-                            'Item_Code'])[0]
-        item_code_genta = pd.unique(
-            consumables.loc[consumables['Items'] == 'Gentamycin, injection, 40 mg/ml in 2 ml vial',
-                            'Item_Code'])[0]
-        item_code_wfi = pd.unique(
-            consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
-        item_code_needle = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
-        item_code_gloves = pd.unique(
-            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
-
-        consumables_abx_for_chorio = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_benpen: 4, item_code_genta: 1, item_code_wfi: 1, item_code_needle: 1,
-                          item_code_gloves: 1}}
+        # item_code_benpen = pd.unique(
+        #     consumables.loc[consumables['Items'] ==
+        #     'Benzathine benzylpenicillin, powder for injection, 2.4 million IU', 'Item_Code'])[0]
+        # item_code_genta = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Gentamycin, injection, 40 mg/ml in 2 ml vial',
+        #                     'Item_Code'])[0]
+        # item_code_wfi = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
+        # item_code_needle = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+        # item_code_gloves = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+        item_code_benpen = 0
+        item_code_genta = 0
+        item_code_wfi = 0
+        item_code_needle = 0
+        item_code_gloves = 0
+        # consumables_abx_for_chorio = {
+        #     'Intervention_Package_Code': {},
+        #     'Item_Code': {item_code_benpen: 4, item_code_genta: 1, item_code_wfi: 1, item_code_needle: 1,
+        #                   item_code_gloves: 1}}
 
         # Then query if these consumables are available during this HSI
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_abx_for_chorio)
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event,
+        #     cons_req_as_footprint=consumables_abx_for_chorio)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
 
         if (outcome_of_request_for_consumables['Item_Code'][item_code_benpen]) and \
             (outcome_of_request_for_consumables['Item_Code'][item_code_genta]) and \
@@ -2904,7 +3025,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         mother = df.loc[person_id]
 
         from tlo.methods.pregnancy_supervisor import GestationalDiabetesGlycaemicControlEvent
@@ -2932,18 +3053,23 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
                 if mother.ac_gest_diab_on_treatment == 'diet_exercise':
 
                     # Currently we assume women are given enough tablets to last the length of their pregnancy
-                    approx_days_of_pregnancy = (40 - df.at[person_id, 'ps_gestational_age_in_weeks']) * 7
+                    # approx_days_of_pregnancy = (40 - df.at[person_id, 'ps_gestational_age_in_weeks']) * 7
 
-                    item_code_oral_antidiabetics = pd.unique(
-                        consumables.loc[consumables['Items'] == 'Glibenclamide 5mg_1000_CMST', 'Item_Code'])[0]
+                    # item_code_oral_antidiabetics = pd.unique(
+                    #     consumables.loc[consumables['Items'] == 'Glibenclamide 5mg_1000_CMST', 'Item_Code'])[0]
+                    item_code_oral_antidiabetics = 0
 
-                    consumables_anti_diabs = {
-                        'Intervention_Package_Code': {},
-                        'Item_Code': {item_code_oral_antidiabetics: approx_days_of_pregnancy * 2}}  # dose 5mg BD
+                    # consumables_anti_diabs = {
+                    #     'Intervention_Package_Code': {},
+                    #     'Item_Code': {item_code_oral_antidiabetics: approx_days_of_pregnancy * 2}}  # dose 5mg BD
 
-                    outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                        hsi_event=self,
-                        cons_req_as_footprint=consumables_anti_diabs)
+                    # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                    #     hsi_event=self,
+                    #     cons_req_as_footprint=consumables_anti_diabs)
+                    outcome_of_request_for_consumables = {
+                        'Intervention_Package_Code': defaultdict(lambda: True),
+                        'Item_Code': defaultdict(lambda: True)
+                    }
 
                     # If the meds are available women are started on that treatment
                     if outcome_of_request_for_consumables['Item_Code'][item_code_oral_antidiabetics]:
@@ -2971,17 +3097,22 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
                 # blood sugar- they are started on insulin
                 if mother.ac_gest_diab_on_treatment == 'orals':
 
-                    item_code_oral_insulin = pd.unique(
-                        consumables.loc[consumables['Items'] == 'Insulin soluble 100 IU/ml, 10ml_each_CMST',
-                                        'Item_Code'])[0]
+                    # item_code_oral_insulin = pd.unique(
+                    #     consumables.loc[consumables['Items'] == 'Insulin soluble 100 IU/ml, 10ml_each_CMST',
+                    #                     'Item_Code'])[0]
+                    item_code_oral_insulin = 0
 
-                    consumables_insulin = {
-                        'Intervention_Package_Code': {},
-                        'Item_Code': {item_code_oral_insulin: 5}}
+                    # consumables_insulin = {
+                    #     'Intervention_Package_Code': {},
+                    #     'Item_Code': {item_code_oral_insulin: 5}}
 
-                    outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                        hsi_event=self,
-                        cons_req_as_footprint=consumables_insulin)
+                    # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                    #     hsi_event=self,
+                    #     cons_req_as_footprint=consumables_insulin)
+                    outcome_of_request_for_consumables = {
+                        'Intervention_Package_Code': defaultdict(lambda: True),
+                        'Item_Code': defaultdict(lambda: True)
+                    }
 
                     if outcome_of_request_for_consumables['Item_Code'][item_code_oral_insulin]:
                         df.at[person_id, 'ac_gest_diab_on_treatment'] = 'insulin'
@@ -3049,7 +3180,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
         mother = df.loc[person_id]
         params = self.module.parameters
         abortion_complications = self.sim.modules['PregnancySupervisor'].abortion_complications
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         if not mother.is_alive:
             return
@@ -3058,12 +3189,13 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
         assert abortion_complications.has_any([person_id], 'sepsis', 'haemorrhage', 'injury', first=True)
 
         # Check the availability of consumables
-        pkg_code_infection = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Post-abortion case management',
-                            'Intervention_Pkg_Code'])[0]
+        # pkg_code_infection = pd.unique(
+        #     consumables.loc[consumables['Intervention_Pkg'] == 'Post-abortion case management',
+        #                     'Intervention_Pkg_Code'])[0]
 
-        all_available = self.get_all_consumables(
-            pkg_codes=[pkg_code_infection])
+        # all_available = self.get_all_consumables(
+        #     pkg_codes=[pkg_code_infection])
+        all_available = True
 
         # If consumables are available then individual interventions can be delivered
         if all_available:
@@ -3113,7 +3245,7 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         mother = df.loc[person_id]
 
         if not mother.is_alive:
@@ -3127,11 +3259,12 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
                                          f'presenting and will now undergo treatment')
 
         # We define the required consumables and check their availability
-        ectopic_pkg = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Ectopic case management',
-                                                'Intervention_Pkg_Code'])[0]
+        # ectopic_pkg = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Ectopic case management',
+        #                                         'Intervention_Pkg_Code'])[0]
 
-        all_available = self.get_all_consumables(
-            pkg_codes=[ectopic_pkg])
+        # all_available = self.get_all_consumables(
+        #     items_codes=[self.module.item)
+        all_available = True  # remove use of package_codes
 
         # If they are available then treatment can go ahead
         if all_available:

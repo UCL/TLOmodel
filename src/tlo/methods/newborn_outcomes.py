@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -804,7 +805,7 @@ class NewbornOutcomes(Module):
         df = self.sim.population.props
         nci = self.newborn_care_info
         person_id = hsi_event.target
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         # -------------------------------------- CHLORHEXIDINE CORD CARE ----------------------------------------------
         # Next we determine if cord care with chlorhexidine is applied (consumables are counted during labour)
@@ -812,20 +813,21 @@ class NewbornOutcomes(Module):
 
         # ---------------------------------- VITAMIN D AND EYE CARE -----------------------------------------------
         # We define the consumables
-        item_code_tetracycline = pd.unique(
-            consumables.loc[consumables['Items'] == 'Tetracycline eye ointment 1%_3.5_CMST', 'Item_Code'])[0]
-        item_code_vit_k = pd.unique(
-            consumables.loc[consumables['Items'] == 'vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA',
-                                                    'Item_Code'])[0]
-        item_code_vit_k_syringe = pd.unique(
-            consumables.loc[consumables['Items'] == 'Syringe,  disposable 2ml,  hypoluer with 23g needle_each_'
-                                                    'CMST', 'Item_Code'])[0]
-        consumables_vit_k_and_eye_care = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_tetracycline: 1, item_code_vit_k: 1, item_code_vit_k_syringe: 1}}
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event, cons_req_as_footprint=consumables_vit_k_and_eye_care)
+        item_code_tetracycline = get_item_code('Tetracycline eye ointment 1%_3.5_CMST')
+        item_code_vit_k = get_item_code('vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA')
+        item_code_vit_k_syringe = get_item_code('Syringe,  disposable 2ml,  hypoluer with 23g needle_each_CMST')
+        # consumables_vit_k_and_eye_care = {
+        #     'Intervention_Package_Code': {},
+        #     'Item_Code': {item_code_tetracycline: 1, item_code_vit_k: 1, item_code_vit_k_syringe: 1}}
+
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event, cons_req_as_footprint=consumables_vit_k_and_eye_care)
+        outcome_of_request_for_consumables = {
+            'Intervention_Package_Code': defaultdict(lambda: True),
+            'Item_Code': defaultdict(lambda: True)
+        }
 
         # If they are available the intervention is delivered, there is limited evidence of the effect of these
         # interventions so currently we are just mapping the consumables
@@ -972,15 +974,16 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
         person_id = hsi_event.target
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         # Required consumables are defined
-        pkg_code_resus = pd.unique(consumables.loc[
-                                       consumables['Intervention_Pkg'] == 'Neonatal resuscitation (institutional)',
-                                       'Intervention_Pkg_Code'])[0]
+        # pkg_code_resus = pd.unique(consumables.loc[
+        #                                consumables['Intervention_Pkg'] == 'Neonatal resuscitation (institutional)',
+        #                                'Intervention_Pkg_Code'])[0]
 
-        all_available = hsi_event.get_all_consumables(
-            pkg_codes=[pkg_code_resus])
+        # all_available = hsi_event.get_all_consumables(
+        #     pkg_codes=[pkg_code_resus])
+        all_available = True
 
         # Use the dx_manager to determine if staff will correctly identify this neonate will require resuscitation
         if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
@@ -1007,19 +1010,20 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
         person_id = hsi_event.target
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         # We assume that only hospitals are able to deliver full supportive care for neonatal sepsis, full supportive
         # care evokes a stronger treatment effect than injectable antibiotics alone
 
         if facility_type == 'hp':
             # Define the consumables
-            pkg_code_sep = pd.unique(consumables.loc[
-                                     consumables['Intervention_Pkg'] == 'Newborn sepsis - full supportive care',
-                                     'Intervention_Pkg_Code'])[0]
+            # pkg_code_sep = pd.unique(consumables.loc[
+            #                          consumables['Intervention_Pkg'] == 'Newborn sepsis - full supportive care',
+            #                          'Intervention_Pkg_Code'])[0]
 
-            all_available = hsi_event.get_all_consumables(
-                pkg_codes=[pkg_code_sep])
+            # all_available = hsi_event.get_all_consumables(
+            #     pkg_codes=[pkg_code_sep])
+            all_available = True
 
             # Use the dx_manager to determine if staff will correctly identify this neonate will treatment for sepsis
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
@@ -1032,21 +1036,27 @@ class NewbornOutcomes(Module):
 
         # The same pattern is then followed for health centre care
         elif facility_type == 'hc':
-            item_code_iv_penicillin = pd.unique(
-                consumables.loc[consumables['Items'] == 'Benzylpenicillin 1g (1MU), PFR_Each_CMST', 'Item_Code'])[0]
-            item_code_iv_gentamicin = pd.unique(
-                consumables.loc[consumables['Items'] == 'Gentamicin 40mg/ml, 2ml_each_CMST', 'Item_Code'])[0]
-            item_code_giving_set = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with '
-                                                                                     'needle',
-                                                                                     'Item_Code'])[0]
+            # item_code_iv_penicillin = pd.unique(
+            #     consumables.loc[consumables['Items'] == 'Benzylpenicillin 1g (1MU), PFR_Each_CMST', 'Item_Code'])[0]
+            # item_code_iv_gentamicin = pd.unique(
+            #     consumables.loc[consumables['Items'] == 'Gentamicin 40mg/ml, 2ml_each_CMST', 'Item_Code'])[0]
+            # item_code_giving_set = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with '
+            #                                                                          'needle',
+            #                                                                          'Item_Code'])[0]
+            item_code_iv_penicillin = 0
+            item_code_iv_gentamicin = 0
+            item_code_giving_set = 0
+            # consumables_inj_abx_sepsis = {
+            #     'Intervention_Package_Code': {},
+            #     'Item_Code': {item_code_iv_penicillin: 1, item_code_iv_gentamicin: 1,
+            #                   item_code_giving_set: 1}}
 
-            consumables_inj_abx_sepsis = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {item_code_iv_penicillin: 1, item_code_iv_gentamicin: 1,
-                              item_code_giving_set: 1}}
-
-            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=hsi_event, cons_req_as_footprint=consumables_inj_abx_sepsis)
+            # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            #     hsi_event=hsi_event, cons_req_as_footprint=consumables_inj_abx_sepsis)
+            outcome_of_request_for_consumables = {
+                'Intervention_Package_Code': defaultdict(lambda: True),
+                'Item_Code': defaultdict(lambda: True)
+            }
 
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                dx_tests_to_run=f'assess_neonatal_sepsis_{facility_type}', hsi_event=hsi_event):

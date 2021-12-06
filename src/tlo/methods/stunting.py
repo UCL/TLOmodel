@@ -241,13 +241,12 @@ class Stunting(Module):
 
     def look_up_consumable_item_codes(self):
         """Look up the item codes that used in the HSI in the module"""
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        get_item_codes = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+
         self.cons_item_codes = dict()
-        self.cons_item_codes['supplementary_feeding'] = consumables.loc[
-            consumables['Items'] == 'Supplementary spread, sachet 92g/CAR-150', 'Item_Code'].values[0]
-        self.cons_item_codes['education_for_supplementary_feeding'] = consumables.loc[
-                consumables['Items'] == 'Complementary feeding--education only drugs/supplies to service a client',
-                'Item_Code'].values[0]
+        self.cons_item_codes['supplementary_feeding'] = get_item_codes('Supplementary spread, sachet 92g/CAR-150')
+        self.cons_item_codes['education_for_supplementary_feeding'] = get_item_codes(
+            'Complementary feeding--education only drugs/supplies to service a client')
 
     def do_onset(self, idx: pd.Index):
         """Represent the onset of stunting for the person_id given in `idx`"""
@@ -523,14 +522,14 @@ class HSI_Stunting_ComplementaryFeeding(HSI_Event, IndividualScopeEventMixin):
 
             # Provide supplementary feeding if consumable available, otherwise provide 'education only' (which has a
             # different probability of success).
-            if self.get_all_consumables(item_codes=self.module.cons_item_codes['supplementary_feeding']):
+            if self.get_consumables(item_codes=self.module.cons_item_codes['supplementary_feeding']):
                 self.module.do_treatment(person_id, prob_success=self.module.parameters[
                     'effectiveness_of_food_supplementation_in_stunting_reduction'])
 
             else:
                 # Request consumables for provision of education for supplementary feeding, but do not let
                 # non-availability prevent provision of the intervention.
-                _ = self.get_all_consumables(
+                _ = self.get_consumables(
                     item_codes=self.module.cons_item_codes['education_for_supplementary_feeding'])
                 self.module.do_treatment(person_id, prob_success=self.module.parameters[
                     'effectiveness_of_complementary_feeding_education_in_stunting_reduction'])
