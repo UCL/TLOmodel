@@ -434,7 +434,7 @@ class CardioMetabolicDisorders(Module):
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             assess_diabetes=DxTest(
                 property='nc_diabetes',
-                cons_req_as_item_code=self.parameters['diabetes_hsi']['test_item_code']
+                item_codes=self.parameters['diabetes_hsi']['test_item_code'].astype(int)
             )
         )
         # Create the diagnostic representing the assessment for whether a person is diagnosed with hypertension:
@@ -455,7 +455,7 @@ class CardioMetabolicDisorders(Module):
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             assess_chronic_kidney_disease=DxTest(
                 property='nc_chronic_kidney_disease',
-                cons_req_as_item_code=self.parameters['chronic_kidney_disease_hsi']['test_item_code']
+                item_codes=self.parameters['chronic_kidney_disease_hsi']['test_item_code'].astype(int)
             )
         )
         # Create the diagnostic representing the assessment for whether a person is diagnosed with CIHD
@@ -1242,8 +1242,8 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         assert person[f'nc_{self.condition}_ever_diagnosed'], "The person is not diagnosed and so should not be " \
                                                               "receiving an HSI."
         # Check availability of medication for condition
-        if self.get_all_consumables(
-            item_codes=self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
+        if self.get_consumables(
+            item_codes=self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code').astype(int)
         ):
             # If medication is available, flag as being on medication
             df.at[person_id, f'nc_{self.condition}_on_medication'] = True
@@ -1293,8 +1293,8 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
         # Check availability of medication for condition
-        if self.get_all_consumables(
-            item_codes=self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
+        if self.get_consumables(
+            item_codes=self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code').astype(int)
         ):
             # Schedule their next HSI for a refill of medication, one month from now
             self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1353,8 +1353,9 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             df.at[person_id, f'nc_{self.event}_ever_diagnosed'] = True
             if squeeze_factor < 0.5:
                 # If squeeze factor is not too large:
-                if self.get_all_consumables(
-                    item_codes=self.module.parameters[f'{self.event}_hsi'].get('emergency_medication_item_code')
+                if self.get_consumables(
+                    item_codes=self.module.parameters[f'{self.event}_hsi'].get(
+                        'emergency_medication_item_code').astype(int)
                 ):
                     logger.debug(key='debug', data='Treatment will be provided.')
                     df.at[person_id, f'nc_{self.event}_on_medication'] = True
