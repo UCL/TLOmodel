@@ -117,17 +117,7 @@ class Hiv(Module):
             Types.DATA_FRAME, "prob of time since infection for baseline adult pop"
         ),
         "art_coverage": Parameter(Types.DATA_FRAME, "coverage of ART at baseline"),
-        # "fraction_of_those_infected_that_have_aids_at_initiation": Parameter(
-        #     Types.REAL,
-        #     "Fraction of persons living with HIV at baseline that have developed AIDS",
-        # ),
         "treatment_cascade": Parameter(Types.DATA_FRAME, "spectrum estimates of treatment cascade"),
-        # "testing_coverage_male": Parameter(
-        #     Types.REAL, "proportion of adult male population tested"
-        # ),
-        # "testing_coverage_female": Parameter(
-        #     Types.REAL, "proportion of adult female population tested"
-        # ),
         # Natural history - transmission - overall rates
         "beta": Parameter(Types.REAL, "Transmission rate"),
         "prob_mtct_untreated": Parameter(
@@ -167,15 +157,6 @@ class Hiv(Module):
             Types.REAL, "Relative risk of HIV with wealth level richest"
         ),
         "rr_sex_f": Parameter(Types.REAL, "Relative risk of HIV if female"),
-        # "rr_age_gp20": Parameter(
-        #     Types.REAL, "Relative risk of HIV if age 20-24 compared with 15-19"
-        # ),
-        # "rr_age_gp25": Parameter(Types.REAL, "Relative risk of HIV if age 25-29"),
-        # "rr_age_gp30": Parameter(Types.REAL, "Relative risk of HIV if age 30-34"),
-        # "rr_age_gp35": Parameter(Types.REAL, "Relative risk of HIV if age 35-39"),
-        # "rr_age_gp40": Parameter(Types.REAL, "Relative risk of HIV if age 40-44"),
-        # "rr_age_gp45": Parameter(Types.REAL, "Relative risk of HIV if age 45-49"),
-        # "rr_age_gp50": Parameter(Types.REAL, "Relative risk of HIV if age 50+"),
         "rr_edlevel_primary": Parameter(
             Types.REAL, "Relative risk of HIV with primary education"
         ),
@@ -280,46 +261,6 @@ class Hiv(Module):
         "hiv_testing_rates": Parameter(
             Types.DATA_FRAME, "annual rates of testing for children and adults"
         ),
-        # "rr_hiv_test_female": Parameter(
-        #     Types.REAL,
-        #     "relative likelihood of having HIV test for females compared with males",
-        # ),
-        # "rr_hiv_test_sexworker": Parameter(
-        #     Types.REAL, "relative likelihood of having HIV test for female sex workers"
-        # ),
-        # "rr_hiv_test_age_20_24": Parameter(
-        #     Types.REAL,
-        #     "relative likelihood of having HIV test for ages 20-24 compared with ages 15-19",
-        # ),
-        # "rr_hiv_test_age_25_29": Parameter(
-        #     Types.REAL,
-        #     "relative likelihood of having HIV test for ages 25-29 compared with ages 15-19",
-        # ),
-        # "rr_hiv_test_age_30_34": Parameter(
-        #     Types.REAL,
-        #     "relative likelihood of having HIV test for ages 30-34 compared with ages 15-19",
-        # ),
-        # "rr_hiv_test_age_35_39": Parameter(
-        #     Types.REAL,
-        #     "relative likelihood of having HIV test for ages 35-39 compared with ages 15-19",
-        # ),
-        # "rr_hiv_test_age_40_44": Parameter(
-        #     Types.REAL,
-        #     "relative likelihood of having HIV test for ages 40-44 compared with ages 15-19",
-        # ),
-        # "rr_hiv_test_age_45_49": Parameter(
-        #     Types.REAL,
-        #     "relative likelihood of having HIV test for ages 45-49 compared with ages 15-19",
-        # ),
-        # "rr_hiv_test_primary_education": Parameter(
-        #     Types.REAL,
-        #     "relative likelihood of having HIV test for people with primary education compared with no education",
-        # ),
-        # "rr_hiv_test_secondary_education": Parameter(
-        #     Types.REAL,
-        #     "relative likelihood of having HIV test for people with secondary or higher education compared "
-        #     "with no education",
-        # ),
         "rr_test_hiv_positive": Parameter(
             Types.REAL,
             "relative likelihood of having HIV test for people with HIV",
@@ -331,15 +272,6 @@ class Hiv(Module):
             Types.REAL,
             "Probability that a person will start treatment, if HIV-positive, following testing",
         ),
-        # "rr_start_art_if_aids_symptoms": Parameter(
-        #     Types.REAL,
-        #     "Relative probability of a person starting treatment if they have aids_symptoms compared to if"
-        #     "they do not.",
-        # ),
-        # "temporal_trend_art_initiation": Parameter(
-        #     Types.REAL,
-        #     "Increase in probability of starting ART after positive hiv test by year",
-        # ),
         "prob_behav_chg_after_hiv_test": Parameter(
             Types.REAL,
             "Probability that a person will change risk behaviours, if HIV-negative, following testing",
@@ -372,20 +304,12 @@ class Hiv(Module):
             "Probability that a person who 'should' be on art will seek another appointment if the health-"
             "system has not been able to provide them with an appointment",
         ),
-        # "vls_m": Parameter(Types.REAL, "Rates of viral load suppression males"),
-        # "vls_f": Parameter(Types.REAL, "Rates of viral load suppression males"),
         "vls_child": Parameter(
             Types.REAL, "Rates of viral load suppression in children 0-14 years"
         ),
         "prob_viral_suppression": Parameter(
             Types.DATA_FRAME, "probability of viral suppression each year"
         ),
-        # "baseline_viral_suppression_adult_2010": Parameter(
-        #     Types.REAL, "rates of viral suppression in baseline population 2010"
-        # ),
-        # "temporal_trend_vl": Parameter(
-        #     Types.REAL, "Annual increase in viral suppression rates for adults"
-        # ),
         "prep_start_year": Parameter(Types.REAL, "Year from which PrEP is available"),
         "ART_age_cutoff_young_child": Parameter(
             Types.INT, "Age cutoff for ART regimen for young children"
@@ -480,7 +404,6 @@ class Hiv(Module):
         self.lm["rr_of_infection"] = LinearModel.multiplicative(
             Predictor("age_years").when("<15", 0.0).when("<49", 1.0).otherwise(0.0),
             Predictor("sex").when("F", p["rr_sex_f"]),
-            # Predictor("li_is_sexworker").when(True, p["rr_fsw"]),
             Predictor("li_is_circ").when(True, p["rr_circumcision"]),
             Predictor("hv_is_on_prep").when(
                 True, 1.0 - p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]
@@ -733,7 +656,6 @@ class Hiv(Module):
             suppr.extend(all_idx[vl_suppr])
             notsuppr.extend(all_idx[~vl_suppr])
 
-        # todo this is changed to a lower baseline vl for 2010
         # todo m/f could be merged
         prob_vs = self.prob_viral_suppression(self.sim.date.year)
 
