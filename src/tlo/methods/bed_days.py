@@ -167,14 +167,18 @@ class BedDays:
         assert all([((v >= 0) and (type(v) is int)) for v in beddays_footprint.values()])
         assert beddays_footprint['non_bed_space'] == 0, "A request cannot be made for this type of bed"
 
-    def issue_bed_days_according_to_availability(self, person_id, footprint):
-        """check the requested bed days footprint against available days in tracker. final footprint is constructed
-        according to bed days availability in tracker i.e. if 10 bed days of bed type A are requested and only 5 days
-        are available, 5 instead of 10 bed days will be issued. It looks further in situations where a high level bed
-        is unavailable whilst a lower class bed is available, in such scenarios all requests to the high class bed
-        are transferred to the lower class bed. an empty footprint will be issued where there are no beds of all
-        classes available on all requested days """
-        # do nothing on footprint if empty
+    def issue_bed_days_according_to_availability(self, person_id: int, footprint: dict) -> dict:
+        """Check a bed days footprint against available days in tracker currently and return the footprint
+        that can be allocated, according to the rules of allocation.
+        The rules for the allocation of beds to an HSI are as follows:
+        * For each type of bed required by the HSI, check if there are sufficient bed-days available of that type in
+        the relevant facility;
+           * If Yes, allocate the beds to that HSI and move to the next type of bed in the footprint.
+           * If No, allocate as many consecutive bed-days as possible to this HSI and consider that the remainder can be
+            placed in a bed of the next type. Move to the next type.
+        """
+
+        # If footprint is empty, then the returned footprint is empty too
         if footprint == self.get_blank_beddays_footprint():
             return footprint
 
