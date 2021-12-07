@@ -59,7 +59,7 @@ class Hiv(Module):
 
         self.daly_wts = dict()
         self.lm = dict()
-        self.footprints_for_consumables_required = dict()
+        self.item_codes_for_consumables_required = dict()
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'Lifestyle', 'SymptomManager'}
 
@@ -670,145 +670,53 @@ class Hiv(Module):
         if self.run_with_checks:
             sim.schedule_event(HivCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1))
 
-        # 6) Define the DxTests
+        # 6) Store codes for the consumables needed
+        hs = self.sim.modules["HealthSystem"]
+        self.item_codes_for_consumables_required['hiv_rapid_test'] = \
+            hs.get_item_codes_from_package_name("HIV Testing Services")
+        self.item_codes_for_consumables_required['hiv_early_infant_test'] = {
+            hs.get_item_code_from_item_name("Blood collecting tube, 5 ml"): 1,
+            hs.get_item_code_from_item_name("Gloves, exam, latex, disposable, pair"): 1,
+            hs.get_item_code_from_item_name("HIV EIA Elisa test"): 1}
+        self.item_codes_for_consumables_required['vl_measurement'] = \
+            hs.get_item_codes_from_package_name("Viral Load")
+        self.item_codes_for_consumables_required['circ'] = \
+            hs.get_item_codes_from_package_name("Male circumcision ")
+        self.item_codes_for_consumables_required['prep'] = {
+            hs.get_item_code_from_item_name("Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg"): 1}
+        # First - line ART for adults(age > "ART_age_cutoff_older_child")
+        self.item_codes_for_consumables_required['First-line ART regimen: adult'] = {
+            hs.get_item_code_from_item_name("First-line ART regimen: adult"): 1,
+            hs.get_item_code_from_item_name("Cotrimoxizole, 960mg pppy"): 1}
+        # ART for older children aged ("ART_age_cutoff_younger_child" < age <= "ART_age_cutoff_older_child"):
+        self.item_codes_for_consumables_required['First line ART regimen: older child'] = {
+            **hs.get_item_codes_from_package_name("Cotrimoxazole for children"),
+            **{hs.get_item_code_from_item_name("First line ART regimen: older child"): 1}}
+        # ART for younger children aged (age < "ART_age_cutoff_younger_child"):
+        self.item_codes_for_consumables_required['First line ART regimen: young child'] = {
+            **hs.get_item_codes_from_package_name("Cotrimoxazole for children"),
+            **{hs.get_item_code_from_item_name("First line ART regimen: young child"): 1}}
+
+        # 7) Define the DxTests
         # HIV Rapid Diagnostic Test:
-
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-        pkg_code_hiv_rapid_test = consumables.loc[
-            consumables["Intervention_Pkg"] == "HIV Testing Services",
-            "Intervention_Pkg_Code"].values[0]
-        hiv_rapid_test_cons_footprint = {
-            'Intervention_Package_Code': {pkg_code_hiv_rapid_test: 1}, 'Item_Code': {}
-        }
-
         # NB. The rapid test is assumed to be 100% specific and sensitive. This is used to guarantee that all persons
         #  that start ART are truly HIV-pos.
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             hiv_rapid_test=DxTest(
                 property='hv_inf',
-                cons_req_as_footprint=hiv_rapid_test_cons_footprint
+                item_codes=self.item_codes_for_consumables_required['hiv_rapid_test']
             )
         )
-        self.footprints_for_consumables_required[
-            'hiv_rapid_test'] = hiv_rapid_test_cons_footprint
 
         # Test for Early Infect Diagnosis
-        #  - Consumables required:
-        item1 = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Blood collecting tube, 5 ml", "Item_Code"
-            ]
-        )[0]
-        item2 = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Gloves, exam, latex, disposable, pair",
-                "Item_Code",
-            ]
-        )[0]
-        item3 = pd.unique(
-            consumables.loc[consumables["Items"] == "HIV EIA Elisa test", "Item_Code"]
-        )[0]
-        hiv_early_infant_test_cons_footprint = {
-            'Intervention_Package_Code': {}, 'Item_Code': {item1: 1, item2: 1, item3: 1}
-        }
-
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             hiv_early_infant_test=DxTest(
                 property='hv_inf',
                 sensitivity=1.0,
                 specificity=1.0,
-                cons_req_as_footprint=hiv_early_infant_test_cons_footprint
+                item_codes=self.item_codes_for_consumables_required['hiv_early_infant_test']
             )
         )
-        self.footprints_for_consumables_required[
-            'hiv_early_infant_test'] = hiv_early_infant_test_cons_footprint
-
-        # 7) Look-up and store the codes for the consumables used in the interventions.
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-
-        # Circumcison:
-        pkg_codes_for_circ = pd.unique(
-            consumables.loc[
-                consumables["Intervention_Pkg"] == "Male circumcision ",
-                "Intervention_Pkg_Code",
-            ]
-        )[0]
-        self.footprints_for_consumables_required['circ'] = {
-            "Intervention_Package_Code": {pkg_codes_for_circ: 1},
-            "Item_Code": {}
-        }
-
-        # PrEP:
-        item_code_for_prep = pd.unique(
-            consumables.loc[
-                consumables["Items"]
-                == "Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg",
-                "Item_Code",
-            ]
-        )[0]
-        self.footprints_for_consumables_required['prep'] = {
-            "Intervention_Package_Code": {},
-            "Item_Code": {item_code_for_prep: 1}
-        }
-
-        # First-line ART for adults (age > "ART_age_cutoff_older_child")
-        item_code_for_art_adult = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "First-line ART regimen: adult",
-                "Item_Code"
-            ]
-        )[0]
-
-        item_code_for_cotrim_adult = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Cotrimoxizole, 960mg pppy", "Item_Code"
-            ]
-        )[0]  # NB spelling error in consumables file "Cotrimoxizole"
-        self.footprints_for_consumables_required['First-line ART regimen: adult'] = {
-            "Intervention_Package_Code": {},
-            "Item_Code": {item_code_for_art_adult: 1, item_code_for_cotrim_adult: 1}
-        }
-
-        # ART for older children aged ("ART_age_cutoff_younger_child" < age <= "ART_age_cutoff_older_child"):
-        item_code_for_art_older_child = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "First line ART regimen: older child",
-                "Item_Code"
-            ]
-        )[0]
-        pkg_code_for_cotrim_child = pd.unique(
-            consumables.loc[
-                consumables["Intervention_Pkg"] == "Cotrimoxazole for children",
-                "Intervention_Pkg_Code",
-            ]
-        )[0]
-        self.footprints_for_consumables_required['First line ART regimen: older child'] = {
-            "Intervention_Package_Code": {pkg_code_for_cotrim_child: 1},
-            "Item_Code": {item_code_for_art_older_child: 1}
-        }
-
-        # ART for younger children aged (age < "ART_age_cutoff_younger_child"):
-        item_code_for_art_younger_child = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "First line ART regimen: young child",
-                "Item_Code"
-            ]
-        )[0]
-        self.footprints_for_consumables_required['First line ART regimen: young child'] = {
-            "Intervention_Package_Code": {pkg_code_for_cotrim_child: 1},
-            "Item_Code": {item_code_for_art_younger_child: 1}
-        }
-
-        # Viral Load monitoring
-        item_code_for_viral_load = pd.unique(
-            consumables.loc[
-                consumables["Intervention_Pkg"] == "Viral Load", "Intervention_Pkg_Code"
-            ]
-        )[0]
-        self.footprints_for_consumables_required['vl_measurement'] = {
-            "Intervention_Package_Code": {},
-            "Item_Code": {item_code_for_viral_load: 1}
-        }
 
     def on_birth(self, mother_id, child_id):
         """
@@ -1504,7 +1412,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         # Check/log use of consumables, and do circumcision if materials available
         # NB. If materials not available, it is assumed that the procedure is not carried out for this person following
         # this particular referral.
-        if self.get_all_consumables(footprint=self.module.footprints_for_consumables_required['circ']):
+        if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['circ']):
             # Update circumcision state
             df.at[person_id, "li_is_circ"] = True
 
@@ -1548,7 +1456,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({"Over5OPD": 1, "VCTPositive": 1})
 
         # Check that PrEP is available and if it is, initiate or continue  PrEP:
-        if self.get_all_consumables(footprint=self.module.footprints_for_consumables_required['prep']):
+        if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['prep']):
             df.at[person_id, "hv_is_on_prep"] = True
 
             # Schedule 'decision about whether to continue on PrEP' for 3 months time
@@ -1676,7 +1584,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Viral Load Monitoring
         # NB. This does not have a direct effect on outcomes for the person.
-        _ = self.get_all_consumables(footprint=self.module.footprints_for_consumables_required['vl_measurement'])
+        _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Check if drugs are available, and provide drugs:
         drugs_available = self.get_drugs(age_of_person=person['age_years'])
@@ -1707,16 +1615,16 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if age_of_person < p["ART_age_cutoff_young_child"]:
             # Formulation for children
-            drugs_available = self.get_all_consumables(
-                footprint=self.module.footprints_for_consumables_required['First line ART regimen: young child'])
+            drugs_available = self.get_consumables(
+                item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: young child'])
         elif age_of_person <= p["ART_age_cutoff_older_child"]:
             # Formulation for children
-            drugs_available = self.get_all_consumables(
-                footprint=self.module.footprints_for_consumables_required['First line ART regimen: older child'])
+            drugs_available = self.get_consumables(
+                item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: older child'])
         else:
             # Formulation for adults
-            drugs_available = self.get_all_consumables(
-                footprint=self.module.footprints_for_consumables_required['First-line ART regimen: adult'])
+            drugs_available = self.get_consumables(
+                item_codes=self.module.item_codes_for_consumables_required['First-line ART regimen: adult'])
 
         return drugs_available
 

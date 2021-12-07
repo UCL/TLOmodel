@@ -413,7 +413,7 @@ def test_airthmetic_of_lifeyearslost():
 
 
 def test_arithmetic_of_stacked_lifeyearslost(tmpdir):
-    """    #  Check that the computation of 'stacked' LifeYearsLost and DALYS is done correctly (i.e. when all the
+    """Check that the computation of 'stacked' LifeYearsLost and DALYS is done correctly (i.e. when all the
     future life-years lost are allocated to the year of death."""
 
     rfp = Path(os.path.dirname(__file__)) / '../resources'
@@ -480,7 +480,7 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir):
     # Examine Years Lived with Disability
     yld = log['yld_by_causes_of_disability']
     marker_for_disability = (yld.year == 2011) & (yld.age_range == '0-4') & (yld.sex == 'F')
-    assert (yld.loc[marker_for_disability, 'cause_of_disability_A'] == daly_wt).all()
+    assert (yld.loc[marker_for_disability, 'cause_of_disability_A'] == daly_wt * 1.0).all()
     assert (yld.loc[~marker_for_disability, 'cause_of_disability_A'] == 0.0).all()
 
     # For the Non-Stacked Results
@@ -491,6 +491,7 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir):
         ['year', 'age_range', 'cause_of_death_A']
     ].groupby('year')['cause_of_death_A'].sum()
     assert all([yll_by_year_not_stacked.loc[year] == approx(1.0, abs=1/364) for year in range(2012, 2029)])
+    assert all([yll_by_year_not_stacked.loc[year] == approx(0.0, abs=1 / 364) for year in range(2010, 2012)])
 
     # For the Non-Stacked Results
     # -- YLL
@@ -500,5 +501,30 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir):
         ['year', 'age_range', 'cause_of_death_A']
     ].groupby('year')['cause_of_death_A'].sum()
     assert all(
-        [yll_by_year_stacked.loc[year] == (approx(68.0, 1/364) if year == 2012 else 0.0) for year in range(2012, 2030)]
+        [yll_by_year_stacked.loc[year] == (approx(68.0, 1/364) if year == 2012 else 0.0) for year in range(2010, 2030)]
     )
+
+    # Check dalys is as expected:
+    dalys_by_year_not_stacked = log['dalys'].loc[
+        (log['dalys'].sex == 'F'), ['year', 'age_range', 'Label_A']
+    ].groupby('year')['Label_A'].sum()
+    assert dalys_by_year_not_stacked.at[2010] == 0.0
+    assert dalys_by_year_not_stacked.at[2011] == approx(0.5, 1/364)
+    assert all([dalys_by_year_not_stacked.at[year] == (approx(1.0, 1/364)) for year in range(2012, 2030)])
+
+    # Check dalys_stacked is as expected:
+    dalys_by_year_stacked = log['dalys_stacked'].loc[
+        (log['dalys'].sex == 'F'), ['year', 'age_range', 'Label_A']
+    ].groupby('year')['Label_A'].sum()
+    assert dalys_by_year_stacked.at[2010] == 0.0
+    assert dalys_by_year_stacked.at[2011] == approx(0.5, 1/364)
+    assert dalys_by_year_stacked.at[2012] == approx(68.0, 1/364)
+    assert all([dalys_by_year_stacked.at[year] == (approx(0.0, 1/364)) for year in range(2013, 2030)])
+
+    # Check that results from daly_stacked can be extract into pd.Series (for use in `extract_results`)
+    def fn(df_):
+        return df_.drop(columns='date').groupby(['year']).sum().stack()
+
+    ser = fn(log['dalys_stacked'])
+    assert ser.loc[(slice(None), 'Label_A')].at[2011] == approx(0.5, 1/364)
+    assert ser.loc[(slice(None), 'Label_A')].at[2012] == approx(68.0, 1/364)

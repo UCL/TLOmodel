@@ -206,6 +206,9 @@ class Mockitis(Module):
             self.sim.schedule_event(MockitisDeathEvent(self, person_id),
                                     df.at[person_id, 'mi_scheduled_date_death'])
 
+        # Store an item code for a consumable
+        self.cons_code = 0
+
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 
@@ -451,7 +454,7 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
 
-        if treatmentworks:
+        if treatmentworks and self.get_consumables(self.module.cons_code):
             df.at[person_id, 'mi_is_infected'] = False
             df.at[person_id, 'mi_status'] = 'P'
 
@@ -464,17 +467,6 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             self.module.sim.modules['SymptomManager'].clear_symptoms(
                 person_id=person_id,
                 disease_module=self.module)
-
-            # Alternative:
-            # symptoms_caused_by_this_disease_module = \
-            #     self.module.sim.modules['SymptomManager'].has_what(person_id, self.module)
-            # for symp in symptoms_caused_by_this_disease_module:
-            #     self.module.sim.modules['SymptomManager'].chg_symptom(
-            #         person_id=person_id,
-            #         symptom_string=symp,
-            #         add_or_remove='-',
-            #         disease_module=self.module
-            #     )
 
         # Create a follow-up appointment
         target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
