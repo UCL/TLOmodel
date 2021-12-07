@@ -1539,22 +1539,18 @@ class HSI_Event:
         """Helper function to make a correctly-formed 'bed-days footprint'"""
 
         # get blank footprint
-        if 'HealthSystem' in self.module.sim.modules:
-            footprint = self.sim.modules['HealthSystem'].bed_days.get_blank_beddays_footprint()
+        footprint = self.bed_days.get_blank_beddays_footprint()
 
-            # do checks
-            assert isinstance(dict_of_beddays, dict)
-            assert all((k in footprint.keys()) for k in dict_of_beddays.keys())
-            assert all(isinstance(v, (float, int)) for v in dict_of_beddays.values())
+        # do checks on the dict_of_beddays provided.
+        assert isinstance(dict_of_beddays, dict)
+        assert all((k in footprint.keys()) for k in dict_of_beddays.keys())
+        assert all(isinstance(v, (float, int)) for v in dict_of_beddays.values())
 
-            # make footprint (defaulting to zero where a type of bed-days is not specified)
-            for k, v in dict_of_beddays.items():
-                footprint[k] = v
+        # make footprint (defaulting to zero where a type of bed-days is not specified)
+        for k, v in dict_of_beddays.items():
+            footprint[k] = v
 
-            return self.sim.modules['HealthSystem'].bed_days.issue_bed_days_according_to_availability(self.target,
-                                                                                                      footprint)
-
-        return {}
+        return footprint
 
     def is_all_beddays_allocated(self):
         """Check if the entire footprint requested is allocated"""
