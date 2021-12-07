@@ -36,8 +36,6 @@ except NameError:
 def bundle():
     Bundle = collections.namedtuple('Bundle',
                                     ['simulation',
-                                     'cons_req_as_footprint_for_consumable_that_is_not_available',
-                                     'cons_req_as_footprint_for_consumable_that_is_available',
                                      'hsi_event',
                                      'item_code_for_consumable_that_is_not_available',
                                      'item_code_for_consumable_that_is_available'])
@@ -86,22 +84,10 @@ def bundle():
     cons_items.loc[item_code_for_consumable_that_is_not_available, cons_items.columns] = False
     cons_items.loc[item_code_for_consumable_that_is_available, cons_items.columns] = True
 
-    assert hsi_event.get_all_consumables(item_codes=item_code_for_consumable_that_is_available)
-    assert not hsi_event.get_all_consumables(item_codes=item_code_for_consumable_that_is_not_available)
-
-    cons_req_as_footprint_for_consumable_that_is_not_available = {
-        'Intervention_Package_Code': {},
-        'Item_Code': {item_code_for_consumable_that_is_not_available: 1},
-    }
-
-    cons_req_as_footprint_for_consumable_that_is_available = {
-        'Intervention_Package_Code': {},
-        'Item_Code': {item_code_for_consumable_that_is_available: 1},
-    }
+    assert hsi_event.get_consumables(item_codes=item_code_for_consumable_that_is_available)
+    assert not hsi_event.get_consumables(item_codes=item_code_for_consumable_that_is_not_available)
 
     return Bundle(sim,
-                  cons_req_as_footprint_for_consumable_that_is_not_available,
-                  cons_req_as_footprint_for_consumable_that_is_available,
                   hsi_event,
                   item_code_for_consumable_that_is_not_available,
                   item_code_for_consumable_that_is_available)
@@ -165,8 +151,8 @@ def test_create_dx_test_and_register(bundle):
 
 def test_create_duplicate_test_that_should_be_allowed(bundle):
     sim = bundle.simulation
-    cons_req_as_footprint_for_consumable_that_is_available = \
-        bundle.cons_req_as_footprint_for_consumable_that_is_available
+    item_code_for_consumable_that_is_available = \
+        bundle.item_code_for_consumable_that_is_available
 
     my_test1_property_only = DxTest(
         property='mi_status'
@@ -174,12 +160,12 @@ def test_create_duplicate_test_that_should_be_allowed(bundle):
 
     my_test1_property_and_consumable = DxTest(
         property='mi_status',
-        cons_req_as_footprint=cons_req_as_footprint_for_consumable_that_is_available,
+        item_codes=item_code_for_consumable_that_is_available,
     )
 
     my_test1_property_and_consumable_and_sensspec = DxTest(
         property='mi_status',
-        cons_req_as_footprint=cons_req_as_footprint_for_consumable_that_is_available,
+        item_codes=item_code_for_consumable_that_is_available,
         sensitivity=0.99,
         specificity=0.95
     )
@@ -192,7 +178,7 @@ def test_create_duplicate_test_that_should_be_allowed(bundle):
     )
     assert len(dx_manager.dx_tests) == 2
 
-    # Give the same test but under a different name: name and consumbales provided - should fail and not add test
+    # Give the same test but under a different name: name and consumables provided - should fail and not add test
     dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
     dx_manager.register_dx_test(
         my_test1=my_test1_property_and_consumable,
@@ -200,9 +186,8 @@ def test_create_duplicate_test_that_should_be_allowed(bundle):
     )
     assert len(dx_manager.dx_tests) == 2
 
-    # Give the same test but under a different name: name and consumbales provided and sens/spec provided:
+    # Give the same test but under a different name: name and consumables provided and sens/spec provided:
     #       --- should fail and not add test
-
     dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
     dx_manager.register_dx_test(
         my_test1=my_test1_property_and_consumable_and_sensspec,
@@ -268,59 +253,6 @@ def test_create_dx_test_and_run(bundle):
         assert result_from_dx_manager['my_test1'] == df.at[person_id, 'mi_status']
 
 
-def test_create_dx_tests_with_consumable_usage(bundle):
-    sim = bundle.simulation
-    cons_req_as_footprint_for_consumable_that_is_not_available = \
-        bundle.cons_req_as_footprint_for_consumable_that_is_not_available
-    cons_req_as_footprint_for_consumable_that_is_available = \
-        bundle.cons_req_as_footprint_for_consumable_that_is_available
-    hsi_event = bundle.hsi_event
-
-    # Create the test:
-    my_test1_not_available = DxTest(
-        cons_req_as_footprint=cons_req_as_footprint_for_consumable_that_is_not_available,
-        property='mi_status'
-    )
-
-    my_test2_is_available = DxTest(
-        cons_req_as_footprint=cons_req_as_footprint_for_consumable_that_is_available,
-        property='mi_status'
-    )
-
-    my_test3_is_no_consumable_needed = DxTest(
-        cons_req_as_footprint=None,  # No consumable code: means that the consumable will not be
-        property='mi_status'
-    )
-
-    # Create new DxManager
-    dx_manager = DxManager(sim.modules['HealthSystem'])
-
-    # Register the single and the compound tests with DxManager:
-    dx_manager.register_dx_test(
-        my_test1=my_test1_not_available,
-        my_test2=my_test2_is_available,
-        my_test3=my_test3_is_no_consumable_needed,
-    )
-
-    # pick a person
-    person_id = 0
-    hsi_event.target = person_id
-
-    # Confirm the my_test1 does not give result
-    assert None is dx_manager.run_dx_test(dx_tests_to_run='my_test1',
-                                          hsi_event=hsi_event,
-                                          )
-
-    # Confirm that my_test2 and my_test3 does give result
-    assert None is not dx_manager.run_dx_test(dx_tests_to_run='my_test2',
-                                              hsi_event=hsi_event,
-                                              )
-
-    assert None is not dx_manager.run_dx_test(dx_tests_to_run='my_test3',
-                                              hsi_event=hsi_event,
-                                              )
-
-
 def test_create_dx_tests_with_consumable_useage_given_by_item_code_only(bundle):
     sim = bundle.simulation
     hsi_event = bundle.hsi_event
@@ -329,12 +261,12 @@ def test_create_dx_tests_with_consumable_useage_given_by_item_code_only(bundle):
 
     # Create the test:
     my_test1_not_available = DxTest(
-        cons_req_as_item_code=item_code_for_consumable_that_is_not_available,
+        item_codes=item_code_for_consumable_that_is_not_available,
         property='mi_status'
     )
 
     my_test2_is_available = DxTest(
-        cons_req_as_item_code=item_code_for_consumable_that_is_available,
+        item_codes=item_code_for_consumable_that_is_available,
         property='mi_status'
     )
 
@@ -362,38 +294,19 @@ def test_create_dx_tests_with_consumable_useage_given_by_item_code_only(bundle):
                                               )
 
 
-def test_hash_from_footprint_and_hash_from_item_code(bundle):
-    cons_req_as_footprint_for_consumable_that_is_available = \
-        bundle.cons_req_as_footprint_for_consumable_that_is_available
-    item_code_for_consumable_that_is_available = bundle.item_code_for_consumable_that_is_available
-
-    my_test_using_item_code = DxTest(
-        cons_req_as_item_code=item_code_for_consumable_that_is_available,
-        property='mi_status'
-    )
-
-    my_test_using_footprint = DxTest(
-        cons_req_as_footprint=cons_req_as_footprint_for_consumable_that_is_available,
-        property='mi_status'
-    )
-
-    assert hash(my_test_using_item_code) == hash(my_test_using_footprint)
-
-
 def test_run_batch_of_dx_test_in_one_call(bundle):
     sim = bundle.simulation
-    cons_req_as_footprint_for_consumable_that_is_available = \
-        bundle.cons_req_as_footprint_for_consumable_that_is_available
+    item_code_for_consumable_that_is_available = bundle.item_code_for_consumable_that_is_available
     hsi_event = bundle.hsi_event
 
     # Create the dx_test
     my_test1 = DxTest(
-        cons_req_as_footprint=cons_req_as_footprint_for_consumable_that_is_available,
+        item_codes=item_code_for_consumable_that_is_available,
         property='mi_status'
     )
 
     my_test2 = DxTest(
-        cons_req_as_footprint=cons_req_as_footprint_for_consumable_that_is_available,
+        item_codes=item_code_for_consumable_that_is_available,
         property='cs_has_cs'
     )
 
@@ -419,20 +332,18 @@ def test_run_batch_of_dx_test_in_one_call(bundle):
 
 def test_create_tuple_of_dx_tests_which_fail_and_require_chain_execution(bundle):
     sim = bundle.simulation
-    cons_req_as_footprint_for_consumable_that_is_not_available = \
-        bundle.cons_req_as_footprint_for_consumable_that_is_not_available
-    cons_req_as_footprint_for_consumable_that_is_available = \
-        bundle.cons_req_as_footprint_for_consumable_that_is_available
+    item_code_for_consumable_that_is_not_available = bundle.item_code_for_consumable_that_is_not_available
+    item_code_for_consumable_that_is_available = bundle.item_code_for_consumable_that_is_available
     hsi_event = bundle.hsi_event
 
     # Create the tests:
     my_test1_not_available = DxTest(
-        cons_req_as_footprint=cons_req_as_footprint_for_consumable_that_is_not_available,
+        item_codes=item_code_for_consumable_that_is_not_available,
         property='mi_status'
     )
 
     my_test2_is_available = DxTest(
-        cons_req_as_footprint=cons_req_as_footprint_for_consumable_that_is_available,
+        item_codes=item_code_for_consumable_that_is_available,
         property='mi_status'
     )
 

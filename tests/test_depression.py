@@ -111,20 +111,14 @@ def test_hsi_functions(tmpdir):
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=0,
-                                           ignore_cons_constraints=True),
+                                           cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
     # Make it more likely that individual with depression seeks care
@@ -178,19 +172,14 @@ def test_hsi_functions_no_medication_available(tmpdir):
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           mode_appt_constraints=0),
+                                           mode_appt_constraints=0,
+                                           cons_availability='none'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
     # Make it more likely that individual with depression seeks care
@@ -217,10 +206,6 @@ def test_hsi_functions_no_medication_available(tmpdir):
     df['de_ever_talk_ther'] = False
     df['de_ever_non_fatal_self_harm_event'] = False
 
-    # zero-out the availability of the consumable that is required for the treatment of antidepressants
-    item_code = sim.modules['Depression'].parameters['anti_depressant_medication_item_code']
-    sim.modules['HealthSystem'].prob_item_codes_available.loc[item_code] = 0.0
-
     sim.simulate(end_date=Date(year=2012, month=1, day=1))
     # --------------------------------------------------------------------------
 
@@ -236,12 +221,6 @@ def test_hsi_functions_no_medication_available(tmpdir):
     assert 'Depression_TalkingTherapy' in hsi['TREATMENT_ID'].values
     assert 'Depression_Antidepressant_Start' in hsi['TREATMENT_ID'].values
     assert 'Depression_Antidepressant_Refill' not in hsi['TREATMENT_ID'].values
-
-    # Check no anti-depressants used
-    assert all(
-        [item_code not in x.keys() for x in output[
-            'tlo.methods.healthsystem']['Consumables']['Item_Available'].apply(eval)]
-    )
 
 
 def test_hsi_functions_no_healthsystem_capability(tmpdir):
@@ -259,21 +238,15 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir):
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=2,
-                                           ignore_cons_constraints=True,
+                                           cons_availability='all',
                                            capabilities_coefficient=0.0),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
     # Make it more likely that individual with depression seeks care
