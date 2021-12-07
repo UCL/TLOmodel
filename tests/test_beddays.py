@@ -720,7 +720,7 @@ def test_bed_days_allocation_to_one_bed_type():
     hsi_bd.post_apply_hook()
 
     # check impose footprint works
-    assert 0 == beds_days_df[hs.bed_days.get_facility_id_for_beds(person_id)].sum(), f'equating different values'
+    assert 0 == beds_days_df[hs.bed_days.get_facility_id_for_beds(person_id)].sum(), 'equating different values'
 
     """ 2) test Bed available for the first but not all of the days requested """
     # ------------- reset variables --------------
@@ -740,8 +740,7 @@ def test_bed_days_allocation_to_one_bed_type():
 
     # check tracker is reset as expected - only 1 day should be available and it should be sim.date
     assert 1 == beds_days_df[hs.bed_days.get_facility_id_for_beds(person_id)].loc[sim.date]
-    assert 1 == beds_days_df[hs.bed_days.get_facility_id_for_beds(person_id)].sum(), "bed tracker is" \
-                                                                                           "not properly reset"
+    assert 1 == beds_days_df[hs.bed_days.get_facility_id_for_beds(person_id)].sum(), "bed tracker is not properly reset"
 
     # run HSI_Dummy Event and check whether days are allocated as expected
     hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
@@ -758,7 +757,7 @@ def test_bed_days_allocation_to_one_bed_type():
     hsi_bd.post_apply_hook()
 
     # check impose footprint works
-    assert 0 == beds_days_df[hs.bed_days.get_facility_id_for_beds(person_id)].sum(), f'equating different values'
+    assert 0 == beds_days_df[hs.bed_days.get_facility_id_for_beds(person_id)].sum(), 'equating different values'
 
     """ 3) test Bed not available on the first day, but available on later days """
     # ------------- reset variables --------------
@@ -821,8 +820,7 @@ def test_bed_days_allocation_to_one_bed_type():
 
     # check tracker is reset as expected - only 3 days should be available
     assert all(1 == beds_days_df[hs.bed_days.get_facility_id_for_beds(person_id)].loc[bed_available_days])
-    assert 3 == beds_days_df[hs.bed_days.get_facility_id_for_beds(person_id)].sum(), "bed tracker is" \
-                                                                                           "not properly reset"
+    assert 3 == beds_days_df[hs.bed_days.get_facility_id_for_beds(person_id)].sum(), "bed tracker is not properly reset"
 
     # run HSI_Dummy Event and check whether days are allocated as expected
     hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
@@ -844,8 +842,7 @@ def test_bed_days_allocation_to_one_bed_type():
 
     assert 0 == beds_days_df[hs.bed_days.get_facility_id_for_beds(person_id)].loc[sim.date]
     assert all(1 == beds_days_df[hs.bed_days.get_facility_id_for_beds(person_id)].loc[bed_available_days[1:]])
-    assert 2 == beds_days_df[hs.bed_days.get_facility_id_for_beds(person_id)].sum(), "bed tracker is" \
-                                                                                           "not properly reset"
+    assert 2 == beds_days_df[hs.bed_days.get_facility_id_for_beds(person_id)].sum(), "bed tracker is not properly reset"
 
 
 def test_multiple_bed_types_allocation_with_lower_class_bed_always_available():
@@ -1164,8 +1161,8 @@ def test_multiple_bed_types_allocation_with_lower_class_bed_always_available():
 def test_multiple_bed_types_allocation_with_lower_class_bed_never_available():
     """This test checks the integrity of bed days allocation algorithm with lower class bed never available and given
         different scenarios i.e. when bed-type A is available for all days requested, bed A available for the first
-        but not all of the days requested (bed-type B not available), bed A not available on the first day, but available on
-        later days (bed-type B not available) and bed A available on 1st, 3rd and 5th day """
+        but not all of the days requested (bed-type B not available), bed A not available on the first day, but
+        available on later days (bed-type B not available) and bed A available on 1st, 3rd and 5th day """
 
     class DummyModule(Module):
         METADATA = {Metadata.USES_HEALTHSYSTEM}
