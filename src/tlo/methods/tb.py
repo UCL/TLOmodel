@@ -1604,7 +1604,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Tb_ScreeningAndRefer"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '0'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1802,7 +1802,7 @@ class HSI_Tb_Xray(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Tb_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 2
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1843,7 +1843,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "Tb_Treatment_Initiation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"TBNew": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1961,7 +1961,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Tb_FollowUp"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2078,7 +2078,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         self.TREATMENT_ID = "Tb_Ipt"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):

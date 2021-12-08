@@ -1425,6 +1425,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     df.is_alive
                     & ~df.hv_inf
                     & df.li_is_sexworker
+                    & ~df.hv_is_on_prep
                     & df.age_years.between(15, 80)
                     & (df.sex == to_sex)
                     ].index
@@ -1788,7 +1789,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Hiv_TestAndRefer"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"VCTNegative": 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):

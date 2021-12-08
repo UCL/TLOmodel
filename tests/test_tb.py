@@ -9,7 +9,6 @@ from tlo import Date, Simulation
 from tlo.methods import (
     care_of_women_during_pregnancy,
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
@@ -55,11 +54,12 @@ def get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=
                      healthsystem.HealthSystem(
                          resourcefilepath=resourcefilepath,
                          disable=disable_HS,
-                         ignore_cons_constraints=ignore_con_constraints),
+                         cons_availability="all",
+                         # mode for consumable constraints (if ignored, all consumables available)
+                     ),
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                      epi.Epi(resourcefilepath=resourcefilepath),
                      hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
                      tb.Tb(resourcefilepath=resourcefilepath),
@@ -75,11 +75,12 @@ def get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=
                      healthsystem.HealthSystem(
                          resourcefilepath=resourcefilepath,
                          disable=True,
-                         ignore_cons_constraints=True),
+                         cons_availability="all",
+                         # mode for consumable constraints (if ignored, all consumables available)
+                     ),
                      healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                      epi.Epi(resourcefilepath=resourcefilepath),
                      hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
                      tb.Tb(resourcefilepath=resourcefilepath),

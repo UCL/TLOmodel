@@ -512,7 +512,8 @@ def test_aids_symptoms_lead_to_treatment_being_initiated():
     # Let one person have HIV and let AIDS be onset for that one person
     person_id = 0
     df.at[person_id, 'hv_inf'] = True
-    aids_event = HivAidsOnsetEvent(person_id=person_id, module=sim.modules['Hiv'])
+    # set this cause (TB) to make sure AIDS onset occurs
+    aids_event = HivAidsOnsetEvent(person_id=person_id, module=sim.modules['Hiv'], cause='AIDS_TB')
     aids_event.apply(person_id)
 
     # Confirm that they have aids symptoms and an AIDS death schedule
@@ -868,8 +869,11 @@ def test_hsi_art_stopped_due_to_no_drug_available_and_no_restart():
         ev[0] for ev in sim.find_events_for_person(person_id) if
         (isinstance(ev[1], hiv.HivAidsOnsetEvent) & (ev[0] >= sim.date))
     ])
-    # confirm no future HSI events for this person
-    assert 0 == len(sim.modules['HealthSystem'].find_events_for_person(person_id))
+    # confirm test and refer scheduled for this person
+    assert 1 == len([
+        ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        (isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer) & (ev[0] >= sim.date))
+    ])
 
 
 def test_hsi_art_stopped_due_to_no_drug_available_but_will_restart():

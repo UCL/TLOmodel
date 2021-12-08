@@ -36,7 +36,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+end_date = Date(2014, 1, 1)
 popsize = 500
 
 # set up the log config
@@ -96,6 +96,8 @@ sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_mont
 sim.modules["Hiv"].parameters["beta"] = 0.13
 
 sim.modules["Hiv"].parameters["rr_start_art_if_aids_symptoms"] = 5
+sim.modules["Hiv"].parameters["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 1.0
+
 
 # sim.modules["Hiv"].parameters["temporal_trend_vl"] = 0.55  # additive model 0.42 + (yr*param)
 
