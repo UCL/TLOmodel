@@ -628,10 +628,8 @@ def test_bed_days_allocation_to_HSI():
     facility_id = 0  # Arbitrary facility_id
 
     def prepare_sim():
-        """Create a run simulation with a particular configuration of bed-days availability"""
-
+        """Create and run simulation"""
         sim = Simulation(start_date=start_date, seed=0)
-
         sim.register(
             demography.Demography(resourcefilepath=resourcefilepath),
             healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
@@ -670,107 +668,98 @@ def test_bed_days_allocation_to_HSI():
         # Check:
         assert expected_footprint_sent_to_hsi == footprint_provided
 
-
-    # When only requesting a bed of the lowest tier:
-    # 1) ... when the bed is available for all requested days:
-    def make_trackers_available_all_days(_bed_tracker):
+    # A: When only requesting a bed of the lowest tier:
+    # A1) ... when the bed is available for all requested days:
+    def make_no_changes(_bed_tracker):
         return _bed_tracker
 
     check_footprint_against_expectation(
         footprint_requested={'bed_A': 0, 'bed_B': 3},
-        fn_edit_bed_tracker=make_trackers_available_all_days,
+        fn_edit_bed_tracker=make_no_changes,
         expected_footprint_sent_to_hsi={'bed_A': 0, 'bed_B': 3}
     )
 
-    # 2) ... when the bed is available for only the first of the days requested;
-    def make_bed_available_on_first_day_only(_bed_tracker):
+    # A2) ... when the bed is available for only the first of the days requested;
+    def make_bed_b_available_on_first_day_only(_bed_tracker):
         _bed_tracker['bed_B'][facility_id].values[1:] = 0
         return _bed_tracker
 
     check_footprint_against_expectation(
         footprint_requested={'bed_A': 0, 'bed_B': 3},
-        fn_edit_bed_tracker=make_bed_available_on_first_day_only,
+        fn_edit_bed_tracker=make_bed_b_available_on_first_day_only,
         expected_footprint_sent_to_hsi={'bed_A': 0, 'bed_B': 1}
     )
 
-    # 3) ... when the bed is not available on the first day but is available on later days;
-    def make_bed_not_available_on_first_day(_bed_tracker):
+    # A3) ... when the bed is not available on the first day but is available on later days;
+    def make_bed_b_not_available_on_first_day(_bed_tracker):
         _bed_tracker['bed_B'][facility_id].values[0] = 0
         return _bed_tracker
 
     check_footprint_against_expectation(
         footprint_requested={'bed_A': 0, 'bed_B': 3},
-        fn_edit_bed_tracker=make_bed_not_available_on_first_day,
+        fn_edit_bed_tracker=make_bed_b_not_available_on_first_day,
         expected_footprint_sent_to_hsi={'bed_A': 0, 'bed_B': 0}
     )
 
-    # When requesting a bed of the highest tier only:
-    # 1) ... when the bed is available for all requested days:
-    def make_trackers_available_all_days(_bed_tracker):
-        return _bed_tracker
-
+    # B: When requesting a bed of the highest tier only:
+    # B1) ... when the bed is available for all requested days:
     check_footprint_against_expectation(
         footprint_requested={'bed_A': 3, 'bed_B': 0},
-        fn_edit_bed_tracker=make_trackers_available_all_days,
+        fn_edit_bed_tracker=make_no_changes,
         expected_footprint_sent_to_hsi={'bed_A': 3, 'bed_B': 0}
     )
 
-    # 2) ... when the bed is available for only the first of the days requested;
-    def make_bed_available_on_first_day_only(_bed_tracker):
+    # B2) ... when the bed is available for only the first of the days requested;
+    def make_bed_a_available_on_first_day_only(_bed_tracker):
         _bed_tracker['bed_A'][facility_id].values[1:] = 0
         return _bed_tracker
 
     check_footprint_against_expectation(
         footprint_requested={'bed_A': 3, 'bed_B': 0},
-        fn_edit_bed_tracker=make_bed_available_on_first_day_only,
+        fn_edit_bed_tracker=make_bed_a_available_on_first_day_only,
         expected_footprint_sent_to_hsi={'bed_A': 1, 'bed_B': 2}
     )
 
-    # 3) ... when the bed is not available on the first day but is available on later days;
-    def make_bed_not_available_on_first_day(_bed_tracker):
+    # B3) ... when the bed is not available on the first day but is available on later days;
+    def make_bed_a_not_available_on_first_day(_bed_tracker):
         _bed_tracker['bed_A'][facility_id].values[0] = 0
         return _bed_tracker
 
     check_footprint_against_expectation(
         footprint_requested={'bed_A': 3, 'bed_B': 0},
-        fn_edit_bed_tracker=make_bed_not_available_on_first_day,
+        fn_edit_bed_tracker=make_bed_a_not_available_on_first_day,
         expected_footprint_sent_to_hsi={'bed_A': 0, 'bed_B': 3}
     )
 
-    # When requesting a bed of the highest and lowest tier:
-    # 1) ... when the bed of the higher tier is not available after 1st day, but the lower tier is
-    def make_bed_not_available_on_first_day(_bed_tracker):
-        _bed_tracker['bed_A'][facility_id].values[1] = 0
-        return _bed_tracker
-
+    # C: When requesting a bed of the highest and lowest tier:
+    # C1) ... when the bed of the higher tier is only available on first day, but the lower tier is always available
     check_footprint_against_expectation(
         footprint_requested={'bed_A': 3, 'bed_B': 3},
-        fn_edit_bed_tracker=make_bed_not_available_on_first_day,
+        fn_edit_bed_tracker=make_bed_a_available_on_first_day_only,
         expected_footprint_sent_to_hsi={'bed_A': 1, 'bed_B': 5}
     )
 
-    # 2) ... when the bed of the higher tier is not available after 1st day, and the lower tier is not available after
-    #  2nd day
-    def make_bed_not_available_on_first_day(_bed_tracker):
-        _bed_tracker['bed_A'][facility_id].values[1] = 0
-        _bed_tracker['bed_B'][facility_id].values[2] = 0
+    # C2) ... when the bed of the higher tier is only available on first day, and the lower tier is available only on
+    # 1st and 2nd day
+    def make_bed_a_available_only_on_first_day_and_bed_b_available_on_first_and_second_day_only(_bed_tracker):
+        make_bed_a_available_on_first_day_only(_bed_tracker)
+        _bed_tracker['bed_B'][facility_id].values[2:] = 0
         return _bed_tracker
 
     check_footprint_against_expectation(
         footprint_requested={'bed_A': 3, 'bed_B': 3},
-        fn_edit_bed_tracker=make_bed_not_available_on_first_day,
+        fn_edit_bed_tracker=make_bed_a_available_only_on_first_day_and_bed_b_available_on_first_and_second_day_only,
         expected_footprint_sent_to_hsi={'bed_A': 1, 'bed_B': 1}
     )
 
-    # 3) ... when the bed of the higher tier is not available after 1st day, and the lower tier is also not available
-    def make_bed_not_available_on_first_day(_bed_tracker):
-        _bed_tracker['bed_A'][facility_id].values[1] = 0
-        _bed_tracker['bed_B'][facility_id].values[:] = 0
-        return _bed_tracker
+    # C3) ... when the bed of the higher tier and the lower tier are only available on the 1st day
+    def make_bed_a_and_b_available_on_first_day_only(_bed_tracker):
+        return make_bed_b_available_on_first_day_only(
+            make_bed_a_available_on_first_day_only(_bed_tracker))
 
     check_footprint_against_expectation(
         footprint_requested={'bed_A': 3, 'bed_B': 3},
-        fn_edit_bed_tracker=make_bed_not_available_on_first_day,
+        fn_edit_bed_tracker=make_bed_a_and_b_available_on_first_day_only,
         expected_footprint_sent_to_hsi={'bed_A': 1, 'bed_B': 0}
     )
 
@@ -805,7 +794,6 @@ def test_bed_days_allocation_information_is_provided_to_HSI():
             self.sim.modules['HealthSystem'].schedule_hsi_event(self.hsi_event, topen=self.sim.date, priority=0)
 
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
-        """Dummy HSI with one type of Bed Day specified"""
 
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
