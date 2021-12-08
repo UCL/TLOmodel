@@ -859,26 +859,34 @@ class Hiv(Module):
 
         # 6) Store codes for the consumables needed
         hs = self.sim.modules["HealthSystem"]
+
         self.item_codes_for_consumables_required['hiv_rapid_test'] = \
             hs.get_item_codes_from_package_name("HIV Testing Services")
+
         self.item_codes_for_consumables_required['hiv_early_infant_test'] = {
             hs.get_item_code_from_item_name("Blood collecting tube, 5 ml"): 1,
             hs.get_item_code_from_item_name("Gloves, exam, latex, disposable, pair"): 1,
             hs.get_item_code_from_item_name("HIV EIA Elisa test"): 1}
+
         self.item_codes_for_consumables_required['vl_measurement'] = \
             hs.get_item_codes_from_package_name("Viral Load")
+
         self.item_codes_for_consumables_required['circ'] = \
             hs.get_item_codes_from_package_name("Male circumcision ")
+
         self.item_codes_for_consumables_required['prep'] = {
             hs.get_item_code_from_item_name("Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg"): 1}
+
         # First - line ART for adults(age > "ART_age_cutoff_older_child")
         self.item_codes_for_consumables_required['First-line ART regimen: adult'] = {
             hs.get_item_code_from_item_name("First-line ART regimen: adult"): 1,
             hs.get_item_code_from_item_name("Cotrimoxizole, 960mg pppy"): 1}
+
         # ART for older children aged ("ART_age_cutoff_younger_child" < age <= "ART_age_cutoff_older_child"):
         self.item_codes_for_consumables_required['First line ART regimen: older child'] = {
             **hs.get_item_codes_from_package_name("Cotrimoxazole for children"),
             **{hs.get_item_code_from_item_name("First line ART regimen: older child"): 1}}
+
         # ART for younger children aged (age < "ART_age_cutoff_younger_child"):
         self.item_codes_for_consumables_required['First line ART regimen: young child'] = {
             **hs.get_item_codes_from_package_name("Cotrimoxazole for children"),

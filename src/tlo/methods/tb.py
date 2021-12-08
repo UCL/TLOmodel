@@ -34,6 +34,7 @@ class Tb(Module):
         self.footprints_for_consumables_required = dict()
         self.symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
         self.district_list = list()
+        self.item_codes_for_consumables_required = dict()
 
     INIT_DEPENDENCIES = {"Demography", "HealthSystem", "Lifestyle", "SymptomManager"}
 
@@ -842,43 +843,26 @@ class Tb(Module):
         # 3) -------- Define the DxTests and get the consumables required --------
 
         p = self.parameters
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        # consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        hs = self.sim.modules["HealthSystem"]
 
         # TB Sputum smear test
         # assume that if smear-positive, sputum smear test is 100% specific and sensitive
-        pkg_sputum = pd.unique(
-            consumables.loc[
-                consumables["Intervention_Pkg"] == "Microscopy Test",
-                "Intervention_Pkg_Code",
-            ]
-        )[0]
+        self.item_codes_for_consumables_required['sputum_test'] = \
+            hs.get_item_codes_from_package_name("Microscopy Test")
 
-        tb_sputum_test_cons_footprint = {
-            "Intervention_Package_Code": {pkg_sputum: 1},
-            "Item_Code": {},
-        }
-
-        self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             tb_sputum_test=DxTest(
-                property="tb_smear",
+                property='tb_smear',
                 sensitivity=1.0,
                 specificity=1.0,
-                cons_req_as_footprint={
-                    "Intervention_Package_Code": {pkg_sputum: 1},
-                    "Item_Code": {},
-                },
+                item_codes=self.item_codes_for_consumables_required['sputum_test']
             )
         )
-        self.footprints_for_consumables_required[
-            "tb_sputum_test"
-        ] = tb_sputum_test_cons_footprint
 
         # TB GeneXpert
-        pkg_xpert = pd.unique(
-            consumables.loc[
-                consumables["Intervention_Pkg"] == "Xpert test", "Intervention_Pkg_Code"
-            ]
-        )[0]
+        self.item_codes_for_consumables_required['xpert_test'] = \
+            hs.get_item_codes_from_package_name("Xpert test")
 
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
             tb_xpert_test=DxTest(
@@ -886,18 +870,13 @@ class Tb(Module):
                 target_categories=["active"],
                 sensitivity=p["sens_xpert"],
                 specificity=1.0,
-                cons_req_as_footprint={
-                    "Intervention_Package_Code": {pkg_xpert: 1},
-                    "Item_Code": {},
-                },
+                item_codes=self.item_codes_for_consumables_required['xpert_test']
             )
         )
-        # todo add consumables required: footprints_for_consumables_required
 
         # TB Chest x-ray
-        pkg_xray = pd.unique(
-            consumables.loc[consumables["Item_Code"] == 175, "Intervention_Pkg_Code"]
-        )[0]
+        self.item_codes_for_consumables_required['chest_xray'] = {
+            hs.get_item_code_from_item_name("X-ray"): 1}
 
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
             tb_xray=DxTest(
@@ -905,91 +884,35 @@ class Tb(Module):
                 target_categories=["active"],
                 sensitivity=1.0,
                 specificity=1.0,
-                cons_req_as_footprint={
-                    "Intervention_Package_Code": {pkg_xray: 1},
-                    "Item_Code": {},
-                },
+                item_codes=self.item_codes_for_consumables_required['chest_xray']
             )
         )
-        # todo add consumables required: footprints_for_consumables_required
 
         # 4) -------- Define the treatment options --------
 
         # adult treatment - primary
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables["Intervention_Pkg"]
-                == "First line treatment for new TB cases for adults",
-                "Intervention_Pkg_Code",
-            ]
-        )[0]
-        self.footprints_for_consumables_required["tb_tx_adult"] = {
-            "Intervention_Package_Code": {pkg_code1: 1},
-            "Item_Code": {},
-        }
+        self.item_codes_for_consumables_required['tb_tx_adult'] = \
+            hs.get_item_codes_from_package_name("First line treatment for new TB cases for adults")
 
         # child treatment - primary
-        pkg_code2 = pd.unique(
-            consumables.loc[
-                consumables["Intervention_Pkg"]
-                == "First line treatment for new TB cases for children",
-                "Intervention_Pkg_Code",
-            ]
-        )[0]
-        self.footprints_for_consumables_required["tb_tx_child"] = {
-            "Intervention_Package_Code": {pkg_code2: 1},
-            "Item_Code": {},
-        }
+        self.item_codes_for_consumables_required['tb_tx_child'] = \
+            hs.get_item_codes_from_package_name("First line treatment for new TB cases for children")
 
         # adult treatment - secondary
-        pkg_code3 = pd.unique(
-            consumables.loc[
-                consumables["Intervention_Pkg"]
-                == "First line treatment for retreatment TB cases for adults",
-                "Intervention_Pkg_Code",
-            ]
-        )[0]
-        self.footprints_for_consumables_required["tb_retx_adult"] = {
-            "Intervention_Package_Code": {pkg_code3: 1},
-            "Item_Code": {},
-        }
+        self.item_codes_for_consumables_required['tb_retx_adult'] = \
+            hs.get_item_codes_from_package_name("First line treatment for retreatment TB cases for adults")
 
         # child treatment - secondary
-        pkg_code4 = pd.unique(
-            consumables.loc[
-                consumables["Intervention_Pkg"]
-                == "First line treatment for retreatment TB cases for children",
-                "Intervention_Pkg_Code",
-            ]
-        )[0]
-        self.footprints_for_consumables_required["tb_retx_child"] = {
-            "Intervention_Package_Code": {pkg_code4: 1},
-            "Item_Code": {},
-        }
+        self.item_codes_for_consumables_required['tb_retx_child'] = \
+            hs.get_item_codes_from_package_name("First line treatment for retreatment TB cases for children")
 
         # mdr treatment
-        pkg_code5 = pd.unique(
-            consumables.loc[
-                consumables["Intervention_Pkg"] == "Case management of MDR cases",
-                "Intervention_Pkg_Code",
-            ]
-        )[0]
-        self.footprints_for_consumables_required["tb_mdrtx"] = {
-            "Intervention_Package_Code": {pkg_code5: 1},
-            "Item_Code": {},
-        }
+        self.item_codes_for_consumables_required['tb_mdrtx'] = \
+            hs.get_item_codes_from_package_name("Case management of MDR cases")
 
         # ipt
-        item_code6 = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Isoniazid Preventive Therapy",
-                "Item_Code",
-            ]
-        )[0]
-        self.footprints_for_consumables_required["tb_ipt"] = {
-            "Intervention_Package_Code": {},
-            "Item_Code": {item_code6: 1},
-        }
+        self.item_codes_for_consumables_required['tb_ipt'] = {
+            hs.get_item_code_from_item_name("Isoniazid Preventive Therapy"): 1}
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual
@@ -1977,9 +1900,8 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if person["tb_diagnosed_mdr"]:
 
-            drugs_available = HSI_Event.get_all_consumables(
-                self,
-                footprint=self.module.footprints_for_consumables_required["tb_mdrtx"],
+            drugs_available = self.get_consumables(
+               item_codes=self.module.item_codes_for_consumables_required["tb_mdrtx"]
             )
 
         # -------- First TB infection -------- #
@@ -1989,19 +1911,13 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
             if person["age_years"] >= 15:
                 # treatment for ds-tb: adult
-                drugs_available = HSI_Event.get_all_consumables(
-                    self,
-                    footprint=self.module.footprints_for_consumables_required[
-                        "tb_tx_adult"
-                    ],
+                drugs_available = self.get_consumables(
+                    item_codes=self.module.item_codes_for_consumables_required["tb_tx_adult"]
                 )
             else:
                 # treatment for ds-tb: child
-                drugs_available = HSI_Event.get_all_consumables(
-                    self,
-                    footprint=self.module.footprints_for_consumables_required[
-                        "tb_tx_child"
-                    ],
+                drugs_available = self.get_consumables(
+                    item_codes=self.module.item_codes_for_consumables_required["tb_tx_child"]
                 )
 
         # -------- Secondary TB infection -------- #
@@ -2011,19 +1927,13 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
             if person["age_years"] >= 15:
                 # treatment for reinfection ds-tb: adult
-                drugs_available = HSI_Event.get_all_consumables(
-                    self,
-                    footprint=self.module.footprints_for_consumables_required[
-                        "tb_retx_adult"
-                    ],
+                drugs_available = self.get_consumables(
+                    item_codes=self.module.item_codes_for_consumables_required["tb_retx_adult"],
                 )
             else:
                 # treatment for reinfection ds-tb: child
-                drugs_available = HSI_Event.get_all_consumables(
-                    self,
-                    footprint=self.module.footprints_for_consumables_required[
-                        "tb_retx_child"
-                    ],
+                drugs_available = self.get_consumables(
+                    item_codes=self.module.item_codes_for_consumables_required["tb_retx_child"],
                 )
 
         return drugs_available
@@ -2189,8 +2099,8 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
 
         # Check/log use of consumables, and give IPT if available
         # NB. If materials not available, it is assumed that no IPT is given and no further referral is offered
-        if self.get_all_consumables(
-            footprint=self.module.footprints_for_consumables_required["tb_ipt"]
+        if self.get_consumables(
+                    item_codes=self.module.item_codes_for_consumables_required["tb_ipt"]
         ):
             # Update properties
             df.at[person_id, "tb_on_ipt"] = True

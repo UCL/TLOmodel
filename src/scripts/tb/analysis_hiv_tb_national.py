@@ -64,7 +64,7 @@ sim.register(
         resourcefilepath=resourcefilepath,
         service_availability=["*"],  # all treatment allowed
         mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
-        ignore_cons_constraints=True,  # mode for consumable constraints (if ignored, all consumables available)
+        cons_availability="all",  # mode for consumable constraints (if ignored, all consumables available)
         ignore_priority=True,  # do not use the priority information in HSI event to schedule
         capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
         disable=True,  # disables the healthsystem (no constraints and no logging) and every HSI runs
