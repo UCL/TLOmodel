@@ -167,53 +167,62 @@ class BedDays:
         assert all([((v >= 0) and (type(v) is int)) for v in beddays_footprint.values()])
         assert beddays_footprint['non_bed_space'] == 0, "A request cannot be made for this type of bed"
 
-    def issue_bed_days_according_to_availability(self, person_id: int, footprint: dict) -> dict:
-        """Check a bed days footprint against available days in tracker currently and return the footprint
-        that can be allocated, according to the rules of allocation.
-        The rules for the allocation of beds to an HSI are as follows:
-        * For each type of bed required by the HSI, check if there are sufficient bed-days available of that type in
-        the relevant facility;
-           * If Yes, allocate the beds to that HSI and move to the next type of bed in the footprint.
-           * If No, allocate as many consecutive bed-days as possible to this HSI and consider that the remainder can be
-            placed in a bed of the next type. Move to the next type.
+    def issue_bed_days_according_to_availability(self, facility_id: int, footprint: dict) -> dict:
+        """Return the 'best possible' footprint can be provided to an HSI, given the current status of the trackers.
+        The rules for determining the 'best possible' footprint, given a requested footprint and the current state of
+         the trackers are as follows:
+        * For each type of bed specified in the footprint (in order from highest tier to lowest tier), check if there
+         are sufficient bed-days available of that type:
+           * Provide as many consecutive days in that bed-type as possible to this HSI.
+           * Re-allocate any remaining days to the next bed-type.
         """
 
         # If footprint is empty, then the returned footprint is empty too
         if footprint == self.get_blank_beddays_footprint():
             return footprint
 
-        get_bed_types = self.get_bed_types()    # get a list of all available beds types
-        counter = 0  # for indexing purposes
+        # Convert the footprint into a format that will make it easy to compare with the trackers
+        dates_for_bed_use = self.compute_dates_of_bed_use(footprint)
+        dates_for_bed_use_not_null = [_date for _date in dates_for_bed_use.values() if pd.notnull(_date)]
+        dates_for_bed_use_date_range = pd.date_range(min(dates_for_bed_use_not_null), max(dates_for_bed_use_not_null))
+        footprint_as_date_ranges = dict()
+        for _bed_type in self.bed_types:
+            if pd.notnull(dates_for_bed_use[f'hs_next_first_day_in_bed_{_bed_type}']):
+                footprint_as_date_ranges[_bed_type] = list(pd.date_range(
+                    dates_for_bed_use[f'hs_next_first_day_in_bed_{_bed_type}'],
+                    dates_for_bed_use[f'hs_next_last_day_in_bed_{_bed_type}'])
+                )
+            else:
+                footprint_as_date_ranges[_bed_type] = list()
 
-        # the section below checks the footprint against available days in tracker
-        for bed_type in footprint.keys():
-            # find all requested bed days per each bed type
-            get_number_of_days = [self.hs_module.sim.date + pd.DateOffset(days=_d) for _d in range(footprint[bed_type])]
+        # Compute footprint that can be provided
+        available_footprint = dict()
+        hold_over_dates_for_next_bed_type = None
+        for _bed_type in self.bed_types:
+            # Add in any days needed for this bed-type held over from higher bed-types
+            if hold_over_dates_for_next_bed_type:
+                footprint_as_date_ranges[_bed_type].extend(hold_over_dates_for_next_bed_type)
+                footprint_as_date_ranges[_bed_type].sort()
 
-            # check the availability of beds for a requested period in bed tracker
-            availability_of_beds = self.bed_tracker[bed_type].loc[
-                get_number_of_days,
-                self.get_facility_id_for_beds(person_id)]
+            # Check if beds are available on each day
+            tracker = self.bed_tracker[_bed_type][facility_id].loc[dates_for_bed_use_date_range]
+            available = tracker[footprint_as_date_ranges[_bed_type]] > 0
 
-            # if any day is unavailable  - 1) subtract that day to all requested days
-            #                              2) add that day to requested days of a lower class bed if available else
-            #                                 ignore it
-            if (availability_of_beds == 0).any():
-                for key, value in availability_of_beds.items():
-                    if value == 0:
-                        print(f'ignoring allocation to {bed_type}, taking this and other remaining days to a lower '
-                              f'class bed if any')
-                        days_to_be_assigned_to_next_low_class_bed = 1 + (max(availability_of_beds.index - key)).days
+            if not available.all():
+                # If the bed is not available on all days, assume it cannot be used after the first day
+                # that it is not available.
+                available.loc[available.idxmin(~available):] = False
 
-                        # subtract the requested days with available days
-                        footprint[get_bed_types[counter]] -= days_to_be_assigned_to_next_low_class_bed
+                # Add any days for which a bed of this type is not available to the footprint for next bed-type:
+                hold_over_dates_for_next_bed_type = list(available.loc[~available].index)
 
-                        # add the remaining days to another bed type of a lower class if any
-                        if not bed_type == get_bed_types[-1]:
-                            footprint[self.get_bed_types()[counter + 1]] += days_to_be_assigned_to_next_low_class_bed
-                        break
-            counter += 1
-        return footprint
+            else:
+                hold_over_dates_for_next_bed_type = None
+
+            # Record the days that are allocated:
+            available_footprint[_bed_type] = int(available.sum())
+
+        return available_footprint
 
     def impose_beddays_footprint(self, person_id, footprint):
         """This is called to reflect that a new occupancy of bed-days should be recorded:
