@@ -1327,11 +1327,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # Mode 2: Only if squeeze <1
 
                 if ok_to_run:
-
-                    # Compute the fraction of the bed-days in the footprint that is available and log the usage:
-                    # todo - this provides exactly the beddays that were requested,
-                    #  ... but this will be where the check on availability is gated
-                    event._received_info_about_bed_days = event.BEDDAYS_FOOTPRINT
+                    # Compute the bed days that are allocated to this HSI and provide this information to the HSO
+                    event._received_info_about_bed_days = \
+                        self.module.bed_days.issue_bed_days_according_to_availability(
+                            facility_id=self.module.bed_days.get_facility_id_for_beds(persons_id=event.target),
+                            footprint=event.BEDDAYS_FOOTPRINT
+                        )
 
                     # Run the HSI event (allowing it to return an updated appt_footprint)
                     actual_appt_footprint = event.run(
