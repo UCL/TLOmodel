@@ -165,7 +165,8 @@ class BedDays:
         assert len(self.bed_types) == len(beddays_footprint)
         assert all([(bed_type in beddays_footprint) for bed_type in self.bed_types])
         assert all([((v >= 0) and (type(v) is int)) for v in beddays_footprint.values()])
-        assert beddays_footprint['non_bed_space'] == 0, "A request cannot be made for this type of bed"
+        if 'non_bed_space' in self.bed_types:
+            assert beddays_footprint['non_bed_space'] == 0, "A request cannot be made for a non-bed space"
 
     def issue_bed_days_according_to_availability(self, facility_id: int, footprint: dict) -> dict:
         """Return the 'best possible' footprint can be provided to an HSI, given the current status of the trackers.

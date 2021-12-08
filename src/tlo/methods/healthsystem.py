@@ -1476,11 +1476,10 @@ class HSI_Event:
     def post_apply_hook(self):
         """Impose the bed-days footprint (if target of the HSI is a person_id)"""
         if isinstance(self.target, int):
-            if 'HealthSystem' in self.module.sim.modules:
-                self.module.sim.modules['HealthSystem'].bed_days.impose_beddays_footprint(
-                    person_id=self.target,
-                    footprint=self.bed_days_allocated_to_this_event
-                )
+            self.module.sim.modules['HealthSystem'].bed_days.impose_beddays_footprint(
+                person_id=self.target,
+                footprint=self.bed_days_allocated_to_this_event
+            )
 
     def run(self, squeeze_factor):
         """Make the event happen."""
@@ -1540,7 +1539,7 @@ class HSI_Event:
         """Helper function to make a correctly-formed 'bed-days footprint'"""
 
         # get blank footprint
-        footprint = self.bed_days.get_blank_beddays_footprint()
+        footprint = self.sim.modules['HealthSystem'].bed_days.get_blank_beddays_footprint()
 
         # do checks on the dict_of_beddays provided.
         assert isinstance(dict_of_beddays, dict)

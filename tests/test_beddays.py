@@ -7,10 +7,10 @@ import pandas as pd
 import pytest
 
 from tlo import Date, Module, Simulation, logging
-# 1) Core functionality of the BedDays module
 from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, demography, healthsystem
+from tlo.methods.bed_days import BedDays
 from tlo.methods.healthsystem import HSI_Event
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -192,7 +192,6 @@ def test_bed_days_basics(tmpdir):
     # 6) Check that footprint can be correctly recorded in the tracker after the HSI event is run and that
     #  '''bd_is_patient''' is updated. (All when the days fall safely inside the period of the simulation)
     # store copy of the original tracker
-    import copy
     orig = copy.deepcopy(hs.bed_days.bed_tracker)
 
     # check that person is not an in-patient before the HSI event's postapply hook is run.
