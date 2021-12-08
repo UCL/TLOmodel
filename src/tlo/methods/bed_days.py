@@ -24,7 +24,7 @@ class BedDays:
     def __init__(self, hs_module):
         self.hs_module = hs_module
         # Number of days to the last day of bed_tracker
-        self.days_until_last_day_of_bed_tracker = 300
+        self.days_until_last_day_of_bed_tracker = 150
 
         # a dictionary to create a footprint according to facility bed days capacity
         self.available_footprint = {}
