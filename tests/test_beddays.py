@@ -625,53 +625,16 @@ def test_bed_days_allocation_to_HSI():
     """Checks the functionality of `issue_bed_days_according_to_availability` in providing the best possible footprint
      to the HSI, given the requested footprint and the current state of the trackers"""
 
-    district_of_residence = 'Zomba'   # Where person_id=0 is resient: Zomba district is in in the Southern region
-    facility_id = 128  # Facility that will provide the beds (Referral Hospital_Southern)
-    days_of_simulation = 10
+    facility_id = 0  # Arbitrary facility_id
 
-    def run_sim(footprint_requested, fn_edit_bed_tracker):
+    def prepare_sim():
         """Create a run simulation with a particular configuration of bed-days availability"""
-
-        class DummyModule(Module):
-            METADATA = {Metadata.USES_HEALTHSYSTEM}
-
-            def __init__(self, fn_edit_bed_tracker):
-                super().__init__()
-                self.fn_edit_bed_tracker = fn_edit_bed_tracker
-
-            def read_parameters(self, data_folder):
-                pass
-
-            def initialise_population(self, population):
-                pass
-
-            def initialise_simulation(self, sim):
-                # Edit bed-tracker
-                self.fn_edit_bed_tracker(sim.modules['HealthSystem'].bed_days.bed_tracker)
-
-                # Make HSI event (and hold pointer to it) and schedule it to occur on the first day of the simulation.
-                self.hsi_event = HSI_Dummy(module=self, person_id=0)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(self.hsi_event, topen=self.sim.date, priority=0)
-
-        class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
-            """Dummy HSI with one type of Bed Day specified"""
-
-            def __init__(self, module, person_id):
-                super().__init__(module, person_id=person_id)
-                self.TREATMENT_ID = 'Dummy'
-                self.ACCEPTED_FACILITY_LEVEL = '2'
-                self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-                self.BEDDAYS_FOOTPRINT = footprint_requested
-
-            def apply(self, person_id, squeeze_factor):
-                pass
 
         sim = Simulation(start_date=start_date, seed=0)
 
         sim.register(
             demography.Demography(resourcefilepath=resourcefilepath),
             healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-            DummyModule(fn_edit_bed_tracker),
         )
 
         # Update BedCapacity parameter with a simple table:
@@ -683,20 +646,30 @@ def test_bed_days_allocation_to_HSI():
                 'bed_B': 1,
             }
         )
-
         # Re-initialise the Bed-days instance (so that these new parameter are used)
         hs.bed_days = BedDays(hs)
 
-        # Simulate
+        # Simulate for 0 days to get everything established
         sim.make_initial_population(n=1)
-        sim.population.props.loc[0, 'district_of_residence'] = district_of_residence
-        sim.simulate(end_date=start_date + pd.DateOffset(days=days_of_simulation))
+        sim.simulate(end_date=start_date)
+        return sim
 
-        # Return the information provided to the HSI
-        return sim.modules['DummyModule'].hsi_event._received_info_about_bed_days
+    def check_footprint_against_expectation(footprint_requested,
+                                            fn_edit_bed_tracker,
+                                            expected_footprint_sent_to_hsi
+                                            ):
+        _sim = prepare_sim()
 
-    def check_footprint_against_expectation(footprint_requested, fn_edit_bed_tracker, expected_footprint_sent_to_hsi):
-        assert expected_footprint_sent_to_hsi == run_sim(footprint_requested, fn_edit_bed_tracker)
+        # Edit tracker
+        fn_edit_bed_tracker(_sim.modules['HealthSystem'].bed_days.bed_tracker)
+
+        # See what footprint can be provided to HSI
+        footprint_provided = _sim.modules['HealthSystem'].bed_days.issue_bed_days_according_to_availability(
+            facility_id=facility_id, footprint=footprint_requested)
+
+        # Check:
+        assert expected_footprint_sent_to_hsi == footprint_provided
+
 
     # When only requesting a bed of the lowest tier:
     # 1) ... when the bed is available for all requested days:
