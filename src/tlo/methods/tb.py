@@ -1604,7 +1604,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Tb_ScreeningAndRefer"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '0'
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):

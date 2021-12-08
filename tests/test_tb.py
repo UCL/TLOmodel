@@ -306,9 +306,7 @@ def test_treatment_schedule():
     # check individual properties consistent with treatment end
     assert not df.at[person_id, 'tb_on_treatment']
     assert not df.at[person_id, 'tb_treated_mdr']
-    assert df.at[person_id, 'tb_inf'] == 'latent'
     assert df.at[person_id, 'tb_strain'] == 'ds'  # should not have changed
-    assert not df.at[person_id, 'tb_smear']
 
 
 def test_treatment_failure():
@@ -327,6 +325,7 @@ def test_treatment_failure():
 
     # change prob treatment success - all treatment will fail
     sim.modules['Tb'].parameters['prob_tx_success_ds'] = 0.0
+    sim.modules['Tb'].parameters["prop_presumptive_mdr_has_xpert"] = 1.0
 
     # simulate for 0 days, just get everything set up (dxtests etc)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -681,6 +680,7 @@ def test_mdr():
 
     # change sensitivity of xpert test to ensure mdr diagnosis on treatment failure
     sim.modules['Tb'].parameters['sens_xpert'] = 1.0
+    sim.modules['Tb'].parameters["prop_presumptive_mdr_has_xpert"] = 1.0
 
     # Make the population
     sim.make_initial_population(n=popsize)
