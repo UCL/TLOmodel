@@ -710,8 +710,8 @@ class Hiv(Module):
                                   & (df.age_years >= 15)])
 
         adults_infected = len(df[df.is_alive
-                                  & df.hv_inf
-                                  & (df.age_years >= 15)])
+                                 & df.hv_inf
+                                 & (df.age_years >= 15)])
 
         prop_currently_diagnosed = adults_diagnosed / adults_infected
         hiv_test_deficit = adult_know_status - prop_currently_diagnosed
@@ -722,21 +722,21 @@ class Hiv(Module):
 
             # sample number_deficit from remaining undiagnosed pop
             adult_undiagnosed = df.loc[df.is_alive
-                & df.hv_inf
-                & ~df.hv_diagnosed
-                & (df.age_years >= 15)].index
+                                       & df.hv_inf
+                                       & ~df.hv_diagnosed
+                                       & (df.age_years >= 15)].index
 
             adult_test_index = self.rng.choice(adult_undiagnosed, size=number_deficit, replace=False)
 
         # CHILDREN
         # find proportion of adult PLHIV diagnosed (currently on ART)
         children_diagnosed = len(df[df.is_alive
-                                  & df.hv_diagnosed
-                                  & (df.age_years < 15)])
+                                    & df.hv_diagnosed
+                                    & (df.age_years < 15)])
 
         children_infected = len(df[df.is_alive
-                                  & df.hv_inf
-                                  & (df.age_years < 15)])
+                                   & df.hv_inf
+                                   & (df.age_years < 15)])
 
         prop_currently_diagnosed = children_diagnosed / children_infected if children_infected > 0 else 0
         hiv_test_deficit = children_know_status - prop_currently_diagnosed
@@ -745,9 +745,9 @@ class Hiv(Module):
         child_test_index = []
         if hiv_test_deficit > 0:
             child_undiagnosed = df.loc[df.is_alive
-                & df.hv_inf
-                & ~df.hv_diagnosed
-                & (df.age_years < 15)].index
+                                       & df.hv_inf
+                                       & ~df.hv_diagnosed
+                                       & (df.age_years < 15)].index
 
             child_test_index = self.rng.choice(child_undiagnosed, size=number_deficit, replace=False)
 
@@ -1175,9 +1175,7 @@ class Hiv(Module):
 
         # todo pass this to prob_art_start_after_test if need to reduce mortality
         # Consider if the person will be referred to start ART
-        has_aids_symptoms = "aids_symptoms" in self.sim.modules[
-            "SymptomManager"
-        ].has_what(person_id)
+        # has_aids_symptoms = "aids_symptoms" in self.sim.modules["SymptomManager"].has_what(person_id)
 
         starts_art = self.rng.random_sample() < self.prob_art_start_after_test(self.sim.date.year)
 
@@ -1440,14 +1438,12 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 )
                 idx_new_infection_fsw = fsw_at_risk[fsw_infected]
 
-            idx_new_infection = list(idx_new_infection)  + list(idx_new_infection_fsw)
+            idx_new_infection = list(idx_new_infection) + list(idx_new_infection_fsw)
 
             # Schedule the date of infection for each new infection:
             for idx in idx_new_infection:
                 date_of_infection = self.sim.date + pd.DateOffset(
-                    days=self.module.rng.randint(
-                        0, 365 * fraction_of_year_between_polls
-                    )
+                    days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls)
                 )
                 self.sim.schedule_event(
                     HivInfectionEvent(self.module, idx), date_of_infection
@@ -2359,14 +2355,14 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # if person has multiple tests in one year, will only count 1
         total_tested = len(
             df.loc[(df.hv_number_tests > 0)
-                & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
-                ]
+                   & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
+                   ]
         )
         total_tested_hiv_positive = len(
             df.loc[df.hv_inf
-                & (df.hv_number_tests > 0)
-                & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
-                ]
+                   & (df.hv_number_tests > 0)
+                   & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
+                   ]
         )
         testing_yield = total_tested_hiv_positive / total_tested if total_tested > 0 else 0
 

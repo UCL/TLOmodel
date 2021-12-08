@@ -5,8 +5,8 @@ save outputs for plotting (file: output_plots_tb.py)
 
 import datetime
 import pickle
-from pathlib import Path
 import random
+from pathlib import Path
 
 import pandas as pd
 

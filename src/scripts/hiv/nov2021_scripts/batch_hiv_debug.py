@@ -45,7 +45,6 @@ from tlo.methods import (
     symptommanager,
     tb,
 )
-
 from tlo.scenario import BaseScenario
 
 
