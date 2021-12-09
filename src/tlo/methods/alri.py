@@ -785,12 +785,26 @@ class Alri(Module):
         """Report DALY incurred in the population in the last month due to ALRI"""
         df = self.sim.population.props
 
+        # get the list of people with severe pneumonia
+        has_danger_signs = \
+            list((set(self.sim.modules['SymptomManager'].who_has('cough')) | set(
+                self.sim.modules['SymptomManager'].who_has('difficult_breathing'))) & set(
+                self.sim.modules['SymptomManager'].who_has('danger_signs')))
+
+        has_fast_breathing_or_chest_indrawing = \
+            list(set(self.sim.modules['SymptomManager'].who_has('tachypnoea')) | set(
+                self.sim.modules['SymptomManager'].who_has('chest_indrawing'))
+                 )
+
+        # get the list of people with non-severe pneumonia
+        for i in has_danger_signs:
+            if i in has_fast_breathing_or_chest_indrawing:
+                has_fast_breathing_or_chest_indrawing.remove(i)
+
+        # report the DALYs occurred
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
-        total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has('tachypnoea' or 'chest_indrawing')] = \
-            self.daly_wts['daly_non_severe_ALRI']  # TODO: AND no danger_signs
-        total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has('danger_signs')] = self.daly_wts['daly_severe_ALRI']
+        total_daly_values.loc[has_fast_breathing_or_chest_indrawing] = self.daly_wts['daly_non_severe_ALRI']
+        total_daly_values.loc[has_danger_signs] = self.daly_wts['daly_severe_ALRI']
 
         # Split out by pathogen that causes the Alri
         dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index, 'ri_primary_pathogen'], dtype='float')
