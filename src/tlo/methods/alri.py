@@ -604,6 +604,11 @@ class Alri(Module):
             Property(Types.CATEGORICAL, 'If infected, what disease type is the person currently suffering from.',
                      categories=list(disease_types)
                      ),
+        # ---- The peripheral oxygen saturation level ----
+        'ri_SpO2_level':
+            Property(Types.CATEGORICAL, 'Peripheral oxygen saturation level (Sp02), measure for hypoxaemia',
+                     categories=['<90%', '90-92%', '>=93%']
+                     ),
 
         # ---- Treatment Status ----
         'ri_on_treatment': Property(Types.BOOL, 'Is this person currently receiving treatment.'),
@@ -677,8 +682,7 @@ class Alri(Module):
     def define_symptoms(self):
         """Define the symptoms that this module will use"""
         all_symptoms = {
-            'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'chest_pain', 'cyanosis',
-            'respiratory_distress', 'danger_signs'
+            'cough', 'difficult_breathing', 'tachypnoea', 'chest_indrawing', 'danger_signs'
         }
 
         for symptom_name in all_symptoms:
@@ -709,6 +713,7 @@ class Alri(Module):
         df.loc[df.is_alive, [
             f"ri_complication_{complication}" for complication in self.complications]
         ] = False
+        df.loc[df.is_alive, 'ri_SpO2_level'] = np.nan
 
         # ---- Internal values ----
         df.loc[df.is_alive, 'ri_start_of_current_episode'] = pd.NaT
@@ -767,6 +772,7 @@ class Alri(Module):
                           'ri_secondary_bacterial_pathogen',
                           'ri_disease_type']] = np.nan
         df.at[child_id, [f"ri_complication_{complication}" for complication in self.complications]] = False
+        df.at[child_id, 'ri_SpO2_level'] = np.nan
 
         # ---- Internal values ----
         df.loc[child_id, ['ri_start_of_current_episode',
@@ -780,7 +786,8 @@ class Alri(Module):
 
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
         total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has('fast_breathing')] = self.daly_wts['daly_non_severe_ALRI']
+            self.sim.modules['SymptomManager'].who_has('tachypnoea' or 'chest_indrawing')] = \
+            self.daly_wts['daly_non_severe_ALRI']  # TODO: AND no danger_signs
         total_daly_values.loc[
             self.sim.modules['SymptomManager'].who_has('danger_signs')] = self.daly_wts['daly_severe_ALRI']
 
@@ -805,6 +812,7 @@ class Alri(Module):
             'ri_primary_pathogen',
             'ri_secondary_bacterial_pathogen',
             'ri_disease_type',
+            'ri_SpO2_level',
             'ri_on_treatment',
             'ri_start_of_current_episode',
             'ri_scheduled_recovery_date',
@@ -812,6 +820,7 @@ class Alri(Module):
             'ri_ALRI_tx_start_date']
         ] = [
             False,
+            np.nan,
             np.nan,
             np.nan,
             np.nan,
@@ -936,13 +945,29 @@ class Alri(Module):
 
     def impose_symptoms_for_complication(self, complication, person_id):
         """Impose symptoms for a complication."""
-        symptoms = self.models.symptoms_for_complication(complication=complication)
+        symptoms = self.models.symptoms_for_complication(person_id, complication=complication)
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=person_id,
             symptom_string=symptoms,
             add_or_remove='+',
             disease_module=self,
         )
+
+    def hypoxaemia_severity(self, person_id, complication_set):
+        """ Determine the level of severity of hypoxaemia by SpO2 measurement"""
+        p = self.parameters
+        df = self.sim.population.props
+        person = self.sim.population.props.loc[person_id]
+
+        if 'hypoxaemia' in complication_set:
+            if p['proportion_hypoxaemia_with_SpO2<90%'] > self.rng.rand():
+                df.loc[person_id, 'ri_SpO2_level'] = '<90%'
+                print(True)
+            else:
+                df.loc[person_id, 'ri_SpO2_level'] = '90-92%'
+                print(False)
+        else:
+            df.loc[person_id, 'ri_SpO2_level'] = '>=93%'
 
 
 class Models:
@@ -1121,50 +1146,29 @@ class Models:
 
         probs = defaultdict(float)
 
-        if primary_path_is_bacterial or has_secondary_bacterial_inf:
-            for c in ['pneumothorax', 'pleural_effusion', 'lung_abscess', 'sepsis', 'meningitis', 'hypoxia']:
-                probs[c] += p[f"prob_{c}_by_bacterial_pneumonia"]
+        # probabilities for local pulmonary complications
+        prob_pulmonary_complications = p['prob_pulmonary_complications_in_pneumonia']
+        if disease_type == 'pneumonia' and (prob_pulmonary_complications > self.rng.rand()):
+            for c in ['pneumothorax', 'pleural_effusion', 'lung_abscess', 'empyema']:
+                probs[c] += p[f'prob_{c}_in_pulmonary_complicated_pneumonia']
+                assert any(c)  # TODO: lung abscess, empyema should only apply to (primary or secondary) bacteria ALRIs
 
-        if primary_path_is_viral and (disease_type == 'pneumonia'):
-            for c in ['pneumothorax', 'pleural_effusion', 'sepsis', 'hypoxia']:
-                probs[c] += p[f"prob_{c}_by_viral_pneumonia"]
+        # probabilities for systemic complications
+        if disease_type == 'pneumonia' and (primary_path_is_bacterial or has_secondary_bacterial_inf):
+            for c in ['sepsis']:
+                probs[c] += p['prob_bacteraemia_in_pneumonia'] * \
+                            p['prob_progression_to_sepsis_with_bacteraemia']
 
-        if primary_path_is_viral and (disease_type == 'bronchiolitis'):
-            for c in ['pneumothorax', 'pleural_effusion', 'sepsis', 'hypoxia']:
-                probs[c] += p[f"prob_{c}_by_bronchiolitis"]
+        if disease_type == 'pneumonia':
+            for c in ['hypoxaemia']:
+                probs[c] += p['prob_hypoxaemia_in_pneumonia']
+
+        if disease_type == 'bronchiolitis/other_alri':
+            for c in ['hypoxaemia']:
+                probs[c] += p['prob_hypoxaemia_in_bronchiolitis/other_alri']
 
         # determine which complications are onset:
         complications = {c for c, p in probs.items() if p > self.rng.rand()}
-
-        # Determine if repiratory failure should also be onset (this depends on whether or not hypoxia is onset):
-        if 'hypoxia' in complications:
-            if p['prob_respiratory_failure_when_SpO2<93%'] > self.rng.rand():
-                complications.add('respiratory_failure')
-
-        return complications
-
-    def delayed_complications(self, person_id):
-        """Determine the set of delayed complications"""
-        p = self.p
-        person = self.module.sim.population.props.loc[person_id]
-
-        complications = set()
-
-        # 'respiratory_failure':
-        if person['ri_complication_pneumothorax'] and ~person['ri_complication_respiratory_failure']:
-            if p['prob_pneumothorax_to_respiratory_failure'] > self.rng.rand():
-                complications.add('respiratory_failure')
-
-        # 'sepsis'
-        if ~person['ri_complication_sepsis']:
-            prob_sepsis = 0.0
-            if person['ri_complication_lung_abscess']:
-                prob_sepsis += p['prob_lung_abscess_to_sepsis']
-            if person['ri_complication_empyema']:
-                prob_sepsis += p['prob_empyema_to_sepsis']
-
-            if prob_sepsis > self.rng.rand():
-                complications.add('sepsis')
 
         return complications
 
@@ -1173,16 +1177,11 @@ class Models:
         p = self.p
 
         assert disease_type in self.module.disease_types
-        index = {
-            'pneumonia': 0,
-            'bronchiolitis': 1,
-            'other_alri': 2
-        }[disease_type]
 
         probs = {
-            symptom: p[f'prob_{symptom}_uncomplicated_ALRI_by_disease_type'][index]
+            symptom: p[f'prob_{symptom}_in_{disease_type}']
             for symptom in [
-                'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'danger_signs']
+                'cough', 'difficult_breathing', 'tachypnoea', 'chest_indrawing']
         }
 
         # determine which symptoms are onset:
@@ -1190,58 +1189,36 @@ class Models:
 
         return symptoms
 
-    def symptoms_for_complication(self, complication):
-        """Probability of each symptom for a person given a particular complication"""
+    def symptoms_for_complication(self, person_id, complication):
+        """Probability of each symptom for a person given a complication"""
         p = self.p
+        df = self.module.sim.population.props
 
-        if complication == 'pneumothorax':
+        lung_complications = ['pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess']
+
+        probs = defaultdict(float)
+
+        if complication == 'sepsis':
             probs = {
-                'chest_pain': p[f'prob_chest_pain_adding_from_{complication}'],
-                'cyanosis': p[f'prob_cyanosis_adding_from_{complication}'],
-                'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complication}']
+                'danger_signs': p['prob_danger_signs_in_sepsis']
             }
-        elif complication == 'pleural_effusion':
+
+        if complication == any(lung_complications):
             probs = {
-                'chest_pain': p[f'prob_chest_pain_adding_from_{complication}'],
-                'fever': p[f'prob_fever_adding_from_{complication}'],
-                'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complication}']
+                'danger_signs': p['prob_danger_signs_in_pulmonary_complications'],
+                'chest_indrawing': p['prob_chest_indrawing_in_pulmonary_complications']
             }
-        elif complication == 'empyema':
+
+        if complication == 'hypoxaemia' and (df.at[person_id, 'ri_SpO2_level'] == '<90%'):
             probs = {
-                'chest_pain': p[f'prob_chest_pain_adding_from_{complication}'],
-                'fever': p[f'prob_fever_adding_from_{complication}'],
-                'respiratory_distress': p[f'prob_respiratory_distress_adding_from_{complication}']
+                'danger_signs': p['prob_danger_signs_in_SpO2<90%'],
+                'chest_indrawing': p['prob_chest_indrawing_in_SpO2<90%']
             }
-        elif complication == 'lung_abscess':
+        if complication == 'hypoxaemia' and (df.at[person_id, 'ri_SpO2_level'] == '90-92%'):
             probs = {
-                'chest_pain': p[f'prob_chest_pain_adding_from_{complication}'],
-                'fast_breathing': p[f'prob_fast_breathing_adding_from_{complication}'],
-                'fever': p[f'prob_fever_adding_from_{complication}']
+                'danger_signs': p['prob_danger_signs_in_SpO2_90-92%'],
+                'chest_indrawing': p['prob_chest_indrawing_in_SpO2_90-92%']
             }
-        elif complication == 'respiratory_failure':
-            probs = {
-                'cyanosis': p[f'prob_cyanosis_adding_from_{complication}'],
-                'fast_breathing': p[f'prob_fast_breathing_adding_from_{complication}'],
-                'difficult_breathing': p[f'prob_difficult_breathing_adding_from_{complication}'],
-                'danger_signs': p[f'prob_danger_signs_adding_from_{complication}']
-            }
-        elif complication == 'sepsis':
-            probs = {
-                'fever': p[f'prob_fever_adding_from_{complication}'],
-                'fast_breathing': p[f'prob_fast_breathing_adding_from_{complication}'],
-                'danger_signs': p[f'prob_danger_signs_adding_from_{complication}']
-            }
-        elif complication == 'meningitis':
-            probs = {
-                'fever': p[f'prob_fever_adding_from_{complication}'],
-                'headache': p[f'prob_headache_adding_from_{complication}'],
-                'danger_signs': p[f'prob_danger_signs_adding_from_{complication}']
-            }
-        elif complication == 'hypoxia':
-            # (No specific symptoms for 'hypoxia')
-            return set()
-        else:
-            raise ValueError
 
         # determine which symptoms are onset:
         symptoms = {s for s, p in probs.items() if p > self.rng.rand()}
@@ -1431,7 +1408,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         self.impose_symptoms_for_uncomplicated_disease(person_id=person_id, disease_type=disease_type)
 
         # ----------------------------------- Complications  -----------------------------------
-        self.impose_complications(person_id=person_id, date_of_outcome=date_of_outcome)
+        self.impose_complications(person_id=person_id)
 
         # ----------------------------------- Outcome  -----------------------------------
         # Determine outcome: death or recovery
@@ -1456,7 +1433,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             disease_module=m,
         )
 
-    def impose_complications(self, person_id, date_of_outcome):
+    def impose_complications(self, person_id):
         """Choose a set of complications for this person and onset these all instantanesouly."""
 
         df = self.sim.population.props
@@ -1465,50 +1442,10 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         complications = models.complications(person_id=person_id)
         df.loc[person_id, [f"ri_complication_{complication}" for complication in complications]] = True
+        self.module.hypoxaemia_severity(person_id=person_id, complication_set=complications)
+
         for complication in complications:
             m.impose_symptoms_for_complication(person_id=person_id, complication=complication)
-
-        # Consider delayed-onset of complications and schedule events accordingly
-        date_of_onset_delayed_complications = random_date(self.sim.date, date_of_outcome, m.rng)
-        delayed_complications = models.delayed_complications(person_id=person_id)
-        for delayed_complication in delayed_complications:
-            self.sim.schedule_event(
-                AlriDelayedOnsetComplication(person_id=person_id,
-                                             complication=delayed_complication,
-                                             module=m),
-                date_of_onset_delayed_complications
-            )
-
-
-class AlriDelayedOnsetComplication(Event, IndividualScopeEventMixin):
-    """This Event is for the delayed onset of complications from Alri. It is applicable only to a subset of
-    complications."""
-
-    def __init__(self, module, person_id, complication):
-        super().__init__(module, person_id=person_id)
-
-        assert complication in ['sepsis', 'respiratory_failure'], \
-            'Delayed onset is only possible for certain complications'
-        self.complication = complication
-
-    def apply(self, person_id):
-        """Apply the complication, if the person is still infected and not on treatment"""
-        df = self.sim.population.props  # shortcut to the dataframe
-        person = df.loc[person_id]
-        m = self.module
-
-        # Do nothing if person is not alive:
-        if not person.is_alive:
-            return
-
-        # If person is infected, not on treatment and does not already have the complication, add this complication:
-        if (
-            person.ri_current_infection_status and
-            ~person.ri_on_treatment and
-            ~person[f'ri_complication_{self.complication}']
-        ):
-            df.at[person_id, f'ri_complication_{self.complication}'] = True
-            m.impose_symptoms_for_complication(complication=self.complication, person_id=person_id)
 
 
 class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
