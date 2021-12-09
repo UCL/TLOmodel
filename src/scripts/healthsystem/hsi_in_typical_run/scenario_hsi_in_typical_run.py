@@ -1,5 +1,5 @@
 """
-This file is used to capture the HSI that are run during a typical ten year simulation 2010-2019.
+This file is used to capture the HSI that are run during a typical simulation 2010-2014.
 
 It defines a large population and an (mode=0) HealthSystem.
 
@@ -50,8 +50,8 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2015, 12, 31)
-        self.pop_size = 5_000
+        self.end_date = Date(2014, 12, 31)
+        self.pop_size = 20_000
         self.number_of_draws = 1
         self.runs_per_draw = 1
 
