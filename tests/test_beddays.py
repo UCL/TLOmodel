@@ -742,7 +742,7 @@ def test_bed_days_allocation_to_HSI():
     # C2) ... when the bed of the higher tier is only available on first day, and the lower tier is available only on
     # 1st and 2nd day
     def make_bed_a_available_only_on_first_day_and_bed_b_available_on_first_and_second_day_only(_bed_tracker):
-        make_bed_a_available_on_first_day_only(_bed_tracker)
+        _bed_tracker = make_bed_a_available_on_first_day_only(_bed_tracker)
         _bed_tracker['bed_B'][facility_id].values[2:] = 0
         return _bed_tracker
 
