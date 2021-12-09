@@ -1,14 +1,12 @@
 """
-This file is used to capture the HSI that are run during a typical simulation 2010-2014.
+This file is used to capture the HSI that are run during a typical simulation, 2010-2014. It defines a large population
+ with all disease modules registered and an unconstrained (mode_appt_constraints=0) HealthSystem.
 
-It defines a large population and an (mode=0) HealthSystem.
-
-Run on the batch system using:
+Run on the remote batch system using:
     ```tlo batch-submit src/scripts/healthsystem/hsi_in_typical_run/scenario_hsi_in_typical_run.py```
 
-or locally using:
+... or locally using:
     ```tlo scenario-run src/scripts/healthsystem/hsi_in_typical_run/scenario_hsi_in_typical_run.py```
-
 """
 
 from tlo import Date, logging
@@ -50,17 +48,18 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2014, 12, 31)
-        self.pop_size = 5_000
+        self.end_date = Date(2010, 1, 2)
+        self.pop_size = 100  # todo increase this
         self.number_of_draws = 1
         self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'long_run',
+            'filename': 'local_file_name',
             'directory': './outputs',
             'custom_levels': {
-                '*': logging.INFO,
+                '*': logging.WARNING,
+                'tlo.methods.healthsystem': logging.INFO,
             }
         }
 
