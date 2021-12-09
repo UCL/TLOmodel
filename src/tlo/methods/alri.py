@@ -107,10 +107,9 @@ class Alri(Module):
             'HMPV',
             'Parainfluenza',
             'Influenza',
-            'Adenovirus',
-            'Bocavirus',
             'other_viral_pathogens'
-            # <-- Coronaviruses NL63, 229E OC43 and HKU1, Cytomegalovirus, Parechovirus/Enterovirus
+            # <-- Coronaviruses NL63, 229E OC43 and HKU1, Cytomegalovirus, Parechovirus/Enterovirus,
+            # Adenovirus, Bocavirus
         ],
         'bacterial': [
             'Strep_pneumoniae_PCV13',      # <--  risk of acquisition is affected by the pneumococcal vaccine
@@ -125,8 +124,9 @@ class Alri(Module):
             # Legionella species, Mycoplasma pneumoniae, Moraxella catarrhalis, Non-fermenting gram-negative
             # rods (Acinetobacter species and Pseudomonas species), Neisseria meningitidis
         ],
-        'fungal': [
-            'P.jirovecii'
+        'fungal/other': [
+            'P.jirovecii',
+            'other_pathogens_NoS'
         ]
     }
 
@@ -156,9 +156,7 @@ class Alri(Module):
                      'empyema',
                      'lung_abscess',
                      'sepsis',
-                     'meningitis',
-                     'respiratory_failure',
-                     'hypoxia'  # <-- Low implies Sp02<93%'
+                     'hypoxaemia'  # <-- Low implies Sp02<93%'
                      }
 
     PARAMETERS = {
@@ -229,16 +227,6 @@ class Alri(Module):
                       'baseline incidence of Alri caused by P. jirovecii in age groups 0-11, 12-59 months, '
                       'per child per year'
                       ),
-        'base_inc_rate_ALRI_by_Adenovirus':
-            Parameter(Types.LIST,
-                      'baseline incidence of Alri caused by adenovirus in age groups 0-11, 12-59 months, '
-                      'per child per year'
-                      ),
-        'base_inc_rate_ALRI_by_Bocavirus':
-            Parameter(Types.LIST,
-                      'baseline incidence of Alri caused by bocavirus in age groups 0-11, 12-59 months, '
-                      'per child per year'
-                      ),
         'base_inc_rate_ALRI_by_other_viral_pathogens':
             Parameter(Types.LIST,
                       'baseline incidence of Alri caused by other viral pathogens in age groups 0-11, 12-59 months, '
@@ -249,25 +237,108 @@ class Alri(Module):
                       'baseline incidence of Alri caused by other viral pathogens in age groups 0-11, 12-59 months, '
                       'per child per year'
                       ),
+        'base_inc_rate_ALRI_by_other_pathogens_NoS':
+            Parameter(Types.LIST,
+                      'baseline incidence of Alri caused by other pathogens not otherwise specified'
+                      ' in age groups 0-11, 12-59 months, per child per year'
+                      ),
+
+        # Proportions of what disease type (pneumonia/ bronchiolitis/ other alri) -----
+        'proportion_pneumonia_in_RSV_ALRI':
+            Parameter(Types.LIST,
+                      'proportion of RSV-attributed ALRI manifesting as pneumonia by age, '
+                      '(based on PERCH CXR+ results)'
+                      ),
+        'proportion_pneumonia_in_Rhinovirus_ALRI':
+            Parameter(Types.LIST,
+                      'proportion of Rhinovirus-attributed ALRI manifesting as pneumonia by age, '
+                      '(based on PERCH CXR+ results)'
+                      ),
+        'proportion_pneumonia_in_HMPV_ALRI':
+            Parameter(Types.LIST,
+                      'proportion of HMPV-attributed ALRI manifesting as pneumonia by age, '
+                      '(based on PERCH CXR+ results)'
+                      ),
+        'proportion_pneumonia_in_Parainfluenza_ALRI':
+            Parameter(Types.LIST,
+                      'proportion of Parainfluenza-attributed ALRI manifesting as pneumonia by age, '
+                      '(based on PERCH CXR+ results)'
+                      ),
+        'proportion_pneumonia_in_Strep_pneumoniae_PCV13_ALRI':
+            Parameter(Types.LIST,
+                      'proportion of S. pneumoniae PCV13-type-attributed ALRI manifesting as pneumonia by age, '
+                      '(based on PERCH CXR+ results)'
+                      ),
+        'proportion_pneumonia_in_Strep_pneumoniae_non_PCV13_ALRI':
+            Parameter(Types.LIST,
+                      'proportion of S. pneumoniae non PCV13-type-attributed ALRI manifesting as pneumonia by age, '
+                      '(based on PERCH CXR+ results)'
+                      ),
+        'proportion_pneumonia_in_Hib_ALRI':
+            Parameter(Types.LIST,
+                      'proportion of Hib ALRI-attributed ALRI manifesting as pneumonia by age, '
+                      '(based on PERCH CXR+ results)'
+                      ),
+        'proportion_pneumonia_in_H.influenzae_non_type_b_ALRI':
+            Parameter(Types.LIST,
+                      'proportion of H.influenzae non type-b-attributed ALRI manifesting as pneumonia by age, '
+                      '(based on PERCH CXR+ results)'
+                      ),
+        'proportion_pneumonia_in_Staph_aureus_ALRI':
+            Parameter(Types.LIST,
+                      'proportion of S. aureus-attributed ALRI manifesting as pneumonia by age, '
+                      '(based on PERCH CXR+ results)'
+                      ),
+        'proportion_pneumonia_in_Enterobacteriaceae_ALRI':
+            Parameter(Types.LIST,
+                      'proportion of Enterobacteriaceae-attributed ALRI manifesting as pneumonia by age, '
+                      '(based on PERCH CXR+ results)'
+                      ),
+        'proportion_pneumonia_in_other_Strepto_Enterococci_ALRI':
+            Parameter(Types.LIST,
+                      'proportion of other Streptococci- and Enterococci-attributed ALRI manifesting as pneumonia'
+                      'by age, (based on PERCH CXR+ results)'
+                      ),
+        'proportion_pneumonia_in_Influenza_ALRI':
+            Parameter(Types.LIST,
+                      'proportion of Influenza-attributed ALRI manifesting as pneumonia by age, '
+                      '(based on PERCH CXR+ results)'
+                      ),
+        'proportion_pneumonia_in_P.jirovecii_ALRI':
+            Parameter(Types.LIST,
+                      'proportion of P. jirovecii-attributed ALRI manifesting as pneumonia by age, '
+                      '(based on PERCH CXR+ results)'
+                      ),
+        'proportion_pneumonia_in_other_viral_pathogens_ALRI':
+            Parameter(Types.LIST,
+                      'proportion of other viral pathogens-attributed ALRI manifesting as pneumonia by age, '
+                      '(based on PERCH CXR+ results)'
+                      ),
+        'proportion_pneumonia_in_other_bacterial_pathogens_ALRI':
+            Parameter(Types.LIST,
+                      'proportion of other bacterial pathogens-attributed ALRI manifesting as pneumonia by age, '
+                      '(based on PERCH CXR+ results)'
+                      ),
+        'proportion_pneumonia_in_other_pathogens_NoS_ALRI':
+            Parameter(Types.LIST,
+                      'proportion of other pathogens NoS-attributed ALRI manifesting as pneumonia by age, '
+                      '(based on PERCH CXR+ results)'
+                      ),
 
         # Risk factors for incidence infection -----
-        'rr_ALRI_HHhandwashing':
+        'rr_ALRI_HIV/AIDS':
             Parameter(Types.REAL,
-                      'relative rate of acquiring Alri for children with household handwashing with soap '
+                      'relative rate of acquiring Alri for children with HIV+/AIDS '
                       ),
-        'rr_ALRI_HIV_untreated':
+        'rr_ALRI_incomplete_measles_immunisation':
             Parameter(Types.REAL,
-                      'relative rate of acquiring Alri for children with untreated HIV positive status'
-                      ),
-        'rr_ALRI_underweight':
-            Parameter(Types.REAL,
-                      'relative rate of acquiring Alri for underweight children'
+                      'relative rate of acquiring Alri for children with incomplete measles immunisation'
                       ),
         'rr_ALRI_low_birth_weight':
             Parameter(Types.REAL,
                       'relative rate of acquiring Alri for infants with low birth weight'
                       ),
-        'rr_ALRI_not_excl_breastfeeding':
+        'rr_ALRI_non_exclusive_breastfeeding':
             Parameter(Types.REAL,
                       'relative rate of acquiring Alri for not exclusive breastfeeding upto 6 months'
                       ),
@@ -275,349 +346,203 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'relative rate of acquiring Alri for indoor air pollution'
                       ),
+        'rr_ALRI_crowding':
+            Parameter(Types.REAL,
+                      'relative rate of acquiring Alri for children living in crowed households (>7 pph)'
+                      ),  # TODO: change to wealth?
+        'rr_ALRI_underweight':
+            Parameter(Types.REAL,
+                      'relative rate of acquiring Alri for underweight children'
+                      ),  # TODO: change to SAM/MAM?
 
         # Probability of bacterial co- / secondary infection -----
         'prob_viral_pneumonia_bacterial_coinfection':
             Parameter(Types.REAL,
                       'probability of primary viral pneumonia having a bacterial co-infection'
                       ),
-        'proportion_bacterial_coinfection_pathogen':
-            Parameter(Types.LIST,
-                      'list of proportions of each bacterial pathogens in a co-infection pneumonia'
-                      ),
-        'prob_secondary_bacterial_infection_in_bronchiolitis':
-            Parameter(Types.REAL,
-                      'probability of viral bronchiolitis having a bacterial infection'
-                      ),
 
         # Probability of complications -----
-        'prob_hypoxia_by_viral_pneumonia':
+        'overall_progression_to_severe_ALRI':
             Parameter(Types.REAL,
-                      'probability of hypoxia caused by primary viral pneumonia'
+                      'probability of progression to severe ALRI'
                       ),
-        'prob_hypoxia_by_bacterial_pneumonia':
+        'prob_pulmonary_complications_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of hypoxia caused by primary or secondary bacterial pneumonia'
+                      'probability of pulmonary complications in (CXR+) pneumonia'
                       ),
-        'prob_hypoxia_by_bronchiolitis':
+        'prob_pleural_effusion_in_pulmonary_complicated_pneumonia':
             Parameter(Types.REAL,
-                      'probability of hypoxia caused by viral bronchiolitis'
+                      'probability of pleural effusion in pneumonia with pulmonary complications'
                       ),
-        'prob_respiratory_failure_when_SpO2<93%':
+        'prob_empyema_in_pulmonary_complicated_pneumonia':
             Parameter(Types.REAL,
-                      'probability of respiratory failure when peripheral oxygen level is lower than 93%'
+                      'probability of empyema in pneumonia with pulmonary complications'
                       ),
-        'prob_respiratory_failure_to_multiorgan_dysfunction':
+        'prob_lung_abscess_in_pulmonary_complicated_pneumonia':
             Parameter(Types.REAL,
-                      'probability of respiratory failure causing multi-organ dysfunction'
+                      'probability of lung abscess in pneumonia with pulmonary complications'
                       ),
-        'prob_sepsis_by_viral_pneumonia':
+        'prob_pneumothorax_in_pulmonary_complicated_pneumonia':
             Parameter(Types.REAL,
-                      'probability of sepsis caused by primary viral pneumonia'
+                      'probability of pneumothorax in pneumonia with pulmonary complications'
                       ),
-        'prob_sepsis_by_bacterial_pneumonia':
+        'prob_hypoxaemia_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of sepsis caused by primary or secondary bacterial pneumonia'
+                      'probability of hypoxaemia in pneumonia cases'
                       ),
-        'prob_sepsis_by_bronchiolitis':
+        'prob_hypoxaemia_in_bronchiolitis/other_alri':
             Parameter(Types.REAL,
-                      'probability of sepsis caused by viral bronchiolitis'
+                      'probability of hypoxaemia in bronchiolitis and other alri cases'
                       ),
-        'prob_sepsis_to_multiorgan_dysfunction':
+        'prob_bacteraemia_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of sepsis causing multi-organ dysfunction'
+                      'probability of bacteraemia in pneumonia'
                       ),
-        'prob_meningitis_by_bacterial_pneumonia':
+        'prob_progression_to_sepsis_with_bacteraemia':
             Parameter(Types.REAL,
-                      'probability of meningitis caused by primary or secondary bacterial pneumonia'
+                      'probability of progression to sepsis from bactereamia'
                       ),
-        'prob_pleural_effusion_by_bacterial_pneumonia':
+        'proportion_hypoxaemia_with_SpO2<90%':
             Parameter(Types.REAL,
-                      'probability of pleural effusion caused by primary or secondary bacterial pneumonia'
-                      ),
-        'prob_pleural_effusion_by_viral_pneumonia':
-            Parameter(Types.REAL,
-                      'probability of pleural effusion caused by primary viral pneumonia'
-                      ),
-        'prob_pleural_effusion_by_bronchiolitis':
-            Parameter(Types.REAL,
-                      'probability of pleural effusion caused by bronchiolitis'
-                      ),
-        'prob_pleural_effusion_to_empyema':
-            Parameter(Types.REAL,
-                      'probability of pleural effusion developing into empyema'
-                      ),
-        'prob_empyema_to_sepsis':
-            Parameter(Types.REAL,
-                      'probability of (bacterial) empyema causing sepsis'
-                      ),
-        'prob_lung_abscess_by_bacterial_pneumonia':
-            Parameter(Types.REAL,
-                      'probability of a lung abscess caused by primary or secondary bacterial pneumonia'
-                      ),
-        'prob_pneumothorax_by_bacterial_pneumonia':
-            Parameter(Types.REAL,
-                      'probability of pneumothorax caused by primary or secondary bacterial pneumonia'
-                      ),
-        'prob_pneumothorax_by_viral_pneumonia':
-            Parameter(Types.REAL,
-                      'probability of pneumothorax caused by primary viral pneumonia'
-                      ),
-        'prob_pneumothorax_by_bronchiolitis':
-            Parameter(Types.REAL,
-                      'probability of atelectasis/ lung collapse caused by bronchiolitis'
-                      ),
-        'prob_pneumothorax_to_respiratory_failure':
-            Parameter(Types.REAL,
-                      'probability of pneumothorax causing respiratory failure'
-                      ),
-        'prob_lung_abscess_to_sepsis':
-            Parameter(Types.REAL,
-                      'probability of lung abscess causing sepsis'
+                      'proportion of hypoxaemic children with SpO2 <90%'
                       ),
 
         # Risk of death parameters -----
-        'base_death_rate_ALRI_by_pneumonia':
+        'overall_CFR_ALRI':
             Parameter(Types.REAL,
-                      'baseline death rate from pneumonia, for those aged 0-11 months'
+                      'overall case-fatality rate of ALRI (calibration value)'
                       ),
-        'base_death_rate_ALRI_by_bronchiolitis':
+        'baseline_odds_alri_death':
             Parameter(Types.REAL,
-                      'baseline death rate from bronchiolitis, base age 0-11 months'
+                      'baseline odds of alri death, no risk factors'
                       ),
-        'base_death_rate_ALRI_by_other_alri':
+        'or_death_ALRI_age<2mo':
             Parameter(Types.REAL,
-                      'baseline death rate from other lower respiratory infections, base age 0-11 months'
+                      'odds ratio of ALRI death for infants aged less than 2 months'
                       ),
-        'rr_death_ALRI_sepsis':
+        'or_death_ALRI_P.jirovecii':
             Parameter(Types.REAL,
-                      'relative death rate from Alri for sepsis, base age 0-11 months'
+                      'odds ratio of ALRI death for P.jirovecii infection'
                       ),
-        'rr_death_ALRI_respiratory_failure':
+        'or_death_ALRI_HIV/AIDS':
             Parameter(Types.REAL,
-                      'relative death rate from Alri for respiratory failure, base age 0-11 months'
+                      'odds ratio of ALRI death for HIV/AIDS children'
                       ),
-        'rr_death_ALRI_meningitis':
+        'or_death_ALRI_SAM':
             Parameter(Types.REAL,
-                      'relative death rate from Alri for meningitis, base age 0-11 months'
+                      'odds ratio of ALRI death for SAM'
                       ),
-        'rr_death_ALRI_age12to23mo':
+        'or_death_ALRI_MAM':
             Parameter(Types.REAL,
-                      'death rate of Alri for children aged 12 to 23 months'
+                      'odds ratio of ALRI death for MAM'
                       ),
-        'rr_death_ALRI_age24to59mo':
+        'or_death_ALRI_male':
             Parameter(Types.REAL,
-                      'death rate of Alri for children aged 24 to 59 months'
+                      'odds ratio of ALRI death for male children'
                       ),
-        'rr_death_ALRI_HIV':
+        'or_death_ALRI_hc_referral':
             Parameter(Types.REAL,
-                      'death rate of Alri for children with HIV not on ART'
+                      'odds ratio of ALRI death for children referred from a health center'
                       ),
-        'rr_death_ALRI_SAM':
+        'or_death_ALRI_SpO2<=92%':
             Parameter(Types.REAL,
-                      'death rate of Alri for children with severe acute malnutrition'
+                      'odds ratio of ALRI death for SpO2<=92%'
                       ),
-        'rr_death_ALRI_low_birth_weight':
+        'or_death_ALRI_severe_underweight':
             Parameter(Types.REAL,
-                      'death rate of Alri for children with low birth weight (applicable to infants)'
+                      'odds ratio of ALRI death for severely underweight children'
                       ),
-
-        # Proportions of what disease type (viral Alri) -----
-        'proportion_viral_pneumonia_by_RSV':
+        'or_death_ALRI_danger_signs':
             Parameter(Types.REAL,
-                      'proportion of RSV infection causing viral pneumonia'
-                      ),
-        'proportion_viral_pneumonia_by_Rhinovirus':
-            Parameter(Types.REAL,
-                      'proportion of Rhinovirus infection causing viral pneumonia'
-                      ),
-        'proportion_viral_pneumonia_by_HMPV':
-            Parameter(Types.REAL,
-                      'proportion of HMPV infection causing viral pneumonia'
-                      ),
-        'proportion_viral_pneumonia_by_Parainfluenza':
-            Parameter(Types.REAL,
-                      'proportion of Parainfluenza infection causing viral pneumonia'
-                      ),
-        'proportion_viral_pneumonia_by_Influenza':
-            Parameter(Types.REAL,
-                      'proportion of Influenza infection causing viral pneumonia'
-                      ),
-        'proportion_viral_pneumonia_by_Adenovirus':
-            Parameter(Types.REAL,
-                      'proportion of Adenovirus infection causing viral pneumonia'
-                      ),
-        'proportion_viral_pneumonia_by_Bocavirus':
-            Parameter(Types.REAL,
-                      'proportion of Bocavirus infection causing viral pneumonia'
-                      ),
-        'proportion_viral_pneumonia_by_other_viral_pathogens':
-            Parameter(Types.REAL,
-                      'proportion of other pathogens infection causing viral pneumonia'
+                      'odds ratio of ALRI death for very severe pneumonia (presenting danger signs)'
                       ),
 
         # Probability of symptom development -----
-        'prob_fever_uncomplicated_ALRI_by_disease_type':
-            Parameter(Types.LIST,
-                      'list of probabilities of having fever by pneumonia, bronchiolitis, and other_alri'
-                      ),
-        'prob_cough_uncomplicated_ALRI_by_disease_type':
-            Parameter(Types.LIST,
-                      'list of probabilities of having cough by pneumonia, bronchiolitis, and other_alri'
-                      ),
-        'prob_difficult_breathing_uncomplicated_ALRI_by_disease_type':
-            Parameter(Types.LIST,
-                      'list of probabilities of difficult breathing by '
-                      'pneumonia, bronchiolitis, and other_alri'
-                      ),
-        'prob_fast_breathing_uncomplicated_ALRI_by_disease_type':
-            Parameter(Types.LIST,
-                      'list of probabilities of fast breathing by '
-                      'pneumonia, bronchiolitis, and other_alri'
-                      ),
-        'prob_chest_indrawing_uncomplicated_ALRI_by_disease_type':
-            Parameter(Types.LIST,
-                      'list of probabilities of chest indrawing by '
-                      'pneumonia, bronchiolitis, and other_alri'
-                      ),
-        'prob_danger_signs_uncomplicated_ALRI_by_disease_type':
-            Parameter(Types.LIST,
-                      'list of probabilities of danger signs by '
-                      'pneumonia, bronchiolitis, and other_alri'
-                      ),
-
-        # Additional signs and symptoms from complications -----
-        'prob_loss_of_appetite_adding_from_pleural_effusion':
+        'prob_cough_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of loss of appetite from pleural effusion'
+                      'probability of cough in pneumonia'
                       ),
-        'prob_loss_of_appetite_adding_from_empyema':
+        'prob_difficult_breathing_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of loss of appetite from empyema'
+                      'probability of difficulty breathing in pneumonia'
                       ),
-        'prob_severe_respiratory_distress_adding_from_respiratory_failure':
+        'prob_chest_indrawing_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of severe respiratory distress from respiratory failure'
+                      'probability of chest indrawing in pneumonia'
                       ),
-        'prob_severe_respiratory_distress_adding_from_sepsis':
+        'prob_tachypnoea_in_pneumonia':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of severe respiratory distress from sepsis'
+                      'probability of tachypnoea in pneumonia'
                       ),
-
-        # Second round of signs/symptoms added from each complication
-        # Pneumothorax ------------
-        'prob_chest_pain_adding_from_pneumothorax':
+        'prob_cough_in_bronchiolitis/other_alri':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of chest pain / pleurisy from pneumothorax'
+                      'probability of cough in bronchiolitis or other alri'
                       ),
-        'prob_cyanosis_adding_from_pneumothorax':
+        'prob_difficult_breathing_in_bronchiolitis/other_alri':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of cyanosis from pneumothorax'
+                      'probability of difficulty breathing in bronchiolitis or other alri'
                       ),
-        'prob_difficult_breathing_adding_from_pneumothorax':
+        'prob_tachypnoea_in_bronchiolitis/other_alri':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of difficult breathing from pneumothorax'
+                      'probability of tachypnoea in bronchiolitis or other alri'
                       ),
-
-        # Pleural effusion -----------
-        'prob_chest_pain_adding_from_pleural_effusion':
+        'prob_chest_indrawing_in_bronchiolitis/other_alri':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of chest pain / pleurisy from pleural effusion'
+                      'probability of chest wall indrawing in bronchiolitis or other alri'
                       ),
-        'prob_fever_adding_from_pleural_effusion':
+        'prob_danger_signs_in_sepsis':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fever from pleural effusion'
+                      'probability of any danger signs in complicated ALRI'
                       ),
-        'prob_difficult_breathing_adding_from_pleural_effusion':
+        'prob_danger_signs_in_SpO2<90%':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of dyspnoea/ difficult breathing from pleural effusion'
+                      'probability of any danger signs in children with SpO2 <90%'
                       ),
-
-        # Empyema ------------
-        'prob_chest_pain_adding_from_empyema':
+        'prob_danger_signs_in_SpO2_90-92%':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of chest pain / pleurisy from empyema'
+                      'probability of any danger signs in children with SpO2 between 90-92%'
                       ),
-        'prob_fever_adding_from_empyema':
+        'prob_chest_indrawing_in_SpO2<90%':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fever from empyema'
+                      'probability of chest indrawing in children with SpO2 <90%'
                       ),
-        'prob_respiratory_distress_adding_from_empyema':
+        'prob_chest_indrawing_in_SpO2_90-92%':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of cough with sputum from respiratory distress'
+                      'probability of chest indrawing in children with SpO2 between 90-92%'
                       ),
-
-        # Lung abscess --------------
-        'prob_chest_pain_adding_from_lung_abscess':
+        'prob_danger_signs_in_pulmonary_complications':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of chest pain / pleurisy from lung abscess'
+                      'probability of danger signs in children with pulmonary complications'
                       ),
-        'prob_fast_breathing_adding_from_lung_abscess':
+        'prob_chest_indrawing_in_pulmonary_complications':
             Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fast_breathing/ fast breathing from lung abscess'
-                      ),
-        'prob_fever_adding_from_lung_abscess':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fever from lung abscess'
-                      ),
-
-        # Hypoxaemic Respiratory failure --------------
-        'prob_difficult_breathing_adding_from_respiratory_failure':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of difficult breathing from respiratory failure'
-                      ),
-        'prob_cyanosis_adding_from_respiratory_failure':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of cyanosis from respiratory failure'
-                      ),
-        'prob_fast_breathing_adding_from_respiratory_failure':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fast_breathing from respiratory failure'
-                      ),
-        'prob_danger_signs_adding_from_respiratory_failure':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of danger signs from respiratory failure'
-                      ),
-
-        # Meningitis ------------
-        'prob_headache_adding_from_meningitis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of headache from meningitis'
-                      ),
-        'prob_fever_adding_from_meningitis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fever from meningitis'
-                      ),
-        'prob_danger_signs_adding_from_meningitis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of danger_signs from meningitis'
-                      ),
-
-        # Sepsis ----------------
-        'prob_fast_breathing_adding_from_sepsis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fast_breathing from sepsis'
-                      ),
-        'prob_danger_signs_adding_from_sepsis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of danger signs from sepsis'
-                      ),
-        'prob_fever_adding_from_sepsis':
-            Parameter(Types.REAL,
-                      'probability of additional signs/symptoms of fever from sepsis'
+                      'probability of chest indrawing in children with pulmonary complications'
                       ),
 
         # Parameters governing the effects of vaccine ----------------
-        'rr_infection_strep_with_pneumococcal_vaccine':
+        'rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y':
             Parameter(Types.REAL,
-                      'relative risk of acquiring the pathogen=="Strep_pneumoniae_PCV13" if has had all doses of '
-                      'pneumonococcal vaccine (i.e., `va_pneumo_all_doses`==True), either as a primary pathogen or'
-                      'as a secondary bacterial coinfection.'
+                      'relative rate of acquiring S. pneumoniae vaccine-type Alri '
+                      'for children under 2 years of age immunised wth PCV13'
                       ),
-        'rr_infection_hib_haemophilus_vaccine':
+        'rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y':
             Parameter(Types.REAL,
-                      'relaitve risk of acquiring the pathogen=="Hib" if has had all doses of Haemophilus vaccine'
-                      ' (i.e., `va_hib_all_doses`==Tue)'
+                      'relative rate of acquiring S. pneumoniae vaccine-type Alri '
+                      'for children aged 2 to 5 immunised wth PCV13'
+                      ),
+        'rr_all_strains_Strep_pneum_ALRI_with_PCV13':
+            Parameter(Types.REAL,
+                      'relative rate of acquiring S. pneumoniae all types Alri '
+                      'for children immunised wth PCV13'
+                      ),
+        'effectiveness_Hib_vaccine_on_Hib_strains':
+            Parameter(Types.REAL,
+                      'effectiveness of Hib vaccine against H. influenzae typ-b ALRI'
+                      ),
+        'rr_Hib_ALRI_with_Hib_vaccine':
+            Parameter(Types.REAL,
+                      'relative rate of acquiring H. influenzae type-b Alri '
+                      'for children immunised wth Hib vaccine'
                       ),
 
         # Parameters governing treatment effectiveness and assoicated behaviours ----------------
@@ -643,6 +568,14 @@ class Alri(Module):
         'antibiotic_therapy_effectiveness_ALRI':
             Parameter(Types.REAL,
                       'effectiveness of antibiotic therapy on death from Alri with bacterial cause'
+                      ),
+        '5day_amoxicillin_treatment_failure_by_day6':
+            Parameter(Types.REAL,
+                      'probability of treatment failure by day 6 of 5-day course amoxicillin for non-severe pneumonia'
+                      ),
+        '5day_amoxicillin_relapse_by_day14':
+            Parameter(Types.REAL,
+                      'probability of relapse by day 14 on 5-day amoxicillin for non-severe pneumonia'
                       ),
     }
 
