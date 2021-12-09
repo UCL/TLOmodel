@@ -5,7 +5,6 @@ in terms of staff allocation and daily capabilities in minutes per cadre per fac
 
 from pathlib import Path
 import pandas as pd
-import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 
@@ -84,7 +83,7 @@ plt.savefig(outputpath / 'staff_allocation_per_level.pdf', bbox_inches='tight')
 # MINUTES PER HEALTH OFFICER CATEGORY BY LEVEL
 
 # Level 0
-data_level = data.loc[data['Facility_Level'] == '0',:]
+data_level = data.loc[data['Facility_Level'] == '0', :]
 tab = data_level.pivot(index='District', columns='Officer_Category', values='Total_Mins_Per_Day')
 ax = tab.plot.bar(stacked=True)
 plt.ylabel('Minutes per day at level 0')
@@ -96,7 +95,7 @@ ax.legend(ncol=3, bbox_to_anchor=(0, 1),
 plt.savefig(outputpath / 'health_officer_minutes_per_district_level_0.pdf', bbox_inches='tight')
 
 # Level 1a
-data_level = data.loc[data['Facility_Level'] == '1a',:]
+data_level = data.loc[data['Facility_Level'] == '1a', :]
 tab = data_level.pivot(index='District', columns='Officer_Category', values='Total_Mins_Per_Day')
 ax = tab.plot.bar(stacked=True)
 plt.ylabel('Minutes per day at level 1a')
@@ -108,7 +107,7 @@ ax.legend(ncol=3, bbox_to_anchor=(0, 1),
 plt.savefig(outputpath / 'health_officer_minutes_per_district_level_1a.pdf', bbox_inches='tight')
 
 # Level 1b
-data_level = data.loc[data['Facility_Level'] == '1b',:]
+data_level = data.loc[data['Facility_Level'] == '1b', :]
 tab = data_level.pivot(index='District', columns='Officer_Category', values='Total_Mins_Per_Day')
 ax = tab.plot.bar(stacked=True)
 plt.ylabel('Minutes per day at level 1b')
@@ -120,7 +119,7 @@ ax.legend(ncol=3, bbox_to_anchor=(0, 1),
 plt.savefig(outputpath / 'health_officer_minutes_per_district_level_1b.pdf', bbox_inches='tight')
 
 # Level 2
-data_level = data.loc[data['Facility_Level'] == '2',:]
+data_level = data.loc[data['Facility_Level'] == '2', :]
 tab = data_level.pivot(index='District', columns='Officer_Category', values='Total_Mins_Per_Day')
 ax = tab.plot.bar(stacked=True)
 plt.ylabel('Minutes per day at level 2')
@@ -132,7 +131,7 @@ ax.legend(ncol=3, bbox_to_anchor=(0, 1),
 plt.savefig(outputpath / 'health_officer_minutes_per_district_level_2.pdf', bbox_inches='tight')
 
 # Level 3
-data_level = data.loc[data['Facility_Level'] == '3',:]
+data_level = data.loc[data['Facility_Level'] == '3', :]
 tab = data_level.pivot(index='Region', columns='Officer_Category', values='Total_Mins_Per_Day')
 ax = tab.plot.bar(stacked=True)
 plt.ylabel('Minutes per day at level 3')
@@ -145,7 +144,7 @@ ax.legend(ncol=3, bbox_to_anchor=(0, 1),
 plt.savefig(outputpath / 'health_officer_minutes_per_district_level_3.pdf', bbox_inches='tight')
 
 # Level 4
-data_level = data.loc[data['Facility_Level'] == '4',:]
+data_level = data.loc[data['Facility_Level'] == '4', :]
 tab = data_level.pivot(index='Facility_Name', columns='Officer_Category', values='Total_Mins_Per_Day')
 ax = tab.plot.bar(stacked=True, width=0.1)
 plt.ylabel('Minutes per day at level 4')
