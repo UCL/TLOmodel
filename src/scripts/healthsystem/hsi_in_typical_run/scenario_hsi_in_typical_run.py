@@ -4,10 +4,10 @@ This file is used to capture the HSI that are run during a typical ten year simu
 It defines a large population and an (mode=0) HealthSystem.
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/healthsystem/showing_hsi_and_appt_types_that_run/ten_year_run_tracking_healthsystem_usage.py```
+    ```tlo batch-submit src/scripts/healthsystem/hsi_in_typical_run/scenario_hsi_in_typical_run.py```
 
 or locally using:
-    ```tlo scenario-run src/scripts/healthsystem/showing_hsi_and_appt_types_that_run/ten_year_run_tracking_healthsystem_usage.py```
+    ```tlo scenario-run src/scripts/healthsystem/hsi_in_typical_run/scenario_hsi_in_typical_run.py```
 
 """
 
