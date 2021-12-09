@@ -199,8 +199,8 @@ def test_integrity_of_linear_models(tmpdir):
             'SAM',
             'low_birth_weight'
         )
-        res = models.death(person_id)
-        assert isinstance(res, bool)
+        res = models.compute_death_risk(person_id)
+        assert isinstance(res, np.bool_)
 
 
 def test_basic_run(tmpdir):
@@ -272,7 +272,7 @@ def test_nat_hist_recovery(tmpdir):
     # make probability of death 0% (not using a lambda function because code uses the keyword argument for clarity)
     def death(person_id):
         return False
-    sim.modules['Alri'].models.death = death
+    sim.modules['Alri'].models.compute_death_risk = death
 
     # make probability of symptoms very high
     params = sim.modules['Alri'].parameters
@@ -352,7 +352,7 @@ def test_nat_hist_death(tmpdir):
     # make probability of death 100% (not using a lambda function because code uses the keyword argument for clarity)
     def death(person_id):
         return True
-    sim.modules['Alri'].models.death = death
+    sim.modules['Alri'].models.compute_death_risk = death
 
     # Get person to use:
     df = sim.population.props
@@ -411,7 +411,7 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
     # make probability of death 0% (not using a lambda function because code uses the keyword argument for clarity)
     def death(person_id):
         return False
-    sim.modules['Alri'].models.death = death
+    sim.modules['Alri'].models.compute_death_risk = death
 
     # Get person to use:
     df = sim.population.props
@@ -486,7 +486,7 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     # make probability of death 100% (not using a lambda function because code uses the keyword argument for clarity)
     def death(person_id):
         return True
-    sim.modules['Alri'].models.death = death
+    sim.modules['Alri'].models.compute_death_risk = death
 
     # Get person to use:
     df = sim.population.props
@@ -636,7 +636,7 @@ def test_treatment(tmpdir):
     # make probability of death 100% (not using a lambda function because code uses the keyword argument for clarity)
     def death(person_id):
         return True
-    sim.modules['Alri'].models.death = death
+    sim.modules['Alri'].models.compute_death_risk = death
 
     # Get person to use:
     df = sim.population.props

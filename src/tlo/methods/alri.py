@@ -985,6 +985,9 @@ class Models:
         # set-up the linear models for the incidence risk for each pathogen
         self.make_model_for_acquisition_risk()
 
+        # set-up the linear model for the death risk
+        self.death_risk = None
+
     def make_model_for_acquisition_risk(self):
         """"Model for the acquisition of a primary pathogen that can cause ALri"""
         p = self.p
@@ -1226,46 +1229,30 @@ class Models:
 
         return symptoms
 
-    def death(self, person_id):
+    def compute_death_risk(self, person_id):
         """Determine if person will die from Alri. Returns True/False"""
         p = self.p
-        person = self.module.sim.population.props.loc[person_id]
+        df = self.module.sim.population.props
 
-        disease_type = person['ri_disease_type']
+        def set_lm_death():
+            """ Linear Model for ALRI death (Logistic regression)"""
 
-        # Baseline risk:
-        risk = p[f"base_death_rate_ALRI_by_{disease_type}"]
+            return LinearModel(
+                LinearModelType.LOGISTIC,
+                p['baseline_odds_alri_death'],
+                Predictor('age_exact_years').when(1/6, p['or_death_ALRI_age<2mo']),
+                Predictor('ri_primary_pathogen').when('P.jirovecii', p['or_death_ALRI_P.jirovecii']),
+                Predictor('un_clinical_acute_malnutrition').when('SAM', p['or_death_ALRI_SAM']),
+                Predictor('un_clinical_acute_malnutrition').when('MAM', p['or_death_ALRI_MAM']),
+                Predictor('sy_danger_signs').when(2, p['or_death_ALRI_danger_signs']),
+                Predictor('sex').when('M', p['or_death_ALRI_male']),
+                Predictor('ri_complication_hypoxaemia').when(True, p['or_death_ALRI_SpO2<=92%']),
+                Predictor('hv_inf').when(True, p['rr_ALRI_HIV/AIDS']),
+                # Predictor('referral_from_hsa_hc').when(True, p['or_death_ALRI_hc_referral'])
+            )
 
-        # The effect of age:
-        if person['age_years'] == 1:
-            risk *= p['rr_death_ALRI_age12to23mo']
-        elif 2 <= person['age_years'] <= 4:
-            risk *= p['rr_death_ALRI_age24to59mo']
-
-        # The effect of complications:
-        if person['ri_complication_sepsis']:
-            risk *= p['rr_death_ALRI_sepsis']
-
-        if person['ri_complication_respiratory_failure']:
-            risk *= p['rr_death_ALRI_respiratory_failure']
-
-        if person['ri_complication_meningitis']:
-            risk *= p['rr_death_ALRI_meningitis']
-
-        # The effect of factors defined in other modules:
-        if person['hv_inf']:
-            risk *= p['rr_death_ALRI_HIV']
-
-        if person['un_clinical_acute_malnutrition'] == 'SAM':
-            risk *= p['rr_death_ALRI_SAM']
-
-        if (
-            person['nb_low_birth_weight_status'] in
-            ['extremely_low_birth_weight', 'very_low_birth_weight', 'low_birth_weight']
-        ):
-            risk *= p['rr_death_ALRI_low_birth_weight']
-
-        return risk > self.rng.rand()
+        self.death_risk = set_lm_death()
+        return self.death_risk.predict(df.loc[[person_id]]).values[0] > self.rng.rand()
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1412,13 +1399,14 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         self.impose_complications(person_id=person_id)
 
         # ----------------------------------- Outcome  -----------------------------------
-        # Determine outcome: death or recovery
-        if models.death(person_id=person_id):
+        if models.compute_death_risk(person_id=person_id):
             self.sim.schedule_event(AlriDeathEvent(self.module, person_id), date_of_outcome)
             df.loc[person_id, ['ri_scheduled_death_date', 'ri_scheduled_recovery_date']] = [date_of_outcome, pd.NaT]
         else:
             self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id), date_of_outcome)
             df.loc[person_id, ['ri_scheduled_recovery_date', 'ri_scheduled_death_date']] = [date_of_outcome, pd.NaT]
+
+        # TODO: death should only be applied to those with any complication, currently applies to all ALRIs
 
     def impose_symptoms_for_uncomplicated_disease(self, person_id, disease_type):
         """
