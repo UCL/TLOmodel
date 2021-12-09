@@ -755,7 +755,8 @@ class Alri(Module):
             self.daly_wts['daly_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=46)
 
         # Define the max episode duration
-        self.max_duration_of_episode = DateOffset(days=self.parameters['days_between_treatment_and_cure'])
+        self.max_duration_of_episode = DateOffset(days=(self.parameters['days_between_treatment_and_cure'] + 14))
+        # 14 days is the max duration of an episode
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -1368,14 +1369,14 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             va_hib_all_doses=person.va_hib_all_doses, va_pneumo_all_doses=person.va_pneumo_all_doses)
 
         # ----------------------- Duration of the Alri event -----------------------
-        duration_in_days_of_alri = rng.randint(1, 8)  # assumes uniform interval around mean duration with range 4 days
+        duration_in_days_of_alri = rng.randint(1, 14)  # assumes uniform interval around mean duration with range 7 days
 
         # Date for outcome (either recovery or death) with uncomplicated Alri
         date_of_outcome = self.module.sim.date + DateOffset(days=duration_in_days_of_alri)
 
         # Define 'episode end' date. This the date when this episode ends. It is the last possible data that any HSI
         # could affect this episode.
-        episode_end = date_of_outcome + m.max_duration_of_episode
+        episode_end = date_of_outcome + DateOffset(days=p['days_between_treatment_and_cure'])
 
         # Update the properties in the dataframe:
         df.loc[person_id,
