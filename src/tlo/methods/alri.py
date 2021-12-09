@@ -147,7 +147,7 @@ class Alri(Module):
 
     # Declare the disease types:
     disease_types = {
-        'pneumonia', 'bronchiolitis', 'other_alri'
+        'pneumonia', 'bronchiolitis/other_alri'
     }
 
     # Declare the Alri complications:
@@ -1031,7 +1031,8 @@ class Models:
 
         return baseline
 
-    def determine_disease_type_and_secondary_bacterial_coinfection(self, pathogen, age, va_pneumo_all_doses):
+    def determine_disease_type_and_secondary_bacterial_coinfection(self, pathogen, age,
+                                                                   va_hib_all_doses, va_pneumo_all_doses):
         """Determines:
          * the disease that is caused by infection with this pathogen (from among self.disease_types)
          * if there is a bacterial coinfection associated that will cause the dominant disease.
@@ -1041,55 +1042,65 @@ class Models:
          """
         p = self.p
 
-        if pathogen in set(self.module.pathogens['bacterial']).union(self.module.pathogens['fungal']):
+        # Determine the disease type - pneumonia or bronchiolitis/other_alri
+        if ((age < 1) and (p[f'proportion_pneumonia_in_{pathogen}_ALRI'][0] > self.rng.rand())) or (
+            (1 <= age < 5) and (p[f'proportion_pneumonia_in_{pathogen}_ALRI'][1] > self.rng.rand())):
             disease_type = 'pneumonia'
+        else:
+            disease_type = 'bronchiolitis/other_alri'
+
+        # Determine bacterial-coinfection
+        if pathogen in set(self.module.pathogens['bacterial']).union(self.module.pathogens['fungal/other']):
+            # No bacterial co-infection in primary bacterial cause, or fungal (assumed)
             bacterial_coinfection = np.nan
 
         elif pathogen in self.module.pathogens['viral']:
-            if (age >= 2) or (p[f'proportion_viral_pneumonia_by_{pathogen}'] > self.rng.rand()):
-                disease_type = 'pneumonia'
+            if disease_type == 'pneumonia':
                 if p['prob_viral_pneumonia_bacterial_coinfection'] > self.rng.rand():
-                    bacterial_coinfection = self.secondary_bacterial_infection(va_pneumo_all_doses)
+                    bacterial_coinfection = self.secondary_bacterial_infection(va_hib_all_doses=va_hib_all_doses,
+                                                                               va_pneumo_all_doses=va_pneumo_all_doses)
                 else:
                     bacterial_coinfection = np.nan
-            else:
-                # likely to be 'bronchiolitis' (if there is no secondary bacterial infection)
-                if p['prob_secondary_bacterial_infection_in_bronchiolitis'] > self.rng.rand():
-                    bacterial_coinfection = self.secondary_bacterial_infection(va_pneumo_all_doses)
-                    disease_type = 'pneumonia' if pd.notnull(bacterial_coinfection) else 'bronchiolitis'
-                else:
-                    bacterial_coinfection = np.nan
-                    disease_type = 'bronchiolitis'
+            else:  # brochiolitis/other_alri (viral)
+                bacterial_coinfection = np.nan
         else:
             raise ValueError('Pathogen is not recognised.')
 
         assert disease_type in self.module.disease_types
-        assert bacterial_coinfection in (self.module.pathogens['bacterial'] + [np.nan])
+        assert bacterial_coinfection in (self.module.pathogens['bacterial'] + ['none'] + [np.nan])
 
         return disease_type, bacterial_coinfection
 
-    def secondary_bacterial_infection(self, va_pneumo_all_doses):
+    def secondary_bacterial_infection(self, va_hib_all_doses, va_pneumo_all_doses):
         """Determine which specific bacterial pathogen causes a secondary coinfection, or if there is no secondary
         bacterial infection (due to the effects of the pneumococcal vaccine).
         """
         p = self.p
 
         # get probability of bacterial coinfection with each pathogen
+        list_bacteria_probs = []
+        for n in range(len(self.module.pathogens['bacterial'])):
+            prob_secondary_patho = 1 / len(self.module.pathogens['bacterial'])  # assume equal distribution
+            list_bacteria_probs.append(prob_secondary_patho)
         probs = dict(zip(
-            self.module.pathogens['bacterial'],
-            p['proportion_bacterial_coinfection_pathogen']))
+            self.module.pathogens['bacterial'], list_bacteria_probs))
 
         # Edit the probability that the coinfection will be of `Strep_pneumoniae_PCV13` if the person has had
-        #  the pneumococcal vaccine:
+        # the pneumococcal vaccine:
         if va_pneumo_all_doses:
-            probs['Strep_pneumoniae_PCV13'] *= self.p['rr_infection_strep_with_pneumococcal_vaccine']
+            probs['Strep_pneumoniae_PCV13'] *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y']
+
+        # Edit the probability that the coinfection will be of `Hib` if the person has had
+        # the hib vaccine:
+        if va_hib_all_doses:
+            probs['Hib'] *= p['rr_Hib_ALRI_with_Hib_vaccine']
 
         # Add in the probability that there is none (to ensure that all probabilities sum to 1.0)
         probs['none'] = 1.0 - sum(probs.values())
 
         # return the random selection of bacterial coinfection (including possibly np.nan for 'none')
         outcome = self.rng.choice(list(probs.keys()), p=list(probs.values()))
-        return outcome if not 'none' else np.nan
+        return outcome
 
     def complications(self, person_id):
         """Determine the set of complication for this person"""
@@ -1369,7 +1380,8 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         # ----------------- Determine the Alri disease type and bacterial coinfection for this case -----------------
         disease_type, bacterial_coinfection = models.determine_disease_type_and_secondary_bacterial_coinfection(
-            age=person.age_years, pathogen=self.pathogen, va_pneumo_all_doses=person.va_pneumo_all_doses)
+            age=person.age_years, pathogen=self.pathogen,
+            va_hib_all_doses=person.va_hib_all_doses, va_pneumo_all_doses=person.va_pneumo_all_doses)
 
         # ----------------------- Duration of the Alri event -----------------------
         duration_in_days_of_alri = rng.randint(1, 8)  # assumes uniform interval around mean duration with range 4 days

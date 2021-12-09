@@ -103,16 +103,17 @@ def test_integrity_of_linear_models(tmpdir):
 
     # pneumococcal vaccine: if efficacy of vaccine is perfect, whomever has vaccine should have no risk of infection
     # from Strep_pneumoniae_PCV13
-    models.p['rr_infection_strep_with_pneumococcal_vaccine'] = 0.0
+    models.p['rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y'] = 0.0
+    models.p['rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y'] = 0.0
     df['va_pneumo_all_doses'] = True
     assert (0.0 == models.compute_risk_of_aquisition(
         pathogen='Strep_pneumoniae_PCV13',
         df=df.loc[df.is_alive & (df.age_years < 5)])
             ).all()
 
-    # pneumococcal vaccine: if efficacy of vaccine is perfect, whomever has vaccine should have no risk of infection
-    # from Strep_pneumoniae_PCV13
-    models.p['rr_infection_hib_haemophilus_vaccine'] = 0.0
+    # hib vaccine: if efficacy of vaccine is perfect, whomever has vaccine should have no risk of infection
+    # from Hib (H.influenzae type-b)
+    models.p['rr_Hib_ALRI_with_Hib_vaccine'] = 0.0
     df['va_hib_all_doses'] = True
     assert (0.0 == models.compute_risk_of_aquisition(
         pathogen='Hib',
@@ -121,7 +122,8 @@ def test_integrity_of_linear_models(tmpdir):
 
     # --- determine_disease_type
     # set efficacy of pneumococcal vaccine to be 100% (i.e. 0 relative risk of infection)
-    models.p['rr_infection_strep_with_pneumococcal_vaccine'] = 0.0
+    models.p['rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y'] = 0.0
+    models.p['rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y'] = 0.0
     for patho in alri.all_pathogens:
         for age in range(0, 100):
             for va_pneumo_all_doses in [True, False]:
@@ -129,6 +131,7 @@ def test_integrity_of_linear_models(tmpdir):
                     models.determine_disease_type_and_secondary_bacterial_coinfection(
                         age=age,
                         pathogen=patho,
+                        va_hib_all_doses=True,
                         va_pneumo_all_doses=va_pneumo_all_doses
                     )
 
@@ -136,11 +139,12 @@ def test_integrity_of_linear_models(tmpdir):
 
                 if patho in alri.pathogens['bacterial']:
                     assert pd.isnull(bacterial_coinfection)
-                elif patho in alri.pathogens['fungal']:
+                elif patho in alri.pathogens['fungal/other']:
                     assert pd.isnull(bacterial_coinfection)
                 else:
                     # viral primary infection- may have a bacterial coinfection or may not:
-                    assert pd.isnull(bacterial_coinfection) or bacterial_coinfection in alri.pathogens['bacterial']
+                    assert pd.isnull(bacterial_coinfection) or \
+                           bacterial_coinfection in alri.pathogens['bacterial'] + ['none']
                     # check that if has had pneumococcal vaccine they are not coinfected with `Strep_pneumoniae_PCV13`
                     if va_pneumo_all_doses:
                         assert bacterial_coinfection != 'Strep_pneumoniae_PCV13'
