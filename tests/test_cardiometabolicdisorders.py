@@ -702,7 +702,7 @@ def test_hsi_weight_loss_and_medication():
 
             # Run the WeightLossEvent
             t = CardioMetabolicDisordersWeightLossEvent(module=sim.modules['CardioMetabolicDisorders'],
-                                                        person_id=person_id, condition=f'{condition}')
+                                                        person_id=person_id)
             t.apply(person_id=person_id)
 
             # Check that individual's BMI has reduced by 1 and they are flagged as having experienced weight loss
@@ -809,10 +809,12 @@ def test_no_availability_of_consumables_for_events():
 
         # Make probability of death 100%
         p = sim.modules['CardioMetabolicDisorders'].parameters
-        p[f'{event}_death']["baseline_annual_probability"] = 1
+        p[f'{event}_death']["baseline_annual_probability"] = 1000
+        # (Use very high value to ensure that risk will be >1 for all individuals (this is the intercept term to a
+        # linear model).
 
         # make initial population
-        sim.make_initial_population(n=1000)
+        sim.make_initial_population(n=100)
 
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
