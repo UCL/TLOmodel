@@ -48,14 +48,14 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2010, 1, 2)
-        self.pop_size = 100  # todo increase this
+        self.end_date = Date(2014, 12, 31)
+        self.pop_size = 20_000
         self.number_of_draws = 1
         self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'local_file_name',
+            'filename': 'scenario_hsi_in_typical_run',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
