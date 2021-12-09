@@ -5,10 +5,12 @@ in a typical run."""
 
 # %% Declare the name of the file that specified the scenarios used in this run.
 from pathlib import Path
-
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from tlo.analysis.utils import get_scenario_outputs, load_pickled_dataframes
 
-scenario_filename = 'long_run_no_diseases.py'
+scenario_filename = 'scenario_hsi_in_typical_run.py'
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/tbh03@ic.ac.uk')
@@ -22,88 +24,60 @@ print(f"Results folder is: {results_folder}")
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
 
 # %% Extract results
+log = load_pickled_dataframes(results_folder)['tlo.methods.healthsystem']  # (There was only one draw and one run)
 
-log = load_pickled_dataframes(results_folder)  # (There was only one draw and one run)
+# %% Plot: Fraction of Total Healthcare Worker Time Used
 
+cap = log['Capacity']
+cap["date"] = pd.to_datetime(cap["date"])
+cap = cap.set_index('date')
 
+frac_time_used = cap['Frac_Time_Used_Overall']
 
+# Plot:
+frac_time_used.plot()
+plt.title("Fraction of Total Healthcare Worker Time Used")
+plt.xlabel("Date")
+plt.tight_layout()
+plt.savefig(make_graph_file_name ('HSI_Frac_time_used'))
+plt.show()
 
+# %% Number of HSI:
 
+hsi = log['HSI_Event']
+hsi["date"] = pd.to_datetime(hsi["date"])
+hsi["month"] = hsi["date"].dt.month
 
+# Number of HSI that are taking place by originating module, by month
+year = 2012
+hsi["Module"] = hsi["TREATMENT_ID"].str.split('_').apply(lambda x: x[0])
+evs = hsi.loc[hsi.date.dt.year == year]\
+    .groupby(by=['month', 'Module'])\
+    .size().reset_index().rename(columns={0: 'count'})\
+    .pivot_table(index='month', columns='Module', values='count', fill_value=0)
 
+# Plot:
+evs.plot.bar(stacked=True)
+plt.title(f"HSI by Module, per Month (year {year})")
+plt.ylabel('Total per month')
+plt.tight_layout()
+plt.savefig(make_graph_file_name('HSI_per_module_per_month'))
+plt.show()
 
+# Plot the breakdown of all HSI, over all the years
+evs = hsi.groupby(by=['Module']).size()
+evs.plot.pie()
+plt.title(f"HSI by Module")
+plt.tight_layout()
+plt.savefig(make_graph_file_name('HSI_per_module'))
+plt.show()
 
+# %% Demand for appointments
 
+num_hsi_by_treatment_id = hsi.groupby(hsi.TREATMENT_ID)['Number_By_Appt_Type_Code'].size()
 
-# todo - describe the HSI that are actually being done (desreiptions and frequency)
-#
-# """Produce plots to show the usage of the healthcare system when 'Everything' is in service_availability.
-# This uses the file that is created by: run_healthsystem_analysis_and_pickle_log
-# """
-#
-# import pickle
-# from datetime import datetime
-# from pathlib import Path
-#
-# import matplotlib.pyplot as plt
-# import numpy as np
-# import pandas as pd
-#
-# from tlo.methods.demography import get_scaling_factor
-#
-# # Define paths and filenames
-# rfp = Path("./resources")
-# outputpath = Path("./outputs")  # folder for convenience of storing outputs
-# results_filename = outputpath / '2020_11_23_health_system_systematic_run.pickle'
-# make_file_name = lambda stub: outputpath / f"{datetime.today().strftime('%Y_%m_%d''')}_{stub}.png"
-#
-# with open(results_filename, 'rb') as f:
-#     output = pickle.load(f)['results']['Everything']
-#
-# # %% Scaling Factor
-# scaling_factor = get_scaling_factor(output, rfp)
-#
-# # %% Show overall usage of the healthsystem:
-#
-# cap = output['tlo.methods.healthsystem']['Capacity'].copy()
-# cap["date"] = pd.to_datetime(cap["date"])
-# cap = cap.set_index('date')
-#
-# frac_time_used = cap['Frac_Time_Used_Overall']
-# cap = cap.drop(columns=['Frac_Time_Used_Overall'])
-#
-# # Plot Fraction of total time of health-care-workers being used
-# frac_time_used.plot()
-# plt.title("Fraction of total health-care worker time being used")
-# plt.xlabel("Date")
-# plt.savefig(make_file_name('HSI_Frac_time_used'))
-# plt.show()
-#
-# # %% Breakdowns by HSI:
-# hsi = output['tlo.methods.healthsystem']['HSI_Event'].copy()
-# hsi["date"] = pd.to_datetime(hsi["date"])
-# hsi["month"] = hsi["date"].dt.month
-# # Reduce TREATMENT_ID to the originating module
-# hsi["Module"] = hsi["TREATMENT_ID"].str.split('_').apply(lambda x: x[0])
-#
-# # Plot the HSI that are taking place, by month, in a a particular year
-# year = 2012
-# evs = hsi.loc[hsi.date.dt.year == year]\
-#     .groupby(by=['month', 'Module'])\
-#     .size().reset_index().rename(columns={0: 'count'})\
-#     .pivot_table(index='month', columns='Module', values='count', fill_value=0)
-# evs *= scaling_factor
-#
-# evs.plot.bar(stacked=True)
-# plt.title(f"HSI by Module, per Month (year {year})")
-# plt.ylabel('Total per month')
-# plt.savefig(make_file_name('HSI_per_module_per_month'))
-# plt.show()
-#
-# # Plot the breakdown of all HSI, over all the years
-# evs = hsi.groupby(by=['Module'])\
-#     .size().rename(columns={0: 'count'}) * scaling_factor
-# evs.plot.pie()
-# plt.title(f"HSI by Module")
-# plt.savefig(make_file_name('HSI_per_module'))
-# plt.show()
+# find the appt footprint for each treatment_id
+appts_by_treatment_id = \
+    hsi.set_index('TREATMENT_ID')['Number_By_Appt_Type_Code'].drop_duplicates().apply(pd.Series).fillna(0.0)
+
+# Plot...
