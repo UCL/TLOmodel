@@ -987,30 +987,34 @@ class Models:
                     .when(1, p[base_inc_rate][1])
                     .when('.between(2,4)', p[base_inc_rate][2])
                     .when('> 4', 0.0),
-                    Predictor('li_no_access_handwashing').when(False, p['rr_ALRI_HHhandwashing']),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
-                    Predictor('hv_inf').when(True, p['rr_ALRI_HIV_untreated']),
+                    Predictor().when('(va_measles_all_doses == False) & (age_years >= 1)',
+                                     p['rr_ALRI_incomplete_measles_immunisation']),
+                    Predictor('hv_inf').when(True, p['rr_ALRI_HIV/AIDS']),
                     Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_ALRI_underweight']),
                     Predictor('nb_breastfeeding_status').when('exclusive', 1.0)
-                                                        .otherwise(p['rr_ALRI_not_excl_breastfeeding'])
-                )
+                                                        .otherwise(p['rr_ALRI_non_exclusive_breastfeeding'])
+                )  # todo: add crowding or wealth?
 
-            zero_year_olds = df.is_alive & (df.age_years == 0)
+            # Use 1 year olds for scaling (because measles vaccine effectiveness is applied for over 1yo)
+            one_year_olds = df.is_alive & (df.age_years == 1)
             unscaled_lm = make_naive_linear_model(patho)
 
-            # If not 0 year-olds then cannot do scaling, return unscaled linear model
-            if sum(zero_year_olds) == 0:
+            # If not 1 year-olds then cannot do scaling, return unscaled linear model
+            if sum(one_year_olds) == 0:
                 return unscaled_lm
 
-            # If some 0 year-olds then can do scaling:
+            # If some 1 year-olds then can do scaling:
             target_mean = p[f'base_inc_rate_ALRI_by_{patho}'][0]
-            actual_mean = unscaled_lm.predict(df.loc[zero_year_olds]).mean()
-            scaled_intercept = 1.0 * (target_mean / actual_mean)
+            actual_mean = unscaled_lm.predict(df.loc[one_year_olds]).mean()
+            scaled_intercept = 1.0 * (target_mean / actual_mean) \
+                if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
             scaled_lm = make_naive_linear_model(patho, intercept=scaled_intercept)
 
             # check by applying the model to mean incidence of 0-year-olds
-            assert (target_mean - scaled_lm.predict(df.loc[zero_year_olds]).mean()) < 1e-10
-            return scaled_lm
+            if (df.is_alive & (df.age_years == 1)).sum() > 0:
+                assert (target_mean - scaled_lm.predict(df.loc[one_year_olds]).mean()) < 1e-10
+                return scaled_lm
 
         for patho in self.module.all_pathogens:
             self.incidence_equations_by_pathogen[patho] = make_scaled_linear_model_for_incidence(patho)
@@ -1025,9 +1029,12 @@ class Models:
 
         # apply the reduced risk of acquisition for those vaccinated
         if pathogen == "Strep_pneumoniae_PCV13":
-            baseline.loc[df['va_pneumo_all_doses']] *= p['rr_infection_strep_with_pneumococcal_vaccine']
+            baseline.loc[df['va_pneumo_all_doses'] & (df['age_years'] < 2)] \
+                *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y']
+            baseline.loc[df['va_pneumo_all_doses'] & (df['age_years'].between(2, 5))] \
+                *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y']
         elif pathogen == "Hib":
-            baseline.loc[df['va_hib_all_doses']] *= p['rr_infection_hib_haemophilus_vaccine']
+            baseline.loc[df['va_hib_all_doses']] *= p['rr_Hib_ALRI_with_Hib_vaccine']
 
         return baseline
 
@@ -1361,13 +1368,13 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         * Determines the disease and complications associated with this case
         * Updates all the properties so that they pertain to this current episode of Alri
         * Imposes the symptoms
-        * Schedules relevant natural history event {(AlriWithPulmonaryComplicationsEvent) and
-        (AlriWithSevereComplicationsEvent) (either AlriNaturalRecoveryEvent or AlriDeathEvent)}
+        * Schedules relevant natural history event {(either AlriNaturalRecoveryEvent or AlriDeathEvent)}
         * Updates the counters in the log accordingly.
         """
         df = self.sim.population.props  # shortcut to the dataframe
         person = df.loc[person_id]
         m = self.module
+        p = m.parameters
         rng = self.module.rng
         models = m.models
 
@@ -1784,7 +1791,7 @@ class AlriPropertiesOfOtherModules(Module):
     # Though this module provides some properties from NewbornOutcomes we do not list
     # NewbornOutcomes in the ALTERNATIVE_TO set to allow using in conjunction with
     # SimplifiedBirths which can also be used as an alternative to NewbornOutcomes
-    ALTERNATIVE_TO = {'Hiv', 'Epi', 'Wasting'}
+    ALTERNATIVE_TO = {'Hiv', 'Measles', 'Epi', 'Wasting'}
 
     PROPERTIES = {
         'hv_inf': Property(Types.BOOL, 'temporary property'),
@@ -1796,6 +1803,7 @@ class AlriPropertiesOfOtherModules(Module):
                                             categories=['none', 'non_exclusive', 'exclusive']),
         'va_pneumo_all_doses': Property(Types.BOOL, 'temporary property'),
         'va_hib_all_doses': Property(Types.BOOL, 'temporary property'),
+        'va_measles_all_doses': Property(Types.BOOL, 'temporary property'),
         'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'temporary property',
                                                    categories=['MAM', 'SAM', 'well']),
     }
@@ -1813,6 +1821,7 @@ class AlriPropertiesOfOtherModules(Module):
         df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.loc[df.is_alive, 'va_pneumo_all_doses'] = False
         df.loc[df.is_alive, 'va_hib_all_doses'] = False
+        df.loc[df.is_alive, 'va_measles_all_doses'] = False
         df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
 
     def initialise_simulation(self, sim):
@@ -1825,4 +1834,5 @@ class AlriPropertiesOfOtherModules(Module):
         df.at[child, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.at[child, 'va_pneumo_all_doses'] = False
         df.at[child, 'va_hib_all_doses'] = False
+        df.at[child, 'va_measles_all_doses'] = False
         df.at[child, 'un_clinical_acute_malnutrition'] = 'well'
