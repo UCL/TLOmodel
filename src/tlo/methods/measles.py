@@ -15,26 +15,7 @@ logger.setLevel(logging.INFO)
 
 
 class Measles(Module):
-    """
-        This module assigns new measles infections to the population
-        measles vaccination is housed in the epi module
-    """
-
-    def __init__(self, name=None, resourcefilepath=None):
-
-        super().__init__(name)
-        self.resourcefilepath = resourcefilepath
-
-        # Store the symptoms that this module will use:
-        self.symptoms = {
-            'rash',
-            'fever',
-            'diarrhoea',
-            'encephalitis',
-            'otitis_media',
-            'respiratory_symptoms',  # pneumonia
-            'eye_complaint'
-        }
+    """This module represents measles infections and disease."""
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
@@ -96,6 +77,24 @@ class Measles(Module):
         'otitis_media'
     }
 
+    def __init__(self, name=None, resourcefilepath=None):
+
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
+
+        # Store the symptoms that this module will use:
+        self.symptoms = {
+            'rash',
+            'fever',
+            'diarrhoea',
+            'encephalitis',
+            'otitis_media',
+            'respiratory_symptoms',  # pneumonia
+            'eye_complaint'
+        }
+
+        self.consumables = None  # (will store item_codes for consumables used in HSI)
+
     def read_parameters(self, data_folder):
         """Read parameter values from file
         """
@@ -152,14 +151,21 @@ class Measles(Module):
         df.loc[df.is_alive, "me_on_treatment"] = False
 
     def initialise_simulation(self, sim):
+        """Schedule measles event to start straight away. Each month it will assign new infections"""
+        sim.schedule_event(MeaslesEvent(self), sim.date)
+        sim.schedule_event(MeaslesLoggingEvent(self), sim.date)
+        sim.schedule_event(MeaslesLoggingFortnightEvent(self), sim.date)
+        sim.schedule_event(MeaslesLoggingAnnualEvent(self), sim.date)
 
-        """schedule measles event to start straight away
-        each month it will assign new infections
-        """
-        sim.schedule_event(MeaslesEvent(self), sim.date + DateOffset(days=0))
-        sim.schedule_event(MeaslesLoggingEvent(self), sim.date + DateOffset(days=0))
-        sim.schedule_event(MeaslesLoggingFortnightEvent(self), sim.date + DateOffset(days=0))
-        sim.schedule_event(MeaslesLoggingAnnualEvent(self), sim.date + DateOffset(days=0))
+        # Look-up item_codes for the consumables used in the associated HSI
+        self.consumables = {
+            'vit_A':
+                self.sim.modules['HealthSystem'].get_item_code_from_item_name("Vitamin A, caplet, 100,000 IU"),
+            'severe_diarrhoea':
+                self.sim.modules['HealthSystem'].get_item_codes_from_package_name("Treatment of severe diarrhea"),
+            'severe_pneumonia':
+                self.sim.modules['HealthSystem'].get_item_codes_from_package_name("Treatment of severe pneumonia")
+        }
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
@@ -273,27 +279,26 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
             ref_age = 30
 
         # read probabilities of symptoms by age
-        symptom_prob = symptom_prob.loc[symptom_prob.age == ref_age]
+        symptom_prob = symptom_prob.loc[symptom_prob.age == ref_age, ["symptom", "probability"]]
+        # map to a series of probabilities indexed by symptom key
+        symptom_prob = symptom_prob.set_index("symptom").probability
 
         # symptom onset
         symp_onset = self.sim.date + DateOffset(days=rng.randint(7, 21))
 
         # everybody gets rash, fever and eye complaint, other symptoms assigned with age-specific probability
-        for symptom in symptom_list:
 
-            specific_symptom_prob = symptom_prob.loc[symptom_prob.symptom == symptom, "probability"].values[0]
-
-            # random sample whether person will have symptom
-            if rng.random_sample(size=1) < specific_symptom_prob:
-                # schedule symptom onset
-                self.sim.modules["SymptomManager"].change_symptom(
-                    person_id=person_id,
-                    symptom_string=symptom,
-                    add_or_remove="+",
-                    disease_module=self.sim.modules["Measles"],
-                    date_of_onset=symp_onset,
-                    duration_in_days=14,  # same duration for all symptoms
-                )
+        # random sample which symptoms a person will have
+        active_symptoms = [sym for sym in symptom_list if rng.uniform() < symptom_prob[sym]]
+        # schedule symptoms onset
+        self.sim.modules["SymptomManager"].change_symptom(
+            person_id=person_id,
+            symptom_string=active_symptoms,
+            add_or_remove="+",
+            disease_module=self.module,
+            date_of_onset=symp_onset,
+            duration_in_days=14,  # same duration for all symptoms
+        )
 
         # schedule symptom resolution without treatment - this only occurs if death doesn't happen first
         symp_resolve = symp_onset + DateOffset(days=rng.randint(7, 14))
@@ -302,7 +307,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         # todo separate probability for people with HIV
 
         # probability of death
-        if rng.random_sample(size=1) < symptom_prob.loc[symptom_prob.symptom == "death", "probability"].values[0]:
+        if rng.uniform() < symptom_prob["death"]:
             logger.debug(key="MeaslesOnsetEvent",
                          data=f"This is MeaslesOnsetEvent, scheduling measles death for {person_id}")
 
@@ -409,45 +414,21 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
                      data=f"HSI_Measles_Treatment: treat person {person_id} for measles")
 
         df = self.sim.population.props
-
-        # treatment combinations available
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-        item_code1 = pd.unique(
-            consumables.loc[consumables["Items"] == "Vitamin A, caplet, 100,000 IU", "Item_Code"])[0]
-
-        package_code1 = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of severe diarrhea',
-                            'Intervention_Pkg_Code'])[0]
-
-        package_code2 = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of severe pneumonia',
-                            'Intervention_Pkg_Code'])[0]
+        symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
 
         # for non-complicated measles
-        the_cons_footprint = {
-            "Intervention_Package_Code": {},
-            "Item_Code": {item_code1: 1}
-        }
+        item_codes = [self.module.consumables['vit_A']]
 
         # for measles with severe diarrhoea
-        if "diarrhoea" in self.sim.modules["SymptomManager"].has_what(person_id):
-            the_cons_footprint = {
-                "Intervention_Package_Code": {package_code1: 1},
-                "Item_Code": {item_code1: 1}
-            }
+        if "diarrhoea" in symptoms:
+            item_codes += self.module.consumables['severe_diarrhoea']
 
         # for measles with pneumonia
-        if "respiratory_symptoms" in self.sim.modules["SymptomManager"].has_what(person_id):
-            the_cons_footprint = {
-                "Intervention_Package_Code": {package_code2: 1},
-                "Item_Code": {item_code1: 1}
-            }
+        if "respiratory_symptoms" in symptoms:
+            item_codes += self.module.consumables['severe_pneumonia']
 
         # request the treatment
-        outcome_of_request_for_consumables = self.sim.modules["HealthSystem"].request_consumables(
-            hsi_event=self, cons_req_as_footprint=the_cons_footprint)
-
-        if outcome_of_request_for_consumables:
+        if self.get_consumables(item_codes):
             logger.debug(key="HSI_Measles_Treatment",
                          data=f"HSI_Measles_Treatment: giving required measles treatment to person {person_id}")
 

@@ -155,7 +155,7 @@ def test_cause_of_death_being_registered(tmpdir):
     make_treatment_perfect(sim.modules['Diarrhoea'])
 
     sim.make_initial_population(n=1000)
-    sim.simulate(end_date=Date(2010, 5, 31))
+    sim.simulate(end_date=Date(2010, 12, 31))
     test_dtypes(sim)
 
     mapper_from_tlo_causes, mapper_from_gbd_causes = \

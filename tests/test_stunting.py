@@ -24,7 +24,7 @@ def get_sim():
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, ignore_cons_constraints=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability='all'),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  stunting.Stunting(resourcefilepath=resourcefilepath),
                  stunting.StuntingPropertiesOfOtherModules(),

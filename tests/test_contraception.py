@@ -38,6 +38,8 @@ def run_sim(tmpdir,
         orig = simulation.population.new_row
         assert (df.dtypes == orig.dtypes).all()
 
+    _cons_available = 'all' if consumables_available else 'none'
+
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
     start_date = Date(2010, 1, 1)
@@ -62,7 +64,7 @@ def run_sim(tmpdir,
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                   disable=disable,
                                   disable_and_reject_all=healthsystem_disable_and_reject_all,
-                                  ignore_cons_constraints=consumables_available,
+                                  cons_availability=_cons_available,
                                   ),
 
         # - modules for mechanistic representation of contraception -> pregnancy -> labour -> delivery etc.
@@ -80,10 +82,6 @@ def run_sim(tmpdir,
     sim.make_initial_population(n=popsize)
     __check_dtypes(sim)
     __check_properties(sim.population.props)
-
-    if not consumables_available:
-        # Make consumables not available
-        sim.modules['HealthSystem'].prob_item_codes_available.loc[:] = 0.0
 
     if no_discontinuation:
         # Let there be no discontinuation of any method
@@ -183,7 +181,6 @@ def test_starting_and_stopping_contraceptive_use():
             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-
             contraception.Contraception(resourcefilepath=resourcefilepath, use_healthsystem=False),
             contraception.SimplifiedPregnancyAndLabour(),
 

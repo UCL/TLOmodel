@@ -791,12 +791,8 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
 
         # Check availability of antidepressant medication
         item_code = self.module.parameters['anti_depressant_medication_item_code']
-        result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
-        )['Item_Code'][item_code]
 
-        if result_of_cons_request:
+        if self.get_consumables(item_codes=item_code):
             # If medication is available, flag as being on antidepressants
             df.at[person_id, 'de_on_antidepr'] = True
 
@@ -839,13 +835,7 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
         # Check availability of antidepressant medication
-        item_code = self.module.parameters['anti_depressant_medication_item_code']
-        result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
-        )['Item_Code'][item_code]
-
-        if result_of_cons_request:
+        if self.get_consumables(self.module.parameters['anti_depressant_medication_item_code']):
             # Schedule their next HSI for a refill of medication, one month from now
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self.module),
