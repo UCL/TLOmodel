@@ -11,7 +11,7 @@ from tlo.analysis.utils import get_scenario_outputs, load_pickled_dataframes
 scenario_filename = 'scenario_hsi_in_typical_run.py'
 
 # %% Declare usual paths:
-outputspath = Path('./outputs/tbh03@ic.ac.uk')
+outputspath = Path('./outputs/bshe@ic.ac.uk')
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -47,7 +47,7 @@ hsi["date"] = pd.to_datetime(hsi["date"])
 hsi["month"] = hsi["date"].dt.month
 
 # Number of HSI that are taking place by originating module, by month
-year = 2012
+year = 2010
 hsi["Module"] = hsi["TREATMENT_ID"].str.split('_').apply(lambda x: x[0])
 evs = hsi.loc[hsi.date.dt.year == year]\
     .groupby(by=['month', 'Module'])\
