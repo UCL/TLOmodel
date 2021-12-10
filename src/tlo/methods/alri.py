@@ -977,10 +977,8 @@ class Alri(Module):
         if 'hypoxaemia' in complication_set:
             if p['proportion_hypoxaemia_with_SpO2<90%'] > self.rng.rand():
                 df.loc[person_id, 'ri_SpO2_level'] = '<90%'
-                print(True)
             else:
                 df.loc[person_id, 'ri_SpO2_level'] = '90-92%'
-                print(False)
         else:
             df.loc[person_id, 'ri_SpO2_level'] = '>=93%'
 
@@ -1169,7 +1167,8 @@ class Models:
         if disease_type == 'pneumonia' and (prob_pulmonary_complications > self.rng.rand()):
             for c in ['pneumothorax', 'pleural_effusion', 'lung_abscess', 'empyema']:
                 probs[c] += p[f'prob_{c}_in_pulmonary_complicated_pneumonia']
-                assert any(c)  # TODO: lung abscess, empyema should only apply to (primary or secondary) bacteria ALRIs
+                assert any(c)
+                # TODO: lung abscess, empyema should only apply to (primary or secondary) bacteria ALRIs
 
         # probabilities for systemic complications
         if disease_type == 'pneumonia' and (primary_path_is_bacterial or has_secondary_bacterial_inf):
@@ -1247,6 +1246,9 @@ class Models:
         """Determine if person will die from Alri. Returns True/False"""
         p = self.p
         df = self.module.sim.population.props
+        person = df.loc[person_id]
+        # check if any complications - death occurs only if a complication is present
+        any_complications = person[[f'ri_complication_{c}' for c in self.module.complications]].any()
 
         def set_lm_death():
             """ Linear Model for ALRI death (Logistic regression)"""
@@ -1258,15 +1260,16 @@ class Models:
                 Predictor('ri_primary_pathogen').when('P.jirovecii', p['or_death_ALRI_P.jirovecii']),
                 Predictor('un_clinical_acute_malnutrition').when('SAM', p['or_death_ALRI_SAM']),
                 Predictor('un_clinical_acute_malnutrition').when('MAM', p['or_death_ALRI_MAM']),
-                Predictor('sy_danger_signs').when(2, p['or_death_ALRI_danger_signs']),
                 Predictor('sex').when('M', p['or_death_ALRI_male']),
-                Predictor('ri_complication_hypoxaemia').when(True, p['or_death_ALRI_SpO2<=92%']),
+                Predictor('ri_complication_hypoxaemia').when(True, p['or_death_ALRI_SpO2<93%']),
                 Predictor('hv_inf').when(True, p['rr_ALRI_HIV/AIDS']),
-                # Predictor('referral_from_hsa_hc').when(True, p['or_death_ALRI_hc_referral'])
             )
 
         self.death_risk = set_lm_death()
-        return self.death_risk.predict(df.loc[[person_id]]).values[0] > self.rng.rand()
+        if any_complications:
+            return self.death_risk.predict(df.loc[[person_id]]).values[0] > self.rng.rand()
+        else:
+            return False
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1419,8 +1422,6 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         else:
             self.sim.schedule_event(AlriNaturalRecoveryEvent(self.module, person_id), date_of_outcome)
             df.loc[person_id, ['ri_scheduled_recovery_date', 'ri_scheduled_death_date']] = [date_of_outcome, pd.NaT]
-
-        # TODO: death should only be applied to those with any complication, currently applies to all ALRIs
 
     def impose_symptoms_for_uncomplicated_disease(self, person_id, disease_type):
         """
