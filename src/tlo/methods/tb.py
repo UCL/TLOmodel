@@ -463,26 +463,37 @@ class Tb(Module):
             LinearModelType.MULTIPLICATIVE,
             p["prog_active"],
             Predictor("va_bcg_all_doses").when(True, p["rr_tb_bcg"]),
-            Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
-            Predictor("sy_aids_symptoms").when(True, p["rr_tb_aids"]),
-            Predictor("hv_art").when(
-                "on_VL_suppressed", (p["rr_tb_hiv"] * p["rr_tb_art_adult"])
+            # hiv- and on ipt
+            Predictor().when(
+                "(tb_on_ipt == True) & (hv_inf == False)", p["rr_ipt_adult"]
             ),
             Predictor("li_bmi").when(">=4", p["rr_tb_obese"]),
             # Predictor('diabetes').when(True, p['rr_tb_diabetes1']),
             Predictor("li_ex_alc").when(True, p["rr_tb_alcohol"]),
             Predictor("li_tob").when(True, p["rr_tb_smoking"]),
+            # -------------- PLHIV -------------- #
+            # hiv+ no AIDS, not on ART, not on IPT
             Predictor().when(
-                "(tb_on_ipt == True) & (hv_inf == False)", p["rr_ipt_adult"]
-            ),  # ipt, hiv-
+                '(hv_inf == True) & (hv_art != "on_VL_suppressed") & (tb_on_ipt == False) & (sy_aids_symptoms == False)',
+                p["rr_tb_hiv"],
+            ),
+            # hiv+, not on ART, AIDS symptoms
+            Predictor("sy_aids_symptoms").when(True, p["rr_tb_aids"]),
+            # hiv+, on ART, no IPT
+            Predictor().when(
+                '(hv_inf == True) & (hv_art == "on_VL_suppressed") & (tb_on_ipt == False)',
+                (p["rr_tb_hiv"] * p["rr_tb_art_adult"])
+            ),
+            # hiv+, on ART, on IPT
             Predictor().when(
                 '(tb_on_ipt == True) & (hv_inf == True) & (hv_art == "on_VL_suppressed")',
-                (p["rr_tb_hiv"] * p["rr_ipt_art_adult"]),
-            ),  # ipt, hiv+ on ART (suppressed)
+                (p["rr_tb_hiv"] * p["rr_tb_art_adult"] * p["rr_ipt_art_adult"]),
+            ),
+            # ipt, hiv+ not on ART (or on ART and not suppressed)
             Predictor().when(
                 '(tb_on_ipt == True) & (hv_inf == True) & (hv_art != "on_VL_suppressed")',
                 (p["rr_tb_hiv"] * p["rr_ipt_adult_hiv"]),
-            ),  # ipt, hiv+ not on ART (or on ART and not suppressed)
+            ),
         )
 
         # children progressing to active disease
@@ -498,22 +509,29 @@ class Tb(Module):
             Predictor().when(
                 "va_bcg_all_doses & (hv_inf == False) & (age_years <10)", p["rr_tb_bcg"]
             ),
-            Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
-            Predictor("sy_aids_symptoms").when(True, p["rr_tb_aids"]),
-            Predictor("hv_art").when(
-                "on_VL_suppressed", (p["rr_tb_hiv"] * p["rr_tb_art_child"])
-            ),
+            # -------------- PLHIV -------------- #
+            # hiv+ no AIDS, not on ART, not on IPT
             Predictor().when(
-                "(tb_on_ipt) & (hv_inf == False)", p["rr_ipt_child"]
-            ),  # ipt, hiv-
+                '(hv_inf == True) & (hv_art != "on_VL_suppressed") & (tb_on_ipt == False) & (sy_aids_symptoms == False)',
+                p["rr_tb_hiv"],
+            ),
+            # hiv+, not on ART, AIDS symptoms
+            Predictor("sy_aids_symptoms").when(True, p["rr_tb_aids"]),
+            # hiv+, on ART, no IPT
+            Predictor().when(
+                '(hv_inf == True) & (hv_art == "on_VL_suppressed") & (tb_on_ipt == False)',
+                (p["rr_tb_hiv"] * p["rr_tb_art_child"])
+            ),
+            # hiv+, on ART, on IPT
             Predictor().when(
                 '(tb_on_ipt == True) & (hv_inf == True) & (hv_art == "on_VL_suppressed")',
-                (p["rr_tb_hiv"] * p["rr_ipt_art_child"]),
-            ),  # ipt, hiv+ on ART (suppressed)
+                (p["rr_tb_hiv"] * p["rr_tb_art_child"] * p["rr_ipt_art_child"]),
+            ),
+            # ipt, hiv+ not on ART (or on ART and not suppressed)
             Predictor().when(
                 '(tb_on_ipt == True) & (hv_inf == True) & (hv_art != "on_VL_suppressed")',
                 (p["rr_tb_hiv"] * p["rr_ipt_child_hiv"]),
-            ),  # ipt, hiv+ not on ART (or on ART and not suppressed)
+            ),
         )
 
         self.lm["risk_relapse_2yrs"] = LinearModel(

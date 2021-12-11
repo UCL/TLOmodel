@@ -1594,10 +1594,10 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
         # need to discount some AIDS cases caused by HIV only
         # as AIDS caused by TB is now modelled separately
         # todo this should be delayed and not discounted
-        if (self.cause == 'AIDS_non_TB') and (
-            self.module.rng.random_sample() < self.module.parameters['discount_aids_due_to_tb']
-        ):
-            return
+        # if (self.cause == 'AIDS_non_TB') and (
+        #     self.module.rng.random_sample() < self.module.parameters['discount_aids_due_to_tb']
+        # ):
+        #     return
 
         # if eligible for aids onset (not treated with ART or currently has active TB):
         # Update Symptoms
