@@ -1417,6 +1417,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             idx_new_infection = will_be_infected[will_be_infected].index
 
             idx_new_infection_fsw = []
+
             # additional risk for fsw
             if to_sex == "F":
                 fsw_at_risk = df.loc[
