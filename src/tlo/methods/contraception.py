@@ -497,23 +497,24 @@ class Contraception(Module):
 
     def select_contraceptive_following_birth(self, mother_id):
         """Initiation of mother's contraception after birth."""
+        # todo - decide which one:
 
-        # Allocate the woman to a contraceptive status
-        # probs = self.processed_params['p_start_after_birth']
-        # new_contraceptive = self.rng.choice(
-        #     probs.index,
-        #     p=probs.values
-        # )
+        # OPTION 1: Allocate the woman to a contraceptive status
+        probs = self.processed_params['p_start_after_birth']
+        new_contraceptive = self.rng.choice(
+            probs.index,
+            p=probs.values
+        )
 
-        # Let the new contraceptive be equal to the one being used prior to the pregnancy
-        method_before_pregnancy = self.sim.population.props.at[mother_id, 'co_contraception_before_pregnancy']
-        new_contraceptive = method_before_pregnancy if pd.notnull(method_before_pregnancy) else 'not_using'
-
-        # ... but don't allow female sterilization to any woman below 30: reset to 'not_using'
-        if (self.sim.population.props.at[mother_id, 'age_years'] < 30) and (
-            new_contraceptive == 'female_sterilization'
-        ):
-            new_contraceptive = 'not_using'
+        # # OPTION 2: Let the new contraceptive be equal to the one being used prior to the pregnancy
+        # method_before_pregnancy = self.sim.population.props.at[mother_id, 'co_contraception_before_pregnancy']
+        # new_contraceptive = method_before_pregnancy if pd.notnull(method_before_pregnancy) else 'not_using'
+        #
+        # # ... but don't allow female sterilization to any woman below 30: reset to 'not_using'
+        # if (self.sim.population.props.at[mother_id, 'age_years'] < 30) and (
+        #     new_contraceptive == 'female_sterilization'
+        # ):
+        #     new_contraceptive = 'not_using'
 
         # Do the change in contraceptive
         self.schedule_batch_of_contraceptive_changes(ids=[mother_id], old=['not_using'], new=[new_contraceptive])
