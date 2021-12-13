@@ -47,7 +47,7 @@ hsi["date"] = pd.to_datetime(hsi["date"])
 hsi["month"] = hsi["date"].dt.month
 
 # Number of HSI that are taking place by originating module, by month
-year = 2010
+year = 2018
 hsi["Module"] = hsi["TREATMENT_ID"].str.split('_').apply(lambda x: x[0])
 evs = hsi.loc[hsi.date.dt.year == year]\
     .groupby(by=['month', 'Module'])\
@@ -65,7 +65,7 @@ plt.show()
 # Plot the breakdown of all HSI, over all the years
 evs = hsi.groupby(by=['Module']).size()
 evs.plot.pie()
-plt.title(f"HSI by Module")
+plt.title("HSI by Module")
 plt.tight_layout()
 plt.savefig(make_graph_file_name('HSI_per_module'))
 plt.show()
