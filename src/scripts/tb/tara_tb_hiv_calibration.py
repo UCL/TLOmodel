@@ -33,7 +33,6 @@ from random import randint
 from tlo import Date, logging
 from tlo.methods import (
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     epi,
     healthburden,
@@ -86,20 +85,18 @@ class TestScenario(BaseScenario):
                 resourcefilepath=self.resources,
                 service_availability=["*"],  # all treatment allowed
                 mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
-                ignore_cons_constraints=False,
-                # mode for consumable constraints (if ignored, all consumables available)
-                ignore_priority=False,  # do not use the priority information in HSI event to schedule
+                cons_availability="all",  # mode for consumable constraints (if ignored, all consumables available)
+                ignore_priority=True,  # do not use the priority information in HSI event to schedule
                 capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
                 disable=True,  # disables the healthsystem (no constraints and no logging) and every HSI runs
                 disable_and_reject_all=False,  # disable healthsystem and no HSI runs
-                store_hsi_events_that_have_run=False,
-            ),  # convenience function for debugging
+                store_hsi_events_that_have_run=False,  # convenience function for debugging
+            ),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(
                 resourcefilepath=self.resources
             ),
             healthburden.HealthBurden(resourcefilepath=self.resources),
-            dx_algorithm_child.DxAlgorithmChild(resourcefilepath=self.resources),
             epi.Epi(resourcefilepath=self.resources),
             hiv.Hiv(resourcefilepath=self.resources),
             tb.Tb(resourcefilepath=self.resources),

@@ -153,10 +153,10 @@ class Tb(Module):
         "rel_inf_smear_ng": Parameter(
             Types.REAL, "relative infectiousness of tb in hiv+ compared with hiv-"
         ),
-        "rel_inf_poor_tx": Parameter(
-            Types.REAL,
-            "relative infectiousness of tb in treated people with poor adherence",
-        ),
+        # "rel_inf_poor_tx": Parameter(
+        #     Types.REAL,
+        #     "relative infectiousness of tb in treated people with poor adherence",
+        # ),
         "rr_bcg_inf": Parameter(
             Types.REAL, "relative risk of tb infection with bcg vaccination"
         ),
@@ -254,9 +254,9 @@ class Tb(Module):
             Types.REAL,
             "relative risk of progression to active disease for adults with HIV on ART",
         ),
-        "rr_tb_overweight": Parameter(
-            Types.REAL, "relative risk of progression to active disease if overweight"
-        ),
+        # "rr_tb_overweight": Parameter(
+        #     Types.REAL, "relative risk of progression to active disease if overweight"
+        # ),
         "rr_tb_obese": Parameter(
             Types.REAL, "relative risk of progression to active disease if obese"
         ),
@@ -271,14 +271,14 @@ class Tb(Module):
         "rr_tb_smoking": Parameter(
             Types.REAL, "relative risk of progression to active disease with smoking"
         ),
-        "dur_prot_ipt": Parameter(
-            Types.REAL,
-            "duration in days of protection conferred by IPT against active TB",
-        ),
-        "dur_prot_ipt_infant": Parameter(
-            Types.REAL,
-            "duration days of protection conferred by IPT against active TB in infants",
-        ),
+        # "dur_prot_ipt": Parameter(
+        #     Types.REAL,
+        #     "duration in days of protection conferred by IPT against active TB",
+        # ),
+        # "dur_prot_ipt_infant": Parameter(
+        #     Types.REAL,
+        #     "duration days of protection conferred by IPT against active TB in infants",
+        # ),
         "rr_ipt_adult": Parameter(
             Types.REAL, "relative risk of active TB with IPT in adults"
         ),
@@ -303,10 +303,10 @@ class Tb(Module):
             Types.REAL,
             "sensitivity of sputum smear microscopy in sputum positive cases",
         ),
-        "sens_sputum_neg": Parameter(
-            Types.REAL,
-            "sensitivity of sputum smear microscopy in sputum negative cases",
-        ),
+        # "sens_sputum_neg": Parameter(
+        #     Types.REAL,
+        #     "sensitivity of sputum smear microscopy in sputum negative cases",
+        # ),
         "sens_clinical": Parameter(
             Types.REAL, "sensitivity of clinical diagnosis in detecting active TB"
         ),
@@ -325,12 +325,12 @@ class Tb(Module):
         "prob_tx_success_5_14": Parameter(
             Types.REAL, "Probability of treatment success for children aged 5-14 years"
         ),
-        "prop_ltfu_tx": Parameter(
-            Types.REAL, "Proportion lost to follow-up during initial treatment"
-        ),
-        "prop_ltfu_retx": Parameter(
-            Types.REAL, "Proportion lost to follow-up during retreatment"
-        ),
+        # "prop_ltfu_tx": Parameter(
+        #     Types.REAL, "Proportion lost to follow-up during initial treatment"
+        # ),
+        # "prop_ltfu_retx": Parameter(
+        #     Types.REAL, "Proportion lost to follow-up during retreatment"
+        # ),
         "rate_testing_general_pop": Parameter(
             Types.REAL,
             "rate of screening / testing per month in general population",
@@ -872,7 +872,7 @@ class Tb(Module):
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             tb_sputum_test=DxTest(
                 property='tb_smear',
-                sensitivity=1.0,
+                sensitivity=p["sens_sputum_pos"],
                 specificity=1.0,
                 item_codes=self.item_codes_for_consumables_required['sputum_test']
             )
@@ -900,8 +900,8 @@ class Tb(Module):
             tb_xray=DxTest(
                 property="tb_inf",
                 target_categories=["active"],
-                sensitivity=1.0,
-                specificity=1.0,
+                sensitivity=p["sens_clinical"],
+                specificity=["spec_clinical"],
                 item_codes=self.item_codes_for_consumables_required['chest_xray']
             )
         )
@@ -1428,13 +1428,13 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         # children aged 0-4 ds-tb
         ds_tx_failure0_4_idx = df.loc[
             df.is_alive
+            & (df.tb_strain == "ds")
             & df.tb_on_treatment
             & ~df.tb_treated_mdr
             & (
                 now
                 > (df.tb_date_treated + pd.DateOffset(months=p["ds_treatment_length"]))
             )
-            & ~df.tb_ever_treated
             & (df.age_years < 5)
             & (random_var < (1 - p["prob_tx_success_0_4"]))
         ].index
@@ -1442,13 +1442,13 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         # children aged 5-14 ds-tb
         ds_tx_failure5_14_idx = df.loc[
             df.is_alive
+            & (df.tb_strain == "ds")
             & df.tb_on_treatment
             & ~df.tb_treated_mdr
             & (
                 now
                 > (df.tb_date_treated + pd.DateOffset(months=p["ds_treatment_length"]))
             )
-            & ~df.tb_ever_treated
             & (df.age_years.between(5, 14))
             & (random_var < (1 - p["prob_tx_success_5_14"]))
         ].index
@@ -1456,6 +1456,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         # adults ds-tb
         ds_tx_failure_adult_idx = df.loc[
             df.is_alive
+            & (df.tb_strain == "ds")
             & df.tb_on_treatment
             & ~df.tb_treated_mdr
             & (
@@ -1488,6 +1489,8 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
                 > (df.tb_date_treated + pd.DateOffset(months=p["mdr_treatment_length"]))
             )
             & (df.tb_strain == "mdr")
+            & (random_var < (1 - p["prob_tx_success_mdr"]))
+
         ].index
 
         # join indices of failing cases together
@@ -2332,7 +2335,6 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ------------------------------------ MDR ------------------------------------
         # number new mdr tb cases
-        # TODO this will exclude mdr cases occurring in the last timeperiod but already cured
         new_mdr_cases = len(
             df[
                 (df.tb_strain == "mdr")
