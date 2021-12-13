@@ -4,6 +4,7 @@ in terms of staff allocation and daily capabilities in minutes per cadre per fac
 """
 
 from pathlib import Path
+
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import ScalarFormatter

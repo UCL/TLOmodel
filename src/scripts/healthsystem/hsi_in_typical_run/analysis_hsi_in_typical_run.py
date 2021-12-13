@@ -3,9 +3,11 @@ in a typical run."""
 
 # %% Declare the name of the file that specified the scenarios used in this run.
 from pathlib import Path
+
 import matplotlib.pyplot as plt
 # import numpy as np
 import pandas as pd
+
 from tlo.analysis.utils import get_scenario_outputs, load_pickled_dataframes
 
 scenario_filename = 'scenario_hsi_in_typical_run.py'
@@ -31,13 +33,22 @@ cap["date"] = pd.to_datetime(cap["date"])
 cap = cap.set_index('date')
 
 frac_time_used = cap['Frac_Time_Used_Overall']
+frac_time_used_2014_2018 = frac_time_used.loc['2013-12-31':'2019-01-01']
+frac_time_used_2016 = frac_time_used.loc['2015-12-31':'2017-01-01']
 
 # Plot:
-frac_time_used.plot()
-plt.title("Fraction of Total Healthcare Worker Time Used")
+frac_time_used_2014_2018.plot()
+plt.title("Fraction of Total Healthcare Worker Time Used 2014-2018")
 plt.xlabel("Date")
 plt.tight_layout()
-plt.savefig(make_graph_file_name('HSI_Frac_time_used'))
+plt.savefig(make_graph_file_name('HSI_Frac_time_used_2014_2018'))
+plt.show()
+
+frac_time_used_2016.plot()
+plt.title("Fraction of Total Healthcare Worker Time Used 2016")
+plt.xlabel("Date")
+plt.tight_layout()
+plt.savefig(make_graph_file_name('HSI_Frac_time_used_2016'))
 plt.show()
 
 # %% Number of HSI:
