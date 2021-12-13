@@ -103,6 +103,7 @@ def run_sim(tmpdir,
             sim.modules['Contraception'].processed_params['p_stop_per_month']
         )
         sim.modules['Contraception'].processed_params['p_switch_from_per_month'] *= 0.0
+        sim.modules['Contraception'].processed_params['p_start_after_birth'] *= 0.0
 
     if equalise_all_risk_of_preg:
         sim.modules['Contraception'].processed_params['p_pregnancy_no_contraception_per_month'].loc[:, :] = 0.02
@@ -367,30 +368,24 @@ def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir):
 
 
 def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_level(tmpdir):
-    """Check that if someone is on a method that requires an HSI, and if consumable is not available and/or the health
-    system cannot do the appointment, then that the person defaults to not using after they become due for a
-    maintenance appointment."""
+    """Check that if someone is on a method that requires an HSI for maintenance, and if consumable is not available
+     and/or the health system cannot do the appointment, then that the person defaults to not using after they become
+     due for a maintenance appointment."""
 
     def check_that_persons_on_contraceptive_default(sim):
-        """Edit parameters, run simulation and do checks; women start on a contraceptive, and those who are on a
-        contraceptive that requires HSI and consumables default by the end of the simulation."""
-
-        # Let there be no chance of starting, switching or discontinuing (everyone would maintain if HSI/cons available)
-        pp = sim.modules['Contraception'].processed_params
-        pp['p_start_per_month'] = zero_param(pp['p_start_per_month'])
-        pp['p_start_after_birth'] *= 0.0
-        pp['p_stop_per_month'] = zero_param(pp['p_stop_per_month'])
-        pp['p_switch_from_per_month'] *= 0.0
+        """Before simulaton starts, put women on a contraceptive, and make some due an appointment. Then run the
+        simulation. Check that those who are on a contraceptive that requires HSI and consumables default to "not_using"
+        by the end of the simulation."""
 
         df = sim.population.props
         contraceptives = list(sim.modules['Contraception'].all_contraception_states)
 
-        # Set that person_id=0-10 are woman on each of the contraceptive and due an appointment next month (these women
-        # will default if on a contraceptive that requires a consumable).
+        # Set that person_id=0-10 are woman on each of the contraceptive and are due an appointment next month (these
+        # women will default if on a contraceptive that requires a consumable).
         person_ids_due_appt = list(range(len(contraceptives)))
 
-        # Set that person_id=12-25 are women each of the contraceptives and not due an appointment during the simulation
-        # These women will not default.
+        # Set that person_id=12-25 are women each of the contraceptives and are not due an appointment during the
+        # simulation. These women will not default.
         person_ids_not_due_appt = [i + len(contraceptives) for i in person_ids_due_appt]
 
         for i, contraceptive in enumerate(contraceptives):
@@ -420,16 +415,13 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
         sim.simulate(end_date=sim.start_date + pd.DateOffset(months=3))
         __check_no_illegal_switches(sim)
 
-        # Those on a contraceptive that requires HSI for maintenance should have defaulted to "not_using" (or another
-        # method that does not require an HSI switch to, in case there is a "natural choice" to switch to it).
-        states_that_do_require_HSI_to_switch_to = (sim.modules['Contraception'].all_contraception_states -
-                                                   sim.modules['Contraception'].states_that_may_require_HSI_to_switch_to
-                                                   )
+        # Those on a contraceptive that requires HSI for maintenance should have defaulted to "not_using".
+        # NB. All defaulters will move to "not_using" because not other kind of natural switching is allowed in this
+        #  simulation.
         for i, _c in enumerate(contraceptives):
-            # Those due an appointment will have defaulted if they are on a contraceptive that requires HSI/consumables
 
             if _c in sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on:
-                assert df.at[person_ids_due_appt[i], "co_contraception"] in states_that_do_require_HSI_to_switch_to
+                assert df.at[person_ids_due_appt[i], "co_contraception"] == "not_using"
             else:
                 assert df.at[person_ids_due_appt[i], "co_contraception"] == _c
 
@@ -441,6 +433,7 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
                   use_healthsystem=True,
                   healthsystem_disable_and_reject_all=True,
                   consumables_available=True,
+                  no_changes_in_contraception=True,
                   run=False,
                   popsize=50
                   )
@@ -451,6 +444,7 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
                   use_healthsystem=True,
                   disable=False,
                   consumables_available=False,
+                  no_changes_in_contraception=True,
                   run=False,
                   popsize=50
                   )
