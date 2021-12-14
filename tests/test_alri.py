@@ -131,6 +131,7 @@ def test_integrity_of_linear_models(tmpdir):
                         age=age,
                         pathogen=patho,
                         va_hib_all_doses=True,
+
                         va_pneumo_all_doses=va_pneumo_all_doses
                     )
 

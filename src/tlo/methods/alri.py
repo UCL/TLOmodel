@@ -1015,7 +1015,7 @@ class Models:
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
                     Predictor().when('(va_measles_all_doses == False) & (age_years >= 1)',
                                      p['rr_ALRI_incomplete_measles_immunisation']),
-                    Predictor('hv_inf').when(True, p['rr_ALRI_HIV/AIDS']),
+                    Predictor().when('(hv_inf == True) & (hv_art!= "on_VL_suppressed")', p['rr_ALRI_HIV/AIDS']),
                     Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_ALRI_underweight']),
                     Predictor('nb_breastfeeding_status').when('exclusive', 1.0)
                                                         .otherwise(p['rr_ALRI_non_exclusive_breastfeeding'])
@@ -1030,16 +1030,15 @@ class Models:
                 return unscaled_lm
 
             # If some 1 year-olds then can do scaling:
-            target_mean = p[f'base_inc_rate_ALRI_by_{patho}'][0]
+            target_mean = p[f'base_inc_rate_ALRI_by_{patho}'][1]
             actual_mean = unscaled_lm.predict(df.loc[one_year_olds]).mean()
             scaled_intercept = 1.0 * (target_mean / actual_mean) \
                 if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
             scaled_lm = make_naive_linear_model(patho, intercept=scaled_intercept)
 
-            # check by applying the model to mean incidence of 0-year-olds
-            if (df.is_alive & (df.age_years == 1)).sum() > 0:
-                assert (target_mean - scaled_lm.predict(df.loc[one_year_olds]).mean()) < 1e-10
-                return scaled_lm
+            # check by applying the model to mean incidence of 1-year-olds
+            assert (target_mean - scaled_lm.predict(df.loc[one_year_olds]).mean()) < 1e-10
+            return scaled_lm
 
         for patho in self.module.all_pathogens:
             self.incidence_equations_by_pathogen[patho] = make_scaled_linear_model_for_incidence(patho)
@@ -1099,7 +1098,7 @@ class Models:
             raise ValueError('Pathogen is not recognised.')
 
         assert disease_type in self.module.disease_types
-        assert bacterial_coinfection in (self.module.pathogens['bacterial'] + ['none'] + [np.nan])
+        assert bacterial_coinfection in (self.module.pathogens['bacterial'] + [np.nan])
 
         return disease_type, bacterial_coinfection
 
@@ -1134,9 +1133,6 @@ class Models:
         outcome = self.rng.choice(list(probs.keys()), p=list(probs.values()))
 
         return outcome if outcome != '_none_' else np.nan
-
-
-
 
     def complications(self, person_id):
         """Determine the set of complication for this person"""
@@ -1731,10 +1727,12 @@ class AlriPropertiesOfOtherModules(Module):
     # Though this module provides some properties from NewbornOutcomes we do not list
     # NewbornOutcomes in the ALTERNATIVE_TO set to allow using in conjunction with
     # SimplifiedBirths which can also be used as an alternative to NewbornOutcomes
-    ALTERNATIVE_TO = {'Hiv', 'Measles', 'Epi', 'Wasting'}
+    ALTERNATIVE_TO = {'Hiv', 'Epi', 'Wasting'}
 
     PROPERTIES = {
         'hv_inf': Property(Types.BOOL, 'temporary property'),
+        'hv_art': Property(Types.CATEGORICAL, 'temporary property',
+                           categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
         'nb_low_birth_weight_status': Property(Types.CATEGORICAL, 'temporary property',
                                                categories=['extremely_low_birth_weight', 'very_low_birth_weight',
                                                            'low_birth_weight', 'normal_birth_weight']),
@@ -1757,6 +1755,7 @@ class AlriPropertiesOfOtherModules(Module):
     def initialise_population(self, population):
         df = population.props
         df.loc[df.is_alive, 'hv_inf'] = False
+        df.loc[df.is_alive, 'hv_art'] = 'not'
         df.loc[df.is_alive, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
         df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.loc[df.is_alive, 'va_pneumo_all_doses'] = False
@@ -1770,6 +1769,7 @@ class AlriPropertiesOfOtherModules(Module):
     def on_birth(self, mother, child):
         df = self.sim.population.props
         df.at[child, 'hv_inf'] = False
+        df.at[child, 'hv_art'] = 'not'
         df.at[child, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
         df.at[child, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.at[child, 'va_pneumo_all_doses'] = False
