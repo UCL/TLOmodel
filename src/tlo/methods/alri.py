@@ -444,7 +444,7 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'odds ratio of ALRI death for children referred from a health center'
                       ),
-        'or_death_ALRI_SpO2<=92%':
+        'or_death_ALRI_SpO2<93%':
             Parameter(Types.REAL,
                       'odds ratio of ALRI death for SpO2<=92%'
                       ),
