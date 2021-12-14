@@ -29,6 +29,7 @@ with all parameters set to default
 """
 
 from random import randint
+
 import numpy as np
 
 from tlo import Date, logging

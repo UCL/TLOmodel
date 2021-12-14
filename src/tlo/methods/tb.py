@@ -474,7 +474,10 @@ class Tb(Module):
             # -------------- PLHIV -------------- #
             # hiv+ no AIDS, not on ART, not on IPT
             Predictor().when(
-                '(hv_inf == True) & (hv_art != "on_VL_suppressed") & (tb_on_ipt == False) & (sy_aids_symptoms == False)',
+                '(hv_inf == True) & '
+                '(hv_art != "on_VL_suppressed") & '
+                '(tb_on_ipt == False) & '
+                '(sy_aids_symptoms == False)',
                 p["rr_tb_hiv"],
             ),
             # hiv+, not on ART, AIDS symptoms
@@ -512,7 +515,10 @@ class Tb(Module):
             # -------------- PLHIV -------------- #
             # hiv+ no AIDS, not on ART, not on IPT
             Predictor().when(
-                '(hv_inf == True) & (hv_art != "on_VL_suppressed") & (tb_on_ipt == False) & (sy_aids_symptoms == False)',
+                '(hv_inf == True) & '
+                '(hv_art != "on_VL_suppressed") & '
+                '(tb_on_ipt == False) & '
+                '(sy_aids_symptoms == False)',
                 p["rr_tb_hiv"],
             ),
             # hiv+, not on ART, AIDS symptoms

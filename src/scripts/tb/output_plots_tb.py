@@ -785,89 +785,84 @@ plt.show()
 
 # # ---------------------------------------------------------------------- #
 # distribution of survival times
-df = sim.population.props
-
-# HIV
-# select adults not on treatment (never treated)
-df_hiv = df.loc[
-    df.hv_inf &
-    (df.hv_art == "not") &
-    (df.age_years >= 15) &
-    ((df.cause_of_death == "AIDS_TB") | (df.cause_of_death == "AIDS_non_TB"))]
-
-len(df_hiv)  # 3020 from pop 100k
-len(df_hiv.date_of_death)
-
-# get times from infection to death in years
-survival_times = df_hiv.date_of_death - df_hiv.hv_date_inf
-survival_times = survival_times[survival_times.notnull()]
-survival_times = pd.Series(survival_times.dt.days / 365.25)
-
-# plot histogram
-survival_times.plot.hist(grid=True, bins=20, rwidth=0.9,
-                   color='#607c8e')
-plt.title('Distribution of survival times for PLHIV')
-plt.xlabel('Survival time, years')
-plt.ylabel('Frequency')
-plt.grid(axis='y', alpha=0.75)
-plt.show()
-
-
-# children with HIV
-# select adults not on treatment (never treated)
-df_hiv_child = df.loc[
-    df.hv_inf &
-    (df.hv_art == "not") &
-    (df.age_years < 15) &
-    ((df.cause_of_death == "AIDS_TB") | (df.cause_of_death == "AIDS_non_TB"))]
-
-len(df_hiv_child)  # 3020 from pop 100k
-len(df_hiv_child.date_of_death)
-
-# get times from infection to death in years
-survival_times = df_hiv_child.date_of_death - df_hiv_child.hv_date_inf
-survival_times = survival_times[survival_times.notnull()]
-survival_times = pd.Series(survival_times.dt.days / 365.25)
-
-# plot histogram
-survival_times.plot.hist(grid=True, bins=20, rwidth=0.9,
-                   color='#607c8e')
-plt.title('Distribution of survival times for PLHIV: children')
-plt.xlabel('Survival time, years')
-plt.ylabel('Frequency')
-plt.grid(axis='y', alpha=0.75)
-plt.show()
-
-
-# TB
-# select adults never treated
-df_tb = df.loc[
-    ~df.tb_date_active.isnull() &
-    df.tb_ever_treated &
-    (df.age_years >= 15) &
-    ((df.cause_of_death == "AIDS_TB") | (df.cause_of_death == "TB"))]
-
-len(df_tb)  # 12 from pop 100k
-len(df_tb.date_of_death)
-
-# get times from infection to death in years
-survival_times = df_tb.date_of_death - df_tb.tb_date_active
-survival_times = survival_times[survival_times.notnull()]
-survival_times = pd.Series(survival_times.dt.days / 365.25)
-
-# plot histogram
-survival_times.plot.hist(grid=True, bins=20, rwidth=0.9,
-                   color='#607c8e')
-plt.title('Distribution of survival times for TB')
-plt.xlabel('Survival time, years')
-plt.ylabel('Frequency')
-plt.grid(axis='y', alpha=0.75)
-plt.show()
-
-
-
-
-
+# df = sim.population.props
+#
+# # HIV
+# # select adults not on treatment (never treated)
+# df_hiv = df.loc[
+#     df.hv_inf &
+#     (df.hv_art == "not") &
+#     (df.age_years >= 15) &
+#     ((df.cause_of_death == "AIDS_TB") | (df.cause_of_death == "AIDS_non_TB"))]
+#
+# len(df_hiv)  # 3020 from pop 100k
+# len(df_hiv.date_of_death)
+#
+# # get times from infection to death in years
+# survival_times = df_hiv.date_of_death - df_hiv.hv_date_inf
+# survival_times = survival_times[survival_times.notnull()]
+# survival_times = pd.Series(survival_times.dt.days / 365.25)
+#
+# # plot histogram
+# survival_times.plot.hist(grid=True, bins=20, rwidth=0.9,
+#                    color='#607c8e')
+# plt.title('Distribution of survival times for PLHIV')
+# plt.xlabel('Survival time, years')
+# plt.ylabel('Frequency')
+# plt.grid(axis='y', alpha=0.75)
+# plt.show()
+#
+#
+# # children with HIV
+# # select adults not on treatment (never treated)
+# df_hiv_child = df.loc[
+#     df.hv_inf &
+#     (df.hv_art == "not") &
+#     (df.age_years < 15) &
+#     ((df.cause_of_death == "AIDS_TB") | (df.cause_of_death == "AIDS_non_TB"))]
+#
+# len(df_hiv_child)  # 3020 from pop 100k
+# len(df_hiv_child.date_of_death)
+#
+# # get times from infection to death in years
+# survival_times = df_hiv_child.date_of_death - df_hiv_child.hv_date_inf
+# survival_times = survival_times[survival_times.notnull()]
+# survival_times = pd.Series(survival_times.dt.days / 365.25)
+#
+# # plot histogram
+# survival_times.plot.hist(grid=True, bins=20, rwidth=0.9,
+#                    color='#607c8e')
+# plt.title('Distribution of survival times for PLHIV: children')
+# plt.xlabel('Survival time, years')
+# plt.ylabel('Frequency')
+# plt.grid(axis='y', alpha=0.75)
+# plt.show()
+#
+#
+# # TB
+# # select adults never treated
+# df_tb = df.loc[
+#     ~df.tb_date_active.isnull() &
+#     df.tb_ever_treated &
+#     (df.age_years >= 15) &
+#     ((df.cause_of_death == "AIDS_TB") | (df.cause_of_death == "TB"))]
+#
+# len(df_tb)  # 12 from pop 100k
+# len(df_tb.date_of_death)
+#
+# # get times from infection to death in years
+# survival_times = df_tb.date_of_death - df_tb.tb_date_active
+# survival_times = survival_times[survival_times.notnull()]
+# survival_times = pd.Series(survival_times.dt.days / 365.25)
+#
+# # plot histogram
+# survival_times.plot.hist(grid=True, bins=20, rwidth=0.9,
+#                    color='#607c8e')
+# plt.title('Distribution of survival times for TB')
+# plt.xlabel('Survival time, years')
+# plt.ylabel('Frequency')
+# plt.grid(axis='y', alpha=0.75)
+# plt.show()
 
 # # ---------------------------------------------------------------------- #
 # HIV test logger
