@@ -440,10 +440,6 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'odds ratio of ALRI death for male children'
                       ),
-        'or_death_ALRI_hc_referral':
-            Parameter(Types.REAL,
-                      'odds ratio of ALRI death for children referred from a health center'
-                      ),
         'or_death_ALRI_SpO2<93%':
             Parameter(Types.REAL,
                       'odds ratio of ALRI death for SpO2<=92%'
@@ -492,7 +488,7 @@ class Alri(Module):
                       ),
         'prob_danger_signs_in_sepsis':
             Parameter(Types.REAL,
-                      'probability of any danger signs in complicated ALRI'
+                      'probability of any danger signs in ALRI complicated by sepsis'
                       ),
         'prob_danger_signs_in_SpO2<90%':
             Parameter(Types.REAL,
