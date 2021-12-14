@@ -213,9 +213,14 @@ def test_basic_run(tmpdir):
 def test_basic_run_lasting_two_years(tmpdir):
     """Check logging results in a run of the model for two years, with daily property config checking"""
     dur = pd.DateOffset(years=2)
-    popsize = 5000
+    popsize = 2000
     sim = get_sim(tmpdir)
     sim.make_initial_population(n=popsize)
+
+    # increase death risk
+    params = sim.modules['Alri'].parameters
+    params['baseline_odds_alri_death'] *= 5.0
+
     sim.simulate(end_date=start_date + dur)
 
     # Read the log for the population counts of incidence:
