@@ -104,3 +104,4 @@ appts_by_treatment_id = \
     hsi.set_index('TREATMENT_ID')['Number_By_Appt_Type_Code'].drop_duplicates().apply(pd.Series).fillna(0.0)
 
 # Plot...
+# See the Sankey plot in analysis_sankey_appt_and_hsi.ipynb (in the same folder)
