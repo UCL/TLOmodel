@@ -901,7 +901,7 @@ class Tb(Module):
                 property="tb_inf",
                 target_categories=["active"],
                 sensitivity=p["sens_clinical"],
-                specificity=["spec_clinical"],
+                specificity=p["spec_clinical"],
                 item_codes=self.item_codes_for_consumables_required['chest_xray']
             )
         )

@@ -832,7 +832,7 @@ survival_times = pd.Series(survival_times.dt.days / 365.25)
 # plot histogram
 survival_times.plot.hist(grid=True, bins=20, rwidth=0.9,
                    color='#607c8e')
-plt.title('Distribution of survival times for PLHIV')
+plt.title('Distribution of survival times for PLHIV: children')
 plt.xlabel('Survival time, years')
 plt.ylabel('Frequency')
 plt.grid(axis='y', alpha=0.75)

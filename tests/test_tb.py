@@ -420,6 +420,11 @@ def test_children_referrals():
 
     # Make the population
     sim.make_initial_population(n=popsize)
+
+    # make clinical diagnosis perfect
+    sim.modules['Tb'].parameters["sens_clinical"] = 1.0
+    sim.modules['Tb'].parameters["spec_clinical"] = 1.0
+
     # simulate for 0 days, just get everything set up (dxtests etc)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 

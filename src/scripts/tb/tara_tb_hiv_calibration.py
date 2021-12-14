@@ -29,6 +29,7 @@ with all parameters set to default
 """
 
 from random import randint
+import numpy as np
 
 from tlo import Date, logging
 from tlo.methods import (
@@ -46,9 +47,9 @@ from tlo.methods import (
 from tlo.scenario import BaseScenario
 
 # define size of parameter lists
-# hiv_param_length = 1
-# tb_param_length = 1
-# number_of_draws = hiv_param_length * tb_param_length
+hiv_param_length = 3
+tb_param_length = 3
+number_of_draws = hiv_param_length * tb_param_length
 
 
 class TestScenario(BaseScenario):
@@ -62,7 +63,7 @@ class TestScenario(BaseScenario):
         self.end_date = Date(2020, 1, 1)
         self.pop_size = 200000
         self.number_of_draws = 1
-        self.runs_per_draw = 5
+        self.runs_per_draw = 3
 
     def log_configuration(self):
         return {
@@ -103,24 +104,23 @@ class TestScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        # grid = self.make_grid(
-        #     {
-        #         "beta": np.linspace(start=0.02, stop=0.06, num=hiv_param_length),
-        #         "transmission_rate": np.linspace(
-        #             start=0.005, stop=0.2, num=tb_param_length
-        #         ),
-        #     }
-        # )
-        #
-        # return {
-        #     "Hiv": {
-        #         "beta": grid["beta"][draw_number],
-        #     },
-        #     "Tb": {
-        #         "transmission_rate": grid["transmission_rate"][draw_number],
-        #     },
-        # }
-        return
+        grid = self.make_grid(
+            {
+                "beta": np.linspace(start=0.05, stop=0.15, num=hiv_param_length),
+                "transmission_rate": np.linspace(
+                    start=1.4, stop=2.2, num=tb_param_length
+                ),
+            }
+        )
+
+        return {
+            "Hiv": {
+                "beta": grid["beta"][draw_number],
+            },
+            "Tb": {
+                "transmission_rate": grid["transmission_rate"][draw_number],
+            },
+        }
 
 
 if __name__ == "__main__":
