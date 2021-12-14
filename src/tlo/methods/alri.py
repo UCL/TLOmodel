@@ -1144,11 +1144,15 @@ class Models:
             probs['Hib'] *= p['rr_Hib_ALRI_with_Hib_vaccine']
 
         # Add in the probability that there is none (to ensure that all probabilities sum to 1.0)
-        probs['none'] = 1.0 - sum(probs.values())
+        probs['_none_'] = 1.0 - sum(probs.values())
 
         # return the random selection of bacterial coinfection (including possibly np.nan for 'none')
         outcome = self.rng.choice(list(probs.keys()), p=list(probs.values()))
-        return outcome
+
+        return outcome if outcome != '_none_' else np.nan
+
+
+
 
     def complications(self, person_id):
         """Determine the set of complication for this person"""
