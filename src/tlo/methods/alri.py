@@ -787,19 +787,18 @@ class Alri(Module):
                 self.sim.modules['SymptomManager'].who_has('difficult_breathing'))) & set(
                 self.sim.modules['SymptomManager'].who_has('danger_signs')))
 
+        # get the list of people with non-severe pneumonia
         has_fast_breathing_or_chest_indrawing = \
             list(set(self.sim.modules['SymptomManager'].who_has('tachypnoea')) | set(
                 self.sim.modules['SymptomManager'].who_has('chest_indrawing'))
                  )
-
-        # get the list of people with non-severe pneumonia
-        for i in has_danger_signs:
-            if i in has_fast_breathing_or_chest_indrawing:
-                has_fast_breathing_or_chest_indrawing.remove(i)
+        has_fast_breathing_or_chest_indrawing_but_not_danger_signs = \
+            set(has_fast_breathing_or_chest_indrawing) - set(has_danger_signs)
 
         # report the DALYs occurred
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
-        total_daly_values.loc[has_fast_breathing_or_chest_indrawing] = self.daly_wts['daly_non_severe_ALRI']
+        total_daly_values.loc[
+            has_fast_breathing_or_chest_indrawing_but_not_danger_signs] = self.daly_wts['daly_non_severe_ALRI']
         total_daly_values.loc[has_danger_signs] = self.daly_wts['daly_severe_ALRI']
 
         # Split out by pathogen that causes the Alri
