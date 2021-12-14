@@ -955,27 +955,16 @@ class Alri(Module):
 
     def impose_symptoms_for_complication(self, complication, person_id):
         """Impose symptoms for a complication."""
-        symptoms = self.models.symptoms_for_complication(person_id, complication=complication)
+        df = self.sim.population.props
+        oxygen_saturation = df.at[person_id, 'ri_SpO2_level']
+        symptoms = self.models.symptoms_for_complication(complication=complication,
+                                                         oxygen_saturation=oxygen_saturation)
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=person_id,
             symptom_string=symptoms,
             add_or_remove='+',
             disease_module=self,
         )
-
-    def hypoxaemia_severity(self, person_id, complication_set):
-        """ Determine the level of severity of hypoxaemia by SpO2 measurement"""
-        p = self.parameters
-        df = self.sim.population.props
-        person = self.sim.population.props.loc[person_id]
-
-        if 'hypoxaemia' in complication_set:
-            if p['proportion_hypoxaemia_with_SpO2<90%'] > self.rng.rand():
-                df.loc[person_id, 'ri_SpO2_level'] = '<90%'
-            else:
-                df.loc[person_id, 'ri_SpO2_level'] = '90-92%'
-        else:
-            df.loc[person_id, 'ri_SpO2_level'] = '>=93%'
 
 
 class Models:
@@ -1166,14 +1155,12 @@ class Models:
         if disease_type == 'pneumonia' and (prob_pulmonary_complications > self.rng.rand()):
             for c in ['pneumothorax', 'pleural_effusion', 'lung_abscess', 'empyema']:
                 probs[c] += p[f'prob_{c}_in_pulmonary_complicated_pneumonia']
-                assert any(c)
                 # TODO: lung abscess, empyema should only apply to (primary or secondary) bacteria ALRIs
 
         # probabilities for systemic complications
         if disease_type == 'pneumonia' and (primary_path_is_bacterial or has_secondary_bacterial_inf):
-            for c in ['sepsis']:
-                probs[c] += p['prob_bacteraemia_in_pneumonia'] * \
-                            p['prob_progression_to_sepsis_with_bacteraemia']
+            probs['sepsis'] += p['prob_bacteraemia_in_pneumonia'] * \
+                               p['prob_progression_to_sepsis_with_bacteraemia']
 
         if disease_type == 'pneumonia':
             for c in ['hypoxaemia']:
@@ -1187,6 +1174,19 @@ class Models:
         complications = {c for c, p in probs.items() if p > self.rng.rand()}
 
         return complications
+
+    def set_hypoxaemia_severity(self, person_id, complication_set):
+        """ Determine the level of severity of hypoxaemia by SpO2 measurement"""
+        p = self.p
+        df = self.module.sim.population.props
+
+        if 'hypoxaemia' in complication_set:
+            if p['proportion_hypoxaemia_with_SpO2<90%'] > self.rng.rand():
+                df.at[person_id, 'ri_SpO2_level'] = '<90%'
+            else:
+                df.at[person_id, 'ri_SpO2_level'] = '90-92%'
+        else:
+            df.at[person_id, 'ri_SpO2_level'] = '>=93%'
 
     def symptoms_for_disease(self, disease_type):
         """Determine set of symptom (before complications) for a given instance of disease"""
@@ -1205,7 +1205,7 @@ class Models:
 
         return symptoms
 
-    def symptoms_for_complication(self, person_id, complication):
+    def symptoms_for_complication(self, complication, oxygen_saturation):
         """Probability of each symptom for a person given a complication"""
         p = self.p
         df = self.module.sim.population.props
@@ -1225,12 +1225,12 @@ class Models:
                 'chest_indrawing': p['prob_chest_indrawing_in_pulmonary_complications']
             }
 
-        if complication == 'hypoxaemia' and (df.at[person_id, 'ri_SpO2_level'] == '<90%'):
+        if complication == 'hypoxaemia' and (oxygen_saturation == '<90%'):
             probs = {
                 'danger_signs': p['prob_danger_signs_in_SpO2<90%'],
                 'chest_indrawing': p['prob_chest_indrawing_in_SpO2<90%']
             }
-        if complication == 'hypoxaemia' and (df.at[person_id, 'ri_SpO2_level'] == '90-92%'):
+        if complication == 'hypoxaemia' and (oxygen_saturation == '90-92%'):
             probs = {
                 'danger_signs': p['prob_danger_signs_in_SpO2_90-92%'],
                 'chest_indrawing': p['prob_chest_indrawing_in_SpO2_90-92%']
@@ -1445,7 +1445,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         complications = models.complications(person_id=person_id)
         df.loc[person_id, [f"ri_complication_{complication}" for complication in complications]] = True
-        self.module.hypoxaemia_severity(person_id=person_id, complication_set=complications)
+        models.set_hypoxaemia_severity(person_id=person_id, complication_set=complications)
 
         for complication in complications:
             m.impose_symptoms_for_complication(person_id=person_id, complication=complication)

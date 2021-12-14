@@ -174,7 +174,7 @@ def test_integrity_of_linear_models(tmpdir):
 
     # --- symptoms_for_complication
     for complication in alri.complications:
-        res = models.symptoms_for_complication(person_id, complication)
+        res = models.symptoms_for_complication(complication, oxygen_saturation='<90%')
         assert isinstance(res, set)
         assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
 
@@ -277,8 +277,7 @@ def test_nat_hist_recovery(tmpdir):
     # make probability of symptoms very high
     params = sim.modules['Alri'].parameters
     all_symptoms = {
-        'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'chest_pain', 'cyanosis',
-        'respiratory_distress', 'danger_signs'
+        'cough', 'difficult_breathing', 'tachypoea', 'chest_indrawing', 'danger_signs'
     }
     for p in params:
         if any([p.startswith(f"prob_{symptom}") for symptom in all_symptoms]):
@@ -575,15 +574,15 @@ def test_immediate_onset_complications(tmpdir):
 
     # Check has some complications ['pneumothorax', 'pleural_effusion', 'hypoxaemia'] are present for pneumonia disease
     # caused by viruses
-    if df.loc[person_id, 'ri_disease_type'] == 'pneumonia':
+    if df.at[person_id, 'ri_disease_type'] == 'pneumonia':
         complications_cols = [
             f"ri_complication_{complication}" for complication in
             ['pneumothorax', 'pleural_effusion', 'hypoxaemia']]
         assert df.loc[person_id, complications_cols].all()
 
     # Check SpO2<93% if hypoxaemia is present
-    if df.loc[person_id, 'ri_complication_hypoxaemia']:
-        assert df.loc[person_id, 'ri_SpO2_level'] != '>=93%'
+    if df.at[person_id, 'ri_complication_hypoxaemia']:
+        assert df.at[person_id, 'ri_SpO2_level'] != '>=93%'
 
 
 def test_no_immediate_onset_complications(tmpdir):
