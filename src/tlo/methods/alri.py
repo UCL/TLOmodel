@@ -981,9 +981,6 @@ class Models:
         # set-up the linear models for the incidence risk for each pathogen
         self.make_model_for_acquisition_risk()
 
-        # set-up the linear model for the death risk
-        self.death_risk = None
-
     def make_model_for_acquisition_risk(self):
         """"Model for the acquisition of a primary pathogen that can cause ALri"""
         p = self.p
@@ -1237,7 +1234,7 @@ class Models:
 
         return symptoms
 
-    def compute_death_risk(self, person_id):
+    def apply_death(self, person_id):
         """Determine if person will die from Alri. Returns True/False"""
         p = self.p
         df = self.module.sim.population.props
@@ -1245,24 +1242,41 @@ class Models:
         # check if any complications - death occurs only if a complication is present
         any_complications = person[[f'ri_complication_{c}' for c in self.module.complications]].any()
 
-        def set_lm_death():
-            """ Linear Model for ALRI death (Logistic regression)"""
+        # Baseline risk:
+        odds_death = p['baseline_odds_alri_death']
 
-            return LinearModel(
-                LinearModelType.LOGISTIC,
-                p['baseline_odds_alri_death'],
-                Predictor('age_exact_years').when(1/6, p['or_death_ALRI_age<2mo']),
-                Predictor('ri_primary_pathogen').when('P.jirovecii', p['or_death_ALRI_P.jirovecii']),
-                Predictor('un_clinical_acute_malnutrition').when('SAM', p['or_death_ALRI_SAM']),
-                Predictor('un_clinical_acute_malnutrition').when('MAM', p['or_death_ALRI_MAM']),
-                Predictor('sex').when('M', p['or_death_ALRI_male']),
-                Predictor('ri_complication_hypoxaemia').when(True, p['or_death_ALRI_SpO2<93%']),
-                Predictor('hv_inf').when(True, p['rr_ALRI_HIV/AIDS']),
-            )
+        # The effect of age:
+        if person['age_exact_years'] < 1/6:
+            odds_death *= p['or_death_ALRI_age<2mo']
 
-        self.death_risk = set_lm_death()
+        # The effect of gender:
+        if person['sex'] == 'M':
+            odds_death *= p['or_death_ALRI_male']
+
+        # The effect of P.jirovecii infection:
+        if person['ri_primary_pathogen'] == 'P.jirovecii':
+            odds_death *= p['or_death_ALRI_P.jirovecii']
+
+        # The effect of hypoxaemia:
+        if person['ri_complication_hypoxaemia']:
+            odds_death *= p['or_death_ALRI_SpO2<93%']
+
+        # The effect of factors defined in other modules:
+        # HIV
+        if person['hv_inf'] & (person['hv_art'] != "on_VL_suppressed"):
+            odds_death *= p['or_death_ALRI_HIV/AIDS']
+
+        # malnutrition:
+        if person['un_clinical_acute_malnutrition'] == 'SAM':
+            odds_death *= p['or_death_ALRI_SAM']
+        elif person['un_clinical_acute_malnutrition'] == 'MAM':
+            odds_death *= p['or_death_ALRI_MAM']
+
+        # Convert odds to probability
+        risk_death = odds_death / (1 + odds_death)
+
         if any_complications:
-            return self.death_risk.predict(df.loc[[person_id]]).values[0] > self.rng.rand()
+            return risk_death > self.rng.rand()
         else:
             return False
 
@@ -1411,7 +1425,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         self.impose_complications(person_id=person_id)
 
         # ----------------------------------- Outcome  -----------------------------------
-        if models.compute_death_risk(person_id=person_id):
+        if models.apply_death(person_id=person_id):
             self.sim.schedule_event(AlriDeathEvent(self.module, person_id), date_of_outcome)
             df.loc[person_id, ['ri_scheduled_death_date', 'ri_scheduled_recovery_date']] = [date_of_outcome, pd.NaT]
         else:

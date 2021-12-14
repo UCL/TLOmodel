@@ -185,8 +185,6 @@ def test_integrity_of_linear_models(tmpdir):
             'ri_disease_type',
             'age_years',
             'ri_complication_sepsis',
-            'ri_complication_respiratory_failure',
-            'ri_complication_meningitis',
             'hv_inf',
             'un_clinical_acute_malnutrition',
             'nb_low_birth_weight_status']
@@ -194,13 +192,11 @@ def test_integrity_of_linear_models(tmpdir):
             disease_type,
             0,
             False,
-            False,
-            False,
             True,
             'SAM',
             'low_birth_weight'
         )
-        res = models.compute_death_risk(person_id)
+        res = models.apply_death(person_id)
         assert isinstance(res, (bool, np.bool_))
 
 
@@ -217,7 +213,7 @@ def test_basic_run(tmpdir):
 def test_basic_run_lasting_two_years(tmpdir):
     """Check logging results in a run of the model for two years, with daily property config checking"""
     dur = pd.DateOffset(years=2)
-    popsize = 1000
+    popsize = 5000
     sim = get_sim(tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
@@ -273,7 +269,7 @@ def test_nat_hist_recovery(tmpdir):
     # make probability of death 0% (not using a lambda function because code uses the keyword argument for clarity)
     def death(person_id):
         return False
-    sim.modules['Alri'].models.compute_death_risk = death
+    sim.modules['Alri'].models.apply_death = death
 
     # make probability of symptoms very high
     params = sim.modules['Alri'].parameters
@@ -352,7 +348,7 @@ def test_nat_hist_death(tmpdir):
     # make probability of death 100% (not using a lambda function because code uses the keyword argument for clarity)
     def death(person_id):
         return True
-    sim.modules['Alri'].models.compute_death_risk = death
+    sim.modules['Alri'].models.apply_death = death
 
     # Get person to use:
     df = sim.population.props
@@ -411,7 +407,7 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
     # make probability of death 0% (not using a lambda function because code uses the keyword argument for clarity)
     def death(person_id):
         return False
-    sim.modules['Alri'].models.compute_death_risk = death
+    sim.modules['Alri'].models.apply_death = death
 
     # Get person to use:
     df = sim.population.props
@@ -486,7 +482,7 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     # make probability of death 100% (not using a lambda function because code uses the keyword argument for clarity)
     def death(person_id):
         return True
-    sim.modules['Alri'].models.compute_death_risk = death
+    sim.modules['Alri'].models.apply_death = death
 
     # Get person to use:
     df = sim.population.props
@@ -636,7 +632,7 @@ def test_treatment(tmpdir):
     # make probability of death 100% (not using a lambda function because code uses the keyword argument for clarity)
     def death(person_id):
         return True
-    sim.modules['Alri'].models.compute_death_risk = death
+    sim.modules['Alri'].models.apply_death = death
 
     # Get person to use:
     df = sim.population.props
