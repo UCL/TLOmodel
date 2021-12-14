@@ -143,7 +143,7 @@ def test_integrity_of_linear_models(tmpdir):
                 else:
                     # viral primary infection- may have a bacterial coinfection or may not:
                     assert pd.isnull(bacterial_coinfection) or \
-                           bacterial_coinfection in alri.pathogens['bacterial'] + ['none']
+                           bacterial_coinfection in alri.pathogens['bacterial']
                     # check that if has had pneumococcal vaccine they are not coinfected with `Strep_pneumoniae_PCV13`
                     if va_pneumo_all_doses:
                         assert bacterial_coinfection != 'Strep_pneumoniae_PCV13'
@@ -200,7 +200,7 @@ def test_integrity_of_linear_models(tmpdir):
             'low_birth_weight'
         )
         res = models.compute_death_risk(person_id)
-        assert isinstance(res, np.bool_)
+        assert isinstance(res, (bool, np.bool_))
 
 
 def test_basic_run(tmpdir):
