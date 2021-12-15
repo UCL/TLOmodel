@@ -409,7 +409,8 @@ class Alri(Module):
         # Risk of death parameters -----
         'overall_CFR_ALRI':
             Parameter(Types.REAL,
-                      'overall case-fatality rate of ALRI (calibration value)'
+                      'overall case-fatality rate of ALRI (Not used in the simulation but is saved here as it is the '
+                      'target for calibration of for the overall case-fatality rate of ALRI).)'
                       ),
         'baseline_odds_alri_death':
             Parameter(Types.REAL,
