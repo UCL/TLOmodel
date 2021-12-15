@@ -966,6 +966,12 @@ class Alri(Module):
         # If person is on treatment, they should have a treatment start date
         assert (df.loc[curr_inf, 'ri_on_treatment'] != df.loc[curr_inf, 'ri_ALRI_tx_start_date'].isna()).all()
 
+        # There should be consistency between the properties for oxygen saturation and the presence of the complication
+        # hypoxaemia
+        assert (df.loc[df['ri_complication_hypoxaemia'], 'ri_SpO2_level'] != '>=93%').all()
+        assert (df.loc[~df['ri_complication_hypoxaemia'], 'ri_SpO2_level'] == '>=93%').all()
+
+
     def impose_symptoms_for_complication(self, person_id, complication, oxygen_saturation):
         """Impose symptoms for a complication."""
         symptoms = self.models.symptoms_for_complication(complication=complication,
