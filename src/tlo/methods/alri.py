@@ -155,7 +155,7 @@ class Alri(Module):
                      'empyema',
                      'lung_abscess',
                      'sepsis',
-                     'hypoxaemia'  # <-- Low implies Sp02<93%'
+                     'hypoxaemia'
                      }
 
     PARAMETERS = {
