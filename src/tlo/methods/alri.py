@@ -1029,23 +1029,21 @@ class Models:
                                                         .otherwise(p['rr_ALRI_non_exclusive_breastfeeding'])
                 )  # todo: add crowding or wealth?
 
-            # Use 1 year olds for scaling (because measles vaccine effectiveness is applied for over 1yo)
-            one_year_olds = df.is_alive & (df.age_years == 1)
+            zero_year_olds = df.is_alive & (df.age_years == 0)
             unscaled_lm = make_naive_linear_model(patho)
 
-            # If not 1 year-olds then cannot do scaling, return unscaled linear model
-            if sum(one_year_olds) == 0:
+            # If not 0 year-olds then cannot do scaling, return unscaled linear model
+            if sum(zero_year_olds) == 0:
                 return unscaled_lm
 
-            # If some 1 year-olds then can do scaling:
-            target_mean = p[f'base_inc_rate_ALRI_by_{patho}'][1]
-            actual_mean = unscaled_lm.predict(df.loc[one_year_olds]).mean()
-            scaled_intercept = 1.0 * (target_mean / actual_mean) \
-                if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
+            # If some 0 year-olds then can do scaling:
+            target_mean = p[f'base_inc_rate_ALRI_by_{patho}'][0]
+            actual_mean = unscaled_lm.predict(df.loc[zero_year_olds]).mean()
+            scaled_intercept = 1.0 * (target_mean / actual_mean)
             scaled_lm = make_naive_linear_model(patho, intercept=scaled_intercept)
 
-            # check by applying the model to mean incidence of 1-year-olds
-            assert (target_mean - scaled_lm.predict(df.loc[one_year_olds]).mean()) < 1e-10
+            # check by applying the model to mean incidence of 0-year-olds
+            assert (target_mean - scaled_lm.predict(df.loc[zero_year_olds]).mean()) < 1e-10
             return scaled_lm
 
         for patho in self.module.all_pathogens:
