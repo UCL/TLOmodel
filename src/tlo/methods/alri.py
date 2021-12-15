@@ -106,9 +106,8 @@ class Alri(Module):
             'HMPV',
             'Parainfluenza',
             'Influenza',
-            'other_viral_pathogens'
-            # <-- Coronaviruses NL63, 229E OC43 and HKU1, Cytomegalovirus, Parechovirus/Enterovirus,
-            # Adenovirus, Bocavirus
+            'other_viral_pathogens'  # <-- Coronaviruses NL63, 229E OC43 and HKU1,
+            # Cytomegalovirus, Parechovirus/Enterovirus, Adenovirus, Bocavirus
         ],
         'bacterial': [
             'Strep_pneumoniae_PCV13',      # <--  risk of acquisition is affected by the pneumococcal vaccine
@@ -359,6 +358,19 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of primary viral pneumonia having a bacterial co-infection'
                       ),
+        'proportion_bacterial_coinfection_pathogen':
+            Parameter(Types.LIST,
+                      'list of proportions of each bacterial pathogens in a viral/bacterial co-infection pneumonia,'
+                      'the current values used are the pathogen attributable fractions (AFs) from PERCH for all ages. '
+                      'The AFs were scaled to bacterial pathogens only causes - value assumed to be the proportions '
+                      'of bacterial pathogens causing co-/secondary infection'
+                      ),
+
+        # Duration of disease - natural history
+        'max_alri_duration_in_days_without_treatment':
+            Parameter(Types.REAL,
+                      'maximum duration in days of untreated ALRI episode, assuming an average of 7 days'
+                      ),
 
         # Probability of complications -----
         'overall_progression_to_severe_ALRI':
@@ -541,7 +553,7 @@ class Alri(Module):
                       'for children immunised wth Hib vaccine'
                       ),
 
-        # Parameters governing treatment effectiveness and assoicated behaviours ----------------
+        # Parameters governing treatment effectiveness and associated behaviours ----------------
         'days_between_treatment_and_cure':
             Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'
                       ),
@@ -751,8 +763,10 @@ class Alri(Module):
             self.daly_wts['daly_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=46)
 
         # Define the max episode duration
-        self.max_duration_of_episode = DateOffset(days=(self.parameters['days_between_treatment_and_cure'] + 14))
-        # 14 days is the max duration of an episode
+        self.max_duration_of_episode = DateOffset(
+            days=(self.parameters['max_alri_duration_in_days_without_treatment'] +
+                  self.parameters['days_between_treatment_and_cure']))
+        # 14 days max duration of an episode (natural history) + 14 days to allow treatment
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -1104,12 +1118,8 @@ class Models:
         p = self.p
 
         # get probability of bacterial coinfection with each pathogen
-        list_bacteria_probs = []
-        for n in range(len(self.module.pathogens['bacterial'])):
-            prob_secondary_patho = 1 / len(self.module.pathogens['bacterial'])  # assume equal distribution
-            list_bacteria_probs.append(prob_secondary_patho)
         probs = dict(zip(
-            self.module.pathogens['bacterial'], list_bacteria_probs))
+            self.module.pathogens['bacterial'], p['proportion_bacterial_coinfection_pathogen']))
 
         # Edit the probability that the coinfection will be of `Strep_pneumoniae_PCV13` if the person has had
         # the pneumococcal vaccine:
@@ -1365,7 +1375,8 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
             va_hib_all_doses=person.va_hib_all_doses, va_pneumo_all_doses=person.va_pneumo_all_doses)
 
         # ----------------------- Duration of the Alri event -----------------------
-        duration_in_days_of_alri = rng.randint(1, 14)  # assumes uniform interval around mean duration with range 7 days
+        duration_in_days_of_alri = rng.randint(1, p['max_alri_duration_in_days_without_treatment'])
+        # assumes uniform interval around mean duration of 7 days, with range 14 days
 
         # Date for outcome (either recovery or death) with uncomplicated Alri
         date_of_outcome = self.module.sim.date + DateOffset(days=duration_in_days_of_alri)
