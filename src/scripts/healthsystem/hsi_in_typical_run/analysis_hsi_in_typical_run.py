@@ -105,8 +105,6 @@ num_hsi_by_treatment_id = hsi.groupby(hsi.TREATMENT_ID)['Number_By_Appt_Type_Cod
 # find the appt footprint for each treatment_id
 appts_by_treatment_id = \
     hsi.set_index('TREATMENT_ID')['Number_By_Appt_Type_Code'].drop_duplicates().apply(pd.Series).fillna(0.0)
-# todo: the drop_duplicates() and fillna(0.0) functions seem delete a lot of rows \
-#  wherein an hsi has called an appt type. Need to regenerate the correct appts_by_treatment_id
 
 # Plot...
 # See the Sankey plot in analysis_sankey_appt_and_hsi.ipynb (in the same folder)
