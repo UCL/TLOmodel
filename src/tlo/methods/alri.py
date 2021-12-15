@@ -1223,7 +1223,7 @@ class Models:
 
         return symptoms
 
-    def apply_death(self, person_id):
+    def will_die_of_alri(self, person_id):
         """Determine if person will die from Alri. Returns True/False"""
         p = self.p
         df = self.module.sim.population.props
@@ -1414,7 +1414,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         self.impose_complications(person_id=person_id)
 
         # ----------------------------------- Outcome  -----------------------------------
-        if models.apply_death(person_id=person_id):
+        if models.will_die_of_alri(person_id=person_id):
             self.sim.schedule_event(AlriDeathEvent(self.module, person_id), date_of_outcome)
             df.loc[person_id, ['ri_scheduled_death_date', 'ri_scheduled_recovery_date']] = [date_of_outcome, pd.NaT]
         else:
