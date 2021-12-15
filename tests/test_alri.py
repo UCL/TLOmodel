@@ -81,15 +81,10 @@ def test_integrity_of_linear_models(tmpdir):
     models = Models(alri)
 
     # --- compute_risk_of_acquisition & incidence_equations_by_pathogen:
-    # if no vaccine and very high risk:
-    # make risk of vaccine high:
-    for patho in alri.all_pathogens:
-        models.p[f'base_inc_rate_ALRI_by_{patho}'] = [0.5] * len(models.p[f'base_inc_rate_ALRI_by_{patho}'])
-    models.make_model_for_acquisition_risk()
-
-    # ensure no one has the relevant vaccines:
+    # 1) if no vaccine:
     df['va_pneumo_all_doses'] = False
     df['va_hib_all_doses'] = False
+    models.make_model_for_acquisition_risk()
 
     for pathogen in alri.all_pathogens:
         res = models.compute_risk_of_aquisition(
@@ -100,7 +95,8 @@ def test_integrity_of_linear_models(tmpdir):
         assert not res.isna().any()
         assert 'float64' == res.dtype.name
 
-    # pneumococcal vaccine: if efficacy of vaccine is perfect, whomever has vaccine should have no risk of infection
+    # 2) If there are vaccines:
+    # 2a) pneumococcal vaccine: if efficacy of vaccine is perfect, whoever has vaccine should have no risk of infection
     # from Strep_pneumoniae_PCV13
     models.p['rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y'] = 0.0
     models.p['rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y'] = 0.0
@@ -110,7 +106,7 @@ def test_integrity_of_linear_models(tmpdir):
         df=df.loc[df.is_alive & (df.age_years < 5)])
             ).all()
 
-    # hib vaccine: if efficacy of vaccine is perfect, whomever has vaccine should have no risk of infection
+    # hib vaccine: if efficacy of vaccine is perfect, whoever has vaccine should have no risk of infection
     # from Hib (H.influenzae type-b)
     models.p['rr_Hib_ALRI_with_Hib_vaccine'] = 0.0
     df['va_hib_all_doses'] = True
