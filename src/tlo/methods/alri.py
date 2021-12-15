@@ -788,8 +788,11 @@ class Alri(Module):
         )
 
         # get the list of people with non-severe pneumonia
-        has_fast_breathing_or_chest_indrawing_but_not_danger_signs = set(self.sim.modules['SymptomManager'].who_has('tachypnoea')).union(
-            self.sim.modules['SymptomManager'].who_has('chest_indrawing')) - has_danger_signs
+        has_fast_breathing_or_chest_indrawing_but_not_danger_signs = set(
+            self.sim.modules['SymptomManager'].who_has('tachypnoea')
+        ).union(
+            self.sim.modules['SymptomManager'].who_has('chest_indrawing')
+        ) - has_danger_signs
 
         # report the DALYs occurred
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
@@ -1141,7 +1144,7 @@ class Models:
                     # TODO: lung abscess, empyema should only apply to (primary or secondary) bacteria ALRIs
 
             # probabilities for systemic complications
-            if  (primary_path_is_bacterial or has_secondary_bacterial_inf):
+            if primary_path_is_bacterial or has_secondary_bacterial_inf:
                 probs['sepsis'] += p['prob_bacteraemia_in_pneumonia'] * p['prob_progression_to_sepsis_with_bacteraemia']
 
             probs['hypoxaemia'] += p['prob_hypoxaemia_in_pneumonia']
@@ -1161,10 +1164,9 @@ class Models:
             if self.p['proportion_hypoxaemia_with_SpO2<90%'] > self.rng.rand():
                 return '<90%'
             else:
-               return '90-92%'
+                return '90-92%'
         else:
             return '>=93%'
-
 
     def symptoms_for_disease(self, disease_type):
         """Determine set of symptom (before complications) for a given instance of disease"""
@@ -1455,7 +1457,6 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
                                                complication=complication,
                                                oxygen_saturation=oxygen_saturation
                                                )
-
 
 
 class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):

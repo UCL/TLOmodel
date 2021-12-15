@@ -155,7 +155,9 @@ def test_integrity_of_linear_models(tmpdir):
             for disease_type in alri.disease_types:
 
                 res = models.get_complications_that_onset(disease_type=disease_type,
-                                                          primary_path_is_bacterial=patho in sim.modules['Alri'].pathogens['bacterial'],
+                                                          primary_path_is_bacterial=(
+                                                              patho in sim.modules['Alri'].pathogens['bacterial']
+                                                          ),
                                                           has_secondary_bacterial_inf=pd.notnull(coinf)
                                                           )
                 assert isinstance(res, set)

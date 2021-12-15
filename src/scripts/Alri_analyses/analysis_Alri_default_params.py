@@ -21,8 +21,8 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    simplified_births,
     symptommanager,
-    simplified_births
 )
 
 # %%
