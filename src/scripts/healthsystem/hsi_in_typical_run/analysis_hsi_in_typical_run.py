@@ -61,6 +61,9 @@ hsi["month"] = hsi["date"].dt.month
 # Number of HSI that are taking place by originating module, by month
 year = 2016
 hsi["Module"] = hsi["TREATMENT_ID"].str.split('_').apply(lambda x: x[0])
+# todo: Rename Module HSI to Generic First Appointment? \
+#  (Q: The treatment_id for module HSI seems not related to Generic First Appt; \
+#  Besides, there are similar modules called GenericEmergency... and GenericFirstAppt...)
 evs = hsi.loc[hsi.date.dt.year == year]\
     .groupby(by=['month', 'Module'])\
     .size().reset_index().rename(columns={0: 'count'})\
@@ -102,6 +105,8 @@ num_hsi_by_treatment_id = hsi.groupby(hsi.TREATMENT_ID)['Number_By_Appt_Type_Cod
 # find the appt footprint for each treatment_id
 appts_by_treatment_id = \
     hsi.set_index('TREATMENT_ID')['Number_By_Appt_Type_Code'].drop_duplicates().apply(pd.Series).fillna(0.0)
+# todo: the drop_duplicates() and fillna(0.0) functions seem delete a lot of rows \
+#  wherein an hsi has called an appt type. Need to regenerate the correct appts_by_treatment_id
 
 # Plot...
 # See the Sankey plot in analysis_sankey_appt_and_hsi.ipynb (in the same folder)
