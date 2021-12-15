@@ -721,7 +721,7 @@ class Alri(Module):
         df.loc[df.is_alive, [
             f"ri_complication_{complication}" for complication in self.complications]
         ] = False
-        df.loc[df.is_alive, 'ri_SpO2_level'] = np.nan
+        df.loc[df.is_alive, 'ri_SpO2_level'] = ">=93%"
 
         # ---- Internal values ----
         df.loc[df.is_alive, 'ri_start_of_current_episode'] = pd.NaT
@@ -783,7 +783,7 @@ class Alri(Module):
                           'ri_secondary_bacterial_pathogen',
                           'ri_disease_type']] = np.nan
         df.at[child_id, [f"ri_complication_{complication}" for complication in self.complications]] = False
-        df.at[child_id, 'ri_SpO2_level'] = np.nan
+        df.at[child_id, 'ri_SpO2_level'] = ">=93%"
 
         # ---- Internal values ----
         df.loc[child_id, ['ri_start_of_current_episode',
@@ -826,35 +826,25 @@ class Alri(Module):
         """End the episode infection for a person (i.e. reset all properties to show no current infection or
         complications).
         This is called by AlriNaturalRecoveryEvent and AlriCureEvent.
+        NB. 'ri_end_of_current_episode is not reset: this is used to prevent new infections from occurring whilst HSI
+        from a previous episode may still be scheduled to occur.
         """
         df = self.sim.population.props
 
         # Reset properties to show no current infection:
-        df.loc[person_id, [
-            'ri_current_infection_status',
-            'ri_primary_pathogen',
-            'ri_secondary_bacterial_pathogen',
-            'ri_disease_type',
-            'ri_SpO2_level',
-            'ri_on_treatment',
-            'ri_start_of_current_episode',
-            'ri_scheduled_recovery_date',
-            'ri_scheduled_death_date',
-            'ri_ALRI_tx_start_date']
-        ] = [
-            False,
-            np.nan,
-            np.nan,
-            np.nan,
-            np.nan,
-            False,
-            pd.NaT,
-            pd.NaT,
-            pd.NaT,
-            pd.NaT,
-        ]
-        #  NB. 'ri_end_of_current_episode is not reset: this is used to prevent new infections from occuring whilst
-        #  HSI from a previous episode may still be scheduled to occur.
+        new_properties = {
+            'ri_current_infection_status': False,
+            'ri_primary_pathogen': np.nan,
+            'ri_secondary_bacterial_pathogen': np.nan,
+            'ri_disease_type': np.nan,
+            'ri_SpO2_level': '>=93%',
+            'ri_on_treatment': False,
+            'ri_start_of_current_episode': pd.NaT,
+            'ri_scheduled_recovery_date': pd.NaT,
+            'ri_scheduled_death_date': pd.NaT,
+            'ri_ALRI_tx_start_date': pd.NaT
+        }
+        df.loc[person_id, new_properties.keys()] = new_properties.values()
 
         # Remove all existing complications
         df.loc[person_id, [f"ri_complication_{c}" for c in self.complications]] = False
@@ -968,8 +958,8 @@ class Alri(Module):
 
         # There should be consistency between the properties for oxygen saturation and the presence of the complication
         # hypoxaemia
-        assert (df.loc[df['ri_complication_hypoxaemia'], 'ri_SpO2_level'] != '>=93%').all()
-        assert (df.loc[~df['ri_complication_hypoxaemia'], 'ri_SpO2_level'] == '>=93%').all()
+        assert (df.loc[df.is_alive & df['ri_complication_hypoxaemia'], 'ri_SpO2_level'] != '>=93%').all()
+        assert (df.loc[df.is_alive & ~df['ri_complication_hypoxaemia'], 'ri_SpO2_level'] == '>=93%').all()
 
 
     def impose_symptoms_for_complication(self, person_id, complication, oxygen_saturation):
