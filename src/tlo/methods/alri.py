@@ -358,6 +358,14 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of primary viral pneumonia having a bacterial co-infection'
                       ),
+        'proportion_bacterial_coinfection_pathogen':
+            Parameter(Types.LIST,
+                      'list of proportions of each bacterial pathogens in a viral/bacterial co-infection pneumonia,'
+                      'the current values used are the pathogen attributable fractions (AFs) from PERCH for all ages. '
+                      'The AFs were scaled to bacterial pathogens only causes - value assumed to be the proportions '
+                      'of bacterial pathogens causing co-/secondary infection'
+                      ),
+
         # Duration of disease - natural history
         'max_alri_duration_in_days_without_treatment':
             Parameter(Types.REAL,
@@ -1110,12 +1118,8 @@ class Models:
         p = self.p
 
         # get probability of bacterial coinfection with each pathogen
-        list_bacteria_probs = []
-        for n in range(len(self.module.pathogens['bacterial'])):
-            prob_secondary_patho = 1 / len(self.module.pathogens['bacterial'])  # assume equal distribution
-            list_bacteria_probs.append(prob_secondary_patho)
         probs = dict(zip(
-            self.module.pathogens['bacterial'], list_bacteria_probs))
+            self.module.pathogens['bacterial'], p['proportion_bacterial_coinfection_pathogen']))
 
         # Edit the probability that the coinfection will be of `Strep_pneumoniae_PCV13` if the person has had
         # the pneumococcal vaccine:
