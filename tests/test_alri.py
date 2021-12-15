@@ -153,17 +153,11 @@ def test_integrity_of_linear_models(tmpdir):
     for patho in alri.all_pathogens:
         for coinf in (alri.pathogens['bacterial'] + [np.nan]):
             for disease_type in alri.disease_types:
-                df.loc[person_id, [
-                    'ri_primary_pathogen',
-                    'ri_secondary_bacterial_pathogen',
-                    'ri_disease_type']
-                ] = (
-                    patho,
-                    coinf,
-                    disease_type
-                )
-                res = models.complications(person_id)
 
+                res = models.get_complications_that_onset(disease_type=disease_type,
+                                                          primary_path_is_bacterial=patho in sim.modules['Alri'].pathogens['bacterial'],
+                                                          has_secondary_bacterial_inf=pd.notnull(coinf)
+                                                          )
                 assert isinstance(res, set)
                 assert all([c in alri.complications for c in res])
 
