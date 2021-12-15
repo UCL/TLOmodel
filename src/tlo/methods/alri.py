@@ -81,14 +81,13 @@ class Alri(Module):
 
     INIT_DEPENDENCIES = {
         'Demography',
+        'Epi',
         'Hiv',
         'Lifestyle',
         'NewbornOutcomes',
         'SymptomManager',
         'Wasting',
     }
-
-    ADDITIONAL_DEPENDENCIES = {'Epi'}
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
