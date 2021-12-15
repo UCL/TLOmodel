@@ -1378,7 +1378,7 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         # ----------------------- Duration of the Alri event -----------------------
         duration_in_days_of_alri = rng.randint(1, p['max_alri_duration_in_days_without_treatment'])
-        # assumes uniform interval around mean duration with range 7 days
+        # assumes uniform interval around mean duration of 7 days, with range 14 days
 
         # Date for outcome (either recovery or death) with uncomplicated Alri
         date_of_outcome = self.module.sim.date + DateOffset(days=duration_in_days_of_alri)
