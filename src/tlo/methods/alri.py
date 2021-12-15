@@ -961,7 +961,6 @@ class Alri(Module):
         assert (df.loc[df.is_alive & df['ri_complication_hypoxaemia'], 'ri_SpO2_level'] != '>=93%').all()
         assert (df.loc[df.is_alive & ~df['ri_complication_hypoxaemia'], 'ri_SpO2_level'] == '>=93%').all()
 
-
     def impose_symptoms_for_complication(self, person_id, complication, oxygen_saturation):
         """Impose symptoms for a complication."""
         symptoms = self.models.symptoms_for_complication(complication=complication,
