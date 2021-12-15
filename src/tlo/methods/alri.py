@@ -781,25 +781,21 @@ class Alri(Module):
         """Report DALY incurred in the population in the last month due to ALRI"""
         df = self.sim.population.props
 
-        # get the list of people with severe pneumonia
-        has_danger_signs = \
-            list((set(self.sim.modules['SymptomManager'].who_has('cough')) | set(
-                self.sim.modules['SymptomManager'].who_has('difficult_breathing'))) & set(
-                self.sim.modules['SymptomManager'].who_has('danger_signs')))
+        # get the list of people with severe pneumonia: danger signs AND either cough or difficult breathing
+        has_danger_signs = set(self.sim.modules['SymptomManager'].who_has('danger_signs')) & set(
+            self.sim.modules['SymptomManager'].who_has('cough')).union(
+            self.sim.modules['SymptomManager'].who_has('difficult_breathing')
+        )
 
         # get the list of people with non-severe pneumonia
-        has_fast_breathing_or_chest_indrawing = \
-            list(set(self.sim.modules['SymptomManager'].who_has('tachypnoea')) | set(
-                self.sim.modules['SymptomManager'].who_has('chest_indrawing'))
-                 )
-        has_fast_breathing_or_chest_indrawing_but_not_danger_signs = \
-            set(has_fast_breathing_or_chest_indrawing) - set(has_danger_signs)
+        has_fast_breathing_or_chest_indrawing_but_not_danger_signs = set(self.sim.modules['SymptomManager'].who_has('tachypnoea')).union(
+            self.sim.modules['SymptomManager'].who_has('chest_indrawing')) - has_danger_signs
 
         # report the DALYs occurred
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
+        total_daly_values.loc[has_danger_signs] = self.daly_wts['daly_severe_ALRI']
         total_daly_values.loc[
             has_fast_breathing_or_chest_indrawing_but_not_danger_signs] = self.daly_wts['daly_non_severe_ALRI']
-        total_daly_values.loc[has_danger_signs] = self.daly_wts['daly_severe_ALRI']
 
         # Split out by pathogen that causes the Alri
         dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index, 'ri_primary_pathogen'], dtype='float')
