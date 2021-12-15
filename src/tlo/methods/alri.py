@@ -1075,21 +1075,19 @@ class Models:
             disease_type = 'bronchiolitis/other_alri'
 
         # Determine bacterial-coinfection
-        if pathogen in set(self.module.pathogens['bacterial']).union(self.module.pathogens['fungal/other']):
-            # No bacterial co-infection in primary bacterial cause, or fungal (assumed)
-            bacterial_coinfection = np.nan
-
-        elif pathogen in self.module.pathogens['viral']:
+        if pathogen in self.module.pathogens['viral']:
             if disease_type == 'pneumonia':
                 if p['prob_viral_pneumonia_bacterial_coinfection'] > self.rng.rand():
                     bacterial_coinfection = self.secondary_bacterial_infection(va_hib_all_doses=va_hib_all_doses,
                                                                                va_pneumo_all_doses=va_pneumo_all_doses)
                 else:
                     bacterial_coinfection = np.nan
-            else:  # brochiolitis/other_alri (viral)
+            else:
+                # brochiolitis/other_alri (viral)
                 bacterial_coinfection = np.nan
         else:
-            raise ValueError('Pathogen is not recognised.')
+            # No bacterial co-infection in primary bacterial or fungal cause
+            bacterial_coinfection = np.nan
 
         assert disease_type in self.module.disease_types
         assert bacterial_coinfection in (self.module.pathogens['bacterial'] + [np.nan])
@@ -1189,8 +1187,6 @@ class Models:
         """Probability of each symptom for a person given a complication"""
         p = self.p
 
-        lung_complications = ['pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess']
-
         probs = defaultdict(float)
 
         if complication == 'sepsis':
@@ -1198,22 +1194,23 @@ class Models:
                 'danger_signs': p['prob_danger_signs_in_sepsis']
             }
 
-        if complication == any(lung_complications):
+        if complication in ['pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess']:
             probs = {
                 'danger_signs': p['prob_danger_signs_in_pulmonary_complications'],
                 'chest_indrawing': p['prob_chest_indrawing_in_pulmonary_complications']
             }
 
-        if complication == 'hypoxaemia' and (oxygen_saturation == '<90%'):
-            probs = {
-                'danger_signs': p['prob_danger_signs_in_SpO2<90%'],
-                'chest_indrawing': p['prob_chest_indrawing_in_SpO2<90%']
-            }
-        if complication == 'hypoxaemia' and (oxygen_saturation == '90-92%'):
-            probs = {
-                'danger_signs': p['prob_danger_signs_in_SpO2_90-92%'],
-                'chest_indrawing': p['prob_chest_indrawing_in_SpO2_90-92%']
-            }
+        if complication == 'hypoxaemia':
+            if oxygen_saturation == '<90%':
+                probs = {
+                    'danger_signs': p['prob_danger_signs_in_SpO2<90%'],
+                    'chest_indrawing': p['prob_chest_indrawing_in_SpO2<90%']
+                }
+            elif oxygen_saturation == '90-92%':
+                probs = {
+                    'danger_signs': p['prob_danger_signs_in_SpO2_90-92%'],
+                    'chest_indrawing': p['prob_chest_indrawing_in_SpO2_90-92%']
+                }
 
         # determine which symptoms are onset:
         symptoms = {s for s, p in probs.items() if p > self.rng.rand()}
