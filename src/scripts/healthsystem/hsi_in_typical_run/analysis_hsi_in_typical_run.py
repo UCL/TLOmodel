@@ -106,5 +106,10 @@ num_hsi_by_treatment_id = hsi.groupby(hsi.TREATMENT_ID)['Number_By_Appt_Type_Cod
 appts_by_treatment_id = \
     hsi.set_index('TREATMENT_ID')['Number_By_Appt_Type_Code'].drop_duplicates().apply(pd.Series).fillna(0.0)
 
+# Todo: Since the resulted appts_by_treatment_id deleted many hsi events \
+#  (i.e., the hsi list is much shorter than in num_hsi_by_treatment_id), \
+#  will try delete empty entries first then apply drop_duplicates().
+
+
 # Plot...
 # See the Sankey plot in analysis_sankey_appt_and_hsi.ipynb (in the same folder)
