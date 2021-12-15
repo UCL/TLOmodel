@@ -116,3 +116,16 @@ output = parse_log_file(sim.log_filepath)
 with open(outputpath / "default_run.pickle", "wb") as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(output, f, pickle.HIGHEST_PROTOCOL)
+
+
+##############################################################################################
+# load the results
+with open(outputpath / "default_run.pickle", "rb") as f:
+    output = pickle.load(f)
+
+prev_and_inc_over_time = output["tlo.methods.hiv"][
+    "summary_inc_and_prev_for_adults_and_children_and_fsw"
+]
+prev_and_inc_over_time = prev_and_inc_over_time.set_index("date")
+
+print(prev_and_inc_over_time["hiv_prev_adult_1549"] * 100)

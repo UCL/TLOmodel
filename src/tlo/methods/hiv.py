@@ -778,7 +778,7 @@ class Hiv(Module):
         )
 
         # 2) Schedule the Logging Event
-        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(years=1))
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=364))
 
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
@@ -1274,7 +1274,7 @@ class Hiv(Module):
         df = self.sim.population.props
 
         # get number of tests performed in last time period
-        if self.sim.date.year == 2011:
+        if self.sim.date.year == 2010:
             number_tests_new = df.hv_number_tests.sum()
             previous_test_numbers = 0
 
@@ -1457,59 +1457,56 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         horizontal_transmission(from_sex="F", to_sex="M")
 
         # ----------------------------------- SPONTANEOUS TESTING -----------------------------------
-        if self.sim.date.year == 2010:
-            return
 
+        # extract annual testing rates from MoH Reports
+        test_rates = p["hiv_testing_rates"]
+
+        # if year later than 2020, set testing rates to those reported in 2020
+        if self.sim.date.year < 2021:
+            current_year = self.sim.date.year
         else:
-            # extract annual testing rates from MoH Reports
-            test_rates = p["hiv_testing_rates"]
+            current_year = 2020
 
-            # if year later than 2020, set testing rates to those reported in 2020
-            if self.sim.date.year < 2021:
-                current_year = self.sim.date.year
-            else:
-                current_year = 2020
+        # reduce testing rates by 0.8 to account for additional testing through ANC/symptoms
+        testing_rate_children = test_rates.loc[
+            test_rates.year == current_year, "annual_testing_rate_children"
+        ].values[0] * 0.6
+        testing_rate_adults = test_rates.loc[
+            test_rates.year == current_year, "annual_testing_rate_adults"
+        ].values[0] * 0.6
+        random_draw = rng.random_sample(size=len(df))
 
-            # reduce testing rates by 0.8 to account for additional testing through ANC/symptoms
-            testing_rate_children = test_rates.loc[
-                test_rates.year == current_year, "annual_testing_rate_children"
-            ].values[0] * 0.6
-            testing_rate_adults = test_rates.loc[
-                test_rates.year == current_year, "annual_testing_rate_adults"
-            ].values[0] * 0.6
-            random_draw = rng.random_sample(size=len(df))
+        child_tests_idx = df.loc[
+            df.is_alive
+            & ~df.hv_diagnosed
+            & (df.age_years < 15)
+            & (random_draw < testing_rate_children)
+            ].index
 
-            child_tests_idx = df.loc[
-                df.is_alive
-                & ~df.hv_diagnosed
-                & (df.age_years < 15)
-                & (random_draw < testing_rate_children)
-                ].index
+        # adult testing trends also informed by demographic characteristics
+        # relative probability of testing - this may skew testing rates higher or lower than moh reports
+        rr_of_test = self.module.lm["lm_spontaneous_test_12m"].predict(df[df.is_alive])
+        mean_prob_test = (rr_of_test * testing_rate_adults).mean()
+        scaled_prob_test = (rr_of_test * testing_rate_adults) / mean_prob_test
+        overall_prob_test = scaled_prob_test * testing_rate_adults
 
-            # adult testing trends also informed by demographic characteristics
-            # relative probability of testing - this may skew testing rates higher or lower than moh reports
-            rr_of_test = self.module.lm["lm_spontaneous_test_12m"].predict(df[df.is_alive])
-            mean_prob_test = (rr_of_test * testing_rate_adults).mean()
-            scaled_prob_test = (rr_of_test * testing_rate_adults) / mean_prob_test
-            overall_prob_test = scaled_prob_test * testing_rate_adults
+        random_draw = rng.random_sample(size=len(df[df.is_alive]))
+        adult_tests_idx = df.loc[df.is_alive & (random_draw < overall_prob_test)].index
 
-            random_draw = rng.random_sample(size=len(df[df.is_alive]))
-            adult_tests_idx = df.loc[df.is_alive & (random_draw < overall_prob_test)].index
+        idx_will_test = child_tests_idx.union(adult_tests_idx)
 
-            idx_will_test = child_tests_idx.union(adult_tests_idx)
-
-            for person_id in idx_will_test:
-                date_test = self.sim.date + pd.DateOffset(
-                    days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls)
-                )
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self.module, referred_from='HIV_poll'),
-                    priority=1,
-                    topen=date_test,
-                    tclose=self.sim.date + pd.DateOffset(
-                        months=self.frequency.months
-                    ),  # (to occur before next polling)
-                )
+        for person_id in idx_will_test:
+            date_test = self.sim.date + pd.DateOffset(
+                days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls)
+            )
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self.module, referred_from='HIV_poll'),
+                priority=1,
+                topen=date_test,
+                tclose=self.sim.date + pd.DateOffset(
+                    months=self.frequency.months
+                ),  # (to occur before next polling)
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -2228,7 +2225,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         adult_prev_1549 = len(
             df[df.hv_inf & df.is_alive & df.age_years.between(15, 49)]
-        ) / len(df[df.is_alive & (df.age_years >= 15)])
+        ) / len(df[df.is_alive & df.age_years.between(15, 49)])
 
         # child prevalence
         child_prev = len(df[df.hv_inf & df.is_alive & (df.age_years < 15)]) / len(

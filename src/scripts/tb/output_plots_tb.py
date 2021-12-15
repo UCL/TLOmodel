@@ -33,9 +33,9 @@ def make_plot(model=None, data_mid=None, data_low=None, data_high=None, title_st
     plt.title(title_str)
     plt.legend(["Model", "Data"])
     plt.gca().set_ylim(bottom=0)
-    # plt.savefig(
-    #     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
-    # )
+    plt.savefig(
+        outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
+    )
     # plt.show()
 
 
@@ -215,7 +215,7 @@ make_plot(
 )
 # data from ResourceFile_TB sheet WHO_mdrTB2017
 plt.errorbar(mdr.index[7], 0.0075, yerr=[[0.0059], [0.0105]], fmt="o")
-plt.legend(["TLO", "WHO"])
+plt.legend(["TLO", "WHO reported MDR cases"])
 # plt.savefig(
 #     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
 # )
@@ -246,15 +246,14 @@ prev_and_inc_over_time = output["tlo.methods.hiv"][
 ]
 prev_and_inc_over_time = prev_and_inc_over_time.set_index("date")
 
-# HIV - prevalence among in adults aged 15+
-# todo note other data is age 15-49
-title_str = "HIV Prevalence in Adults Aged 15+ (%)"
+# HIV - prevalence among in adults aged 15-49
+title_str = "HIV Prevalence in Adults Aged 15-49 (%)"
 make_plot(
     title_str=title_str,
-    model=prev_and_inc_over_time["hiv_prev_adult_15plus"] * 100,
-    data_mid=data_hiv_unaids["prevalence_age15plus"],
-    data_low=data_hiv_unaids["prevalence_age15plus_lower"],
-    data_high=data_hiv_unaids["prevalence_age15plus_upper"],
+    model=prev_and_inc_over_time["hiv_prev_adult_1549"] * 100,
+    data_mid=data_hiv_unaids["prevalence_age15_49"] * 100,
+    data_low=data_hiv_unaids["prevalence_age15_49_lower"] * 100,
+    data_high=data_hiv_unaids["prevalence_age15_49_upper"] * 100,
 )
 
 # MPHIA
@@ -315,9 +314,9 @@ title_str = "HIV Incidence in Adults (15-49) (per 100 pyar)"
 make_plot(
     title_str=title_str,
     model=prev_and_inc_over_time["hiv_adult_inc_1549"] * 100,
-    data_mid=data_hiv_unaids["incidence_per_1000"] / 10,
-    data_low=data_hiv_unaids["incidence_per_1000_lower"] / 10,
-    data_high=data_hiv_unaids["incidence_per_1000_upper"] / 10,
+    data_mid=data_hiv_unaids["incidence_per1000_age15_49"] / 10,
+    data_low=data_hiv_unaids["incidence_per1000_age15_49_lower"] / 10,
+    data_high=data_hiv_unaids["incidence_per1000_age15_49_upper"] / 10,
 )
 
 # MPHIA
@@ -620,7 +619,6 @@ pd.concat(
 plt.gca().spines["right"].set_color("none")
 plt.gca().spines["top"].set_color("none")
 plt.title("ART Cascade for Adults (15+)")
-# plt.savefig(outputpath / ("HIV_art_cascade_adults" + datestamp + ".pdf"), format='pdf')
 
 # data from UNAIDS 2021
 # todo scatter the error bars
@@ -661,9 +659,9 @@ x_values = data_hiv_program.index + pd.DateOffset(months=6)
 y_values = data_hiv_program["percent_on_art_viral_suppr"]
 y_lower = abs(y_values - data_hiv_program["percent_on_art_viral_suppr_lower"])
 y_upper = abs(y_values - data_hiv_program["percent_on_art_viral_suppr_upper"])
-y_values.index = x_values
-y_lower.index = x_values
-y_lower.index = x_values
+# y_values.index = x_values
+# y_lower.index = x_values
+# y_lower.index = x_values
 plt.errorbar(
     x_values,
     y_values,
@@ -675,6 +673,7 @@ plt.errorbar(
     ecolor="g",
 )
 plt.ylim((20, 100))
+plt.savefig(outputpath / ("HIV_art_cascade_adults" + datestamp + ".pdf"), format='pdf')
 
 plt.show()
 
@@ -687,7 +686,7 @@ make_plot(
     data_mid=data_hiv_moh_tests["annual_testing_rate_all_ages"],
 )
 plt.legend(["TLO", "MoH"])
-plt.ylim((0, 1))
+plt.ylim((0, 0.6))
 
 plt.show()
 
@@ -701,7 +700,7 @@ make_plot(
     model=testing_yield,
     data_mid=data_hiv_moh_tests["testing_yield"],
 )
-plt.ylim((0, 0.3))
+plt.ylim((0, 0.1))
 plt.legend(["TLO", "MoH"])
 
 plt.show()
@@ -737,6 +736,8 @@ plt.plot(
     cov_over_time["prop_men_circ"].index[5], 0.279,
     "bx",
 )
+plt.ylim((0, 0.4))
+
 # handles for legend
 red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
 green_cross = mlines.Line2D(
@@ -778,103 +779,108 @@ make_plot(
     model=Tb_tx_coverage["tbTreatmentCoverage"] * 100,
     data_mid=data_tb_ntp["treatment_coverage"],
 )
+plt.ylim((0, 100))
+
 plt.legend(["TLO", "NTP"])
-plt.savefig(outputpath / ("Percent_tb_cases_treated" + datestamp + ".png"), format='png')
+# plt.savefig(outputpath / ("Percent_tb_cases_treated" + datestamp + ".png"), format='png')
 
 plt.show()
 
 # # ---------------------------------------------------------------------- #
 # distribution of survival times
-# df = sim.population.props
-#
-# # HIV
-# # select adults not on treatment (never treated)
-# df_hiv = df.loc[
-#     df.hv_inf &
-#     (df.hv_art == "not") &
-#     (df.age_years >= 15) &
-#     ((df.cause_of_death == "AIDS_TB") | (df.cause_of_death == "AIDS_non_TB"))]
-#
-# len(df_hiv)  # 3020 from pop 100k
-# len(df_hiv.date_of_death)
-#
-# # get times from infection to death in years
-# survival_times = df_hiv.date_of_death - df_hiv.hv_date_inf
-# survival_times = survival_times[survival_times.notnull()]
-# survival_times = pd.Series(survival_times.dt.days / 365.25)
-#
-# # plot histogram
-# survival_times.plot.hist(grid=True, bins=20, rwidth=0.9,
-#                    color='#607c8e')
-# plt.title('Distribution of survival times for PLHIV')
-# plt.xlabel('Survival time, years')
-# plt.ylabel('Frequency')
-# plt.grid(axis='y', alpha=0.75)
-# plt.show()
-#
-#
-# # children with HIV
-# # select adults not on treatment (never treated)
-# df_hiv_child = df.loc[
-#     df.hv_inf &
-#     (df.hv_art == "not") &
-#     (df.age_years < 15) &
-#     ((df.cause_of_death == "AIDS_TB") | (df.cause_of_death == "AIDS_non_TB"))]
-#
-# len(df_hiv_child)  # 3020 from pop 100k
-# len(df_hiv_child.date_of_death)
-#
-# # get times from infection to death in years
-# survival_times = df_hiv_child.date_of_death - df_hiv_child.hv_date_inf
-# survival_times = survival_times[survival_times.notnull()]
-# survival_times = pd.Series(survival_times.dt.days / 365.25)
-#
-# # plot histogram
-# survival_times.plot.hist(grid=True, bins=20, rwidth=0.9,
-#                    color='#607c8e')
-# plt.title('Distribution of survival times for PLHIV: children')
-# plt.xlabel('Survival time, years')
-# plt.ylabel('Frequency')
-# plt.grid(axis='y', alpha=0.75)
-# plt.show()
-#
-#
-# # TB
-# # select adults never treated
-# df_tb = df.loc[
-#     ~df.tb_date_active.isnull() &
-#     df.tb_ever_treated &
-#     (df.age_years >= 15) &
-#     ((df.cause_of_death == "AIDS_TB") | (df.cause_of_death == "TB"))]
-#
-# len(df_tb)  # 12 from pop 100k
-# len(df_tb.date_of_death)
-#
-# # get times from infection to death in years
-# survival_times = df_tb.date_of_death - df_tb.tb_date_active
-# survival_times = survival_times[survival_times.notnull()]
-# survival_times = pd.Series(survival_times.dt.days / 365.25)
-#
-# # plot histogram
-# survival_times.plot.hist(grid=True, bins=20, rwidth=0.9,
-#                    color='#607c8e')
-# plt.title('Distribution of survival times for TB')
-# plt.xlabel('Survival time, years')
-# plt.ylabel('Frequency')
-# plt.grid(axis='y', alpha=0.75)
-# plt.show()
+df = sim.population.props
+
+# HIV
+# select adults not on treatment (never treated)
+df_hiv = df.loc[
+    df.hv_inf &
+    (df.hv_art == "not") &
+    (df.age_years >= 15) &
+    ((df.cause_of_death == "AIDS_TB") | (df.cause_of_death == "AIDS_non_TB"))]
+
+len(df_hiv)  # 3020 from pop 100k
+len(df_hiv.date_of_death)
+
+# get times from infection to death in years
+survival_times = df_hiv.date_of_death - df_hiv.hv_date_inf
+survival_times = survival_times[survival_times.notnull()]
+survival_times = pd.Series(survival_times.dt.days / 365.25)
+
+# plot histogram
+survival_times.plot.hist(grid=True, bins=20, rwidth=0.9,
+                   color='#607c8e')
+plt.title('Distribution of survival times for PLHIV')
+plt.xlabel('Survival time, years')
+plt.ylabel('Frequency')
+plt.grid(axis='y', alpha=0.75)
+plt.savefig(outputpath / ("Distribution of survival times for PLHIV (untreated)" + datestamp + ".png"), format='png')
+plt.show()
+
+
+# children with HIV
+# select adults not on treatment (never treated)
+df_hiv_child = df.loc[
+    df.hv_inf &
+    (df.hv_art == "not") &
+    (df.age_years < 15) &
+    ((df.cause_of_death == "AIDS_TB") | (df.cause_of_death == "AIDS_non_TB"))]
+
+len(df_hiv_child)  # 3020 from pop 100k
+len(df_hiv_child.date_of_death)
+
+# get times from infection to death in years
+survival_times = df_hiv_child.date_of_death - df_hiv_child.hv_date_inf
+survival_times = survival_times[survival_times.notnull()]
+survival_times = pd.Series(survival_times.dt.days / 365.25)
+
+# plot histogram
+survival_times.plot.hist(grid=True, bins=20, rwidth=0.9,
+                   color='#607c8e')
+plt.title('Distribution of survival times for PLHIV: children')
+plt.xlabel('Survival time, years')
+plt.ylabel('Frequency')
+plt.grid(axis='y', alpha=0.75)
+plt.savefig(outputpath / ("Distribution of survival times for HIV+ children (untreated)" + datestamp + ".png"), format='png')
+plt.show()
+
+
+# TB
+# select adults never treated
+df_tb = df.loc[
+    ~df.tb_date_active.isnull() &
+    df.tb_ever_treated &
+    (df.age_years >= 15) &
+    ((df.cause_of_death == "AIDS_TB") | (df.cause_of_death == "TB"))]
+
+len(df_tb)  # 12 from pop 100k
+len(df_tb.date_of_death)
+
+# get times from infection to death in years
+survival_times = df_tb.date_of_death - df_tb.tb_date_active
+survival_times = survival_times[survival_times.notnull()]
+survival_times = pd.Series(survival_times.dt.days / 365.25)
+
+# plot histogram
+survival_times.plot.hist(grid=True, bins=20, rwidth=0.9,
+                   color='#607c8e')
+plt.title('Distribution of survival times for TB')
+plt.xlabel('Survival time, years')
+plt.ylabel('Frequency')
+plt.grid(axis='y', alpha=0.75)
+plt.savefig(outputpath / ("Distribution of survival times for adults with TB" + datestamp + ".png"), format='png')
+plt.show()
 
 # # ---------------------------------------------------------------------- #
 # HIV test logger
 
-# test = output["tlo.methods.hiv"]["hiv_test"].copy()
-# test = test.set_index("date")
-# test["year"] = test.index.year
-# agg_tests = test.groupby(by=["year", "referred_from"]).size()
-# total_tests_per_year = test.groupby(by=["year"]).size()
-# referral_type_proportion = agg_tests.div(total_tests_per_year, level="year") * 100
-#
-# writer = pd.ExcelWriter(outputpath / ("hiv_tests_inc_2010_testing" + datestamp + ".xlsx"))
-# agg_tests.to_excel(writer, sheet_name="numbers_tests")
-# referral_type_proportion.to_excel(writer, sheet_name="proportion_tests")
-# writer.save()
+test = output["tlo.methods.hiv"]["hiv_test"].copy()
+test = test.set_index("date")
+test["year"] = test.index.year
+agg_tests = test.groupby(by=["year", "referred_from"]).size()
+total_tests_per_year = test.groupby(by=["year"]).size()
+referral_type_proportion = agg_tests.div(total_tests_per_year, level="year") * 100
+
+writer = pd.ExcelWriter(outputpath / ("hiv_tests" + datestamp + ".xlsx"))
+agg_tests.to_excel(writer, sheet_name="numbers_tests")
+referral_type_proportion.to_excel(writer, sheet_name="proportion_tests")
+writer.save()
