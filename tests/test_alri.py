@@ -347,9 +347,9 @@ def test_nat_hist_death(tmpdir):
     sim.event_queue.queue = []  # clear the queue
 
     # make probability of death 100% (not using a lambda function because code uses the keyword argument for clarity)
-    def death(person_id):
+    def __will_die_of_alri(person_id):
         return True
-    sim.modules['Alri'].models.will_die_of_alri = death
+    sim.modules['Alri'].models.will_die_of_alri = __will_die_of_alri
 
     # Get person to use:
     df = sim.population.props

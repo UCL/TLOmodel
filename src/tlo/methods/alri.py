@@ -48,7 +48,7 @@ not being used (e.g prob_respiratory_failure_to_multiorgan_dysfunction and r_pro
    needed).
 
 #5:
-Is it right that 'danger_signs' is an indepednet symptom? It seems like this is something that is determined in the
+Is it right that 'danger_signs' is an independent symptom? It seems like this is something that is determined in the
  course of a diagnosis (like in diarrhoea module).
 """
 
@@ -1271,7 +1271,7 @@ class Models:
 # ---------------------------------------------------------------------------------------------------------
 
 class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
-    """ This is the main event that runs the acquisition of pathogens that cause Alri.
+    """This is the main event that runs the acquisition of pathogens that cause Alri.
     It determines who is infected and when and schedules individual IncidentCase events to represent onset.
 
     A known issue is that Alri events are scheduled based on the risk of current age but occur a short time
@@ -1331,9 +1331,7 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 class AlriIncidentCase(Event, IndividualScopeEventMixin):
-    """
-    This Event is for the onset of the infection that causes Alri. It is scheduled by the AlriPollingEvent.
-    """
+    """This Event is for the onset of the infection that causes Alri. It is scheduled by the AlriPollingEvent."""
 
     def __init__(self, module, person_id, pathogen):
         super().__init__(module, person_id=person_id)
@@ -1460,11 +1458,8 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
 
 class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
-    """
-    This is the Natural Recovery event. It is scheduled by the AlriIncidentCase Event for someone who will recover
-    from the infection even if no care received.
-    It calls the 'end_infection' function.
-    """
+    """This is the Natural Recovery event. It is scheduled by the AlriIncidentCase Event for someone who will recover
+    from the infection even if no care received. It calls the 'end_infection' function."""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1522,9 +1517,7 @@ class AlriCureEvent(Event, IndividualScopeEventMixin):
 
 
 class AlriDeathEvent(Event, IndividualScopeEventMixin):
-    """
-    This Event is for the death of someone that is caused by the infection with a pathogen that causes Alri.
-    """
+    """This Event is for the death of someone that is caused by the infection with a pathogen that causes Alri."""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1563,9 +1556,7 @@ class AlriDeathEvent(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------------------------------
 
 class HSI_Alri_GenericTreatment(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is a template for the HSI interaction events. It just shows the checks to use each time.
-    """
+    """This is a template for the HSI interaction events. It just shows the checks to use each time."""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1595,10 +1586,8 @@ class HSI_Alri_GenericTreatment(HSI_Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------------------------------
 
 class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    """
-    This Event logs the number of incident cases that have occurred since the previous logging event.
-    Analysis scripts expect that the frequency of this logging event is once per year.
-    """
+    """This Event logs the number of incident cases that have occurred since the previous logging event.
+    Analysis scripts expect that the frequency of this logging event is once per year."""
 
     def __init__(self, module):
         # This event to occur every year
@@ -1698,8 +1687,7 @@ class Tracker():
 # ---------------------------------------------------------------------------------------------------------
 
 class AlriCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
-    """This event runs daily and checks properties are in the right configuration. Only use whilst debugging!
-    """
+    """This event runs daily and checks properties are in the right configuration. Only use whilst debugging!"""
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(days=1))
@@ -1709,9 +1697,7 @@ class AlriCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 class AlriIndividualLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    """
-    This Event logs the daily occurrence to a single individual child.
-    """
+    """This Event logs the daily occurrence to a single individual child."""
 
     def __init__(self, module):
         # This logging event to occur every day
