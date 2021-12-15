@@ -1194,13 +1194,13 @@ class Models:
                 'danger_signs': p['prob_danger_signs_in_sepsis']
             }
 
-        if complication in ['pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess']:
+        elif complication in ['pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess']:
             probs = {
                 'danger_signs': p['prob_danger_signs_in_pulmonary_complications'],
                 'chest_indrawing': p['prob_chest_indrawing_in_pulmonary_complications']
             }
 
-        if complication == 'hypoxaemia':
+        elif complication == 'hypoxaemia':
             if oxygen_saturation == '<90%':
                 probs = {
                     'danger_signs': p['prob_danger_signs_in_SpO2<90%'],
@@ -1229,7 +1229,7 @@ class Models:
         odds_death = p['baseline_odds_alri_death']
 
         # The effect of age:
-        if person['age_exact_years'] < 1/6:
+        if person['age_exact_years'] < 1.0/6.0:
             odds_death *= p['or_death_ALRI_age<2mo']
 
         # The effect of gender:
