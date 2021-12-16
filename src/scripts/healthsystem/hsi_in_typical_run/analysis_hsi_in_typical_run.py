@@ -62,10 +62,10 @@ hsi["month"] = hsi["date"].dt.month
 year = 2016
 hsi["Module"] = hsi["TREATMENT_ID"].str.split('_').apply(lambda x: x[0])
 # Rename Module 'HSI' to 'CareOfWomenDuringPregnancy'
-hsi["Module"] = hsi["Module"].replace("HSI", "CareOfWomenDuringPregnancy")
+# hsi["Module"] = hsi["Module"].replace("HSI", "CareOfWomenDuringPregnancy")
 # Rename Module 'GenericEmergency...' and 'GenericFirstAppt...' to 'HealthSeekingBehaviour' (or 'GenericFirstAppt')
-hsi["Module"] = hsi["Module"].replace("GenericFirstApptAtFacilityLevel0", "HealthSeekingBehaviour")
-hsi["Module"] = hsi["Module"].replace("GenericEmergencyFirstApptAtFacilityLevel1", "HealthSeekingBehaviour")
+# hsi["Module"] = hsi["Module"].replace("GenericFirstApptAtFacilityLevel0", "HealthSeekingBehaviour")
+# hsi["Module"] = hsi["Module"].replace("GenericEmergencyFirstApptAtFacilityLevel1", "HealthSeekingBehaviour")
 
 evs = hsi.loc[hsi.date.dt.year == year]\
     .groupby(by=['month', 'Module'])\
@@ -74,12 +74,12 @@ evs = hsi.loc[hsi.date.dt.year == year]\
 
 # Plot:
 # Use colormap tab20 so that each module has a unique color
-color_tab20 = get_cmap('tab20')
+color_tab20 = get_cmap('tab20_r')
 evs.plot.bar(stacked=True, color=color_tab20.colors)
 plt.title(f"HSI by Module, per Month (year {year})")
 plt.ylabel('Total per month')
 plt.tight_layout()
-plt.legend(ncol=3, loc='center', fontsize='x-small')
+plt.legend(ncol=3, loc='center', fontsize='xx-small')
 plt.savefig(make_graph_file_name('HSI_per_module_per_month'))
 plt.show()
 
@@ -96,7 +96,7 @@ if sort_legend:
     patches, labels, dummy = zip(*sorted(zip(patches, labels, evs[0]),
                                          key=lambda x: x[2],
                                          reverse=True))
-plt.legend(patches, labels, ncol=3, loc='lower center', fontsize='x-small')
+plt.legend(patches, labels, ncol=3, loc='lower center', fontsize='xx-small')
 plt.title("HSI by Module (year 2010-2018)")
 plt.tight_layout()
 plt.savefig(make_graph_file_name('HSI_per_module'))
