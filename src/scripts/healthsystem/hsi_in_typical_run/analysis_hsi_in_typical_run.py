@@ -107,23 +107,17 @@ plt.show()
 num_hsi_by_treatment_id = hsi.groupby(hsi.TREATMENT_ID)['Number_By_Appt_Type_Code'].size()
 
 # find the appt footprint for each treatment_id
-appts_by_treatment_id = \
-    hsi.set_index('TREATMENT_ID')['Number_By_Appt_Type_Code'].drop_duplicates().apply(pd.Series).fillna(0.0)
+# in hsi, drop rows with empty 'Number_By_Appt_Type_Code' to avoid warnings of empty series
+null_hsi_idx = hsi[hsi['Number_By_Appt_Type_Code'] == {}].index
+hsi.drop(index=null_hsi_idx, inplace=True)
+# generate the table
+appts_by_treatment_id =pd.DataFrame({
+    _treatment_id: pd.Series(hsi.loc[hsi.TREATMENT_ID == _treatment_id, 'Number_By_Appt_Type_Code'].values[0]) for _treatment_id in num_hsi_by_treatment_id.index
+}).fillna(0.0).T
 
-# Todo: Since the resulted appts_by_treatment_id deleted many hsi events \
-#  (i.e., the hsi list is much shorter than in num_hsi_by_treatment_id), \
-#  need to regenerate this table.
-# appts_by_treatment_id_alt = hsi[["TREATMENT_ID", 'Number_By_Appt_Type_Code']]
-# # drop rows that have empty entries
-# null_appt_idx = appts_by_treatment_id_alt[appts_by_treatment_id_alt['Number_By_Appt_Type_Code'] == {}].index
-# appts_by_treatment_id_alt = appts_by_treatment_id_alt.drop(index=null_appt_idx).copy()
-# # set index
-# appts_by_treatment_id_alt.set_index('TREATMENT_ID', inplace=True)
-# # turn to series
-# appts_by_treatment_id_alt = appts_by_treatment_id_alt.squeeze('columns')
-# # drop repetitive rows that have same index and value
-# # appts_by_treatment_id_alt = appts_by_treatment_id_alt.drop_duplicates()
-
+# the tricky one that omits many hsi events
+# appts_by_treatment_id = \
+#     hsi.set_index('TREATMENT_ID')['Number_By_Appt_Type_Code'].drop_duplicates().apply(pd.Series).fillna(0.0)
 
 # Plot...
 # See the Sankey plot in analysis_sankey_appt_and_hsi.ipynb (in the same folder)
