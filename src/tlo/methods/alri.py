@@ -201,14 +201,14 @@ class Alri(Module):
                       ),
         'base_inc_rate_ALRI_by_Enterobacteriaceae':
             Parameter(Types.LIST,
-                      'baseline incidence of Alri caused by Enterobacteriaceae in age groups 0-11, 12-23, 24-59 months,'
-                      ' per child per year'
+                      'baseline incidence of Alri caused by Enterobacteriaceae in age groups 0-11, 12-23, '
+                      '24-59 months, per child per year'
                       ),
         'base_inc_rate_ALRI_by_other_Strepto_Enterococci':
             Parameter(Types.LIST,
                       'baseline incidence of Alri caused by other streptococci and Enterococci including '
-                      'Streptococcus pyogenes and Enterococcus faecium in age groups 0-11, 12-23, 24-59 months,'
-                      ' per child per year'
+                      'Streptococcus pyogenes and Enterococcus faecium in age groups 0-11, 12-23, 24-59 months, '
+                      'per child per year'
                       ),
         'base_inc_rate_ALRI_by_Staph_aureus':
             Parameter(Types.LIST,
@@ -222,23 +222,23 @@ class Alri(Module):
                       ),
         'base_inc_rate_ALRI_by_P.jirovecii':
             Parameter(Types.LIST,
-                      'baseline incidence of Alri caused by P. jirovecii in age groups 0-11, 12-59 months, '
-                      'per child per year'
+                      'baseline incidence of Alri caused by P. jirovecii in age groups 0-11, '
+                      '12-23, 24-59 months, per child per year'
                       ),
         'base_inc_rate_ALRI_by_other_viral_pathogens':
             Parameter(Types.LIST,
-                      'baseline incidence of Alri caused by other viral pathogens in age groups 0-11, 12-59 months, '
-                      'per child per year'
+                      'baseline incidence of Alri caused by other viral pathogens in age groups 0-11, 12-23, '
+                      '24-59 months, per child per year'
                       ),
         'base_inc_rate_ALRI_by_other_bacterial_pathogens':
             Parameter(Types.LIST,
-                      'baseline incidence of Alri caused by other viral pathogens in age groups 0-11, 12-59 months, '
-                      'per child per year'
+                      'baseline incidence of Alri caused by other viral pathogens in age groups 0-11, 12-23, '
+                      '24-59 months, per child per year'
                       ),
         'base_inc_rate_ALRI_by_other_pathogens_NoS':
             Parameter(Types.LIST,
                       'baseline incidence of Alri caused by other pathogens not otherwise specified'
-                      ' in age groups 0-11, 12-59 months, per child per year'
+                      ' in age groups 0-11, 12-23, 24-59 months, per child per year'
                       ),
 
         # Proportions of what disease type (pneumonia/ bronchiolitis/ other alri) -----
@@ -585,6 +585,7 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of relapse by day 14 on 5-day amoxicillin for non-severe pneumonia'
                       ),
+
     }
 
     PROPERTIES = {
@@ -1024,21 +1025,33 @@ class Models:
                                                         .otherwise(p['rr_ALRI_non_exclusive_breastfeeding'])
                 )  # todo: add crowding or wealth?
 
-            zero_year_olds = df.is_alive & (df.age_years == 0)
+            # Use 1 year olds for scaling (because measles vaccine effectiveness is applied for over 1yo)
+            one_year_olds = df.is_alive & (df.age_years == 1)
             unscaled_lm = make_naive_linear_model(patho)
 
-            # If not 0 year-olds then cannot do scaling, return unscaled linear model
-            if sum(zero_year_olds) == 0:
+            # If not 1 year-olds then cannot do scaling, return unscaled linear model
+            if sum(one_year_olds) == 0:
                 return unscaled_lm
 
-            # If some 0 year-olds then can do scaling:
-            target_mean = p[f'base_inc_rate_ALRI_by_{patho}'][0]
-            actual_mean = unscaled_lm.predict(df.loc[zero_year_olds]).mean()
+            # If some 1 year-olds then can do scaling:
+            target_mean = p[f'base_inc_rate_ALRI_by_{patho}'][1]
+
+            # apply the reduced risk of acquisition for those vaccinated
+            actual_risks = unscaled_lm.predict(df.loc[one_year_olds])
+            if patho == "Strep_pneumoniae_PCV13":
+                actual_risks.loc[df['va_pneumo_all_doses'] & (df['age_years'] < 2)] \
+                    *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y']
+                actual_risks.loc[df['va_pneumo_all_doses'] & (df['age_years'].between(2, 5))] \
+                    *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y']
+            elif patho == "Hib":
+                actual_risks.loc[df['va_hib_all_doses']] *= p['rr_Hib_ALRI_with_Hib_vaccine']
+
+            actual_mean = actual_risks.mean()
             scaled_intercept = 1.0 * (target_mean / actual_mean)
             scaled_lm = make_naive_linear_model(patho, intercept=scaled_intercept)
 
-            # check by applying the model to mean incidence of 0-year-olds
-            assert (target_mean - scaled_lm.predict(df.loc[zero_year_olds]).mean()) < 1e-10
+            # check by applying the model to mean incidence of 1-year-olds
+            assert (target_mean - scaled_lm.predict(df.loc[one_year_olds]).mean()) < 1e-10
             return scaled_lm
 
         for patho in self.module.all_pathogens:
@@ -1051,15 +1064,6 @@ class Models:
 
         # run linear model to get baseline risk
         baseline = lm.predict(df)
-
-        # apply the reduced risk of acquisition for those vaccinated
-        if pathogen == "Strep_pneumoniae_PCV13":
-            baseline.loc[df['va_pneumo_all_doses'] & (df['age_years'] < 2)] \
-                *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y']
-            baseline.loc[df['va_pneumo_all_doses'] & (df['age_years'].between(2, 5))] \
-                *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y']
-        elif pathogen == "Hib":
-            baseline.loc[df['va_hib_all_doses']] *= p['rr_Hib_ALRI_with_Hib_vaccine']
 
         return baseline
 
