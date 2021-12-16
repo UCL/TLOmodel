@@ -96,9 +96,6 @@ class Contraception(Module):
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
         'date_of_last_pregnancy': Property(Types.DATE, 'Date that the most recent or current pregnancy began.'),
         'co_unintended_preg': Property(Types.BOOL, 'Whether the most recent or current pregnancy was unintended.'),
-        'co_contraception_before_pregnancy': Property(Types.CATEGORICAL, "Method used prior to current pregnancy "
-                                                                         "(np.nan if not pregnant).",
-                                                      categories=sorted(all_contraception_states)),
         'co_date_of_last_fp_appt': Property(Types.DATE,
                                             'The date of the most recent Family Planning appointment. This is used to '
                                             'determine if a Family Planning appointment is needed to maintain the '
@@ -171,7 +168,6 @@ class Contraception(Module):
         df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
         df.loc[df.is_alive, 'co_unintended_preg'] = False
         df.loc[df.is_alive, 'co_date_of_last_fp_appt'] = pd.NaT
-        df.loc[df.is_alive, 'co_contraception_before_pregnancy'] = np.nan
 
         # 2) Assign contraception method
         # Select females aged 15-49 from population, for current year
@@ -224,14 +220,13 @@ class Contraception(Module):
         if mother_id != -1:
             self.end_pregnancy(person_id=mother_id)
 
-        # Initialise child's properties:
+        # Initialise child's properties:  # todo do dict thing
         df.loc[child_id, (
             'co_contraception',
             'is_pregnant',
             'date_of_last_pregnancy',
             'co_unintended_preg',
             'co_date_of_last_fp_appt',
-            'co_contraception_before_pregnancy'
         )
         ] = (
             'not_using',
@@ -239,7 +234,6 @@ class Contraception(Module):
             pd.NaT,
             False,
             pd.NaT,
-            np.nan
         )
 
     def end_pregnancy(self, person_id):
@@ -249,7 +243,6 @@ class Contraception(Module):
 
         self.sim.population.props.at[person_id, 'is_pregnant'] = False
         self.select_contraceptive_following_birth(person_id)
-        self.sim.population.props.at[person_id, 'co_contraception_before_pregnancy'] = np.nan
 
     def process_params(self):
         """Process parameters that have been read-in."""
@@ -497,24 +490,10 @@ class Contraception(Module):
 
     def select_contraceptive_following_birth(self, mother_id):
         """Initiation of mother's contraception after birth."""
-        # todo - decide which one:
 
-        # OPTION 1: Allocate the woman to a contraceptive status
+        # Allocate the woman to a contraceptive status
         probs = self.processed_params['p_start_after_birth']
-        new_contraceptive = self.rng.choice(
-            probs.index,
-            p=probs.values
-        )
-
-        # # OPTION 2: Let the new contraceptive be equal to the one being used prior to the pregnancy
-        # method_before_pregnancy = self.sim.population.props.at[mother_id, 'co_contraception_before_pregnancy']
-        # new_contraceptive = method_before_pregnancy if pd.notnull(method_before_pregnancy) else 'not_using'
-        #
-        # # ... but don't allow female sterilization to any woman below 30: reset to 'not_using'
-        # if (self.sim.population.props.at[mother_id, 'age_years'] < 30) and (
-        #     new_contraceptive == 'female_sterilization'
-        # ):
-        #     new_contraceptive = 'not_using'
+        new_contraceptive = self.rng.choice(probs.index, p=probs.values)
 
         # Do the change in contraceptive
         self.schedule_batch_of_contraceptive_changes(ids=[mother_id], old=['not_using'], new=[new_contraceptive])
@@ -892,19 +871,17 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             unintended = (method_before_pregnancy != 'not_using')
 
             # Update properties (including that she is no longer on any contraception; and store the method used prior
-            # pregnancy).
+            # pregnancy).  # todo do dict thing
             df.loc[w, (
                 'co_contraception',
                 'is_pregnant',
                 'date_of_last_pregnancy',
                 'co_unintended_preg',
-                'co_contraception_before_pregnancy'
             )] = (
                 'not_using',
                 True,
                 self.sim.date,
                 unintended,
-                method_before_pregnancy
             )
 
             # Set date of labour in the Labour module
