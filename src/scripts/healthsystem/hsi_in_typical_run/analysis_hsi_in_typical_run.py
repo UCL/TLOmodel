@@ -118,8 +118,13 @@ appts_by_treatment_id = pd.DataFrame({
 }).fillna(0.0).T
 
 # the tricky one that omits many hsi events
-# appts_by_treatment_id = \
-#     hsi.set_index('TREATMENT_ID')['Number_By_Appt_Type_Code'].drop_duplicates().apply(pd.Series).fillna(0.0)
+appts_by_treatment_id_short = \
+    hsi.set_index('TREATMENT_ID')['Number_By_Appt_Type_Code'].drop_duplicates().apply(pd.Series).fillna(0.0)
+
+# A possible issue:
+# set(appts_by_treatment_id_short.columns)-set(appts_by_treatment_id.columns)
+# the output is: {'NormalDelivery', 'VCTPositive'}
+# not clear yet why the two appts are not in the table appts_by_treatment_id
 
 # Plot...
 # See the Sankey plot in analysis_sankey_appt_and_hsi.ipynb (in the same folder)
