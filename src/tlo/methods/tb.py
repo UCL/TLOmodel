@@ -36,6 +36,13 @@ class Tb(Module):
         self.district_list = list()
         self.item_codes_for_consumables_required = dict()
 
+        # tb outputs needed for calibration
+        keys = ["num_new_active_tb",
+                "tbPrevLatent"
+                ]
+        # initialise empty dict with set keys
+        self.tb_outputs = {k: [] for k in keys}
+
     INIT_DEPENDENCIES = {"Demography", "HealthSystem", "Lifestyle", "SymptomManager"}
 
     OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden"}
@@ -2275,6 +2282,9 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             },
         )
 
+        # save outputs to dict for calibration
+        self.module.tb_outputs["num_new_active_tb"].append(new_tb_cases)
+
         # ------------------------------------ PREVALENCE ------------------------------------
         # number of current active cases divided by population alive
 
@@ -2338,6 +2348,9 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "tbPrevLatentChild": prev_latent_child,
             },
         )
+
+        # save outputs to dict for calibration
+        self.module.tb_outputs["tbPrevLatent"].append(prev_latent)
 
         # ------------------------------------ MDR ------------------------------------
         # number new mdr tb cases

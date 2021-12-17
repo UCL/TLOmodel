@@ -64,7 +64,9 @@ class Hiv(Module):
                 "hiv_prev_child",
                 ]
         # initialise empty dict with set keys
-        self.hiv_outputs = dict.fromkeys(keys, [])
+        # self.hiv_outputs = dict.fromkeys(keys, [])
+        # d = {k: [] for k in keys}
+        self.hiv_outputs = {k: [] for k in keys}
 
         self.daly_wts = dict()
         self.lm = dict()
@@ -2311,9 +2313,9 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # store some outputs in dict for calibration
-        self.module.hiv_outputs["hiv_prev_adult_1549"].append(adult_prev_1549)
-        self.module.hiv_outputs["hiv_adult_inc_1549"].append(adult_inc_1549)
-        self.module.hiv_outputs["hiv_prev_child"].append(child_prev)
+        self.module.hiv_outputs["hiv_prev_adult_1549"] += [adult_prev_1549]
+        self.module.hiv_outputs["hiv_adult_inc_1549"] += [adult_inc_1549]
+        self.module.hiv_outputs["hiv_prev_child"] += [child_prev]
 
         # ------------------------------------ PREVALENCE BY AGE and SEX  ------------------------------------
 

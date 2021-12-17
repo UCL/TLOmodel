@@ -122,12 +122,21 @@ class HealthSeekingBehaviour(Module):
 
     def read_model_outputs(self):
 
-        hiv = self.sim.modules['Hiv']
-        tb = self.sim.modules['Tb']
-        demog = self.sim.modules['Demography']
+        hiv = self.sim.modules['Hiv'].hiv_outputs
+        tb = self.sim.modules['Tb'].tb_outputs
+        demog = self.sim.modules['Demography'].demog_outputs
 
         # get logged outputs for calibration into dict
         self.model_dict = {}
+
+        # these are the outputs
+        # self.module.hiv_outputs["hiv_prev_adult_1549"].append(adult_prev_1549)
+        # self.module.hiv_outputs["hiv_adult_inc_1549"].append(adult_inc_1549)
+        # self.module.hiv_outputs["hiv_prev_child"].append(child_prev)
+
+        # tb ["num_new_active_tb","tbPrevLatent"]
+
+        # self.demog_outputs["death"]
 
         # HIV - prevalence among in adults aged 15-49
         model_hiv_prev = hiv["summary_inc_and_prev_for_adults_and_children_and_fsw"]
