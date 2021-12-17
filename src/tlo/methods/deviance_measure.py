@@ -5,24 +5,63 @@ This module runs at the end of a simulation and calculates a weighted deviance m
 for a given set of parameters using outputs from the demography (deaths), HIV and TB modules
 
 """
-import datetime
-import math
-import pickle
 from pathlib import Path
-
+import math
+import numpy as np
 import pandas as pd
 
+from tlo import Date, Module, Parameter, Types
 
-def calculate_deviance_measure(parsed_output, resourcefilepath):
-    """
-        calculate deviance measure for this simulation using logged outputs
-        return single deviance value
-    """
-    parsed_output = parsed_output
 
-    def read_data_files():
+class HealthSeekingBehaviour(Module):
+    """
+    This modules reads in logged outputs from HIV, TB and demography and compares them with reported data
+    a deviance measure is calculated and returned on simulation end
+    """
+
+    INIT_DEPENDENCIES = {'Demography', 'Hiv', 'Tb'}
+    ADDITIONAL_DEPENDENCIES = {}
+
+    # Declare Metadata
+    METADATA = {}
+
+    # No parameters to declare
+    PARAMETERS = {}
+
+    # No properties to declare
+    PROPERTIES = {}
+
+    def __init__(self, name=None, resourcefilepath=None, force_any_symptom_to_lead_to_healthcareseeking=False):
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
+
+        self.data_dict = dict()
+        self.model_dict = dict()
+
+    def read_parameters(self, data_folder):
+        """Read in ResourceFile"""
+        # Load parameters from resource file:
+        # todo could read in params here instead of read_data_files
+        # todo create data_dict / model_dict in def init??
+
+    def initialise_population(self, population):
+        """Nothing to initialise in the population
+        """
+        pass
+
+    def initialise_simulation(self, sim):
+        """ nothing to initialise
+        """
+        pass
+
+    def on_birth(self, mother_id, child_id):
+        """Nothing to handle on_birth
+        """
+        pass
+
+    def read_data_files(self, resourcefilepath):
         # make a dict of all data to be used in calculating calibration score
-        data_dict = {}
+        self.data_dict = {}
 
         # HIV read in resource files for data
         xls = pd.ExcelFile(resourcefilepath / "ResourceFile_HIV.xlsx")
@@ -31,12 +70,12 @@ def calculate_deviance_measure(parsed_output, resourcefilepath):
         data_hiv_mphia_inc = pd.read_excel(xls, sheet_name="MPHIA_incidence2015")
         data_hiv_mphia_prev = pd.read_excel(xls, sheet_name="MPHIA_prevalence_art2015")
 
-        data_dict["mphia_inc_2015"] = data_hiv_mphia_inc.loc[
+        self.data_dict["mphia_inc_2015"] = data_hiv_mphia_inc.loc[
             (data_hiv_mphia_inc.age == "15-49"), "total_percent_annual_incidence"
         ].values[
             0
         ]  # inc
-        data_dict["mphia_prev_2015"] = data_hiv_mphia_prev.loc[
+        self.data_dict["mphia_prev_2015"] = data_hiv_mphia_prev.loc[
             data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"
         ].values[
             0
@@ -44,16 +83,16 @@ def calculate_deviance_measure(parsed_output, resourcefilepath):
 
         # DHS HIV data
         data_hiv_dhs_prev = pd.read_excel(xls, sheet_name="DHS_prevalence")
-        data_dict["dhs_prev_2010"] = data_hiv_dhs_prev.loc[
+        self.data_dict["dhs_prev_2010"] = data_hiv_dhs_prev.loc[
             (data_hiv_dhs_prev.Year == 2010), "HIV prevalence among general population 15-49"
         ].values[0]
-        data_dict["dhs_prev_2015"] = data_hiv_dhs_prev.loc[
+        self.data_dict["dhs_prev_2015"] = data_hiv_dhs_prev.loc[
             (data_hiv_dhs_prev.Year == 2015), "HIV prevalence among general population 15-49"
         ].values[0]
 
         # UNAIDS AIDS deaths data: 2010-
         data_hiv_unaids_deaths = pd.read_excel(xls, sheet_name="unaids_mortality_dalys2021")
-        data_dict["unaids_deaths_per_100k"] = data_hiv_unaids_deaths["AIDS_mortality_per_100k"]
+        self.data_dict["unaids_deaths_per_100k"] = data_hiv_unaids_deaths["AIDS_mortality_per_100k"]
 
         # TB
         # TB WHO data: 2010-
@@ -61,51 +100,50 @@ def calculate_deviance_measure(parsed_output, resourcefilepath):
 
         # TB active incidence per 100k 2010-2017
         data_tb_who = pd.read_excel(xls_tb, sheet_name="WHO_activeTB2020")
-        data_dict["who_tb_inc_per_100k"] = data_tb_who.loc[
+        self.data_dict["who_tb_inc_per_100k"] = data_tb_who.loc[
             (data_tb_who.year >= 2010), "incidence_per_100k"
         ]
 
         # TB latent data (Houben & Dodd 2016)
         data_tb_latent = pd.read_excel(xls_tb, sheet_name="latent_TB2014_summary")
         data_tb_latent_all_ages = data_tb_latent.loc[data_tb_latent.Age_group == "0_80"]
-        data_dict["who_tb_latent_prev"] = data_tb_latent_all_ages.proportion_latent_TB.values[0]
+        self.data_dict["who_tb_latent_prev"] = data_tb_latent_all_ages.proportion_latent_TB.values[0]
 
         # TB case notification rate NTP: 2012-2019
         data_tb_ntp = pd.read_excel(xls_tb, sheet_name="NTP2019")
-        data_dict["ntp_case_notification_per_100k"] = data_tb_ntp.loc[
+        self.data_dict["ntp_case_notification_per_100k"] = data_tb_ntp.loc[
             (data_tb_ntp.year >= 2012), "case_notification_rate_per_100k"
         ]
 
         # TB mortality per 100k excluding HIV: 2010-2017
-        data_dict["who_tb_deaths_per_100k"] = data_tb_who.loc[
+        self.data_dict["who_tb_deaths_per_100k"] = data_tb_who.loc[
             (data_tb_who.year >= 2010), "mortality_tb_excl_hiv_per_100k"
         ]
 
-        return data_dict
+    def read_model_outputs(self):
 
-    def read_model_outputs(parsed_output):
-        output = parsed_output
+        hiv = self.sim.modules['Hiv']
+        tb = self.sim.modules['Tb']
+        demog = self.sim.modules['Demography']
 
         # get logged outputs for calibration into dict
-        model_dict = {}
+        self.model_dict = {}
 
         # HIV - prevalence among in adults aged 15-49
-        model_hiv_prev = output["tlo.methods.hiv"][
-            "summary_inc_and_prev_for_adults_and_children_and_fsw"
-        ]
-        model_dict["hiv_prev_adult_2010"] = (
+        model_hiv_prev = hiv["summary_inc_and_prev_for_adults_and_children_and_fsw"]
+        self.model_dict["hiv_prev_adult_2010"] = (
                                                 model_hiv_prev.loc[
                                                     (model_hiv_prev.date == "2011-01-01"), "hiv_prev_adult_1549"
                                                 ].values[0]
                                             ) * 100
-        model_dict["hiv_prev_adult_2015"] = (
+        self.model_dict["hiv_prev_adult_2015"] = (
                                                 model_hiv_prev.loc[
                                                     (model_hiv_prev.date == "2015-01-01"), "hiv_prev_adult_1549"
                                                 ].values[0]
                                             ) * 100
 
         # hiv incidence in adults aged 15-49
-        model_dict["hiv_inc_adult_2015"] = (
+        self.model_dict["hiv_inc_adult_2015"] = (
                                                model_hiv_prev.loc[
                                                    (model_hiv_prev.date == "2015-01-01"), "hiv_adult_inc_1549"
                                                ].values[0]
@@ -113,7 +151,7 @@ def calculate_deviance_measure(parsed_output, resourcefilepath):
 
         # aids deaths
         # deaths
-        deaths = output["tlo.methods.demography"]["death"].copy()  # outputs individual deaths
+        deaths = demog["death"].copy()  # outputs individual deaths
         deaths = deaths.set_index("date")
 
         # AIDS DEATHS
@@ -140,24 +178,24 @@ def calculate_deviance_measure(parsed_output, resourcefilepath):
         tot_aids_deaths.index = pd.to_datetime(tot_aids_deaths.index, format="%Y")
 
         # aids mortality rates per 1000 person-years
-        model_dict["AIDS_mortality_per_100k"] = (tot_aids_deaths / py) * 100000
+        self.model_dict["AIDS_mortality_per_100k"] = (tot_aids_deaths / py) * 100000
 
         # tb active incidence per 100k - all ages
         TB_inc = output["tlo.methods.tb"]["tb_incidence"]
         TB_inc = TB_inc.set_index("date")
         TB_inc.index = pd.to_datetime(TB_inc.index)
-        model_dict["TB_active_inc_per100k"] = (TB_inc["num_new_active_tb"] / py) * 100000
+        self.model_dict["TB_active_inc_per100k"] = (TB_inc["num_new_active_tb"] / py) * 100000
 
         # tb latent prevalence
         latentTB_prev = output["tlo.methods.tb"]["tb_prevalence"]
-        model_dict["TB_latent_prev"] = latentTB_prev.loc[
+        self.model_dict["TB_latent_prev"] = latentTB_prev.loc[
             (latentTB_prev.date == "2014-01-01"), "tbPrevLatent"].values[0]
 
         # tb case notifications
         tb_notifications = output["tlo.methods.tb"]["tb_treatment"]
         tb_notifications = tb_notifications.set_index("date")
         tb_notifications.index = pd.to_datetime(tb_notifications.index)
-        model_dict["TB_case_notifications_per100k"] = (
+        self.model_dict["TB_case_notifications_per100k"] = (
                                                           tb_notifications["tbNewDiagnosis"] / py
                                                       ) * 100000
 
@@ -168,11 +206,9 @@ def calculate_deviance_measure(parsed_output, resourcefilepath):
         tot_tb_non_hiv_deaths = deaths_TB.groupby(by=["year"]).size()
         tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format="%Y")
         # tb mortality rates per 100k person-years
-        model_dict["TB_mortality_per_100k"] = (tot_tb_non_hiv_deaths / py) * 100000
+        self.model_dict["TB_mortality_per_100k"] = (tot_tb_non_hiv_deaths / py) * 100000
 
-        return model_dict
-
-    def weighted_mean(model_dict, data_dict):
+    def weighted_mean(self, model_dict, data_dict):
         # assert model_output is not empty
 
         # return calibration score (weighted mean deviance)
@@ -367,14 +403,16 @@ def calculate_deviance_measure(parsed_output, resourcefilepath):
             + tb_mortality_who
         )
 
-        return calibration_score
+        transmission_rates = [None, None]  # store hiv and tb transmission rates
 
-    data_dict = read_data_files()
-    model_dict = read_model_outputs()
-    deviance_measure = weighted_mean(model_dict=model_dict, data_dict=data_dict)
+        return_values = {calibration_score, transmission_rates}
 
-    transmission_rates = [None, None]  # store hiv and tb transmission rates
+        return return_values
 
-    return_values = {deviance_measure, transmission_rates}
+    def on_simulation_end(self):
 
-    return return_values
+        self.read_model_outputs()
+        self.read_data_files()
+        deviance_measure = self.weighted_mean(model_dict=self.model_dict, data_dict=self.data_dict)
+
+        # todo logging deviance measure

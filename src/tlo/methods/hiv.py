@@ -58,6 +58,14 @@ class Hiv(Module):
 
         self.stored_test_numbers = []  # create empty list for storing hiv test numbers
 
+        # hiv outputs needed for calibration
+        keys = ["hiv_prev_adult_1549",
+                "hiv_adult_inc_1549",
+                "hiv_prev_child",
+                ]
+        # initialise empty dict with set keys
+        self.hiv_outputs = dict.fromkeys(keys, [])
+
         self.daly_wts = dict()
         self.lm = dict()
         self.item_codes_for_consumables_required = dict()
@@ -2301,6 +2309,11 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "hiv_prev_fsw": prev_hiv_fsw,
             },
         )
+
+        # store some outputs in dict for calibration
+        self.module.hiv_outputs["hiv_prev_adult_1549"].append(adult_prev_1549)
+        self.module.hiv_outputs["hiv_adult_inc_1549"].append(adult_inc_1549)
+        self.module.hiv_outputs["hiv_prev_child"].append(child_prev)
 
         # ------------------------------------ PREVALENCE BY AGE and SEX  ------------------------------------
 
