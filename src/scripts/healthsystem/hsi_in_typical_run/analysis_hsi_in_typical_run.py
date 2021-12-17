@@ -111,8 +111,10 @@ num_hsi_by_treatment_id = hsi.groupby(hsi.TREATMENT_ID)['Number_By_Appt_Type_Cod
 null_hsi_idx = hsi[hsi['Number_By_Appt_Type_Code'] == {}].index
 hsi.drop(index=null_hsi_idx, inplace=True)
 # generate the table
-appts_by_treatment_id =pd.DataFrame({
-    _treatment_id: pd.Series(hsi.loc[hsi.TREATMENT_ID == _treatment_id, 'Number_By_Appt_Type_Code'].values[0]) for _treatment_id in num_hsi_by_treatment_id.index
+appts_by_treatment_id = pd.DataFrame({
+    _treatment_id: pd.Series(
+        hsi.loc[hsi.TREATMENT_ID == _treatment_id, 'Number_By_Appt_Type_Code'].values[0]
+    ) for _treatment_id in num_hsi_by_treatment_id.index
 }).fillna(0.0).T
 
 # the tricky one that omits many hsi events
