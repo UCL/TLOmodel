@@ -338,7 +338,6 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
         mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
         labour_list = sim.modules['Labour'].women_in_labour
 
-        # -----  COMPLICATION DURING BIRTH  -----
         if person_id in labour_list:
             la_currently_in_labour = df.at[person_id, 'la_currently_in_labour']
             if (
@@ -349,16 +348,6 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                 event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                     module=sim.modules['Labour'], person_id=person_id,
                     facility_level_of_this_hsi=rng.choice(['1a', '1b']))
-                schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
-
-            # -----  COMPLICATION AFTER BIRTH  -----
-            if (
-                la_currently_in_labour &
-                mni[person_id]['sought_care_for_complication'] &
-                (mni[person_id]['sought_care_labour_phase'] == 'postpartum')
-            ):
-                event = HSI_Labour_ReceivesPostnatalCheck(
-                    module=sim.modules['Labour'], person_id=person_id)
                 schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
 
     if "Depression" in sim.modules:

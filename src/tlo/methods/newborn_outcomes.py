@@ -384,7 +384,8 @@ class NewbornOutcomes(Module):
         # -------------------------------------------- VITAMIN K ------------------------------------------
         self.item_codes_nb_consumables['vitamin_k'] =\
             [get_item_code_from_name('vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA')] + \
-            [get_item_code_from_name('Syringe,  disposable 2ml,  hypoluer with 23g needle_each_CMST')]
+            [get_item_code_from_name('Syringe, needle + swab')] + \
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
 
         # -------------------------------------------- EYE CARE  ------------------------------------------
         self.item_codes_nb_consumables['eye_care'] = \
@@ -396,14 +397,23 @@ class NewbornOutcomes(Module):
 
         # ------------------------------------- SEPSIS - FULL SUPPORTIVE CARE ---------------------------------------
         self.item_codes_nb_consumables['sepsis_supportive_care'] = \
-            get_item_code_from_pkg('Newborn sepsis - full supportive care')
+            [get_item_code_from_name('Benzylpenicillin 1g (1MU), PFR_Each_CMST')] + \
+            [get_item_code_from_name('Gentamicin 40mg/ml, 2ml_each_CMST')] + \
+            [get_item_code_from_name('Oxygen, 1000 liters, primarily with oxygen cylinders')] + \
+            [get_item_code_from_name('Dextrose (glucose) 5%, 1000ml_each_CMST')] + \
+            [get_item_code_from_name('Tube, feeding CH 8_each_CMST')] + \
+            [get_item_code_from_name('Cannula iv  (winged with injection pot) 20_each_CMST')] + \
+            [get_item_code_from_name('IV giving/infusion set, with needle')] + \
+            [get_item_code_from_name('Syringe, needle + swab')] + \
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
 
         # ---------------------------------------- SEPSIS - ANTIBIOTICS ---------------------------------------------
         self.item_codes_nb_consumables['sepsis_abx'] =\
             [get_item_code_from_name('Benzylpenicillin 1g (1MU), PFR_Each_CMST')] + \
-            [get_item_code_from_name('Gentamicin 40mg/ml, 2ml_each_CMST')] +\
-            [get_item_code_from_name('IV giving/infusion set, with needle')]
-
+            [get_item_code_from_name('Gentamicin 40mg/ml, 2ml_each_CMST')] + \
+            [get_item_code_from_name('Cannula iv  (winged with injection pot) 20_each_CMST')] + \
+            [get_item_code_from_name('IV giving/infusion set, with needle')] + \
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
 
     def initialise_simulation(self, sim):
         # We call the following function to store the required consumables for the simulation run within the appropriate
@@ -1019,8 +1029,12 @@ class NewbornOutcomes(Module):
 
             # The same pattern is then followed for health centre care
             elif facility_type == 'hc':
-                avail = hsi_event.get_consumables(item_codes=self.item_codes_nb_consumables['sepsis_abx'])
-                if avail:
+                consumables = hsi_event.get_consumables(item_codes=self.item_codes_nb_consumables['sepsis_abx'],
+                                                        return_individual_results=True)
+                abx_1_avail = list(consumables.values())[0]
+                abx_2_avail = list(consumables.values())[1]
+
+                if abx_1_avail and abx_2_avail:
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True
 
     def link_twins(self, child_one, child_two, mother_id):

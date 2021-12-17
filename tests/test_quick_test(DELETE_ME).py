@@ -23,7 +23,7 @@ from tlo.methods import (
      joes_fake_props_module, cardio_metabolic_disorders, dummy_contraception
 )
 
-seed = 8546
+seed = 223
 
 # The resource files
 try:
@@ -134,7 +134,7 @@ def register_all_modules():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
                                            mode_appt_constraints=2,
-                                           ignore_cons_constraints=True),
+                                           cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -158,9 +158,9 @@ def test_run_core_modules_normal_allocation_of_pregnancy():
     dtypes at the end"""
 
     sim = register_all_modules()
-    sim.make_initial_population(n=50000)
+    sim.make_initial_population(n=1000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
-    sim.simulate(end_date=Date(2020, 1, 1))
+    sim.simulate(end_date=Date(2011, 1, 1))
     check_dtypes(sim)
 
 

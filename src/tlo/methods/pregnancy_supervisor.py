@@ -828,13 +828,15 @@ class PregnancySupervisor(Module):
                 # for women who are no long pregnant -this check ensures women who are still pregnant do not have the
                 # entry in the mni deleted
                 if mni[person]['delete_mni'] and (df.at[person, 'is_pregnant'] or
+                                                  df.at[person, 'la_is_postpartum'] or
                                                   (df.at[person, 'ps_ectopic_pregnancy'] != 'none')):
                     mni[person]['delete_mni'] = False
 
                 # otherwise the entry can be deleted
-                elif mni[person]['delete_mni'] and not df.at[person, 'is_pregnant'] and (df.at[person,
-                                                                                               'ps_ectopic_pregnancy']
-                                                                                         == 'none'):
+                elif mni[person]['delete_mni'] and \
+                    ~df.at[person, 'is_pregnant'] and\
+                    ~df.at[person, 'la_is_postpartum'] and \
+                    (df.at[person, 'ps_ectopic_pregnancy'] == 'none'):
                     del mni[person]
 
         daly_series = pd.Series(data=0, index=df.index[df.is_alive])
@@ -2041,12 +2043,12 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        if not df.at[individual_id, 'is_alive']:
+        if (
+            ~df.at[individual_id, 'is_alive'] or
+            (df.at[individual_id, 'ps_ectopic_pregnancy'] != 'not_ruptured') or
+            (df.at[individual_id, 'ps_gestational_age_in_weeks'] < 9)
+        ):
             return
-
-        # Check only the right women have arrived here
-        assert df.at[individual_id, 'ps_ectopic_pregnancy'] == 'not_ruptured'
-        assert df.at[individual_id, 'ps_gestational_age_in_weeks'] < 9
 
         # reset pregnancy variables and store onset for daly calculation
         self.sim.modules['Contraception'].end_pregnancy(individual_id)
@@ -2081,11 +2083,8 @@ class EctopicPregnancyRuptureEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        if not df.at[individual_id, 'is_alive']:
+        if not df.at[individual_id, 'is_alive'] or (df.at[individual_id, 'ps_ectopic_pregnancy'] != 'not_ruptured'):
             return
-
-        # Check the right woman has arrived at this event
-        assert df.at[individual_id, 'ps_ectopic_pregnancy'] == 'not_ruptured'
 
         logger.info(key='maternal_complication', data={'person': individual_id,
                                                        'type': 'ectopic_ruptured',

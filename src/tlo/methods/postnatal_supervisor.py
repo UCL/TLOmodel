@@ -446,6 +446,8 @@ class PostnatalSupervisor(Module):
         endometritis = pd.Series(False, index=df.index)
         chorio_in_preg = pd.Series(False, index=df.index)
 
+        # todo: will crash if NA values included in externals - although this shouldnt happen if women are in the MNI
+
         if 'mode_of_delivery' in mni_df.columns:
             mode_of_delivery = pd.Series(mni_df['mode_of_delivery'], index=df.index)
 
