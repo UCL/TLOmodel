@@ -59,13 +59,13 @@ class Hiv(Module):
         self.stored_test_numbers = []  # create empty list for storing hiv test numbers
 
         # hiv outputs needed for calibration
-        keys = ["hiv_prev_adult_1549",
+        keys = ["date",
+                "hiv_prev_adult_1549",
                 "hiv_adult_inc_1549",
                 "hiv_prev_child",
+                "population"
                 ]
         # initialise empty dict with set keys
-        # self.hiv_outputs = dict.fromkeys(keys, [])
-        # d = {k: [] for k in keys}
         self.hiv_outputs = {k: [] for k in keys}
 
         self.daly_wts = dict()
@@ -2297,6 +2297,8 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             ) / n_fsw
         )
 
+        population = len(df.loc[df.is_alive])
+
         logger.info(
             key="summary_inc_and_prev_for_adults_and_children_and_fsw",
             description="Summary of HIV among adult (15+ and 15-49) and children (0-14s) and female sex workers"
@@ -2313,9 +2315,11 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # store some outputs in dict for calibration
+        self.module.hiv_outputs["date"] += [self.sim.date.year]
         self.module.hiv_outputs["hiv_prev_adult_1549"] += [adult_prev_1549]
         self.module.hiv_outputs["hiv_adult_inc_1549"] += [adult_inc_1549]
         self.module.hiv_outputs["hiv_prev_child"] += [child_prev]
+        self.module.hiv_outputs["population"] += [population]
 
         # ------------------------------------ PREVALENCE BY AGE and SEX  ------------------------------------
 
