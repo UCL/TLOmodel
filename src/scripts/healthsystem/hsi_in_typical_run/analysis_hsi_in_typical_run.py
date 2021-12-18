@@ -61,11 +61,6 @@ hsi["month"] = hsi["date"].dt.month
 # Number of HSI that are taking place by originating module, by month
 year = 2016
 hsi["Module"] = hsi["TREATMENT_ID"].str.split('_').apply(lambda x: x[0])
-# Rename Module 'HSI' to 'CareOfWomenDuringPregnancy'
-# hsi["Module"] = hsi["Module"].replace("HSI", "CareOfWomenDuringPregnancy")
-# Rename Module 'GenericEmergency...' and 'GenericFirstAppt...' to 'HealthSeekingBehaviour' (or 'GenericFirstAppt')
-# hsi["Module"] = hsi["Module"].replace("GenericFirstApptAtFacilityLevel0", "HealthSeekingBehaviour")
-# hsi["Module"] = hsi["Module"].replace("GenericEmergencyFirstApptAtFacilityLevel1", "HealthSeekingBehaviour")
 
 evs = hsi.loc[hsi.date.dt.year == year]\
     .groupby(by=['month', 'Module'])\
