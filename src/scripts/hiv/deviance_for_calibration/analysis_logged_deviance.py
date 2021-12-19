@@ -24,7 +24,6 @@ from tlo.methods import (
     symptommanager,
     tb,
     deviance_measure,
-    test_method
 )
 
 # Where will outputs go
@@ -38,17 +37,16 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2019, 1, 1)
-popsize = 1000
+end_date = Date(2020, 1, 1)
+popsize = 500
 
 # set up the log config
-# todo
 log_config = {
     "filename": "deviance",
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
-        "tlo.methods.skeleton": logging.INFO,
+        "tlo.methods.deviance_measure": logging.INFO,
     },
 }
 
@@ -79,7 +77,6 @@ sim.register(
     hiv.Hiv(resourcefilepath=resourcefilepath),
     tb.Tb(resourcefilepath=resourcefilepath),
     deviance_measure.Deviance(resourcefilepath=resourcefilepath),
-    # test_method.Test(resourcefilepath=resourcefilepath),
 )
 
 # change IPT high-risk districts to all districts for national-level model
@@ -93,7 +90,7 @@ sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 1.5
 sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.998
 # sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = 0.3
 # sim.modules["Hiv"].parameters["temporal_trend_art_initiation"] = 3.5  # multipl model 0.3 * (yr*param)
-sim.modules["Hiv"].parameters["beta"] = 0.13
+# sim.modules["Hiv"].parameters["beta"] = 0.13
 
 sim.modules["Hiv"].parameters["rr_start_art_if_aids_symptoms"] = 5
 sim.modules["Hiv"].parameters["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 1.0
