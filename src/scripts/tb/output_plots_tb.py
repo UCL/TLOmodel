@@ -163,8 +163,8 @@ py.index = pd.to_datetime(years, format="%Y")
 
 # Active TB incidence per 100,000 person-years - annual outputs
 TB_inc = output["tlo.methods.tb"]["tb_incidence"]
-TB_inc = TB_inc.set_index("date")
-TB_inc.index = pd.to_datetime(TB_inc.index)
+years = pd.to_datetime(TB_inc["date"]).dt.year
+TB_inc.index = pd.to_datetime(years, format="%Y")
 activeTB_inc_rate = (TB_inc["num_new_active_tb"] / py) * 100000
 
 make_plot(

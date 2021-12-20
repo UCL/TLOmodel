@@ -1,17 +1,17 @@
 """
-This file defines a batch run through which the hiv and tb modules are run across a grid of parameter values
+This file defines a batch run through which the hiv and tb modules are run across a set of parameter values
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/tb/tara_tb_hiv_calibration.py
+tlo scenario-run --draw-only src/scripts/hiv/hiv_tb_analyses/calibration_script.py
 
 Test the scenario starts running without problems:
-tlo scenario-run src/scripts/tb/tara_tb_hiv_calibration.py
+tlo scenario-run src/scripts/hiv/hiv_tb_analyses/calibration_script.py
 
 or execute a single run:
-tlo scenario-run src/scripts/tb/tara_tb_hiv_calibration.py --draw 1 0
+tlo scenario-run src/scripts/hiv/hiv_tb_analyses/calibration_script.py --draw 1 0
 
 Run on the batch system using:
-tlo batch-submit src/scripts/tb/tara_tb_hiv_calibration.py
+tlo batch-submit src/scripts/hiv/hiv_tb_analyses/calibration_script.py
 
 
 save Job ID: tara_tb_hiv_calibration-2021-10-06T094337Z
@@ -23,14 +23,12 @@ tlo batch-job tlo_q1_demo-123 --tasks
 Download result files for a completed job:
 tlo batch-download tlo_q1_demo-123
 
-This currently will run multiple simulations of the baseline scenario
-with all parameters set to default
-
 """
 
 import numpy as np
-from scipy.stats import qmc
+import pandas as pd
 import random
+import os
 
 from tlo import Date, logging
 from tlo.methods import (
@@ -49,17 +47,8 @@ from tlo.methods import (
 
 from tlo.scenario import BaseScenario
 
-number_of_draws = 10
+number_of_draws = 20
 runs_per_draw = 5
-
-# set up LHC sampler
-sampler = qmc.LatinHypercube(d=2)
-sample = sampler.random(n=number_of_draws)  # todo: decide how many samples (also 5 or 10 runs per draw?)
-
-l_bounds = [0.08, 0.2]  # todo: quick runs with extreme values to get bounds
-u_bounds = [1.2, 2.2]
-qmc.scale(sample, l_bounds, u_bounds)
-
 
 
 # todo: check all below with analysis_logged_deviance
@@ -73,7 +62,12 @@ class TestScenario(BaseScenario):
         self.end_date = Date(2020, 1, 1)
         self.pop_size = 1500
         self.number_of_draws = number_of_draws
-        self.runs_per_draw = 2
+        self.runs_per_draw = runs_per_draw
+
+        self.sampled_parameters = pd.read_excel(
+            os.path.join(self.resources, "ResourceFile_HIV.xlsx"),
+            sheet_name="LHC_samples",
+        )
 
     def log_configuration(self):
         return {
@@ -111,20 +105,13 @@ class TestScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        # todo bring in LHS samples here
-        grid = self.make_grid(
-            {
-                'beta': np.linspace(start=0.02, stop=0.06, num=hiv_param_length),
-                'transmission_rate': np.linspace(start=0.005, stop=0.2, num=tb_param_length),
-            }
-        )
-
+        # todo bring in LHC samples here
         return {
             'Hiv': {
-                'beta': grid['beta'][draw_number],
+                'beta': self.sampled_parameters.hiv[draw_number],
             },
             'Tb': {
-                'transmission_rate': grid['transmission_rate'][draw_number],
+                'transmission_rate': self.sampled_parameters.tb[draw_number],
             },
         }
 
