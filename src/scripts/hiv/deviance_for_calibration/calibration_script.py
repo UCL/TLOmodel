@@ -14,7 +14,8 @@ Run on the batch system using:
 tlo batch-submit src/scripts/hiv/deviance_for_calibration/calibration_script.py
 
 
-save Job ID: Job ID: calibration_script-2021-12-20T111824Z
+save Job ID:  calibration_script-2021-12-20T144906Z
+this ^^ is the large calibration run (100 jobs, pop=760k)
 
 
 Display information about a job:
