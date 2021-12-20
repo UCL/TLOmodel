@@ -14,18 +14,17 @@ Run on the batch system using:
 tlo batch-submit src/scripts/hiv/deviance_for_calibration/calibration_script.py
 
 
-save Job ID: tara_tb_hiv_calibration-2021-10-06T094337Z
+save Job ID: Job ID: calibration_script-2021-12-20T111824Z
 
 
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
 
 Download result files for a completed job:
-tlo batch-download tlo_q1_demo-123
+tlo batch-download calibration_script-2021-12-20T111824Z
 
 """
 
-import numpy as np
 import pandas as pd
 import random
 import os
@@ -47,8 +46,7 @@ from tlo.methods import (
 
 from tlo.scenario import BaseScenario
 
-# todo change to 20 for full run
-number_of_draws = 5
+number_of_draws = 20
 runs_per_draw = 5
 
 
@@ -60,7 +58,7 @@ class TestScenario(BaseScenario):
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)
-        self.pop_size = 50000
+        self.pop_size = 760000  # 1:25 representative sample
         self.number_of_draws = number_of_draws
         self.runs_per_draw = runs_per_draw
 
