@@ -4,10 +4,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import (
-    flatten_multi_index_series_into_dict_for_logging,
-    get_medium_variant_asfr_from_wpp_resourcefile,
-)
+from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
 from tlo.util import random_date, sample_outcome, transition_states
@@ -18,7 +15,12 @@ logger.setLevel(logging.INFO)
 
 class Contraception(Module):
     """Contraception module covering baseline contraception methods use, failure (i.e., pregnancy),
-    Switching contraceptive methods, and discontinuation rates by age."""
+    Switching contraceptive methods, and discontinuation rates by age.
+    Calibration is done in two stages:
+    (i) A scaling factor on the risk of pregnancy (`scaling_factor_on_monthly_risk_of_pregnancy`) is used to induce the
+     correct number of age-specific births initially, given the initial pattern of contraceptive use;
+    (ii) Trends over time in the risk of starting (`time_age_trend_in_initiation`) and stopping
+    (`time_age_trend_in_stopping`) of contraceptives are used to induce the correct trend in the number of births."""
 
     INIT_DEPENDENCIES = {'Demography'}
 
@@ -220,21 +222,15 @@ class Contraception(Module):
         if mother_id != -1:
             self.end_pregnancy(person_id=mother_id)
 
-        # Initialise child's properties:  # todo do dict thing
-        df.loc[child_id, (
-            'co_contraception',
-            'is_pregnant',
-            'date_of_last_pregnancy',
-            'co_unintended_preg',
-            'co_date_of_last_fp_appt',
-        )
-        ] = (
-            'not_using',
-            False,
-            pd.NaT,
-            False,
-            pd.NaT,
-        )
+        # Initialise child's properties:
+        new_properties = {
+            'co_contraception': 'not_using',
+            'is_pregnant': False,
+            'date_of_last_pregnancy': pd.NaT,
+            'co_unintended_preg': False,
+            'co_date_of_last_fp_appt': pd.NaT,
+        }
+        df.loc[child_id, new_properties.keys()] = new_properties.values()
 
     def end_pregnancy(self, person_id):
         """End the pregnancy. Reset pregnancy status and may initiate a contraceptive method.
@@ -340,7 +336,7 @@ class Contraception(Module):
                 for a in age_effect.index:
                     p_stop_this_year[a] = p_stop_by_method * age_effect.at[a] * year_effect.at[year, a]
                 p_stop_this_year_df = pd.DataFrame.from_dict(p_stop_this_year, orient='index')
-                # todo soft-code this
+
                 # Check correct format of age/method data-frame
                 assert set(p_stop_this_year_df.columns) == set(self.all_contraception_states - {'not_using'})
                 assert (p_stop_this_year_df.index == range(15, 50)).all()
@@ -352,12 +348,12 @@ class Contraception(Module):
 
         def time_age_trend_in_initiation():
             """The age-specific effect of calendar year on the probability of starting use of contraceptive
-            (multiplicative effect). Values are chosen so as to induce a trend in age-specific fertility consistent with
+            (multiplicative effect). Values are chosen to induce a trend in age-specific fertility consistent with
              the WPP estimates."""
-            # todo soft-code this
 
             _years = np.arange(2010, 2101)
             _ages = np.arange(15, 50)
+
             _init_over_time = np.exp(+0.05 * np.minimum(2020 - 2010, (_years - 2010))) * np.maximum(1.0, np.exp(
                 +0.01 * (_years - 2020)))
             _init_over_time_modification_by_age = 1.0 / expand_to_age_years([1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], _ages)
@@ -367,8 +363,9 @@ class Contraception(Module):
 
         def time_age_trend_in_stopping():
             """The age-specific effect of calendar year on the probability of discontinuing use of contraceptive
-            (multiplicative effect). Values are chosen so as to induce a trend in age-specific fertility consistent with
+            (multiplicative effect). Values are chosen to induce a trend in age-specific fertility consistent with
             the WPP estimates."""
+
             _years = np.arange(2010, 2101)
             _ages = np.arange(15, 50)
 
@@ -394,42 +391,25 @@ class Contraception(Module):
             return p_start_after_birth
 
         def scaling_factor_on_monthly_risk_of_pregnancy():
+            """A scaling factor on the monthly risk of pregnancy, chosen to give the correct number of live-births
+            initially, given the initial pattern of contraceptive use."""
+
             # first scaling factor is that worked out from the calibration script
-            _first_scaling_factor_as_dict = dict(zip(
+            scaling_factor_as_dict = dict(zip(
                 ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49'],
                 self.parameters['scaling_factor_on_monthly_risk_of_pregnancy']
             ))
 
-            # second calibration factor is worked out from comparison in real model run (in test)
-            # todo- combine these into a single set of "magic number"
-            _second_scaling_factor_as_dict = {
-                '15-19': 1.1527232462304295,
-                '20-24': 1.1590288550036147,
-                '25-29': 1.1353718581445968,
-                '30-34': 1.126416628978486,
-                '35-39': 1.1313056773435877,
-                '40-44': 1.0019264980655145,
-                '45-49': 1.201926971328496
-            }
-
-            # Combine these to scaling factors and expand to single years of age
             AGE_RANGE_LOOKUP = self.sim.modules['Demography'].AGE_RANGE_LOOKUP
             _ages = range(15, 50)
             return pd.Series(
                 index=_ages,
-                data=[
-                    (_first_scaling_factor_as_dict[AGE_RANGE_LOOKUP[_age_year]]
-                     * _second_scaling_factor_as_dict[AGE_RANGE_LOOKUP[_age_year]])
-                    for _age_year in _ages]
+                data=[scaling_factor_as_dict[AGE_RANGE_LOOKUP[_age_year]] for _age_year in _ages]
             )
 
         def pregnancy_no_contraception():
             """Get the probability per month of a woman becoming pregnant if she is not using any contraceptive method.
             """
-
-            def convert_annual_prob_to_monthly_prob(p_annual):
-                # todo - do this properly and using helper function
-                return 1 - np.exp(np.log(1 - p_annual) / 12)
 
             # Get the probability of being pregnant if not HIV-positive
             p_pregnancy_no_contraception_per_month_nohiv = self.parameters['Pregnancy_NotUsing_In_2010'] \
@@ -871,18 +851,14 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             unintended = (method_before_pregnancy != 'not_using')
 
             # Update properties (including that she is no longer on any contraception; and store the method used prior
-            # pregnancy).  # todo do dict thing
-            df.loc[w, (
-                'co_contraception',
-                'is_pregnant',
-                'date_of_last_pregnancy',
-                'co_unintended_preg',
-            )] = (
-                'not_using',
-                True,
-                self.sim.date,
-                unintended,
-            )
+            # pregnancy).
+            new_properties = {
+                'co_contraception': 'not_using',
+                'is_pregnant': True,
+                'date_of_last_pregnancy': self.sim.date,
+                'co_unintended_preg': unintended,
+            }
+            df.loc[w, new_properties.keys()] = new_properties.values()
 
             # Set date of labour in the Labour module
             self.sim.modules['Labour'].set_date_of_labour(w)
@@ -1045,8 +1021,8 @@ class SimplifiedPregnancyAndLabour(Module):
                                                     live_birth=(self.rng.rand() < self.parameters['prob_live_birth'])
                                                     ),
                                 random_date(
-                                    self.sim.date + pd.DateOffset(months=8, days=14),
-                                    self.sim.date + pd.DateOffset(months=8, days=44),
+                                    self.sim.date + pd.DateOffset(months=9) - pd.DateOffset(days=14),
+                                    self.sim.date + pd.DateOffset(months=9) + pd.DateOffset(days=14),
                                     self.rng)
                                 )
 
@@ -1065,3 +1041,44 @@ class EndOfPregnancyEvent(Event, IndividualScopeEventMixin):
             self.sim.do_birth(person_id)
         else:
             self.sim.modules['Contraception'].end_pregnancy(person_id)
+
+
+# -----------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------
+#
+# Helper functions
+#
+# -----------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------
+
+def get_medium_variant_asfr_from_wpp_resourcefile(dat: pd.DataFrame, months_exposure: int) -> dict:
+    """Process the data on age-specific fertility rates into a form that can be used to quickly map
+    age-ranges to an age-specific fertility rate (for the "Medium Variant" in the WPP data source).
+    :param dat: Raw form of the data in `ResourceFile_ASFR_WPP.csv`
+    :param months_exposure: The time (in integer number of months) over which the risk of pregnancy should be
+    computed.
+    :returns: a dict, keyed by year, giving a dataframe of risk of pregnancy over a the period, by age """
+
+    dat = dat.drop(dat[~dat.Variant.isin(['WPP_Estimates', 'WPP_Medium variant'])].index)
+    dat['Period-Start'] = dat['Period'].str.split('-').str[0].astype(int)
+    dat['Period-End'] = dat['Period'].str.split('-').str[1].astype(int)
+    years = range(min(dat['Period-Start'].values), 1 + max(dat['Period-End'].values))
+
+    # Convert the rates for asfr (rate of live-birth per year) to a rate per the frequency of this event repeating
+    dat['asfr_per_period'] = convert_annual_prob_to_monthly_prob(dat['asfr'], num_months=months_exposure)
+
+    asfr = dict()  # format is {year: {age-range: asfr}}
+    for year in years:
+        asfr[year] = dat.loc[
+            (year >= dat['Period-Start']) & (year <= dat['Period-End'])
+            ].set_index('Age_Grp')['asfr_per_period'].to_dict()
+
+    return asfr
+
+
+def convert_annual_prob_to_monthly_prob(p_annual, num_months=1):
+    return 1.0 - ((1.0 - p_annual) ** (num_months / 12.0))
+
+
+def convert_monthly_prob_to_annual_prob(p_monthly):
+    return 1.0 - ((1.0 - p_monthly) ** 12.0)

@@ -6,8 +6,8 @@
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import get_medium_variant_asfr_from_wpp_resourcefile
 from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.methods.contraception import get_medium_variant_asfr_from_wpp_resourcefile
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

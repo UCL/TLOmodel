@@ -1,8 +1,10 @@
 """This file is used to do a quick check on the likely outcomes of a longer run. It simulates only the contraceptive
-poll and age-update event in order to construct an age-time trend of the usage of each contraceptive. This is combined
-with the assumption of fertility and failure rates and compared with the WPP estimates of age-specific fertility rates.
+poll and age-update event in order to construct a *rought* age-time trend of the usage of each contraceptive.
+This is combined with the assumption of fertility and failure rates and compared with the WPP estimates of age-specific
+fertility rates. Its limitations are that it does not consider the time when a woman is pregnant (and so can't become
+pregnant) and the choice of contraceptive following birth.
+For a full calibration, run the "real" simulation and compute the number of age-specific births directly.
 """
-# todo - this needs updating to reflect the way it was used and to note that a lot of the functionality is now in tests
 
 from pathlib import Path
 
@@ -11,14 +13,10 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation
-from tlo.analysis.utils import (
-    get_medium_variant_asfr_from_wpp_resourcefile,
-    make_calendar_period_lookup,
-)
+from tlo.analysis.utils import make_calendar_period_lookup
 from tlo.methods import contraception, demography, enhanced_lifestyle, healthsystem, symptommanager
+from tlo.methods.contraception import get_medium_variant_asfr_from_wpp_resourcefile
 from tlo.methods.hiv import DummyHivModule
-
-do_plots = False
 
 # %% Create dummy simulation object
 resourcefilepath = Path('resources')
@@ -89,27 +87,30 @@ asfr_per_month_init = get_asfr_per_month_implied_by_contraceptive_use(assumption
 # Get the WPP age-specific fertility rates, adjusted to risk per woman per month.
 wpp_fert_per_month_2010 = get_medium_variant_asfr_from_wpp_resourcefile(wpp, months_exposure=1)[2010]
 
-if do_plots:
-    # Plot
-    plt.plot(asfr_per_month_init.keys(), asfr_per_month_init.values(), 'k', label='Model (Expectation)')
-    plt.plot(wpp_fert_per_month_2010.keys(), wpp_fert_per_month_2010.values(), 'r-', label='WPP')
-    plt.title("Age-specific fertility per month in 2010")
-    plt.xlabel('Age-group')
-    plt.ylabel('Live-births per month per woman')
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+# Plot
+plt.plot(asfr_per_month_init.keys(), asfr_per_month_init.values(), 'k', label='Model (Expectation)')
+plt.plot(wpp_fert_per_month_2010.keys(), wpp_fert_per_month_2010.values(), 'r-', label='WPP')
+plt.title("Age-specific fertility per month in 2010")
+plt.xlabel('Age-group')
+plt.ylabel('Live-births per month per woman')
+plt.legend()
+plt.tight_layout()
+plt.show()
 
 current_sf = (sim.modules['Contraception']).parameters['scaling_factor_on_monthly_risk_of_pregnancy']
 y = np.array(list(wpp_fert_per_month_2010.values())) / (np.array(list(asfr_per_month_init.values())) / current_sf)
-print(f'Scaling_Factor should be (constant over age): {y.mean}')
-print(f'Scaling_Factor should be (by age_group): {[round(_x, 2) for _x in y]}')
+print(f'Approximate scaling factor on pregnancy should be (by age_group): {[round(_x, 2) for _x in y]}')
+# NB. This is very approximate because it doesn't take into account the time that is actually spent being pregnant (when
+#  , therefore, women are not at risk of becoming pregnant again). The best estimate for the scaling factor is created
+# by using "real" runs of the simulation.
 
 
 # %% Define the simulation runner
+# NB. This is very approximate because it doesn't take into account the time that is actually spent being pregnant or
+# the pattern of resumption of contraception following birth. It can be used as a rough guide only.
 
 def run_sim(end_date=Date(2029, 12, 31)):
-    # Run the ContraceptivePoll (with the option `run_do_pregnancy`=False to prevent pregnancies)
+    # Run the ContraceptivePoll (with the option `run_do_pregnancy=False` to prevent pregnancies)
     popsize = 5_000  # size of population for simulation
     sim.make_initial_population(n=popsize)
     poll = contraception.ContraceptionPoll(module=sim.modules['Contraception'], run_do_pregnancy=False)
@@ -157,16 +158,15 @@ def plot(df, title=''):
     plt.show()
 
 
-if do_plots:
-    for age_grp in ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']:
-        plot(
-            pd.DataFrame.from_dict({_date.date(): usage_by_age[_date].unstack()[age_grp] for _date in usage_by_age},
-                                   orient='index'),
-            title=age_grp
-        )
+for age_grp in ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']:
+    plot(
+        pd.DataFrame.from_dict({_date.date(): usage_by_age[_date].unstack()[age_grp] for _date in usage_by_age},
+                               orient='index'),
+        title=age_grp
+    )
 
 # %% Get the approximate implied "age-specific fertility" rates (per month) by this changing pattern of contraceptive
-# use
+# use.
 
 #  WPP ASFR per month:
 wpp_fert_per_month = pd.DataFrame(get_medium_variant_asfr_from_wpp_resourcefile(wpp, months_exposure=1))
@@ -208,13 +208,12 @@ fig.show()
 
 # %% Check that initial usage by age matches the input assumption (initial_method_use)
 
-if do_plots:
-    actual_init_use = format_usage_results(usage_by_age[Date(2010, 1, 1)])
-    for i, agegrp in enumerate(actual_init_use.index):
-        pd.concat({
-            'actual': actual_init_use.loc[agegrp],
-            'expected': assumption_init_use.loc[agegrp]
-        }, axis=1).plot.bar()
-        plt.title(f"Contraception use in 2010: {agegrp}")
-        plt.tight_layout()
-        plt.show()
+actual_init_use = format_usage_results(usage_by_age[Date(2010, 1, 1)])
+for i, agegrp in enumerate(actual_init_use.index):
+    pd.concat({
+        'actual': actual_init_use.loc[agegrp],
+        'expected': assumption_init_use.loc[agegrp]
+    }, axis=1).plot.bar()
+    plt.title(f"Contraception use in 2010: {agegrp}")
+    plt.tight_layout()
+    plt.show()

@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import get_medium_variant_asfr_from_wpp_resourcefile, parse_log_file
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import contraception, demography, enhanced_lifestyle, healthsystem, symptommanager
 from tlo.methods.hiv import DummyHivModule
 
@@ -22,7 +22,7 @@ def run_sim(tmpdir,
             end_date=Date(2011, 12, 31),
             no_changes_in_contraception=False,
             no_initial_contraception_use=False,
-            equalise_all_risk_of_preg=False,   # todo - this can go.
+            equalised_risk_of_preg=None,
             ):
     """Run basic checks on function of contraception module"""
 
@@ -74,8 +74,9 @@ def run_sim(tmpdir,
         # - Dummy HIV module (as contraception requires the property hv_inf): but set prevalence to be 0%
         DummyHivModule(hiv_prev=0.0)
     )
+    states = sim.modules['Contraception'].all_contraception_states
+
     if no_initial_contraception_use:
-        states = sim.modules['Contraception'].all_contraception_states
         sim.modules['Contraception'].parameters['Method_Use_In_2010'].loc[:, 'not_using'] = 1.0
         sim.modules['Contraception'].parameters['Method_Use_In_2010'].loc[:, list(states - {'not_using'})] = 0.0
 
@@ -103,11 +104,15 @@ def run_sim(tmpdir,
             sim.modules['Contraception'].processed_params['p_stop_per_month']
         )
         sim.modules['Contraception'].processed_params['p_switch_from_per_month'] *= 0.0
-        sim.modules['Contraception'].processed_params['p_start_after_birth'] *= 0.0
 
-    if equalise_all_risk_of_preg:
-        sim.modules['Contraception'].processed_params['p_pregnancy_no_contraception_per_month'].loc[:, :] = 0.02
-        sim.modules['Contraception'].processed_params['p_pregnancy_with_contraception_per_month'].loc[:, :] = 0.02
+        sim.modules['Contraception'].processed_params['p_start_after_birth']['not_using'] = 1.0
+        sim.modules['Contraception'].processed_params['p_start_after_birth'][list(states - {'not_using'})] = 0.0
+
+    if equalised_risk_of_preg is not None:
+        sim.modules['Contraception'].processed_params['p_pregnancy_no_contraception_per_month'].loc[:, :] = \
+            equalised_risk_of_preg
+        sim.modules['Contraception'].processed_params['p_pregnancy_with_contraception_per_month'].loc[:, :] = \
+            equalised_risk_of_preg
 
     if not run:
         return sim
@@ -547,17 +552,55 @@ def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir):
         )
 
 
-def test_initial_distribution_of_contraception_and_implied_asfr(tmpdir):
-    """Check that the initial population distribution has the expected distribution of use of contraceptive methods and
-    that this induces an age-specific fertility rate that is consistent with the WPP calibration data in that year."""
+def test_correct_number_of_live_births_created(tmpdir):
+    """Check that the actual number of births simulated (in one month) matches expectations"""
 
-    sim = run_sim(tmpdir, end_date=Date(2010, 1, 1), popsize=100_000)  # large simulation just to initialise pop
+    # Run a simulation in which every woman has the same chance of becoming pregnant.
+    _risk_of_pregnancy = 0.05
+    sim = run_sim(tmpdir,
+                  end_date=Date(2010, 11, 1),
+                  popsize=100_000,
+                  disable=True,
+                  equalised_risk_of_preg=_risk_of_pregnancy
+                  )
+    log = parse_log_file(sim.log_filepath)
+
+    age_group_lookup = sim.modules['Demography'].AGE_RANGE_LOOKUP
+    adult_age_groups = ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']
+
+    def get_births_in_a_month_by_age_range_of_mother_at_pregnancy(_df, year, month):
+        _df = _df.drop(_df.index[_df.mother == -1])  # ignore pregnancies generated in first 9mo by other method
+        _df = _df.assign(year=_df['date'].dt.year)
+        _df = _df.assign(month=_df['date'].dt.month)
+        _df['mother_age_range'] = _df['mother_age_at_pregnancy'].map(age_group_lookup)
+        return _df.loc[(_df.year == year) & (_df.month == month)].groupby(by='mother_age_range').size()
+
+    def get_num_adult_women_in_a_year_by_age_range(_df, year):
+        _df = _df.assign(year=_df['date'].dt.year)
+        _df = _df.set_index(_df['year'], drop=True)
+        return _df.loc[year, adult_age_groups]
+
+    # Compute the ASFR for the month of October 2010 (the first month when pregnancies could occur caused by
+    # the Contraception Module's parameters for pregnancy risk, at the beginning of which no woman is pregnant.)
+    av_num_adult_women_in_2010 = get_num_adult_women_in_a_year_by_age_range(
+        log["tlo.methods.demography"]["age_range_f"], year=2010)
+
+    num_births_in_Oct2010 = get_births_in_a_month_by_age_range_of_mother_at_pregnancy(
+        log["tlo.methods.demography"]["on_birth"], year=2010, month=10)
+    totfr_per_month_Oct2010 = num_births_in_Oct2010.sum() / av_num_adult_women_in_2010.sum()
+
+    _prob_live_birth = sim.modules['Labour'].parameters['prob_live_birth']
+
+    assert np.isclose(totfr_per_month_Oct2010, _risk_of_pregnancy * _prob_live_birth, rtol=0.10)
+
+
+def test_initial_distribution_of_contraception(tmpdir):
+    """Check that the initial population distribution has the expected distribution of use of contraceptive methods."""
+
+    sim = run_sim(tmpdir, end_date=Date(2010, 1, 1), popsize=100_000)  # large simulation, run just to initialise pop
 
     df = sim.population.props
-    contraception = sim.modules['Contraception']
-    pp = contraception.processed_params
-    states = contraception.all_contraception_states
-    prob_live_births = sim.modules['Labour'].parameters['prob_live_birth']
+    pp = sim.modules['Contraception'].processed_params
 
     adult_age_groups = ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']
     age_group_lookup = sim.modules['Demography'].AGE_RANGE_LOOKUP
@@ -571,122 +614,3 @@ def test_initial_distribution_of_contraception_and_implied_asfr(tmpdir):
         lambda row: row / row.sum(), axis=1
     ).loc[adult_age_groups]
     assert (abs(actual - expected_by_age_range) < 0.03).all().all()
-
-    # 2) Check that the induced age-specific fertility rates match expected number of births per month (by mother age)
-
-    # - pregnancies for those not on contraception
-    prob_preg_no_contraception = df.loc[(df.sex == "F")
-                                        & df.age_years.between(15, 49)
-                                        & df.is_alive
-                                        & ~df.is_pregnant
-                                        & (df.co_contraception == 'not_using')
-                                        ].merge(
-        pp['p_pregnancy_no_contraception_per_month'], left_on='age_years', right_on='age_years')
-    [['age_range', 'hv_inf', 'hv_inf_False', 'hv_inf_True']]
-    prob_preg_no_contraception['prob'] = prob_preg_no_contraception.apply(
-        lambda row: row.hv_inf_True if row.hv_inf else row.hv_inf_False, axis=1)
-    expected_pregs_no_contraception = prob_preg_no_contraception.groupby('age_range')['prob'].sum()[
-        adult_age_groups].to_dict()
-
-    # - pregnancies for those on contraception
-    prob_preg_on_contraception = df.loc[
-        (df.sex == "F") & df.age_years.between(15, 49) & df.is_alive & ~df.is_pregnant & (
-            df.co_contraception != 'not_using')].merge(
-        pp['p_pregnancy_with_contraception_per_month'].stack().reset_index(),
-        left_on=['co_contraception', 'age_years'], right_on=['level_1', 'level_0']
-    )
-    expected_preg_on_contraception = prob_preg_on_contraception.groupby('age_range')[0].sum()[
-        adult_age_groups].to_dict()
-
-    # Expected Age-Specific Fertility Rates (per month), given actual pattern of contraceptive usage in the model
-    model_asfr = {
-        k: prob_live_births * (
-            (expected_pregs_no_contraception[k] + expected_preg_on_contraception[k])
-            / len(df.loc[df.is_alive & (df.sex == "F") & (df.age_range == k)])
-        ) for k in adult_age_groups
-    }
-
-    # Get the "expected" age-specific fertility rates (per month) implied deterministically by the parameters for
-    # usage of contraception usage in 2010
-    assumption_init_use = pp['initial_method_use'].groupby(
-        by=pp['initial_method_use'].index.map(age_group_lookup)).mean()
-    ex_preg_per_month = pd.DataFrame(index=range(15, 50), columns=sorted(states))
-    ex_preg_per_month['not_using'] = \
-        pp['p_pregnancy_no_contraception_per_month']['hv_inf_False']  # (for simplicity, assume all HIV-negative)
-    ex_preg_per_month.loc[:, sorted(states - {'not_using'})] = \
-        pp['p_pregnancy_with_contraception_per_month'].loc[:, sorted(states - {'not_using'})]
-    ex_preg_per_month = ex_preg_per_month.groupby(by=ex_preg_per_month.index.map(age_group_lookup)).mean()
-    ex_asfr_per_month = ((assumption_init_use * ex_preg_per_month).sum(axis=1) * prob_live_births).to_dict()
-
-    # Check that model approximately matches the deterministic expectation
-    assert all([np.isclose(model_asfr[k], ex_asfr_per_month[k], rtol=0.10) for k in adult_age_groups])
-    assert 0.05 > (
-        abs(sum(model_asfr.values()) - sum(ex_asfr_per_month.values())) / sum(ex_asfr_per_month.values())
-    )
-
-    # Check age-specific fertility rates against WPP
-    wpp_fert_per_month_2010 = get_medium_variant_asfr_from_wpp_resourcefile(
-        sim.modules['Contraception'].parameters['age_specific_fertility_rates'], months_exposure=1)[2010]
-    # assert all([np.isclose(model_asfr[k], wpp_fert_per_month_2010[k], rtol=0.10) for k in adult_age_groups])
-    # todo - put this back to working :-)
-
-    # 3) Check that the actual number of births simulated over 2010-2014 matches expectations:
-    sim_run_to_end_2014 = run_sim(tmpdir,
-                                  end_date=Date(2014, 12, 31),
-                                  popsize=20_000,
-                                  disable=True,
-                                  # no_changes_in_contraception=True,
-                                  # no_initial_contraception_use=True,
-                                  # equalise_all_risk_of_preg=True
-                                  )
-    log = parse_log_file(sim_run_to_end_2014.log_filepath)
-
-    def get_births_by_year_and_age_range_of_mother_at_pregnancy(_df):
-        _df = _df.drop(_df.index[_df.mother == -1])
-        _df = _df.assign(year=_df['date'].dt.year)
-        _df['mother_age_range'] = _df['mother_age_at_pregnancy'].map(age_group_lookup)
-        return _df.groupby(['year', 'mother_age_range'])['year'].count()
-
-    def get_num_adult_women_by_age_range(_df):
-        _df = _df.assign(year=_df['date'].dt.year)
-        _df = _df.set_index(_df['year'], drop=True)
-        _df = _df.drop(columns='date')
-        select_col = adult_age_groups
-        ser = _df[select_col].stack()
-        ser.index.names = ['year', 'mother_age_range']
-        return ser
-
-    def convert_annual_prob_to_monthly_prob(p_annual):
-        # todo - do this properly and using helper function
-        return 1 - np.exp(np.log(1 - p_annual) / 12)
-
-    av_num_adult_women = get_num_adult_women_by_age_range(log["tlo.methods.demography"]["age_range_f"]).unstack().mean()
-    num_births = get_births_by_year_and_age_range_of_mother_at_pregnancy(
-        log["tlo.methods.demography"]["on_birth"]).loc[(slice(2011, 2014), slice(None))].unstack()
-    av_births_per_year = num_births.mean()
-    asfr_sim_per_year = av_births_per_year.div(av_num_adult_women).to_dict()
-    asfr_sim_per_month = {_a: convert_annual_prob_to_monthly_prob(asfr_sim_per_year[_a]) for _a in asfr_sim_per_year}
-
-    import matplotlib.pyplot as plt
-    plt.plot(asfr_sim_per_month.keys(), asfr_sim_per_month.values(), 'b', label='In Simulation')
-    plt.plot(model_asfr.keys(), model_asfr.values(), 'r', label='Expected ASFR given actual contraception')
-    plt.plot(ex_asfr_per_month.keys(), ex_asfr_per_month.values(), 'r--',
-             label='Expected ASFR given parameters for contraception')
-    plt.plot(wpp_fert_per_month_2010.keys(), wpp_fert_per_month_2010.values(), 'k-', label='WPP')
-    plt.title('ASFR per month')
-    plt.ylabel('Live births per woman per month')
-    plt.xlabel('Age at pregnancy')
-    plt.legend()
-    plt.show()
-
-    # correction_factor = {
-    #     _age:  model_asfr[_age] / asfr_sim_per_month[_age] for _age in asfr_sim_per_month
-    # }
-
-    # todo - we need a further correction because the calibration factor is from the script which doesn't recognise that
-    #  people become pregnant.... putting this in heuristically for now
-
-    # todo remove plot and make into a formal test.
-
-    # todo (when gestation doesn't last very long, we see another bias --- to solve!)
-    # todo - do it when there is a constant asfr and we can test if the number of births in all age-groups matches it.
