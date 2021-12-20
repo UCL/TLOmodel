@@ -2,16 +2,16 @@
 This file defines a batch run through which the hiv and tb modules are run across a set of parameter values
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/hiv_tb_analyses/calibration_script.py
+tlo scenario-run --draw-only src/scripts/hiv/deviance_for_calibration/calibration_script.py
 
 Test the scenario starts running without problems:
-tlo scenario-run src/scripts/hiv/hiv_tb_analyses/calibration_script.py
+tlo scenario-run src/scripts/hiv/deviance_for_calibration/calibration_script.py
 
 or execute a single run:
-tlo scenario-run src/scripts/hiv/hiv_tb_analyses/calibration_script.py --draw 1 0
+tlo scenario-run src/scripts/hiv/deviance_for_calibration/calibration_script.py --draw 1 0
 
 Run on the batch system using:
-tlo batch-submit src/scripts/hiv/hiv_tb_analyses/calibration_script.py
+tlo batch-submit src/scripts/hiv/deviance_for_calibration/calibration_script.py
 
 
 save Job ID: tara_tb_hiv_calibration-2021-10-06T094337Z
@@ -47,11 +47,11 @@ from tlo.methods import (
 
 from tlo.scenario import BaseScenario
 
-number_of_draws = 20
+# todo change to 20 for full run
+number_of_draws = 5
 runs_per_draw = 5
 
 
-# todo: check all below with analysis_logged_deviance
 class TestScenario(BaseScenario):
     # this imports the resource filepath automatically
 
@@ -60,7 +60,7 @@ class TestScenario(BaseScenario):
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)
-        self.pop_size = 1500
+        self.pop_size = 50000
         self.number_of_draws = number_of_draws
         self.runs_per_draw = runs_per_draw
 
@@ -105,7 +105,7 @@ class TestScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        # todo bring in LHC samples here
+
         return {
             'Hiv': {
                 'beta': self.sampled_parameters.hiv[draw_number],

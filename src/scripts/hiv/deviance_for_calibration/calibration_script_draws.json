@@ -1,0 +1,247 @@
+{
+  "scenario_script_path": "src/scripts/hiv/deviance_for_calibration/calibration_script.py",
+  "scenario_seed": 35756,
+  "runs_per_draw": 5,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 214742134,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1532336775860935
+        },
+        "Tb": {
+          "transmission_rate": 1.416758335698586
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 674400637,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.08722141373910067
+        },
+        "Tb": {
+          "transmission_rate": 2.23124868723476
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 854745038,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1271617584986833
+        },
+        "Tb": {
+          "transmission_rate": 1.711202597539665
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 389298743,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1595901014947427
+        },
+        "Tb": {
+          "transmission_rate": 2.349875443510096
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 420704514,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1076045565090741
+        },
+        "Tb": {
+          "transmission_rate": 1.998048150417086
+        }
+      }
+    },
+    {
+      "draw_number": 5,
+      "draw_seed": 2035799288,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.08465953115621856
+        },
+        "Tb": {
+          "transmission_rate": 1.519934232331737
+        }
+      }
+    },
+    {
+      "draw_number": 6,
+      "draw_seed": 482980867,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1779401320029405
+        },
+        "Tb": {
+          "transmission_rate": 1.459620967583795
+        }
+      }
+    },
+    {
+      "draw_number": 7,
+      "draw_seed": 248143275,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1735937519111629
+        },
+        "Tb": {
+          "transmission_rate": 1.866036767762846
+        }
+      }
+    },
+    {
+      "draw_number": 8,
+      "draw_seed": 1975360895,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1405780932724471
+        },
+        "Tb": {
+          "transmission_rate": 1.564037342107425
+        }
+      }
+    },
+    {
+      "draw_number": 9,
+      "draw_seed": 195640910,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1002962909052489
+        },
+        "Tb": {
+          "transmission_rate": 2.282315505667485
+        }
+      }
+    },
+    {
+      "draw_number": 10,
+      "draw_seed": 1939050961,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.09131757198463748
+        },
+        "Tb": {
+          "transmission_rate": 1.685329044849794
+        }
+      }
+    },
+    {
+      "draw_number": 11,
+      "draw_seed": 1389914873,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.09893283971009151
+        },
+        "Tb": {
+          "transmission_rate": 1.610881489862668
+        }
+      }
+    },
+    {
+      "draw_number": 12,
+      "draw_seed": 1241222518,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1691157442201197
+        },
+        "Tb": {
+          "transmission_rate": 2.103862867321153
+        }
+      }
+    },
+    {
+      "draw_number": 13,
+      "draw_seed": 821019191,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1603933205533193
+        },
+        "Tb": {
+          "transmission_rate": 1.780438147076164
+        }
+      }
+    },
+    {
+      "draw_number": 14,
+      "draw_seed": 459024871,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1381116927089701
+        },
+        "Tb": {
+          "transmission_rate": 2.011103057117126
+        }
+      }
+    },
+    {
+      "draw_number": 15,
+      "draw_seed": 902233069,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1490030135679314
+        },
+        "Tb": {
+          "transmission_rate": 2.096894697243415
+        }
+      }
+    },
+    {
+      "draw_number": 16,
+      "draw_seed": 843545841,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.114896350924055
+        },
+        "Tb": {
+          "transmission_rate": 1.913143343623164
+        }
+      }
+    },
+    {
+      "draw_number": 17,
+      "draw_seed": 1754002652,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1228132840450901
+        },
+        "Tb": {
+          "transmission_rate": 1.373695008264307
+        }
+      }
+    },
+    {
+      "draw_number": 18,
+      "draw_seed": 1419468991,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1335422656693579
+        },
+        "Tb": {
+          "transmission_rate": 2.166649490869822
+        }
+      }
+    },
+    {
+      "draw_number": 19,
+      "draw_seed": 231483761,
+      "parameters": {
+        "Hiv": {
+          "beta": 0.1161360152113111
+        },
+        "Tb": {
+          "transmission_rate": 1.829666468338746
+        }
+      }
+    }
+  ]
+}
