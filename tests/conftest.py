@@ -4,10 +4,10 @@ import pytest
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--run-slow",
+        "--skip-slow",
         action="store_true",
         default=False,
-        help="Run slow tests"
+        help="Skip slow tests"
     )
 
 
@@ -16,8 +16,8 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(config, items):
-    if not config.getoption("--run-slow"):
-        skip_slow = pytest.mark.skip(reason="Need --run-slow option to run")
+    if config.getoption("--skip-slow"):
+        skip_slow = pytest.mark.skip(reason="--skip-slow option is set")
         for item in items:
             if "slow" in item.keywords:
                 item.add_marker(skip_slow)
