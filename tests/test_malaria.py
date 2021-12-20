@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
@@ -57,7 +58,7 @@ def register_sim():
     return sim
 
 
-# @pytest.fixture(scope='module')
+@pytest.mark.slow
 def test_sims(tmpdir):
 
     sim = register_sim()
@@ -105,6 +106,7 @@ def test_sims(tmpdir):
 
 # remove scheduled rdt testing and disable health system, should be no rdts and no treatment
 # increase cfr for severe cases (all severe cases will die)
+@pytest.mark.slow
 def test_remove_malaria_test(tmpdir):
 
     service_availability = list([" "])  # no treatments available
@@ -169,6 +171,7 @@ def test_remove_malaria_test(tmpdir):
 
 
 # test everyone regularly and check no treatment without positive rdt
+@pytest.mark.slow
 def test_schedule_rdt_for_all(tmpdir):
     sim = register_sim()
 

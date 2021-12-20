@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.lm import LinearModel
@@ -106,6 +107,7 @@ def start_sim_and_clear_event_queues(sim):
     return sim
 
 
+@pytest.mark.slow
 def test_basic_run_with_default_parameters():
     """Run the HIV module with check and check dtypes consistency"""
     end_date = Date(2015, 12, 31)
