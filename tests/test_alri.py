@@ -104,7 +104,7 @@ def test_integrity_of_linear_models(tmpdir):
     assert (0.0 == models.compute_risk_of_aquisition(
         pathogen='Strep_pneumoniae_PCV13',
         df=df.loc[df.is_alive & (df.age_years < 5)])
-            ).all()
+            ).all()  # todo: This assert is error because target_mean is not set as zero if 100% effectiveness
 
     # hib vaccine: if efficacy of vaccine is perfect, whoever has vaccine should have no risk of infection
     # from Hib (H.influenzae type-b)
@@ -113,7 +113,7 @@ def test_integrity_of_linear_models(tmpdir):
     assert (0.0 == models.compute_risk_of_aquisition(
         pathogen='Hib',
         df=df.loc[df.is_alive & (df.age_years < 5)])
-            ).all()
+            ).all()  # todo: This assert is error because target_mean is not set as zero if 100% effectiveness
 
     # --- determine_disease_type
     # set efficacy of pneumococcal vaccine to be 100% (i.e. 0 relative risk of infection)

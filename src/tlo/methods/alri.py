@@ -1000,10 +1000,14 @@ class Models:
             linear model if there are no 0-year-olds in the population.
             """
 
-            def make_naive_linear_model(_patho, intercept=1.0):
+            def make_naive_linear_model(_patho, _age, intercept=1.0):
                 """Make the linear model based exactly on the parameters specified"""
 
+                # dict to use for matching age value in baseline incidence list to age_years predictor
+                age_value_dict = {0: 0, 1: 1, 2: '.between(2,4)'}
+
                 base_inc_rate = f'base_inc_rate_ALRI_by_{_patho}'
+
                 return LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     intercept,
@@ -1011,11 +1015,8 @@ class Models:
                         'age_years',
                         conditions_are_mutually_exclusive=True,
                         conditions_are_exhaustive=True,
-                    )
-                    .when(0, p[base_inc_rate][0])
-                    .when(1, p[base_inc_rate][1])
-                    .when('.between(2,4)', p[base_inc_rate][2])
-                    .when('> 4', 0.0),
+                    ).when(age_value_dict[_age], p[base_inc_rate][_age])
+                     .when('> 4', 0.0),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
                     Predictor().when('(va_measles_all_doses == False) & (age_years >= 1)',
                                      p['rr_ALRI_incomplete_measles_immunisation']),
@@ -1023,47 +1024,70 @@ class Models:
                     Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_ALRI_underweight']),
                     Predictor('nb_breastfeeding_status').when('exclusive', 1.0)
                                                         .otherwise(p['rr_ALRI_non_exclusive_breastfeeding'])
-                )  # todo: add crowding or wealth?
+                )
 
-            # Use 1 year olds for scaling (because measles vaccine effectiveness is applied for over 1yo)
+            zero_year_olds = df.is_alive & (df.age_years == 0)
             one_year_olds = df.is_alive & (df.age_years == 1)
-            unscaled_lm = make_naive_linear_model(patho)
+            two_to_five_year_olds = df.is_alive & (df.age_years > 1) & (df.age_years < 5)
+            age_dict = {0: zero_year_olds, 1: one_year_olds, 2: two_to_five_year_olds}
 
-            # If not 1 year-olds then cannot do scaling, return unscaled linear model
-            if sum(one_year_olds) == 0:
-                return unscaled_lm
+            # create empty dict for scaled_lm by age group
+            scaled_lm_dict = {}
 
-            # If some 1 year-olds then can do scaling:
-            target_mean = p[f'base_inc_rate_ALRI_by_{patho}'][1]
+            # Use the appropriate age group for scaling
+            for age in age_dict.keys():
+                unscaled_lm = make_naive_linear_model(patho, _age=age)
 
-            # apply the reduced risk of acquisition for those vaccinated
-            actual_risks = unscaled_lm.predict(df.loc[one_year_olds])
-            if patho == "Strep_pneumoniae_PCV13":
-                actual_risks.loc[df['va_pneumo_all_doses'] & (df['age_years'] < 2)] \
-                    *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y']
-                actual_risks.loc[df['va_pneumo_all_doses'] & (df['age_years'].between(2, 5))] \
-                    *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y']
-            elif patho == "Hib":
-                actual_risks.loc[df['va_hib_all_doses']] *= p['rr_Hib_ALRI_with_Hib_vaccine']
+                # If not 'age' year-olds then cannot do scaling, return unscaled linear model
+                if sum(age_dict[age]) == 0:
+                    return unscaled_lm
 
-            actual_mean = actual_risks.mean()
-            scaled_intercept = 1.0 * (target_mean / actual_mean)
-            scaled_lm = make_naive_linear_model(patho, intercept=scaled_intercept)
+                # If some 'age' year-olds then can do scaling:
+                target_mean = p[f'base_inc_rate_ALRI_by_{patho}'][age]
 
-            # check by applying the model to mean incidence of 1-year-olds
-            assert (target_mean - scaled_lm.predict(df.loc[one_year_olds]).mean()) < 1e-10
-            return scaled_lm
+                # apply the reduced risk of acquisition for those vaccinated
+                actual_risks = unscaled_lm.predict(df.loc[age_dict[age]])
+                if patho == "Strep_pneumoniae_PCV13":
+                    actual_risks.loc[df['va_pneumo_all_doses'] & (df['age_years'] < 2)] \
+                        *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y']
+                    actual_risks.loc[df['va_pneumo_all_doses'] & (df['age_years'].between(2, 5))] \
+                        *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y']
+                elif patho == "Hib":
+                    actual_risks.loc[df['va_hib_all_doses']] *= p['rr_Hib_ALRI_with_Hib_vaccine']
 
+                actual_mean = actual_risks.mean()
+                scaled_intercept = 1.0 * (target_mean / actual_mean) \
+                    if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
+                scaled_lm = make_naive_linear_model(patho, _age=age, intercept=scaled_intercept)
+
+                # check by applying the model to mean incidence of 'age'-year-olds
+                assert (target_mean - scaled_lm.predict(df.loc[age_dict[age]]).mean()) < 1e-10
+                scaled_lm_dict[age] = scaled_lm
+
+            return scaled_lm_dict
+
+        # update self.incidence_equations_by_pathogen dict with pathogen and age category:
+        # {'RSV': {0: LinearModel object, 1: LinearModel object, 2: LinearModel object},
+        # 'HMPV': {0: LinearModel object, 1: LinearModel object, 2: LinearModel object} ....}
         for patho in self.module.all_pathogens:
-            self.incidence_equations_by_pathogen[patho] = make_scaled_linear_model_for_incidence(patho)
+            self.incidence_equations_by_pathogen[patho] = make_scaled_linear_model_for_incidence(patho=patho)
 
     def compute_risk_of_aquisition(self, pathogen, df):
         """Compute the risk of a pathogen, using the linear model created and the df provided"""
-        p = self.p
-        lm = self.incidence_equations_by_pathogen[pathogen]
 
-        # run linear model to get baseline risk
-        baseline = lm.predict(df)
+        # define linear model by age group [0 = 0-11months, 1 = 12-23 months, 2 = 24-59 months]
+        lm_0yo = self.incidence_equations_by_pathogen[pathogen][0]
+        lm_1yo = self.incidence_equations_by_pathogen[pathogen][1]
+        lm_2_to_5yo = self.incidence_equations_by_pathogen[pathogen][2]
+
+        # run linear model for respective age population to get baseline risk
+        baseline_0yo = lm_0yo.predict(df[df.age_years == 0])
+        baseline_1yo = lm_1yo.predict(df[df.age_years == 1])
+        baseline_2_to_5yo = lm_2_to_5yo.predict(df[(df.age_years >= 2) & (df.age_years < 5)])
+
+        baseline_upto1yo = baseline_0yo.combine(baseline_1yo, max, fill_value=0)
+        # baseline for all under 5s
+        baseline = baseline_upto1yo.combine(baseline_2_to_5yo, max, fill_value=0)
 
         return baseline
 
