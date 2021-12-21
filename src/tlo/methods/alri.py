@@ -1044,20 +1044,9 @@ class Models:
 
                 # If some 'age' year-olds then can do scaling:
                 target_mean = p[f'base_inc_rate_ALRI_by_{patho}'][age]
+                actual_mean = unscaled_lm.predict(df.loc[age_dict[age]]).mean()
 
-                # apply the reduced risk of acquisition for those vaccinated
-                actual_risks = unscaled_lm.predict(df.loc[age_dict[age]])
-                if patho == "Strep_pneumoniae_PCV13":
-                    actual_risks.loc[df['va_pneumo_all_doses'] & (df['age_years'] < 2)] \
-                        *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y']
-                    actual_risks.loc[df['va_pneumo_all_doses'] & (df['age_years'].between(2, 5))] \
-                        *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y']
-                elif patho == "Hib":
-                    actual_risks.loc[df['va_hib_all_doses']] *= p['rr_Hib_ALRI_with_Hib_vaccine']
-
-                actual_mean = actual_risks.mean()
-                scaled_intercept = 1.0 * (target_mean / actual_mean) \
-                    if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
+                scaled_intercept = 1.0 * (target_mean / actual_mean)
                 scaled_lm = make_naive_linear_model(patho, _age=age, intercept=scaled_intercept)
 
                 # check by applying the model to mean incidence of 'age'-year-olds
@@ -1074,6 +1063,7 @@ class Models:
 
     def compute_risk_of_aquisition(self, pathogen, df):
         """Compute the risk of a pathogen, using the linear model created and the df provided"""
+        p = self.p
 
         # define linear model by age group [0 = 0-11months, 1 = 12-23 months, 2 = 24-59 months]
         lm_0yo = self.incidence_equations_by_pathogen[pathogen][0]
@@ -1088,6 +1078,15 @@ class Models:
         baseline_upto1yo = baseline_0yo.combine(baseline_1yo, max, fill_value=0)
         # baseline for all under 5s
         baseline = baseline_upto1yo.combine(baseline_2_to_5yo, max, fill_value=0)
+
+        # apply the reduced risk of acquisition for those vaccinated
+        if pathogen == "Strep_pneumoniae_PCV13":
+            baseline.loc[df['va_pneumo_all_doses'] & (df['age_years'] < 2)] \
+                *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y']
+            baseline.loc[df['va_pneumo_all_doses'] & (df['age_years'].between(2, 5))] \
+                *= p['rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y']
+        elif pathogen == "Hib":
+            baseline.loc[df['va_hib_all_doses']] *= p['rr_Hib_ALRI_with_Hib_vaccine']
 
         return baseline
 
