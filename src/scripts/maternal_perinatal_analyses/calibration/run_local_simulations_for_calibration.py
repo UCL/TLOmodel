@@ -15,7 +15,6 @@ from tlo.methods import (
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
-    joes_fake_props_module, dummy_contraception,
     symptommanager, malaria, hiv, cardio_metabolic_disorders, depression, dx_algorithm_child, dx_algorithm_adult
 )
 

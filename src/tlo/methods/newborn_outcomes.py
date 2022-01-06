@@ -799,10 +799,11 @@ class NewbornOutcomes(Module):
         # this is done here as we use variables from the mni as predictors in some of the above equations
         mother_id = df.loc[individual_id, 'mother_id']
         if not df.at[mother_id, 'is_alive']:
-            if ~df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
-                                                                  (mni[mother_id]['twin_count'] == 2)):
-                if mother_id in mni:
-                    del mni[mother_id]
+            if (mother_id in mni) and \
+                (~df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
+                                                                (mni[mother_id]['twin_count'] == 2))):
+                del mni[mother_id]
+
 
     def set_disability_status(self, individual_id):
         """
@@ -1124,6 +1125,8 @@ class NewbornOutcomes(Module):
         if df.at[mother_id, 'ps_multiple_pregnancy'] and m['twin_count'] == 0:
             df.at[child_id, 'nb_is_twin'] = True
             m['twin_count'] = 1
+            if m['single_twin_still_birth']:
+                df.at[child_id, 'nb_twin_sibling_id'] = -1
 
         elif df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 1):
             df.at[child_id, 'nb_is_twin'] = True

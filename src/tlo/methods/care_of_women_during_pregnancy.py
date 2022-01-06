@@ -174,9 +174,6 @@ class CareOfWomenDuringPregnancy(Module):
                                                                    'undergoing post abortion care'),
         'ac_received_abx_for_prom': Property(Types.BOOL, 'Whether this woman has received antibiotics as treatment for '
                                                          'premature rupture of membranes'),
-        'ac_received_abx_for_chorioamnionitis': Property(Types.BOOL, 'Whether this woman has received antibiotics as '
-                                                                     'treatment for chorioamnionitis rupture of '
-                                                                     'membranes'),
         'ac_mag_sulph_treatment': Property(Types.BOOL, 'Whether this woman has received magnesium sulphate for '
                                                        'treatment of severe pre-eclampsia/eclampsia'),
         'ac_iv_anti_htn_treatment': Property(Types.BOOL, 'Whether this woman has received intravenous antihypertensive '
@@ -215,7 +212,6 @@ class CareOfWomenDuringPregnancy(Module):
         df.loc[df.is_alive, 'ac_ectopic_pregnancy_treated'] = False
         df.loc[df.is_alive, 'ac_post_abortion_care_interventions'] = 0
         df.loc[df.is_alive, 'ac_received_abx_for_prom'] = False
-        df.loc[df.is_alive, 'ac_received_abx_for_chorioamnionitis'] = False
         df.loc[df.is_alive, 'ac_mag_sulph_treatment'] = False
         df.loc[df.is_alive, 'ac_iv_anti_htn_treatment'] = False
         df.loc[df.is_alive, 'ac_received_blood_transfusion'] = False
@@ -461,7 +457,6 @@ class CareOfWomenDuringPregnancy(Module):
         update[id_or_index, 'ac_gest_diab_on_treatment'] = 'none'
         update[id_or_index, 'ac_ectopic_pregnancy_treated'] = False
         update[id_or_index, 'ac_received_abx_for_prom'] = False
-        update[id_or_index, 'ac_received_abx_for_chorioamnionitis'] = False
         update[id_or_index, 'ac_mag_sulph_treatment'] = False
         update[id_or_index, 'ac_iv_anti_htn_treatment'] = False
         update[id_or_index, 'ac_received_blood_transfusion'] = False
@@ -484,7 +479,6 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[child_id, 'ac_ectopic_pregnancy_treated'] = False
         df.at[child_id, 'ac_post_abortion_care_interventions'] = 0
         df.at[child_id, 'ac_received_abx_for_prom'] = False
-        df.at[child_id, 'ac_received_abx_for_chorioamnionitis'] = False
         df.at[child_id, 'ac_mag_sulph_treatment'] = False
         df.at[child_id, 'ac_iv_anti_htn_treatment'] = False
         df.at[child_id, 'ac_received_blood_transfusion'] = False
@@ -2697,8 +2691,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
                 # meds
                 if mother.ac_gest_diab_on_treatment == 'diet_exercise':
                     dose = self.module.get_approx_days_of_pregnancy(person_id) * 2
-                    cons = {_i: dose for _i in self.module.item_codes_preg_consumables['oral_antidiabetics']}
-                    avail = self.module.get_consumables(item_codes=cons)
+                    cons = {_i: dose for _i in self.module.item_codes_preg_consumables['oral_diabetic_treatment']}
+                    avail = self.get_consumables(item_codes=cons)
 
                     # If the meds are available women are started on that treatment
                     if avail:
@@ -2725,8 +2719,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalD
                 # This process is repeated for mothers for whom oral medication is not effectively controlling their
                 # blood sugar- they are started on insulin
                 if mother.ac_gest_diab_on_treatment == 'orals':
-                    cons = {_i: 5 for _i in self.module.item_codes_preg_consumables['insulin']}
-                    avail = self.module.get_consumables(item_codes=cons)
+                    cons = {_i: 5 for _i in self.module.item_codes_preg_consumables['insulin_treatment']}
+                    avail = self.get_consumables(item_codes=cons)
 
                     if avail:
                         df.at[person_id, 'ac_gest_diab_on_treatment'] = 'insulin'

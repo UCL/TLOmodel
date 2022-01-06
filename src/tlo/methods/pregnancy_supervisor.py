@@ -409,6 +409,12 @@ class PregnancySupervisor(Module):
                                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
+        for key, value in self.parameters.items():
+            if type(value) is list:
+                self.current_parameters[key] = self.parameters[key][0]
+            else:
+                self.current_parameters[key] = self.parameters[key]
+
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module.
         # Currently this module calculates and reports all DALY weights from all maternal modules
         if 'HealthBurden' in self.sim.modules.keys():
@@ -464,7 +470,6 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_chorioamnionitis'] = False
         df.loc[df.is_alive, 'ps_emergency_event'] = False
 
-
         # This bitset property stores 'types' of complication that can occur after an abortion
         self.abortion_complications = BitsetHandler(self.sim.population, 'ps_abortion_complications',
                                                     ['sepsis', 'haemorrhage', 'injury', 'other'])
@@ -481,13 +486,16 @@ class PregnancySupervisor(Module):
         df.loc[previous_miscarriage.loc[previous_miscarriage].index, 'ps_prev_spont_abortion'] = True
 
     def initialise_simulation(self, sim):
+
+        # todo: why was this initially moved here- i feel like there was an error when this was in read_parameters
+        #  is it because you cant update paramters through batch?
         # When the simulation initialises we use the dictionary self.current_parameters to store the parameters of
         # interest for the time period of 2010-2015. These are later updated in ParameterUpdateEvent.
-        for key, value in self.parameters.items():
-            if type(value) is list:
-                self.current_parameters[key] = self.parameters[key][0]
-            else:
-                self.current_parameters[key] = self.parameters[key]
+        #for key, value in self.parameters.items():
+        #   if type(value) is list:
+        #        self.current_parameters[key] = self.parameters[key][0]
+        #    else:
+        #        self.current_parameters[key] = self.parameters[key]
 
         # Next we register and schedule the PregnancySupervisorEvent
         sim.schedule_event(PregnancySupervisorEvent(self),
@@ -2165,23 +2173,20 @@ class GestationalDiabetesGlycaemicControlEvent(Event, IndividualScopeEventMixin)
         params = self.module.current_parameters
         mother = df.loc[individual_id]
 
-        if not mother.is_alive or not mother.is_pregnant or (mother.ps_gestational_age_in_weeks < 20):
+        if (not mother.is_alive or
+            not mother.is_pregnant or
+            (mother.ps_gestational_age_in_weeks < 20) or
+            ((mother.ps_gest_diab == 'none') and (mother.ac_gest_diab_on_treatment == 'none'))
+            ):
             return
 
-        if mother.ps_gest_diab != 'none':
-            # Check only the right women are sent here
-            if mother.ac_gest_diab_on_treatment != 'none':
-                return
-            else:
-                # We apply a probability that the treatment this woman is receiving for her GDM (diet and exercise/
-                # oral anti-diabetics/ insulin) will not control this womans hyperglycaemia
-                if self.module.rng.random_sample() > params[f'prob_glycaemic_' \
-                                                            f'control_{mother.ac_gest_diab_on_treatment }']:
-
-                    # If so we reset her diabetes status as uncontrolled, her treatment is ineffective at reducing
-                    # risk of still birth, and when she returns for follow up she should be started on the next
-                    # treatment available
-                    df.at[individual_id, 'ps_gest_diab'] = 'uncontrolled'
+        # We apply a probability that the treatment this woman is receiving for her GDM (diet and exercise/
+        # oral anti-diabetics/ insulin) will not control this womans hyperglycaemia
+        if self.module.rng.random_sample() > params[f'prob_glycaemic_control_{mother.ac_gest_diab_on_treatment }']:
+            # If so we reset her diabetes status as uncontrolled, her treatment is ineffective at reducing
+            # risk of still birth, and when she returns for follow up she should be started on the next
+            # treatment available
+            df.at[individual_id, 'ps_gest_diab'] = 'uncontrolled'
 
 
 class SyphilisInPregnancyEvent(Event, IndividualScopeEventMixin):

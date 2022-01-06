@@ -3084,7 +3084,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                                                                                              'la_uterine_rupture']:
 
             # We dont have a specific package code for general surgery...
-            self.get_consumables(item_codes=self.module.item_codes_lab_consumables['vaginal_delivery'])
+            self.get_consumables(item_codes=self.module.item_codes_lab_consumables['delivery'])
 
             # We apply a probability that repair surgery will be successful which will reduce risk of death from
             # uterine rupture
