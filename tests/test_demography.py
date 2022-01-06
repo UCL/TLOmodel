@@ -1,5 +1,4 @@
 import os
-import time
 from pathlib import Path
 
 import numpy as np
@@ -40,7 +39,7 @@ end_date = Date(2015, 1, 1)
 popsize = 500
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture
 def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date, seed=0)
@@ -49,20 +48,18 @@ def simulation():
     return sim
 
 
-def test_run(simulation):
-    simulation.make_initial_population(n=popsize)
-    simulation.simulate(end_date=end_date)
-    assert set(['Other']) == set(simulation.population.props['cause_of_death'].cat.categories)
-
-
-def test_dtypes(simulation):
+def check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
 
-def test_mothers_female(simulation):
+def test_run_dtypes_and_mothers_female(simulation):
+    simulation.make_initial_population(n=popsize)
+    simulation.simulate(end_date=end_date)
+    assert set(['Other']) == set(simulation.population.props['cause_of_death'].cat.categories)
+    check_dtypes(simulation)
     # check all mothers are female
     df = simulation.population.props
     mothers = df.loc[df.mother_id >= 0, 'mother_id']
@@ -109,9 +106,10 @@ def test_storage_of_cause_of_death():
     assert not person.is_alive
     assert person.cause_of_death == 'a_cause'
     assert (df.dtypes == orig).all()
-    test_dtypes(sim)
+    check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_cause_of_death_being_registered(tmpdir):
     """Test that the modules can declare causes of death, that the mappers between tlo causes of death and gbd
     causes of death can be created correctly and that the analysis helper scripts can be used to produce comparisons
@@ -156,7 +154,7 @@ def test_cause_of_death_being_registered(tmpdir):
 
     sim.make_initial_population(n=1000)
     sim.simulate(end_date=Date(2010, 12, 31))
-    test_dtypes(sim)
+    check_dtypes(sim)
 
     mapper_from_tlo_causes, mapper_from_gbd_causes = \
         sim.modules['Demography'].create_mappers_from_causes_of_death_to_label()
@@ -193,6 +191,7 @@ def test_cause_of_death_being_registered(tmpdir):
     assert (results['model'].sum() * 5.0) == approx(len(output['tlo.methods.demography']['death']))
 
 
+@pytest.mark.slow
 def test_calc_of_scaling_factor(tmpdir):
     """Test that the scaling factor is computed and put out to the log"""
     rfp = Path(os.path.dirname(__file__)) / '../resources'
@@ -351,11 +350,3 @@ def test_py_calc_w_mask(simulation):
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year, mask=mask)
     np.testing.assert_almost_equal(1.0, df_py['M'][19])
-
-
-if __name__ == '__main__':
-    t0 = time.time()
-    simulation = simulation()
-    test_run(simulation)
-    t1 = time.time()
-    print('Time taken', t1 - t0)

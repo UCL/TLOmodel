@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 from pandas.tseries.offsets import DateOffset
 
 from tlo import Date, Simulation
@@ -100,6 +101,7 @@ def register_modules():
     return sim
 
 
+@pytest.mark.slow
 def test_run_core_modules_normal_allocation_of_pregnancy():
     """Runs the simulation using only core modules without manipulation of pregnancy rates or parameters and checks
     dtypes at the end"""
@@ -110,6 +112,7 @@ def test_run_core_modules_normal_allocation_of_pregnancy():
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_run_core_modules_high_volumes_of_pregnancy():
     """Runs the simulation with the core modules and all women of reproductive age being pregnant at the start of the
     simulation"""
@@ -248,7 +251,8 @@ def test_calculation_of_gestational_age():
         foetal_age_weeks = np.ceil((sim.date - df.at[person, 'date_of_last_pregnancy']) / np.timedelta64(1, 'W'))
         assert df.at[person, 'ps_gestational_age_in_weeks'] == (foetal_age_weeks + 2)
 
-
+# todo: still true? (asif)
+@pytest.mark.slow
 def test_application_of_risk_of_twin_pregnancy():
     """Runs the simulation with the core modules, all reproductive age women as pregnant and forces all pregnancies to
     be twins. Other functionality related to or dependent upon twin birth is tested in respective module test files"""
@@ -278,6 +282,8 @@ def test_application_of_risk_of_twin_pregnancy():
     assert df.loc[women.index, 'ps_multiple_pregnancy'].all().all()
 
 
+# todo: still true? (asif)
+@pytest.mark.slow
 def test_spontaneous_abortion_ends_pregnancies_as_expected():
     """Test to check that risk of spontaneous abortion is applied as expected within the population and leads to the
     end of pregnancy"""
@@ -464,6 +470,8 @@ def test_abortion_complications():
     check_abortion_logic('induced')
 
 
+# todo: still true? (asif)
+@pytest.mark.slow
 def test_still_births_ends_pregnancies_as_expected():
     """Runs the simulation with the core modules and all women of reproductive age as pregnant. Sets antenatal still
     birth risk to 1 and runs checks """

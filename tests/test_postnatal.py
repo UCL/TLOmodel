@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -96,6 +97,7 @@ def register_core_modules(cons_availability):
     return sim
 
 
+@pytest.mark.slow
 def test_run_and_check_dtypes():
     sim = register_core_modules(cons_availability='default')
     sim.make_initial_population(n=1000)
