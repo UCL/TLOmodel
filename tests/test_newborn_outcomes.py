@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -98,6 +99,7 @@ def register_modules(ignore_cons_constraints):
     return sim
 
 
+@pytest.mark.slow
 def test_run_and_check_dtypes():
     """Run the sim for five years and check dtypes at the end """
     sim = register_modules(ignore_cons_constraints=False)
