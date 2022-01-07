@@ -980,6 +980,8 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
 
             # Removal:
             eligible_population = df.is_alive & df[f'nc_{condition}']
+            if len(self.module.lms_symptoms[condition]) > 0:
+                eligible_population &= ~symptom_onset
             loses_condition = self.module.lms_removal[condition].predict(
                 df.loc[eligible_population], rng, squeeze_single_row_output=False)
             idx_loses_condition = loses_condition[loses_condition].index
