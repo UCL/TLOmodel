@@ -126,7 +126,8 @@ def test_pregnancy_and_birth_for_one_woman(seed):
     sim = get_sim(seed=seed, popsize=1)
     df = sim.population.props
 
-    # confirm that the woman is alive and eligible to become pregnant
+    # confirm that the person is alive and eligible to become pregnant
+    df.loc[0, 'sex'] = 'F'
     df.loc[0, 'is_alive'] = True
     df.loc[0, 'age_exact_years'] = 17.0
     df.loc[0, 'date_of_birth'] = sim.date - pd.DateOffset(years=17.0)
