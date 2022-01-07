@@ -4431,69 +4431,36 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         # Request first draft of consumables used in major surgery
-        # request a general anaesthetic
-        general_anaesthetic_item_code = pd.unique(
-            consumables.loc[consumables['Items'] == "Halothane (fluothane)_250ml_CMST", 'Item_Code'])[0]
-        # clean the site of the surgery
-        sterilise_surgical_site_code = pd.unique(
-            consumables.loc[consumables['Items'] == "Chlorhexidine 1.5% solution_5_CMST", 'Item_Code'])[0]
-        # tools to begin surgery
-        scalpel_code = pd.unique(
-            consumables.loc[consumables['Items'] == "Scalpel blade size 22 (individually wrapped)_100_CMST",
-                            'Item_Code'])[0]
-        # administer an IV
-        cannula_code = pd.unique(
-            consumables.loc[consumables['Items'] == "Cannula iv  (winged with injection pot) 20_each_CMST",
-                            'Item_Code'])[0]
-        iv_giving_set_code = pd.unique(
-            consumables.loc[consumables['Items'] == "Giving set iv administration + needle 15 drops/ml_each_CMST",
-                            'Item_Code'])[0]
-        iv_fluid_code = pd.unique(
-            consumables.loc[consumables['Items'] == "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA",
-                            'Item_Code'])[0]
-        # repair incision made
-        suture_pack_code = pd.unique(consumables.loc[consumables['Items'] == "Suture pack", 'Item_Code'])[0]
-        gauze_code = pd.unique(consumables.loc[consumables['Items'] == "Gauze, absorbent 90cm x 40m_each_CMST",
-                                               'Item_Code'])[0]
-        # administer pain killer
-        painkiller_code = pd.unique(consumables.loc[consumables['Items'] == 'Pethidine, 50 mg/ml, 2 ml ampoule',
-                                                    'Item_Code'])[0]
-        # administer antibiotic
-        antibiotic_code = pd.unique(consumables.loc[consumables['Items'] == "Ampicillin injection 500mg, PFR_each_CMST",
-                                                    'Item_Code'])[0]
-        # equipment used by surgeon, gloves and facemask
-        gloves_code = pd.unique(
-            consumables.loc[consumables['Items'] == 'Disposables gloves, powder free, 100 pieces per box',
-                            'Item_Code'])[0]
-        facemask_code = pd.unique(
-            consumables.loc[consumables['Items'] == 'surgical face mask, disp., with metal nose piece_50_IDA',
-                            'Item_Code'])[0]
-        # request syringe
-        syringe_code = pd.unique(consumables.loc[consumables['Items'] == "Syringe, Autodisable SoloShot IX ",
-                                                 'Item_Code'])[0]
-        consumables_for_surgery = {
-            'Intervention_Package_Code': dict(),
-            'Item_Code': {general_anaesthetic_item_code: 1,
-                          sterilise_surgical_site_code: 1,
-                          scalpel_code: 1,
-                          cannula_code: 1,
-                          iv_giving_set_code: 1,
-                          iv_fluid_code: 1,
-                          suture_pack_code: 1,
-                          gauze_code: 1,
-                          painkiller_code: 1,
-                          antibiotic_code: 1,
-                          gloves_code: 1,
-                          facemask_code: 1,
-                          syringe_code: 1
-                          }
+        self.module.item_codes_for_consumables_required['major_surgery'] = {
+            # request a general anaesthetic
+            get_item_code("Halothane (fluothane)_250ml_CMST"): 1,
+            # clean the site of the surgery
+            get_item_code("Chlorhexidine 1.5% solution_5_CMST"): 1,
+            # tools to begin surgery
+            get_item_code("Scalpel blade size 22 (individually wrapped)_100_CMST"): 1,
+            # administer an IV
+            get_item_code("Cannula iv  (winged with injection pot) 20_each_CMST"): 1,
+            get_item_code("Giving set iv administration + needle 15 drops/ml_each_CMST"): 1,
+            get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
+            # repair incision made
+            get_item_code("Suture pack"): 1,
+            get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 1,
+            # administer pain killer
+            get_item_code('Pethidine, 50 mg/ml, 2 ml ampoule'): 1,
+            # administer antibiotic
+            get_item_code("Ampicillin injection 500mg, PFR_each_CMST"): 1,
+            # equipment used by surgeon, gloves and facemask
+            get_item_code('Disposables gloves, powder free, 100 pieces per box'): 1,
+            get_item_code('surgical face mask, disp., with metal nose piece_50_IDA'): 1,
+            # request syringe
+            get_item_code("Syringe, Autodisable SoloShot IX "): 1
         }
-        request_outcome = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_for_surgery,
-            to_log=True)
+
+        request_outcome = self.get_consumables(
+                self.module.item_codes_for_consumables_required['major_surgery']
+            )
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
