@@ -4128,7 +4128,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
         assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
         assert df.loc[person_id, 'rt_med_int'], 'This person has not been through rti med int'
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         road_traffic_injuries = self.sim.modules['RTI']
         pain_level = "none"
         # create a dictionary to associate the level of pain to the codes
@@ -4171,44 +4171,26 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
             logger.info(key='Requested_Pain_Management',
                         data=dict_to_output,
                         description='Summary of the pain medicine requested by each person')
-            item_code_paracetamol = pd.unique(
-                consumables.loc[consumables['Items'] == "Paracetamol 500mg_1000_CMST",
-                                'Item_Code'])[0]
-            item_code_diclofenac = pd.unique(
-                consumables.loc[consumables['Items'] == "diclofenac sodium 25 mg, enteric coated_1000_IDA",
-                                'Item_Code'])[0]
-
-            pain_management_strategy_paracetamol = {
-                'Intervention_Package_Code': dict(),
-                'Item_Code': {item_code_paracetamol: 1}}
-            pain_management_strategy_diclofenac = {
-                'Intervention_Package_Code': dict(),
-                'Item_Code': {item_code_diclofenac: 1}}
-
             if df.loc[person_id, 'age_years'] < 16:
-                # or df.iloc[person_id]['is_pregnant']
-                # If they are under 16 or pregnant only give them paracetamol
-                is_paracetamol_available = self.sim.modules['HealthSystem'].request_consumables(
-                    hsi_event=self,
-                    cons_req_as_footprint=pain_management_strategy_paracetamol,
-                    to_log=True)['Item_Code'][item_code_paracetamol]
-                cond = is_paracetamol_available
-                logger.debug(key='rti_general_message',
-                             data=f"Person {person_id} requested paracetamol for their pain relief")
+                self.module.item_codes_for_consumables_required['pain_management'] = {
+                    get_item_code("Paracetamol 500mg_1000_CMST"): 1
+                }
+                cond = self.get_consumables(
+                    self.module.item_codes_for_consumables_required['pain_management']
+                )
             else:
-                # Multiple options, give them what's available or random pick between them (for now)
-                is_diclofenac_available = self.sim.modules['HealthSystem'].request_consumables(
-                    hsi_event=self,
-                    cons_req_as_footprint=pain_management_strategy_diclofenac,
-                    to_log=True)['Item_Code'][item_code_diclofenac]
-
-                is_paracetamol_available = self.sim.modules['HealthSystem'].request_consumables(
-                    hsi_event=self,
-                    cons_req_as_footprint=pain_management_strategy_paracetamol,
-                    to_log=True)['Item_Code'][item_code_paracetamol]
-
-                cond1 = is_paracetamol_available
-                cond2 = is_diclofenac_available
+                self.module.item_codes_for_consumables_required['pain_management'] = {
+                    get_item_code("diclofenac sodium 25 mg, enteric coated_1000_IDA"): 1
+                }
+                cond1 = self.get_consumables(
+                    self.module.item_codes_for_consumables_required['pain_management']
+                )
+                self.module.item_codes_for_consumables_required['pain_management'] = {
+                    get_item_code("Paracetamol 500mg_1000_CMST"): 1
+                }
+                cond2 = self.get_consumables(
+                    self.module.item_codes_for_consumables_required['pain_management']
+                )
                 if (cond1 is True) & (cond2 is True):
                     which = self.module.rng.random_sample(size=1)
                     if which <= 0.5:
@@ -4260,18 +4242,12 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
             logger.info(key='Requested_Pain_Management',
                         data=dict_to_output,
                         description='Summary of the pain medicine requested by each person')
-            item_code_tramadol = pd.unique(
-                consumables.loc[consumables['Items'] == "tramadol HCl 100 mg/2 ml, for injection_100_IDA",
-                                'Item_Code'])[0]
-
-            pain_management_strategy_tramadol = {
-                'Intervention_Package_Code': dict(),
-                'Item_Code': {item_code_tramadol: 1}}
-
-            is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=pain_management_strategy_tramadol,
-                to_log=True)
+            self.module.item_codes_for_consumables_required['pain_management'] = {
+                get_item_code("tramadol HCl 100 mg/2 ml, for injection_100_IDA"): 1
+            }
+            is_cons_available = self.get_consumables(
+                self.module.item_codes_for_consumables_required['pain_management']
+            )
             logger.debug(key='rti_general_message',
                          data=f"Person {person_id} has requested tramadol for moderate pain relief")
 
@@ -4298,18 +4274,12 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                         data=dict_to_output,
                         description='Summary of the pain medicine requested by each person')
             # give morphine
-            item_code_morphine = pd.unique(
-                consumables.loc[consumables['Items'] == "morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA",
-                                'Item_Code'])[0]
-
-            pain_management_strategy = {
-                'Intervention_Package_Code': dict(),
-                'Item_Code': {item_code_morphine: 1}}
-
-            is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=pain_management_strategy,
-                to_log=True)
+            self.module.item_codes_for_consumables_required['pain_management'] = {
+                get_item_code("morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA"): 1
+            }
+            is_cons_available = self.get_consumables(
+                self.module.item_codes_for_consumables_required['pain_management']
+            )
             logger.debug(key='rti_general_message',
                          data=f"Person {person_id} has requested morphine for severe pain relief")
 
