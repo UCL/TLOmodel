@@ -33,6 +33,7 @@ class RTI(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.ASSIGN_INJURIES_AND_DALY_CHANGES = None
+        self.item_codes_for_consumables_required = dict()
 
     INIT_DEPENDENCIES = {"SymptomManager",
                          "HealthBurden"}
@@ -3529,41 +3530,30 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        consumables_shock = {'Intervention_Package_Code': dict(), 'Item_Code': dict()}
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         # TODO: find a more complete list of required consumables for adults
         if self.is_child:
-            item_code_fluid_replacement = pd.unique(
-                consumables.loc[consumables['Items'] ==
-                                "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA", 'Item_Code'])[0]
-            item_code_dextrose = pd.unique(consumables.loc[consumables['Items'] ==
-                                                           "Dextrose (glucose) 5%, 1000ml_each_CMST", 'Item_Code'])[0]
-            item_code_cannula = pd.unique(consumables.loc[consumables['Items'] ==
-                                                          'Cannula iv  (winged with injection pot) 20_each_CMST',
-                                                          'Item_Code'])[0]
-            item_code_blood = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
-            item_code_oxygen = pd.unique(consumables.loc[consumables['Items'] ==
-                                                         "Oxygen, 1000 liters, primarily with oxygen cylinders",
-                                                         'Item_Code'])[0]
-            consumables_shock['Item_Code'].update({item_code_cannula: 1, item_code_fluid_replacement: 1,
-                                                   item_code_dextrose: 1, item_code_blood: 1, item_code_oxygen: 1})
+            self.item_codes_for_consumables_required['shock_treatment_child'] = {
+                get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
+                get_item_code("Dextrose (glucose) 5%, 1000ml_each_CMST"): 1,
+                get_item_code('Cannula iv  (winged with injection pot) 20_each_CMST'): 1,
+                get_item_code('Blood, one unit'): 1,
+                get_item_code("Oxygen, 1000 liters, primarily with oxygen cylinders"): 1
+            }
+            is_cons_available = self.get_consumables(
+                self.module.item_codes_for_consumables_required['shock_treatment_child']
+            )
         else:
-            item_code_fluid_replacement = pd.unique(
-                consumables.loc[consumables['Items'] ==
-                                "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA", 'Item_Code'])[0]
-            item_code_oxygen = pd.unique(consumables.loc[consumables['Items'] ==
-                                                         "Oxygen, 1000 liters, primarily with oxygen cylinders",
-                                                         'Item_Code'])[0]
-            item_code_cannula = pd.unique(consumables.loc[consumables['Items'] ==
-                                                          'Cannula iv  (winged with injection pot) 20_each_CMST',
-                                                          'Item_Code'])[0]
-            item_code_blood = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
-            consumables_shock['Item_Code'].update({item_code_fluid_replacement: 1, item_code_cannula: 1,
-                                                   item_code_oxygen: 1, item_code_blood: 1})
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_shock,
-            to_log=True)
+            self.item_codes_for_consumables_required['shock_treatment_adult'] = {
+                get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
+                get_item_code('Cannula iv  (winged with injection pot) 20_each_CMST'): 1,
+                get_item_code('Blood, one unit'): 1,
+                get_item_code("Oxygen, 1000 liters, primarily with oxygen cylinders"): 1
+            }
+            is_cons_available = self.get_consumables(
+                self.module.item_codes_for_consumables_required['shock_treatment_adult']
+            )
+
         if all(is_cons_available['Item_Code'].values()):
             logger.debug(key='rti_general_message',
                          data=f"Hypovolemic shock treatment available for person {person_id}")
@@ -3633,7 +3623,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             return hs.get_blank_appt_footprint()
         # get a shorthand reference to RTI and consumables modules
         road_traffic_injuries = self.sim.modules['RTI']
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         # isolate the relevant injury information
         # Find the untreated injuries
         untreated_injury_cols = \
@@ -3657,18 +3647,13 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         # Check this injury assigned to be treated here is actually had by the person
         assert all(injuries in person_injuries.values for injuries in p['rt_injuries_to_cast'])
         # If they have a fracture that needs a cast, ask for plaster of paris
-        if fracturecastcounts > 0:
-            plaster_of_paris_code = pd.unique(
-                consumables.loc[consumables['Items'] ==
-                                'Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST', 'Item_Code'])[0]
-            consumables_fractures['Item_Code'].update({plaster_of_paris_code: fracturecastcounts})
-        # If they have a fracture that needs a sling, ask for bandage.
-
-        if slingcounts > 0:
-            sling_code = pd.unique(
-                consumables.loc[consumables['Items'] ==
-                                'Bandage, crepe 7.5cm x 1.4m long , when stretched', 'Item_Code'])[0]
-            consumables_fractures['Item_Code'].update({sling_code: slingcounts})
+        self.item_codes_for_consumables_required['fracture_treatment'] = {
+            get_item_code('Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST'): fracturecastcounts,
+            get_item_code('Bandage, crepe 7.5cm x 1.4m long , when stretched'): slingcounts,
+        }
+        is_cons_available = self.get_consumables(
+            self.module.item_codes_for_consumables_required['fracture_treatment']
+        )
         # Check that there are enough consumables to treat this person's fractures
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
