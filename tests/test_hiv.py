@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.lm import LinearModel
@@ -89,9 +90,8 @@ def get_sim(use_simplified_birth=True):
 
 def adjust_availability_of_consumables_for_hiv(sim, available=True):
     all_item_codes = set()
-    for f in sim.modules['Hiv'].footprints_for_consumables_required.values():
-        all_item_codes = all_item_codes.union(
-            sim.modules['HealthSystem'].get_consumables_as_individual_items(f).index)
+    for f in sim.modules['Hiv'].item_codes_for_consumables_required.values():
+        all_item_codes = all_item_codes.union(f.keys())
 
     sim.modules['HealthSystem'].prob_item_codes_available.loc[all_item_codes] = 1.0 if available else 0.0
 
@@ -107,6 +107,7 @@ def start_sim_and_clear_event_queues(sim):
     return sim
 
 
+@pytest.mark.slow
 def test_basic_run_with_default_parameters():
     """Run the HIV module with check and check dtypes consistency"""
     end_date = Date(2015, 12, 31)
@@ -468,7 +469,7 @@ def test_aids_symptoms_lead_to_treatment_being_initiated():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True),
+                     cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
                                                                # force symptoms to lead to health care seeking:

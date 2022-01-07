@@ -13,21 +13,14 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import (
-    bladder_cancer,
     cardio_metabolic_disorders,
-    care_of_women_during_pregnancy,
-    contraception,
     demography,
     depression,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    newborn_outcomes,
-    oesophagealcancer,
-    postnatal_supervisor,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 
@@ -44,29 +37,23 @@ def runsim(seed=0):
     # add file handler for the purpose of logging
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2012, 12, 31)
-    popsize = 10000
+    end_date = Date(2019, 12, 31)
+    popsize = 500000
 
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
 
     # run the simulation
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False,
+                                           ignore_cons_constraints=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath,
                                                                      do_condition_combos=True),
                  depression.Depression(resourcefilepath=resourcefilepath),
-                 bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
-                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
                  )
 
     sim.make_initial_population(n=popsize)
@@ -82,47 +69,80 @@ output = parse_log_file(sim.log_filepath)
 
 # Get comparison
 comparison = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=resourcefilepath)
-
-# Make a simple bar chart
-comparison.loc[('2010-2014', slice(None), '50-54', 'Heart Disease')].sum().plot.bar()
-plt.title('Deaths per year due to Heart Disease, 2010-2014')
-plt.tight_layout()
-plt.show()
+comparison.to_csv('GBD_and_model_Deaths.csv')
+condition_names = ["Diabetes", "Heart Disease", "Kidney Disease", "Stroke"]
 
 age_cats = ['20-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60-64',
             '65-69', '70-74', '75-79', '80-84', '85-89', '90-94', '95-99']
 
-men_GBD = []
-men_model = []
-for age_cat in age_cats:
-    men_GBD.append(comparison.loc[('2015-2019', 'M', f'{age_cat}', 'Heart Disease')]['GBD_mean'])
-    men_model.append(comparison.loc[('2015-2019', 'M', f'{age_cat}', 'Heart Disease')]['model'])
+for cond in condition_names:
+    men_GBD = []
+    men_GBD_lower = []
+    men_GBD_upper = []
+    men_model = []
+    for age_cat in age_cats:
+        men_GBD.append(comparison.loc[('2015-2019', 'M', f'{age_cat}', f'{cond}')]['GBD_mean'])
+        men_GBD_lower.append(comparison.loc[('2015-2019', 'M', f'{age_cat}', f'{cond}')]['GBD_lower'])
+        men_GBD_upper.append(comparison.loc[('2015-2019', 'M', f'{age_cat}', f'{cond}')]['GBD_upper'])
+        men_model.append(comparison.loc[('2015-2019', 'M', f'{age_cat}', f'{cond}')]['model'])
 
-x = np.arange(len(age_cats))
-width = 0.35
+    men_GBD_error = [([mean - lower for mean, lower in zip(men_GBD, men_GBD_lower)]),
+                     ([upper - mean for upper, mean in zip(men_GBD_upper, men_GBD)])]
 
-fig, ax = plt.subplots()
-rects1 = ax.bar(x - width/2, men_GBD, width, label='GBD mean')
-rects2 = ax.bar(x + width/2, men_model, width, label='Model')
+    x = np.arange(len(age_cats))
+    width = 0.5
 
-# Add some text for labels, title and custom x-axis tick labels, etc.
-ax.set_ylabel('Deaths')
-ax.set_title('Deaths (Men, 2015-2019)')
-ax.set_xticks(x)
-ax.set_xticklabels(age_cats, rotation=90)
-ax.legend()
+    fig, ax = plt.subplots()
+    ax.bar(x, men_model, width, color='#ADD8E6', label='Model')
+    ax.errorbar(x, men_GBD, yerr=men_GBD_error, fmt='o', color='#23395d', label="GBD")
 
-fig.tight_layout()
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel('Deaths')
+    ax.set_title(f'Mean Annual Deaths from {cond} (Men, 2015-2019)')
+    ax.set_xticks(x)
+    ax.set_xticklabels(age_cats, rotation=90)
+    ax.legend()
 
-plt.show()
+    fig.tight_layout()
 
+    plt.show()
 
-labels_f = ['F/20-24', 'F/25-29', 'F/30-34', 'F/35-39', 'F/40-44', 'F/45-49', 'F/50-54', 'F/55-59', 'F/60-64',
-            'F/65-69', 'F/70-74', 'F/75-79', 'F/80-84', 'F/85-89', 'F/90-94', 'F/95-99', 'F/100+']
+    women_GBD = []
+    women_model = []
+    women_GBD_lower = []
+    women_GBD_upper = []
+    for age_cat in age_cats:
+        women_GBD.append(comparison.loc[('2015-2019', 'F', f'{age_cat}', f'{cond}')]['GBD_mean'])
+        women_GBD_lower.append(comparison.loc[('2015-2019', 'F', f'{age_cat}', f'{cond}')]['GBD_lower'])
+        women_GBD_upper.append(comparison.loc[('2015-2019', 'F', f'{age_cat}', f'{cond}')]['GBD_upper'])
+        women_model.append(comparison.loc[('2015-2019', 'F', f'{age_cat}', f'{cond}')]['model'])
+
+    women_GBD_error = [([mean - lower for mean, lower in zip(women_GBD, women_GBD_lower)]),
+                       ([upper - mean for upper, mean in zip(women_GBD_upper, women_GBD)])]
+
+    x = np.arange(len(age_cats))
+    width = 0.5
+
+    fig, ax = plt.subplots()
+    ax.bar(x, women_model, width, color='#ADD8E6', label='Model')
+    ax.errorbar(x, women_GBD, yerr=women_GBD_error, fmt='o', color='#23395d', label="GBD")
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel('Deaths')
+    ax.set_title(f'Mean Annual Deaths from {cond} (Women, 2015-2019)')
+    ax.set_xticks(x)
+    ax.set_xticklabels(age_cats, rotation=90)
+    ax.legend()
+
+    fig.tight_layout()
+
+    plt.show()
+
 # ----------------------------------------------- SET UP FUNCTIONS ----------------------------------------------
 
 # list all of the conditions in the module to loop through
 conditions = sim.modules['CardioMetabolicDisorders'].conditions
+events = sim.modules['CardioMetabolicDisorders'].events
 age_range = sim.modules['Demography'].AGE_RANGE_CATEGORIES
 
 
@@ -169,9 +189,19 @@ for condition in conditions:
     )
 
     # get prevalence + lower and upper values
-    prev_range = pd.read_excel("resources/cmd/ResourceFile_cmd_condition_prevalence.xlsx", sheet_name=None)
-    asymptomatic_error = [(prev_range[f'{condition}']['value'].values - prev_range[f'{condition}']['lower'].values),
-                          (prev_range[f'{condition}']['upper'].values - prev_range[f'{condition}']['value'].values)]
+    prev_range = pd.read_excel(resourcefilepath / "cmd" / "ResourceFile_cmd_condition_prevalence.xlsx", sheet_name=None)
+    baseline_error = [(prev_range[f'{condition}']['value'].values - prev_range[f'{condition}']['lower'].values),
+                      (prev_range[f'{condition}']['upper'].values - prev_range[f'{condition}']['value'].values)]
+    if 'gbd_value' in prev_range[f'{condition}']:
+        gbd_error = [(prev_range[f'{condition}']['gbd_value'].values - prev_range[f'{condition}'][
+            'gbd_lower'].values),
+                     (prev_range[f'{condition}']['gbd_upper'].values - prev_range[
+                         f'{condition}']['gbd_value'].values)]
+    if 'steps_value' in prev_range[f'{condition}']:
+        steps_error = [
+            (prev_range[f'{condition}']['steps_value'].values - prev_range[f'{condition}']['steps_lower'].values),
+            (prev_range[f'{condition}']['steps_upper'].values - prev_range[
+                f'{condition}']['steps_value'].values)]
 
     bar_width = 0.75
     opacity = 0.25
@@ -189,30 +219,138 @@ for condition in conditions:
                   alpha=opacity,
                   color='b',
                   label='Model')
-    scatter = plt.scatter(prev_range[f'{condition}'].index, prev_range[f'{condition}']['value'].values, s=20,
-                          alpha=1.0,
-                          color='gray',
-                          label="Data")
-    plt.xticks(rotation=90)
-    plt.errorbar(prev_range[f'{condition}'].index, prev_range[f'{condition}']['value'].values, yerr=asymptomatic_error,
-                 fmt='o', c='gray')
-    plt.ylabel(f'Proportion With {condition_title}')
-    plt.title(f'Prevalence of {condition_title} by Age and Sex')
-    plt.legend([bar, scatter], ['Model', 'Data'])
-    plt.savefig(outputpath / f'prevalence_{condition_title}_by_age_sex.pdf')
-    # plt.ylim([0, 1])
-    plt.tight_layout()
-    plt.show()
 
-    # Plot prevalence among all adults over time for each condition
-    prev_condition_all = output['tlo.methods.cardio_metabolic_disorders'][f'{condition}_prevalence']
-    plt.plot(prev_condition_all)
-    plt.ylabel(f'Prevalence of {condition_title} Over Time (Ages 20+)')
-    plt.xlabel('Year')
-    plt.ylim([0, 0.4])
-    plt.tight_layout()
-    plt.savefig(outputpath / f'prevalence_{condition_title}_over_time.pdf')
-    plt.show()
+    if condition == 'diabetes':
+        scatter = plt.scatter(prev_range[f'{condition}'].index, prev_range[f'{condition}']['gbd_value'].values, s=8,
+                              alpha=0.8,
+                              color='gray',
+                              label="GBD 2019")
+        scatter_price = plt.scatter(prev_range[f'{condition}'].index, prev_range[f'{condition}']['value'].values,
+                                    s=8,
+                                    alpha=0.8,
+                                    color='hotpink',
+                                    label="Price et al. 2018")
+        scatter_steps = plt.scatter(prev_range[f'{condition}'].index, prev_range[f'{condition}']['steps_value'].values,
+                                    s=8,
+                                    alpha=0.8,
+                                    color='#23395d',
+                                    label="STEPS Survey 2017")
+        plt.xticks(rotation=90)
+        plt.errorbar(prev_range[f'{condition}'].index, prev_range[f'{condition}']['gbd_value'].values,
+                     yerr=gbd_error,
+                     fmt='x', c='gray')
+        plt.errorbar(prev_range[f'{condition}'].index, prev_range[f'{condition}']['value'].values,
+                     yerr=baseline_error,
+                     fmt='o', c='hotpink')
+        plt.errorbar(prev_range[f'{condition}'].index, prev_range[f'{condition}']['steps_value'].values,
+                     yerr=steps_error,
+                     fmt='*', c='#23395d')
+        plt.ylabel(f'Proportion With {condition_title}')
+        plt.title(f'Prevalence of {condition_title} by Age and Sex')
+        plt.legend([bar, scatter, scatter_price, scatter_steps], ['Model', 'GBD 2019', 'Price et al. 2018',
+                                                                  'STEPS Survey 2017'])
+        plt.savefig(outputpath / f'prevalence_{condition_title}_by_age_sex.pdf')
+        # plt.ylim([0, 1])
+        plt.tight_layout()
+        plt.show()
+    elif condition == 'hypertension':
+        scatter_price = plt.scatter(prev_range[f'{condition}'].index, prev_range[f'{condition}']['value'].values,
+                                    s=8,
+                                    alpha=0.8,
+                                    color='hotpink',
+                                    label="Price et al. 2018")
+        scatter_steps = plt.scatter(prev_range[f'{condition}'].index, prev_range[f'{condition}']['steps_value'].values,
+                                    s=8,
+                                    alpha=0.8,
+                                    color='#23395d',
+                                    label="STEPS Survey 2017")
+        plt.xticks(rotation=90)
+        plt.errorbar(prev_range[f'{condition}'].index, prev_range[f'{condition}']['value'].values,
+                     yerr=baseline_error,
+                     fmt='o', c='hotpink')
+        plt.errorbar(prev_range[f'{condition}'].index, prev_range[f'{condition}']['steps_value'].values,
+                     yerr=steps_error,
+                     fmt='*', c='#23395d')
+        plt.ylabel(f'Proportion With {condition_title}')
+        plt.title(f'Prevalence of {condition_title} by Age and Sex')
+        plt.legend([bar, scatter_price, scatter_steps], ['Model', 'Price et al. 2018', 'STEPS Survey 2017'])
+        plt.savefig(outputpath / f'prevalence_{condition_title}_by_age_sex.pdf')
+        # plt.ylim([0, 1])
+        plt.tight_layout()
+        plt.show()
+    elif condition == 'chronic_kidney_disease':
+        scatter_price = plt.scatter(prev_range[f'{condition}'].index, prev_range[f'{condition}']['value'].values,
+                                    s=8,
+                                    alpha=0.8,
+                                    color='hotpink',
+                                    label="Nakanga et al. 2020")
+        scatter = plt.scatter(prev_range[f'{condition}'].index, prev_range[f'{condition}']['gbd_value'].values,
+                              s=8,
+                              alpha=0.8,
+                              color='gray',
+                              label="GBD 2019")
+        plt.xticks(rotation=90)
+        plt.errorbar(prev_range[f'{condition}'].index, prev_range[f'{condition}']['gbd_value'].values,
+                     yerr=gbd_error,
+                     fmt='x', c='gray')
+        plt.errorbar(prev_range[f'{condition}'].index, prev_range[f'{condition}']['value'].values,
+                     yerr=0,
+                     fmt='o', c='hotpink')
+        plt.ylabel(f'Proportion With {condition_title}')
+        plt.title(f'Prevalence of {condition_title} by Age and Sex')
+        plt.legend([bar, scatter_price, scatter], ['Model', 'Nakanga et al. 2020', 'GBD 2019'])
+        plt.savefig(outputpath / f'prevalence_{condition_title}_by_age_sex.pdf')
+        # plt.ylim([0, 1])
+        plt.tight_layout()
+        plt.show()
+    else:
+        scatter = plt.scatter(prev_range[f'{condition}'].index, prev_range[f'{condition}']['value'].values, s=8,
+                              alpha=0.8,
+                              color='gray',
+                              label="GBD 2019")
+        plt.xticks(rotation=90)
+        plt.errorbar(prev_range[f'{condition}'].index, prev_range[f'{condition}']['value'].values, yerr=baseline_error,
+                     fmt='x', c='gray')
+        plt.ylabel(f'Proportion With {condition_title}')
+        plt.title(f'Prevalence of {condition_title} by Age and Sex')
+        plt.legend([bar, scatter], ['Model', 'GBD 2019'])
+        plt.savefig(outputpath / f'prevalence_{condition_title}_by_age_sex.pdf')
+        # plt.ylim([0, 1])
+        plt.tight_layout()
+        plt.show()
+
+# Plot snapshot of % diagnosed and % on medication
+
+diagnosis_df = pd.DataFrame(index=['diagnosis_prev'])
+
+for condition in conditions:
+    diagnosis = output['tlo.methods.cardio_metabolic_disorders'][f'{condition}_diagnosis_prevalence']
+    diagnosis_df[f'{condition}'] = diagnosis[f'{condition}_diagnosis_prevalence'].iloc[-1]
+diagnosis_df = diagnosis_df.transpose()
+bar = plt.bar(diagnosis_df.index, diagnosis_df['diagnosis_prev'],
+              alpha=0.25,
+              color='b',
+              label='Model')
+steps_data = [0.5, 0.479]  # from STEP Survey 2017
+scatter_steps = plt.scatter(['diabetes', 'hypertension'], steps_data, s=20,
+                            alpha=1.0,
+                            color='#23395d',
+                            label="STEPS Survey 2017")
+steps_error = [[0.447, 0.16], [0.184, 0.207]]
+plt.errorbar(['diabetes', 'hypertension'], steps_data, yerr=steps_error,
+             fmt='o', c='#23395d')
+price_data = [0.3846, 0.3797]  # from Price et al. 2018
+scatter_price = plt.scatter(['diabetes', 'hypertension'], price_data, s=20,
+                            alpha=1.0,
+                            color='hotpink',
+                            label="Price et al. 2018")
+plt.xticks(rotation=90)
+plt.ylabel('Proportion Diagnosed with Condition')
+plt.title('Proportion Diagnosed with CMD Conditions in 2019')
+plt.legend([bar, scatter_steps, scatter_price], ['Model', 'STEPS Survey 2017', 'Price et al. 2018'])
+plt.tight_layout()
+plt.savefig(outputpath / 'diagnosis_by_condition.pdf')
+plt.show()
 
 # plot prevalence of multi-morbidities
 age_range = sim.modules['Demography'].AGE_RANGE_CATEGORIES
@@ -231,63 +369,7 @@ plt.tight_layout()
 plt.savefig(outputpath / ("N_comorbidities_by_age_all" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
-# ----------------------------------------------- CREATE DEATH PLOTS --------------------------------------------------
-# calculate death rate
-deaths_df = output['tlo.methods.demography']['death']
-deaths_df['year'] = pd.to_datetime(deaths_df['date']).dt.year
-deaths_df.to_csv('deaths_by_cause.csv')
-
-pop_df = output['tlo.methods.demography']['population']
-pop_df['year'] = pd.to_datetime(pop_df['date']).dt.year
-
-deaths = pd.DataFrame(index=deaths_df['year'].unique(), columns=conditions)
-rate_deaths = pd.DataFrame(index=deaths_df['year'].unique(), columns=conditions)
-
-total_deaths = pd.DataFrame(index=deaths_df['year'].unique())
-total_deaths['total_deaths'] = deaths_df.groupby('year')['cause'].count()
-
-total_pop = pd.DataFrame(index=pop_df['year'].unique())
-total_pop['total_pop'] = pop_df.groupby('year')['total'].sum()
-total_pop['total_pop_adjustment_factor'] = 100000 / total_pop['total_pop']
-
-for condition in conditions:
-    deaths[condition] = deaths_df.loc[deaths_df['cause'].str.startswith(f'{condition}')].groupby('year').size()
-    rate_deaths[condition] = deaths[condition] * total_pop['total_pop_adjustment_factor']  # gives rate per 100k pop
-
-# death rates for conditions from GBD
-deaths_data = [{'nc_diabetes': 19.04, 'nc_hypertension': 0, 'nc_chronic_kidney_disease': 18.45,
-                'nc_lower_back_pain': 0, 'nc_chronic_ischemic_hd': 118.10}]
-deaths_lower = [{'nc_diabetes': 17.73, 'nc_hypertension': 0, 'nc_chronic_kidney_disease': 16.98,
-                 'nc_lower_back_pain': 0, 'nc_chronic_ischemic_hd': 108.51}]
-deaths_upper = [{'nc_diabetes': 20.24, 'nc_hypertension': 0, 'nc_chronic_kidney_disease': 19.70,
-                 'nc_lower_back_pain': 0, 'nc_chronic_ischemic_hd': 125.93}]
-df_death_data = pd.DataFrame(deaths_data)
-df_death_lower = pd.DataFrame(deaths_lower)
-df_death_upper = pd.DataFrame(deaths_upper)
-asymptomatic_error = [[1.31, 0, 1.47, 0, 9.59], [1.2, 0, 1.25, 0, 7.83]]
-
-bar_width = 0.5
-opacity = 0.25
-
-bar = plt.bar(conditions, deaths.iloc[-1], bar_width,
-              alpha=opacity,
-              color='b',
-              label='Model')
-scatter = plt.scatter(conditions, df_death_data.iloc[-1], s=20,
-                      alpha=1.0,
-                      color='gray',
-                      label="GBD Data")
-plt.xticks(rotation=90)
-plt.errorbar(conditions, df_death_data.iloc[-1], yerr=asymptomatic_error, fmt='o', c='gray')
-plt.ylabel('Death Rate (per 100k Population)')
-plt.title('Death Rate by Condition (2020)')
-plt.legend([bar, scatter], ['Model', 'GBD'])
-plt.savefig(outputpath / 'deaths_by_condition.pdf')
-# plt.ylim([0, 1])
-plt.tight_layout()
-plt.show()
-
-# ----------------------------------------------- RETRIEVE COMBINATION OF CONDITIONS ----------------------------------
+# ----------------------------------------------- COMBINATIONS OF CONDITIONS ----------------------------------
 
 prop_combos = convert_output(output['tlo.methods.cardio_metabolic_disorders']['prop_combos'])
 last_year = prop_combos.iloc[-1, :].to_frame(name="props")
@@ -350,20 +432,132 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     return inc_mean
 
 
+# Extract the relevant outputs and make a graph:
+def get_incidence_rate_and_death_numbers_from_logfile_events(logfile, type):
+    output = parse_log_file(logfile)
+
+    # Calculate the "incidence rate" from the output counts of incidence
+    incident_counts = convert_output(
+        output['tlo.methods.cardio_metabolic_disorders'][f'incidence_count_by_{type}_event'])
+
+    # create empty dict to store incidence rates
+    inc_rate = dict()
+
+    for event in events:
+        # get person-years of time lived without condition
+        py_ = output['tlo.methods.cardio_metabolic_disorders'][f'person_years_{event}']
+        years = pd.to_datetime(py_['date']).dt.year
+        py = pd.DataFrame(index=years, columns=age_range)
+
+        for year in years:
+            tot_py = (
+                (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) +
+                (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['F']).apply(pd.Series)
+            ).transpose()
+            py.loc[year, :] = tot_py.T.iloc[0]
+            py = py.replace(0, np.nan)
+
+        event_counts = pd.DataFrame(index=years, columns=age_range)
+
+        for age_grp in age_range:
+            # extract specific condition counts from counts df
+            event_counts[age_grp] = incident_counts[f'{event}'].apply(lambda x: x.get(f'{age_grp}')).dropna()
+            individual_condition = event_counts[age_grp].apply(pd.Series).div(py[age_grp],
+                                                                              axis=0).dropna()
+            individual_condition.columns = [f'{event}']
+            if event == events[0]:
+                inc_rate[age_grp] = event_counts[age_grp].apply(pd.Series).div(py[age_grp],
+                                                                               axis=0).dropna()
+                inc_rate[age_grp].columns = [f'{event}']
+            else:
+                inc_rate[age_grp] = inc_rate[age_grp].join(individual_condition)
+
+    # Produce mean incidence rates of incidence rate during the simulation:
+    inc_mean = pd.DataFrame()
+    for age_grp in age_range:
+        inc_mean[age_grp] = inc_rate[age_grp].mean()
+
+    # replace NaNs and inf's with 0s
+    inc_mean = inc_mean.replace([np.inf, -np.inf, np.nan], 0)
+
+    return inc_mean
+
+
 inc_by_condition = get_incidence_rate_and_death_numbers_from_logfile(sim.log_filepath)
+inc_by_incident_event = get_incidence_rate_and_death_numbers_from_logfile_events(sim.log_filepath, type='incident')
+inc_by_prevalent_event = get_incidence_rate_and_death_numbers_from_logfile_events(sim.log_filepath, type='prevalent')
 
 
-def plot_for_column_of_interest(results, column_of_interest):
-    summary_table = dict()
-    summary_table.update({'No_Treatment': results[column_of_interest]})
-    data = 100 * pd.concat(summary_table, axis=1)
-    data.plot.bar()
-    plt.title(f'Incidence rate (/100 py): {column_of_interest}')
-    plt.savefig(outputpath / ("CardioMetabolicDisorders_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
-    plt.show()
+def make_incidence_plot(condition, type):
+    # Capitalize and replace underscores with spaces for title
+    condition_title = condition.replace("_", " ")
+    condition_title = condition_title.title()
+
+    if type == 'incidence':
+        inc_range = pd.read_excel(resourcefilepath / "cmd" / f"ResourceFile_cmd_condition_and_events_{type}.xlsx",
+                                  sheet_name=None)
+    else:
+        inc_range = pd.read_excel(resourcefilepath / "cmd" / f"ResourceFile_cmd_event_{type}.xlsx", sheet_name=None)
+    asymptomatic_error = [(inc_range[f'{condition}']['value'].values - inc_range[f'{condition}']['lower'].values),
+                          (inc_range[f'{condition}']['upper'].values - inc_range[f'{condition}']['value'].values)]
+
+    bar_width = 0.75
+    opacity = 0.25
+
+    inc_df = pd.DataFrame(index=["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39",
+                                 "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74",
+                                 "75-79", "80-84", "85-89", "90-94", "95-99", "100+"])
+    if condition == 'ever_stroke':
+        if type == 'incidence':
+            inc_df['model_incidence'] = inc_by_incident_event.loc[f'{condition}'].transpose().values
+        else:
+            inc_df['model_incidence'] = inc_by_prevalent_event.loc[f'{condition}'].transpose().values
+    else:
+        inc_df['model_incidence'] = inc_by_condition.loc[f'{condition}'].transpose().values
+
+    inc_df['model_incidence'] = inc_df['model_incidence'] * 100
+
+    bar = plt.bar(inc_df.index, inc_df['model_incidence'], bar_width,
+                  alpha=opacity,
+                  color='b',
+                  label='Model')
+    scatter = plt.scatter(inc_range[f'{condition}'].index, inc_range[f'{condition}']['value'].values, s=20,
+                          alpha=1.0,
+                          color='gray',
+                          label="Data")
+    plt.xticks(rotation=90)
+    plt.errorbar(inc_range[f'{condition}'].index, inc_range[f'{condition}']['value'].values, yerr=asymptomatic_error,
+                 fmt='o', c='gray')
+    if condition == 'ever_stroke':
+        if type == 'incidence':
+            plt.ylabel('Incidence of Incident Strokes per 100 PY')
+            plt.title('Incidence of Incident Strokes by Age')
+            plt.legend([bar, scatter], ['Model', 'GBD 2019'])
+            plt.savefig(outputpath / f'incidence_{condition_title}_incident_cases_by_age.pdf')
+            plt.tight_layout()
+            plt.show()
+        else:
+            plt.ylabel('Incidence of Prevalent Strokes per 100 PY')
+            plt.title('Incidence of Prevalent Strokes by Age')
+            plt.legend([bar, scatter], ['Model', 'GBD 2019'])
+            plt.savefig(outputpath / f'incidence_{condition_title}_prevalent_cases_by_age.pdf')
+            plt.tight_layout()
+            plt.show()
+    else:
+        plt.ylabel(f'Incidence of {condition_title} per 100 PY')
+        plt.title(f'Incidence of {condition_title} by Age')
+        plt.legend([bar, scatter], ['Model', 'GBD 2019'])
+        plt.savefig(outputpath / f'incidence_{condition_title}_by_age.pdf')
+        plt.tight_layout()
+        plt.show()
 
 
-# Plot incidence by condition
+conditions_and_events_for_incidence = ['diabetes', 'chronic_kidney_disease', 'chronic_ischemic_hd',
+                                       'chronic_lower_back_pain', 'ever_stroke']
 
-for column_of_interest in inc_by_condition.columns:
-    plot_for_column_of_interest(inc_by_condition, column_of_interest)
+for condition in conditions_and_events_for_incidence:
+    if condition.startswith('ever'):
+        make_incidence_plot(condition, type='incidence')
+        make_incidence_plot(condition, type='prevalence')
+    else:
+        make_incidence_plot(condition, type='incidence')

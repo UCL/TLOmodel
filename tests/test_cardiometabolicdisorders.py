@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -69,6 +70,7 @@ def routine_checks(sim):
     assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'ever_heart_attack').any()
 
 
+@pytest.mark.slow
 def test_basic_run():
     # --------------------------------------------------------------------------
     # Create and run a short but big population simulation for use in the tests
@@ -110,6 +112,7 @@ def test_basic_run():
     hsi_checks(sim)
 
 
+@pytest.mark.slow
 def test_basic_run_with_high_incidence_hypertension():
     """This sim makes one condition very common and the others non-existent to check basic functions for prevalence and
     death"""
@@ -320,7 +323,7 @@ def make_simulation_health_system_disabled():
 
 
 # helper function to run the sim with the healthcare system disabled
-def make_simulation_health_system_functional():
+def make_simulation_health_system_functional(cons_availability='default'):
     """Make the simulation with the healthcare system enabled and no cons constraints
     """
     sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
@@ -328,8 +331,10 @@ def make_simulation_health_system_functional():
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False,
-                                           ignore_cons_constraints=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable=False,
+                                           cons_availability=cons_availability
+                                           ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -340,6 +345,7 @@ def make_simulation_health_system_functional():
     return sim
 
 
+@pytest.mark.slow
 def test_if_no_health_system_and_zero_death():
     """"
     Make the health-system unavailable to run any HSI event and set death rate to zero to check that no one dies
@@ -371,6 +377,7 @@ def test_if_no_health_system_and_zero_death():
         assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{condition}').any()
 
 
+@pytest.mark.slow
 def test_if_no_health_system_and_high_risk_of_death():
     """"
     Make the health-system unavailable to run any HSI event and set death rate to 100% to check that everyone dies
@@ -435,6 +442,7 @@ def test_if_no_health_system_and_high_risk_of_death():
             df.loc[~df.date_of_birth.isna() & pd.isnull(df[f'nc_{event}']) & (df.age_years >= 20), 'is_alive']).any()
 
 
+@pytest.mark.slow
 def test_if_medication_prevents_all_death():
     """"
     Make medication 100% effective to check that no one dies
@@ -443,7 +451,7 @@ def test_if_medication_prevents_all_death():
     # Make a list of all conditions and events to run this test for
     condition_list = ['diabetes', 'chronic_kidney_disease', 'chronic_ischemic_hd']
     for condition in condition_list:
-        sim = make_simulation_health_system_functional()
+        sim = make_simulation_health_system_functional(cons_availability='all')
         sim.make_initial_population(n=50)
 
         # force all individuals to have condition and be on medication
@@ -472,7 +480,7 @@ def test_if_medication_prevents_all_death():
 
     for event in event_list:
         # Create the sim with an enabled healthcare system
-        sim = make_simulation_health_system_functional()
+        sim = make_simulation_health_system_functional(cons_availability='all')
         # make initial population
         sim.make_initial_population(n=50)
 
@@ -493,6 +501,7 @@ def test_if_medication_prevents_all_death():
         assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{event}').any()
 
 
+@pytest.mark.slow
 def test_symptoms():
     """"
     Test that if symptoms are onset with 100% probability, all persons with condition have symptoms
@@ -700,7 +709,7 @@ def test_hsi_weight_loss_and_medication():
 
             # Run the WeightLossEvent
             t = CardioMetabolicDisordersWeightLossEvent(module=sim.modules['CardioMetabolicDisorders'],
-                                                        person_id=person_id, condition=f'{condition}')
+                                                        person_id=person_id)
             t.apply(person_id=person_id)
 
             # Check that individual's BMI has reduced by 1 and they are flagged as having experienced weight loss
@@ -766,8 +775,8 @@ def test_no_availability_of_consumables_for_conditions():
     # Make a list of all conditions and events to run this test for
     condition_list = ['diabetes', 'chronic_lower_back_pain', 'chronic_kidney_disease', 'chronic_ischemic_hd']
     for condition in condition_list:
-        # Create the sim with an enabled healthcare system
-        sim = make_simulation_health_system_functional()
+        # Create the sim with an enabled healthcare system but no consumables
+        sim = make_simulation_health_system_functional(cons_availability='none')
 
         # make initial population
         sim.make_initial_population(n=50)
@@ -802,15 +811,17 @@ def test_no_availability_of_consumables_for_events():
     # Make a list of all events to run this test for
     event_list = ['ever_stroke', 'ever_heart_attack']
     for event in event_list:
-        # Create the sim with an enabled healthcare system
-        sim = make_simulation_health_system_functional()
+        # Create the sim with an enabled healthcare system but no consumables
+        sim = make_simulation_health_system_functional(cons_availability='none')
 
         # Make probability of death 100%
         p = sim.modules['CardioMetabolicDisorders'].parameters
-        p[f'{event}_death']["baseline_annual_probability"] = 1
+        p[f'{event}_death']["baseline_annual_probability"] = 1000
+        # (Use very high value to ensure that risk will be >1 for all individuals (this is the intercept term to a
+        # linear model).
 
         # make initial population
-        sim.make_initial_population(n=1000)
+        sim.make_initial_population(n=100)
 
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)

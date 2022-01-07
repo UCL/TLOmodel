@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -25,6 +26,7 @@ except NameError:
     resourcefilepath = Path('./resources')
 
 
+@pytest.mark.slow
 def test_configuration_of_properties():
     # --------------------------------------------------------------------------
     # Create and run a short but big population simulation for use in the tests
@@ -102,6 +104,7 @@ def test_configuration_of_properties():
     assert df.loc[df['date_of_birth'] < sim.start_date, 'de_ever_depr'].sum()
 
 
+@pytest.mark.slow
 def test_hsi_functions(tmpdir):
     # With health seeking and healthsystem functioning and no constraints --
     #   --- people should have both talking therapies and antidepressants
@@ -111,20 +114,14 @@ def test_hsi_functions(tmpdir):
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=0,
-                                           ignore_cons_constraints=True),
+                                           cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
     # Make it more likely that individual with depression seeks care
@@ -167,6 +164,7 @@ def test_hsi_functions(tmpdir):
     assert 'Depression_Antidepressant_Refill' in hsi['TREATMENT_ID'].values
 
 
+@pytest.mark.slow
 def test_hsi_functions_no_medication_available(tmpdir):
     # With health seeking and healthsystem functioning but no medication available ---
     #   --- people should have talking therapy but not antidepressants,
@@ -178,19 +176,14 @@ def test_hsi_functions_no_medication_available(tmpdir):
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           mode_appt_constraints=0),
+                                           mode_appt_constraints=0,
+                                           cons_availability='none'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
     # Make it more likely that individual with depression seeks care
@@ -217,10 +210,6 @@ def test_hsi_functions_no_medication_available(tmpdir):
     df['de_ever_talk_ther'] = False
     df['de_ever_non_fatal_self_harm_event'] = False
 
-    # zero-out the availability of the consumable that is required for the treatment of antidepressants
-    item_code = sim.modules['Depression'].parameters['anti_depressant_medication_item_code']
-    sim.modules['HealthSystem'].prob_item_codes_available.loc[item_code] = 0.0
-
     sim.simulate(end_date=Date(year=2012, month=1, day=1))
     # --------------------------------------------------------------------------
 
@@ -237,13 +226,8 @@ def test_hsi_functions_no_medication_available(tmpdir):
     assert 'Depression_Antidepressant_Start' in hsi['TREATMENT_ID'].values
     assert 'Depression_Antidepressant_Refill' not in hsi['TREATMENT_ID'].values
 
-    # Check no anti-depressants used
-    assert all(
-        [item_code not in x.keys() for x in output[
-            'tlo.methods.healthsystem']['Consumables']['Item_Available'].apply(eval)]
-    )
 
-
+@pytest.mark.slow
 def test_hsi_functions_no_healthsystem_capability(tmpdir):
     # With health seeking and healthsystem functioning and no medication ---
     #   --- people should have nothing (no talking therapy or antidepressants) and no HSI events run at all
@@ -259,21 +243,15 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir):
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 # contraception.Contraception(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=2,
-                                           ignore_cons_constraints=True,
+                                           cons_availability='all',
                                            capabilities_coefficient=0.0),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 # labour.Labour(resourcefilepath=resourcefilepath),
-                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 # postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
     # Make it more likely that individual with depression seeks care

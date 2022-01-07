@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 from pandas import DateOffset
 
 from tlo import Date, Simulation, logging
@@ -55,6 +56,7 @@ def get_combined_log(log_filepath):
     return m
 
 
+@pytest.mark.slow
 def test_basic_run_of_diarrhoea_module_with_default_params(tmpdir):
     """Check that the module run and that properties are maintained correctly, using health system and default
     parameters"""
@@ -94,6 +96,7 @@ def test_basic_run_of_diarrhoea_module_with_default_params(tmpdir):
     assert (m['date_of_outcome'] == m['date_o']).all()
 
 
+@pytest.mark.slow
 def test_basic_run_of_diarrhoea_module_with_zero_incidence():
     """Run with zero incidence and check for no cases or deaths"""
     start_date = Date(2010, 1, 1)
@@ -146,6 +149,7 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
     assert not df.loc[~df.is_alive & ~pd.isnull(df.date_of_birth), 'cause_of_death'].str.startswith('Diarrhoea').any()
 
 
+@pytest.mark.slow
 def test_basic_run_of_diarrhoea_module_with_high_incidence_and_zero_death(tmpdir):
     """Check that there are incident cases, and that everyone recovers naturally"""
 
@@ -198,6 +202,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_zero_death(tmpdir
     assert (m['date_of_outcome'] == m['date_o']).all()
 
 
+@pytest.mark.slow
 def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no_treatment(tmpdir):
     """Check that there are incident cases, treatments and deaths occurring correctly"""
     start_date = Date(2010, 1, 1)
@@ -256,6 +261,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
     assert (m['date_of_outcome'] == m['date_o']).all()
 
 
+@pytest.mark.slow
 def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_with_perfect_treatment(tmpdir):
     """Run with high incidence and perfect treatment, with and without spurious symptoms of diarrhoea being generated"""
 
@@ -281,7 +287,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                      healthsystem.HealthSystem(
                          resourcefilepath=resourcefilepath,
                          disable=True,
-                         ignore_cons_constraints=True,
+                         cons_availability='all',
                      ),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath,
                                                    spurious_symptoms=spurious_symptoms
@@ -354,7 +360,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
@@ -429,7 +435,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
@@ -493,7 +499,7 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
@@ -557,7 +563,7 @@ def test_run_each_of_the_HSI():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
@@ -672,7 +678,7 @@ def test_do_treatment_for_those_that_will_die_if_consumables_available():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
@@ -820,7 +826,7 @@ def test_do_treatment_for_those_that_will_not_die():
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
-                     ignore_cons_constraints=True
+                     cons_availability='all'
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
