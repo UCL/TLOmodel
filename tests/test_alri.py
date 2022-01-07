@@ -269,7 +269,7 @@ def test_alri_polling(sim):
     params = sim.modules['Alri'].parameters
     for p in params:
         if p.startswith('base_inc_rate_ALRI_by_'):
-            params[p] = [3 * v for v in params[p]]
+            params[p] = [10 * v for v in params[p]]
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
