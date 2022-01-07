@@ -136,8 +136,8 @@ def test_basic_run_with_high_incidence_hypertension(seed):
     # Set incidence of hypertension very high and incidence of all other conditions to 0, set initial prevalence of
     # other conditions to 0
 
-    p['hypertension_onset']["baseline_annual_probability"] = 10000
-    p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = 10
+    p['hypertension_onset']["baseline_annual_probability"] = float('inf')
+    p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = float('inf')
     p['diabetes_onset'] *= 0.0
     p['chronic_lower_back_pain_onset'] *= 0.0
     p['chronic_kidney_disease_onset'] *= 0.0
@@ -146,7 +146,7 @@ def test_basic_run_with_high_incidence_hypertension(seed):
     p['chronic_kidney_disease_initial_prev'] *= 0.0
 
     # Increase RR of heart disease very high if individual has hypertension
-    p['chronic_ischemic_hd_onset']["rr_hypertension"] = 1000
+    p['chronic_ischemic_hd_onset']["rr_hypertension"] = float('inf')
 
     sim.make_initial_population(n=2000)
     sim.simulate(end_date=Date(year=2013, month=1, day=1))
@@ -398,7 +398,7 @@ def test_if_no_health_system_and_high_risk_of_death(seed):
         p = sim.modules['CardioMetabolicDisorders'].parameters
 
         # set annual probability of death from condition to 1
-        p[f'{condition}_death']["baseline_annual_probability"] = 10000
+        p[f'{condition}_death']["baseline_annual_probability"] = float('inf')
         p[f'{condition}_death']["rr_20_24"] = 1
         p[f'{condition}_death']["rr_25_29"] = 1
         p[f'{condition}_death']["rr_30_34"] = 1
@@ -429,8 +429,8 @@ def test_if_no_health_system_and_high_risk_of_death(seed):
         p = sim.modules['CardioMetabolicDisorders'].parameters
 
         # increase annual probability of onset and death
-        p[f'{event}_onset']["baseline_annual_probability"] = 10000
-        p[f'{event}_death']["baseline_annual_probability"] = 10000
+        p[f'{event}_onset']["baseline_annual_probability"] = 1
+        p[f'{event}_death']["baseline_annual_probability"] = 1
 
         # simulate for one year
         sim.simulate(end_date=Date(year=2011, month=1, day=1))
@@ -467,7 +467,7 @@ def test_if_medication_prevents_all_death(seed):
         # set probability of treatment working to 1 and increase annual risk of death
         p = sim.modules['CardioMetabolicDisorders'].parameters
         p[f'{condition}_hsi']["pr_treatment_works"] = 1
-        p[f'{condition}_death']["baseline_annual_probability"] = 10000
+        p[f'{condition}_death']["baseline_annual_probability"] = float('inf')
 
         sim.simulate(end_date=Date(year=2011, month=1, day=1))
 
@@ -487,8 +487,8 @@ def test_if_medication_prevents_all_death(seed):
         p = sim.modules['CardioMetabolicDisorders'].parameters
 
         # increase annual probability of onset & probability of death
-        p[f'{event}_onset']["baseline_annual_probability"] = 10000
-        p[f'{event}_death']["baseline_annual_probability"] = 10000
+        p[f'{event}_onset']["baseline_annual_probability"] = 1
+        p[f'{event}_death']["baseline_annual_probability"] = 1
 
         # set probability of treatment working to 1
         p[f'{event}_hsi']["pr_treatment_works"] = 1
@@ -526,13 +526,13 @@ def test_symptoms(seed):
     # Set incidence of hypertension very high and incidence of all other conditions to 0, set initial prevalence of
     # other conditions to 0
 
-    p['diabetes_onset']["baseline_annual_probability"] = 10000
+    p['diabetes_onset']["baseline_annual_probability"] = float('inf')
     p['diabetes_symptoms']['diabetes_symptoms'] = 10000
-    p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = 10000
+    p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = float('inf')
     p['chronic_ischemic_hd_symptoms']['chronic_ischemic_hd_symptoms'] = 10000
-    p['chronic_lower_back_pain_onset']["baseline_annual_probability"] = 10000
+    p['chronic_lower_back_pain_onset']["baseline_annual_probability"] = float('inf')
     p['chronic_lower_back_pain_symptoms']['chronic_lower_back_pain_symptoms'] = 10000
-    p['chronic_kidney_disease_onset']["baseline_annual_probability"] = 10000
+    p['chronic_kidney_disease_onset']["baseline_annual_probability"] = float('inf')
     p['chronic_kidney_disease_symptoms']['chronic_kidney_disease_symptoms'] = 10000
 
     sim.make_initial_population(n=100)
@@ -816,7 +816,7 @@ def test_no_availability_of_consumables_for_events(seed):
 
         # Make probability of death 100%
         p = sim.modules['CardioMetabolicDisorders'].parameters
-        p[f'{event}_death']["baseline_annual_probability"] = 1000
+        p[f'{event}_death']["baseline_annual_probability"] = 1
         # (Use very high value to ensure that risk will be >1 for all individuals (this is the intercept term to a
         # linear model).
 
