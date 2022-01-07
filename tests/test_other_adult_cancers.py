@@ -103,8 +103,8 @@ def zero_rate_of_onset_lgd(sim):
 
 def incr_rates_of_progression(sim):
     # Rates of cancer progression per 3 months:
-    sim.modules['OtherAdultCancer'].parameters['r_local_ln_site_confined_other_adult_ca'] *= 5
-    sim.modules['OtherAdultCancer'].parameters['r_metastatic_local_ln'] *= 5
+    sim.modules['OtherAdultCancer'].parameters['r_local_ln_site_confined_other_adult_ca'] *= 2
+    sim.modules['OtherAdultCancer'].parameters['r_metastatic_local_ln'] *= 2
     return sim
 
 
