@@ -540,16 +540,13 @@ def test_symptoms(seed):
 
     df = sim.population.props
     df = df[df.is_alive]
-
-    who_has_diabetes = [i for i in df['nc_diabetes'].index if df['nc_diabetes'][i]]
+    who_has_diabetes = df[df['nc_diabetes']].index.to_list()
     who_has_diabetes_symptoms = sim.modules['SymptomManager'].who_has('diabetes_symptoms')
-    who_has_chronic_ischemic_hd = [i for i in df['nc_chronic_ischemic_hd'].index if df['nc_chronic_ischemic_hd'][i]]
+    who_has_chronic_ischemic_hd = df[df['nc_chronic_ischemic_hd']].index.to_list()
     who_has_chronic_ischemic_hd_symptoms = sim.modules['SymptomManager'].who_has('chronic_ischemic_hd_symptoms')
-    who_has_chronic_lower_back_pain = [i for i in df['nc_chronic_lower_back_pain'].index if df[
-        'nc_chronic_lower_back_pain'][i]]
+    who_has_chronic_lower_back_pain = df[df['nc_chronic_lower_back_pain']].index.to_list()
     who_has_chronic_lower_back_pain_symptoms = sim.modules['SymptomManager'].who_has('chronic_lower_back_pain_symptoms')
-    who_has_chronic_kidney_disease = [i for i in df['nc_chronic_kidney_disease'].index if df[
-        'nc_chronic_kidney_disease'][i]]
+    who_has_chronic_kidney_disease = df[df['nc_chronic_kidney_disease']].index.to_list()
     who_has_chronic_kidney_disease_symptoms = sim.modules['SymptomManager'].who_has('chronic_kidney_disease_symptoms')
 
     assert who_has_diabetes == who_has_diabetes_symptoms
