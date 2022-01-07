@@ -10,7 +10,7 @@ import tlo.util
 
 @pytest.fixture
 def rng(seed):
-    return np.random.RandomState(seed)
+    return np.random.RandomState(seed % 2**32)
 
 
 def check_output_states_and_freq(
@@ -140,7 +140,7 @@ def test_sample_outcome(tmpdir, seed):
         'B': {0: 0.0, 1: 1.0, 2: 0.25, 3: 0.0},
         'C': {0: 0.0, 1: 0.0, 2: 0.50, 3: 0.0},
     })
-    rng = np.random.RandomState(seed=seed)
+    rng = np.random.RandomState(seed=seed % 2**32)
 
     list_of_results = list()
     n = 5000
