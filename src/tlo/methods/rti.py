@@ -3949,7 +3949,6 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
         self.prob_mild_burns = p['prob_mild_burns']
 
     def apply(self, person_id, squeeze_factor):
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
@@ -3981,7 +3980,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
             if (burncounts > 1) or ((len(idx2) > 0) & (random_for_severe_burn > self.prob_mild_burns)):
                 # check if they have multiple burns, which implies a higher burned total body surface area (TBSA) which
                 # will alter the treatment plan
-                self.item_codes_for_consumables_required['burn_treatment'].update(
+                self.module.item_codes_for_consumables_required['burn_treatment'].update(
                     {get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1}
                 )
 
@@ -4068,17 +4067,13 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
         assert counts > 0
         # If they have a laceration/burn ask request the tetanus vaccine
         if counts > 0:
-            consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-            item_code_tetanus = pd.unique(
-                consumables.loc[consumables['Items'] == 'Tetanus toxoid, injection', 'Item_Code'])[0]
-            consumables_tetanus = {
-                'Intervention_Package_Code': dict(),
-                'Item_Code': {item_code_tetanus: 1}
+            get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+            self.module.item_codes_for_consumables_required['tetanus_treatment'] = {
+                get_item_code('Tetanus toxoid, injection'): 1
             }
-            is_tetanus_available = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=consumables_tetanus,
-                to_log=True)
+            is_tetanus_available = self.get_consumables(
+                self.module.item_codes_for_consumables_required['tetanus_treatment']
+            )
             if is_tetanus_available:
                 logger.debug(key='rti_general_message',
                              data=f"Tetanus vaccine requested for person {person_id} and given")
