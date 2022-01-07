@@ -203,12 +203,12 @@ def test_twin_and_single_twin_still_birth_logic_for_twins():
 
     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 38
+    df.at[mother_id, 'is_pregnant'] = True
     sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
     sim.modules['Labour'].set_labour_mni_variables(mother_id)
 
     # Show mother is pregnant with twins and has lost one twin during labour
     df.at[mother_id, 'ps_multiple_pregnancy'] = True
-    df.at[mother_id, 'is_pregnant'] = True
     mni[mother_id]['single_twin_still_birth'] = True
     mni[mother_id]['delivery_setting'] = 'health_centre'
     df.at[mother_id, 'la_due_date_current_pregnancy'] = sim.date - pd.DateOffset(days=5)
