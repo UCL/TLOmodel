@@ -183,7 +183,7 @@ class DxTest:
 
         # Store consumable code (None means that no consumables are required)
         if item_codes is not None:
-            assert isinstance(item_codes, (np.integer, int, list, dict)), 'item_codes in incorrect format.'
+            assert isinstance(item_codes, (np.integer, int, list, set, dict)), 'item_codes in incorrect format.'
         self.item_codes = item_codes
 
         # Store performance characteristics (if sensitivity and specificity are not supplied than assume perfect)
