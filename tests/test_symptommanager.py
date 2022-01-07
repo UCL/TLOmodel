@@ -214,6 +214,8 @@ def test_auto_onset_symptom(seed):
     # Select a person and make them alive and no symptoms
     person_id = 0
     sim.population.props.loc[person_id, 'is_alive'] = True
+    for symptom in sm.symptom_names:
+        sim.population.props.loc[person_id, sm.get_column_name_for_symptom(symptom)] = 0
     assert 0 == len(sm.has_what(person_id))
 
     def get_events_in_sim():
