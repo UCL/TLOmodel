@@ -3950,6 +3950,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
 
@@ -3967,13 +3968,11 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
         assert df.loc[person_id, 'rt_med_int'], 'this person has not been treated'
         if burncounts > 0:
             # Request materials for burn treatment
-            item_code_cetrimide_chlorhexidine = pd.unique(
-                consumables.loc[consumables['Items'] ==
-                                'Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST', 'Item_Code'])[0]
-            item_code_gauze = pd.unique(
-                consumables.loc[
-                    consumables['Items'] == "Gauze, absorbent 90cm x 40m_each_CMST",
-                    'Item_Code'])[0]
+            self.item_codes_for_consumables_required['burn_treatment'] = {
+                get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): burncounts,
+                get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): burncounts,
+
+            }
             possible_large_TBSA_burn_codes = ['7113', '8113', '4113', '5113']
             idx2, bigburncounts = \
                 road_traffic_injuries.rti_find_and_count_injuries(person_injuries, possible_large_TBSA_burn_codes)
@@ -3982,24 +3981,13 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
             if (burncounts > 1) or ((len(idx2) > 0) & (random_for_severe_burn > self.prob_mild_burns)):
                 # check if they have multiple burns, which implies a higher burned total body surface area (TBSA) which
                 # will alter the treatment plan
+                self.item_codes_for_consumables_required['burn_treatment'].update(
+                    {get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1}
+                )
 
-                item_code_fluid_replacement = pd.unique(
-                    consumables.loc[consumables['Items'] ==
-                                    "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA", 'Item_Code'])[0]
-                consumables_burns = {
-                    'Intervention_Package_Code': dict(),
-                    'Item_Code': {item_code_cetrimide_chlorhexidine: burncounts,
-                                  item_code_fluid_replacement: 1, item_code_gauze: burncounts}}
-
-            else:
-                consumables_burns = {
-                    'Intervention_Package_Code': dict(),
-                    'Item_Code': {item_code_cetrimide_chlorhexidine: burncounts,
-                                  item_code_gauze: burncounts}}
-            is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=consumables_burns,
-                to_log=True)['Item_Code']
+            is_cons_available = self.get_consumables(
+                self.module.item_codes_for_consumables_required['burn_treatment']
+            )
             if is_cons_available:
                 logger.debug(key='rti_general_message',
                              data=f"This facility has burn treatment available which has been used for person "
