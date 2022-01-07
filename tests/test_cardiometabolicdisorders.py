@@ -856,6 +856,11 @@ def test_no_availability_of_consumables_for_events(seed):
         df.at[person_id, f"nc_{event}_ever_diagnosed"] = False
         df.at[person_id, f"nc_{event}_on_medication"] = False
 
+        # Set age and BMI of target to ensure high probability of death
+        df.at[person_id, "date_of_birth"] = sim.date - pd.DateOffset(years=70)
+        df.at[person_id, "age_years"] = 70
+        df.at[person_id, "li_bmi"] = 4
+
         # Run the CardioMetabolicDisordersEvent event
         t = CardioMetabolicDisordersEvent(module=sim.modules['CardioMetabolicDisorders'],
                                           person_id=person_id, event=event)
