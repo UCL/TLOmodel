@@ -3773,7 +3773,6 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
                 get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): 1,
                 get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 1,
                 get_item_code('Suture pack'): 1,
-
             }
             # If wound is "grossly contaminated" administer Metronidazole
             # todo: parameterise the probability of wound contamination
@@ -3860,7 +3859,7 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
 
@@ -3877,57 +3876,33 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
         # Check that the person sent here has an injury that is treated by this HSI event
         assert lacerationcounts > 0
         if lacerationcounts > 0:
-            # check the number of suture kits required and request them
-            item_code_suture_kit = pd.unique(
-                consumables.loc[consumables['Items'] == 'Suture pack', 'Item_Code'])[0]
-            item_code_cetrimide_chlorhexidine = pd.unique(
-                consumables.loc[consumables['Items'] ==
-                                'Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST', 'Item_Code'])[0]
-            consumables_open_wound_1 = {
-                'Intervention_Package_Code': dict(),
-                'Item_Code': {item_code_suture_kit: lacerationcounts,
-                              item_code_cetrimide_chlorhexidine: lacerationcounts}
+            self.item_codes_for_consumables_required['laceration_treatment'] = {
+                get_item_code('Suture pack'): lacerationcounts,
+                get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): lacerationcounts,
+
             }
-
-            is_cons_available_1 = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=consumables_open_wound_1,
-                to_log=True)['Item_Code']
-
-            cond = is_cons_available_1
+            # check the number of suture kits required and request them
+            is_cons_available = self.get_consumables(
+                self.module.item_codes_for_consumables_required['laceration_treatment']
+            )
 
             # Availability of consumables determines if the intervention is delivered...
-            if cond[item_code_suture_kit]:
+            if is_cons_available:
                 logger.debug(key='rti_general_message',
                              data=f"This facility has open wound treatment available which has been used for person "
                                   f"{person_id}."
                              )
                 logger.debug(key='rti_general_message',
                              data=f"This facility treated their {lacerationcounts} open wounds")
-                if cond[item_code_cetrimide_chlorhexidine]:
-                    logger.debug(key='rti_general_message',
-                                 data="This laceration was cleaned before stitching")
-                    df.at[person_id, 'rt_med_int'] = True
-                    columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, codes)
-                    for col in columns:
-                        # heal time for lacerations is roughly two weeks according to:
-                        # https://www.facs.org/~/media/files/education/patient%20ed/wound_lacerations.ashx#:~:text=of%20
-                        # wound%20and%20your%20general,have%20a%20weakened%20immune%20system.
-                        df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.date + \
-                                                                                        DateOffset(days=14)
-                        assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
 
-                else:
-                    logger.debug(key='rti_general_message',
-                                 data=f"This laceration wasn't cleaned before stitching, person {person_id} is at risk "
-                                      f"of infection")
-                    df.at[person_id, 'rt_med_int'] = True
-                    columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, codes)
-                    for col in columns:
-                        df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.date + \
-                                                                                        DateOffset(days=14)
-                        assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
-
+                columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, codes)
+                for col in columns:
+                    # heal time for lacerations is roughly two weeks according to:
+                    # https://www.facs.org/~/media/files/education/patient%20ed/wound_lacerations.ashx#:~:text=of%20
+                    # wound%20and%20your%20general,have%20a%20weakened%20immune%20system.
+                    df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.date + \
+                                                                                    DateOffset(days=14)
+                    assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
             else:
                 self.module.rti_ask_for_suture_kit(person_id)
                 logger.debug(key='rti_general_message',
