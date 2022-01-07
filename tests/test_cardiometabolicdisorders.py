@@ -572,6 +572,13 @@ def test_hsi_investigation_not_following_symptoms(seed):
         # make initial population
         sim.make_initial_population(n=50)
 
+        # make sure any consumables for DX tests always available
+        parameters = sim.modules['CardioMetabolicDisorders'].parameters
+        test_item_code = parameters[f'{condition}_hsi'].get('test_item_code')
+        if test_item_code is not None:
+            test_item_code = test_item_code.astype(int)
+            sim.modules["HealthSystem"].prob_item_codes_available.loc[test_item_code] = 1
+
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
 
@@ -616,6 +623,13 @@ def test_hsi_investigation_following_symptoms(seed):
 
         # make initial population
         sim.make_initial_population(n=50)
+
+        # make sure any consumables for DX tests always available
+        parameters = sim.modules['CardioMetabolicDisorders'].parameters
+        test_item_code = parameters[f'{condition}_hsi'].get('test_item_code')
+        if test_item_code is not None:
+            test_item_code = test_item_code.astype(int)
+            sim.modules["HealthSystem"].prob_item_codes_available.loc[test_item_code] = 1
 
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
@@ -733,6 +747,10 @@ def test_hsi_emergency_events(seed):
         # change treatment parameter to always work
         p = sim.modules['CardioMetabolicDisorders'].parameters
         p[f'{event}_hsi']["pr_treatment_works"] = 1
+
+        # change relevant consumables to always be available
+        emergency_medication_item_code = p[f'{event}_hsi']['emergency_medication_item_code'].astype(int)
+        sim.modules["HealthSystem"].prob_item_codes_available.loc[emergency_medication_item_code] = 1
 
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
