@@ -32,15 +32,15 @@ except NameError:
     resourcefilepath = Path('./resources')
 
 
-@pytest.fixture(scope='module')
-def bundle():
+@pytest.fixture
+def bundle(seed):
     Bundle = collections.namedtuple('Bundle',
                                     ['simulation',
                                      'hsi_event',
                                      'item_code_for_consumable_that_is_not_available',
                                      'item_code_for_consumable_that_is_available'])
     # Establish the simulation object
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),

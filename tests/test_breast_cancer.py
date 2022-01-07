@@ -30,11 +30,11 @@ popsize = 10000
 
 
 # %% Construction of simulation objects:
-def make_simulation_healthsystemdisabled():
+def make_simulation_healthsystemdisabled(seed):
     """Make the simulation with:
     * the demography module with the OtherDeathsPoll not running
     """
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -50,11 +50,11 @@ def make_simulation_healthsystemdisabled():
     return sim
 
 
-def make_simulation_nohsi():
+def make_simulation_nohsi(seed):
     """Make the simulation with:
     * the healthsystem enable but with no service availabilty (so no HSI run)
     """
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -185,18 +185,18 @@ def check_configuration_of_population(sim):
 
 
 # %% Tests:
-def test_initial_config_of_pop_high_prevalence():
+def test_initial_config_of_pop_high_prevalence(seed):
     """Tests of the the way the population is configured: with high initial prevalence values """
-    sim = make_simulation_healthsystemdisabled()
+    sim = make_simulation_healthsystemdisabled(seed=seed)
     sim = make_high_init_prev(sim)
     sim.make_initial_population(n=popsize)
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
 
-def test_initial_config_of_pop_zero_prevalence():
+def test_initial_config_of_pop_zero_prevalence(seed):
     """Tests of the the way the population is configured: with zero initial prevalence values """
-    sim = make_simulation_healthsystemdisabled()
+    sim = make_simulation_healthsystemdisabled(seed=seed)
     sim = zero_out_init_prev(sim)
     sim.make_initial_population(n=popsize)
     check_dtypes(sim)
@@ -205,19 +205,19 @@ def test_initial_config_of_pop_zero_prevalence():
     assert (df.loc[df.is_alive].brc_status == 'none').all()
 
 
-def test_initial_config_of_pop_usual_prevalence():
+def test_initial_config_of_pop_usual_prevalence(seed):
     """Tests of the the way the population is configured: with usual initial prevalence values"""
-    sim = make_simulation_healthsystemdisabled()
+    sim = make_simulation_healthsystemdisabled(seed=seed)
     sim.make_initial_population(n=popsize)
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
 
 @pytest.mark.slow
-def test_run_sim_from_high_prevalence():
+def test_run_sim_from_high_prevalence(seed):
     """Run the simulation from the usual prevalence values and high rates of incidence and check configuration of
     properties at the end"""
-    sim = make_simulation_healthsystemdisabled()
+    sim = make_simulation_healthsystemdisabled(seed=seed)
     sim = make_high_init_prev(sim)
     sim = incr_rates_of_progression(sim)
     sim = incr_rate_of_onset_lgd(sim)
@@ -230,12 +230,12 @@ def test_run_sim_from_high_prevalence():
 
 
 @pytest.mark.slow
-def test_check_progression_through_stages_is_happening():
+def test_check_progression_through_stages_is_happening(seed):
     """Put all people into the first stage, let progression happen (with no treatment effect) and check that people end
     up in late stages and some die of this cause.
     Use a functioning healthsystem that allows HSI and check that diagnosis, treatment and palliative care is happening.
     """
-    sim = make_simulation_healthsystemdisabled()
+    sim = make_simulation_healthsystemdisabled(seed=seed)
 
     # set initial prevalence to be zero
     sim = zero_out_init_prev(sim)
@@ -281,12 +281,12 @@ def test_check_progression_through_stages_is_happening():
 
 
 @pytest.mark.slow
-def test_that_there_is_no_treatment_without_the_hsi_running():
+def test_that_there_is_no_treatment_without_the_hsi_running(seed):
     """Put all people into the first stage, let progression happen (with no treatment effect) and check that people end
     up in late stages and some die of this cause.
     Use a healthsystem that does not allows HSI and check that diagnosis, treatment and palliative care do not occur.
     """
-    sim = make_simulation_nohsi()
+    sim = make_simulation_nohsi(seed=seed)
 
     # set initial prevalence to be zero
     sim = zero_out_init_prev(sim)
@@ -327,10 +327,10 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
 
 
 @pytest.mark.slow
-def test_check_progression_through_stages_is_blocked_by_treatment():
+def test_check_progression_through_stages_is_blocked_by_treatment(seed):
     """Put all people into the first stage but on treatment, let progression happen, and check that people do move into
     a late stage or die"""
-    sim = make_simulation_healthsystemdisabled()
+    sim = make_simulation_healthsystemdisabled(seed=seed)
 
     # set initial prevalence to be zero
     sim = zero_out_init_prev(sim)

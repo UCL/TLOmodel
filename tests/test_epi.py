@@ -43,14 +43,14 @@ def check_dtypes(simulation):
 # hard constraints (mode=2) and zero capabilities
 @pytest.mark.slow
 @pytest.mark.group2
-def test_no_health_system(tmpdir):
+def test_no_health_system(tmpdir, seed):
     log_config = {
         'filename': 'test_log',
         'directory': tmpdir,
         'custom_levels': {"*": logging.FATAL, "tlo.methods.epi": logging.INFO}
     }
 
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -85,7 +85,7 @@ def test_no_health_system(tmpdir):
 # check epi module does schedule hsi events
 @pytest.mark.slow
 @pytest.mark.group2
-def test_epi_scheduling_hsi_events(tmpdir):
+def test_epi_scheduling_hsi_events(tmpdir, seed):
 
     log_config = {
         'filename': 'test_log',
@@ -93,7 +93,7 @@ def test_epi_scheduling_hsi_events(tmpdir):
         'custom_levels': {"*": logging.FATAL, "tlo.methods.epi": logging.INFO}
     }
 
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
@@ -139,7 +139,7 @@ def test_epi_scheduling_hsi_events(tmpdir):
 
 
 @pytest.mark.slow
-def test_all_doses_properties():
+def test_all_doses_properties(seed):
     """check alignment between "number of doses" properties and "all_doses" properties"""
 
     # Make Dummy class and event to check alignment of the properties:
@@ -176,7 +176,7 @@ def test_all_doses_properties():
                 assert properties_aligned, f"On {self.sim.date} and for vaccine {_vacc}, there is a mismatch between" \
                                            f" the all-doses and number-of-doses."
 
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),

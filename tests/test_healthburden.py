@@ -56,12 +56,12 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def test_run_with_healthburden_with_dummy_diseases(tmpdir):
+def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     """Check that everything runs in the simple cases of Mockitis and Chronic Syndrome and that outputs are as expected.
     """
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'test_log', 'directory': tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir})
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -99,14 +99,14 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir):
 
 
 @pytest.mark.slow
-def test_cause_of_disability_being_registered():
+def test_cause_of_disability_being_registered(seed):
     """Test that the modules can declare causes of disability, and that the mappers between tlo causes of disability
     and gbd causes of disability can be created correctly and that these make sense with respect to the corresponding
     mappers for deaths."""
 
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=rfp),
         symptommanager.SymptomManager(resourcefilepath=rfp),
@@ -148,7 +148,7 @@ def test_cause_of_disability_being_registered():
     assert set(mapper_from_gbd_causes.values()) == set(mapper_from_tlo_causes.values())
 
 
-def test_arithmetic_of_disability_aggregation_calcs():
+def test_arithmetic_of_disability_aggregation_calcs(seed):
     """Check that disability from different modules are being combined and computed in the correct way"""
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -256,7 +256,7 @@ def test_arithmetic_of_disability_aggregation_calcs():
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=rfp),
         healthburden.HealthBurden(resourcefilepath=rfp),
@@ -305,7 +305,7 @@ def test_arithmetic_of_disability_aggregation_calcs():
     assert yld.loc['C'] == approx(1.0 / 12)
 
 
-def test_arithmetic_of_dalys_calcs():
+def test_arithmetic_of_dalys_calcs(seed):
     """Check that life-years lost are being computed and combined with years lived with disability correctly"""
 
     rfp = Path(os.path.dirname(__file__)) / '../resources'
@@ -348,7 +348,7 @@ def test_arithmetic_of_dalys_calcs():
             self.module.has_disease = True
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=rfp),
         healthburden.HealthBurden(resourcefilepath=rfp),
@@ -375,13 +375,13 @@ def test_arithmetic_of_dalys_calcs():
     assert dalys['Label_A'] == approx(0.5 + 0.25 * daly_wt, abs=1/365)
 
 
-def test_airthmetic_of_lifeyearslost():
+def test_airthmetic_of_lifeyearslost(seed):
     """Check that a death causes the right number of life-years-lost to be logged and in the right age-groups"""
 
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=rfp),
         healthburden.HealthBurden(resourcefilepath=rfp),
@@ -415,7 +415,7 @@ def test_airthmetic_of_lifeyearslost():
 
 
 @pytest.mark.slow
-def test_arithmetic_of_stacked_lifeyearslost(tmpdir):
+def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     """Check that the computation of 'stacked' LifeYearsLost and DALYS is done correctly (i.e. when all the
     future life-years lost are allocated to the year of death."""
 
@@ -457,7 +457,7 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir):
             self.module.has_disease = True
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0, log_config={
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
         'filename': 'tmp',
         'directory': tmpdir,
         'custom_levels': {

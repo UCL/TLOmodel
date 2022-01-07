@@ -27,10 +27,10 @@ except NameError:
 
 
 @pytest.mark.slow
-def test_configuration_of_properties():
+def test_configuration_of_properties(seed):
     # --------------------------------------------------------------------------
     # Create and run a short but big population simulation for use in the tests
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -105,12 +105,12 @@ def test_configuration_of_properties():
 
 
 @pytest.mark.slow
-def test_hsi_functions(tmpdir):
+def test_hsi_functions(tmpdir, seed):
     # With health seeking and healthsystem functioning and no constraints --
     #   --- people should have both talking therapies and antidepressants
     # --------------------------------------------------------------------------
     # Create and run a longer simulation on a small population.
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -165,14 +165,14 @@ def test_hsi_functions(tmpdir):
 
 
 @pytest.mark.slow
-def test_hsi_functions_no_medication_available(tmpdir):
+def test_hsi_functions_no_medication_available(tmpdir, seed):
     # With health seeking and healthsystem functioning but no medication available ---
     #   --- people should have talking therapy but not antidepressants,
     #       (though appointments to try to start them can occur)
 
     # --------------------------------------------------------------------------
     # Create and run a longer simulation on a small population
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -228,7 +228,7 @@ def test_hsi_functions_no_medication_available(tmpdir):
 
 
 @pytest.mark.slow
-def test_hsi_functions_no_healthsystem_capability(tmpdir):
+def test_hsi_functions_no_healthsystem_capability(tmpdir, seed):
     # With health seeking and healthsystem functioning and no medication ---
     #   --- people should have nothing (no talking therapy or antidepressants) and no HSI events run at all
 
@@ -239,7 +239,7 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir):
     }
 
     # Create and run a longer simulation on a small population
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0, log_config=log_config)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed, log_config=log_config)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),

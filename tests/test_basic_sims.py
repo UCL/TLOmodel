@@ -82,9 +82,9 @@ def test_single_step_death():
     )
 
 
-def test_make_test_property():
+def test_make_test_property(seed):
     # This tests the Population.make_test_property method
-    sim = Simulation(start_date=Date(2010, 1, 1))
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
     sim.make_initial_population(n=3)
     # There should be no properties
     pop = sim.population
@@ -165,7 +165,7 @@ def test_birth_and_death():
             assert child1 + DateOffset(months=9) <= child2
 
 
-def test_regular_event_with_end():
+def test_regular_event_with_end(seed):
     # A small module (that does nothing) and event with end date
     class MyModule(Module):
         PROPERTIES = {'last_run': Property(Types.DATE, '')}
@@ -194,7 +194,7 @@ def test_regular_event_with_end():
         def apply(self, population):
             pass
 
-    sim = Simulation(start_date=Date(2010, 1, 1))
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
 
     my_module = MyModule()
     sim.register(my_module)
@@ -213,10 +213,10 @@ def test_regular_event_with_end():
     assert sim.date == pd.Timestamp(Date(2011, 1, 1))
 
 
-def test_show_progress_bar(capfd):
+def test_show_progress_bar(capfd, seed):
     start_date = Date(2010, 1, 1)
     end_date = Date(2010, 2, 1)
-    sim = Simulation(start_date=start_date, seed=1, show_progress_bar=True)
+    sim = Simulation(start_date=start_date, seed=seed, show_progress_bar=True)
     logger = logging.getLogger('tlo')
     assert len(logger.handlers) == 0
     rd = random_death.RandomDeath(name='rd')

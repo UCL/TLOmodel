@@ -182,7 +182,7 @@ class TestCreateAgeRangeLookup:
 
 
 @pytest.mark.slow
-def test_sample_outcome(tmpdir):
+def test_sample_outcome(tmpdir, seed):
     """Check that helper function `sample_outcome` works correctly."""
 
     # Create probability matrix for four individual (0-3) with four possible outcomes (A, B, C).
@@ -191,7 +191,7 @@ def test_sample_outcome(tmpdir):
         'B': {0: 0.0, 1: 1.0, 2: 0.25, 3: 0.0},
         'C': {0: 0.0, 1: 0.0, 2: 0.50, 3: 0.0},
     })
-    rng = np.random.RandomState(seed=0)
+    rng = np.random.RandomState(seed=seed)
 
     list_of_results = list()
     n = 5000

@@ -22,7 +22,6 @@ except NameError:
 
 simulation_start_date = Date(2010, 1, 1)
 simulation_end_date = Date(2010, 4, 1)
-simulation_seed = 645407762
 simulation_initial_population = 1000
 
 
@@ -38,8 +37,8 @@ def parameterize_module_class(test_function):
 
 
 @pytest.fixture
-def sim():
-    return Simulation(start_date=simulation_start_date, seed=simulation_seed)
+def sim(seed):
+    return Simulation(start_date=simulation_start_date, seed=seed)
 
 
 @pytest.fixture

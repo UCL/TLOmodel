@@ -21,8 +21,6 @@ from tlo.methods import (
 )
 from tlo.methods.hiv import DummyHivModule
 
-seed = 1896
-
 # The resource files
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -105,7 +103,7 @@ def check_pp_death_function_acts_as_expected(sim, cause, individual_id):
     df.at[individual_id, 'la_maternal_death_in_labour_date'] = pd.NaT
 
 
-def register_modules(ignore_cons_constraints):
+def register_modules(ignore_cons_constraints, seed):
     """Register all modules that are required for labour to run"""
     _cons_availability = 'all' if ignore_cons_constraints else 'none'
 
@@ -133,11 +131,11 @@ def register_modules(ignore_cons_constraints):
 
 
 @pytest.mark.slow
-def test_run_no_constraints():
+def test_run_no_constraints(seed):
     """This test runs a simulation with a functioning health system with full service availability and no set
     constraints"""
 
-    sim = register_modules(ignore_cons_constraints=False)
+    sim = register_modules(ignore_cons_constraints=False, seed=seed)
 
     sim.make_initial_population(n=1000)
     sim.simulate(end_date=Date(2015, 1, 1))
@@ -145,11 +143,11 @@ def test_run_no_constraints():
     check_dtypes(sim)
 
 
-def test_event_scheduling_for_labour_onset_and_home_birth_no_care_seeking():
+def test_event_scheduling_for_labour_onset_and_home_birth_no_care_seeking(seed):
     """Test that the right events are scheduled during the labour module (and in the right order) for women who deliver
      at home. Spacing between events (in terms of days since labour onset) is enforced via assert functions within the
     labour module"""
-    sim = register_modules(ignore_cons_constraints=False)
+    sim = register_modules(ignore_cons_constraints=False, seed=seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
     params = sim.modules['Labour'].parameters
@@ -207,9 +205,9 @@ def test_event_scheduling_for_labour_onset_and_home_birth_no_care_seeking():
     assert postnatal_supervisor.PostnatalWeekOneEvent in events
 
 
-def test_event_scheduling_for_care_seeking_during_home_birth():
+def test_event_scheduling_for_care_seeking_during_home_birth(seed):
     """Test that women who develop complications during a home birth are scheduled to receive care correctly """
-    sim = register_modules(ignore_cons_constraints=False)
+    sim = register_modules(ignore_cons_constraints=False, seed=seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     set_pregnancy_characteristics(sim, mother_id)
 
@@ -291,10 +289,10 @@ def test_event_scheduling_for_care_seeking_during_home_birth():
     assert labour.HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour in hsi_events
 
 
-def test_event_scheduling_for_labour_onset_and_facility_delivery():
+def test_event_scheduling_for_labour_onset_and_facility_delivery(seed):
     """Test that women who go into labour and choose to delivery in a facility are correctly scheduled to receive care
     and the correct sequence of events is scheduled accordingly """
-    sim = register_modules(ignore_cons_constraints=False)
+    sim = register_modules(ignore_cons_constraints=False, seed=seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
     params = sim.modules['Labour'].parameters
@@ -356,10 +354,10 @@ def test_event_scheduling_for_labour_onset_and_facility_delivery():
     assert postnatal_supervisor.PostnatalWeekOneEvent in events
 
 
-def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesarean_section():
+def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesarean_section(seed):
     """Test that women who are admitted via the antenatal modules for caesarean are correctly scheduled the caesarean
      events. This also tests scheduling for all women who need caesarean (mechanism is the same)"""
-    sim = register_modules(ignore_cons_constraints=False)
+    sim = register_modules(ignore_cons_constraints=False, seed=seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
@@ -428,10 +426,10 @@ def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesa
     assert postnatal_supervisor.PostnatalWeekOneEvent in events
 
 
-def test_application_of_risk_of_complications_in_intrapartum_and_postpartum_phases():
+def test_application_of_risk_of_complications_in_intrapartum_and_postpartum_phases(seed):
     """Test that functions which apply risk of complications correctly set complication properties when risk is set
     to 1"""
-    sim = register_modules(ignore_cons_constraints=False)
+    sim = register_modules(ignore_cons_constraints=False, seed=seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     set_pregnancy_characteristics(sim, mother_id)
 
@@ -520,10 +518,10 @@ def test_application_of_risk_of_complications_in_intrapartum_and_postpartum_phas
     assert df.at[mother_id, 'la_postpartum_haem']
 
 
-def test_logic_within_death_and_still_birth_events():
+def test_logic_within_death_and_still_birth_events(seed):
     """Test that the LabourDeathAndStillBirthEvent correctly applies risk of death, updates variables appropriately and
     scheules the demography death event"""
-    sim = register_modules(ignore_cons_constraints=False)
+    sim = register_modules(ignore_cons_constraints=False, seed=seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     df = sim.population.props
 
@@ -607,11 +605,11 @@ def test_logic_within_death_and_still_birth_events():
     assert not df.at[mother_id, 'is_alive']
 
 
-def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_constraints_via_functions():
+def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_constraints_via_functions(seed):
     """Test all the functions that store interventions delivered within the labour module, that they behave as expected
     with no constraints and treatment is correctly delivered"""
 
-    sim = register_modules(ignore_cons_constraints=True)
+    sim = register_modules(ignore_cons_constraints=True, seed=seed)
     sim.make_initial_population(n=100)
 
     # Set sensitivity parameters for dxtests to 1 to ensure all complications are detected and treated
@@ -775,10 +773,10 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     assert mni[mother_id]['referred_for_surgery']
 
 
-def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quality_constraints():
+def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quality_constraints(seed):
     """Test that interventions delivered within HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare behave as
     expected """
-    sim = register_modules(ignore_cons_constraints=True)
+    sim = register_modules(ignore_cons_constraints=True, seed=seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     updated_id = int(mother_id)
     set_pregnancy_characteristics(sim, mother_id)
@@ -867,9 +865,9 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
     assert df.at[mother_id, 'la_has_had_hysterectomy']
 
 
-def test_to_check_similarly_named_and_functioning_dx_tests_work_as_expected():
+def test_to_check_similarly_named_and_functioning_dx_tests_work_as_expected(seed):
     """Tests the dxtests called in labour """
-    sim = register_modules(ignore_cons_constraints=False)
+    sim = register_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=100)
 
     params = sim.modules['Labour'].parameters

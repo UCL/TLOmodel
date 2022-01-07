@@ -71,10 +71,10 @@ def routine_checks(sim):
 
 
 @pytest.mark.slow
-def test_basic_run():
+def test_basic_run(seed):
     # --------------------------------------------------------------------------
     # Create and run a short but big population simulation for use in the tests
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -113,12 +113,12 @@ def test_basic_run():
 
 
 @pytest.mark.slow
-def test_basic_run_with_high_incidence_hypertension():
+def test_basic_run_with_high_incidence_hypertension(seed):
     """This sim makes one condition very common and the others non-existent to check basic functions for prevalence and
     death"""
 
     # Create and run a short but big population simulation for use in the tests
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -233,13 +233,13 @@ def start_sim_and_clear_event_queues(sim):
     return sim
 
 
-def test_if_health_system_cannot_run():
+def test_if_health_system_cannot_run(seed):
     # Make the health-system unavailable to run any HSI event and check events to make sure no one initiates or
     # continues treatment
 
     start_date = Date(2010, 1, 1)
     popsize = 1000
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -303,10 +303,10 @@ def test_if_health_system_cannot_run():
 
 
 # helper function to run the sim with the healthcare system disabled
-def make_simulation_health_system_disabled():
+def make_simulation_health_system_disabled(seed):
     """Make the simulation with the healthcare system disabled
     """
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -323,10 +323,10 @@ def make_simulation_health_system_disabled():
 
 
 # helper function to run the sim with the healthcare system disabled
-def make_simulation_health_system_functional(cons_availability='default'):
+def make_simulation_health_system_functional(seed, cons_availability='default'):
     """Make the simulation with the healthcare system enabled and no cons constraints
     """
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -346,7 +346,7 @@ def make_simulation_health_system_functional(cons_availability='default'):
 
 
 @pytest.mark.slow
-def test_if_no_health_system_and_zero_death():
+def test_if_no_health_system_and_zero_death(seed):
     """"
     Make the health-system unavailable to run any HSI event and set death rate to zero to check that no one dies
     """
@@ -356,7 +356,7 @@ def test_if_no_health_system_and_zero_death():
 
     for condition in condition_list:
         # Disable the healthcare system
-        sim = make_simulation_health_system_disabled()
+        sim = make_simulation_health_system_disabled(seed)
         # make initial population
         sim.make_initial_population(n=2000)
         # force all individuals to have condition
@@ -378,7 +378,7 @@ def test_if_no_health_system_and_zero_death():
 
 
 @pytest.mark.slow
-def test_if_no_health_system_and_high_risk_of_death():
+def test_if_no_health_system_and_high_risk_of_death(seed):
     """"
     Make the health-system unavailable to run any HSI event and set death rate to 100% to check that everyone dies
     """
@@ -388,7 +388,7 @@ def test_if_no_health_system_and_high_risk_of_death():
 
     for condition in condition_list:
         # Disable the healthcare system
-        sim = make_simulation_health_system_disabled()
+        sim = make_simulation_health_system_disabled(seed)
         # make initial population
         sim.make_initial_population(n=50)
         # force all individuals to have condition
@@ -422,7 +422,7 @@ def test_if_no_health_system_and_high_risk_of_death():
 
     for event in event_list:
         # Disable the healthcare system
-        sim = make_simulation_health_system_disabled()
+        sim = make_simulation_health_system_disabled(seed)
         # make initial population
         sim.make_initial_population(n=50)
 
@@ -443,7 +443,7 @@ def test_if_no_health_system_and_high_risk_of_death():
 
 
 @pytest.mark.slow
-def test_if_medication_prevents_all_death():
+def test_if_medication_prevents_all_death(seed):
     """"
     Make medication 100% effective to check that no one dies
     """
@@ -451,7 +451,7 @@ def test_if_medication_prevents_all_death():
     # Make a list of all conditions and events to run this test for
     condition_list = ['diabetes', 'chronic_kidney_disease', 'chronic_ischemic_hd']
     for condition in condition_list:
-        sim = make_simulation_health_system_functional(cons_availability='all')
+        sim = make_simulation_health_system_functional(seed=seed, cons_availability='all')
         sim.make_initial_population(n=50)
 
         # force all individuals to have condition and be on medication
@@ -480,7 +480,7 @@ def test_if_medication_prevents_all_death():
 
     for event in event_list:
         # Create the sim with an enabled healthcare system
-        sim = make_simulation_health_system_functional(cons_availability='all')
+        sim = make_simulation_health_system_functional(seed=seed, cons_availability='all')
         # make initial population
         sim.make_initial_population(n=50)
 
@@ -502,13 +502,13 @@ def test_if_medication_prevents_all_death():
 
 
 @pytest.mark.slow
-def test_symptoms():
+def test_symptoms(seed):
     """"
     Test that if symptoms are onset with 100% probability, all persons with condition have symptoms
     """
 
     # Create and run a short simulation for use in the tests
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -558,7 +558,7 @@ def test_symptoms():
     assert who_has_chronic_kidney_disease == who_has_chronic_kidney_disease_symptoms
 
 
-def test_hsi_investigation_not_following_symptoms():
+def test_hsi_investigation_not_following_symptoms(seed):
     """Create a person and check if the functions in HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms
     create the correct HSI"""
 
@@ -567,7 +567,7 @@ def test_hsi_investigation_not_following_symptoms():
                       'chronic_ischemic_hd']
     for condition in condition_list:
         # Create the sim with an enabled healthcare system
-        sim = make_simulation_health_system_functional()
+        sim = make_simulation_health_system_functional(seed=seed)
 
         # make initial population
         sim.make_initial_population(n=50)
@@ -604,7 +604,7 @@ def test_hsi_investigation_not_following_symptoms():
             assert df.at[person_id, "nc_ever_weight_loss_treatment"]
 
 
-def test_hsi_investigation_following_symptoms():
+def test_hsi_investigation_following_symptoms(seed):
     """Create a person and check if the functions in HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms
     create the correct HSI"""
 
@@ -612,7 +612,7 @@ def test_hsi_investigation_following_symptoms():
     condition_list = ['diabetes', 'chronic_lower_back_pain', 'chronic_kidney_disease', 'chronic_ischemic_hd']
     for condition in condition_list:
         # Create the sim with an enabled healthcare system
-        sim = make_simulation_health_system_functional()
+        sim = make_simulation_health_system_functional(seed=seed)
 
         # make initial population
         sim.make_initial_population(n=50)
@@ -656,7 +656,7 @@ def test_hsi_investigation_following_symptoms():
             assert df.at[person_id, "nc_ever_weight_loss_treatment"]
 
 
-def test_hsi_weight_loss_and_medication():
+def test_hsi_weight_loss_and_medication(seed):
     """Create a person and check if the functions in HSI_CardioMetabolicDisorders_StartWeightLossAndMedication
     create the correct HSI"""
 
@@ -664,7 +664,7 @@ def test_hsi_weight_loss_and_medication():
     condition_list = ['diabetes', 'chronic_lower_back_pain', 'chronic_kidney_disease', 'chronic_ischemic_hd']
     for condition in condition_list:
         # Create the sim with an enabled healthcare system
-        sim = make_simulation_health_system_functional()
+        sim = make_simulation_health_system_functional(seed=seed)
 
         # make initial population
         sim.make_initial_population(n=50)
@@ -717,7 +717,7 @@ def test_hsi_weight_loss_and_medication():
             assert df.at[person_id, "nc_weight_loss_worked"]
 
 
-def test_hsi_emergency_events():
+def test_hsi_emergency_events(seed):
     """Create a person and check if the functions in HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment
     result in the correct order of events and create the correct HSI"""
 
@@ -725,7 +725,7 @@ def test_hsi_emergency_events():
     event_list = ['ever_stroke', 'ever_heart_attack']
     for event in event_list:
         # Create the sim with an enabled healthcare system
-        sim = make_simulation_health_system_functional()
+        sim = make_simulation_health_system_functional(seed=seed)
 
         # make initial population
         sim.make_initial_population(n=50)
@@ -769,14 +769,14 @@ def test_hsi_emergency_events():
         assert f"{event}_damage" not in sim.modules['SymptomManager'].has_what(person_id)
 
 
-def test_no_availability_of_consumables_for_conditions():
+def test_no_availability_of_consumables_for_conditions(seed):
     """Check if consumables aren't available that everyone drops off of treatment"""
 
     # Make a list of all conditions and events to run this test for
     condition_list = ['diabetes', 'chronic_lower_back_pain', 'chronic_kidney_disease', 'chronic_ischemic_hd']
     for condition in condition_list:
         # Create the sim with an enabled healthcare system but no consumables
-        sim = make_simulation_health_system_functional(cons_availability='none')
+        sim = make_simulation_health_system_functional(seed=seed, cons_availability='none')
 
         # make initial population
         sim.make_initial_population(n=50)
@@ -805,14 +805,14 @@ def test_no_availability_of_consumables_for_conditions():
         assert not df.at[person_id, f"nc_{condition}_on_medication"]
 
 
-def test_no_availability_of_consumables_for_events():
+def test_no_availability_of_consumables_for_events(seed):
     """Check if consumables aren't available that HSI events are commissioned but individual dies of event anyway"""
 
     # Make a list of all events to run this test for
     event_list = ['ever_stroke', 'ever_heart_attack']
     for event in event_list:
         # Create the sim with an enabled healthcare system but no consumables
-        sim = make_simulation_health_system_functional(cons_availability='none')
+        sim = make_simulation_health_system_functional(seed=seed, cons_availability='none')
 
         # Make probability of death 100%
         p = sim.modules['CardioMetabolicDisorders'].parameters
