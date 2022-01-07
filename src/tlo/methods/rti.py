@@ -3654,11 +3654,6 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.get_consumables(
             self.module.item_codes_for_consumables_required['fracture_treatment']
         )
-        # Check that there are enough consumables to treat this person's fractures
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_fractures,
-            to_log=True)
         # if the consumables are available then the appointment can run
         if is_cons_available:
             logger.debug(key='rti_general_message',
@@ -3758,7 +3753,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
         road_traffic_injuries = self.sim.modules['RTI']
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         # isolate the relevant injury information
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # check if they have a fracture that requires a cast
@@ -3773,41 +3768,27 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         # If they have an open fracture, ask for consumables to treat fracture
         if open_fracture_counts > 0:
-            # Ask for ceftriaxon antibiotics as first choice.
-            first_choice_antibiotic_code = pd.unique(
-                consumables.loc[consumables['Items'] ==
-                                'ceftriaxon 500 mg, powder for injection_10_IDA',
-                                'Item_Code'])[0]
-            consumables_fractures['Item_Code'].update({first_choice_antibiotic_code: 1})
-            # Ask for sterilized gauze
-            item_code_cetrimide_chlorhexidine = pd.unique(
-                consumables.loc[consumables['Items'] ==
-                                'Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST', 'Item_Code'])[0]
-            consumables_fractures['Item_Code'].update({item_code_cetrimide_chlorhexidine: 1})
-            consumables_key = "Gauze, absorbent 90cm x 40m_each_CMST"
-            item_code_gauze = pd.unique(consumables.loc[consumables['Items'] == consumables_key, 'Item_Code'])[0]
-            consumables_fractures['Item_Code'].update({item_code_gauze: 1})
-            # Ask for suture kit
-            item_code_suture_kit = pd.unique(
-                consumables.loc[consumables['Items'] == 'Suture pack', 'Item_Code'])[0]
-            consumables_fractures['Item_Code'].update({item_code_suture_kit: 1})
+            self.item_codes_for_consumables_required['open_fracture_treatment'] = {
+                get_item_code('ceftriaxon 500 mg, powder for injection_10_IDA'): 1,
+                get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): 1,
+                get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 1,
+                get_item_code('Suture pack'): 1,
+
+            }
             # If wound is "grossly contaminated" administer Metronidazole
             # todo: parameterise the probability of wound contamination
             p = self.module.parameters
             prob_open_fracture_contaminated = p['prob_open_fracture_contaminated']
             rand_for_contamination = self.module.rng.random_sample(size=1)
             if rand_for_contamination < prob_open_fracture_contaminated:
-                conaminated_wound_metronidazole_code = pd.unique(
-                    consumables.loc[consumables['Items'] ==
-                                    'Metronidazole, injection, 500 mg in 100 ml vial',
-                                    'Item_Code'])[0]
-                consumables_fractures['Item_Code'].update({conaminated_wound_metronidazole_code: 1})
-
+                self.item_codes_for_consumables_required['open_fracture_treatment'].update(
+                    {get_item_code('Metronidazole, injection, 500 mg in 100 ml vial'): 1}
+                )
         # Check that there are enough consumables to treat this person's fractures
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_fractures,
-            to_log=True)
+        is_cons_available = self.get_consumables(
+            self.module.item_codes_for_consumables_required['open_fracture_treatment']
+        )
+
         if is_cons_available:
             logger.debug(key='rti_general_message',
                          data=f"Fracture casts available for person {person_id} {open_fracture_counts} open fractures"
