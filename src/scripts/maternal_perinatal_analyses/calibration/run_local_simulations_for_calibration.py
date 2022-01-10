@@ -2,7 +2,6 @@
 from pathlib import Path
 import pandas as pd
 import numpy as np
-from tlo.analysis.utils import parse_log_file
 from tlo import Date, Simulation, logging
 from tlo.methods.labour import LabourOnsetEvent
 from tlo.methods import (
@@ -15,30 +14,24 @@ from tlo.methods import (
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
-    symptommanager, malaria, hiv, cardio_metabolic_disorders, depression, dx_algorithm_child, dx_algorithm_adult
+    symptommanager, malaria, hiv, cardio_metabolic_disorders, depression,
 )
-
 
 resourcefilepath = Path("./resources")
 
-# HELPER FUNCTIONS
 
+# HELPER FUNCTIONS
 def register_modules(sim):
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
-                 #dummy_contraception.DummyContraceptionModule(),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
-                                           ignore_cons_constraints=True),
-                 #joes_fake_props_module.JoesFakePropsModule(resourcefilepath=resourcefilepath),
+                                           cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
                  malaria.Malaria(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
-                 #hiv.DummyHivModule(),
                  cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
@@ -61,7 +54,7 @@ def set_logging(config_name, seed):
 def make_all_women_of_reproductive_age_pregnant_from_sim_start(sim):
     df = sim.population.props
 
-    all = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years >14) & (df.age_years < 49)]
+    all = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 49)]
     df.loc[all.index, 'is_pregnant'] = True
     df.loc[all.index, 'date_of_last_pregnancy'] = sim.start_date
     for person in all.index:
@@ -101,9 +94,8 @@ def make_all_women_of_reproductive_age_pregnant_and_sim_start_at_labour_onset(si
         df.at[person, 'la_due_date_current_pregnancy'] = sim.start_date + pd.DateOffset(days=1)
         sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(person)
 
-        sim.schedule_event(LabourOnsetEvent(sim.modules['Labour'], person), df.at[person,
-                                                                                          'la_due_date_current_pregnancy'])
-
+        sim.schedule_event(LabourOnsetEvent(sim.modules['Labour'], person), df.at[person, 'la_due_date_current_'
+                                                                                          'pregnancy'])
 
 
 def allow_varying_parameter_sets_to_be_used(parameters, sim):
@@ -232,7 +224,7 @@ def do_run_forcing_complication_pregnancy_to_look_at_cfr(config_name, start_date
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
     register_modules(sim)
     sim.make_initial_population(n=population)
-    #make_all_women_of_reproductive_age_pregnant_from_sim_start(sim)
+    # make_all_women_of_reproductive_age_pregnant_from_sim_start(sim)
     make_all_women_of_reproductive_age_pregnant_and_sim_start_at_labour_onset(sim)
     allow_varying_parameter_sets_to_be_used(parameters, sim)
 
@@ -240,11 +232,11 @@ def do_run_forcing_complication_pregnancy_to_look_at_cfr(config_name, start_date
     sim.modules['Labour'].current_parameters['prob_obstruction_malpos_malpres'] = 1
     sim.modules['Labour'].current_parameters['prob_obstruction_other'] = 1
 
-    #sim.modules['PregnancySupervisor'].current_parameters['prob_chorioamnionitis'] = 1
-    #sim.modules['PregnancySupervisor'].current_parameters['prob_prom_per_month'] = 0
-
+    # sim.modules['PregnancySupervisor'].current_parameters['prob_chorioamnionitis'] = 1
+    # sim.modules['PregnancySupervisor'].current_parameters['prob_prom_per_month'] = 0
 
     sim.simulate(end_date=end_date)
+
 
 def normal_run(config_name, start_date, end_date, seed, population, parameters):
     log_config = set_logging(config_name, seed)
@@ -255,12 +247,9 @@ def normal_run(config_name, start_date, end_date, seed, population, parameters):
 
     sim.simulate(end_date=end_date)
 
+
 do_run_forcing_complication_pregnancy_to_look_at_cfr('test_avd_is_running', Date(2010, 1, 1),
                                                      Date(2010, 2, 1), 111, 1000, 2010)
 
-#normal_run('test_lbw_logging_less_eptb', Date(2010, 1, 1), Date(2011, 1, 1), 77, 10000, 2010)
-#normal_run('anc1_checker_15', Date(2010, 1, 1), Date(2011, 1, 1), 2, 10000, 2015)
-
-
-
-
+# normal_run('test_lbw_logging_less_eptb', Date(2010, 1, 1), Date(2011, 1, 1), 77, 10000, 2010)
+# normal_run('anc1_checker_15', Date(2010, 1, 1), Date(2011, 1, 1), 2, 10000, 2015)

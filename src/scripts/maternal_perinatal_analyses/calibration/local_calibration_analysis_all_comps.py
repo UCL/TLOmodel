@@ -40,9 +40,9 @@ indirect_causes = ['AIDS', 'severe_malaria', 'Suicide', 'diabetes', 'chronic_kid
 logs_dict = dict()
 
 new_parse_log_2010 = {2010: parse_log_file(
-    log_filepath=f"./outputs/calibration_files/test_pph_traetment_calibration_111__2021-10-20T133832.log")}
+    log_filepath="./outputs/calibration_files/test_pph_traetment_calibration_111__2021-10-20T133832.log")}
 new_parse_log_2015 = {2015: parse_log_file(
-    log_filepath=f"./outputs/calibration_files/anc1_checker_15_calibration_2__2021-09-22T153811.log")}
+    log_filepath="./outputs/calibration_files/anc1_checker_15_calibration_2__2021-09-22T153811.log")}
 logs_dict.update(new_parse_log_2010)
 logs_dict.update(new_parse_log_2015)
 
@@ -55,27 +55,33 @@ master_dict_pn_2015 = dict()
 master_dict_nb_2010 = dict()
 master_dict_nb_2015 = dict()
 
+
 def update_dicts(comps, dict_2010, dict_2015, module, age_group):
     for complication in comps:
         new_row = {complication: 0}
         dict_2010.update(new_row)
-        graph_maker_for_local_calibration.get_incidence(logs_dict[2010], module, complication, dict_2010, specific_year=False, year=2010,
+        graph_maker_for_local_calibration.get_incidence(logs_dict[2010], module, complication, dict_2010,
+                                                        specific_year=False, year=2010,
                                                         age_group=age_group)
         dict_2015.update(new_row)
-        graph_maker_for_local_calibration.get_incidence(logs_dict[2015], module, complication, dict_2015, specific_year=False, year=2015,
+        graph_maker_for_local_calibration.get_incidence(logs_dict[2015], module, complication, dict_2015,
+                                                        specific_year=False, year=2015,
                                                         age_group=age_group)
+
 
 update_dicts(antenatal_comps, master_dict_an_2010, master_dict_an_2015, 'pregnancy_supervisor', 'maternal')
 update_dicts(intrapartum_comps, master_dict_la_2010, master_dict_la_2015, 'labour', 'maternal')
 update_dicts(postnatal_comps, master_dict_pn_2010, master_dict_pn_2015, 'postnatal_supervisor', 'maternal')
 update_dicts(neonatal_comps, master_dict_nb_2010, master_dict_nb_2015, 'newborn_outcomes', 'newborn')
 
+
 def get_crf(dict_incidence, death_label, year):
     comp_death = logs_dict[year]['tlo.methods.demography']['death']['cause'] == death_label
     cfr = (len(comp_death.loc[comp_death].index) / dict_incidence) * 100
     print(cfr)
 
-#graph_maker.get_parity_graphs(logs_dict[2010])
+# graph_maker.get_parity_graphs(logs_dict[2010])
+
 
 total_births_2010 = graph_maker_for_local_calibration.get_total_births(logs_dict[2010])
 total_births_2015 = graph_maker_for_local_calibration.get_total_births(logs_dict[2015])
@@ -85,8 +91,8 @@ graph_maker_for_local_calibration.output_distribution_of_ga_at_birth_for_logfile
 pregnancies_2011 = graph_maker_for_local_calibration.get_pregnancies_in_a_year(logs_dict[2010], 2010)
 pregnancies_2016 = graph_maker_for_local_calibration.get_pregnancies_in_a_year(logs_dict[2015], 2015)
 
-#total_ended_pregnancies = graph_maker_for_local_calibration.get_completed_pregnancies_in_a_year(logs_dict[2010],
- #                                                                                               master_dict_an_2010)
+# total_ended_pregnancies = graph_maker_for_local_calibration.get_completed_pregnancies_in_a_year(logs_dict[2010],
+#                                                                                               master_dict_an_2010)
 
 graph_maker_for_local_calibration.get_single_year_generic_incidence_graph('low_birth_weight', master_dict_nb_2010,
                                                                           total_births_2010, 12.5,

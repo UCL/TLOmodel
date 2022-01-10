@@ -1,5 +1,3 @@
-import numpy as np
-
 from tlo import Date, logging
 from tlo.methods import (
     care_of_women_during_pregnancy,
@@ -34,7 +32,7 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'increased_scenario_15k', 'directory': './outputs',
+            'filename': 'baseline_scenario_15k', 'directory': './outputs',
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -73,7 +71,6 @@ class TestScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'PregnancySupervisor': {'switch_anc_coverage': True}
         }
 
 

@@ -38,8 +38,9 @@ def predict_encephalopathy(self, df, rng=None, **externals):
         result *= params['rr_enceph_neonatal_sepsis']
     if main_df.at[mother_id, 'la_obstructed_labour']:
         result *= params['rr_enceph_obstructed_labour']
-    if main_df.at[mother_id, 'la_uterine_rupture'] or (main_df.at[mother_id, 'la_antepartum_haem'] != 'none') or\
-        (main_df.at[mother_id, 'ps_antepartum_haemorrhage'] != 'none'):
+    if main_df.at[mother_id, 'la_uterine_rupture'] or\
+        (main_df.at[mother_id, 'la_antepartum_haem'] != 'none') or\
+       (main_df.at[mother_id, 'ps_antepartum_haemorrhage'] != 'none'):
         result *= params['rr_enceph_acute_hypoxic_event']
 
     return pd.Series(data=[result], index=df.index)

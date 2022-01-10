@@ -5,8 +5,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import (
-    extract_results, extract_str_results,
-    get_scenario_outputs, create_pickles_locally, summarize
+    extract_results,
+    get_scenario_outputs,
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
@@ -19,15 +19,15 @@ rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
 results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
-#create_pickles_locally(results_folder)  # if not created via batch
+# create_pickles_locally(results_folder)  # if not created via batch
 
 # Enter the years the simulation has ran for here?
-sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]#, 2021, 2022, 2023, 2024, 2025, 2026,
-             #2027, 2028,  2029]
+sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
+
 # todo: replace with something more clever at some point
 
-# ============================================HELPER FUNCTIONS... =====================================================
 
+# ============================================HELPER FUNCTIONS... =====================================================
 def get_modules_maternal_complication_dataframes(module):
     complications_df = extract_results(
         results_folder,
@@ -40,10 +40,12 @@ def get_modules_maternal_complication_dataframes(module):
 
     return complications_df
 
+
 #  COMPLICATION DATA FRAMES....
 an_comps = get_modules_maternal_complication_dataframes('pregnancy_supervisor')
 la_comps = get_modules_maternal_complication_dataframes('labour')
 pn_comps = get_modules_maternal_complication_dataframes('postnatal_supervisor')
+
 
 def get_mean_and_quants(df):
     year_means = list()
@@ -174,6 +176,7 @@ def simple_bar_chart(model_rates, x_title, y_title, title, file_name):
     plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
 
+
 def line_graph_with_ci_and_target_rate(mean_list, lq_list, uq_list, target_rate, x_label, y_label, title, file_name):
     fig, ax = plt.subplots()
     ax.plot(sim_years, mean_list, 'o-g', label="Model", color='deepskyblue')
@@ -200,6 +203,7 @@ def get_target_rate(first_rate, second_rate):
             target_rate_adjusted.append(second_rate * 0.70)
 
     return [target_rate, target_rate_adjusted]
+
 
 # ============================================  Total births... ======================================================
 births_results = extract_results(
@@ -267,11 +271,12 @@ scaled_deaths = extract_results(
 deaths = get_mean_and_quants_from_str_df(scaled_deaths, 'Maternal Disorders')
 
 gbd_deaths_2010_2019_data = [
-    [1308.234973, 1276.183582,1236.480898, 1203.78822,1173.894982, 1147.804779, 1149.500937,1134.968587, 1127.841623,
-     1129.940058],[908.8606818, 886.6127208, 869.109778, 833.9787632, 795.7024331, 785.9900535, 766.3767863,
-                   738.2473034, 741.6140021, 728.0930259],
+    [1308.234973, 1276.183582, 1236.480898, 1203.78822, 1173.894982, 1147.804779, 1149.500937, 1134.968587, 1127.841623,
+     1129.940058],
+    [908.8606818, 886.6127208, 869.109778, 833.9787632, 795.7024331, 785.9900535, 766.3767863, 738.2473034,
+     741.6140021, 728.0930259],
     [1738.37933, 1714.101592, 1650.485182, 1629.394539, 1614.174427, 1596.760928, 1608.548815, 1589.998955,
-     1585.286372,1591.604143]]
+     1585.286372, 1591.604143]]
 
 mean_deaths = list()
 death_lq = list()
@@ -281,6 +286,7 @@ for year in years:
     mean_deaths.append(scaled_deaths.loc[year, 'Maternal Disorders'].mean())
     death_lq.append(scaled_deaths.loc[year, 'Maternal Disorders'].quantile(0.025))
     death_uq.append(scaled_deaths.loc[year, 'Maternal Disorders'].quantile(0.925))
+
 
 model_ci = [(x - y) / 2 for x, y in zip(death_uq, death_lq)]
 gbd_ci = [(x - y) / 2 for x, y in zip(gbd_deaths_2010_2019_data[2], gbd_deaths_2010_2019_data[1])]
@@ -292,7 +298,7 @@ plt.bar(ind, mean_deaths, width, label='Model', yerr=model_ci, color='teal')
 plt.bar(ind + width, gbd_deaths_2010_2019_data[0], width, label='GBD', yerr=gbd_ci, color='olivedrab')
 plt.ylabel('Total Deaths Maternal Deaths (scaled)')
 plt.title('Yearly Modelled Maternal Deaths Compared to GBD')
-plt.xticks(ind + width / 2, (years))
+plt.xticks(ind + width / 2, years)
 plt.legend(loc='best')
 plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/deaths_gbd_comparison.png')
 plt.show()
@@ -364,9 +370,9 @@ for year in sim_years:
 
     for complication in direct_causes:
         if complication in death_results.loc[year].index:
-                mean = death_results.loc[year, complication].mean()
-                yearly_mean_number.append(mean)
-                causes.update({f'{complication}': mean})
+            mean = death_results.loc[year, complication].mean()
+            yearly_mean_number.append(mean)
+            causes.update({f'{complication}': mean})
         else:
             yearly_mean_number.append(0)
 
@@ -389,13 +395,15 @@ def pie_prop_cause_of_death(values, years, labels, title):
     plt.legend(labels, loc='center left', bbox_to_anchor=(1, 0.5))
     # Equal aspect ratio ensures that pie is drawn as a circle.
     plt.title(f'Proportion of total maternal deaths by cause ({title}) {years}')
-    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mat_death_by_cause_{title}_{years}.png', bbox_inches="tight")
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/mat_death_by_cause_{title}_{years}.png',
+                bbox_inches="tight")
     plt.show()
+
 
 props_df = pd.DataFrame(data=proportions_dicts)
 props_df = props_df.fillna(0)
 
-#labels = list(props_df.index)
+# labels = list(props_df.index)
 labels_10 = list()
 labels_15 = list()
 values_10 = list()
@@ -464,7 +472,7 @@ mean_spph = get_mean_and_quants_from_str_df(pn_comps, 'secondary_postpartum_haem
 mean_spe = get_comp_mean_and_rate_across_multiple_dataframes('severe_pre_eclamp', dummy_denom, 1,
                                                              [an_comps, la_comps, pn_comps])[0]
 mean_ec = get_comp_mean_and_rate_across_multiple_dataframes('eclampsia', dummy_denom, 1,
-                                                             [an_comps, la_comps, pn_comps])[0]
+                                                            [an_comps, la_comps, pn_comps])[0]
 mean_sgh = get_comp_mean_and_rate_across_multiple_dataframes('severe_gest_htn', dummy_denom, 1,
                                                              [an_comps, la_comps, pn_comps])[0]
 
@@ -475,7 +483,7 @@ s_aph_mean = get_comp_mean_and_rate_across_multiple_dataframes('severe_antepartu
 mean_aph = [x + y for x, y in zip(mm_aph_mean, s_aph_mean)]
 
 for inc_list in [mean_ep, mean_sa, mean_ia, mean_ur, mean_lsep,
-                mean_psep, mean_asep, mean_ppph, mean_spph, mean_spe, mean_ec, mean_sgh, mean_aph]:
+                 mean_psep, mean_asep, mean_ppph, mean_spph, mean_spe, mean_ec, mean_sgh, mean_aph]:
 
     for index, item in enumerate(inc_list):
         if item == 0:
@@ -582,7 +590,7 @@ plt.errorbar(2017, 18.6, label='Hug 2017 (adj.)', yerr=(24-13)/2, fmt='o', color
 ax.plot([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
         [28, 27, 26, 25, 24, 23, 22, 22, 20, 20],  label="UN IGCME (unadj.)", color='purple')
 ax.fill_between([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019],
-               [25, 24, 23, 22, 20, 18, 16, 15, 14, 13],
+                [25, 24, 23, 22, 20, 18, 16, 15, 14, 13],
                 [32, 31, 30, 29, 29, 28, 28, 29, 29, 30], color='grey', alpha=.1)
 ax.set(ylim=(0, 45))
 plt.xlabel('Year')
@@ -606,14 +614,14 @@ death_lq_n = list()
 death_uq_n = list()
 years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
 for year in years:
-   if 'Neonatal Disorders' in scaled_deaths.loc[year].index:
+    if 'Neonatal Disorders' in scaled_deaths.loc[year].index:
         mean_deaths_n.append(scaled_deaths.loc[year, 'Neonatal Disorders'].mean())
         death_lq_n.append(scaled_deaths.loc[year, 'Neonatal Disorders'].quantile(0.025))
         death_uq_n.append(scaled_deaths.loc[year, 'Neonatal Disorders'].quantile(0.925))
-   else:
-       mean_deaths_n.append(0)
-       death_lq_n.append(0)
-       death_uq_n.append(0)
+    else:
+        mean_deaths_n.append(0)
+        death_lq_n.append(0)
+        death_uq_n.append(0)
 
 model_ci_neo = [(x - y) / 2 for x, y in zip(death_uq_n, death_lq_n)]
 gbd_ci_neo = [(x - y) / 2 for x, y in zip(gbd_deaths_2010_2019_data_neo[2], gbd_deaths_2010_2019_data_neo[1])]
@@ -625,7 +633,7 @@ plt.bar(ind, mean_deaths_n, width, label='Model', yerr=model_ci_neo, color='teal
 plt.bar(ind + width, gbd_deaths_2010_2019_data_neo[0], width, label='GBD', yerr=gbd_ci_neo, color='olivedrab')
 plt.ylabel('Total Deaths Neonatal Deaths (scaled)')
 plt.title('Yearly Modelled Neonatal Deaths Compared to GBD')
-plt.xticks(ind + width / 2, (years))
+plt.xticks(ind + width / 2, years)
 plt.legend(loc='best')
 plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/deaths_gbd_comparison_neo.png')
 plt.show()
@@ -791,15 +799,13 @@ def get_dalys(df_):
 
 
 dalys_stacked = extract_results(
-        results_folder,
-        module="tlo.methods.healthburden",
-                key="dalys_stacked",
-                custom_generate_series=(
-                    lambda df: df.drop(
-                        columns='date'
-                    ).groupby(['year']).sum().stack()
-                ),
-                do_scaling=True)
+    results_folder,
+    module="tlo.methods.healthburden",
+    key="dalys_stacked",
+    custom_generate_series=(
+        lambda df: df.drop(
+            columns='date').groupby(['year']).sum().stack()),
+    do_scaling=True)
 
 stacked_mat_dalys = list()
 stacked_mat_dalys_lq = list()
@@ -834,15 +840,13 @@ plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/dalys_stacked.png')
 plt.show()
 
 dalys_stacked = extract_results(
-        results_folder,
-        module="tlo.methods.healthburden",
-                key="dalys_stacked",
-                custom_generate_series=(
-                    lambda df_: df_.drop(
-                        columns='date').
-                        groupby(['year'])['Maternal Disorders'].sum()
-                ),
-                do_scaling=True)
+    results_folder,
+    module="tlo.methods.healthburden",
+    key="dalys_stacked",
+    custom_generate_series=(
+        lambda df_: df_.drop(
+            columns='date').groupby(['year'])['Maternal Disorders'].sum()),
+    do_scaling=True)
 
 # todo: move to scenrio files
 # 1.) define HSIs of interest

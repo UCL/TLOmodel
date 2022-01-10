@@ -25,7 +25,6 @@ from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.labour import (
     HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour,
-    HSI_Labour_ReceivesPostnatalCheck,
 )
 from tlo.methods.malaria import (
     HSI_Malaria_complicated_treatment_adult,

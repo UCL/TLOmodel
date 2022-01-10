@@ -1,4 +1,3 @@
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -804,7 +803,6 @@ class NewbornOutcomes(Module):
                                                                 (mni[mother_id]['twin_count'] == 2))):
                 del mni[mother_id]
 
-
     def set_disability_status(self, individual_id):
         """
         This function cycles through each complication experience by a newborn during birth/neonatal period and
@@ -1019,7 +1017,7 @@ class NewbornOutcomes(Module):
         # care evokes a stronger treatment effect than injectable antibiotics alone
 
         if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or df.at[person_id, 'pn_sepsis_late_neonatal'] or\
-          df.at[person_id, 'pn_sepsis_early_neonatal']:
+           df.at[person_id, 'pn_sepsis_early_neonatal']:
 
             if facility_type == 'hp':
                 avail = hsi_event.get_consumables(item_codes=self.item_codes_nb_consumables['sepsis_supportive_care'])
@@ -1156,7 +1154,7 @@ class NewbornOutcomes(Module):
 
         if (df.at[child_id, 'nb_low_birth_weight_status'] == 'low_birth_weight') or\
             (df.at[child_id, 'nb_low_birth_weight_status'] == 'very_low_birth_weight') or\
-            (df.at[child_id, 'nb_low_birth_weight_status'] == 'extremely_low_birth_weight'):
+           (df.at[child_id, 'nb_low_birth_weight_status'] == 'extremely_low_birth_weight'):
             logger.info(key='newborn_complication', data={'newborn': child_id, 'type': 'low_birth_weight'})
 
         elif df.at[child_id, 'nb_low_birth_weight_status'] == 'macrosomia':
@@ -1409,14 +1407,6 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(HSI_Event, I
         if not df.at[person_id, 'is_alive']:
             return
 
-        # Currently the primary intervention delivered by this HSI is newborn resuscitation, we assume that this is
-        # part of the care around labour and is distinct from the postnatal check (as the newborn requiring resus is
-        # evident at birth)
-        if nci[person_id]['delivery_setting'] == 'health_centre':
-            facility_type_code = 'hc'
-        else:
-            facility_type_code = 'hp'
-
         if squeeze_factor < params['squeeze_threshold_neonatal_resus']:
             self.module.assessment_and_initiation_of_neonatal_resus(self)
 
@@ -1512,7 +1502,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
         # Postnatal Supervisor module
         if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or (df.at[person_id, 'nb_encephalopathy'] != 'none')\
             or df.at[person_id, 'nb_early_preterm'] or df.at[person_id, 'nb_late_preterm'] or\
-            df.at[person_id, 'nb_kangaroo_mother_care']:
+           df.at[person_id, 'nb_kangaroo_mother_care']:
 
             event = HSI_NewbornOutcomes_NeonatalWardInpatientCare(
                     self.module, person_id=person_id)
@@ -1618,7 +1608,6 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=self.repeat))
 
     def apply(self, population):
-        df = self.sim.population.props
+        # df = self.sim.population.props
 
         pass
-

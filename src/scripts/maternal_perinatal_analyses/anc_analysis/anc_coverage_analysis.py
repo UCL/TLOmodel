@@ -1,8 +1,5 @@
 from pathlib import Path
-import pickle
-
 import pandas as pd
-import numpy as np
 from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import (
@@ -10,8 +7,7 @@ from tlo.analysis.utils import (
     get_scenario_outputs, load_pickled_dataframes
 )
 from scripts.maternal_perinatal_analyses import analysis_utility_functions
-from datetime import datetime
-#from tlo.methods.demography import get_scaling_factor
+# from tlo.methods.demography import get_scaling_factor
 
 
 # %% Declare the name of the file that specified the scenarios used in this run.
@@ -31,6 +27,7 @@ sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2
              2028, 2029, 2030]
 intervention_years = [2020, 2021, 2022, 2023, 2024, 2025]
 
+
 # GET BIRTHS...
 def get_total_births_per_year(folder):
     births_results = extract_results(
@@ -44,8 +41,10 @@ def get_total_births_per_year(folder):
     total_births_per_year = analysis_utility_functions.get_mean_and_quants(births_results, intervention_years)[0]
     return total_births_per_year
 
+
 baseline_births = get_total_births_per_year(baseline_results_folder)
 intervention_births = get_total_births_per_year(intervention_results_folder)
+
 
 # ===============================================CHECK INTERVENTION ===================================================
 def get_anc_4_coverage(folder):
@@ -95,6 +94,7 @@ def get_anc_4_coverage(folder):
 
     return[yearly_anc4_rates, anc4_lqs, anc4_uqs]
 
+
 baseline_anc4_coverage = get_anc_4_coverage(baseline_results_folder)
 intervention_anc4_coverage = get_anc_4_coverage(intervention_results_folder)
 
@@ -111,8 +111,9 @@ plt.xlabel('Year')
 plt.ylabel('Coverage of ANC4')
 plt.title('ANC4 coverage in baseline and intervention scenarios from 2020')
 plt.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc4_intervention_coverage.png')
+# plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/anc4_intervention_coverage.png')
 plt.show()
+
 
 #  --------------------------------------------- MATERNAL DEATH ------------------------------------------------------
 def get_yearly_mmr_and_nnmr(folder, births):
@@ -130,10 +131,12 @@ def get_yearly_mmr_and_nnmr(folder, births):
                                                            intervention_years)
     return [mm, nm]
 
+
 baseline_mmr = get_yearly_mmr_and_nnmr(baseline_results_folder, baseline_births)[0]
 intervention_mmr = get_yearly_mmr_and_nnmr(intervention_results_folder, intervention_births)[0]
 baseline_nmr = get_yearly_mmr_and_nnmr(baseline_results_folder, baseline_births)[1]
 intervention_nmr = get_yearly_mmr_and_nnmr(intervention_results_folder, intervention_births)[1]
+
 
 def get_mmr_nmr_graphs(bdata, idata, group):
     fig, ax = plt.subplots()
@@ -141,7 +144,7 @@ def get_mmr_nmr_graphs(bdata, idata, group):
     ax.fill_between(intervention_years, bdata[1], bdata[2], color='b', alpha=.1)
     ax.plot(intervention_years, idata[0], label="Intervention (mean)", color='olivedrab')
     ax.fill_between(intervention_years, idata[1], idata[2], color='g', alpha=.1)
-    #ax.set(ylim=(0, 800))
+    # ax.set(ylim=(0, 800))
     plt.xlabel('Year')
     if group == 'Neonatal':
         plt.ylabel("Deaths per 1000 live births")
@@ -149,8 +152,9 @@ def get_mmr_nmr_graphs(bdata, idata, group):
         plt.ylabel("Deaths per 100,000 live births")
     plt.title(f'{group} Mortality Ratio per Year at Baseline and Under Intervention')
     plt.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{group}_mr_int.png')
+    # plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{group}_mr_int.png')
     plt.show()
+
 
 get_mmr_nmr_graphs(baseline_mmr, intervention_mmr, 'Maternal')
 get_mmr_nmr_graphs(baseline_nmr, intervention_nmr, 'Neonatal')
@@ -184,6 +188,7 @@ def get_yearly_sbr_data(folder, births):
 
     return [total_sbr, total_lqs, total_uqs]
 
+
 baseline_sbr = get_yearly_sbr_data(baseline_results_folder, baseline_births)
 intervention_sbr = get_yearly_sbr_data(intervention_results_folder, intervention_births)
 
@@ -196,7 +201,7 @@ plt.xlabel('Year')
 plt.ylabel("Stillbirths per 1000 live births")
 plt.title('Stillbirth Rate per Year at Baseline and Under Intervention')
 plt.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sbr_int.png')
+# plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/sbr_int.png')
 plt.show()
 
 # HEALTH CARE WORKER TIME
@@ -210,9 +215,6 @@ capacity = extract_results(
         ),
     )
 
-
-
-#
 # cap = output['tlo.methods.healthsystem']['Capacity'].copy()
 # cap["date"] = pd.to_datetime(cap["date"])
 # cap = cap.set_index('date')
@@ -256,6 +258,7 @@ capacity = extract_results(
 # #plt.savefig(make_file_name('HSI_per_module'))
 # plt.show()
 
+
 # =================================================== CONSUMABLE COST =================================================
 def get_mean_and_quants(df, sim_years):
     year_means = list()
@@ -274,12 +277,14 @@ def get_mean_and_quants(df, sim_years):
 
     return [year_means, lower_quantiles, upper_quantiles]
 
+
 draws = [0, 1, 2, 3, 4]
 resourcefilepath = Path("./resources/healthsystem/consumables/")
 consumables_df = pd.read_csv(Path(resourcefilepath) / 'ResourceFile_Consumables.csv')
 
 # TODO: this should be scaled to the correct population size?
 # todo: also so slow...
+
 
 def get_cons_cost_per_year(results_folder):
     # Create df that replicates the 'extracted' df
@@ -317,8 +322,9 @@ def get_cons_cost_per_year(results_folder):
 
         for row in cons_df_for_this_draw.index:
             for column in cons_df_for_this_draw.columns:
-                cons_df_for_this_draw.at[row, column] = (cons_df_for_this_draw.at[row, column] *
-                                          (consumables_df[consumables_df.Item_Code == 0]['Unit_Cost'].iloc[0]))
+                cons_df_for_this_draw.at[row, column] =\
+                    (cons_df_for_this_draw.at[row, column] *
+                     (consumables_df[consumables_df.Item_Code == 0]['Unit_Cost'].iloc[0]))
                 cons_df_for_this_draw.at[row, column] = cons_df_for_this_draw.at[row, column] * 0.0014
                 # todo: this is usd conversion
                 # todo: account for inflation, and use 2010 rate
@@ -328,6 +334,7 @@ def get_cons_cost_per_year(results_folder):
 
     final_cost_data = get_mean_and_quants(total_cost_per_draw_per_year, intervention_years)
     return final_cost_data
+
 
 baseline_cost_data = get_cons_cost_per_year(baseline_results_folder)
 intervention_cost_data = get_cons_cost_per_year(intervention_results_folder)
@@ -341,12 +348,11 @@ plt.xlabel('Year')
 plt.ylabel("Total Cost (USD)")
 plt.title('Total Cost Attributable To Antenatal Care Per Year (in USD) (unscaled)')
 plt.legend()
-#plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/COST.png')
+# plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/COST.png')
 plt.show()
 
-
-
 # (DALYS)
+
 
 def get_yearly_dalys(folder):
     dalys = extract_results(
@@ -372,8 +378,10 @@ def get_yearly_dalys(folder):
 
     return [yearly_mat_dalys, yearly_neo_dalys]
 
+
 baseline_dalys = get_yearly_dalys(baseline_results_folder)
 intervention_dalys = get_yearly_dalys(baseline_results_folder)
+
 
 def daly_graphs(condition, b_data, i_data):
     fig, ax = plt.subplots()
@@ -383,8 +391,9 @@ def daly_graphs(condition, b_data, i_data):
     plt.ylabel("Disability Adjusted Life Years")
     plt.title(f'Total DALYs per Year Attributable to {condition} disorders')
     plt.legend()
-    #plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{condition}_dalys.png')
+    # plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{condition}_dalys.png')
     plt.show()
+
 
 daly_graphs('Maternal', baseline_dalys[0], intervention_dalys[0])
 daly_graphs('Neonatal', baseline_dalys[1], intervention_dalys[1])

@@ -207,4 +207,3 @@ def early_initiation_anc4(self, df, rng=None, **externals):
 
     result = result / (1 + result)
     return result
-

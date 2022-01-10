@@ -1,4 +1,3 @@
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -10,7 +9,6 @@ from tlo.lm import LinearModel
 from tlo.methods import Metadata, postnatal_supervisor_lm
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
-from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -258,7 +256,6 @@ class PostnatalSupervisor(Module):
         df.loc[df.is_alive, 'pn_obstetric_fistula'] = 'none'
         df.loc[df.is_alive, 'pn_emergency_event_mother'] = False
 
-
     def initialise_simulation(self, sim):
 
         # Schedule the first instance of the PostnatalSupervisorEvent
@@ -504,8 +501,8 @@ class PostnatalSupervisor(Module):
         onset_sepsis_sst = onset('sepsis_sst_late_postpartum')
 
         # Risk of urinary sepsis is currently a fixed parameter so we apply that risk here
-        at_sepsis_urinary = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == week) & \
-                            ~df.hs_is_inpatient
+        at_sepsis_urinary = \
+            df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == week) & ~df.hs_is_inpatient
 
         onset_sepsis_urinary = pd.Series(
             self.rng.random_sample(len(at_sepsis_urinary.loc[at_sepsis_urinary])) <
@@ -527,8 +524,9 @@ class PostnatalSupervisor(Module):
 
         # Log the complication for analysis
 
-        new_sepsis = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == week) & \
-                    ~df.hs_is_inpatient & df.pn_sepsis_late_postpartum
+        new_sepsis = \
+            df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == week) & ~df.hs_is_inpatient & \
+            df.pn_sepsis_late_postpartum
 
         for person in new_sepsis.loc[new_sepsis].index:
             store_dalys_in_mni(person, 'sepsis_onset')
@@ -1205,9 +1203,8 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
         if (df.at[individual_id, 'pn_sepsis_late_postpartum'] or
             df.at[individual_id, 'pn_postpartum_haem_secondary'] or
             ((df.at[individual_id, 'pn_htn_disorders'] == 'severe_pre_eclamp') and
-             mni[individual_id]['new_onset_spe']) or
-            (df.at[individual_id, 'pn_htn_disorders'] == 'eclampsia')
-            ):
+            mni[individual_id]['new_onset_spe']) or
+           (df.at[individual_id, 'pn_htn_disorders'] == 'eclampsia')):
 
             # We assume the probability of care seeking is higher in women with complications
             if (mni[individual_id]['will_receive_pnc'] == 'late') or (self.module.rng.random_sample() <

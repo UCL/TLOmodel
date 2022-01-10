@@ -1,14 +1,3 @@
-from pathlib import Path
-
-import numpy as np
-import pandas as pd
-from matplotlib import pyplot as plt
-
-from tlo.analysis.utils import (
-    extract_results, extract_str_results,
-    get_scenario_outputs, create_pickles_locally, summarize
-)
-
 
 # ==================================================== UTILITY CODE ===================================================
 def get_mean_and_quants_from_str_df(df, complication, sim_years):
@@ -27,6 +16,7 @@ def get_mean_and_quants_from_str_df(df, complication, sim_years):
 
     return [yearly_mean_number, yearly_lq, yearly_uq]
 
+
 def get_comp_mean_and_rate(complication, denominator_list, df, rate, years):
     yearly_means = get_mean_and_quants_from_str_df(df, complication, years)[0]
     yearly_lq = get_mean_and_quants_from_str_df(df, complication, years)[1]
@@ -37,6 +27,7 @@ def get_comp_mean_and_rate(complication, denominator_list, df, rate, years):
     yearly_uq_rate = [(x / y) * rate for x, y in zip(yearly_uq, denominator_list)]
 
     return [yearly_mean_rate, yearly_lq_rate, yearly_uq_rate]
+
 
 def get_mean_and_quants(df, sim_years):
     year_means = list()

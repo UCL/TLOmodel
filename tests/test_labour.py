@@ -5,7 +5,6 @@ import pandas as pd
 import pytest
 
 from tlo import Date, Simulation
-from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
     care_of_women_during_pregnancy,
     cardio_metabolic_disorders,

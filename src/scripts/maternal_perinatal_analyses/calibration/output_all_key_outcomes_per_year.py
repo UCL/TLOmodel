@@ -5,8 +5,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import (
-    extract_results, extract_str_results,
-    get_scenario_outputs, create_pickles_locally, summarize
+    extract_results,
+    get_scenario_outputs,
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
@@ -19,16 +19,15 @@ rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
 results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
-#create_pickles_locally(results_folder)  # if not created via batch
+# create_pickles_locally(results_folder)  # if not created via batch
 
 
 # Enter the years the simulation has ran for here?
-sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]#, 2021, 2022, 2023, 2024, 2025, 2026,
-            # 2027, 2028,  2029]
+sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
 # todo: replace with something more clever at some point
 
-# ============================================HELPER FUNCTIONS... =====================================================
 
+# ============================================HELPER FUNCTIONS... =====================================================
 def get_modules_maternal_complication_dataframes(module):
     complications_df = extract_results(
         results_folder,
@@ -41,10 +40,12 @@ def get_modules_maternal_complication_dataframes(module):
 
     return complications_df
 
+
 #  COMPLICATION DATA FRAMES....
 an_comps = get_modules_maternal_complication_dataframes('pregnancy_supervisor')
 la_comps = get_modules_maternal_complication_dataframes('labour')
 pn_comps = get_modules_maternal_complication_dataframes('postnatal_supervisor')
+
 
 def get_mean_and_quants(df):
     year_means = list()
@@ -204,15 +205,15 @@ pregnancy_poll_results = extract_results(
     ))
 
 mean_pp_pregs = get_mean_and_quants(pregnancy_poll_results)[0]
-#mean_cf_pregs = get_mean_and_quants(contraception_failure)[0]
-#total_pregnancies_per_year = [x + y for x, y in zip(mean_pp_pregs, mean_cf_pregs)]
+# mean_cf_pregs = get_mean_and_quants(contraception_failure)[0]
+# total_pregnancies_per_year = [x + y for x, y in zip(mean_pp_pregs, mean_cf_pregs)]
 
 lq_pp = get_mean_and_quants(pregnancy_poll_results)[1]
-#lq_cf = get_mean_and_quants(contraception_failure)[1]
+# lq_cf = get_mean_and_quants(contraception_failure)[1]
 uq_pp = get_mean_and_quants(pregnancy_poll_results)[2]
-#uq_cf = get_mean_and_quants(contraception_failure)[2]
-#total_lq = [x + y for x, y in zip(lq_pp, lq_cf)]
-#total_uq = [x + y for x, y in zip(uq_pp, uq_cf)]
+# uq_cf = get_mean_and_quants(contraception_failure)[2]
+# total_lq = [x + y for x, y in zip(lq_pp, lq_cf)]
+# total_uq = [x + y for x, y in zip(uq_pp, uq_cf)]
 
 
 fig, ax = plt.subplots()
@@ -282,7 +283,8 @@ anc_count_on_birth = extract_results(
     module="tlo.methods.care_of_women_during_pregnancy",
     key="anc_count_on_birth",
     custom_generate_series=(
-        lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'total_anc', 'ga_anc_one'])['person_id'].count()),
+        lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'total_anc', 'ga_anc_one'])['person_
+        id'].count()),
     do_scaling=False
 )
 
@@ -460,22 +462,22 @@ for year in sim_years:
     yearly_anc8_rates.append((eight_or_more_visits / anc_total) * 100)
 
 target_anc1_dict = {'double': True,
-                    'first': {'year': 2010, 'value': 94, 'label': 'DHS 2010', 'ci':0},
-                    'second': {'year': 2015, 'value': 95, 'label': 'DHS 2015', 'ci':0}}
+                    'first': {'year': 2010, 'value': 94, 'label': 'DHS 2010', 'ci': 0},
+                    'second': {'year': 2015, 'value': 95, 'label': 'DHS 2015', 'ci': 0}}
 target_anc4_dict = {'double': True,
                     'first': {'year': 2010, 'value': 45.5, 'label': 'DHS 2010', 'ci': 0},
                     'second': {'year': 2015, 'value': 51, 'label': 'DHS 2015', 'ci': 0}}
 
-line_graph_with_ci_and_target_rate(yearly_anc1_rates, anc1_lqs, anc1_uqs, target_anc1_dict,'Year',
+line_graph_with_ci_and_target_rate(yearly_anc1_rates, anc1_lqs, anc1_uqs, target_anc1_dict, 'Year',
                                    '% of total births',  'Proportion of women attending >= 1 ANC contact per year',
                                    'anc_prop_anc1')
 line_graph_with_ci_and_target_rate(yearly_anc4_rates, anc4_lqs, anc4_uqs, target_anc4_dict,
                                    'Year', '% total births', 'Proportion of women attending >= 4 ANC contact per year',
                                    'anc_prop_anc4')
 
-#simple_line_chart(yearly_anc1_rates, target_rate_an, 'Year', '% of total births',
+# simple_line_chart(yearly_anc1_rates, target_rate_an, 'Year', '% of total births',
 #                  'Proportion of women attending > 1 ANC contact per year', 'anc_prop_anc1')
-#simple_line_chart(yearly_anc4_rates, target_rate_anc4, 'Year', '% total births',
+# simple_line_chart(yearly_anc4_rates, target_rate_anc4, 'Year', '% total births',
 #                  'Proportion of women attending >= 4 ANC contact per year', 'anc_prop_anc4')
 
 plt.plot(sim_years, yearly_anc1_rates,  label="anc1", color='palevioletred')
@@ -503,23 +505,19 @@ labels = sim_years
 width = 0.35       # the width of the bars: can also be len(x) sequence
 fig, ax = plt.subplots()
 ax.bar(labels, anc_count_df.loc[8], width, label=8, bottom=anc_count_df.loc[1] + anc_count_df.loc[2] +
-                                                           anc_count_df.loc[3] + anc_count_df.loc[4] +
-                                                           anc_count_df.loc[5] + anc_count_df.loc[6] +
-                                                           anc_count_df.loc[7])
+       anc_count_df.loc[3] + anc_count_df.loc[4] + anc_count_df.loc[5] + anc_count_df.loc[6] + anc_count_df.loc[7])
 ax.bar(labels, anc_count_df.loc[7], width, label=7, bottom=anc_count_df.loc[1] + anc_count_df.loc[2] +
-                                                           anc_count_df.loc[3] + anc_count_df.loc[4] +
-                                                           anc_count_df.loc[5] + anc_count_df.loc[6])
+       anc_count_df.loc[3] + anc_count_df.loc[4] + anc_count_df.loc[5] + anc_count_df.loc[6])
 ax.bar(labels, anc_count_df.loc[6], width, label=6, bottom=anc_count_df.loc[1] + anc_count_df.loc[2] +
-                                                           anc_count_df.loc[3] + anc_count_df.loc[4] +
-                                                           anc_count_df.loc[5])
+       anc_count_df.loc[3] + anc_count_df.loc[4] + anc_count_df.loc[5])
 ax.bar(labels, anc_count_df.loc[5], width, label=5, bottom=anc_count_df.loc[1] + anc_count_df.loc[2] +
-                                                           anc_count_df.loc[3] + anc_count_df.loc[4] )
+       anc_count_df.loc[3] + anc_count_df.loc[4])
 ax.bar(labels, anc_count_df.loc[4], width, label=4, bottom=anc_count_df.loc[1] + anc_count_df.loc[2] +
-                                                           anc_count_df.loc[3])
+       anc_count_df.loc[3])
 ax.bar(labels, anc_count_df.loc[3], width, label=3, bottom=anc_count_df.loc[1] + anc_count_df.loc[2])
 ax.bar(labels, anc_count_df.loc[2], width, label=2, bottom=anc_count_df.loc[1])
 ax.bar(labels, anc_count_df.loc[1], width, label=1,)
-#ax.bar(labels, anc_count_df.loc[0], width, label=0)
+# ax.bar(labels, anc_count_df.loc[0], width, label=0)
 
 ax.set_ylabel('% of total yearly visits')
 ax.set_title('Number of ANC visits at birth per year')
@@ -536,7 +534,8 @@ anc_ga_first_visit = extract_results(
     module="tlo.methods.care_of_women_during_pregnancy",
     key="anc_count_on_birth",
     custom_generate_series=(
-        lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'total_anc', 'ga_anc_one'])['person_id'].count()),
+        lambda df_: df_.assign(year=df_['date'].dt.year) .groupby(['year', 'total_anc', 'ga_anc_one'])['person'
+                                                                                                       '_id'].count()),
     do_scaling=False
 )
 
@@ -547,11 +546,13 @@ anc_before_four_five_months = list()
 anc_before_six_seven_months = list()
 anc_before_eight_plus_months = list()
 
+
 def get_means(df):
     mean_list = 0
     for index in df.index:
         mean_list += df.loc[index].mean()
     return mean_list
+
 
 for year in sim_years:
     year_df = anc_ga_first_visit.loc[year]
@@ -660,8 +661,8 @@ fd_lqs = [x + y for x, y in zip(health_centre_lq, hospital_lq)]
 fd_uqs = [x + y for x, y in zip(health_centre_uq, hospital_uq)]
 
 target_fd_dict = {'double': True,
-                'first':{'year': 2010, 'value': 73, 'label': 'DHS 2010', 'ci':0},
-                    'second':{'year': 2015, 'value': 91, 'label': 'DHS 2015', 'ci':0}}
+                  'first': {'year': 2010, 'value': 73, 'label': 'DHS 2010', 'ci': 0},
+                  'second': {'year': 2015, 'value': 91, 'label': 'DHS 2015', 'ci': 0}}
 
 line_graph_with_ci_and_target_rate(total_fd_rate, fd_lqs, fd_uqs, target_fd_dict, 'Year', '% of total births',
                                    'Proportion of Women Delivering in a Health Facility per Year',
@@ -729,15 +730,15 @@ pnc_neo_uqs = [100 - ((x / y) * 100) for x, y in zip(pnc_0_uqs_neo, total_births
 
 
 target_mpnc_dict = {'double': True,
-                    'first':{'year': 2010, 'value': 50, 'label': 'DHS 2010', 'ci':0},
-                    'second':{'year': 2015, 'value': 48, 'label': 'DHS 2015', 'ci':0}}
+                    'first': {'year': 2010, 'value': 50, 'label': 'DHS 2010', 'ci': 0},
+                    'second': {'year': 2015, 'value': 48, 'label': 'DHS 2015', 'ci': 0}}
 
 target_npnc_dict = {'double': False,
-                    'first':{'year': 2015, 'value': 60, 'label': 'DHS 2015', 'ci':0}}
+                    'first': {'year': 2015, 'value': 60, 'label': 'DHS 2015', 'ci': 0}}
 
 line_graph_with_ci_and_target_rate(pnc_1_plus_rate_mat, pnc_mat_lqs, pnc_mat_uqs, target_mpnc_dict,
-                                   'Year', '% of total births','Proportion of Women post-delivery attending PNC per '
-                                                               'year', 'pnc_mat')
+                                   'Year', '% of total births',
+                                   'Proportion of Women post-delivery attending PNC per year', 'pnc_mat')
 
 line_graph_with_ci_and_target_rate(pnc1_plus_rate_neo, pnc_neo_lqs, pnc_neo_uqs, target_npnc_dict, 'Year',
                                    '% of total births', 'Proportion of Neonates per year attending PNC',
@@ -770,7 +771,7 @@ def get_early_late_pnc_split(module, target, file_name):
     ax.bar(labels, early_rate, width, label='< 48hrs')
     ax.bar(labels, late_rate, width, bottom=early_rate, label='>48hrs')
     ax.set_ylabel('% of PNC 1 visits')
-    ax.set_title(f'Proportion of {target} PNC1 Visits Occuring pre/post 48hrs Postnatal')
+    ax.set_title(f'Proportion of {target} PNC1 Visits occurring pre/post 48hrs Postnatal')
     ax.legend()
     plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{file_name}.png')
     plt.show()
@@ -794,12 +795,12 @@ twins_results = extract_results(
 mean_twin_births = get_mean_and_quants(twins_results)[0]
 total_deliveries = [x - y for x, y in zip(total_births_per_year, mean_twin_births)]
 final_twining_rate = [(x / y) * 100 for x, y in zip(mean_twin_births, total_deliveries)]
-lq_rate = [(x / y) * 100 for x, y in zip( get_mean_and_quants(twins_results)[1], total_deliveries)]
-uq_rate = [(x / y) * 100 for x, y in zip( get_mean_and_quants(twins_results)[2], total_deliveries)]
+lq_rate = [(x / y) * 100 for x, y in zip(get_mean_and_quants(twins_results)[1], total_deliveries)]
+uq_rate = [(x / y) * 100 for x, y in zip(get_mean_and_quants(twins_results)[2], total_deliveries)]
 
 
 target_twin_dict = {'double': False,
-                    'first': {'year': 2010, 'value': 3.9, 'label': 'DHS 2010', 'ci':0}}
+                    'first': {'year': 2010, 'value': 3.9, 'label': 'DHS 2010', 'ci': 0}}
 
 # todo: ADD additional HIV report data?
 line_graph_with_ci_and_target_rate(final_twining_rate, lq_rate, uq_rate, target_twin_dict, 'Year',
@@ -812,8 +813,8 @@ total_pregnancies_per_year = get_mean_and_quants(pregnancy_poll_results)[0]
 ectopic_data = get_comp_mean_and_rate('ectopic_unruptured', total_pregnancies_per_year, an_comps, 1000)
 
 target_ect_dict = {'double': True,
-                    'first': {'year': 2010, 'value': 4.9, 'label': 'GBD 2010', 'ci': 0},
-                    'second': {'year': 2015, 'value': 3.6, 'label': 'GBD 2015', 'ci': 0}}
+                   'first': {'year': 2010, 'value': 4.9, 'label': 'GBD 2010', 'ci': 0},
+                   'second': {'year': 2015, 'value': 3.6, 'label': 'GBD 2015', 'ci': 0}}
 
 # todo: if were using GBD data why cant we have this rate yearly?
 
@@ -839,7 +840,7 @@ simple_line_chart(proportion_of_ectopics_that_rupture_per_year, target_rate_rup,
 spotaneous_abortion_data = get_comp_mean_and_rate('spontaneous_abortion',
                                                   total_completed_pregnancies_per_year, an_comps, 1000)
 target_sa_dict = {'double': False,
-                   'first': {'year': 2016, 'value': 130, 'label': 'Dellicour et al.', 'ci': 0}}
+                  'first': {'year': 2016, 'value': 130, 'label': 'Dellicour et al.', 'ci': 0}}
 
 line_graph_with_ci_and_target_rate(spotaneous_abortion_data[0], spotaneous_abortion_data[1],
                                    spotaneous_abortion_data[2], target_sa_dict, 'Year',
@@ -886,8 +887,7 @@ line_graph_with_ci_and_target_rate(syphilis_data[0], syphilis_data[1],
                                    'syphilis_rate')
 
 # ------------------------------------------------ Gestational Diabetes... -------------------------------------------
-gdm_data = get_comp_mean_and_rate('gest_diab', total_completed_pregnancies_per_year, an_comps,
-                                            1000)
+gdm_data = get_comp_mean_and_rate('gest_diab', total_completed_pregnancies_per_year, an_comps, 1000)
 
 target_gdm_dict = {'double': False,
                    'first': {'year': 2019, 'value': 16, 'label': 'Phiri et al.', 'ci': 0}}
@@ -929,6 +929,7 @@ pnc_anaemia = extract_results(
     do_scaling=False
 )
 
+
 def get_anaemia_graphs(df, timing):
     no_anaemia_data = get_mean_and_quants_from_str_df(df, 'none')
     prevalence_of_anaemia_per_year = [100 - ((x/y) * 100) for x, y in zip(no_anaemia_data[0], total_births_per_year)]
@@ -944,7 +945,6 @@ def get_anaemia_graphs(df, timing):
                                        no_anaemia_uqs, target_an_dict, 'Year', 'Prevalence at birth',
                                        f'Yearly prevalence of Anaemia (all severity) at {timing}',
                                        f'anaemia_prev_{timing}')
-
 
     # todo: should maybe be total postnatal women still alive as opposed to births as will inflate
     mild_anaemia_at_birth = get_mean_and_quants_from_str_df(anaemia_results, 'mild')[0]
@@ -972,16 +972,16 @@ get_anaemia_graphs(pnc_anaemia, 'postnatal')
 
 # ------------------------------------------- Hypertensive disorders -------------------------------------------------
 gh_data = get_comp_mean_and_rate_across_multiple_dataframes('mild_gest_htn', total_births_per_year, 1000,
-                                                                        [an_comps, pn_comps])
+                                                            [an_comps, pn_comps])
 sgh_data = get_comp_mean_and_rate_across_multiple_dataframes('severe_gest_htn', total_births_per_year, 1000,
-                                                                         [an_comps, la_comps, pn_comps])
+                                                             [an_comps, la_comps, pn_comps])
 
 mpe_data = get_comp_mean_and_rate_across_multiple_dataframes('mild_pre_eclamp', total_births_per_year, 1000,
-                                                                         [an_comps, pn_comps])
+                                                             [an_comps, pn_comps])
 spe_data = get_comp_mean_and_rate_across_multiple_dataframes('severe_pre_eclamp', total_births_per_year,
-                                                                         1000, [an_comps, la_comps, pn_comps])
+                                                             1000, [an_comps, la_comps, pn_comps])
 ec_data = get_comp_mean_and_rate_across_multiple_dataframes('eclampsia', total_births_per_year, 1000,
-                                                                        [an_comps, la_comps, pn_comps])
+                                                            [an_comps, la_comps, pn_comps])
 
 target_gh_dict = {'double': False,
                   'first': {'year': 2019, 'value': 36.8, 'label': 'Noubiap et al.', 'ci': 0},
@@ -991,20 +991,20 @@ line_graph_with_ci_and_target_rate(gh_data[0], gh_data[1], gh_data[2], target_gh
                                    'Rate of Gestational Hypertension per Year', 'gest_htn_rate')
 
 target_sgh_dict = {'double': False,
-                  'first': {'year': 2019, 'value': 8.1, 'label': 'Noubiap et al.', 'ci': 0},
-                  }
+                   'first': {'year': 2019, 'value': 8.1, 'label': 'Noubiap et al.', 'ci': 0},
+                   }
 line_graph_with_ci_and_target_rate(sgh_data[0], sgh_data[1], sgh_data[2], target_sgh_dict, 'Year',
-                                   'Rate per 1000 births','Rate of Severe Gestational Hypertension per Year',
+                                   'Rate per 1000 births', 'Rate of Severe Gestational Hypertension per Year',
                                    'severe_gest_htn_rate')
 target_mpe_dict = {'double': False,
-                  'first': {'year': 2019, 'value': 44, 'label': 'Noubiap et al', 'ci': 0},
-                  }
+                   'first': {'year': 2019, 'value': 44, 'label': 'Noubiap et al', 'ci': 0},
+                   }
 line_graph_with_ci_and_target_rate(mpe_data[0], mpe_data[1], mpe_data[2], target_mpe_dict, 'Year',
                                    'Rate per 1000 births', 'Rate of Mild pre-eclampsia per Year',
                                    'mild_pre_eclampsia_rate')
 target_spe_dict = {'double': False,
-                  'first': {'year': 2019, 'value': 22, 'label': 'Noubiap et al', 'ci': 0},
-                  }
+                   'first': {'year': 2019, 'value': 22, 'label': 'Noubiap et al', 'ci': 0},
+                   }
 line_graph_with_ci_and_target_rate(spe_data[0], spe_data[1], spe_data[2], target_spe_dict, 'Year',
                                    'Rate per 1000 births', 'Rate of Severe pre-eclampsia per Year',
                                    'severe_pre_eclampsia_rate')
@@ -1033,25 +1033,23 @@ target_pa_dict = {'double': False,
                   }
 
 line_graph_with_ci_and_target_rate(pa_data[0], pa_data[1], pa_data[2], target_pa_dict, 'Year', 'Rate per 1000 births',
-                  'Rate of Placental Abruption per Year', 'abruption_rate')
+                                   'Rate of Placental Abruption per Year', 'abruption_rate')
 
 # --------------------------------------------- Antepartum Haemorrhage... ---------------------------------------------
 # Rate of APH/total births (antenatal and labour)
-mm_aph_data = get_comp_mean_and_rate_across_multiple_dataframes('mild_mod_antepartum_haemorrhage',
-                                                                             total_births_per_year, 1000,
-                                                                             [an_comps, la_comps])
+mm_aph_data = get_comp_mean_and_rate_across_multiple_dataframes(
+    'mild_mod_antepartum_haemorrhage', total_births_per_year, 1000, [an_comps, la_comps])
 
-s_aph_data = get_comp_mean_and_rate_across_multiple_dataframes('severe_antepartum_haemorrhage',
-                                                                           total_births_per_year, 1000,
-                                                                           [an_comps, la_comps])
+s_aph_data = get_comp_mean_and_rate_across_multiple_dataframes(
+    'severe_antepartum_haemorrhage', total_births_per_year, 1000, [an_comps, la_comps])
 
 total_aph_rates = [x + y for x, y in zip(mm_aph_data[0], s_aph_data[0])]
 aph_lqs = [x + y for x, y in zip(mm_aph_data[1], s_aph_data[1])]
 aph_uqs = [x + y for x, y in zip(mm_aph_data[2], s_aph_data[2])]
 
 target_aph_dict = {'double': False,
-                  'first': {'year': 2015, 'value': 6.4, 'label': 'BEmONC.', 'ci': 0},
-                  }
+                   'first': {'year': 2015, 'value': 6.4, 'label': 'BEmONC.', 'ci': 0},
+                   }
 
 line_graph_with_ci_and_target_rate(total_aph_rates, aph_lqs, aph_uqs, target_aph_dict, 'Year', 'Rate per 1000 births',
                                    'Rate of Antepartum Haemorrhage per Year', 'aph_rate')
@@ -1138,17 +1136,17 @@ sga_data = get_comp_mean_and_rate('small_for_gestational_age', total_births_per_
 
 
 target_lbw_dict = {'double': True,
-                     'first': {'year': 2010, 'value': 12, 'label': 'DHS 2010', 'ci': 0},
-                     'second': {'year': 2015, 'value': 12, 'label': 'DHS 2015', 'ci': 0}}
+                   'first': {'year': 2010, 'value': 12, 'label': 'DHS 2010', 'ci': 0},
+                   'second': {'year': 2015, 'value': 12, 'label': 'DHS 2015', 'ci': 0}}
 
 line_graph_with_ci_and_target_rate(lbw_data[0], lbw_data[1], lbw_data[2], target_lbw_dict, 'Year',
                                    'Proportion of total births', 'Yearly Prevalence of Low Birth Weight',
                                    'neo_lbw_prev')
 
 target_mac_dict = {'double': False,
-                    'first': {'year': 2019, 'value': 5.13, 'label': 'Ngwira et al.', 'ci': 0}}
+                   'first': {'year': 2019, 'value': 5.13, 'label': 'Ngwira et al.', 'ci': 0}}
 
-line_graph_with_ci_and_target_rate(macro_data[0], macro_data[1], macro_data[2], target_mac_dict,'Year',
+line_graph_with_ci_and_target_rate(macro_data[0], macro_data[1], macro_data[2], target_mac_dict, 'Year',
                                    'Proportion of total births', 'Yearly Prevalence of Macrosomia',
                                    'neo_macrosomia_prev')
 dummy_dict = {'double': False,
@@ -1233,9 +1231,9 @@ for year in sim_years:
 
     for indication in ['an_aph_pa', 'an_aph_pp', 'la_aph', 'ol', 'ol_failed_avd', 'ur', 'spe_ec']:
         if indication in cs_results.loc[year].index:
-                mean = cs_results.loc[year, indication].mean()
-                yearly_mean_number.append(mean)
-                causes.update({f'{indication}': mean})
+            mean = cs_results.loc[year, indication].mean()
+            yearly_mean_number.append(mean)
+            causes.update({f'{indication}': mean})
         else:
             yearly_mean_number.append(0)
 
@@ -1266,7 +1264,7 @@ fig1, ax1 = plt.subplots()
 ax1.pie(sizes, shadow=True, startangle=90)
 ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
 plt.legend(labels, loc="best")
-plt.title(f'Proportion of total CS deliveries by indication')
+plt.title('Proportion of total CS deliveries by indication')
 plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/cs_by_indication.png')
 plt.show()
 
@@ -1289,8 +1287,8 @@ sep_uq = [x + y + z for x, y, z in zip(an_sep_data[2], la_sep_data[2], complete_
 
 # todo: note, we would expect our rate to be higher than this
 target_sep_dict = {'double': True,
-                  'first': {'year': 2010, 'value': 4.7, 'label': 'BEmONC 2010', 'ci': 0},
-                  'second': {'year': 2015, 'value': 1.89, 'label': 'BEmONC 2015', 'ci': 0}}
+                   'first': {'year': 2010, 'value': 4.7, 'label': 'BEmONC 2010', 'ci': 0},
+                   'second': {'year': 2015, 'value': 1.89, 'label': 'BEmONC 2015', 'ci': 0}}
 
 line_graph_with_ci_and_target_rate(total_sep_rates, sep_lq, sep_uq, target_sep_dict, 'Year',
                                    'Rate per 1000 births', 'Rate of Maternal Sepsis per Year', 'sepsis_rate')
@@ -1304,11 +1302,11 @@ pph_lq = [x + y for x, y in zip(la_pph_data[1], pn_pph_data[1])]
 pph_uq = [x + y for x, y in zip(la_pph_data[2], pn_pph_data[2])]
 
 target_pph_dict = {'double': True,
-                  'first': {'year': 2010, 'value': 16, 'label': 'BEmONC 2010', 'ci': 0},
-                  'second': {'year': 2015, 'value': 14.6, 'label': 'BEmONC 2015', 'ci': 0}}
+                   'first': {'year': 2010, 'value': 16, 'label': 'BEmONC 2010', 'ci': 0},
+                   'second': {'year': 2015, 'value': 14.6, 'label': 'BEmONC 2015', 'ci': 0}}
 
 line_graph_with_ci_and_target_rate(total_pph_rates, pph_lq, pph_uq, target_pph_dict, 'Year', 'Rate per 1000 births',
-                  'Rate of Postpartum Haemorrhage per Year', 'pph_rate')
+                                   'Rate of Postpartum Haemorrhage per Year', 'pph_rate')
 
 # ------------------------------------------- Intrapartum Stillbirth ... -----------------------------------------------
 ip_stillbirth_results = extract_results(
@@ -1366,8 +1364,7 @@ fis_lqs = [x + y for x, y in zip(vv_fis_data[1], rv_fis_data[1])]
 fis_uqs = [x + y for x, y in zip(vv_fis_data[2], rv_fis_data[2])]
 
 target_fistula_dict = {'double': False,
-                       'first': {'year': 2015, 'value': 6, 'label': 'DHS 2015', 'ci': 0},
-                     }
+                       'first': {'year': 2015, 'value': 6, 'label': 'DHS 2015', 'ci': 0}}
 
 line_graph_with_ci_and_target_rate(total_fistula_rates, fis_lqs, fis_uqs, target_fistula_dict, 'Year',
                                    'Rate per 1000 births', 'Rate of Obstetric Fistula per Year', 'fistula_rate')
@@ -1380,14 +1377,14 @@ late_ns_data = get_comp_mean_and_rate('late_onset_sepsis', total_births_per_year
 
 target_nsep_dict = {'double': False,
                     'first': {'year': 2020, 'value': 39.3, 'label': 'Fleischmann et al.', 'ci': 0},
-                     }
+                    }
 
 total_ns_rates = [x + y + z for x, y, z in zip(early_ns_data[0], early_ns_pn[0], late_ns_data[0])]
 ns_lqs = [x + y + z for x, y, z in zip(early_ns_data[1], early_ns_pn[1], late_ns_data[1])]
 ns_uqs = [x + y + z for x, y, z in zip(early_ns_data[2], early_ns_pn[2], late_ns_data[2])]
 
 line_graph_with_ci_and_target_rate(total_ns_rates, ns_lqs, ns_uqs, target_nsep_dict,  'Year', 'Rate per 1000 births',
-                  'Rate of Neonatal Sepsis per year', 'neo_sepsis_rate')
+                                   'Rate of Neonatal Sepsis per year', 'neo_sepsis_rate')
 
 # TODO: more analysis on rate by timing?
 
@@ -1401,13 +1398,13 @@ enceph_lq = [x + y + z for x, y, z in zip(mild_data[1], mod_data[1], sev_data[1]
 enceph_uq = [x + y + z for x, y, z in zip(mild_data[2], mod_data[2], sev_data[2])]
 
 
-target_rate_enceph = list() # todo: replace
+target_rate_enceph = list()  # todo: replace
 for year in sim_years:
     target_rate_enceph.append(19)
 
 target_enceph_dict = {'double': True,
-                     'first': {'year': 2010, 'value': 19.42, 'label': 'GBD 2010', 'ci': 0},
-                     'second': {'year': 2015, 'value': 18.59, 'label': 'GBD 2015', 'ci': 0}}
+                      'first': {'year': 2010, 'value': 19.42, 'label': 'GBD 2010', 'ci': 0},
+                      'second': {'year': 2015, 'value': 18.59, 'label': 'GBD 2015', 'ci': 0}}
 
 line_graph_with_ci_and_target_rate(total_enceph_rates, enceph_lq, enceph_uq, target_enceph_dict,   'Year',
                                    'Rate per 1000 births', 'Rate of Neonatal Encephalopathy per year',

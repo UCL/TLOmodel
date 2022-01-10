@@ -1,12 +1,9 @@
-from collections import defaultdict
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.lm import LinearModel, LinearModelType
+from tlo.events import IndividualScopeEventMixin
 from tlo.methods import Metadata
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
@@ -2256,7 +2253,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
 
         # If the woman is no longer alive, pregnant is in labour or is an inpatient already then the event doesnt run
         if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'is_pregnant'] or \
-            df.at[person_id, 'la_currently_in_labour'] or df.at[person_id, 'hs_is_inpatient']:
+           df.at[person_id, 'la_currently_in_labour'] or df.at[person_id, 'hs_is_inpatient']:
             return
 
         # We set this admission property to show shes being admitted for induction of labour and hand her over to the
@@ -2873,7 +2870,6 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
             # consumables) we schedule these women to arrive at the rupture event as they have not received treatment
             if df.at[person_id, 'ps_ectopic_pregnancy'] == 'not_ruptured':
                 self.module.ectopic_pregnancy_treatment_doesnt_run(person_id)
-
 
     def never_ran(self):
         self.module.ectopic_pregnancy_treatment_doesnt_run(self)

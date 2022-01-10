@@ -1,11 +1,5 @@
-
-from tlo import Module, Property, Types, logging
-from tlo.methods import Metadata
-
 from matplotlib import pyplot as plt
 import numpy as np
-from tlo import Date
-import statistics as st
 import pandas as pd
 
 
@@ -24,6 +18,7 @@ def get_incidence(logs_dict_file, module, complication, dictionary, specific_yea
             if f'{age_group}_complication' in logs_dict_file[f'tlo.methods.{module}']:
                 comps = logs_dict_file[f'tlo.methods.{module}'][f'{age_group}_complication']
                 dictionary[complication] = len(comps.loc[(comps['type'] == f'{complication}')])
+
 
 def get_prop_unintended_preg(logs_dict, dict):
     for file in logs_dict:
@@ -89,12 +84,14 @@ def get_pregnancies_in_a_year(logs_dict_file, year):
 
     return total_pregnancies
 
+
 def get_pregnancies_from_dummy_contraception(logs_dict_file, year):
     preg_poll = logs_dict_file['tlo.methods.dummy_contraception']['pregnancy']
     preg_poll['date'] = pd.to_datetime(preg_poll['date'])
     preg_poll['year'] = preg_poll['date'].dt.year
 
     return len(preg_poll.loc[preg_poll['year'] == year])
+
 
 def get_completed_pregnancies_in_a_year(logs_dict_file, master_dict):
     sum_ended_pregs_from_dict = master_dict['spontaneous_abortion'] + master_dict['induced_abortion'] + \
@@ -147,10 +144,9 @@ def get_parity_graphs(log_file):
         get_proportions(14, 50, total, parity)
         get_proportions(14, 100, all_ages, parity)
 
-
     def make_parity_graphs(dict, target_rates, age_group):
         N = 11
-        model_rates = (dict[0], dict[1], dict[2], dict[3], dict[4],dict[5] , dict[6], dict[7], dict[8], dict[9],
+        model_rates = (dict[0], dict[1], dict[2], dict[3], dict[4], dict[5], dict[6], dict[7], dict[8], dict[9],
                        dict[10])
         target_rates = (target_rates)
         ind = np.arange(N)
@@ -163,7 +159,6 @@ def get_parity_graphs(log_file):
         plt.xticks(ind + width / 2, ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'))
         plt.legend(loc='best')
         plt.show()
-
 
     make_parity_graphs(proportions_15_19, [79.9, 17.6, 2.3, 0.2, 0, 0, 0, 0, 0, 0, 0], '15_19')
     make_parity_graphs(proportions_20_24, [15.4, 31.7, 34.1, 14.5, 3.6, 0.6, 0.1, 0, 0, 0, 0], '20_24')
@@ -178,13 +173,12 @@ def get_parity_graphs(log_file):
 
 def get_htn_disorders_graph(master_dict_an, master_dict_la, master_dict_pn, denominator, year):
 
-    gh_rate = ((master_dict_an['mild_gest_htn'] +
-                 master_dict_pn['mild_gest_htn']) / denominator) * 1000
+    gh_rate = ((master_dict_an['mild_gest_htn'] + master_dict_pn['mild_gest_htn']) / denominator) * 1000
     print(f'total gh rate {year} =', gh_rate)
 
     sgh_rate = ((master_dict_an['severe_gest_htn'] +
                  master_dict_la['severe_gest_htn'] +
-                 master_dict_pn['severe_gest_htn'] ) / denominator) * 1000
+                 master_dict_pn['severe_gest_htn']) / denominator) * 1000
     print(f'total sgh rate {year} =', sgh_rate)
 
     mpe_rate = ((master_dict_an['mild_pre_eclamp'] +
@@ -196,11 +190,9 @@ def get_htn_disorders_graph(master_dict_an, master_dict_la, master_dict_pn, deno
                  master_dict_pn['severe_pre_eclamp']) / denominator) * 1000
     print(f'total spe rate {year} =', spe_rate)
 
-    ec_rate = ((master_dict_an['eclampsia'] +
-                 master_dict_la['eclampsia'] +
-                 master_dict_pn['eclampsia']) / denominator) * 1000
+    ec_rate = ((master_dict_an['eclampsia'] + master_dict_la['eclampsia'] + master_dict_pn['eclampsia']) /
+               denominator) * 1000
     print(f'total ec rate {year} =', ec_rate)
-
 
     N = 5
     model_rates = (gh_rate, sgh_rate, mpe_rate, spe_rate, ec_rate)
@@ -258,9 +250,9 @@ def get_single_year_twins_graph(log_dict, total_births, target, colours):
         twin_births = len(log_dict['tlo.methods.newborn_outcomes']['twin_birth'])
     total_births_corr = total_births - twin_births
 
-    rate = (twin_births/ total_births_corr) * 100
+    rate = (twin_births / total_births_corr) * 100
 
-    print(f'twins rate', rate, 'per 100 births')
+    print('twins rate', rate, 'per 100 births')
     model_rates = [rate]
     target_rates = [target]
 
@@ -271,7 +263,7 @@ def get_single_year_twins_graph(log_dict, total_births, target, colours):
     plt.bar(r1, model_rates, width=barWidth, color=colours[0], capsize=7, label='model')
     plt.bar(r2, target_rates, width=barWidth, color=colours[1], capsize=7, label='target')
 
-    plt.title(f'Modelled incidence of twin birth')
+    plt.title('Modelled incidence of twin birth')
     plt.xticks([r + barWidth for r in range(len(model_rates))], ['twins'])
     plt.ylabel('proportion of all births')
     plt.legend()
@@ -315,12 +307,11 @@ def get_generic_incidence_graph(complication, dict_2010, dict_2015, denominator_
     width = 0.35
     plt.bar(ind, model_rates, width, label='Model', color=colours[0])
     plt.bar(ind + width, target_rates, width, label='Target Rate', color=colours[1])
-    plt.ylabel(f'Rate per 000 pregnancies')
+    plt.ylabel('Rate per 000 pregnancies')
     plt.title(f'Modelled incidence of {complication}')
     plt.xticks(ind + width / 2, ('2010', '2015'))
     plt.legend(loc='best')
     plt.show()
-
 
 
 def get_total_anaemia_graph(logs_2010, logs_2015, colours):
@@ -354,12 +345,11 @@ def get_total_anaemia_graph(logs_2010, logs_2015, colours):
     width = 0.35
     plt.bar(ind, model_rates, width, label='Model', color=colours[0])
     plt.bar(ind + width, target_rates, width, label='Target Rate', color=colours[1])
-    plt.ylabel(f'Prevalence')
-    plt.title(f'Prevalence of Maternal anaemia at birth')
+    plt.ylabel('Prevalence')
+    plt.title('Prevalence of Maternal anaemia at birth')
     plt.xticks(ind + width / 2, ('2010', '2015', 'm2010', 'm2015', 'mo2010', 'mo2015', 's2010', 's2015'))
     plt.legend(loc='best')
     plt.show()
-
 
 
 def get_incidence_graph_from_an_and_la(complication, dict_an_2010, dict_la_2010, dict_an_2015, dict_la_2015,
@@ -381,7 +371,7 @@ def get_incidence_graph_from_an_and_la(complication, dict_an_2010, dict_la_2010,
     width = 0.35
     plt.bar(ind, model_rates, width, label='Model', color=colours[0])
     plt.bar(ind + width, target_rates, width, label='Target Rate', color=colours[1])
-    plt.ylabel(f'Rate per 000 facility deliveries')
+    plt.ylabel('Rate per 000 facility deliveries')
     plt.title(f'Modelled incidence of {complication}')
     plt.xticks(ind + width / 2, ('2010', '2015'))
     plt.legend(loc='best')
@@ -412,8 +402,8 @@ def get_abortion_complication_graphs(dict_2010, dict_2015, denominator_2010, den
     width = 0.35
     plt.bar(ind, model_rates, width, label='Model', color=colours[0])
     plt.bar(ind + width, target_rates, width, label='Target Rate', color=colours[1])
-    plt.ylabel(f'Rate per 000 pregnancies')
-    plt.title(f'Rate of complicated spontaneous and induced abortion')
+    plt.ylabel('Rate per 000 pregnancies')
+    plt.title('Rate of complicated spontaneous and induced abortion')
     plt.xticks(ind + width / 2, ('SA10', 'SA15', 'IA10', 'IA15'))
     plt.legend(loc='best')
     plt.show()
@@ -427,8 +417,8 @@ def get_abortion_complication_graphs(dict_2010, dict_2015, denominator_2010, den
     width = 0.35
     plt.bar(ind, model_rates, width, label='Model', color=colours[0])
     plt.bar(ind + width, target_rates, width, label='Target Rate', color=colours[1])
-    plt.ylabel(f'Proportion of total abortion by type')
-    plt.title(f'Proportion of abortions leading to complications')
+    plt.ylabel('Proportion of total abortion by type')
+    plt.title('Proportion of abortions leading to complications')
     plt.xticks(ind + width / 2, ('SA10', 'SA15', 'IA10', 'IA15'))
     plt.legend(loc='best')
     plt.show()
@@ -463,8 +453,8 @@ def get_abortion_complication_graphs(dict_2010, dict_2015, denominator_2010, den
     width = 0.35
     plt.bar(ind, model_rates, width, label='Model', color=colours[0])
     plt.bar(ind + width, target_rates, width, label='Target Rate', color=colours[1])
-    plt.ylabel(f'% total complicated abortions')
-    plt.title(f'Proportion of complicated abortions by complication')
+    plt.ylabel('% total complicated abortions')
+    plt.title('Proportion of complicated abortions by complication')
     plt.xticks(ind + width / 2, ('S.SA10', 'S.SA15', 'H.SA10', 'H.SA15', 'O.SA10', 'O.SA15', 'S.IA10', 'S.IA15',
                                  'H.AA10', 'H.IA15', 'I.IA10', 'I.IA15', 'O.IA10', 'O.IA15'), rotation=45)
     plt.legend(loc='best')
@@ -496,8 +486,8 @@ def get_preterm_birth_graph(dict_2010, dict_2015, total_births_2010, total_birth
     width = 0.35
     plt.bar(ind, model_rates, width, label='Model', color=colours[0])
     plt.bar(ind + width, target_rates, width, label='Target Rate', color=colours[1])
-    plt.ylabel(f'Rate per 00 births')
-    plt.title(f'Modelled incidence of Preterm Birth')
+    plt.ylabel('Rate per 00 births')
+    plt.title('Modelled incidence of Preterm Birth')
     plt.xticks(ind + width / 2, ('Rate 10', 'Late 10', 'Early 10', 'Total 15', 'Late 15', 'Early 15', ))
     plt.legend(loc='best')
     plt.show()
@@ -505,7 +495,7 @@ def get_preterm_birth_graph(dict_2010, dict_2015, total_births_2010, total_birth
 
 def get_anc_coverage_graph(logs_dict_file, year):
 
-    anc1 = logs_dict_file['tlo.methods.care_of_women_during_pregnancy']['anc1']
+    # anc1 = logs_dict_file['tlo.methods.care_of_women_during_pregnancy']['anc1']
     anc1_at_birth = logs_dict_file['tlo.methods.care_of_women_during_pregnancy']['anc_ga_first_visit']
     total_anc = logs_dict_file['tlo.methods.care_of_women_during_pregnancy']['anc_count_on_birth']
     total_anc_num = len(total_anc)
@@ -582,11 +572,11 @@ def get_coverage_of_anc_interventions(logs_dict_file):
     #  hard to do it by visit number i.e. of women who attended 3 visits did they have all the visit three info)
 
     if 'anc1' in logs_dict_file['tlo.methods.care_of_women_during_pregnancy']:
-        total_anc = logs_dict_file[f'tlo.methods.care_of_women_during_pregnancy']['anc1']
+        total_anc = logs_dict_file['tlo.methods.care_of_women_during_pregnancy']['anc1']
         total_women_anc = len(total_anc)
 
     if 'anc_interventions' in logs_dict_file['tlo.methods.care_of_women_during_pregnancy']:
-        ints_orig = logs_dict_file[f'tlo.methods.care_of_women_during_pregnancy']['anc_interventions']
+        ints_orig = logs_dict_file['tlo.methods.care_of_women_during_pregnancy']['anc_interventions']
         ints_no_date = ints_orig.drop(['date'], axis=1)
         duplicates = ints_no_date.duplicated(subset=None, keep='first')
         final_ints = ints_no_date.drop(index=duplicates.loc[duplicates].index)
@@ -594,7 +584,6 @@ def get_coverage_of_anc_interventions(logs_dict_file):
         for intervention in coverage:
             total_intervention = len(final_ints.loc[(final_ints['intervention'] == intervention)])
             coverage[intervention] = (total_intervention / total_women_anc) * 100
-
 
     labels = ['DS', 'BP', 'ADM.', 'DSc', 'IFA', 'BEP', 'ITN', 'TT', 'CA', 'Hb', 'AL', 'HEP', 'S.Te', 'S.Tr',
               'HIV', 'IPTP', 'GDM']
@@ -605,16 +594,17 @@ def get_coverage_of_anc_interventions(logs_dict_file):
     plt.bar(ind, model_rates, width, label='Model', color='lightcoral')
     plt.ylabel('Proportion of women who attended ANC during pregnancy')
     plt.title('Coverage indicators of ANC')
-    plt.xticks(ind + width / 2, (labels))
+    plt.xticks(ind + width / 2, labels)
     plt.legend(loc='best')
     plt.show()
 
 
 def get_total_facility_deliveries(logs_dict_file):
     if 'delivery_setting' in logs_dict_file['tlo.methods.labour']:
-        fd_df = logs_dict_file[f'tlo.methods.labour']['delivery_setting']
-        facility_deliveries = len(fd_df.loc[fd_df['facility_type'] == 'hospital']) + \
-                               len(fd_df.loc[fd_df['facility_type'] == 'health_centre'])
+        fd_df = logs_dict_file['tlo.methods.labour']['delivery_setting']
+        facility_deliveries = \
+            len(fd_df.loc[fd_df['facility_type'] == 'hospital']) + len(fd_df.loc[fd_df['facility_type'] == 'health_'
+                                                                                                           'centre'])
 
         return facility_deliveries
 
@@ -624,7 +614,7 @@ def get_facility_delivery_graph(logs_dict_file, total_births, year):
     health_centre_deliveries = 0
 
     if 'delivery_setting' in logs_dict_file['tlo.methods.labour']:
-        facility_deliveries = logs_dict_file[f'tlo.methods.labour']['delivery_setting']
+        facility_deliveries = logs_dict_file['tlo.methods.labour']['delivery_setting']
         hospital_deliveries += len(facility_deliveries.loc[facility_deliveries['facility_type'] == 'hospital'])
         health_centre_deliveries += len(facility_deliveries.loc[facility_deliveries['facility_type'] ==
                                                                 'health_centre'])
@@ -676,14 +666,14 @@ def get_pnc_coverage(logs_dict_file, total_births, year):
 
     if 'total_mat_pnc_visits' in logs_dict_file['tlo.methods.postnatal_supervisor']:
         total_visits = logs_dict_file['tlo.methods.postnatal_supervisor']['total_mat_pnc_visits']
-        more_than_zero= len(total_visits.loc[total_visits['visits'] > 0])
+        more_than_zero = len(total_visits.loc[total_visits['visits'] > 0])
         one_visit = len(total_visits.loc[total_visits['visits'] == 1])
         two_visit = len(total_visits.loc[total_visits['visits'] == 2])
         two_plus_visit = len(total_visits.loc[total_visits['visits'] > 2])
 
     if 'total_neo_pnc_visits' in logs_dict_file['tlo.methods.postnatal_supervisor']:
         total_visits_n = logs_dict_file['tlo.methods.postnatal_supervisor']['total_neo_pnc_visits']
-        more_than_zero_n= len(total_visits_n.loc[total_visits_n['visits'] > 0])
+        more_than_zero_n = len(total_visits_n.loc[total_visits_n['visits'] > 0])
         one_visit_n = len(total_visits_n.loc[total_visits_n['visits'] == 1])
         two_visit_n = len(total_visits_n.loc[total_visits_n['visits'] == 2])
         two_plus_visit_n = len(total_visits_n.loc[total_visits_n['visits'] > 2])
@@ -767,10 +757,10 @@ def get_mmr(logs_dict_file, list, live_births, year):
         total_indirect_death += indirect_deaths_preg_2011
         total_indirect_death += indirect_deaths_postnatal_2011
 
-    maternal_deaths = total_direct_death + total_indirect_death
-    total_mmr = (maternal_deaths / live_births) * 100000
+    # maternal_deaths = total_direct_death + total_indirect_death
+    # total_mmr = (maternal_deaths / live_births) * 100000
 
-    prop_indirect_deaths = (total_indirect_death / maternal_deaths) * 100
+    # prop_indirect_deaths = (total_indirect_death / maternal_deaths) * 100
     indirect_mmr = (total_indirect_death / live_births) * 100000
     direct_mmr = (total_direct_death / live_births) * 100000
 
@@ -800,6 +790,7 @@ def get_mmr(logs_dict_file, list, live_births, year):
     ax.legend()
     plt.show()
 
+
 def output_distribution_of_ga_at_birth_for_logfile_year(logs_dict):
     ga_births = logs_dict['tlo.methods.labour']['live_birth']['ga'].sort_values(ascending=True).astype(int)
     counts = ga_births.value_counts()
@@ -822,4 +813,3 @@ def output_distribution_of_ga_at_birth_for_logfile_year(logs_dict):
     plt.xticks(x_pos, x)
 
     plt.show()
-

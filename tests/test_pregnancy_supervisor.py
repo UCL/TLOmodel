@@ -69,9 +69,9 @@ def turn_off_antenatal_pregnancy_loss(sim):
     params['prob_still_birth_per_month'] = 0
 
     sim.modules['PregnancySupervisor'].ps_linear_models['spontaneous_abortion'] = \
-            LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                0)
+        LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            0)
 
 
 def register_modules():
@@ -251,6 +251,7 @@ def test_calculation_of_gestational_age():
         foetal_age_weeks = np.ceil((sim.date - df.at[person, 'date_of_last_pregnancy']) / np.timedelta64(1, 'W'))
         assert df.at[person, 'ps_gestational_age_in_weeks'] == (foetal_age_weeks + 2)
 
+
 # todo: still true? (asif)
 @pytest.mark.slow
 def test_application_of_risk_of_twin_pregnancy():
@@ -428,7 +429,8 @@ def test_abortion_complications():
 
         # Check that date of onset stored in mni dict to allow for daly calculations
         assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['abortion_onset'] == sim.date)
-        assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['abortion_haem_onset'] == sim.date)
+        assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['abortion_haem_onset'] ==
+                sim.date)
         assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['abortion_sep_onset'] == sim.date)
 
         # Check the sim event queue for the death event
@@ -1076,7 +1078,6 @@ def test_induction_of_labour_logic():
     params = sim.modules['PregnancySupervisor'].current_parameters
     params['prob_seek_care_induction'] = 1
 
-
     df = sim.population.props
     pregnant_women = df.loc[df.is_alive & df.is_pregnant]
     for woman in pregnant_women.index:
@@ -1115,4 +1116,3 @@ def test_induction_of_labour_logic():
     assert (df.loc[pregnant_women.index, 'ps_prev_stillbirth']).all().all()
     for person in pregnant_women.index:
         assert sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]['delete_mni']
-

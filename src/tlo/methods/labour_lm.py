@@ -445,4 +445,3 @@ def predict_postnatal_check(self, df, rng=None, **externals):
 
     result = result / (1 + result)
     return pd.Series(data=[result], index=df.index)
-
