@@ -687,6 +687,12 @@ def test_hsi_weight_loss_and_medication(seed):
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
 
+        # set availability probability of consumables required for HSI event to 1
+        hsi_item_code = p[f'{condition}_hsi'].get('medication_item_code').astype(int)
+        if hsi_item_code is not None:
+            sim.modules["HealthSystem"].prob_item_codes_available.loc[hsi_item_code] = 1
+            sim.modules["HealthSystem"].determine_availability_of_consumables_today()
+
         df = sim.population.props
 
         # Get target person and make them have condition and diagnosed but not on medication yet
