@@ -96,7 +96,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
         the_appt_footprint = self.make_appt_footprint({
             'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
-        if 'injury' in symptoms:
+        if 'severe_trauma' in symptoms:
             if 'RTI' in self.sim.modules:
                 # change the appointment footprint for general injuries if diagnostic equipment is needed
                 self.sim.modules['RTI'].rti_injury_diagnosis(person_id, the_appt_footprint)
@@ -470,7 +470,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             if pd.isnull(df.at[person_id, 'cause_of_death']) and not df.at[person_id, 'rt_diagnosed']:
                 if df.at[person_id, 'rt_in_shock']:
                     road_traffic_injuries.rti_ask_for_shock_treatment(person_id)
-                consumables = sim.modules['HealthSystem'].parameters['Consumables']
+                get_item_code = sim.modules['HealthSystem'].get_item_code_from_item_name
 
                 columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                            'rt_injury_7', 'rt_injury_8']
@@ -481,20 +481,10 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                 fracture_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
                 idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, fracture_codes)
                 if counts >= 1:
-
-                    item_code_x_ray_film = pd.unique(
-                        consumables.loc[consumables['Items'] ==
-                                        "Monochromatic blue senstive X-ray Film, screen SizeSize: 30cm x 40cm",
-                                        'Item_Code'])[0]
-                    consumables_x_ray = {
-                        'Intervention_Package_Code': dict(),
-                        'Item_Code': {item_code_x_ray_film: counts}}
-                    is_cons_available_1 = sim.modules['HealthSystem'].request_consumables(
-                        hsi_event=hsi_event,
-                        cons_req_as_footprint=consumables_x_ray,
-                        to_log=False)
-
-                    if is_cons_available_1:
+                    get_item_code = sim.modules['HealthSystem'].get_item_code_from_item_name
+                    xray_code = get_item_code("Monochromatic blue senstive X-ray Film, screen SizeSize: 30cm x 40cm")
+                    is_cons_available = hsi_event.get_consumables({xray_code: counts})
+                    if is_cons_available:
                         logger.debug(
                             'This facility has x-ray capability which has been used to diagnose person %d.',
                             person_id)

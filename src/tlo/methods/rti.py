@@ -60,6 +60,54 @@ class RTI(Module):
                       'P674b', 'P675a', 'P675b', 'P676', 'P782b', 'P783', 'P883', 'P884', '813bo', '813co', '813do',
                       '813eo']
 
+    NO_TREATMENT_RECOVERY_TIMES_IN_DAYS = {
+        '112': 49,
+        '113': 49,
+        '1101': 7,
+        '211': 49,
+        '212': 49,
+        '241': 7,
+        '2101': 7,
+        '291': 7,
+        '342': 42,
+        '343': 42,
+        '361': 7,
+        '363': 14,
+        '322': 42,
+        '323': 42,
+        '3101': 7,
+        '3113': 56,
+        '412': 35,
+        '414': 365,
+        '461': 7,
+        '463': 14,
+        '453a': 84,
+        '453b': 84,
+        '441': 14,
+        '442': 14,
+        '4101': 7,
+        '552': 90,
+        '553': 90,
+        '554': 90,
+        '5101': 7,
+        '5113': 56,
+        '612': 63,
+        '712a': 70,
+        '712b': 70,
+        '722': 84,
+        '7101': 7,
+        '7113': 56,
+        '813do': 240,
+        '812': 70,
+        '813eo': 240,
+        '813bo': 240,
+        '813co': 240,
+        '822a': 60,
+        '822b': 180,
+        '8101': 7,
+        '8113': 56
+    }
+
     # Module parameters
     PARAMETERS = {
 
@@ -1932,6 +1980,7 @@ class RTI(Module):
         if df.at[person_id, 'rt_disability'] < 0:
             df.at[person_id, 'rt_disability'] = df.at[person_id, 'rt_debugging_DALY_wt']
         # Make sure the true disability burden is greater or equal to zero
+        print('oi')
         assert df.at[person_id, 'rt_debugging_DALY_wt'] >= 0, (person_injuries.values,
                                                                df.at[person_id, 'rt_debugging_DALY_wt'])
         # the reported disability should satisfy 0<=disability<=1, check that they do
@@ -2776,40 +2825,6 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                         non_empty_injuries = persons_injuries[persons_injuries != "none"]
                         non_empty_injuries = non_empty_injuries.dropna(axis=1)
                         injury_columns = non_empty_injuries.columns
-                        # create a dictionary to store recovery times in
-                        no_treatment_recovery_times_in_days = {
-                            '112': 49,
-                            '211': 49,
-                            '212': 49,
-                            '412': 35,
-                            '612': 63,
-                            '712a': 70,
-                            '712b': 70,
-                            '712c': 70,
-                            '811': 70,
-                            '812': 70,
-                            '322': 42,
-                            '722': 84,
-                            '822a': 60,
-                            '822b': 180,
-                            '241': 7,
-                            '342': 42,
-                            '441': 14,
-                            '442': 14,
-                            '552': 90,
-                            '361': 7,
-                            '461': 7,
-                            '291': 7,
-                            '1101': 7,
-                            '2101': 7,
-                            '3101': 7,
-                            '4101': 7,
-                            '5101': 7,
-                            '6101': 7,
-                            '7101': 7,
-                            '8101': 7
-                        }
-
                         columns = \
                             injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person, [code])[0])
                         # assign a recovery date
@@ -2817,9 +2832,9 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                         # would normally be sent directly to the health system. In the instance that a serious injury
                         # occurs and no treatment is recieved but the person survives assume they will be disabled for
                         # the duration of the simulation
-                        if code in no_treatment_recovery_times_in_days.keys():
+                        if code in self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS.keys():
                             df.loc[person, 'rt_date_to_remove_daly'][columns] = \
-                                self.sim.date + DateOffset(days=no_treatment_recovery_times_in_days[code])
+                                self.sim.date + DateOffset(days=self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS[code])
                         else:
                             df.loc[person, 'rt_date_to_remove_daly'][columns] = self.sim.end_date + DateOffset(days=1)
                         assert df.loc[person, 'rt_date_to_remove_daly'][columns] > self.sim.date
@@ -2897,6 +2912,7 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                             df.loc[person, 'rt_injuries_for_open_fracture_treatment'] +
                             df.loc[person, 'rt_injuries_to_cast']
                         )
+                        print('oi')
                         assert untreated_injuries == [], f"not every injury removed from dataframe when treated " \
                                                          f"{untreated_injuries}"
             # Check that the date to remove dalys is removed if the date to remove the daly is today
@@ -3533,7 +3549,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         # TODO: find a more complete list of required consumables for adults
         if self.is_child:
-            self.item_codes_for_consumables_required['shock_treatment_child'] = {
+            self.module.item_codes_for_consumables_required['shock_treatment_child'] = {
                 get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
                 get_item_code("Dextrose (glucose) 5%, 1000ml_each_CMST"): 1,
                 get_item_code('Cannula iv  (winged with injection pot) 20_each_CMST'): 1,
@@ -3544,7 +3560,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
                 self.module.item_codes_for_consumables_required['shock_treatment_child']
             )
         else:
-            self.item_codes_for_consumables_required['shock_treatment_adult'] = {
+            self.module.item_codes_for_consumables_required['shock_treatment_adult'] = {
                 get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
                 get_item_code('Cannula iv  (winged with injection pot) 20_each_CMST'): 1,
                 get_item_code('Blood, one unit'): 1,
@@ -3554,7 +3570,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
                 self.module.item_codes_for_consumables_required['shock_treatment_adult']
             )
 
-        if all(is_cons_available['Item_Code'].values()):
+        if is_cons_available:
             logger.debug(key='rti_general_message',
                          data=f"Hypovolemic shock treatment available for person {person_id}")
             df.at[person_id, 'rt_in_shock'] = False
@@ -3647,7 +3663,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         # Check this injury assigned to be treated here is actually had by the person
         assert all(injuries in person_injuries.values for injuries in p['rt_injuries_to_cast'])
         # If they have a fracture that needs a cast, ask for plaster of paris
-        self.item_codes_for_consumables_required['fracture_treatment'] = {
+        self.module.item_codes_for_consumables_required['fracture_treatment'] = {
             get_item_code('Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST'): fracturecastcounts,
             get_item_code('Bandage, crepe 7.5cm x 1.4m long , when stretched'): slingcounts,
         }
@@ -3768,7 +3784,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         # If they have an open fracture, ask for consumables to treat fracture
         if open_fracture_counts > 0:
-            self.item_codes_for_consumables_required['open_fracture_treatment'] = {
+            self.module.item_codes_for_consumables_required['open_fracture_treatment'] = {
                 get_item_code('ceftriaxon 500 mg, powder for injection_10_IDA'): 1,
                 get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): 1,
                 get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 1,
@@ -3780,7 +3796,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
             prob_open_fracture_contaminated = p['prob_open_fracture_contaminated']
             rand_for_contamination = self.module.rng.random_sample(size=1)
             if rand_for_contamination < prob_open_fracture_contaminated:
-                self.item_codes_for_consumables_required['open_fracture_treatment'].update(
+                self.module.item_codes_for_consumables_required['open_fracture_treatment'].update(
                     {get_item_code('Metronidazole, injection, 500 mg in 100 ml vial'): 1}
                 )
         # Check that there are enough consumables to treat this person's fractures
@@ -3876,7 +3892,7 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
         # Check that the person sent here has an injury that is treated by this HSI event
         assert lacerationcounts > 0
         if lacerationcounts > 0:
-            self.item_codes_for_consumables_required['laceration_treatment'] = {
+            self.module.item_codes_for_consumables_required['laceration_treatment'] = {
                 get_item_code('Suture pack'): lacerationcounts,
                 get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): lacerationcounts,
 
@@ -3967,7 +3983,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
         assert df.loc[person_id, 'rt_med_int'], 'this person has not been treated'
         if burncounts > 0:
             # Request materials for burn treatment
-            self.item_codes_for_consumables_required['burn_treatment'] = {
+            self.module.item_codes_for_consumables_required['burn_treatment'] = {
                 get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): burncounts,
                 get_item_code('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): burncounts,
 
@@ -4431,6 +4447,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        rng = self.module.rng
+        road_traffic_injuries = self.sim.modules['RTI']
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         # Request first draft of consumables used in major surgery
         self.module.item_codes_for_consumables_required['major_surgery'] = {
@@ -4466,49 +4484,47 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             return hs.get_blank_appt_footprint()
         # todo: think about consequences of certain consumables not being available for major surgery and model health
         #  outcomes
+        # Isolate the relevant injury information
+        surgically_treated_codes = ['112', '811', '812', '813a', '813b', '813c', '133a', '133b', '133c', '133d', '134a',
+                                    '134b', '135', '552', '553', '554', '342', '343', '414', '361', '363', '782',
+                                    '782a', '782b', '782c', '783', '822a', '882', '883', '884', 'P133a', 'P133b',
+                                    'P133c', 'P133d', 'P134a', 'P134b', 'P135', 'P782a', 'P782b', 'P782c', 'P783',
+                                    'P882', 'P883', 'P884']
+        # If we have allowed spinal cord surgeries to be treated in this simulation, include the associated injury
+        # codes here
+        if 'include_spine_surgery' in self.allowed_interventions:
+            additional_codes = ['673a', '673b', '674a', '674b', '675a', '675b', '676', 'P673a', 'P673b', 'P674',
+                                'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676']
+            for code in additional_codes:
+                surgically_treated_codes.append(code)
+        # If we have allowed greater access to thoroscopy, include the codes treated by thoroscopy here
+        if 'include_thoroscopy' in self.allowed_interventions:
+            additional_codes = ['441', '443', '453', '453a', '453b', '463']
+            for code in additional_codes:
+                surgically_treated_codes.append(code)
+        persons_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
+        injuries_to_be_treated = df.loc[person_id, 'rt_injuries_for_major_surgery']
+        assert len(set(injuries_to_be_treated) & set(surgically_treated_codes)) > 0, \
+            'This person has asked for surgery but does not have an appropriate injury'
+        # check the people sent here have at least one injury treated by this HSI event
+        _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, surgically_treated_codes)
+        assert counts > 0, (persons_injuries.to_dict(), surgically_treated_codes)
+        # People can be sent here for multiple surgeries, but only one injury can be treated at a time. Decide which
+        # injury is being treated in this surgery
+        # find index for untreated injuries
+        idx_for_untreated_injuries = np.where(pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly']))
+        # find untreated injury codes that are treated with major surgery
+        relevant_codes = np.intersect1d(injuries_to_be_treated, surgically_treated_codes)
+        # check that the person sent here has an appropriate code(s)
+        assert len(relevant_codes) > 0, (persons_injuries.values[0], idx_for_untreated_injuries, person_id,
+                                         persons_injuries.values[0][idx_for_untreated_injuries])
+        # choose a code at random
+        self.treated_code = rng.choice(relevant_codes)
         if request_outcome:
-            rng = self.module.rng
-            road_traffic_injuries = self.sim.modules['RTI']
             # check the people sent here hasn't died due to rti, have had their injuries diagnosed and been through
             # RTI_Med
             assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
             assert df.loc[person_id, 'rt_med_int'], 'This person has not been through rti med int'
-            # Isolate the relevant injury information
-            surgically_treated_codes = ['112', '811', '812', '813a', '813b', '813c', '133a', '133b', '133c', '133d',
-                                        '134a', '134b', '135', '552', '553', '554', '342', '343', '414', '361', '363',
-                                        '782', '782a', '782b', '782c', '783', '822a', '882', '883', '884',
-                                        'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135', 'P782a', 'P782b',
-                                        'P782c', 'P783', 'P882', 'P883', 'P884']
-            # If we have allowed spinal cord surgeries to be treated in this simulation, include the associated injury
-            # codes here
-            if 'include_spine_surgery' in self.allowed_interventions:
-                additional_codes = ['673a', '673b', '674a', '674b', '675a', '675b', '676', 'P673a', 'P673b', 'P674',
-                                    'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676']
-                for code in additional_codes:
-                    surgically_treated_codes.append(code)
-            # If we have allowed greater access to thoroscopy, include the codes treated by thoroscopy here
-            if 'include_thoroscopy' in self.allowed_interventions:
-                additional_codes = ['441', '443', '453', '453a', '453b', '463']
-                for code in additional_codes:
-                    surgically_treated_codes.append(code)
-            persons_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
-            injuries_to_be_treated = df.loc[person_id, 'rt_injuries_for_major_surgery']
-            assert len(set(injuries_to_be_treated) & set(surgically_treated_codes)) > 0, \
-                'This person has asked for surgery but does not have an appropriate injury'
-            # check the people sent here have at least one injury treated by this HSI event
-            _, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, surgically_treated_codes)
-            assert counts > 0, (persons_injuries.to_dict(), surgically_treated_codes)
-            # People can be sent here for multiple surgeries, but only one injury can be treated at a time. Decide which
-            # injury is being treated in this surgery
-            # find index for untreated injuries
-            idx_for_untreated_injuries = np.where(pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly']))
-            # find untreated injury codes that are treated with major surgery
-            relevant_codes = np.intersect1d(injuries_to_be_treated, surgically_treated_codes)
-            # check that the person sent here has an appropriate code(s)
-            assert len(relevant_codes) > 0, (persons_injuries.values[0], idx_for_untreated_injuries, person_id,
-                                             persons_injuries.values[0][idx_for_untreated_injuries])
-            # choose a code at random
-            self.treated_code = rng.choice(relevant_codes)
             # ------------------------ Track permanent disabilities with treatment -------------------------------------
             # --------------------------------- Perm disability from TBI -----------------------------------------------
             codes = ['133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135']
@@ -4685,8 +4701,24 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             assert self.treated_code not in df.loc[person_id, 'rt_injuries_for_major_surgery'], \
                 ['Treated injury code not removed', self.treated_code]
         else:
-            self.module.rti_do_for_major_surgeries(person_id=person_id,
-                                                   count=len(df.loc[person_id, 'rt_injuries_for_major_surgery']))
+            # If the surgery was a life-saving surgery, then send them to RTI_No_Medical_Intervention_Death_Event
+            life_threatening_injuries = ['133a', '133b', '133c', '133d', '134a', '134b', '135',  # TBI
+                                         '112',  # Depressed skull fracture
+                                         'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135',  # Perm TBI
+                                         '342', '343', '361', '363',  # Injuries to neck
+                                         '414', '441', '443', '463', '453a', '453b',  # Severe chest trauma
+                                         '782b',  # Unilateral arm amputation
+                                         '783',  # Bilateral arm amputation
+                                         '883',  # Unilateral lower limb amputation
+                                         '884',  # Bilateral lower limb amputation
+                                         '552', '553', '554'  # Internal organ injuries
+                                         ]
+            if (self.treated_code in life_threatening_injuries) & df.loc[person_id, 'is_alive']:
+                self.sim.schedule_event(RTI_No_Lifesaving_Medical_Intervention_Death_Event(self.module, person_id),
+                                        self.sim.date)
+            else:
+                self.module.rti_do_for_major_surgeries(person_id=person_id,
+                                                       count=len(df.loc[person_id, 'rt_injuries_for_major_surgery']))
             return hs.get_blank_appt_footprint()
 
     def did_not_run(self, person_id):
@@ -4703,22 +4735,6 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                        'Eight injury': df.loc[person_id, 'rt_injury_8']}
         logger.debug(key='rti_general_message',
                      data=f"Injury profile of person {person_id}, {injurycodes}")
-
-        # If the surgery was a life-saving surgery, then send them to RTI_No_Medical_Intervention_Death_Event
-        life_threatening_injuries = ['133a', '133b', '133c', '133d', '134a', '134b', '135',  # TBI
-                                     '112',  # Depressed skull fracture
-                                     'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135',  # Perm TBI
-                                     '342', '343', '361', '363',  # Injuries to neck
-                                     '414', '441', '443', '463', '453a', '453b',  # Severe chest trauma
-                                     '782b',  # Unilateral arm amputation
-                                     '783',  # Bilateral arm amputation
-                                     '883',  # Unilateral lower limb amputation
-                                     '884',  # Bilateral lower limb amputation
-                                     '552', '553', '554'  # Internal organ injuries
-                                     ]
-        if (self.treated_code in life_threatening_injuries) & df.loc[person_id, 'is_alive']:
-            self.sim.schedule_event(RTI_No_Lifesaving_Medical_Intervention_Death_Event(self.module, person_id),
-                                    self.sim.date)
 
 
 class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
@@ -4771,7 +4787,6 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -5023,7 +5038,17 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
         non_empty_injuries = persons_injuries[persons_injuries != "none"]
         non_empty_injuries = non_empty_injuries.dropna(axis=1)
         untreated_injuries = []
-        prob_death = 0
+        life_threatening_injuries = ['133a', '133b', '133c', '133d', '134a', '134b', '135',  # TBI
+                                     '112',  # Depressed skull fracture
+                                     'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135',  # Perm TBI
+                                     '342', '343', '361', '363',  # Injuries to neck
+                                     '414', '441', '443', '463', '453a', '453b',  # Severe chest trauma
+                                     '782b',  # Unilateral arm amputation
+                                     '783',  # Bilateral arm amputation
+                                     '883',  # Unilateral lower limb amputation
+                                     '884',  # Bilateral lower limb amputation
+                                     '552', '553', '554'  # Internal organ injuries
+                                     ]
         # Find which injuries are left untreated by finding injuries which haven't been set a recovery time
         for col in non_empty_injuries:
             if pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1]):
@@ -5031,6 +5056,8 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
         # people can have multiple untreated injuries, most serious injury will be used to determine the likelihood of
         # their passing, so create an empty list to store probabilities of death associated with this person's untreated
         # injury and take the max value
+        # filter out injuries which won't be life threatening if not treated
+        untreated_injuries = [code for code in untreated_injuries if code in life_threatening_injuries]
         prob_deaths = []
         for injury in untreated_injuries:
             for severity_level in untreated_dict:
@@ -5046,6 +5073,34 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
             logger.debug(key='rti_general_message',
                          data=f"This is RTINoMedicalInterventionDeathEvent scheduling a death for person {person_id} on"
                               f" date {self.sim.date}")
+        else:
+            # person has survived their injuries despite the lack of treatment. Assign a recovery date to their injuries
+            # If a spinal injury, amputation, TBI is untreated, assign this injury's recovery time to the end of the
+            # simulation
+            codes = ['673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676',
+                     '782a', '782b', '782c', '783', '882', '883', '884', '133', '133a', '133b', '133c', '133d', '134',
+                     '134a', '134b', '135']
+            for injury in untreated_injuries:
+                print('oi')
+
+                if injury in codes:
+                    # Track whether they are permanently disabled
+                    df.at[person_id, 'rt_perm_disability'] = True
+                    # Find the column and code where the permanent injury is stored
+                    df.loc[person_id, col] = "P" + injury
+                    # schedule the recovery date for the permanent injury for beyond the end of the simulation (making
+                    # it permanent)
+                    df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = \
+                        self.sim.end_date + DateOffset(days=1)
+                    assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
+                else:
+                    # check if the injury has a heal time associated with no treamtent
+                    if injury in self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS.keys():
+                        df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = \
+                            self.sim.end_date + DateOffset(days=self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS[injury])
+                        if injury in df.loc[person_id, 'rt_injuries_for_major_surgery']:
+                            df.loc[person_id, 'rt_injuries_for_major_surgery'].remove(injury)
+
 
 
 # ---------------------------------------------------------------------------------------------------------
