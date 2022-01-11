@@ -2837,6 +2837,20 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                                 self.sim.date + DateOffset(days=self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS[code])
                         else:
                             df.loc[person, 'rt_date_to_remove_daly'][columns] = self.sim.end_date + DateOffset(days=1)
+                        # remove the injury code from columns to be treated, as they have not sought care and have
+                        # survived without treatment
+                        if code in df.loc[person, 'rt_injuries_to_cast']:
+                            df.loc[person, 'rt_injuries_to_cast'].remove(code)
+                        if code in df.loc[person, 'rt_injuries_for_minor_surgery']:
+                            df.loc[person, 'rt_injuries_for_minor_surgery'].remove(code)
+                        if code in df.loc[person, 'rt_injuries_for_major_surgery']:
+                            df.loc[person, 'rt_injuries_for_major_surgery'].remove(code)
+                        if code in df.loc[person, 'rt_injuries_to_heal_with_time']:
+                            df.loc[person, 'rt_injuries_to_heal_with_time'].remove(code)
+                        if code in df.loc[person, 'rt_injuries_to_heal_with_time']:
+                            df.loc[person, 'rt_injuries_to_heal_with_time'].remove(code)
+                        if code in df.loc[person, 'rt_injuries_for_open_fracture_treatment']:
+                            df.loc[person, 'rt_injuries_for_open_fracture_treatment'].remove(code)
                         assert df.loc[person, 'rt_date_to_remove_daly'][columns] > self.sim.date
 
 
