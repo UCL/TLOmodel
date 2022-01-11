@@ -591,26 +591,34 @@ class PregnancySupervisor(Module):
 
         # Scale all models updating the parameter used as the intercept of the linear models
         for k in models_to_be_scaled:
-            self.scale_linear_model_at_initialisation(models_to_be_scaled[k][0], models_to_be_scaled[k][1])
+            self.scale_linear_model_at_initialisation(module_of_interest=self,
+                                                      model=models_to_be_scaled[k][0],
+                                                      parameter_key=models_to_be_scaled[k][1])
 
-    def scale_linear_model_at_initialisation(self, model, parameter_key):
+    def scale_linear_model_at_initialisation(self, module_of_interest, model, parameter_key):
         """
         This function scales the intercept value of linear models according to the distribution of predictor values
         within the data frame. The parameter value (intercept of the model) is then updated accordingly
+        :param module_of_interest: module object for which the models are being scaled
         :param model: model object to be scaled
         :param parameter_key: key (str) relating to the parameter which holds the target rate for the model
         :return:
         """
 
         df = self.sim.population.props
-        params = self.current_parameters
+        params = module_of_interest.current_parameters
+
+        # Select women and create dummy variable for externals called during model run
+        women = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+        mode_of_delivery = pd.Series(False, index=women.index)
+        delivery_setting = pd.Series('none', index=women.index)
 
         # Create a function that runs a linear model with an intercept of 1 and generates a scaled intercept
         def return_scaled_intercept(target, logistic_model):
-            mean = model.predict(
-                df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
-                year=self.sim.date.year).mean()
-
+            mean = model.predict(women,
+                                 year=self.sim.date.year,
+                                 mode_of_delivery=mode_of_delivery,
+                                 delivery_setting=delivery_setting).mean()
             if logistic_model:
                 mean = mean / (1 - mean)
 
@@ -627,7 +635,7 @@ class PregnancySupervisor(Module):
             params[parameter_key] = 1
 
             # Function varies depending on the input/output of the model (i.e. if logistic)
-            if parameter_key == 'odds_early_init_anc4':
+            if 'odds' in parameter_key:
                 params[parameter_key] = return_scaled_intercept(target, logistic_model=True)
             else:
                 params[parameter_key] = return_scaled_intercept(target, logistic_model=False)
@@ -2058,8 +2066,9 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
 
         if (
             ~df.at[individual_id, 'is_alive'] or
+            ~df.at[individual_id, 'is_pregnant'] or
             (df.at[individual_id, 'ps_ectopic_pregnancy'] != 'not_ruptured') or
-            (df.at[individual_id, 'ps_gestational_age_in_weeks'] < 9)
+            (df.at[individual_id, 'ps_gestational_age_in_weeks'] >= 9)
         ):
             return
 
@@ -2253,21 +2262,33 @@ class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
                           self.sim.modules['PostnatalSupervisor'].current_parameters)
 
         # scale the linear models again according to the distribution of the population
-        mod = self.module.ps_linear_models
+        mod_ps = self.module.ps_linear_models
+        mod_la = self.sim.modules['Labour'].la_linear_models
 
-        models_to_be_scaled = {'pp': [mod['placenta_praevia'], 'prob_placenta_praevia'],
-                               'an': [mod['maternal_anaemia'], 'baseline_prob_anaemia_per_month'],
-                               'gd': [mod['gest_diab'], 'prob_gest_diab_per_month'],
-                               'gh': [mod['gest_htn'], 'prob_gest_htn_per_month'],
-                               'pe': [mod['pre_eclampsia'], 'prob_pre_eclampsia_per_month'],
-                               'pa': [mod['placental_abruption'], 'prob_placental_abruption_per_month'],
-                               'ansb': [mod['antenatal_stillbirth'], 'prob_still_birth_per_month'],
-                               'anc': [mod['early_initiation_anc4'], 'odds_early_init_anc4'],
-                               'sa': [mod['spontaneous_abortion'], 'prob_spontaneous_abortion_per_month'],
-                               'ptb': [mod['early_onset_labour'], 'baseline_prob_early_labour_onset']}
+        ps_models_to_be_scaled = {'pp': [mod_ps['placenta_praevia'], 'prob_placenta_praevia'],
+                                  'an': [mod_ps['maternal_anaemia'], 'baseline_prob_anaemia_per_month'],
+                                  'gd': [mod_ps['gest_diab'], 'prob_gest_diab_per_month'],
+                                  'gh': [mod_ps['gest_htn'], 'prob_gest_htn_per_month'],
+                                  'pe': [mod_ps['pre_eclampsia'], 'prob_pre_eclampsia_per_month'],
+                                  'pa': [mod_ps['placental_abruption'], 'prob_placental_abruption_per_month'],
+                                  'ansb': [mod_ps['antenatal_stillbirth'], 'prob_still_birth_per_month'],
+                                  'anc': [mod_ps['early_initiation_anc4'], 'odds_early_init_anc4'],
+                                  'sa': [mod_ps['spontaneous_abortion'], 'prob_spontaneous_abortion_per_month'],
+                                  'ptb': [mod_ps['early_onset_labour'], 'baseline_prob_early_labour_onset']}
 
-        for k in models_to_be_scaled:
-            self.module.scale_linear_model_at_initialisation(models_to_be_scaled[k][0], models_to_be_scaled[k][1])
+        la_models_to_be_scaled = {'ur': [mod_la['uterine_rupture_ip'], 'prob_uterine_rupture'],
+                                  'pn': [mod_la['postnatal_check'], 'odds_will_attend_pnc'],
+                                  'hb': [mod_la['probability_delivery_at_home'], 'odds_deliver_at_home'],
+                                  'hc': [mod_la['probability_delivery_health_centre'], 'odds_deliver_in_health_centre']}
+
+        for k in ps_models_to_be_scaled:
+            self.module.scale_linear_model_at_initialisation(module_of_interest=self.module,
+                                                             model=ps_models_to_be_scaled[k][0],
+                                                             parameter_key=ps_models_to_be_scaled[k][1])
+        for k in la_models_to_be_scaled:
+            self.module.scale_linear_model_at_initialisation(module_of_interest=self.sim.modules['Labour'],
+                                                             model=la_models_to_be_scaled[k][0],
+                                                             parameter_key=la_models_to_be_scaled[k][1])
 
 
 class OverrideKeyParameterForAnalysis(Event, PopulationScopeEventMixin):

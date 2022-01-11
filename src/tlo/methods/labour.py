@@ -878,8 +878,19 @@ class Labour(Module):
             # This equation is used to determine the probability that a woman will seek care for PNC after delivery
             'postnatal_check': LinearModel.custom(
                 labour_lm.predict_postnatal_check, parameters=params),
-
         }
+
+        # Here we create a dict with all the models to be scaled and the 'target' rate parameter
+        mod = self.la_linear_models
+        models_to_be_scaled = {'ur': [mod['uterine_rupture_ip'], 'prob_uterine_rupture'],
+                               'pn': [mod['postnatal_check'], 'odds_will_attend_pnc'],
+                               'hb': [mod['probability_delivery_at_home'], 'odds_deliver_at_home'],
+                               'hc': [mod['probability_delivery_health_centre'], 'odds_deliver_in_health_centre']}
+
+        # Scale all models updating the parameter used as the intercept of the linear models
+        for k in models_to_be_scaled:
+            self.sim.modules['PregnancySupervisor'].scale_linear_model_at_initialisation(
+                module_of_interest=self, model=models_to_be_scaled[k][0], parameter_key=models_to_be_scaled[k][1])
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -2726,8 +2737,10 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
             else:
                 # We use a linear model to determine if women without complications will receive any postnatal care
                 prob_pnc = self.module.la_linear_models['postnatal_check'].predict(
-                    df.loc[[mother_id]], mode_of_delivery=mni[mother_id]['mode_of_delivery'],
-                    delivery_setting=mni[mother_id]['delivery_setting'])[mother_id]
+                    df.loc[[mother_id]],
+                    mode_of_delivery=pd.Series(mni[mother_id]['mode_of_delivery'], index=df.loc[[mother_id]].index),
+                    delivery_setting=pd.Series(mni[mother_id]['delivery_setting'], index=df.loc[[mother_id]].index)
+                )[mother_id]
                 has_comps = False
 
             # If she will receive PNC, we determine if this will happen less than 48 hours from birth or later

@@ -318,10 +318,6 @@ class PostnatalSupervisor(Module):
             'late_onset_neonatal_sepsis': LinearModel.custom(
                 postnatal_supervisor_lm.predict_late_onset_neonatal_sepsis, parameters=params),
 
-            # This equation is used to determine the probability that a woman will seek care for PNC after delivery
-            'care_seeking_for_first_pnc_visit': LinearModel.custom(
-                postnatal_supervisor_lm.predict_care_seeking_for_first_pnc_visit, parameters=params),
-
             # This equation is used to determine if a mother will seek care for treatment in the instance of an
             # emergency complication postnatally (sepsis or haemorrhage)
             'care_seeking_postnatal_complication_mother': LinearModel.custom(

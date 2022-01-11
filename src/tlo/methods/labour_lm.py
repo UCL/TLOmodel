@@ -242,7 +242,7 @@ def predict_postpartum_haem_pp_death(self, df, rng=None, **externals):
     treatment = self.module.pph_treatment.to_strings(person.la_postpartum_haem_treatment)
     result = params['cfr_pp_pph']
 
-    if ('surgery' in treatment) or ('hysterectomy' in treatment):
+    if ('surgery' in treatment) or ('hysterectomy' in treatment):  # todo: replace bitset property with bool?
         result *= params['pph_treatment_effect_surg_md']
     if externals['received_blood_transfusion']:
         result *= params['pph_bt_treatment_effect_md']
@@ -253,24 +253,18 @@ def predict_postpartum_haem_pp_death(self, df, rng=None, **externals):
 
 
 def predict_uterine_rupture_ip(self, df, rng=None, **externals):
-    """individual level"""
-    person = df.iloc[0]
+    """population level - to allow scaling"""
     params = self.parameters
-    result = params['prob_uterine_rupture']
+    result = pd.Series(data=params['prob_uterine_rupture'], index=df.index)
 
-    if person['la_parity'] == 2:
-        result *= params['rr_ur_parity_2']
-    if 5 > person['la_parity'] > 2:
-        result *= params['rr_ur_parity_3_or_4']
-    if person['la_parity'] >= 5:
-        result *= params['rr_ur_parity_5+']
+    result[df.la_parity == 2] *= params['rr_ur_parity_2']
+    result[(df.la_parity > 2) & (df.la_parity < 5)] *= params['rr_ur_parity_3_or_4']
+    result[df.la_parity >= 5] *= params['rr_ur_parity_5+']
 
-    if person['la_previous_cs_delivery']:
-        result *= params['rr_ur_prev_cs']
-    if person['la_obstructed_labour']:
-        result *= params['rr_ur_obstructed_labour']
+    result[df.la_previous_cs_delivery] *= params['rr_ur_prev_cs']
+    result[df.la_obstructed_labour] *= params['rr_ur_obstructed_labour']
 
-    return pd.Series(data=[result], index=df.index)
+    return result
 
 
 def predict_uterine_rupture_death(self, df, rng=None, **externals):
@@ -321,127 +315,83 @@ def predict_intrapartum_still_birth(self, df, rng=None, **externals):
 
 
 def predict_probability_delivery_health_centre(self, df, rng=None, **externals):
-    """individual level"""
-    person = df.iloc[0]
+    """population level - to allow scaling"""
     params = self.parameters
-    result = params['odds_deliver_in_health_centre']
+    result = pd.Series(data=params['odds_deliver_in_health_centre'], index=df.index)
 
-    if 19 < person['age_years'] < 25:
-        result *= params['rrr_hc_delivery_age_20_24']
-    if 24 < person['age_years'] < 30:
-        result *= params['rrr_hc_delivery_age_25_29']
-    if 29 < person['age_years'] < 35:
-        result *= params['rrr_hc_delivery_age_30_34']
-    if 34 < person['age_years'] < 40:
-        result *= params['rrr_hc_delivery_age_35_39']
-    if 39 < person['age_years'] < 45:
-        result *= params['rrr_hc_delivery_age_40_44']
-    if 44 < person['age_years'] < 50:
-        result *= params['rrr_hc_delivery_age_45_49']
+    result[(df.age_years > 19) & (df.age_years < 25)] *= params['rrr_hc_delivery_age_20_24']
+    result[(df.age_years > 24) & (df.age_years < 30)] *= params['rrr_hc_delivery_age_25_29']
+    result[(df.age_years > 29) & (df.age_years < 35)] *= params['rrr_hc_delivery_age_30_34']
+    result[(df.age_years > 34) & (df.age_years < 40)] *= params['rrr_hc_delivery_age_35_39']
+    result[(df.age_years > 39) & (df.age_years < 45)] *= params['rrr_hc_delivery_age_40_44']
+    result[(df.age_years > 44) & (df.age_years < 50)] *= params['rrr_hc_delivery_age_45_49']
 
-    if person['li_wealth'] == 1:
-        result *= params['rrr_hc_delivery_wealth_1']
-    if person['li_wealth'] == 2:
-        result *= params['rrr_hc_delivery_wealth_2']
-    if person['li_wealth'] == 3:
-        result *= params['rrr_hc_delivery_wealth_3']
-    if person['li_wealth'] == 4:
-        result *= params['rrr_hc_delivery_wealth_4']
+    result[df.li_wealth == 1] *= params['rrr_hc_delivery_wealth_1']
+    result[df.li_wealth == 2] *= params['rrr_hc_delivery_wealth_2']
+    result[df.li_wealth == 3] *= params['rrr_hc_delivery_wealth_3']
+    result[df.li_wealth == 4] *= params['rrr_hc_delivery_wealth_4']
 
-    if 2 < person['la_parity'] < 5:
-        result *= params['rrr_hc_delivery_parity_3_to_4']
-    if person['la_parity'] > 4:
-        result *= params['rrr_hc_delivery_parity_>4']
+    result[(df.la_parity > 2) & (df.la_parity < 5)] *= params['rrr_hc_delivery_parity_3_to_4']
+    result[(df.la_parity > 4)] *= params['rrr_hc_delivery_parity_>4']
 
-    if ~person['li_urban']:
-        result *= params['rrr_hc_delivery_rural']
+    result[~df.li_urban] *= params['rrr_hc_delivery_rural']
 
-    if person['li_mar_stat'] == 2:
-        result *= params['rrr_hc_delivery_married']
+    result[df.li_mar_stat == 2] *= params['rrr_hc_delivery_married']
 
     result = result / (1 + result)
-    return pd.Series(data=[result], index=df.index)
+    return result
 
 
 def predict_probability_delivery_at_home(self, df, rng=None, **externals):
-    """individual level"""
-    person = df.iloc[0]
+    """population level - to allow scaling"""
     params = self.parameters
-    result = params['odds_deliver_at_home']
+    result = pd.Series(data=params['odds_deliver_in_health_centre'], index=df.index)
 
-    if 19 < person['age_years'] < 25:
-        result *= params['rrr_hb_delivery_age_20_24']
-    if 24 < person['age_years'] < 30:
-        result *= params['rrr_hb_delivery_age_25_29']
-    if 29 < person['age_years'] < 35:
-        result *= params['rrr_hb_delivery_age_30_34']
-    if 34 < person['age_years'] < 40:
-        result *= params['rrr_hb_delivery_age_35_39']
-    if 39 < person['age_years'] < 45:
-        result *= params['rrr_hb_delivery_age_40_44']
-    if 44 < person['age_years'] < 50:
-        result *= params['rrr_hb_delivery_age_45_49']
+    result[(df.age_years > 19) & (df.age_years < 25)] *= params['rrr_hb_delivery_age_20_24']
+    result[(df.age_years > 24) & (df.age_years < 30)] *= params['rrr_hb_delivery_age_25_29']
+    result[(df.age_years > 29) & (df.age_years < 35)] *= params['rrr_hb_delivery_age_30_34']
+    result[(df.age_years > 34) & (df.age_years < 40)] *= params['rrr_hb_delivery_age_35_39']
+    result[(df.age_years > 39) & (df.age_years < 45)] *= params['rrr_hb_delivery_age_40_44']
+    result[(df.age_years > 44) & (df.age_years < 50)] *= params['rrr_hb_delivery_age_45_49']
 
-    if ~person['li_urban']:
-        result *= params['rrr_hb_delivery_rural']
+    result[~df.li_urban] *= params['rrr_hb_delivery_rural']
 
-    if 2 < person['la_parity'] < 5:
-        result *= params['rrr_hb_delivery_parity_3_to_4']
-    if person['la_parity'] > 4:
-        result *= params['rrr_hb_delivery_parity_>4']
+    result[(df.la_parity > 2) & (df.la_parity < 5)] *= params['rrr_hb_delivery_parity_3_to_4']
+    result[(df.la_parity > 4)] *= params['rrr_hb_delivery_parity_>4']
 
-    if person['li_ed_lev'] == 2:
-        result *= params['rrr_hb_delivery_primary_education']
-    if person['li_ed_lev'] == 3:
-        result *= params['rrr_hb_delivery_secondary_education']
+    result[df.li_ed_lev == 2] *= params['rrr_hb_delivery_primary_education']
+    result[df.li_ed_lev == 3] *= params['rrr_hb_delivery_secondary_education']
 
-    if person['li_wealth'] == 1:
-        result *= params['rrr_hb_delivery_wealth_1']
-    if person['li_wealth'] == 2:
-        result *= params['rrr_hb_delivery_wealth_2']
-    if person['li_wealth'] == 3:
-        result *= params['rrr_hb_delivery_wealth_3']
-    if person['li_wealth'] == 4:
-        result *= params['rrr_hb_delivery_wealth_4']
+    result[df.li_wealth == 1] *= params['rrr_hb_delivery_wealth_1']
+    result[df.li_wealth == 2] *= params['rrr_hb_delivery_wealth_2']
+    result[df.li_wealth == 3] *= params['rrr_hb_delivery_wealth_3']
+    result[df.li_wealth == 4] *= params['rrr_hb_delivery_wealth_4']
 
-    if 2 < person['la_parity'] < 5:
-        result *= params['rrr_hb_delivery_parity_3_to_4']
-    if person['la_parity'] > 4:
-        result *= params['rrr_hb_delivery_parity_>4']
-
-    if person['li_mar_stat'] == 3:
-        result *= params['rrr_hb_delivery_married']
+    result[df.li_mar_stat == 3] *= params['rrr_hb_delivery_married']
 
     result = result / (1 + result)
-    return pd.Series(data=[result], index=df.index)
+    return result
 
 
 def predict_postnatal_check(self, df, rng=None, **externals):
-    """individual level"""
-    person = df.iloc[0]
+    """population level - to allow scaling"""
     params = self.parameters
-    result = params['odds_will_attend_pnc']
+    result = pd.Series(data=params['odds_will_attend_pnc'], index=df.index)
 
-    if 29 < person['age_years'] < 36:
-        result *= params['or_pnc_age_30_35']
-    if person['age_years'] >= 36:
-        result *= params['or_pnc_age_>35']
-    if not person['li_urban']:
-        result *= params['or_pnc_rural']
+    result[(df.age_years > 29) & (df.age_years < 36)] *= params['or_pnc_age_30_35']
+    result[(df.age_years >= 36)] *= params['or_pnc_age_>35']
 
-    if person['li_wealth'] == 1:
-        result *= params['or_pnc_wealth_level_1']
+    result[~df.li_urban] *= params['or_pnc_rural']
 
-    if person['la_parity'] > 4:
-        result *= params['or_pnc_parity_>4']
+    result[df.li_wealth == 1] *= params['or_pnc_wealth_level_1']
 
-    if person['ac_total_anc_visits_current_pregnancy'] > 3:
-        result *= params['or_pnc_anc4+']
+    result[(df.la_parity > 4)] *= params['or_pnc_parity_>4']
 
-    if externals['mode_of_delivery'] == 'caesarean_section':
-        result *= params['or_pnc_caesarean_delivery']
-    if externals['delivery_setting'] != 'home_birth':
-        result *= params['or_pnc_facility_delivery']
+    result[(df.ac_total_anc_visits_current_pregnancy > 3)] *= params['or_pnc_anc4+']
+
+    result[externals['mode_of_delivery'] == 'caesarean_section'] *= params['or_pnc_caesarean_delivery']
+    result[(externals['delivery_setting'] == 'health_centre') | (externals['delivery_setting'] == 'hospital')] \
+        *= params['or_pnc_facility_delivery']
 
     result = result / (1 + result)
-    return pd.Series(data=[result], index=df.index)
+    return result

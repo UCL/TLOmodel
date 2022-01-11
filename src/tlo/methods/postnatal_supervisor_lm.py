@@ -115,24 +115,6 @@ def predict_late_onset_neonatal_sepsis(self, df, rng=None, **externals):
     return result
 
 
-def predict_care_seeking_for_first_pnc_visit(self, df, rng=None, **externals):
-    """population level"""
-    params = self.parameters
-    result = pd.Series(data=params['odds_will_attend_pnc'], index=df.index)
-
-    result[(df.age_years > 29) & (df.age_years < 36)] *= params['or_pnc_age_30_35']
-    result[df.age_years >= 36] *= params['or_pnc_age_>35']
-    result[~df.li_urban] *= params['or_pnc_rural']
-    result[df.li_wealth == 1] *= params['or_pnc_wealth_level_1']
-    result[df.la_parity > 4] *= params['or_pnc_parity_>4']
-
-    result[externals['mode_of_delivery'] == 'caesarean_section'] *= params['or_pnc_caesarean_delivery']
-    result[externals['delivery_setting'] != 'home_birth'] *= params['or_pnc_facility_delivery']
-
-    result = result / (1 + result)
-    return result
-
-
 def predict_care_seeking_postnatal_complication_mother(self, df, rng=None, **externals):
     """population level"""
     params = self.parameters
