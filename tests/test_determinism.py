@@ -6,8 +6,10 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 
+@pytest.mark.slow
 def test_scale_run_script_deterministic(tmp_path):
     """Test running scale_run profiling scripts gives deterministic output.
 
