@@ -449,9 +449,6 @@ def test_defaulting_off_method_if_no_healthsystem_at_population_level(tmpdir, se
     states_that_may_require_HSI_to_switch_to = sim.modules['Contraception'].states_that_may_require_HSI_to_switch_to
     changes = log["contraception_change"]
     assert not changes["switch_to"].isin(states_that_may_require_HSI_to_switch_to).any()
-    assert (changes.loc[changes["switch_from"].isin(states_that_may_require_HSI_to_switch_to), "switch_to"]
-            == "not_using"
-            ).all()
 
 
 @pytest.mark.slow
