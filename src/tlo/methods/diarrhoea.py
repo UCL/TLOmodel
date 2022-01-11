@@ -643,23 +643,18 @@ class Diarrhoea(Module):
         return average_daly_weight_in_last_month.reindex(index=df.loc[df.is_alive].index, fill_value=0.0)
 
     def look_up_consumables(self):
-        """Look up and store the consumables used in each of the HSI."""
+        """Look up and store the consumables item codes used in each of the HSI."""
+        get_item_codes_from_package_name = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
 
-        def get_code(package=None, item=None):
-            consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-            if package is not None:
-                condition = consumables['Intervention_Pkg'] == package
-                column = 'Intervention_Pkg_Code'
-            else:
-                condition = consumables['Items'] == item
-                column = 'Item_Code'
-            return pd.unique(consumables.loc[condition, column])[0]
-
-        self.consumables_used_in_hsi['ORS'] = get_code(package='ORS')
-        self.consumables_used_in_hsi['Treatment_Severe_Dehydration'] = get_code(package='Treatment of severe diarrhea')
-        self.consumables_used_in_hsi['Zinc_Under6mo'] = get_code(package='Zinc for Children 0-6 months')
-        self.consumables_used_in_hsi['Zinc_Over6mo'] = get_code(package='Zinc for Children 6-59 months')
-        self.consumables_used_in_hsi['Antibiotics_for_Dysentery'] = get_code(
+        self.consumables_used_in_hsi['ORS'] = get_item_codes_from_package_name(
+            package='ORS')
+        self.consumables_used_in_hsi['Treatment_Severe_Dehydration'] = get_item_codes_from_package_name(
+            package='Treatment of severe diarrhea')
+        self.consumables_used_in_hsi['Zinc_Under6mo'] = get_item_codes_from_package_name(
+            package='Zinc for Children 0-6 months')
+        self.consumables_used_in_hsi['Zinc_Over6mo'] = get_item_codes_from_package_name(
+            package='Zinc for Children 6-59 months')
+        self.consumables_used_in_hsi['Antibiotics_for_Dysentery'] = get_item_codes_from_package_name(
             package='Antibiotics for treatment of dysentery')
 
     def do_when_presentation_with_diarrhoea(self, person_id, hsi_event):
@@ -733,22 +728,22 @@ class Diarrhoea(Module):
 
         # ** Implement the procedure for treatment **
         # STEP ZERO: Get the Zinc consumable (happens irrespective of whether child will die or not)
-        gets_zinc = hsi_event.get_all_consumables(
-            pkg_codes=self.consumables_used_in_hsi[
+        gets_zinc = hsi_event.get_consumables(
+            item_codes=self.consumables_used_in_hsi[
                 'Zinc_Under6mo' if person.age_exact_years < 0.5 else 'Zinc_Over6mo']
         )
 
         # STEP ONE: Aim to alleviate dehydration:
         prob_remove_dehydration = 0.0
         if is_in_patient:
-            if hsi_event.get_all_consumables(pkg_codes=self.consumables_used_in_hsi['Treatment_Severe_Dehydration']):
+            if hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['Treatment_Severe_Dehydration']):
                 # In-patient receiving IV fluids (WHO Plan C)
                 prob_remove_dehydration = \
                     p['prob_WHOPlanC_cures_dehydration_if_severe_dehydration'] if dehydration_is_severe \
                     else self.parameters['prob_ORS_cures_dehydration_if_non_severe_dehydration']
 
         else:
-            if hsi_event.get_all_consumables(pkg_codes=self.consumables_used_in_hsi['ORS']):
+            if hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['ORS']):
                 # Out-patient receving ORS
                 prob_remove_dehydration = \
                     self.parameters['prob_ORS_cures_dehydration_if_severe_dehydration'] if dehydration_is_severe \
@@ -758,8 +753,8 @@ class Diarrhoea(Module):
         dehydration_after_treatment = 'none' if self.rng.rand() < prob_remove_dehydration else person.gi_dehydration
 
         # STEP TWO: If has bloody diarrhoea (i.e., dysentry), then aim to clear bacterial infection
-        if type_of_diarrhoea_is_bloody and hsi_event.get_all_consumables(
-            pkg_codes=self.consumables_used_in_hsi['Antibiotics_for_Dysentery']
+        if type_of_diarrhoea_is_bloody and hsi_event.get_consumables(
+            item_codes=self.consumables_used_in_hsi['Antibiotics_for_Dysentery']
         ):
             prob_clear_bacterial_infection = self.parameters['prob_antibiotic_cures_dysentery']
         else:

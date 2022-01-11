@@ -85,6 +85,7 @@ def test_using_parameter_or_argument_to_set_service_availability():
     assert sim.modules['HealthSystem'].service_availability == service_availability_arg
 
 
+@pytest.mark.slow
 def test_run_with_healthsystem_no_disease_modules_defined():
     sim = Simulation(start_date=start_date, seed=0)
 
@@ -94,8 +95,7 @@ def test_run_with_healthsystem_no_disease_modules_defined():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2,
-                                           ignore_cons_constraints=True),
+                                           mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -108,6 +108,7 @@ def test_run_with_healthsystem_no_disease_modules_defined():
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_run_no_interventions_allowed(tmpdir):
     # There should be no events run or scheduled
 
@@ -129,8 +130,7 @@ def test_run_no_interventions_allowed(tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2,
-                                           ignore_cons_constraints=True),
+                                           mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
@@ -160,6 +160,7 @@ def test_run_no_interventions_allowed(tmpdir):
     assert not any(sim.population.props['mi_status'] == 'P')  # No cures
 
 
+@pytest.mark.slow
 def test_run_in_mode_0_with_capacity(tmpdir):
     # Events should run and there be no squeeze factors
     # (Mode 0 -> No Constraints)
@@ -177,8 +178,7 @@ def test_run_in_mode_0_with_capacity(tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=0,
-                                           ignore_cons_constraints=True),
+                                           mode_appt_constraints=0),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
@@ -198,10 +198,11 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
-    # Check that some Mockitis cures occurred (though health system)
+    # Check that some Mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.slow
 def test_run_in_mode_0_no_capacity(tmpdir):
     # Every events should run (no did_not_run) and no squeeze factors
     # (Mode 0 -> No Constraints)
@@ -218,8 +219,7 @@ def test_run_in_mode_0_no_capacity(tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
-                                           mode_appt_constraints=0,
-                                           ignore_cons_constraints=True),
+                                           mode_appt_constraints=0),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
@@ -244,6 +244,7 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.slow
 def test_run_in_mode_1_with_capacity(tmpdir):
     # All events should run with some zero squeeze factors
     # (Mode 1 -> elastic constraints)
@@ -261,8 +262,7 @@ def test_run_in_mode_1_with_capacity(tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=1,
-                                           ignore_cons_constraints=True),
+                                           mode_appt_constraints=1),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
@@ -286,6 +286,7 @@ def test_run_in_mode_1_with_capacity(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.slow
 def test_run_in_mode_1_with_no_capacity(tmpdir):
     # Events should run but with high squeeze factors
     # (Mode 1 -> elastic constraints)
@@ -303,8 +304,7 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
-                                           mode_appt_constraints=1,
-                                           ignore_cons_constraints=True),
+                                           mode_appt_constraints=1),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
@@ -330,6 +330,7 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.slow
 def test_run_in_mode_2_with_capacity(tmpdir):
     # All events should run
     # (Mode 2 -> hard constraints)
@@ -347,8 +348,7 @@ def test_run_in_mode_2_with_capacity(tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2,
-                                           ignore_cons_constraints=True),
+                                           mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
@@ -372,6 +372,7 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.slow
 @pytest.mark.group2
 def test_run_in_mode_2_with_no_capacity(tmpdir):
     # No individual level events should run and the log should contain events with a flag showing that all individual
@@ -391,8 +392,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
-                                           mode_appt_constraints=2,
-                                           ignore_cons_constraints=True),
+                                           mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
@@ -418,6 +418,8 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     assert not any(sim.population.props['mi_status'] == 'P')
 
 
+# todo - need some better tests for consumables
+@pytest.mark.slow
 def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
     # Events should run and there be no squeeze factors
     # (Mode 0 -> No Constraints)
@@ -437,7 +439,7 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=0,
-                                           ignore_cons_constraints=True),
+                                           cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
@@ -454,14 +456,13 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
 
     # Do the checks for the consumables: all requests granted and nothing in NotAvailable
     assert 0 == len([v for v in output['tlo.methods.healthsystem']['Consumables']['Item_NotAvailable'] if v != '{}'])
-    assert 0 == len([v for v in output['tlo.methods.healthsystem']['Consumables']['Package_NotAvailable'] if v != '{}'])
     assert 0 < len([v for v in output['tlo.methods.healthsystem']['Consumables']['Item_Available'] if v != '{}'])
-    assert 0 < len([v for v in output['tlo.methods.healthsystem']['Consumables']['Package_Available'] if v != '{}'])
 
     # Check that some mockitis cured occured (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.slow
 @pytest.mark.group2
 def test_run_in_with_hs_disabled(tmpdir):
     # All events should run but no logging from healthsystem
@@ -507,6 +508,7 @@ def test_run_in_with_hs_disabled(tmpdir):
     assert any(['HSIEventWrapper' in str(ev_name) for ev_name in list_of_ev_name])
 
 
+@pytest.mark.slow
 def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
     # All events should run
     # (Mode 2 -> hard constraints)
@@ -524,8 +526,7 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2,
-                                           ignore_cons_constraints=True),
+                                           mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
@@ -547,6 +548,7 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.slow
 def test_all_appt_types_can_run():
     """Check that if an appointment type is declared as one that can run at a facility-type of level `x` that it can
     run at the level for persons in any district."""
@@ -650,8 +652,8 @@ def test_all_appt_types_can_run():
     assert 0 == len(error_msg)
 
 
-def test_use_of_helper_function_get_all_consumables():
-    """Test that the helper function 'get_all_consumables' in the base class of the HSI works as expected."""
+def test_use_get_consumables():
+    """Test that the helper function 'get_consumables' in the base class of the HSI works as expected."""
     # todo - check that this is coming out in log correctly
 
     # Create a dummy disease module (to be the parent of the dummy HSI)
@@ -667,111 +669,7 @@ def test_use_of_helper_function_get_all_consumables():
         def initialise_simulation(self, sim):
             pass
 
-    # Create simulation with the healthsystem and DummyModule
-    sim = Simulation(start_date=start_date, seed=0)
-    sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-        DummyModule(),
-        # Disable sorting + checks to avoid error due to missing dependencies
-        sort_modules=False,
-        check_all_dependencies=False
-    )
-    sim.make_initial_population(n=100)
-    sim.simulate(end_date=start_date + pd.DateOffset(days=0))
-
-    # Define availability of items
-    item_code_is_available = [0, 1, 2, 3]
-    item_code_not_available = [4, 5, 6, 7]
-    pkg_code_is_available = [1, 2]
-    pkg_code_not_available = [3, 4, 5]
-
-    # Edit the item-package lookup-table to create packages that will be available or not
-    lookup = sim.modules['HealthSystem'].parameters['Consumables']
-    lookup['Intervention_Pkg_Code'] = -99
-    lookup.loc[item_code_is_available[0], 'Intervention_Pkg_Code'] = pkg_code_is_available[0]
-    lookup.loc[item_code_is_available[1:3], 'Intervention_Pkg_Code'] = pkg_code_is_available[1]
-    lookup.loc[item_code_not_available[0], 'Intervention_Pkg_Code'] = pkg_code_not_available[0]
-    lookup.loc[item_code_not_available[1:3], 'Intervention_Pkg_Code'] = pkg_code_not_available[1]
-    lookup.loc[[item_code_is_available[3], item_code_not_available[3]], 'Intervention_Pkg_Code'] = \
-        pkg_code_not_available[2]
-
-    # Process consumables file
-    hs = sim.modules['HealthSystem']
-    hs.process_consumables_file()
-
-    # Manually edit availability probabilities to force some items to be (not) available
-    hs.prob_item_codes_available.loc[item_code_is_available] = 1
-    hs.prob_item_codes_available.loc[item_code_not_available] = 0
-
-    # Update availability ready for calling
-    hs.determine_availability_of_consumables_today()
-
     # Create a dummy HSI event:
-    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
-        def __init__(self, module, person_id):
-            super().__init__(module, person_id=person_id)
-            self.TREATMENT_ID = 'Dummy'
-            self.EXPECTED_APPT_FOOTPRINT = module.sim.modules['HealthSystem'].get_blank_appt_footprint()
-            self.ACCEPTED_FACILITY_LEVEL = '0'
-            self.ALERT_OTHER_DISEASES = []
-
-        def apply(self, person_id, squeeze_factor):
-            pass
-
-    hsi_event = HSI_Dummy(module=sim.modules['DummyModule'], person_id=0)
-
-    # Test using item_codes:
-    assert True is hsi_event.get_all_consumables(item_codes=item_code_is_available[0])
-    assert True is hsi_event.get_all_consumables(item_codes=[item_code_is_available[0]])
-    assert True is hsi_event.get_all_consumables(item_codes=item_code_is_available)
-    assert False is hsi_event.get_all_consumables(item_codes=item_code_not_available)
-    assert False is hsi_event.get_all_consumables(item_codes=[
-        item_code_is_available[0], item_code_not_available[0]])
-    assert False is hsi_event.get_all_consumables(item_codes=[
-        item_code_not_available[0], item_code_is_available[0]])
-
-    # Test using pkg_codes:
-    assert True is hsi_event.get_all_consumables(pkg_codes=pkg_code_is_available[0])
-    assert True is hsi_event.get_all_consumables(pkg_codes=[pkg_code_is_available[0]])
-    assert True is hsi_event.get_all_consumables(pkg_codes=pkg_code_is_available)
-    assert False is hsi_event.get_all_consumables(pkg_codes=pkg_code_not_available[2])
-    assert False is hsi_event.get_all_consumables(pkg_codes=pkg_code_not_available)
-    assert False is hsi_event.get_all_consumables(pkg_codes=[
-        pkg_code_is_available[0], pkg_code_not_available[0]])
-    assert False is hsi_event.get_all_consumables(pkg_codes=[
-        pkg_code_is_available[0], pkg_code_not_available[2]])
-
-    # Test using item_codes and pkg_codes:
-    assert True is hsi_event.get_all_consumables(item_codes=item_code_is_available, pkg_codes=pkg_code_is_available)
-    assert False is hsi_event.get_all_consumables(item_codes=item_code_not_available, pkg_codes=pkg_code_is_available)
-    assert False is hsi_event.get_all_consumables(item_codes=item_code_is_available, pkg_codes=pkg_code_not_available)
-
-    # Test using footprints:
-    assert True is hsi_event.get_all_consumables(footprint={
-        'Item_Code': {item_code_is_available[0]: 10, item_code_is_available[1]: 20},
-        'Intervention_Package_Code': {pkg_code_is_available[0]: 1, pkg_code_is_available[1]: 10}
-    })
-    assert False is hsi_event.get_all_consumables(footprint={
-        'Item_Code': {item_code_not_available[0]: 1, item_code_is_available[1]: 20},
-        'Intervention_Package_Code': {pkg_code_is_available[0]: 1, pkg_code_is_available[1]: 10}
-    })
-
-
-def test_speeding_up_request_consumables():
-
-    class DummyModule(Module):
-        METADATA = {Metadata.USES_HEALTHSYSTEM}
-
-        def read_parameters(self, data_folder):
-            pass
-
-        def initialise_population(self, population):
-            pass
-
-        def initialise_simulation(self, sim):
-            pass
-
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
@@ -783,88 +681,53 @@ def test_speeding_up_request_consumables():
         def apply(self, person_id, squeeze_factor):
             pass
 
-    # Create simulation with the healthsystem and DummyModule
+    # Create simulation with the HealthSystem and DummyModule
     sim = Simulation(start_date=start_date, seed=0)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-        DummyModule()
+        DummyModule(),
+        # Disable sorting + checks to avoid error due to missing dependencies
+        sort_modules=False,
+        check_all_dependencies=False
     )
+
     sim.make_initial_population(n=100)
-    sim.simulate(end_date=start_date)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+
+    # Manually edit availability probabilities to force some items to be (not) available
+    item_code_is_available = [0, 1]
+    item_code_not_available = [2, 3]
 
     hs = sim.modules['HealthSystem']
+    hs.prob_item_codes_available.loc[item_code_is_available] = 1
+    hs.prob_item_codes_available.loc[item_code_not_available] = 0
+
+    hs.determine_availability_of_consumables_today()
+
+    # Make HSI Event to be the originator of the request for consumables
     hsi_event = HSI_Dummy(module=sim.modules['DummyModule'], person_id=0)
 
-    # refresh availabilities of consumables to all available:
-    hs.determine_availability_of_consumables_today()
+    # Test using item_codes in different input format and with different output formats
+    # -- as `int`
+    assert True is hsi_event.get_consumables(item_codes=item_code_is_available[0])
+    assert False is hsi_event.get_consumables(item_codes=item_code_not_available[0])
 
-    # create a very complicated footprint:
-    consumables = hs.parameters['Consumables']
-    pkg_code = \
-        pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'ORS',
-                            'Intervention_Pkg_Code'])[0]
+    # -- as `list`
+    assert True is hsi_event.get_consumables(item_codes=item_code_is_available)
+    assert False is hsi_event.get_consumables(item_codes=item_code_not_available)
+    assert False is hsi_event.get_consumables(item_codes=item_code_is_available + item_code_not_available)
+    assert {item_code_is_available[0]: True, item_code_not_available[0]: False} == hsi_event.get_consumables(
+        item_codes=[item_code_is_available[0], item_code_not_available[0]], return_individual_results=True)
 
-    cons_req_as_footprint = {
-        'Intervention_Package_Code': {pkg_code: 2, 3: 1, 5: 1},
-        'Item_Code': {99: 2, 98: 4, 97: 6}
-    }
-
-    # test running request_consumables
-    _ = hs.request_consumables(cons_req_as_footprint=cons_req_as_footprint, hsi_event=hsi_event)
-
-    # Check it all works with footprints with different configurations
-    _ = hs.request_consumables(cons_req_as_footprint={
-        'Intervention_Package_Code': {},
-        'Item_Code': {}},
-        hsi_event=hsi_event
+    # -- as `dict`
+    assert True is hsi_event.get_consumables(
+        item_codes={i: 10 for i in item_code_is_available}
     )
-
-    _ = hs.request_consumables(cons_req_as_footprint={
-        'Intervention_Package_Code': {1: 10},
-        'Item_Code': {}},
-        hsi_event=hsi_event
+    assert False is hsi_event.get_consumables(
+        item_codes={i: 10 for i in item_code_not_available}
     )
-
-    _ = hs.request_consumables(cons_req_as_footprint={
-        'Intervention_Package_Code': {},
-        'Item_Code': {1: 10}},
-        hsi_event=hsi_event
+    assert {item_code_is_available[0]: True, item_code_not_available[0]: False} == hsi_event.get_consumables(
+        item_codes={item_code_is_available[0]: 10, item_code_not_available[0]: 10},
+        return_individual_results=True
     )
-
-    # Time it!
-    import time
-    start = time.time()
-    # do a one-time update (as would happen each day in the simulation)
-    hs.determine_availability_of_consumables_today()
-
-    # run the whole "request_consumables" routine many times to capture a time that it takes:
-    # - no logging
-    for i in range(1000):
-        _ = hs.request_consumables(cons_req_as_footprint=cons_req_as_footprint, hsi_event=hsi_event, to_log=False)
-    end = time.time()
-    print(f"Elapsed time for 1000 X request_consumables (no logging): {end - start}")
-    # with original code: elapsed time = 13.770344972610474
-    # first version edit: elapsed time = 5.978830099105835
-    # second version edit: elapsed time = 5.255127191543579
-    # third version edit: elapsed time = 20.793461084365845
-    # fourth version (with pre-computing): 1.0886831283569336
-    # fifth version (allowing asserts): 1.1119129657745361
-
-    # - with logging
-    for i in range(1000):
-        _ = hs.request_consumables(cons_req_as_footprint=cons_req_as_footprint, hsi_event=hsi_event, to_log=True)
-    end = time.time()
-    print(f"Elapsed time for 1000 X request_consumables (with logging): {end - start}")
-    # with original code: elapsed time = 13.770344972610474
-    # fifth version (allowing asserts): 2.5592801570892334
-
-    # check functionality of helper function getting consumables as individual items
-    start = time.time()
-    for i in range(1000):
-        _ = hs.get_consumables_as_individual_items(cons_req_as_footprint=cons_req_as_footprint)
-    end = time.time()
-    print(f"Elapsed time for 1000 X get_consumables_as_individual_items: {end - start}")
-    # with looping through dict: elapsed time = 2.2378311157226562
-    # with pandas manipulations: 16.766106843948364

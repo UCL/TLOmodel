@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 from pytest import approx
 from scipy.stats import norm
 
@@ -24,7 +25,7 @@ def get_sim():
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, ignore_cons_constraints=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability='all'),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  stunting.Stunting(resourcefilepath=resourcefilepath),
                  stunting.StuntingPropertiesOfOtherModules(),
@@ -63,6 +64,7 @@ def test_models():
     models.lm_prob_natural_recovery.predict(df.loc[df.is_alive])
 
 
+@pytest.mark.slow
 def test_basic_run():
     """Short run of the module using default parameters with check on dtypes"""
     dur = pd.DateOffset(years=5)
@@ -77,6 +79,7 @@ def test_basic_run():
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_initial_prevalence_of_stunting():
     """Check that initial prevalence of stunting is as expected"""
     sim = get_sim()

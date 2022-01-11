@@ -63,6 +63,7 @@ class Epi(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.all_doses = dict()
+        self.cons_item_codes = dict()  # (will store dict giving item_codes for each vaccine)
 
     def read_parameters(self, data_folder):
         p = self.parameters
@@ -185,6 +186,9 @@ class Epi(Module):
             self.parameters["district_vaccine_coverage"]["District"].map(
                 {v: k for k, v in self.sim.modules['Demography'].parameters['district_num_to_district_name'].items()}
             )
+
+        # Look up item codes for consumables
+        self.get_item_codes()
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
@@ -357,6 +361,28 @@ class Epi(Module):
         if df.at[person_id, f"va_{vaccine}"] >= self.all_doses[vaccine]:
             df.at[person_id, f"va_{vaccine}_all_doses"] = True
 
+    def get_item_codes(self):
+        """Look-up the item-codes for each vaccine and update `self.cons_item_codes`"""
+        get_item_codes_from_package_name = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+        get_item_code_from_item_name = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+
+        self.cons_item_codes['bcg'] = [
+            get_item_code_from_item_name("Syringe, autodisposable, BCG, 0.1 ml, with needle"),
+            get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
+        self.cons_item_codes['opv'] = get_item_code_from_item_name("Polio vaccine")
+        self.cons_item_codes['pentavalent_vaccine'] = [
+                get_item_code_from_item_name("Pentavalent vaccine (DPT, Hep B, Hib)"),
+                get_item_code_from_item_name("Syringe, Autodisable SoloShot IX "),
+                get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
+        self.cons_item_codes["rota"] = get_item_code_from_item_name("Rotavirus vaccine")
+        self.cons_item_codes["pneumo"] = [
+                get_item_code_from_item_name("Pneumococcal vaccine"),
+                get_item_code_from_item_name("Syringe, Autodisable SoloShot IX "),
+                get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
+        self.cons_item_codes['measles_and_rubella'] = get_item_codes_from_package_name("Measles rubella vaccine")
+        self.cons_item_codes['hpv'] = get_item_codes_from_package_name("HPV vaccine")
+        self.cons_item_codes['td'] = get_item_codes_from_package_name("Tetanus toxoid (pregnant women)")
+
 
 # ---------------------------------------------------------------------------------
 # Individually Scheduled Vaccine Events
@@ -504,46 +530,6 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
         """must be implemented by subclasses"""
         raise NotImplementedError
 
-    def request_vax_consumables(self, *, items=None, packages=None):
-        """pull together the construction of consumables (items & packages) needed and returns the outcome after
-        requesting them from the health system module
-
-        The following must be passed as keyword arguments:
-        :param items - a list of tuples, where first element of tuple is item name and second element is number req.
-        :param packages - a list of tuples, where first element of tuple is package name and second element is number
-            required"""
-        health_system = self.sim.modules["HealthSystem"]
-        consumables = health_system.parameters["Consumables"]
-
-        # collect the consumable items needed
-        items_found = {}
-        if items is not None:
-            assert isinstance(items, list)
-            for item_name, item_count in items:
-                item_code = pd.unique(consumables.loc[consumables["Items"] == item_name,
-                                                      "Item_Code"])[0]
-                items_found[item_code] = item_count
-
-        # collect the consumable packages needed
-        packages_found = {}
-        if packages is not None:
-            assert isinstance(packages, list)
-            for package_name, package_count in packages:
-                package_code = pd.unique(consumables.loc[consumables["Intervention_Pkg"] == package_name,
-                                                         "Intervention_Pkg_Code"])[0]
-                packages_found[package_code] = package_count
-
-        # put together the items and packages need for this vax
-        consumables_needed = {"Intervention_Package_Code": packages_found,
-                              "Item_Code": items_found}
-
-        # make request to the health system for consumables
-        outcome_of_request_for_consumables = health_system.request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed
-        )
-
-        return outcome_of_request_for_consumables
-
     def did_not_run(self):
         logger.debug(key="debug", data=f"{self.__class__.__name__}: did not run")
 
@@ -554,22 +540,9 @@ class HSI_BcgVaccine(HsiBaseVaccine):
         return "Epi_bcg"
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(key="debug", data=f"HSI_bcg: giving bcg to {person_id}")
-
         df = self.sim.population.props
-
         if df.at[person_id, "va_bcg"] < self.module.all_doses["bcg"]:
-            outcome = self.request_vax_consumables(
-                items=[
-                    ("Syringe, autodisposable, BCG, 0.1 ml, with needle", 1),
-                    ("Safety box for used syringes/needles, 5 liter", 1)
-                ]
-            )
-
-            # check if BCG and syringes available
-            bcg_vax, safety_box = outcome["Item_Code"].keys()
-
-            if outcome["Item_Code"][bcg_vax] & outcome["Item_Code"][safety_box]:
+            if self.get_consumables(item_codes=self.module.cons_item_codes["bcg"]):
                 self.module.increment_dose(person_id, "bcg")
 
 
@@ -579,11 +552,7 @@ class HSI_opv(HsiBaseVaccine):
         return "Epi_opv"
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(key="debug", data=f"HSI_opv: giving opv to {person_id}")
-
-        outcome = self.request_vax_consumables(items=[("Polio vaccine", 1)])
-
-        if all(outcome["Item_Code"].values()):
+        if self.get_consumables(item_codes=self.module.cons_item_codes["opv"]):
             self.module.increment_dose(person_id, "opv")
 
 
@@ -593,27 +562,10 @@ class HSI_DtpHibHepVaccine(HsiBaseVaccine):
         return "Epi_DtpHibHep"
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(key="debug", data=f"HSI_DtpHibHepVaccine: requesting vaccines for {person_id}")
-
-        outcome = self.request_vax_consumables(
-            items=[
-                ("Pentavalent vaccine (DPT, Hep B, Hib)", 1),
-                ("Syringe, Autodisable SoloShot IX ", 1),
-                ("Safety box for used syringes/needles, 5 liter", 1)
-            ]
-        )
-
-        # check if Penta and syringes available
-        penta_vax, syringe, safety_box = outcome["Item_Code"].keys()
-
-        if outcome["Item_Code"][penta_vax] & outcome["Item_Code"][syringe]:
-            logger.debug(key="debug", data=f"Penta vax is available, so administer to {person_id}")
+        if self.get_consumables(item_codes=self.module.cons_item_codes['pentavalent_vaccine']):
             self.module.increment_dose(person_id, "dtp")
             self.module.increment_dose(person_id, "hib")
             self.module.increment_dose(person_id, "hep")
-
-        else:
-            logger.debug(key="debug", data=f"Penta vax is not available for person {person_id}")
 
 
 class HSI_RotaVaccine(HsiBaseVaccine):
@@ -627,15 +579,9 @@ class HSI_RotaVaccine(HsiBaseVaccine):
         # only 2 doses rotavirus given (week 6 and 10)
         # available from 2012 onwards
         df = self.sim.population.props
-
         if df.at[person_id, "va_rota"] < self.module.all_doses["rota"]:
-            outcome = self.request_vax_consumables(items=[("Rotavirus vaccine", 1)])
-
-            if all(outcome["Item_Code"]):
-                logger.debug(key="debug", data=f"Rotavirus vaccine is available, so administer to {person_id}")
+            if self.get_consumables(item_codes=self.module.cons_item_codes["rota"]):
                 self.module.increment_dose(person_id, "rota")
-            else:
-                logger.debug(key="debug", data=f"Rotavirus vaccine is not available for person {person_id}")
 
 
 class HSI_PneumoVaccine(HsiBaseVaccine):
@@ -644,23 +590,8 @@ class HSI_PneumoVaccine(HsiBaseVaccine):
         return "Epi_Pneumo"
 
     def apply(self, person_id, squeeze_factor):
-        outcome = self.request_vax_consumables(
-            items=[
-                ("Pneumococcal vaccine", 1),
-                ("Syringe, Autodisable SoloShot IX ", 1),
-                ("Safety box for used syringes/needles, 5 liter", 1)
-            ]
-        )
-
-        # check if pneumo vax and syringes available
-        pneumo_vax, syringe, safety_box = outcome["Item_Code"].keys()
-
-        # check if pneumococcal vaccine available and current year 2012 onwards
-        if outcome["Item_Code"][pneumo_vax] & outcome["Item_Code"][syringe]:
-            logger.debug(key="debug", data=f"Pneumococcal vaccine is available, so administer to {person_id}")
+        if self.get_consumables(item_codes=self.module.cons_item_codes["pneumo"]):
             self.module.increment_dose(person_id, "pneumo")
-        else:
-            logger.debug(key="debug", data=f"Pneumococcal vaccine is NOT available for {person_id}")
 
 
 class HSI_MeaslesRubellaVaccine(HsiBaseVaccine):
@@ -669,19 +600,9 @@ class HSI_MeaslesRubellaVaccine(HsiBaseVaccine):
         return "Epi_MeaslesRubella"
 
     def apply(self, person_id, squeeze_factor):
-        outcome = self.request_vax_consumables(
-           packages=[("Measles rubella vaccine", 1)]
-        )
-
-        # this package includes a syringe disposal box
-        if all(outcome["Intervention_Package_Code"].values()):
-            logger.debug(key="debug",
-                         data=f"HSI_MeaslesRubellaVaccine: measles+rubella vaccine is available for {person_id}")
+        if self.get_consumables(item_codes=self.module.cons_item_codes["measles_and_rubella"]):
             self.module.increment_dose(person_id, "measles")
             self.module.increment_dose(person_id, "rubella")
-        else:
-            logger.debug(key="debug",
-                         data=f"HSI_MeaslesRubellaVaccine: measles+rubella vaccine is NOT available for {person_id}")
 
 
 class HSI_HpvVaccine(HsiBaseVaccine):
@@ -690,19 +611,13 @@ class HSI_HpvVaccine(HsiBaseVaccine):
         return "Epi_hpv"
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(key="debug", data=f"HSI_HpvVaccine: giving hpv vaccine to {person_id}")
         df = self.sim.population.props
-
         if df.at[person_id, "va_hpv"] < self.module.all_doses["hpv"]:
-            # this package includes syringe disposal box
-            outcome = self.request_vax_consumables(packages=[("HPV vaccine", 1)])
-
-            if all(outcome["Intervention_Package_Code"].values()):
+            if self.get_consumables(item_codes=self.module.cons_item_codes["hpv"]):
                 self.module.increment_dose(person_id, "hpv")
 
 
-# TODO this will be called by the antenatal care module as part of routine care
-# currently not implemented
+# TODO this will be called by the antenatal care module as part of routine care: currently not implemented
 class HSI_TdVaccine(HsiBaseVaccine):
     """ gives tetanus/diphtheria vaccine to pregnant women as part of routine antenatal care
     recommended 2+ doses (WHO)
@@ -711,11 +626,7 @@ class HSI_TdVaccine(HsiBaseVaccine):
         return "Epi_Td"
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(key="debug", data=f"HSI_TdVaccine: giving Td vaccine to {person_id}")
-
-        # this package DOES NOT include syringe disposal box
-        outcome = self.request_vax_consumables(packages=[("Tetanus toxoid (pregnant women)", 1)])
-        if all(outcome["Intervention_Package_Code"].values()):
+        if self.get_consumables(item_codes=self.modules.cons_item_codes["td"]):
             self.module.increment_dose(person_id, "td")
 
 

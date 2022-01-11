@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -73,6 +74,8 @@ def check_newborn_death_function_acts_as_expected(sim, individual_id, cause):
 
 def register_modules(ignore_cons_constraints):
     """Register all modules that are required for newborn outcomes to run"""
+    _cons_availability = 'all' if ignore_cons_constraints else 'none'
+
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
@@ -80,7 +83,7 @@ def register_modules(ignore_cons_constraints):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
-                                           ignore_cons_constraints=ignore_cons_constraints),
+                                           cons_availability=_cons_availability),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
@@ -96,6 +99,7 @@ def register_modules(ignore_cons_constraints):
     return sim
 
 
+@pytest.mark.slow
 def test_run_and_check_dtypes():
     """Run the sim for five years and check dtypes at the end """
     sim = register_modules(ignore_cons_constraints=False)
