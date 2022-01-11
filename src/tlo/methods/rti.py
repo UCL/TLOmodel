@@ -3665,7 +3665,6 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         # check if they have a fracture that requires a sling
         codes = ['712a']
         _, slingcounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
-        consumables_fractures = {'Intervention_Package_Code': dict(), 'Item_Code': dict()}
         # Check the person sent here is alive, been through the generic first appointment,
         # been through the RTI med intervention
         assert p['rt_diagnosed'], 'person sent here has not been diagnosed'
@@ -3790,7 +3789,6 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         codes = ['813bo', '813co', '813do', '813eo']
         _, open_fracture_counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         assert open_fracture_counts > 0
-        consumables_fractures = {'Intervention_Package_Code': dict(), 'Item_Code': dict()}
         # Check the person sent here is alive, been through the generic first appointment,
         # been through the RTI med intervention
         assert df.loc[person_id, 'rt_diagnosed'], 'person sent here has not been diagnosed'
@@ -5116,14 +5114,12 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
                             df.loc[person_id, 'rt_injuries_for_major_surgery'].remove(injury)
 
 
-
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
 #
 #   Put the logging events here. There should be a regular logger outputting current states of the
 #   population. There may also be a loggig event that is driven by particular events.
 # ---------------------------------------------------------------------------------------------------------
-
 
 class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
 

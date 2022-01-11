@@ -191,6 +191,7 @@ def test_all_injuries_run_no_healthsystem():
     # check datatypes are same through sim
     check_dtypes(sim)
 
+
 def test_module_properties():
     """ A test to see whether the logical flows through the module are followed"""
     sim = create_basic_rti_sim(popsize)
