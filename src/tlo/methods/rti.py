@@ -1980,7 +1980,6 @@ class RTI(Module):
         if df.at[person_id, 'rt_disability'] < 0:
             df.at[person_id, 'rt_disability'] = df.at[person_id, 'rt_debugging_DALY_wt']
         # Make sure the true disability burden is greater or equal to zero
-        print('oi')
         assert df.at[person_id, 'rt_debugging_DALY_wt'] >= 0, (person_injuries.values,
                                                                df.at[person_id, 'rt_debugging_DALY_wt'])
         # the reported disability should satisfy 0<=disability<=1, check that they do
@@ -2926,7 +2925,6 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                             df.loc[person, 'rt_injuries_for_open_fracture_treatment'] +
                             df.loc[person, 'rt_injuries_to_cast']
                         )
-                        print('oi')
                         assert untreated_injuries == [], f"not every injury removed from dataframe when treated " \
                                                          f"{untreated_injuries}"
             # Check that the date to remove dalys is removed if the date to remove the daly is today
@@ -5093,8 +5091,6 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
                      '782a', '782b', '782c', '783', '882', '883', '884', '133', '133a', '133b', '133c', '133d', '134',
                      '134a', '134b', '135']
             for injury in untreated_injuries:
-                print('oi')
-
                 if injury in codes:
                     # Track whether they are permanently disabled
                     df.at[person_id, 'rt_perm_disability'] = True
