@@ -51,7 +51,6 @@ def scenario_run(scenario_file, draw_only, draw: tuple):
 
     SCENARIO_FILE is path to file containing a scenario class
     """
-    print(draw)
     scenario = load_scenario(scenario_file)
     run_json = scenario.save_draws()
     if draw_only:

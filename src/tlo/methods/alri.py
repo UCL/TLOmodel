@@ -131,7 +131,7 @@ class Alri(Module):
     }
 
     # Make set of all pathogens combined:
-    all_pathogens = set(chain.from_iterable(pathogens.values()))
+    all_pathogens = sorted(set(chain.from_iterable(pathogens.values())))
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
@@ -146,20 +146,19 @@ class Alri(Module):
     }
 
     # Declare the disease types:
-    disease_types = {
-        'pneumonia', 'bronchiolitis', 'other_alri'
-    }
+    disease_types = sorted({'pneumonia', 'bronchiolitis', 'other_alri'})
 
     # Declare the Alri complications:
-    complications = {'pneumothorax',
-                     'pleural_effusion',
-                     'empyema',
-                     'lung_abscess',
-                     'sepsis',
-                     'meningitis',
-                     'respiratory_failure',
-                     'hypoxia'  # <-- Low implies Sp02<93%'
-                     }
+    complications = sorted({
+        'pneumothorax',
+        'pleural_effusion',
+        'empyema',
+        'lung_abscess',
+        'sepsis',
+        'meningitis',
+        'respiratory_failure',
+        'hypoxia'  # <-- Low implies Sp02<93%'
+    })
 
     PARAMETERS = {
         # Incidence rate by pathogens  -----
@@ -669,7 +668,7 @@ class Alri(Module):
         # ---- The underlying Alri condition ----
         'ri_disease_type':
             Property(Types.CATEGORICAL, 'If infected, what disease type is the person currently suffering from.',
-                     categories=list(disease_types)
+                     categories=disease_types
                      ),
 
         # ---- Treatment Status ----
@@ -748,7 +747,7 @@ class Alri(Module):
             'respiratory_distress', 'danger_signs'
         }
 
-        for symptom_name in all_symptoms:
+        for symptom_name in sorted(all_symptoms):
             if symptom_name not in self.sim.modules['SymptomManager'].generic_symptoms:
                 self.sim.modules['SymptomManager'].register_symptom(
                     Symptom(name=symptom_name)
@@ -1003,7 +1002,7 @@ class Alri(Module):
 
     def impose_symptoms_for_complication(self, complication, person_id):
         """Impose symptoms for a complication."""
-        symptoms = self.models.symptoms_for_complication(complication=complication)
+        symptoms = sorted(self.models.symptoms_for_complication(complication=complication))
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=person_id,
             symptom_string=symptoms,
@@ -1496,10 +1495,10 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         """
         m = self.module
         models = m.models
-
+        symptoms = sorted(models.symptoms_for_disease(disease_type=disease_type))
         m.sim.modules['SymptomManager'].change_symptom(
             person_id=person_id,
-            symptom_string=models.symptoms_for_disease(disease_type=disease_type),
+            symptom_string=symptoms,
             add_or_remove='+',
             disease_module=m,
         )
@@ -1513,13 +1512,13 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
 
         complications = models.complications(person_id=person_id)
         df.loc[person_id, [f"ri_complication_{complication}" for complication in complications]] = True
-        for complication in complications:
+        for complication in sorted(complications):
             m.impose_symptoms_for_complication(person_id=person_id, complication=complication)
 
         # Consider delayed-onset of complications and schedule events accordingly
         date_of_onset_delayed_complications = random_date(self.sim.date, date_of_outcome, m.rng)
         delayed_complications = models.delayed_complications(person_id=person_id)
-        for delayed_complication in delayed_complications:
+        for delayed_complication in sorted(delayed_complications):
             self.sim.schedule_event(
                 AlriDelayedOnsetComplication(person_id=person_id,
                                              complication=delayed_complication,
@@ -1761,8 +1760,7 @@ class Tracker():
         # Check and store parameters
         self.pathogens = pathogens
         self.age_grps_lookup = age_grps
-        self.unique_age_grps = list(set(self.age_grps_lookup.values()))
-        self.unique_age_grps.sort()
+        self.unique_age_grps = sorted(set(self.age_grps_lookup.values()))
 
         # Initialise Tracker
         self.tracker = None
