@@ -960,9 +960,9 @@ def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management():
 
     # set key pregnancy characteristics
     df = sim.population.props
-    df.at[mother_id, 'is_pregnant'] = False
+    df.at[mother_id, 'is_pregnant'] = True
     df.at[mother_id, 'ps_ectopic_pregnancy'] = 'not_ruptured'
-    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 11
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 8
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'delete_mni': False}
 
     # Check treatment for not ruptured ectopic pregnancy
