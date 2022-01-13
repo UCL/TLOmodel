@@ -81,23 +81,24 @@ class Simulation:
         self.rng = np.random.RandomState(np.random.MT19937(self._seed_seq))
 
     def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
-                          custom_levels: Dict[str, int] = None):
+                          custom_levels: Dict[str, int] = None, suppress_stdout: bool = False):
         """Configure logging, can write logging to a logfile in addition the default of stdout.
 
-        Minimum custom levels for each loggers can be specified for filtering out messages.
+        Minimum custom levels for each loggers can be specified for filtering out messages
 
         :param filename: Prefix for logfile name, final logfile will have a datetime appended
         :param directory: Path to output directory, default value is the outputs folder.
         :param custom_levels: dictionary to set logging levels, '*' can be used as a key for all registered modules.
                               This is likely to be used to disable all disease modules, and then enable one of interest
                               e.g. ``{'*': logging.CRITICAL 'tlo.methods.hiv': logging.INFO}``
+        :param suppress_stdout: If True, suppresses logging to standard output stream (default is False)
 
         :return: Path of the log file if a filename has been given.
         """
         # clear logging environment
         # if using progress bar we do not print log messages to stdout to avoid
         # clashes between progress bar and log output
-        logging.init_logging(add_stdout_handler=not self.show_progress_bar)
+        logging.init_logging(add_stdout_handler=not (self.show_progress_bar or suppress_stdout))
         logging.set_simulation(self)
 
         if custom_levels:
