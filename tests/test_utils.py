@@ -1,11 +1,15 @@
 """Unit tests for utility functions."""
+import os
 
 import numpy as np
 import pandas as pd
 import pytest
 
 import tlo.util
-from tlo import Date
+from pathlib import Path
+from tlo import Date, Simulation
+from tlo.analysis.utils import LogsDict, parse_log_file
+from tlo.methods import demography, simplified_births
 
 
 @pytest.fixture
@@ -207,3 +211,35 @@ def test_sample_outcome(tmpdir):
     for op in ['A', 'B', 'C']:
         prob = probs.loc[2, op]
         assert res[2].value_counts()[op] == pytest.approx(probs.loc[2, op] * n, abs=2 * np.sqrt(n * prob * (1 - prob)))
+
+
+def test_logs_parsing(tmpdir):
+    """a function to test the  functionalities of LogDict class inside utils.py"""
+
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    start_date = Date(2010, 1, 1)
+    end_date = Date(2010, 12, 31)
+    popsize = 20_000
+
+    # Create simulation with the health system and DummyModule
+    sim = Simulation(start_date=start_date, seed=0, log_config={
+        'filename': 'temp',
+        'directory': tmpdir,
+    })
+
+    # run the simulation
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 )
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    # display filename
+    log_filename = sim.log_filepath
+
+    output = parse_log_file(log_filename)
+
+    # check if returned output is an object
+    assert isinstance(output, LogsDict)
+

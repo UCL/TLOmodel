@@ -91,7 +91,7 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
 
     # parse each module-specific log file and collect the results into a single dictionary. metadata about each log
     # is returned in the same key '_metadata', so it needs to be collected separately and then merged back in.
-    all_module_logs = dict()
+    all_module_logs = LogsDict()
     metadata = dict()
     for file_handle in module_name_to_filehandle.values():
         print(f'Parsing {file_handle.name}', end='', flush=True)
@@ -494,3 +494,20 @@ def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
 
     # 3) Return summary
     return gbd.merge(model, on=['period', 'sex', 'age_grp', 'label'], how='left')
+
+
+class LogsDict(dict):
+    """a class that parses logs on demand. it returns an object that behaves like a dictionary."""
+
+    def __setitem__(self, key, item):
+        self.__dict__[key] = item
+
+    def __getitem__(self, key):
+        return self.__dict__[key]
+        # if key in self.__dict__:
+        #     path = self.__dict__[key]
+        #     logs_dataframes = _parse_log_file_inner_loop(path)
+        #     return logs_dataframes
+
+    def update(self, *args, **kwargs):
+        return self.__dict__.update(*args, **kwargs)
