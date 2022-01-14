@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation, logging
 from tlo.methods import (
@@ -95,6 +96,7 @@ def test_single_person():
     assert isinstance(next_event_obj, (measles.MeaslesDeathEvent, measles.MeaslesSymptomResolveEvent))
 
 
+@pytest.mark.slow
 def test_measles_cases_and_hsi_occurring():
     """ Run the measles module
     check dtypes consistency
@@ -153,6 +155,7 @@ def test_measles_cases_and_hsi_occurring():
     assert df.cause_of_death.loc[~df.is_alive].str.startswith('Measles').any()
 
 
+@pytest.mark.slow
 def test_measles_zero_death_rate():
 
     end_date = Date(2010, 12, 31)
