@@ -29,8 +29,8 @@ def predict_parity(self, df, rng=None, **externals):
     result = pd.Series(data=params['intercept_parity_lr2010'], index=df.index)
 
     # todo: unsure which of these is correct currently
-    # result += (df.age_years * 0.21)
-    result += (df.age_years - 14) * 0.21
+    result += (df.age_years * 0.21)
+    # result += (df.age_years - 14) * 0.21
 
     result[df.li_mar_stat == 2] += params['effect_mar_stat_2_parity_lr2010']
     result[df.li_mar_stat == 3] += params['effect_mar_stat_3_parity_lr2010']

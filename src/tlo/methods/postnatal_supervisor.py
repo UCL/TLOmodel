@@ -1199,7 +1199,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
         if (df.at[individual_id, 'pn_sepsis_late_postpartum'] or
             df.at[individual_id, 'pn_postpartum_haem_secondary'] or
             ((df.at[individual_id, 'pn_htn_disorders'] == 'severe_pre_eclamp') and
-            mni[individual_id]['new_onset_spe']) or
+             mni[individual_id]['new_onset_spe']) or
            (df.at[individual_id, 'pn_htn_disorders'] == 'eclampsia')):
 
             # We assume the probability of care seeking is higher in women with complications
@@ -1216,7 +1216,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
         else:
             # Women without complications in week one are scheduled to attend PNC in the future
             if mni[individual_id]['will_receive_pnc'] == 'late':
-                appt_date = self.sim.date + pd.DateOffset(self.module.rng.randint(0, 41))
+                appt_date = self.sim.date + pd.DateOffset(self.module.rng.randint(0, 35))
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     pnc_one_maternal, priority=0, topen=appt_date, tclose=appt_date + pd.DateOffset(days=1))
 
