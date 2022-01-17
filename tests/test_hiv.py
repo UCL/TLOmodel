@@ -537,6 +537,9 @@ def test_art_is_initiated_for_infants(seed):
     sim.modules['Hiv'].parameters["prob_mtct_untreated"] = 1.0
     sim.modules['Hiv'].parameters["prob_mtct_incident_preg"] = 1.0
 
+    # Manipulate CFR for deaths due to not breathing at birth
+    sim.modules['NewbornOutcomes'].parameters['cfr_failed_to_transition'] = 0.0
+
     # Do a birth from a mother that is HIV-positive:
     df = sim.population.props
     mother_id = df.loc[df.is_alive & (df.sex == "F")].index[0]
