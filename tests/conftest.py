@@ -8,8 +8,9 @@ def pytest_addoption(parser):
     parser.addoption(
         "--seed",
         type=int,
-        default=DEFAULT_SEED,
-        help="Seed for simulation random number generator"
+        nargs="*",
+        default=[DEFAULT_SEED],
+        help="Seed(s) for simulation-level random number generator in tests"
     )
     parser.addoption(
         "--skip-slow",
@@ -31,6 +32,6 @@ def pytest_collection_modifyitems(config, items):
                 item.add_marker(skip_slow)
 
 
-@pytest.fixture
-def seed(request):
-    return request.config.getoption("--seed")
+def pytest_generate_tests(metafunc):
+    if "seed" in metafunc.fixturenames:
+        metafunc.parametrize("seed", metafunc.config.getoption("seed"))
