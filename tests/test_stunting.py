@@ -124,7 +124,7 @@ def test_initial_prevalence_of_stunting(seed):
         mean, stdev = sim.modules['Stunting'].parameters[f'prev_HAZ_distribution_age_{agegp}']
         haz_distribution = norm(loc=mean, scale=stdev)
 
-        assert haz_distribution.cdf(-2.0) == approx(prevalence_of_stunting_by_age[agegp], abs=0.011)
+        assert haz_distribution.cdf(-2.0) == approx(prevalence_of_stunting_by_age[agegp], abs=0.02)
         assert (haz_distribution.cdf(-3.0) / haz_distribution.cdf(-2.0)) == approx(
             prevalence_of_severe_stunting_given_any_stunting_by_age[agegp], abs=0.02)
 
