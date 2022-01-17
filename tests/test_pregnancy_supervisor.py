@@ -586,6 +586,10 @@ def test_preterm_labour_logic(seed):
     # We force risk of preterm birth to be 1, meaning all women will go into labour at month 5
     params['baseline_prob_early_labour_onset'] = 1
 
+    # Set chorioamnionitis still birth probability to zero to avoid still births causing
+    # la_due_date_current_pregnancy to be set to NaT
+    params['prob_still_birth_chorioamnionitis'] = 0
+
     # And stop attendance to ANC (could block labour)
     params['prob_first_anc_visit_gestational_age'] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
 
