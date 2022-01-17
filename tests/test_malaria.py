@@ -38,7 +38,6 @@ def check_dtypes(simulation):
 
 
 def register_sim():
-
     sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
@@ -60,7 +59,6 @@ def register_sim():
 
 @pytest.mark.slow
 def test_sims(tmpdir):
-
     sim = register_sim()
 
     # Run the simulation and flush the logger
@@ -108,7 +106,6 @@ def test_sims(tmpdir):
 # increase cfr for severe cases (all severe cases will die)
 @pytest.mark.slow
 def test_remove_malaria_test(tmpdir):
-
     service_availability = list([" "])  # no treatments available
 
     end_date = Date(2011, 1, 1)
@@ -371,7 +368,6 @@ def test_dx_algorithm_for_non_malaria_outcomes():
 
 
 def test_severe_malaria_deaths(tmpdir):
-
     sim = register_sim()
 
     # -------------- Perfect treatment for severe malaria -------------- #
@@ -391,7 +387,7 @@ def test_severe_malaria_deaths(tmpdir):
 
     # put person on treatment
     treatment_appt = malaria.HSI_Malaria_complicated_treatment_adult(person_id=person_id,
-                                                 module=sim.modules['Malaria'])
+                                                                     module=sim.modules['Malaria'])
     treatment_appt.apply(person_id=person_id, squeeze_factor=0.0)
     assert df.at[person_id, 'ma_tx']
     assert df.at[person_id, "ma_date_tx"] == sim.date
@@ -425,7 +421,7 @@ def test_severe_malaria_deaths(tmpdir):
 
     # put person on treatment
     treatment_appt = malaria.HSI_Malaria_complicated_treatment_adult(person_id=person_id,
-                                                 module=sim.modules['Malaria'])
+                                                                     module=sim.modules['Malaria'])
     treatment_appt.apply(person_id=person_id, squeeze_factor=0.0)
     assert df.at[person_id, 'ma_tx']
     assert df.at[person_id, "ma_date_tx"] == sim.date
