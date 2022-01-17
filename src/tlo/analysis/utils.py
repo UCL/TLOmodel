@@ -91,7 +91,7 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
 
     # parse each module-specific log file and collect the results into a single dictionary. metadata about each log
     # is returned in the same key '_metadata', so it needs to be collected separately and then merged back in.
-    all_module_logs = LogsDict()
+    all_module_logs = dict()
     metadata = dict()
     for file_handle in module_name_to_filehandle.values():
         print(f'Parsing {file_handle.name}', end='', flush=True)
@@ -499,15 +499,27 @@ def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
 class LogsDict(dict):
     """a class that parses logs on demand. it returns an object that behaves like a dictionary."""
 
+    def __init__(self, file_names_and_paths):
+        # initialise class with a dictionary containing module name as a key and full file path as a value
+        self.logfile_names_and_paths: Dict[str, str] = file_names_and_paths
+
     def __setitem__(self, key, item):
-        self.__dict__[key] = item
+        # restrict setting of dictionary items
+        raise NotImplementedError
 
     def __getitem__(self, key):
-        return self.__dict__[key]
-        # if key in self.__dict__:
-        #     path = self.__dict__[key]
-        #     logs_dataframes = _parse_log_file_inner_loop(path)
-        #     return logs_dataframes
+        # check if the requested key is found and return parsed logs if true. if key is not found return found
+        # nothing statement
+        if key in self.logfile_names_and_paths:
+            result_df = _parse_log_file_inner_loop(self.logfile_names_and_paths[key])
+            return result_df[key]
+
+        else:
+            print('found nothing')
+
+    def has_key(self, k):
+        # check if the requested key is found in dictionary. return true is found and false if not
+        return k in self.logfile_names_and_paths
 
     def update(self, *args, **kwargs):
-        return self.__dict__.update(*args, **kwargs)
+        raise NotImplementedError

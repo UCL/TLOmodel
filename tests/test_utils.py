@@ -1,15 +1,13 @@
 """Unit tests for utility functions."""
-import os
+from typing import Dict
 
 import numpy as np
 import pandas as pd
 import pytest
 
 import tlo.util
-from pathlib import Path
-from tlo import Date, Simulation
-from tlo.analysis.utils import LogsDict, parse_log_file
-from tlo.methods import demography, simplified_births
+from tlo import Date
+from tlo.analysis.utils import LogsDict
 
 
 @pytest.fixture
@@ -213,33 +211,26 @@ def test_sample_outcome(tmpdir):
         assert res[2].value_counts()[op] == pytest.approx(probs.loc[2, op] * n, abs=2 * np.sqrt(n * prob * (1 - prob)))
 
 
-def test_logs_parsing(tmpdir):
+def test_logs_parsing():
     """a function to test the  functionalities of LogDict class inside utils.py"""
 
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    start_date = Date(2010, 1, 1)
-    end_date = Date(2010, 12, 31)
-    popsize = 20_000
+    # create a simple look_up dictionary containing log_file name and path
+    logfile_name_path: Dict[str, str] = dict()
 
-    # Create simulation with the health system and DummyModule
-    sim = Simulation(start_date=start_date, seed=0, log_config={
-        'filename': 'temp',
-        'directory': tmpdir,
-    })
+    # update the dictionary with module name and file paths
+    logfile_name_path.update({'tlo.population': 'C:\\Users\\HEPU\\PycharmProjects\\TLOmodel\\outputs\\tlo.population'
+                                                '.log',
+                              'tlo.simulation': 'C:\\Users\\HEPU\\PycharmProjects\\TLOmodel\\outputs\\tlo.simulation'
+                                                '.log',
+                             'tlo.methods.demography': 'C:\\Users\\HEPU\\PycharmProjects\\TLOmodel\\outputs\\tlo'
+                                                       '.methods.demography.log'})
 
-    # run the simulation
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 )
+    # initialise the LogsDict class
+    logs_class = LogsDict(logfile_name_path)
 
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
+    # check if the requested key is available in LogsDict class
+    assert logs_class.has_key('tlo.methods.demography')
 
-    # display filename
-    log_filename = sim.log_filepath
-
-    output = parse_log_file(log_filename)
-
-    # check if returned output is an object
-    assert isinstance(output, LogsDict)
-
+    # print the results just to be sure it is what is expected
+    demography_df = logs_class["tlo.methods.demography"]["mapper_from_tlo_cause_to_common_label"]
+    print(f'demography dataframe {demography_df}')
