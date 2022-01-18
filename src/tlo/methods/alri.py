@@ -1020,7 +1020,7 @@ class Models:
                         'age_years',
                         conditions_are_mutually_exclusive=True,
                         conditions_are_exhaustive=True
-                    ).when(0, age_effects[0])  # todo - do this through unpacking the dict?
+                    ).when(0, age_effects[0])
                      .when(1, age_effects[1])
                      .when(2, age_effects[2])
                      .when(3, age_effects[3])
