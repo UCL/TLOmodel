@@ -998,9 +998,10 @@ class Models:
 
         def make_scaled_linear_model_for_incidence(target_prob_by_age):
             """Return a linear model that is scaled for each the age-groups.
-            It does this by first making an unscaled linear model with an intercept 1. Using this, it calculates the
-            resulting mean incidents rate for the populations (by age-group). It then creates a new linear model with an
-            adjusted intercept so that the average incidence in the population (by age-group) matches the target.
+            It does this by first making an unscaled linear model with an intercept of 1.0. Using this, it calculates
+             the resulting mean incidence rate for the population (by age-group). It then creates a new linear model
+             with an adjusted age effect so that the average incidence in the population (by age-group) matches the
+             target.
             NB. It will not work if there are no persons of that age in the population.
             """
 
@@ -1062,7 +1063,7 @@ class Models:
             self.incidence_equations_by_pathogen[patho] = \
                 make_scaled_linear_model_for_incidence(target_prob_by_age=self.p[f'base_inc_rate_ALRI_by_{patho}'])
 
-    def compute_risk_of_aquisition(self, pathogen, df):
+    def compute_risk_of_acquisition(self, pathogen, df):
         """Compute the risk of a pathogen, using the linear model created and the df provided"""
         p = self.p
 
@@ -1325,7 +1326,7 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Compute the incidence rate for each person acquiring Alri
         inc_of_acquiring_alri = pd.DataFrame(index=df.loc[mask_could_get_new_alri_event].index)
         for pathogen in m.all_pathogens:
-            inc_of_acquiring_alri[pathogen] = models.compute_risk_of_aquisition(
+            inc_of_acquiring_alri[pathogen] = models.compute_risk_of_acquisition(
                 pathogen=pathogen,
                 df=df.loc[mask_could_get_new_alri_event]
             )

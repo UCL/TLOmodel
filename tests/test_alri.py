@@ -88,7 +88,7 @@ def test_integrity_of_linear_models(tmpdir):
     models.make_model_for_acquisition_risk()
 
     for pathogen in alri.all_pathogens:
-        res = models.compute_risk_of_aquisition(
+        res = models.compute_risk_of_acquisition(
             pathogen=pathogen,
             df=df.loc[df.is_alive & (df.age_years < 5)]
         )
@@ -102,7 +102,7 @@ def test_integrity_of_linear_models(tmpdir):
     models.p['rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y'] = 0.0
     models.p['rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y'] = 0.0
     df['va_pneumo_all_doses'] = True
-    assert (0.0 == models.compute_risk_of_aquisition(
+    assert (0.0 == models.compute_risk_of_acquisition(
         pathogen='Strep_pneumoniae_PCV13',
         df=df.loc[df.is_alive & (df.age_years < 5)])
             ).all()
@@ -111,10 +111,10 @@ def test_integrity_of_linear_models(tmpdir):
     # from Hib (H.influenzae type-b)
     models.p['rr_Hib_ALRI_with_Hib_vaccine'] = 0.0
     df['va_hib_all_doses'] = True
-    assert (0.0 == models.compute_risk_of_aquisition(
+    assert (0.0 == models.compute_risk_of_acquisition(
         pathogen='Hib',
         df=df.loc[df.is_alive & (df.age_years < 5)])
-            ).all()  # todo: This assert is error because target_mean is not set as zero if 100% effectiveness
+            ).all()
 
     # --- determine_disease_type
     # set efficacy of pneumococcal vaccine to be 100% (i.e. 0 relative risk of infection)
