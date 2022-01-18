@@ -14,7 +14,7 @@ scenario_filename = 'standard_mph_calibration.py'  # <-- update this to look at 
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_30k_standard_mph_calibration-2021-11-18T095751Z/death'
+graph_location = 'output_graphs_10k(parity)_standard_mph_calibration-2022-01-14T154213Z/death'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -23,8 +23,11 @@ results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
 # Enter the years the simulation has ran for here?
 sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
-
+daly_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
 # todo: replace with something more clever at some point
+
+#read in daly data
+dalys_data = pd.read_csv(Path('./resources/gbd') / 'ResourceFile_Deaths_and_DALYS_GBD2019.CSV')
 
 
 # ============================================HELPER FUNCTIONS... =====================================================
@@ -270,13 +273,22 @@ scaled_deaths = extract_results(
 
 deaths = get_mean_and_quants_from_str_df(scaled_deaths, 'Maternal Disorders')
 
-gbd_deaths_2010_2019_data = [
-    [1308.234973, 1276.183582, 1236.480898, 1203.78822, 1173.894982, 1147.804779, 1149.500937, 1134.968587, 1127.841623,
-     1129.940058],
-    [908.8606818, 886.6127208, 869.109778, 833.9787632, 795.7024331, 785.9900535, 766.3767863, 738.2473034,
-     741.6140021, 728.0930259],
-    [1738.37933, 1714.101592, 1650.485182, 1629.394539, 1614.174427, 1596.760928, 1608.548815, 1589.998955,
-     1585.286372, 1591.604143]]
+def extract_deaths_gbd_data(group):
+    dalys_df = dalys_data.loc[(dalys_data['measure_name'] == 'Deaths') &
+                              (dalys_data['cause_name'] == f'{group} disorders') & (dalys_data['Year'] > 2009)]
+    gbd_deaths = list()
+    gbd_deaths_lq = list()
+    gbd_deaths_uq = list()
+
+    for year in daly_years:
+        gbd_deaths.append(dalys_df.loc[(dalys_df['Year'] == year)].sum()['GBD_Est'])
+        gbd_deaths_lq.append(dalys_df.loc[(dalys_df['Year'] == year)].sum()['GBD_Lower'])
+        gbd_deaths_uq.append(dalys_df.loc[(dalys_df['Year'] == year)].sum()['GBD_Upper'])
+
+    return [gbd_deaths, gbd_deaths_lq, gbd_deaths_uq]
+
+
+gbd_deaths_2010_2019_data = extract_deaths_gbd_data('Maternal')
 
 mean_deaths = list()
 death_lq = list()
@@ -794,9 +806,23 @@ for cause, tr in zip(simplified_causes, trs):
 
 # add in GBD?
 
-def get_dalys(df_):
-    df_.drop(columns='date').groupby(['year']).sum().stack()
+def extract_dalys_gbd_data(group):
+    dalys_df = dalys_data.loc[(dalys_data['measure_name'] == 'DALYs (Disability-Adjusted Life Years)') &
+                              (dalys_data['cause_name'] == f'{group} disorders') & (dalys_data['Year'] > 2009)]
 
+    gbd_dalys = list()
+    gbd_dalys_lq = list()
+    gbd_dalys_uq = list()
+
+    for year in daly_years:
+        gbd_dalys.append(dalys_df.loc[(dalys_df['Year'] == year)].sum()['GBD_Est'])
+        gbd_dalys_lq.append(dalys_df.loc[(dalys_df['Year'] == year)].sum()['GBD_Lower'])
+        gbd_dalys_uq.append(dalys_df.loc[(dalys_df['Year'] == year)].sum()['GBD_Upper'])
+
+    return [gbd_dalys, gbd_dalys_lq, gbd_dalys_uq]
+
+maternal_gbd_dalys = extract_dalys_gbd_data('Maternal')
+neonatal_gbd_dalys = extract_dalys_gbd_data('Neonatal')
 
 dalys_stacked = extract_results(
     results_folder,
@@ -807,46 +833,41 @@ dalys_stacked = extract_results(
             columns='date').groupby(['year']).sum().stack()),
     do_scaling=True)
 
-stacked_mat_dalys = list()
-stacked_mat_dalys_lq = list()
-stacked_mat_dalys_uq = list()
 
-stacked_neo_dalys = list()
-stacked_neo_dalys_lq = list()
-stacked_neo_dalys_uq = list()
+def extract_dalys_tlo_model(group):
+    stacked_dalys = list()
+    stacked_dalys_lq = list()
+    stacked_dalys_uq = list()
 
-for year in sim_years:
-    if year in dalys_stacked.index:
-        stacked_mat_dalys.append(dalys_stacked.loc[year, 'Maternal Disorders'].mean())
-        stacked_mat_dalys_lq.append(dalys_stacked.loc[year, 'Maternal Disorders'].quantile(0.025))
-        stacked_mat_dalys_uq.append(dalys_stacked.loc[year, 'Maternal Disorders'].quantile(0.925))
+    for year in sim_years:
+        if year in dalys_stacked.index:
+            stacked_dalys.append(dalys_stacked.loc[year, f'{group} Disorders'].mean())
+            stacked_dalys_lq.append(dalys_stacked.loc[year, f'{group} Disorders'].quantile(0.025))
+            stacked_dalys_uq.append(dalys_stacked.loc[year, f'{group} Disorders'].quantile(0.925))
 
-        stacked_neo_dalys.append(dalys_stacked.loc[year, 'Neonatal Disorders'].mean())
-        stacked_neo_dalys_lq.append(dalys_stacked.loc[year, 'Neonatal Disorders'].quantile(0.025))
-        stacked_neo_dalys_uq.append(dalys_stacked.loc[year, 'Neonatal Disorders'].quantile(0.925))
+    return [stacked_dalys, stacked_dalys_lq, stacked_dalys_uq]
+
+maternal_dalys = extract_dalys_tlo_model('Maternal')
+neonatal_dalys = extract_dalys_tlo_model('Neonatal')
 
 
-fig, ax = plt.subplots()
-ax.plot(sim_years, stacked_mat_dalys, label="Maternal DALYs", color='deepskyblue')
-ax.fill_between(sim_years, stacked_mat_dalys_lq, stacked_mat_dalys_uq, color='b', alpha=.1)
+def get_daly_graphs(group, dalys, gbd_estimate):
+    fig, ax = plt.subplots()
+    ax.plot(sim_years, dalys[0], label=f"{group} DALYs", color='deepskyblue')
+    ax.fill_between(sim_years, dalys[1], dalys[2], color='b', alpha=.1)
 
-ax.plot(sim_years, stacked_neo_dalys, label="Neonatal DALYs", color='olivedrab')
-ax.fill_between(sim_years, stacked_neo_dalys_lq, stacked_neo_dalys_uq, color='g', alpha=.1)
-plt.xlabel('Year')
-plt.ylabel("Disability Adjusted Life Years (stacked)")
-plt.title('Total DALYs per Year Attributable to Maternal/Neonatal disorders')
-plt.legend()
-plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/dalys_stacked.png')
-plt.show()
+    ax.plot(daly_years, gbd_estimate[0], label="GBD DALY Est.", color='olivedrab')
+    ax.fill_between(daly_years, gbd_estimate[1], gbd_estimate[2], color='g', alpha=.1)
+    plt.xlabel('Year')
+    plt.ylabel("Disability Adjusted Life Years (stacked)")
+    plt.title(f'Total DALYs per Year Attributable to {group} disorders')
+    plt.legend()
+    plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{group}_dalys_stacked.png')
+    plt.show()
 
-dalys_stacked = extract_results(
-    results_folder,
-    module="tlo.methods.healthburden",
-    key="dalys_stacked",
-    custom_generate_series=(
-        lambda df_: df_.drop(
-            columns='date').groupby(['year'])['Maternal Disorders'].sum()),
-    do_scaling=True)
+get_daly_graphs('Maternal', maternal_dalys, maternal_gbd_dalys)
+get_daly_graphs('Neonatal', neonatal_dalys, neonatal_gbd_dalys)
+
 
 # todo: move to scenrio files
 # 1.) define HSIs of interest

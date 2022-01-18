@@ -22,7 +22,7 @@ from tlo.methods import (
     cardio_metabolic_disorders
 )
 
-seed = 789
+seed = 7844
 
 resourcefilepath = Path("./resources")
 
@@ -136,12 +136,11 @@ print('actual neonatal dalys', dalys_from_simulation)
 import pandas as pd
 import numpy as np
 
-output = parse_log_file(sim.log_filepath)
-
 # number of deaths:
 deaths = output['tlo.methods.demography']['death']
 num_deaths_mat_disorders = ((pd.to_datetime(deaths.date).dt.year == 2010) & (deaths.label == 'Maternal '
-                                                                                             'Disorders')).sum()  # 49 deaths
+                                                                                             'Disorders')).sum()
+# 49 deaths
 
 # number of YLL (stacked onto year 2010)
 yll = output['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']
