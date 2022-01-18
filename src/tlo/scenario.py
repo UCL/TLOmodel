@@ -305,8 +305,11 @@ class SampleRunner:
 
     def run_sample(self, sample, output_directory=None):
         log_config = self.scenario.log_configuration()
+
         if output_directory is not None:
             log_config["directory"] = output_directory
+            # suppress stdout when saving output to directory (either user specified, or set by batch-run process)
+            log_config["suppress_stdout"] = True
 
         sim = Simulation(
             start_date=self.scenario.start_date,

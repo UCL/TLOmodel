@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -202,6 +203,7 @@ def test_basic_run(tmpdir):
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_basic_run_lasting_two_years(tmpdir):
     """Check logging results in a run of the model for two years, with daily property config checking"""
     dur = pd.DateOffset(years=2)
