@@ -9,9 +9,9 @@ number_of_draws = 20
 
 # set up LHC sampler
 sampler = qmc.LatinHypercube(d=2)
-sample = sampler.random(n=number_of_draws)  # todo: decide how many samples (also 5 or 10 runs per draw?)
+sample = sampler.random(n=number_of_draws)
 
-l_bounds = [0.08, 1.35]  # todo: quick runs with extreme values to get bounds
+l_bounds = [0.08, 1.35]
 u_bounds = [0.18, 2.35]
 sampled_params = pd.DataFrame(qmc.scale(sample, l_bounds, u_bounds))
 
