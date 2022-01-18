@@ -150,13 +150,14 @@ class Alri(Module):
     })
 
     # Declare the Alri complications:
-    complications = sorted({'pneumothorax',
-                     'pleural_effusion',
-                     'empyema',
-                     'lung_abscess',
-                     'sepsis',
-                     'hypoxaemia'
-                     })
+    complications = sorted({
+        'pneumothorax',
+        'pleural_effusion',
+        'empyema',
+        'lung_abscess',
+        'sepsis',
+        'hypoxaemia'
+    })
 
     PARAMETERS = {
         # Incidence rate by pathogens  -----
@@ -965,8 +966,9 @@ class Alri(Module):
 
     def impose_symptoms_for_complication(self, person_id, complication, oxygen_saturation):
         """Impose symptoms for a complication."""
-        symptoms = sorted(self.models.symptoms_for_complication(complication=complication,
-                                                         oxygen_saturation=oxygen_saturation))
+        symptoms = sorted(self.models.symptoms_for_complication(
+            complication=complication, oxygen_saturation=oxygen_saturation))
+
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=person_id,
             symptom_string=symptoms,
