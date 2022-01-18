@@ -364,6 +364,9 @@ class Labour(Module):
         'rrr_hb_delivery_married': Parameter(
             Types.LIST, 'relative risk ratio of a married woman delivering in a home compared to a hospital'),
 
+        'probability_delivery_hospital': Parameter(
+            Types.LIST, 'probability of delivering in a hospital'),
+
         # PNC CHECK...
         'prob_timings_pnc': Parameter(
             Types.LIST, 'probabilities that a woman who will receive a PNC check will receive care <48hrs post birth '
@@ -637,7 +640,7 @@ class Labour(Module):
             [get_item_code_from_name('Paracetamol 500mg_1000_CMST')]
 
         # -------------------------------------------- CAESAREAN DELIVERY ------------------------------------------
-        # TODO: this package is incomplete
+        # TODO: this package is incomplete?
         # todo: replace- halothane with thiopental
         self.item_codes_lab_consumables['caesarean_delivery'] = \
             [get_item_code_from_name('Halothane (fluothane)_250ml_CMST')] + \
@@ -654,7 +657,23 @@ class Labour(Module):
             [get_item_code_from_name("Giving set iv administration + needle 15 drops/ml_each_CMST")] + \
             [get_item_code_from_name("Chlorhexidine 1.5% solution_5_CMST")]
 
-        # -------------------------------------------- ABX FOR PROM ---------------------------------------------
+        # -------------------------------------------- OBSTETRIC SURGERY ----------------------------------------------
+        # TODO: this package may not be accurate yet
+        self.item_codes_lab_consumables['obstetric_surgery'] = \
+            [get_item_code_from_name('Halothane (fluothane)_250ml_CMST')] + \
+            [get_item_code_from_name('Ceftriaxone 1g, PFR_each_CMST')] + \
+            [get_item_code_from_name('Metronidazole 200mg_1000_CMST')] + \
+            [get_item_code_from_name('Cannula iv  (winged with injection pot) 20_each_CMST')] + \
+            [get_item_code_from_name('Paracetamol 500mg _1000_CMST')] + \
+            [get_item_code_from_name('Declofenac injection_each_CMST')] + \
+            [get_item_code_from_name('Pethidine, 50 mg/ml, 2 ml ampoule')] + \
+            [get_item_code_from_name('Foley catheter')] + \
+            [get_item_code_from_name('Bag, urine, collecting, 2000 ml')] + \
+            [get_item_code_from_name("Sodium lactate injection (Ringer's), 500 ml, with giving set")] + \
+            [get_item_code_from_name('Sodium chloride, injectable solution, 0,9 %, 500 ml')] + \
+            [get_item_code_from_name("Giving set iv administration + needle 15 drops/ml_each_CMST")]
+
+        # -------------------------------------------- ABX FOR PROM -------------------------------------------------
         self.item_codes_lab_consumables['abx_for_prom'] = \
             [get_item_code_from_name('Benzathine benzylpenicillin, powder for injection, 2.4 million IU')] + \
             [get_item_code_from_name('Water for injection, 10ml_Each_CMST')] + \
@@ -2030,14 +2049,20 @@ class Labour(Module):
             # We apply a probability that surgical techniques will be effective
             treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
 
+            # We log the log the required consumables and condition the surgery happening on the availability of the
+            # first consumable in this package, the anaesthetic required for the surgery
+            consumables = hsi_event.get_consumables(item_codes=self.item_codes_lab_consumables['obstetric_surgery'],
+                                                    return_individual_results=True)
+            key_consumable_avail = list(consumables.values())[0]
+
             # And store the treatment which will dramatically reduce risk of death
-            if treatment_success_pph:
+            if treatment_success_pph and key_consumable_avail:
                 logger.debug(key='msg',
                                  data=f'mother {person_id} undergone surgery to manage her PPH which resolved')
                 self.pph_treatment.set(person_id, 'surgery')
 
             # If the treatment is unsuccessful then women will require a hysterectomy to stop the bleeding
-            elif ~treatment_success_pph:
+            elif ~treatment_success_pph and key_consumable_avail:
                 logger.debug(key='msg', data=f'mother {person_id} undergone surgery to manage her PPH, she required'
                                              f' a hysterectomy to stop the bleeding')
 
@@ -2410,15 +2435,16 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                     df.loc[[individual_id]])[individual_id]
                 pred_hc_delivery = self.module.la_linear_models['probability_delivery_health_centre'].predict(
                     df.loc[[individual_id]])[individual_id]
+                pred_hp_delivery = params['probability_delivery_hospital']
 
                 # The denominator is calculated
-                denom = 1 + pred_hb_delivery + pred_hc_delivery
+                denom = pred_hp_delivery + pred_hb_delivery + pred_hc_delivery
 
                 # Followed by the probability of each of the three outcomes - home birth, health centre birth or
                 # hospital birth
                 prob_hb = pred_hb_delivery / denom
                 prob_hc = pred_hc_delivery / denom
-                prob_hp = 1 / denom
+                prob_hp = pred_hp_delivery / denom
 
                 # And a probability weighted random draw is used to determine where the woman will deliver
                 facility_types = ['home_birth', 'health_centre', 'hospital']
@@ -3102,18 +3128,22 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         if mni[person_id]['referred_for_surgery'] and self.timing == 'intrapartum' and df.at[person_id,
                                                                                              'la_uterine_rupture']:
 
-            # We dont have a specific package code for general surgery...
-            self.get_consumables(item_codes=self.module.item_codes_lab_consumables['delivery'])
+            # We log the log the required consumables and condition the surgery happening on the availability of the
+            # first consumable in this package, the anaesthetic required for the surgery
+            consumables = self.get_consumables(item_codes=self.module.item_codes_lab_consumables['obstetric_surgery'],
+                                               return_individual_results=True)
+            key_consumable_avail = list(consumables.values())[0]
 
             # We apply a probability that repair surgery will be successful which will reduce risk of death from
             # uterine rupture
             treatment_success_ur = params['success_rate_uterine_repair'] > self.module.rng.random_sample()
 
-            if treatment_success_ur:
+            if key_consumable_avail and treatment_success_ur:
                 df.at[person_id, 'la_uterine_rupture_treatment'] = True
+
             # Unsuccessful repair will lead to this woman requiring a hysterectomy. Hysterectomy will also reduce risk
             # of death from uterine rupture but leads to permanent infertility in the simulation
-            elif ~treatment_success_ur:
+            elif key_consumable_avail and ~treatment_success_ur:
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         # ============================= SURGICAL MANAGEMENT OF POSTPARTUM HAEMORRHAGE==================================

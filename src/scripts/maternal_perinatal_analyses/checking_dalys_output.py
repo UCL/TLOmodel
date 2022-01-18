@@ -131,3 +131,39 @@ dalys_2010 = dalys_ouput.loc[dalys_ouput['year'] == 2010]
 dalys_from_simulation = dalys_2010['Neonatal Disorders'].sum()
 
 print('actual neonatal dalys', dalys_from_simulation)
+
+# Tim's checks
+import pandas as pd
+import numpy as np
+
+output = parse_log_file(sim.log_filepath)
+
+# number of deaths:
+deaths = output['tlo.methods.demography']['death']
+num_deaths_mat_disorders = ((pd.to_datetime(deaths.date).dt.year == 2010) & (deaths.label == 'Maternal '
+                                                                                             'Disorders')).sum()  # 49 deaths
+
+# number of YLL (stacked onto year 2010)
+yll = output['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']
+map_to_label_deaths = \
+    pd.Series(output['tlo.methods.demography']['mapper_from_tlo_cause_to_common_label'].drop(
+        columns={'date'}).loc[0]).to_dict()
+
+sum_yll = yll.loc[(yll.year == 2010)].sum().drop(['sex', 'age_range', 'year'])
+sum_yll.index = sum_yll.index.map(map_to_label_deaths)
+yll_mat_disorders = sum_yll.groupby(level=0).sum()['Maternal Disorders']  # 2038 life-years
+yll_mat_disorders_per_death = yll_mat_disorders / num_deaths_mat_disorders  # 40.1 YLL per death
+
+
+yld = output['tlo.methods.healthburden']['yld_by_causes_of_disability']
+map_to_label_disability = pd.Series(output['tlo.methods.healthburden']['mapper_from_tlo_cause_to_common_label'].drop(
+    columns={'date'}).loc[0]).to_dict()
+sum_yld = yld.loc[(yld.year == 2010)].sum().drop(['sex', 'age_range', 'year'])
+sum_yld.index = sum_yld.index.map(map_to_label_disability)
+yld_mat_disorders = sum_yld['Maternal Disorders']
+
+dalys = output['tlo.methods.healthburden']['dalys_stacked']
+dalys_mat_disorders = dalys['Maternal Disorders'].sum()
+
+# Check it works!
+assert np.isclose(dalys_mat_disorders, yld_mat_disorders + yll_mat_disorders)

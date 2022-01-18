@@ -93,7 +93,7 @@ class PregnancySupervisor(Module):
 
         # SPONTANEOUS AND INDUCED ABORTION
         'prob_previous_miscarriage_at_baseline': Parameter(
-            Types.LIST, 'probability that a woman at baseline will have previously experienced a miscarriage'),
+            Types.REAL, 'probability that a woman at baseline will have previously experienced a miscarriage'),
         'prob_spontaneous_abortion_per_month': Parameter(
             Types.LIST, 'underlying risk of spontaneous abortion per month'),
         'rr_spont_abortion_age_35': Parameter(
@@ -318,10 +318,6 @@ class PregnancySupervisor(Module):
             Types.LIST, 'Treatment effect of ectopic pregnancy case management'),
         'treatment_effect_post_abortion_care': Parameter(
             Types.LIST, 'Treatment effect of post abortion care'),
-        'treatment_effect_iron_def_ifa': Parameter(
-            Types.LIST, 'treatment effect of iron supplementation on iron deficiency '),
-        'treatment_effect_folate_def_ifa': Parameter(
-            Types.LIST, 'treatment effect of folate supplementation on folate deficiency'),
         'treatment_effect_iron_folic_acid_anaemia': Parameter(
             Types.LIST, 'relative effect of daily iron and folic acid treatment on risk of maternal anaemia '),
         'treatment_effect_calcium_pre_eclamp': Parameter(
@@ -480,7 +476,7 @@ class PregnancySupervisor(Module):
 
         previous_miscarriage = pd.Series(
             self.rng.random_sample(len(reproductive_age_women.loc[reproductive_age_women])) <
-            self.parameters['prob_previous_miscarriage_at_baseline'][0],
+            self.parameters['prob_previous_miscarriage_at_baseline'],
             index=reproductive_age_women.loc[reproductive_age_women].index)
 
         df.loc[previous_miscarriage.loc[previous_miscarriage].index, 'ps_prev_spont_abortion'] = True
@@ -1597,7 +1593,7 @@ class PregnancySupervisor(Module):
         # who are post term)
         non_care_seekers = df.loc[care_seekers.loc[~care_seekers].index]
         still_birth_risk = self.ps_linear_models['antenatal_stillbirth'].predict(non_care_seekers)
-        weekly_risk = still_birth_risk / 4.5
+        weekly_risk = still_birth_risk / 4.3483
         still_birth = self.rng.random_sample(len(weekly_risk)) < weekly_risk
 
         self.update_variables_post_still_birth_for_data_frame(still_birth.loc[still_birth])
