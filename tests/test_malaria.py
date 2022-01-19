@@ -82,8 +82,13 @@ def test_sims(sim):
     # check clinical malaria in pregnancy counter not including males
     assert not any((df.sex == "M") & (df.ma_clinical_preg_counter > 0))
 
-    # check symptoms are being assigned - fever assigned to all clinical cases
-    for person in df.index[df.is_alive & (df.ma_inf_type == "clinical")]:
+    # check symptoms are being assigned - fever assigned to all clinical cases in symptomatic period
+    for person in df.index[
+        df.is_alive
+        & (df.ma_inf_type == "clinical")
+        & (sim.date >= df.ma_date_symptoms)
+        & (sim.date < df.ma_date_symptoms + pd.DateOffset(days=sim.modules["Malaria"].parameters["dur_clin"]))
+    ]:
         assert "fever" in sim.modules["SymptomManager"].has_what(person)
         assert "Malaria" in sim.modules["SymptomManager"].causes_of(person, "fever")
 
