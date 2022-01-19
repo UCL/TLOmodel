@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -172,6 +173,7 @@ def __check_no_illegal_switches(sim):
             # female_sterilization if age less than 30 (or equal to, in case they have aged since an HSI was scheduled)
 
 
+@pytest.mark.slow
 def test_starting_and_stopping_contraceptive_use():
     """Check that initiation and discontinuation rates work as expected."""
     popsize = 10_000
@@ -244,6 +246,7 @@ def test_starting_and_stopping_contraceptive_use():
     assert 0 == end_usage.drop(index=['not_using', 'female_sterilization']).sum().sum()
 
 
+@pytest.mark.slow
 def test_pregnancies_and_births_occurring(tmpdir):
     """Test that pregnancies occur for those who are on contraception and those who are not."""
     # Run simulation without use of HealthSystem stuff and with high risk of failure of contraceptive
@@ -372,6 +375,7 @@ def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir):
     assert not len(sim.modules['HealthSystem'].find_events_for_person(person_id))
 
 
+@pytest.mark.slow
 def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_level(tmpdir):
     """Check that if someone is on a method that requires an HSI for maintenance, and if consumable is not available
      and/or the health system cannot do the appointment, then that the person defaults to not using after they become
@@ -456,6 +460,7 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
     check_that_persons_on_contraceptive_default(sim)
 
 
+@pytest.mark.slow
 def test_defaulting_off_method_if_no_healthsystem_at_population_level(tmpdir):
     """Check that if switching and initiation use the HealthSystem but no HSI can occur, then all those already
      on a contraceptive requiring an HSI to maintain use will default to not_using, and there is no initiation or
@@ -486,6 +491,7 @@ def test_defaulting_off_method_if_no_healthsystem_at_population_level(tmpdir):
         states_that_do_require_HSI_to_switch_to).all()
 
 
+@pytest.mark.slow
 def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir):
     """Check that if switching and initiation use the HealthSystem but there are no consumables, then all those already
      on a contraceptive requiring a consumable to maintain use will default to not_using, and there is no initiation or
@@ -524,6 +530,7 @@ def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir):
         states_that_do_require_HSI_to_switch_to).all()
 
 
+@pytest.mark.slow
 def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir):
     """Test that the contraception module functions and that exactly the same patterns of usage, switching, etc occur
     when action do not use the HealthsSystem as when they do (and the HealthSystem allow every change to occur)."""

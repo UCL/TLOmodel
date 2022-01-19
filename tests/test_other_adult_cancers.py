@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -209,6 +210,7 @@ def test_initial_config_of_pop_usual_prevalence():
     check_configuration_of_population(sim)
 
 
+@pytest.mark.slow
 def test_run_sim_from_high_prevalence():
     """Run the simulation from the usual prevalence values and high rates of incidence and check configuration of
     properties at the end"""
@@ -224,6 +226,7 @@ def test_run_sim_from_high_prevalence():
     check_configuration_of_population(sim)
 
 
+@pytest.mark.slow
 def test_check_progression_through_stages_is_happening():
     """Put all people into the first stage, let progression happen (with no treatment effect) and check that people end
     up in late stages and some die of this cause.
@@ -273,6 +276,7 @@ def test_check_progression_through_stages_is_happening():
     assert (df.oac_date_palliative_care > start_date).any()
 
 
+@pytest.mark.slow
 def test_that_there_is_no_treatment_without_the_hsi_running():
 
     # I have checked that there is no treatment without the hsi running but this test is not running and not sure why
