@@ -192,6 +192,24 @@ def test_all_injuries_run_no_healthsystem():
     check_dtypes(sim)
 
 
+def test_blocked_interventions():
+    sim = create_basic_rti_sim(popsize)
+    params = sim.modules['RTI'].parameters
+    params['blocked_interventions'] = ['Minor Surgery']
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+    sim = create_basic_rti_sim(popsize)
+    params = sim.modules['RTI'].parameters
+    params['blocked_interventions'] = ['Fracture Casts']
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+    sim = create_basic_rti_sim(popsize)
+    params = sim.modules['RTI'].parameters
+    params['blocked_interventions'] = ['Minor Surgery', 'Fracture Casts']
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+
 def test_module_properties():
     """ A test to see whether the logical flows through the module are followed"""
     sim = create_basic_rti_sim(popsize)

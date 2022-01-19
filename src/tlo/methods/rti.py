@@ -1630,7 +1630,7 @@ class RTI(Module):
             # check that this person's injuries that were decided to be treated with a minor surgery and the injuries
             # actually treated by minor surgeries coincide
             if count == 0:
-                assert len(set(df.at[person_id, 'rt_injuries_for_minor_surgery']) & set(surgically_treated_codes)) > 0, \
+                assert len(set(df.at[person_id, 'rt_injuries_for_minor_surgery']) & set(surgically_treated_codes)) > 0,\
                     'This person has asked for a minor surgery but does not need it'
             # Isolate the relevant injury information
             person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
@@ -2891,8 +2891,10 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                         else:
                             # if they have sought medical care and it hasn't been provided, we need to make sure only
                             # the untreated injuries have a recovery date assigned here
-                            if ((code in self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS.keys()) &
-                                (code in df.loc[person, 'rt_injuries_left_untreated'])):
+                            code_has_untreated_recovery_time = \
+                                code in self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS.keys()
+                            in_untreated_injuries = code in df.loc[person, 'rt_injuries_left_untreated']
+                            if code_has_untreated_recovery_time & in_untreated_injuries:
                                 df.loc[person, 'rt_date_to_remove_daly'][columns] = \
                                     self.sim.date + DateOffset(
                                         days=self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS[code]
@@ -2983,16 +2985,6 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                     if df.loc[person, 'rt_date_to_remove_daly'] == default_recovery:
                         # remove the injury severity as person is uninjured
                         df.loc[person, 'rt_inj_severity'] = "none"
-                        untreated_injuries = (
-                            df.loc[person, 'rt_injuries_to_heal_with_time'] +
-                            df.loc[person, 'rt_injuries_for_minor_surgery'] +
-                            df.loc[person, 'rt_injuries_for_major_surgery'] +
-                            df.loc[person, 'rt_injuries_for_open_fracture_treatment'] +
-                            df.loc[person, 'rt_injuries_to_cast']
-                        )
-                        df
-                        # assert untreated_injuries == [], f"not every injury removed from dataframe when treated " \
-                        #                                  f"{untreated_injuries}"
             # Check that the date to remove dalys is removed if the date to remove the daly is today
             assert now not in df.loc[person, 'rt_date_to_remove_daly']
             # finally ensure the reported disability burden is an appropriate value
