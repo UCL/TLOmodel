@@ -144,11 +144,11 @@ tlo.methods.cardio_metabolic_disorders module
           - BOOL
           - Whether or not someone has chronic_ischemic_hd
         * - nc_ever_stroke
-          - DATE
-          - Date of when someone has had a ever_stroke
+          - BOOL
+          - Whether or not someone has had a ever_stroke
         * - nc_ever_heart_attack
-          - DATE
-          - Date of when someone has had a ever_heart_attack
+          - BOOL
+          - Whether or not someone has had a ever_heart_attack
         * - nc_diabetes_ever_diagnosed
           - BOOL
           - Whether or not someone has ever been diagnosed with diabetes
@@ -224,6 +224,12 @@ tlo.methods.cardio_metabolic_disorders module
         * - nc_chronic_ischemic_hd_medication_prevents_death
           - BOOL
           - Whether or not medication (if provided) will prevent death from chronic_ischemic_hd
+        * - nc_ever_stroke_date_last_event
+          - DATE
+          - Date of last ever_stroke
+        * - nc_ever_heart_attack_date_last_event
+          - DATE
+          - Date of last ever_heart_attack
         * - nc_ever_stroke_ever_diagnosed
           - BOOL
           - Whether or not someone has ever been diagnosed with ever_stroke
@@ -232,10 +238,10 @@ tlo.methods.cardio_metabolic_disorders module
           - Whether or not someone has ever been diagnosed with ever_heart_attack
         * - nc_ever_stroke_date_diagnosis
           - DATE
-          - When someone has  been diagnosed with ever_stroke
+          - When someone has last been diagnosed with ever_stroke
         * - nc_ever_heart_attack_date_diagnosis
           - DATE
-          - When someone has  been diagnosed with ever_heart_attack
+          - When someone has last been diagnosed with ever_heart_attack
         * - nc_ever_stroke_on_medication
           - BOOL
           - Whether or not someone has ever been diagnosed with ever_stroke
@@ -270,13 +276,13 @@ tlo.methods.cardio_metabolic_disorders module
 
      ADDITIONAL_DEPENDENCIES : {'Depression'}
 
-     CAUSES_OF_DEATH : {'diabetes': <tlo.methods.causes.Cause object at 0x7f830b0d6190>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x7f830b0d61f0>, 'ever_heart_attack': <tlo.methods.causes.Cause object at 0x7f830b0d6250>, 'ever_stroke': <tlo.methods.causes.Cause object at 0x7f830b0d62b0>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x7f830b0d6310>}
+     CAUSES_OF_DEATH : {'diabetes': <tlo.methods.causes.Cause object at 0x7f89781eb190>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x7f89781eb1f0>, 'ever_heart_attack': <tlo.methods.causes.Cause object at 0x7f89781eb250>, 'ever_stroke': <tlo.methods.causes.Cause object at 0x7f89781eb2b0>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x7f89781eb310>}
 
-     CAUSES_OF_DISABILITY : {'any_ncd': <tlo.methods.causes.Cause object at 0x7f830b0d6370>}
+     CAUSES_OF_DISABILITY : {'diabetes': <tlo.methods.causes.Cause object at 0x7f89781eb370>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x7f89781eb3d0>, 'heart_attack': <tlo.methods.causes.Cause object at 0x7f89781eb430>, 'stroke': <tlo.methods.causes.Cause object at 0x7f89781eb490>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x7f89781eb4f0>, 'lower_back_pain': <tlo.methods.causes.Cause object at 0x7f89781eb550>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'SymptomManager', 'Lifestyle', 'Demography'}
+     INIT_DEPENDENCIES : {'Lifestyle', 'SymptomManager', 'Demography', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -298,11 +304,13 @@ tlo.methods.cardio_metabolic_disorders module
 
      death_events_param_dicts : {'ever_stroke_death': DICT === all the parameters that specify the linear models for death from ever_stroke, 'ever_heart_attack_death': DICT === all the parameters that specify the linear models for death from ever_heart_attack}
 
-     event_date_diagnosis_list : {'nc_ever_stroke_date_diagnosis': DATE === When someone has  been diagnosed with ever_stroke, 'nc_ever_heart_attack_date_diagnosis': DATE === When someone has  been diagnosed with ever_heart_attack}
+     event_date_diagnosis_list : {'nc_ever_stroke_date_diagnosis': DATE === When someone has last been diagnosed with ever_stroke, 'nc_ever_heart_attack_date_diagnosis': DATE === When someone has last been diagnosed with ever_heart_attack}
+
+     event_date_last_list : {'nc_ever_stroke_date_last_event': DATE === Date of last ever_stroke, 'nc_ever_heart_attack_date_last_event': DATE === Date of last ever_heart_attack}
 
      event_diagnosis_list : {'nc_ever_stroke_ever_diagnosed': BOOL === Whether or not someone has ever been diagnosed with ever_stroke, 'nc_ever_heart_attack_ever_diagnosed': BOOL === Whether or not someone has ever been diagnosed with ever_heart_attack}
 
-     event_list : {'nc_ever_stroke': DATE === Date of when someone has had a ever_stroke, 'nc_ever_heart_attack': DATE === Date of when someone has had a ever_heart_attack}
+     event_list : {'nc_ever_stroke': BOOL === Whether or not someone has had a ever_stroke, 'nc_ever_heart_attack': BOOL === Whether or not someone has had a ever_heart_attack}
 
      event_medication_death_list : {'nc_ever_stroke_medication_prevents_death': BOOL === Whether or not medication will prevent death from ever_stroke, 'nc_ever_heart_attack_medication_prevents_death': BOOL === Whether or not medication will prevent death from ever_heart_attack}
 
@@ -439,6 +447,24 @@ tlo.methods.cardio_metabolic_disorders module
 
 
      **Functions (defined or overridden in class CardioMetabolicDisorders_LoggingEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_CardioMetabolicDisorders_CommunityTestingForHypertension
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_CardioMetabolicDisorders_CommunityTestingForHypertension):**
 
      .. automethod:: __init__
 

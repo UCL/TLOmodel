@@ -1,76 +1,34 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.hiv &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../index.html" class="icon icon-home"> TLOmodel
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -78,18 +36,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -103,71 +50,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
           <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
           <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
       <li>tlo.methods.hiv</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.hiv</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">The HIV Module</span>
@@ -230,7 +137,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lm</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span></div>
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">,</span> <span class="s1">&#39;Lifestyle&#39;</span><span class="p">,</span> <span class="s1">&#39;SymptomManager&#39;</span><span class="p">}</span>
 
@@ -654,10 +561,10 @@
         <span class="c1"># Assign date that persons were infected by drawing from assumed distribution (for adults)</span>
         <span class="c1"># Clipped to prevent dates of infection before before the person was born.</span>
         <span class="n">years_ago_inf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">time_inf</span><span class="p">[</span><span class="s2">&quot;year&quot;</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;time_inf&quot;</span><span class="p">][</span><span class="s2">&quot;year&quot;</span><span class="p">],</span>
             <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">infec</span><span class="p">),</span>
             <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">time_inf</span><span class="p">[</span><span class="s2">&quot;scaled_prob&quot;</span><span class="p">],</span>
+            <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;time_inf&quot;</span><span class="p">][</span><span class="s2">&quot;scaled_prob&quot;</span><span class="p">],</span>
         <span class="p">)</span>
 
         <span class="n">hv_date_inf</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_timedelta</span><span class="p">(</span><span class="n">years_ago_inf</span> <span class="o">*</span> <span class="n">DAYS_IN_YEAR</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;d&quot;</span><span class="p">))</span>
@@ -841,145 +748,53 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_with_checks</span><span class="p">:</span>
             <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">HivCheckPropertiesEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
-        <span class="c1"># 6) Define the DxTests</span>
+        <span class="c1"># 6) Store codes for the consumables needed</span>
+        <span class="n">hs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;hiv_rapid_test&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_codes_from_package_name</span><span class="p">(</span><span class="s2">&quot;HIV Testing Services&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;hiv_early_infant_test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Blood collecting tube, 5 ml&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Gloves, exam, latex, disposable, pair&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;HIV EIA Elisa test&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;vl_measurement&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_codes_from_package_name</span><span class="p">(</span><span class="s2">&quot;Viral Load&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;circ&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_codes_from_package_name</span><span class="p">(</span><span class="s2">&quot;Male circumcision &quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;prep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="c1"># First - line ART for adults(age &gt; &quot;ART_age_cutoff_older_child&quot;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First-line ART regimen: adult&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;First-line ART regimen: adult&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Cotrimoxizole, 960mg pppy&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="c1"># ART for older children aged (&quot;ART_age_cutoff_younger_child&quot; &lt; age &lt;= &quot;ART_age_cutoff_older_child&quot;):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: older child&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="o">**</span><span class="n">hs</span><span class="o">.</span><span class="n">get_item_codes_from_package_name</span><span class="p">(</span><span class="s2">&quot;Cotrimoxazole for children&quot;</span><span class="p">),</span>
+            <span class="o">**</span><span class="p">{</span><span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;First line ART regimen: older child&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}}</span>
+        <span class="c1"># ART for younger children aged (age &lt; &quot;ART_age_cutoff_younger_child&quot;):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: young child&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="o">**</span><span class="n">hs</span><span class="o">.</span><span class="n">get_item_codes_from_package_name</span><span class="p">(</span><span class="s2">&quot;Cotrimoxazole for children&quot;</span><span class="p">),</span>
+            <span class="o">**</span><span class="p">{</span><span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;First line ART regimen: young child&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">}}</span>
+
+        <span class="c1"># 7) Define the DxTests</span>
         <span class="c1"># HIV Rapid Diagnostic Test:</span>
-
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Consumables&quot;</span><span class="p">]</span>
-        <span class="n">pkg_code_hiv_rapid_test</span> <span class="o">=</span> <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-            <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Intervention_Pkg&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;HIV Testing Services&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Intervention_Pkg_Code&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">hiv_rapid_test_cons_footprint</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">pkg_code_hiv_rapid_test</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{}</span>
-        <span class="p">}</span>
-
         <span class="c1"># NB. The rapid test is assumed to be 100% specific and sensitive. This is used to guarantee that all persons</span>
         <span class="c1">#  that start ART are truly HIV-pos.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">register_dx_test</span><span class="p">(</span>
             <span class="n">hiv_rapid_test</span><span class="o">=</span><span class="n">DxTest</span><span class="p">(</span>
                 <span class="nb">property</span><span class="o">=</span><span class="s1">&#39;hv_inf&#39;</span><span class="p">,</span>
-                <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">hiv_rapid_test_cons_footprint</span>
+                <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;hiv_rapid_test&#39;</span><span class="p">]</span>
             <span class="p">)</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span>
-            <span class="s1">&#39;hiv_rapid_test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hiv_rapid_test_cons_footprint</span>
 
         <span class="c1"># Test for Early Infect Diagnosis</span>
-        <span class="c1">#  - Consumables required:</span>
-        <span class="n">item1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Blood collecting tube, 5 ml&quot;</span><span class="p">,</span> <span class="s2">&quot;Item_Code&quot;</span>
-            <span class="p">]</span>
-        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Gloves, exam, latex, disposable, pair&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;Item_Code&quot;</span><span class="p">,</span>
-            <span class="p">]</span>
-        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item3</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;HIV EIA Elisa test&quot;</span><span class="p">,</span> <span class="s2">&quot;Item_Code&quot;</span><span class="p">]</span>
-        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">hiv_early_infant_test_cons_footprint</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item1</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item2</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item3</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
-        <span class="p">}</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">register_dx_test</span><span class="p">(</span>
             <span class="n">hiv_early_infant_test</span><span class="o">=</span><span class="n">DxTest</span><span class="p">(</span>
                 <span class="nb">property</span><span class="o">=</span><span class="s1">&#39;hv_inf&#39;</span><span class="p">,</span>
                 <span class="n">sensitivity</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
                 <span class="n">specificity</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-                <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">hiv_early_infant_test_cons_footprint</span>
+                <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;hiv_early_infant_test&#39;</span><span class="p">]</span>
             <span class="p">)</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span>
-            <span class="s1">&#39;hiv_early_infant_test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hiv_early_infant_test_cons_footprint</span>
-
-        <span class="c1"># 7) Look-up and store the codes for the consumables used in the interventions.</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Consumables&quot;</span><span class="p">]</span>
-
-        <span class="c1"># Circumcison:</span>
-        <span class="n">pkg_codes_for_circ</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Intervention_Pkg&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Male circumcision &quot;</span><span class="p">,</span>
-                <span class="s2">&quot;Intervention_Pkg_Code&quot;</span><span class="p">,</span>
-            <span class="p">]</span>
-        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;circ&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">pkg_codes_for_circ</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
-            <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{}</span>
-        <span class="p">}</span>
-
-        <span class="c1"># PrEP:</span>
-        <span class="n">item_code_for_prep</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span>
-                <span class="o">==</span> <span class="s2">&quot;Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;Item_Code&quot;</span><span class="p">,</span>
-            <span class="p">]</span>
-        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;prep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_for_prep</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
-        <span class="p">}</span>
-
-        <span class="c1"># First-line ART for adults (age &gt; &quot;ART_age_cutoff_older_child&quot;)</span>
-        <span class="n">item_code_for_art_adult</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;First-line ART regimen: adult&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;Item_Code&quot;</span>
-            <span class="p">]</span>
-        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="n">item_code_for_cotrim_adult</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Cotrimoxizole, 960mg pppy&quot;</span><span class="p">,</span> <span class="s2">&quot;Item_Code&quot;</span>
-            <span class="p">]</span>
-        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># NB spelling error in consumables file &quot;Cotrimoxizole&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First-line ART regimen: adult&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_for_art_adult</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_for_cotrim_adult</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
-        <span class="p">}</span>
-
-        <span class="c1"># ART for older children aged (&quot;ART_age_cutoff_younger_child&quot; &lt; age &lt;= &quot;ART_age_cutoff_older_child&quot;):</span>
-        <span class="n">item_code_for_art_older_child</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;First line ART regimen: older child&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;Item_Code&quot;</span>
-            <span class="p">]</span>
-        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">pkg_code_for_cotrim_child</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Intervention_Pkg&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Cotrimoxazole for children&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;Intervention_Pkg_Code&quot;</span><span class="p">,</span>
-            <span class="p">]</span>
-        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: older child&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">pkg_code_for_cotrim_child</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
-            <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_for_art_older_child</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
-        <span class="p">}</span>
-
-        <span class="c1"># ART for younger children aged (age &lt; &quot;ART_age_cutoff_younger_child&quot;):</span>
-        <span class="n">item_code_for_art_younger_child</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;First line ART regimen: young child&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;Item_Code&quot;</span>
-            <span class="p">]</span>
-        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: young child&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">pkg_code_for_cotrim_child</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
-            <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_for_art_younger_child</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
-        <span class="p">}</span>
-
-        <span class="c1"># Viral Load monitoring</span>
-        <span class="n">item_code_for_viral_load</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                <span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Intervention_Pkg&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Viral Load&quot;</span><span class="p">,</span> <span class="s2">&quot;Intervention_Pkg_Code&quot;</span>
-            <span class="p">]</span>
-        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;vl_measurement&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_for_viral_load</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
-        <span class="p">}</span></div>
+        <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Hiv.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.Hiv.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -1561,7 +1376,7 @@
         <span class="c1"># Define the necessary information for an HSI</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;Hiv_TestAndRefer&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;VCTNegative&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 <div class="viewcode-block" id="HSI_Hiv_TestAndRefer.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.HSI_Hiv_TestAndRefer.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
@@ -1657,8 +1472,8 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;Hiv_Circumcision&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;MinorSurg&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;MaleCirc&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 <div class="viewcode-block" id="HSI_Hiv_Circ.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.HSI_Hiv_Circ.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
@@ -1675,7 +1490,7 @@
         <span class="c1"># Check/log use of consumables, and do circumcision if materials available</span>
         <span class="c1"># NB. If materials not available, it is assumed that the procedure is not carried out for this person following</span>
         <span class="c1"># this particular referral.</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span><span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;circ&#39;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;circ&#39;</span><span class="p">]):</span>
             <span class="c1"># Update circumcision state</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;li_is_circ&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div></div>
 
@@ -1687,7 +1502,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;Hiv_StartOrContinueOnPrep&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 <div class="viewcode-block" id="HSI_Hiv_StartOrContinueOnPrep.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.HSI_Hiv_StartOrContinueOnPrep.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
@@ -1719,7 +1534,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;VCTPositive&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
 
         <span class="c1"># Check that PrEP is available and if it is, initiate or continue  PrEP:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span><span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;prep&#39;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;prep&#39;</span><span class="p">]):</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hv_is_on_prep&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
             <span class="c1"># Schedule &#39;decision about whether to continue on PrEP&#39; for 3 months time</span>
@@ -1745,7 +1560,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;Hiv_Treatment_InitiationOrContinuation&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;NewAdult&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">counter_for_did_not_run</span> <span class="o">=</span> <span class="mi">0</span></div>
@@ -1847,7 +1662,7 @@
 
         <span class="c1"># Viral Load Monitoring</span>
         <span class="c1"># NB. This does not have a direct effect on outcomes for the person.</span>
-        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span><span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;vl_measurement&#39;</span><span class="p">])</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;vl_measurement&#39;</span><span class="p">])</span>
 
         <span class="c1"># Check if drugs are available, and provide drugs:</span>
         <span class="n">drugs_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_drugs</span><span class="p">(</span><span class="n">age_of_person</span><span class="o">=</span><span class="n">person</span><span class="p">[</span><span class="s1">&#39;age_years&#39;</span><span class="p">])</span>
@@ -1878,16 +1693,16 @@
 
         <span class="k">if</span> <span class="n">age_of_person</span> <span class="o">&lt;</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;ART_age_cutoff_young_child&quot;</span><span class="p">]:</span>
             <span class="c1"># Formulation for children</span>
-            <span class="n">drugs_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-                <span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: young child&#39;</span><span class="p">])</span>
+            <span class="n">drugs_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
+                <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: young child&#39;</span><span class="p">])</span>
         <span class="k">elif</span> <span class="n">age_of_person</span> <span class="o">&lt;=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;ART_age_cutoff_older_child&quot;</span><span class="p">]:</span>
             <span class="c1"># Formulation for children</span>
-            <span class="n">drugs_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-                <span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: older child&#39;</span><span class="p">])</span>
+            <span class="n">drugs_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
+                <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First line ART regimen: older child&#39;</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Formulation for adults</span>
-            <span class="n">drugs_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-                <span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">footprints_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First-line ART regimen: adult&#39;</span><span class="p">])</span>
+            <span class="n">drugs_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
+                <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;First-line ART regimen: adult&#39;</span><span class="p">])</span>
 
         <span class="k">return</span> <span class="n">drugs_available</span></div>
 
@@ -2199,7 +2014,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -2207,40 +2021,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Nov 09, 2021.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Jan 19, 2022.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

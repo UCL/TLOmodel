@@ -1,76 +1,34 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.postnatal_supervisor &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../index.html" class="icon icon-home"> TLOmodel
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -78,18 +36,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -103,73 +50,34 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
           <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
           <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
       <li>tlo.methods.postnatal_supervisor</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.postnatal_supervisor</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -1216,7 +1124,7 @@
 <span class="sd">        :param hsi_event: HSI event in which this function is called</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
         <span class="c1"># We create a variable that will be set to true if a health work detects a complication and chooses to admit</span>
@@ -1236,16 +1144,21 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Depression&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_when_suspected_depression</span><span class="p">(</span><span class="n">individual_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span>
 
         <span class="c1"># Define the consumables</span>
-        <span class="n">item_code_urine_dipstick</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Test strips, urine analysis&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># item_code_urine_dipstick = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Test strips, urine analysis&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="n">item_code_urine_dipstick</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="n">consumables_dipstick</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_urine_dipstick</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+        <span class="c1"># consumables_dipstick = {</span>
+        <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+        <span class="c1">#     &#39;Item_Code&#39;: {item_code_urine_dipstick: 1}}</span>
 
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
-            <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_dipstick</span><span class="p">)</span>
+        <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+        <span class="c1">#     hsi_event=hsi_event,</span>
+        <span class="c1">#     cons_req_as_footprint=consumables_dipstick)</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">}</span>
 
         <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_urine_dipstick</span><span class="p">]</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span>
                                                                                           <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_intervention&#39;</span>
@@ -1931,7 +1844,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;PostnatalSupervisor_PostnatalCareContactOne&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;ANCSubsequent&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 <div class="viewcode-block" id="HSI_PostnatalSupervisor_PostnatalCareContactOne.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
@@ -2006,7 +1919,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;PostnatalSupervisor_PostnatalCareContactTwoMaternal&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;ANCSubsequent&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 <div class="viewcode-block" id="HSI_PostnatalSupervisor_PostnatalCareContactTwo.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactTwo.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
@@ -2071,14 +1984,14 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;PostnatalSupervisor_PostnatalWardInpatientCare&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;IPAdmission&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({</span><span class="s1">&#39;general_bed&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="HSI_PostnatalSupervisor_PostnatalWardInpatientCare.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalWardInpatientCare.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">mother</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">]</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
 
         <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_is_postpartum&#39;</span><span class="p">]</span>
 
@@ -2091,12 +2004,13 @@
         <span class="c1"># --------------------------------------- SEPSIS TREATMENT ---------------------------------------------------</span>
         <span class="k">if</span> <span class="n">mother</span><span class="o">.</span><span class="n">pn_sepsis_late_postpartum</span><span class="p">:</span>
             <span class="c1"># First check the availability of consumables for treatment</span>
-            <span class="n">pkg_code_sepsis</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Intervention_Pkg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Maternal sepsis case management&#39;</span><span class="p">,</span>
-                                <span class="s1">&#39;Intervention_Pkg_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># pkg_code_sepsis = pd.unique(</span>
+            <span class="c1">#     consumables.loc[consumables[&#39;Intervention_Pkg&#39;] == &#39;Maternal sepsis case management&#39;,</span>
+            <span class="c1">#                     &#39;Intervention_Pkg_Code&#39;])[0]</span>
 
-            <span class="n">all_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-                <span class="n">pkg_codes</span><span class="o">=</span><span class="p">[</span><span class="n">pkg_code_sepsis</span><span class="p">])</span>
+            <span class="c1"># all_available = self.get_all_consumables(</span>
+            <span class="c1">#     pkg_codes=[pkg_code_sepsis])</span>
+            <span class="n">all_available</span> <span class="o">=</span> <span class="kc">True</span>
 
             <span class="c1"># If available then treatment is delivered</span>
             <span class="k">if</span> <span class="n">all_available</span><span class="p">:</span>
@@ -2112,12 +2026,13 @@
         <span class="c1"># ------------------------------------- SECONDARY PPH TREATMENT -----------------------------------------------</span>
         <span class="k">if</span> <span class="n">mother</span><span class="o">.</span><span class="n">pn_postpartum_haem_secondary</span><span class="p">:</span>
             <span class="c1"># First check the availability of consumables for treatment</span>
-            <span class="n">pkg_code_pph</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Intervention_Pkg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Treatment of postpartum hemorrhage&#39;</span><span class="p">,</span>
-                                <span class="s1">&#39;Intervention_Pkg_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># pkg_code_pph = pd.unique(</span>
+            <span class="c1">#     consumables.loc[consumables[&#39;Intervention_Pkg&#39;] == &#39;Treatment of postpartum hemorrhage&#39;,</span>
+            <span class="c1">#                     &#39;Intervention_Pkg_Code&#39;])[0]</span>
 
-            <span class="n">all_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-                <span class="n">pkg_codes</span><span class="o">=</span><span class="p">[</span><span class="n">pkg_code_pph</span><span class="p">])</span>
+            <span class="c1"># all_available = self.get_all_consumables(</span>
+            <span class="c1">#     pkg_codes=[pkg_code_pph])</span>
+            <span class="n">all_available</span> <span class="o">=</span> <span class="kc">True</span>
 
             <span class="c1"># If available then treatment is delivered</span>
             <span class="k">if</span> <span class="n">all_available</span><span class="p">:</span>
@@ -2134,19 +2049,23 @@
         <span class="c1"># Treatment for complications of hypertension include two interventions, anti hypertensive therapy and</span>
         <span class="c1"># magnesium</span>
         <span class="k">if</span> <span class="n">mother</span><span class="o">.</span><span class="n">pn_htn_disorders</span> <span class="o">==</span> <span class="s1">&#39;gest_htn&#39;</span> <span class="ow">or</span> <span class="n">mother</span><span class="o">.</span><span class="n">pn_htn_disorders</span> <span class="o">==</span> <span class="s1">&#39;mild_pre_eclamp&#39;</span><span class="p">:</span>
-            <span class="n">approx_days_of_pn_period</span> <span class="o">=</span> <span class="p">(</span><span class="mi">6</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;pn_postnatal_period_in_weeks&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">7</span>
+            <span class="c1"># approx_days_of_pn_period = (6 - df.at[person_id, &#39;pn_postnatal_period_in_weeks&#39;]) * 7</span>
 
             <span class="c1"># Define the consumables and check their availability</span>
-            <span class="n">item_code_methyldopa</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Methyldopa 250mg_1000_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># item_code_methyldopa = pd.unique(</span>
+            <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Methyldopa 250mg_1000_CMST&#39;, &#39;Item_Code&#39;])[0]</span>
+            <span class="n">item_code_methyldopa</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="c1"># consumables_gest_htn_treatment = {</span>
+            <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+            <span class="c1">#     &#39;Item_Code&#39;: {item_code_methyldopa: 4 * approx_days_of_pn_period}}</span>
 
-            <span class="n">consumables_gest_htn_treatment</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-                <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_methyldopa</span><span class="p">:</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">approx_days_of_pn_period</span><span class="p">}}</span>
-
-            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-                <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
-                <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_gest_htn_treatment</span><span class="p">)</span>
+            <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+            <span class="c1">#     hsi_event=self,</span>
+            <span class="c1">#     cons_req_as_footprint=consumables_gest_htn_treatment)</span>
+            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+                <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="p">}</span>
 
             <span class="c1"># If they are available then the woman is started on treatment</span>
             <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_methyldopa</span><span class="p">]:</span>
@@ -2159,28 +2078,36 @@
            <span class="n">mother</span><span class="o">.</span><span class="n">pn_htn_disorders</span> <span class="o">==</span> <span class="s1">&#39;severe_gest_htn&#39;</span><span class="p">:</span>
 
             <span class="c1"># Define required consumables</span>
-            <span class="n">item_code_hydralazine</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Hydralazine, powder for injection, 20 mg ampoule&#39;</span><span class="p">,</span>
-                                <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">item_code_wfi</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Water for injection, 10ml_Each_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">item_code_needle</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Syringe, needle + swab&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Gloves, exam, latex, disposable, pair&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">item_code_methyldopa</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Methyldopa 250mg_1000_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-
+            <span class="c1"># item_code_hydralazine = pd.unique(</span>
+            <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Hydralazine, powder for injection, 20 mg ampoule&#39;,</span>
+            <span class="c1">#                     &#39;Item_Code&#39;])[0]</span>
+            <span class="c1"># item_code_wfi = pd.unique(</span>
+            <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Water for injection, 10ml_Each_CMST&#39;, &#39;Item_Code&#39;])[0]</span>
+            <span class="c1"># item_code_needle = pd.unique(</span>
+            <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Syringe, needle + swab&#39;, &#39;Item_Code&#39;])[0]</span>
+            <span class="c1"># item_code_gloves = pd.unique(</span>
+            <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Gloves, exam, latex, disposable, pair&#39;, &#39;Item_Code&#39;])[0]</span>
+            <span class="c1"># item_code_methyldopa = pd.unique(</span>
+            <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Methyldopa 250mg_1000_CMST&#39;, &#39;Item_Code&#39;])[0]</span>
+            <span class="n">item_code_hydralazine</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">item_code_wfi</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">item_code_needle</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">item_code_methyldopa</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="c1"># As we need multiple of one consumable we use the old method to check availablity</span>
-            <span class="n">consumables_gest_htn_treatment</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-                <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_hydralazine</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_wfi</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_needle</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                              <span class="n">item_code_gloves</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_methyldopa</span><span class="p">:</span> <span class="mi">4</span><span class="p">}}</span>
+            <span class="c1"># consumables_gest_htn_treatment = {</span>
+            <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+            <span class="c1">#     &#39;Item_Code&#39;: {item_code_hydralazine: 1, item_code_wfi: 1, item_code_needle: 1,</span>
+            <span class="c1">#                   item_code_gloves: 1, item_code_methyldopa: 4}}</span>
 
             <span class="c1"># Then query if these consumables are available during this HSI</span>
-            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-                <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
-                <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_gest_htn_treatment</span><span class="p">)</span>
+            <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+            <span class="c1">#     hsi_event=self,</span>
+            <span class="c1">#     cons_req_as_footprint=consumables_gest_htn_treatment)</span>
+            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+                <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="p">}</span>
 
             <span class="c1"># If they are available then the woman is started on treatment</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_hydralazine</span><span class="p">])</span> <span class="ow">and</span> \
@@ -2194,12 +2121,13 @@
                     <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;pn_htn_disorders&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;gest_htn&#39;</span>
 
             <span class="k">if</span> <span class="n">mother</span><span class="o">.</span><span class="n">pn_htn_disorders</span> <span class="o">==</span> <span class="s1">&#39;severe_pre_eclamp&#39;</span> <span class="ow">or</span> <span class="n">mother</span><span class="o">.</span><span class="n">pn_htn_disorders</span> <span class="o">==</span> <span class="s1">&#39;eclampsia&#39;</span><span class="p">:</span>
-                <span class="n">pkg_code_severe_pre_eclampsia</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                    <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Intervention_Pkg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Management of eclampsia&#39;</span><span class="p">,</span>
-                                    <span class="s1">&#39;Intervention_Pkg_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="c1"># pkg_code_severe_pre_eclampsia = pd.unique(</span>
+                <span class="c1">#     consumables.loc[consumables[&#39;Intervention_Pkg&#39;] == &#39;Management of eclampsia&#39;,</span>
+                <span class="c1">#                     &#39;Intervention_Pkg_Code&#39;])[0]</span>
 
-                <span class="n">all_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-                    <span class="n">pkg_codes</span><span class="o">=</span><span class="p">[</span><span class="n">pkg_code_severe_pre_eclampsia</span><span class="p">])</span>
+                <span class="c1"># all_available = self.get_all_consumables(</span>
+                <span class="c1">#     pkg_codes=[pkg_code_severe_pre_eclampsia])</span>
+                <span class="n">all_available</span> <span class="o">=</span> <span class="kc">True</span>
 
                 <span class="k">if</span> <span class="n">all_available</span><span class="p">:</span>
                     <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;pn_mag_sulph_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -2246,7 +2174,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;PostnatalSupervisor_TreatmentForObstetricFistula&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;InpatientDays&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({</span><span class="s1">&#39;general_bed&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">})</span></div>
 
@@ -2277,13 +2205,13 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;PostnatalSupervisor_NeonatalWardInpatientCare&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;IPAdmission&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({</span><span class="s1">&#39;general_bed&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="HSI_PostnatalSupervisor_NeonatalWardInpatientCare.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_NeonatalWardInpatientCare.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
         <span class="n">child</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">child</span><span class="o">.</span><span class="n">is_alive</span><span class="p">:</span>
@@ -2291,12 +2219,13 @@
 
         <span class="c1"># Here we deliver treatment to any neonates who have been admitted to either early or late onset sepsis</span>
         <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">pn_sepsis_early_neonatal</span> <span class="ow">or</span> <span class="n">child</span><span class="o">.</span><span class="n">pn_sepsis_late_neonatal</span><span class="p">:</span>
-            <span class="n">pkg_code_sep</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                                         <span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Intervention_Pkg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Newborn sepsis - full supportive care&#39;</span><span class="p">,</span>
-                                         <span class="s1">&#39;Intervention_Pkg_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># pkg_code_sep = pd.unique(consumables.loc[</span>
+            <span class="c1">#                              consumables[&#39;Intervention_Pkg&#39;] == &#39;Newborn sepsis - full supportive care&#39;,</span>
+            <span class="c1">#                              &#39;Intervention_Pkg_Code&#39;])[0]</span>
 
-            <span class="n">all_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-                <span class="n">pkg_codes</span><span class="o">=</span><span class="p">[</span><span class="n">pkg_code_sep</span><span class="p">])</span>
+            <span class="c1"># all_available = self.get_all_consumables(</span>
+            <span class="c1">#     pkg_codes=[pkg_code_sep])</span>
+            <span class="n">all_available</span> <span class="o">=</span> <span class="kc">True</span>
 
             <span class="k">if</span> <span class="n">all_available</span><span class="p">:</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;pn_sepsis_neonatal_full_supp_care&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -2406,7 +2335,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -2414,40 +2342,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Nov 09, 2021.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Jan 19, 2022.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

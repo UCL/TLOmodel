@@ -1,76 +1,34 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.newborn_outcomes &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../index.html" class="icon icon-home"> TLOmodel
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -78,18 +36,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -103,73 +50,34 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
           <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
           <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
       <li>tlo.methods.newborn_outcomes</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.newborn_outcomes</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -975,7 +883,7 @@
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">nci</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">newborn_care_info</span>
         <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
 
         <span class="c1"># -------------------------------------- CHLORHEXIDINE CORD CARE ----------------------------------------------</span>
         <span class="c1"># Next we determine if cord care with chlorhexidine is applied (consumables are counted during labour)</span>
@@ -983,20 +891,21 @@
 
         <span class="c1"># ---------------------------------- VITAMIN D AND EYE CARE -----------------------------------------------</span>
         <span class="c1"># We define the consumables</span>
-        <span class="n">item_code_tetracycline</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Tetracycline eye ointment 1%_3.5_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_vit_k</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA&#39;</span><span class="p">,</span>
-                                                    <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_vit_k_syringe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Syringe,  disposable 2ml,  hypoluer with 23g needle_each_&#39;</span>
-                                                    <span class="s1">&#39;CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">consumables_vit_k_and_eye_care</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_tetracycline</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_vit_k</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_vit_k_syringe</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+        <span class="n">get_item_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
 
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span> <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_vit_k_and_eye_care</span><span class="p">)</span>
+        <span class="n">item_code_tetracycline</span> <span class="o">=</span> <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Tetracycline eye ointment 1%_3.5_CMST&#39;</span><span class="p">)</span>
+        <span class="n">item_code_vit_k</span> <span class="o">=</span> <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA&#39;</span><span class="p">)</span>
+        <span class="n">item_code_vit_k_syringe</span> <span class="o">=</span> <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Syringe,  disposable 2ml,  hypoluer with 23g needle_each_CMST&#39;</span><span class="p">)</span>
+        <span class="c1"># consumables_vit_k_and_eye_care = {</span>
+        <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+        <span class="c1">#     &#39;Item_Code&#39;: {item_code_tetracycline: 1, item_code_vit_k: 1, item_code_vit_k_syringe: 1}}</span>
+
+        <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+        <span class="c1">#     hsi_event=hsi_event, cons_req_as_footprint=consumables_vit_k_and_eye_care)</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">}</span>
 
         <span class="c1"># If they are available the intervention is delivered, there is limited evidence of the effect of these</span>
         <span class="c1"># interventions so currently we are just mapping the consumables</span>
@@ -1143,15 +1052,16 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
 
         <span class="c1"># Required consumables are defined</span>
-        <span class="n">pkg_code_resus</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                                       <span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Intervention_Pkg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Neonatal resuscitation (institutional)&#39;</span><span class="p">,</span>
-                                       <span class="s1">&#39;Intervention_Pkg_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># pkg_code_resus = pd.unique(consumables.loc[</span>
+        <span class="c1">#                                consumables[&#39;Intervention_Pkg&#39;] == &#39;Neonatal resuscitation (institutional)&#39;,</span>
+        <span class="c1">#                                &#39;Intervention_Pkg_Code&#39;])[0]</span>
 
-        <span class="n">all_available</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-            <span class="n">pkg_codes</span><span class="o">=</span><span class="p">[</span><span class="n">pkg_code_resus</span><span class="p">])</span>
+        <span class="c1"># all_available = hsi_event.get_all_consumables(</span>
+        <span class="c1">#     pkg_codes=[pkg_code_resus])</span>
+        <span class="n">all_available</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="c1"># Use the dx_manager to determine if staff will correctly identify this neonate will require resuscitation</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
@@ -1178,19 +1088,20 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
 
         <span class="c1"># We assume that only hospitals are able to deliver full supportive care for neonatal sepsis, full supportive</span>
         <span class="c1"># care evokes a stronger treatment effect than injectable antibiotics alone</span>
 
         <span class="k">if</span> <span class="n">facility_type</span> <span class="o">==</span> <span class="s1">&#39;hp&#39;</span><span class="p">:</span>
             <span class="c1"># Define the consumables</span>
-            <span class="n">pkg_code_sep</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                                     <span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Intervention_Pkg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Newborn sepsis - full supportive care&#39;</span><span class="p">,</span>
-                                     <span class="s1">&#39;Intervention_Pkg_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># pkg_code_sep = pd.unique(consumables.loc[</span>
+            <span class="c1">#                          consumables[&#39;Intervention_Pkg&#39;] == &#39;Newborn sepsis - full supportive care&#39;,</span>
+            <span class="c1">#                          &#39;Intervention_Pkg_Code&#39;])[0]</span>
 
-            <span class="n">all_available</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-                <span class="n">pkg_codes</span><span class="o">=</span><span class="p">[</span><span class="n">pkg_code_sep</span><span class="p">])</span>
+            <span class="c1"># all_available = hsi_event.get_all_consumables(</span>
+            <span class="c1">#     pkg_codes=[pkg_code_sep])</span>
+            <span class="n">all_available</span> <span class="o">=</span> <span class="kc">True</span>
 
             <span class="c1"># Use the dx_manager to determine if staff will correctly identify this neonate will treatment for sepsis</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
@@ -1203,21 +1114,27 @@
 
         <span class="c1"># The same pattern is then followed for health centre care</span>
         <span class="k">elif</span> <span class="n">facility_type</span> <span class="o">==</span> <span class="s1">&#39;hc&#39;</span><span class="p">:</span>
-            <span class="n">item_code_iv_penicillin</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Benzylpenicillin 1g (1MU), PFR_Each_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">item_code_iv_gentamicin</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Gentamicin 40mg/ml, 2ml_each_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">item_code_giving_set</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;IV giving/infusion set, with &#39;</span>
-                                                                                     <span class="s1">&#39;needle&#39;</span><span class="p">,</span>
-                                                                                     <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># item_code_iv_penicillin = pd.unique(</span>
+            <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Benzylpenicillin 1g (1MU), PFR_Each_CMST&#39;, &#39;Item_Code&#39;])[0]</span>
+            <span class="c1"># item_code_iv_gentamicin = pd.unique(</span>
+            <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Gentamicin 40mg/ml, 2ml_each_CMST&#39;, &#39;Item_Code&#39;])[0]</span>
+            <span class="c1"># item_code_giving_set = pd.unique(consumables.loc[consumables[&#39;Items&#39;] == &#39;IV giving/infusion set, with &#39;</span>
+            <span class="c1">#                                                                          &#39;needle&#39;,</span>
+            <span class="c1">#                                                                          &#39;Item_Code&#39;])[0]</span>
+            <span class="n">item_code_iv_penicillin</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">item_code_iv_gentamicin</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">item_code_giving_set</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="c1"># consumables_inj_abx_sepsis = {</span>
+            <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+            <span class="c1">#     &#39;Item_Code&#39;: {item_code_iv_penicillin: 1, item_code_iv_gentamicin: 1,</span>
+            <span class="c1">#                   item_code_giving_set: 1}}</span>
 
-            <span class="n">consumables_inj_abx_sepsis</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-                <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_iv_penicillin</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_iv_gentamicin</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                              <span class="n">item_code_giving_set</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
-
-            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-                <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span> <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_inj_abx_sepsis</span><span class="p">)</span>
+            <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+            <span class="c1">#     hsi_event=hsi_event, cons_req_as_footprint=consumables_inj_abx_sepsis)</span>
+            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+                <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="p">}</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
                <span class="n">dx_tests_to_run</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;assess_neonatal_sepsis_</span><span class="si">{</span><span class="n">facility_type</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">):</span>
@@ -1435,7 +1352,7 @@
             <span class="c1"># same level of facility that they were delivered in</span>
             <span class="k">if</span> <span class="n">m</span><span class="p">[</span><span class="s1">&#39;delivery_setting&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;health_centre&#39;</span><span class="p">:</span>
                 <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">child_id</span><span class="p">,</span> <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">child_id</span><span class="p">,</span> <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="s1">&#39;1a&#39;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                                                                     <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
                                                                     <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
@@ -1446,7 +1363,7 @@
 
             <span class="k">elif</span> <span class="n">m</span><span class="p">[</span><span class="s1">&#39;delivery_setting&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;hospital&#39;</span><span class="p">:</span>
                 <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">child_id</span><span class="p">,</span> <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])))</span>
+                    <span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">child_id</span><span class="p">,</span> <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s1">&#39;1a&#39;</span><span class="p">,</span> <span class="s1">&#39;1b&#39;</span><span class="p">]))</span>  <span class="c1"># todo note</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                                                                     <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
                                                                     <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
@@ -1497,7 +1414,7 @@
                     <span class="n">nci</span><span class="p">[</span><span class="n">child_id</span><span class="p">][</span><span class="s1">&#39;sought_care_for_complication&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
                     <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant</span><span class="p">(</span>
-                        <span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">child_id</span><span class="p">,</span> <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])))</span>
+                        <span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">child_id</span><span class="p">,</span> <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s1">&#39;1a&#39;</span><span class="p">,</span> <span class="s1">&#39;1b&#39;</span><span class="p">]))</span>  <span class="c1"># todo note</span>
 
                     <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
                         <span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
@@ -1858,7 +1775,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -1866,40 +1782,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Nov 09, 2021.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Jan 19, 2022.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

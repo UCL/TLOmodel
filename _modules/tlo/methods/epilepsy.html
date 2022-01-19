@@ -1,76 +1,34 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.epilepsy &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../index.html" class="icon icon-home"> TLOmodel
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -78,18 +36,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -103,71 +50,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
           <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
           <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
       <li>tlo.methods.epilepsy</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.epilepsy</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
@@ -190,7 +97,8 @@
 <div class="viewcode-block" id="Epilepsy"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy">[docs]</a><span class="k">class</span> <span class="nc">Epilepsy</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
 <div class="viewcode-block" id="Epilepsy.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (will hold consumable item codes used in the HSI)</span></div>
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthBurden&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">}</span>
 
@@ -369,7 +277,14 @@
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">epilepsy_poll</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
 
         <span class="n">event</span> <span class="o">=</span> <span class="n">EpilepsyLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span></div>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="c1"># Get item_codes for the consumables used in the HSI</span>
+        <span class="n">hs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;phenobarbitone&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s1">&#39;Phenobarbitone  30mg_1000_CMST&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;carbamazepine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s1">&#39;Carbamazepine 200mg_1000_CMST&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;phenytoin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s1">&#39;Phenytoin sodium 100mg_1000_CMST&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Epilepsy.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.</span>
@@ -652,62 +567,29 @@
         <span class="c1"># Define the necessary information for an HSI</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;Epilepsy_Start_Anti-Epilpetics&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;Over5OPD&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># This enforces that the apppointment must be run at that facility-level</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>  <span class="c1"># This enforces that the apppointment must be run at that facility-level</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 <div class="viewcode-block" id="HSI_Epilepsy_Start_Anti_Epilpetic.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.HSI_Epilepsy_Start_Anti_Epilpetic.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
         <span class="c1"># Define the consumables</span>
         <span class="n">anti_epileptics_available</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="c1"># first choice is phenobarbitone</span>
-        <span class="n">item_code_phenobarbitone</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Phenobarbitone  30mg_1000_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">consumables_phenobarbitone</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_phenobarbitone</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
-            <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_phenobarbitone</span><span class="p">,</span>
-            <span class="n">to_log</span><span class="o">=</span><span class="kc">True</span>
-        <span class="p">)</span>
-        <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_phenobarbitone</span><span class="p">]:</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;phenobarbitone&#39;</span><span class="p">]):</span>
             <span class="n">anti_epileptics_available</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">item_code_carbamazepine</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Carbamazepine 200mg_1000_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">consumables_carbamazepine</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-                <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_carbamazepine</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
-            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-                <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
-                <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_carbamazepine</span><span class="p">,</span>
-                <span class="n">to_log</span><span class="o">=</span><span class="kc">True</span>
-            <span class="p">)</span>
-            <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_carbamazepine</span><span class="p">]:</span>
-                <span class="n">anti_epileptics_available</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!&#39;</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">item_code_phenytoin</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                    <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Phenytoin sodium 100mg_1000_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="n">consumables_phenytoin</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-                    <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_phenytoin</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
-                <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-                    <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
-                    <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_phenytoin</span><span class="p">,</span>
-                    <span class="n">to_log</span><span class="o">=</span><span class="kc">True</span>
-                <span class="p">)</span>
-                <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_phenytoin</span><span class="p">]:</span>
-                    <span class="n">anti_epileptics_available</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;carbamazepine&#39;</span><span class="p">]):</span>
+            <span class="n">anti_epileptics_available</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;phenytoin&#39;</span><span class="p">]):</span>
+            <span class="n">anti_epileptics_available</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!&#39;</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">anti_epileptics_available</span><span class="p">:</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ep_antiep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div></div>
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -715,40 +597,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Nov 09, 2021.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Jan 19, 2022.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

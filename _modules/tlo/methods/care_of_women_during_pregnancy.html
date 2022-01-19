@@ -1,76 +1,34 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.care_of_women_during_pregnancy &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../index.html" class="icon icon-home"> TLOmodel
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -78,18 +36,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -103,73 +50,34 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
           <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
           <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
       <li>tlo.methods.care_of_women_during_pregnancy</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.care_of_women_during_pregnancy</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -762,7 +670,7 @@
 
         <span class="c1"># Use a weighted random draw to determine which level of facility the woman will be admitted too</span>
         <span class="c1"># facility_level = int(self.rng.choice([1, 2, 3], p=params[&#39;prob_an_ip_at_facility_level_1_2_3&#39;]))</span>
-        <span class="n">facility_level</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]))</span>
+        <span class="n">facility_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s1">&#39;1a&#39;</span><span class="p">,</span> <span class="s1">&#39;1b&#39;</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>  <span class="c1"># todo - note choice of facility_levels</span>
 
         <span class="c1"># Schedule the HSI</span>
         <span class="n">inpatient</span> <span class="o">=</span> <span class="n">HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare</span><span class="p">(</span>
@@ -791,7 +699,7 @@
 <span class="sd">        :param hsi_event: HSI event in which the function has been called:</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
         <span class="n">mni</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mother_and_newborn_info</span>
@@ -800,17 +708,20 @@
         <span class="n">proteinuria_diagnosed</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="c1"># Define the consumables</span>
-        <span class="n">item_code_urine_dipstick</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Test strips, urine analysis&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">get_item_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
+        <span class="n">item_code_urine_dipstick</span> <span class="o">=</span> <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Test strips, urine analysis&#39;</span><span class="p">)</span>
 
-        <span class="n">consumables_dipstick</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_urine_dipstick</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+        <span class="c1"># consumables_dipstick = {</span>
+        <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+        <span class="c1">#     &#39;Item_Code&#39;: {item_code_urine_dipstick: 1}}</span>
 
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
-            <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_dipstick</span><span class="p">)</span>
-
+        <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+        <span class="c1">#     hsi_event=hsi_event,</span>
+        <span class="c1">#     cons_req_as_footprint=consumables_dipstick)</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">}</span>
         <span class="c1"># Delivery of the intervention is conditioned on the availability of the consumable and a random draw against a</span>
         <span class="c1"># probability that the intervention would be delivered (used to calibrate to SPA data- acts as proxy for</span>
         <span class="c1"># clinical quality)</span>
@@ -874,33 +785,35 @@
 <span class="sd">        :param hsi_event: HSI event in which the function has been called</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
 
         <span class="c1"># We calculate an approximate number of days left of a womans pregnancy to capture the consumables required for</span>
         <span class="c1"># daily iron/folic acid tablets</span>
-        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ps_gestational_age_in_weeks&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">40</span><span class="p">:</span>
-            <span class="n">approx_days_of_pregnancy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">40</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ps_gestational_age_in_weeks&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">7</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">approx_days_of_pregnancy</span> <span class="o">=</span> <span class="mi">14</span>
+        <span class="c1"># if df.at[person_id, &#39;ps_gestational_age_in_weeks&#39;] &lt; 40:</span>
+        <span class="c1">#     approx_days_of_pregnancy = (40 - df.at[person_id, &#39;ps_gestational_age_in_weeks&#39;]) * 7</span>
+        <span class="c1"># else:</span>
+        <span class="c1">#     approx_days_of_pregnancy = 14</span>
 
         <span class="c1"># Iron/folic acid &amp; BEP supplements...</span>
         <span class="c1"># Define the consumables</span>
-        <span class="n">item_code_iron_folic_acid</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_diet_supps</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Dietary supplements (country-specific)&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">get_item_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
+        <span class="n">item_code_iron_folic_acid</span> <span class="o">=</span> <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg&#39;</span><span class="p">)</span>
+        <span class="n">item_code_diet_supps</span> <span class="o">=</span> <span class="n">get_item_code</span><span class="p">(</span><span class="s1">&#39;Dietary supplements (country-specific)&#39;</span><span class="p">)</span>
 
-        <span class="n">consumables_anc1</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_iron_folic_acid</span><span class="p">:</span> <span class="n">approx_days_of_pregnancy</span><span class="p">,</span>
-                          <span class="n">item_code_diet_supps</span><span class="p">:</span> <span class="n">approx_days_of_pregnancy</span><span class="p">}}</span>
+        <span class="c1"># consumables_anc1 = {</span>
+        <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+        <span class="c1">#     &#39;Item_Code&#39;: {item_code_iron_folic_acid: approx_days_of_pregnancy,</span>
+        <span class="c1">#                   item_code_diet_supps: approx_days_of_pregnancy}}</span>
 
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
-            <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_anc1</span><span class="p">)</span>
-
+        <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+        <span class="c1">#     hsi_event=hsi_event,</span>
+        <span class="c1">#     cons_req_as_footprint=consumables_anc1)</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">}</span>
         <span class="c1"># As with previous interventions - condition on consumables and probability intervention is delivered</span>
         <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_iron_folic_acid</span><span class="p">]</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span>
                                                                                            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_intervention_&#39;</span>
@@ -916,17 +829,25 @@
 
         <span class="c1"># LLITN provision...</span>
         <span class="c1"># We define the required consumables</span>
-        <span class="n">pkg_code_obstructed_llitn</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Intervention_Pkg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;ITN distribution to pregnant women&#39;</span><span class="p">,</span>
-                            <span class="s1">&#39;Intervention_Pkg_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># pkg_code_obstructed_llitn = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Intervention_Pkg&#39;] == &#39;ITN distribution to pregnant women&#39;,</span>
+        <span class="c1">#                     &#39;Intervention_Pkg_Code&#39;])[0]</span>
+        <span class="n">pkg_code_obstructed_llitn</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># consumables_llitn = {</span>
+        <span class="c1">#     &#39;Intervention_Package_Code&#39;: {pkg_code_obstructed_llitn: 1},</span>
+        <span class="c1">#     &#39;Item_Code&#39;: {}}</span>
+        <span class="c1"># remove use of package_codes</span>
+        <span class="c1"># consumables_llitn = {</span>
+        <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+        <span class="c1">#     &#39;Item_Code&#39;: {}}</span>
 
-        <span class="n">consumables_llitn</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">pkg_code_obstructed_llitn</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
-            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{}}</span>
-
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
-            <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_llitn</span><span class="p">)</span>
+        <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+        <span class="c1">#     hsi_event=hsi_event,</span>
+        <span class="c1">#     cons_req_as_footprint=consumables_llitn)</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">}</span>
 
         <span class="c1"># If available, women are provided with a bed net at ANC1. The effect of these nets is determined</span>
         <span class="c1"># through the malaria module - not yet coded. n.b any interventions involving non-obstetric diseases have been</span>
@@ -962,17 +883,18 @@
 <span class="sd">        :param hsi_event: HSI event in which the function has been called</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
 
         <span class="c1"># Define required consumables</span>
-        <span class="n">pkg_code_tet</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Intervention_Pkg&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Tetanus toxoid (pregnant women)&quot;</span><span class="p">,</span>
-                            <span class="s2">&quot;Intervention_Pkg_Code&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="n">all_available</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-            <span class="n">pkg_codes</span><span class="o">=</span><span class="p">[</span><span class="n">pkg_code_tet</span><span class="p">])</span>
+        <span class="c1"># pkg_code_tet = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&quot;Intervention_Pkg&quot;] == &quot;Tetanus toxoid (pregnant women)&quot;,</span>
+        <span class="c1">#                     &quot;Intervention_Pkg_Code&quot;])[0]</span>
+        <span class="c1">#</span>
+        <span class="c1"># all_available = hsi_event.get_all_consumables(</span>
+        <span class="c1">#     pkg_codes=[pkg_code_tet])</span>
+        <span class="n">all_available</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="c1"># If the consumables are available and the HCW will deliver the vaccine, the intervention is given</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_intervention_delivered_tt&#39;</span><span class="p">]:</span>
@@ -987,25 +909,30 @@
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
         <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
 
         <span class="k">if</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ac_receiving_calcium_supplements&#39;</span><span class="p">]:</span>
 
             <span class="c1"># Define consumables</span>
-            <span class="n">item_code_calcium_supp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Calcium, tablet, 600 mg&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># item_code_calcium_supp = pd.unique(</span>
+            <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Calcium, tablet, 600 mg&#39;, &#39;Item_Code&#39;])[0]</span>
+            <span class="n">item_code_calcium_supp</span> <span class="o">=</span> <span class="mi">0</span>
 
             <span class="c1"># Calculate the approximate dose for the remainder of pregnancy</span>
-            <span class="n">approx_days_of_pregnancy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">40</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ps_gestational_age_in_weeks&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">7</span>
-            <span class="n">dose</span> <span class="o">=</span> <span class="n">approx_days_of_pregnancy</span> <span class="o">*</span> <span class="mi">3</span>
+            <span class="c1"># approx_days_of_pregnancy = (40 - df.at[person_id, &#39;ps_gestational_age_in_weeks&#39;]) * 7</span>
+            <span class="c1"># dose = approx_days_of_pregnancy * 3</span>
 
-            <span class="n">consumables_calcium</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-                <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_calcium_supp</span><span class="p">:</span> <span class="n">dose</span><span class="p">}}</span>
+            <span class="c1"># consumables_calcium = {</span>
+            <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+            <span class="c1">#     &#39;Item_Code&#39;: {item_code_calcium_supp: dose}}</span>
 
-            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-                <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
-                <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_calcium</span><span class="p">)</span>
+            <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+            <span class="c1">#     hsi_event=hsi_event,</span>
+            <span class="c1">#     cons_req_as_footprint=consumables_calcium)</span>
+            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+                <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="p">}</span>
 
             <span class="c1"># If the consumables are available and the HCW will provide the tablets, the intervention is given</span>
             <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_calcium_supp</span><span class="p">]</span> <span class="ow">and</span> \
@@ -1022,26 +949,33 @@
         <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
 
         <span class="c1"># Define the required consumables</span>
-        <span class="n">item_code_hb_test</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Haemoglobin test (HB)&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_blood_tube</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Blood collecting tube, 5 ml&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_needle</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Syringe, needle + swab&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Gloves, exam, latex, disposable, pair&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="n">consumables_hb_test</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_hb_test</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_blood_tube</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_needle</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_gloves</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+        <span class="c1"># item_code_hb_test = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Haemoglobin test (HB)&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_blood_tube = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Blood collecting tube, 5 ml&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_needle = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Syringe, needle + swab&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_gloves = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Gloves, exam, latex, disposable, pair&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="n">item_code_hb_test</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_blood_tube</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_needle</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># consumables_hb_test = {</span>
+        <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+        <span class="c1">#     &#39;Item_Code&#39;: {item_code_hb_test: 1, item_code_blood_tube: 1, item_code_needle: 1, item_code_gloves: 1}}</span>
 
         <span class="c1"># Confirm their availability</span>
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
-            <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_hb_test</span><span class="p">)</span>
+        <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+        <span class="c1">#     hsi_event=hsi_event,</span>
+        <span class="c1">#     cons_req_as_footprint=consumables_hb_test)</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">}</span>
 
         <span class="c1"># If the consumables are available and the HCW will provide the test, the test is given</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_hb_test</span><span class="p">])</span> <span class="ow">and</span> \
@@ -1065,22 +999,27 @@
 <span class="sd">         ANC</span>
 <span class="sd">        :param hsi_event: HSI event in which the function has been called</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
         <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
 
         <span class="c1"># We run this function to store the associated consumables with albendazole administration. This intervention</span>
         <span class="c1"># has no effect in the model due to limited evidence</span>
-        <span class="n">item_code_albendazole</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Albendazole 200mg_1000_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># item_code_albendazole = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Albendazole 200mg_1000_CMST&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="n">item_code_albendazole</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="n">consumables_albendazole</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_albendazole</span><span class="p">:</span> <span class="mi">2</span><span class="p">}}</span>
+        <span class="c1"># consumables_albendazole = {</span>
+        <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+        <span class="c1">#     &#39;Item_Code&#39;: {item_code_albendazole: 2}}</span>
 
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
-            <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_albendazole</span><span class="p">)</span>
+        <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+        <span class="c1">#     hsi_event=hsi_event,</span>
+        <span class="c1">#     cons_req_as_footprint=consumables_albendazole)</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">}</span>
 
         <span class="c1"># If the consumables are available and the HCW will provide the tablets, the intervention is given</span>
         <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_albendazole</span><span class="p">]</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span>
@@ -1094,28 +1033,36 @@
 <span class="sd">        B is not modelled currently this intervention just maps consumables used during ANC</span>
 <span class="sd">        :param hsi_event: HSI event in which the function has been called</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
         <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
 
         <span class="c1"># This intervention is a place holder prior to the Hepatitis B module being coded</span>
         <span class="c1"># Define the consumables</span>
-        <span class="n">item_code_hep_test</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Hepatitis B test kit-Dertemine_100 tests_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_blood_tube</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Blood collecting tube, 5 ml&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_needle</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Syringe, needle + swab&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Gloves, exam, latex, disposable, pair&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># item_code_hep_test = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Hepatitis B test kit-Dertemine_100 tests_CMST&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_blood_tube = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Blood collecting tube, 5 ml&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_needle = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Syringe, needle + swab&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_gloves = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Gloves, exam, latex, disposable, pair&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="n">item_code_hep_test</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_blood_tube</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_needle</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="n">consumables_hep_b_test</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_hep_test</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_blood_tube</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_needle</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_gloves</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+        <span class="c1"># consumables_hep_b_test = {</span>
+        <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+        <span class="c1">#     &#39;Item_Code&#39;: {item_code_hep_test: 1, item_code_blood_tube: 1, item_code_needle: 1, item_code_gloves: 1}}</span>
 
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
-            <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_hep_b_test</span><span class="p">)</span>
+        <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+        <span class="c1">#     hsi_event=hsi_event,</span>
+        <span class="c1">#     cons_req_as_footprint=consumables_hep_b_test)</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">}</span>
 
         <span class="c1"># If the consumables are available and the HCW will provide the test, the test is delivered</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_hep_test</span><span class="p">])</span> <span class="ow">and</span> \
@@ -1132,28 +1079,36 @@
 <span class="sd">        not modelled currently this intervention just maps consumables used during ANC</span>
 <span class="sd">        :param hsi_event: HSI event in which the function has been called</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
         <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
 
         <span class="c1"># Define the consumables</span>
-        <span class="n">item_code_syphilis_test</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Test, Rapid plasma reagin (RPR)&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_blood_tube</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Blood collecting tube, 5 ml&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_needle</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Syringe, needle + swab&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Gloves, exam, latex, disposable, pair&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># item_code_syphilis_test = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Test, Rapid plasma reagin (RPR)&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_blood_tube = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Blood collecting tube, 5 ml&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_needle = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Syringe, needle + swab&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_gloves = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Gloves, exam, latex, disposable, pair&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="n">item_code_syphilis_test</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_blood_tube</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_needle</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="n">consumables_syphilis</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_syphilis_test</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_blood_tube</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_needle</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                          <span class="n">item_code_gloves</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+        <span class="c1"># consumables_syphilis = {</span>
+        <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+        <span class="c1">#     &#39;Item_Code&#39;: {item_code_syphilis_test: 1, item_code_blood_tube: 1, item_code_needle: 1,</span>
+        <span class="c1">#                   item_code_gloves: 1}}</span>
 
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
-            <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_syphilis</span><span class="p">)</span>
+        <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+        <span class="c1">#     hsi_event=hsi_event,</span>
+        <span class="c1">#     cons_req_as_footprint=consumables_syphilis)</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">}</span>
 
         <span class="c1"># If the consumables are available and the HCW will provide the test, the test is delivered</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_syphilis_test</span><span class="p">])</span> <span class="ow">and</span> \
@@ -1191,7 +1146,7 @@
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
         <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Consumables&quot;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&quot;HealthSystem&quot;].parameters[&quot;Consumables&quot;]</span>
 
         <span class="k">if</span> <span class="s1">&#39;Malaria&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;is_alive&quot;</span><span class="p">]:</span>
@@ -1200,12 +1155,13 @@
                 <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ac_doses_of_iptp_received&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">6</span>
 
                 <span class="c1"># Define and check the availability of consumables</span>
-                <span class="n">pkg_code_iptp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                    <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Intervention_Pkg&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;IPT (pregnant women)&quot;</span><span class="p">,</span>
-                                    <span class="s2">&quot;Intervention_Pkg_Code&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="c1"># pkg_code_iptp = pd.unique(</span>
+                <span class="c1">#     consumables.loc[consumables[&quot;Intervention_Pkg&quot;] == &quot;IPT (pregnant women)&quot;,</span>
+                <span class="c1">#                     &quot;Intervention_Pkg_Code&quot;])[0]</span>
 
-                <span class="n">all_available</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-                    <span class="n">pkg_codes</span><span class="o">=</span><span class="p">[</span><span class="n">pkg_code_iptp</span><span class="p">])</span>
+                <span class="c1"># all_available = hsi_event.get_all_consumables(</span>
+                <span class="c1">#     pkg_codes=[pkg_code_iptp])</span>
+                <span class="n">all_available</span> <span class="o">=</span> <span class="kc">True</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_intervention_delivered_iptp&#39;</span><span class="p">]:</span>
                     <span class="k">if</span> <span class="n">all_available</span><span class="p">:</span>
@@ -1224,31 +1180,39 @@
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
         <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Consumables&quot;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&quot;HealthSystem&quot;].parameters[&quot;Consumables&quot;]</span>
 
         <span class="c1"># We check if this women has any of the key risk factors, if so they are sent for additional blood tests</span>
         <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;li_bmi&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">4</span> <span class="ow">or</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ps_prev_gest_diab&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span>
                                                                                              <span class="s1">&#39;ps_prev_stillbirth&#39;</span><span class="p">]:</span>
 
             <span class="c1"># We define the required consumables for testing</span>
-            <span class="n">item_code_glucose_test</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Blood glucose level test&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">item_code_blood_tube</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Blood collecting tube, 5 ml&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">item_code_needle</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Syringe, needle + swab&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Gloves, exam, latex, disposable, pair&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># item_code_glucose_test = pd.unique(</span>
+            <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Blood glucose level test&#39;, &#39;Item_Code&#39;])[0]</span>
+            <span class="c1"># item_code_blood_tube = pd.unique(</span>
+            <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Blood collecting tube, 5 ml&#39;, &#39;Item_Code&#39;])[0]</span>
+            <span class="c1"># item_code_needle = pd.unique(</span>
+            <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Syringe, needle + swab&#39;, &#39;Item_Code&#39;])[0]</span>
+            <span class="c1"># item_code_gloves = pd.unique(</span>
+            <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Gloves, exam, latex, disposable, pair&#39;, &#39;Item_Code&#39;])[0]</span>
+            <span class="n">item_code_glucose_test</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">item_code_blood_tube</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">item_code_needle</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="mi">0</span>
 
-            <span class="n">consumables_gdm_testing</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-                <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_glucose_test</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_blood_tube</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_needle</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                              <span class="n">item_code_gloves</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+            <span class="c1"># consumables_gdm_testing = {</span>
+            <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+            <span class="c1">#     &#39;Item_Code&#39;: {item_code_glucose_test: 1, item_code_blood_tube: 1, item_code_needle: 1,</span>
+            <span class="c1">#                   item_code_gloves: 1}}</span>
 
             <span class="c1"># Then query if these consumables are available during this HSI</span>
-            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-                <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
-                <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_gdm_testing</span><span class="p">)</span>
+            <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+            <span class="c1">#     hsi_event=hsi_event,</span>
+            <span class="c1">#     cons_req_as_footprint=consumables_gdm_testing)</span>
+            <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+                <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="p">}</span>
 
             <span class="c1"># If they are available, the test is conducted</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_glucose_test</span><span class="p">])</span> <span class="ow">and</span> \
@@ -1426,26 +1390,35 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
 
         <span class="c1"># Define the required consumables</span>
-        <span class="n">item_code_hb_test</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Haemoglobin test (HB)&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_blood_tube</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Blood collecting tube, 5 ml&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_needle</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Syringe, needle + swab&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Gloves, exam, latex, disposable, pair&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># item_code_hb_test = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Haemoglobin test (HB)&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_blood_tube = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Blood collecting tube, 5 ml&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_needle = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Syringe, needle + swab&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_gloves = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Gloves, exam, latex, disposable, pair&#39;, &#39;Item_Code&#39;])[0]</span>
 
-        <span class="n">consumables_hb_test</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_hb_test</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_blood_tube</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_needle</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_gloves</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+        <span class="n">item_code_hb_test</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_blood_tube</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_needle</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># consumables_hb_test = {</span>
+        <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+        <span class="c1">#     &#39;Item_Code&#39;: {item_code_hb_test: 1, item_code_blood_tube: 1, item_code_needle: 1, item_code_gloves: 1}}</span>
 
         <span class="c1"># Confirm their availability</span>
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
-            <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_hb_test</span><span class="p">)</span>
+        <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+        <span class="c1">#     hsi_event=hsi_event,</span>
+        <span class="c1">#     cons_req_as_footprint=consumables_hb_test)</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">}</span>
 
         <span class="c1"># Check consumables</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_hb_test</span><span class="p">])</span> <span class="ow">and</span> \
@@ -1484,42 +1457,54 @@
 <span class="sd">        :param hsi_event: HSI event in which the function has been called</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
         <span class="n">pregnancy_deficiencies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">deficiencies_in_pregnancy</span>
         <span class="n">store_dalys_in_mni</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">store_dalys_in_mni</span>
 
         <span class="c1"># Calculate the approximate dose for the remainder of pregnancy</span>
-        <span class="n">approx_days_of_pregnancy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">40</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;ps_gestational_age_in_weeks&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">7</span>
+        <span class="c1"># approx_days_of_pregnancy = (40 - df.at[individual_id, &#39;ps_gestational_age_in_weeks&#39;]) * 7</span>
+
+        <span class="c1"># # Check and request consumables</span>
+        <span class="c1"># item_code_elemental_iron = pd.unique(</span>
+        <span class="c1">#     consumables.loc[</span>
+        <span class="c1">#         consumables[&#39;Items&#39;] ==</span>
+        <span class="c1">#         &#39;ferrous sulphate 200 mg, coated (65 mg iron)_1000_IDA&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1">#</span>
+        <span class="c1"># # n.b. folate doesnt have a specific consumable so this is a place holder</span>
+        <span class="c1"># item_code_folate = pd.unique(</span>
+        <span class="c1">#     consumables.loc[</span>
+        <span class="c1">#         consumables[&#39;Items&#39;] ==</span>
+        <span class="c1">#         &#39;Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1">#</span>
+        <span class="c1"># item_code_b12 = pd.unique(</span>
+        <span class="c1">#     consumables.loc[</span>
+        <span class="c1">#         consumables[&#39;Items&#39;] ==</span>
+        <span class="c1">#         &#39;vitamin B12 (cyanocobalamine) 1 mg/ml, 1 ml, inj._100_IDA&#39;, &#39;Item_Code&#39;])[0]</span>
 
         <span class="c1"># Check and request consumables</span>
-        <span class="n">item_code_elemental_iron</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                <span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span>
-                <span class="s1">&#39;ferrous sulphate 200 mg, coated (65 mg iron)_1000_IDA&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">item_code_elemental_iron</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="c1"># n.b. folate doesnt have a specific consumable so this is a place holder</span>
-        <span class="n">item_code_folate</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                <span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span>
-                <span class="s1">&#39;Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">item_code_folate</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="n">item_code_b12</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                <span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span>
-                <span class="s1">&#39;vitamin B12 (cyanocobalamine) 1 mg/ml, 1 ml, inj._100_IDA&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">item_code_b12</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="c1"># If iron or folate deficient, a woman will need to take additional daily supplements. If B12 deficient this</span>
         <span class="c1"># should occur monthly</span>
-        <span class="n">consumables_ifa</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_elemental_iron</span><span class="p">:</span> <span class="n">approx_days_of_pregnancy</span><span class="p">,</span>
-                          <span class="n">item_code_folate</span><span class="p">:</span> <span class="n">approx_days_of_pregnancy</span><span class="p">,</span>
-                          <span class="n">item_code_b12</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">approx_days_of_pregnancy</span> <span class="o">/</span> <span class="mi">31</span><span class="p">)}}</span>
+        <span class="c1"># consumables_ifa = {</span>
+        <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+        <span class="c1">#     &#39;Item_Code&#39;: {item_code_elemental_iron: approx_days_of_pregnancy,</span>
+        <span class="c1">#                   item_code_folate: approx_days_of_pregnancy,</span>
+        <span class="c1">#                   item_code_b12: np.ceil(approx_days_of_pregnancy / 31)}}</span>
 
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
-            <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_ifa</span><span class="p">)</span>
+        <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+        <span class="c1">#     hsi_event=hsi_event,</span>
+        <span class="c1">#     cons_req_as_footprint=consumables_ifa)</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">}</span>
 
         <span class="c1"># Treatment is provided dependent on deficiencies present</span>
         <span class="k">if</span> <span class="n">pregnancy_deficiencies</span><span class="o">.</span><span class="n">has_any</span><span class="p">([</span><span class="n">individual_id</span><span class="p">],</span> <span class="s1">&#39;iron&#39;</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -1576,25 +1561,30 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
         <span class="n">store_dalys_in_mni</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">store_dalys_in_mni</span>
 
         <span class="c1"># Calculate the approximate dose for the remainder of pregnancy</span>
-        <span class="n">approx_days_of_pregnancy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">40</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;ps_gestational_age_in_weeks&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">7</span>
+        <span class="c1"># approx_days_of_pregnancy = (40 - df.at[individual_id, &#39;ps_gestational_age_in_weeks&#39;]) * 7</span>
 
         <span class="c1"># Check availability of consumables</span>
-        <span class="n">item_code_iron_folic_acid</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
-                <span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span>
-                <span class="s1">&#39;Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># item_code_iron_folic_acid = pd.unique(</span>
+        <span class="c1">#     consumables.loc[</span>
+        <span class="c1">#         consumables[&#39;Items&#39;] ==</span>
+        <span class="c1">#         &#39;Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="n">item_code_iron_folic_acid</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="n">consumables_ifa</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_iron_folic_acid</span><span class="p">:</span> <span class="n">approx_days_of_pregnancy</span><span class="p">}}</span>
+        <span class="c1"># consumables_ifa = {</span>
+        <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+        <span class="c1">#     &#39;Item_Code&#39;: {item_code_iron_folic_acid: approx_days_of_pregnancy}}</span>
 
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
-            <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_ifa</span><span class="p">)</span>
+        <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+        <span class="c1">#     hsi_event=hsi_event,</span>
+        <span class="c1">#     cons_req_as_footprint=consumables_ifa)</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">}</span>
 
         <span class="c1"># Start iron and folic acid treatment</span>
         <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_iron_folic_acid</span><span class="p">]:</span>
@@ -1623,24 +1613,32 @@
 <span class="sd">        :param cause: (STR) cause of woman needed transfusion [&#39;antepartum_haem&#39;, &#39;abortion&#39;, &#39;severe_anaemia&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
         <span class="n">store_dalys_in_mni</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">store_dalys_in_mni</span>
 
         <span class="c1"># Check for consumables</span>
-        <span class="n">item_code_blood</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Blood, one unit&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_needle</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Lancet, blood, disposable&#39;</span><span class="p">,</span>
-                                                     <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_test</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Test, hemoglobin&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_giving_set</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;IV giving/infusion set, with needle&#39;</span><span class="p">,</span>
-                                                         <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># item_code_blood = pd.unique(consumables.loc[consumables[&#39;Items&#39;] == &#39;Blood, one unit&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_needle = pd.unique(consumables.loc[consumables[&#39;Items&#39;] == &#39;Lancet, blood, disposable&#39;,</span>
+        <span class="c1">#                                              &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_test = pd.unique(consumables.loc[consumables[&#39;Items&#39;] == &#39;Test, hemoglobin&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_giving_set = pd.unique(consumables.loc[consumables[&#39;Items&#39;] ==</span>
+        <span class="c1"># &#39;IV giving/infusion set, with needle&#39;,&#39;Item_Code&#39;])[0]</span>
+        <span class="n">item_code_blood</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_needle</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_test</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_giving_set</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="n">consumables_needed_bt</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-                                 <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_blood</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="n">item_code_needle</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_test</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                                               <span class="n">item_code_giving_set</span><span class="p">:</span> <span class="mi">2</span><span class="p">}}</span>
+        <span class="c1"># consumables_needed_bt = {&#39;Intervention_Package_Code&#39;: {},</span>
+        <span class="c1">#                          &#39;Item_Code&#39;: {item_code_blood: 2, item_code_needle: 1, item_code_test: 1,</span>
+        <span class="c1">#                                        item_code_giving_set: 2}}</span>
 
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span> <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_needed_bt</span><span class="p">)</span>
+        <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+        <span class="c1">#     hsi_event=hsi_event, cons_req_as_footprint=consumables_needed_bt)</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">}</span>
 
         <span class="c1"># If the consumables are available the intervention is delivered</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_blood</span><span class="p">])</span> <span class="ow">and</span> \
@@ -1677,22 +1675,27 @@
 <span class="sd">        :param hsi_event: HSI event in which the function has been called</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Consumables&quot;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&quot;HealthSystem&quot;].parameters[&quot;Consumables&quot;]</span>
 
         <span class="c1"># Calculate the approximate dose for the remainder of pregnancy</span>
-        <span class="n">approx_days_of_pregnancy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">40</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;ps_gestational_age_in_weeks&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">7</span>
+        <span class="c1"># approx_days_of_pregnancy = (40 - df.at[individual_id, &#39;ps_gestational_age_in_weeks&#39;]) * 7</span>
 
         <span class="c1"># Define the consumables and check their availability</span>
-        <span class="n">item_code_methyldopa</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Methyldopa 250mg_1000_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># item_code_methyldopa = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Methyldopa 250mg_1000_CMST&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="n">item_code_methyldopa</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="n">consumables_gest_htn_treatment</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_methyldopa</span><span class="p">:</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">approx_days_of_pregnancy</span><span class="p">}}</span>
+        <span class="c1"># consumables_gest_htn_treatment = {</span>
+        <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+        <span class="c1">#     &#39;Item_Code&#39;: {item_code_methyldopa: 4 * approx_days_of_pregnancy}}</span>
 
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
-            <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_gest_htn_treatment</span><span class="p">)</span>
+        <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+        <span class="c1">#     hsi_event=hsi_event,</span>
+        <span class="c1">#     cons_req_as_footprint=consumables_gest_htn_treatment)</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">}</span>
 
         <span class="c1"># If they are available then the woman is started on treatment</span>
         <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_methyldopa</span><span class="p">]:</span>
@@ -1710,30 +1713,38 @@
 <span class="sd">        :param hsi_event: HSI event in which the function has been called</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Consumables&quot;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&quot;HealthSystem&quot;].parameters[&quot;Consumables&quot;]</span>
 
         <span class="c1"># Define the consumables and check their availability</span>
-        <span class="n">item_code_hydralazine</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Hydralazine, powder for injection, 20 mg ampoule&#39;</span><span class="p">,</span>
-                            <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_wfi</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Water for injection, 10ml_Each_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_needle</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Syringe, needle + swab&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Gloves, exam, latex, disposable, pair&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># item_code_hydralazine = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Hydralazine, powder for injection, 20 mg ampoule&#39;,</span>
+        <span class="c1">#                     &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_wfi = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Water for injection, 10ml_Each_CMST&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_needle = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Syringe, needle + swab&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_gloves = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Gloves, exam, latex, disposable, pair&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="n">item_code_hydralazine</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_wfi</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_needle</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="n">consumables_gest_htn_treatment</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_hydralazine</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                          <span class="n">item_code_wfi</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                          <span class="n">item_code_gloves</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                          <span class="n">item_code_needle</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+        <span class="c1"># consumables_gest_htn_treatment = {</span>
+        <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+        <span class="c1">#     &#39;Item_Code&#39;: {item_code_hydralazine: 1,</span>
+        <span class="c1">#                   item_code_wfi: 1,</span>
+        <span class="c1">#                   item_code_gloves: 1,</span>
+        <span class="c1">#                   item_code_needle: 1}}</span>
 
         <span class="c1"># Then query if these consumables are available during this HSI</span>
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
-            <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_gest_htn_treatment</span><span class="p">)</span>
+        <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+        <span class="c1">#     hsi_event=hsi_event,</span>
+        <span class="c1">#     cons_req_as_footprint=consumables_gest_htn_treatment)</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">}</span>
 
         <span class="c1"># If they are available then the woman is started on treatment</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_hydralazine</span><span class="p">])</span> <span class="ow">and</span> \
@@ -1768,15 +1779,17 @@
 <span class="sd">        :param hsi_event: HSI event in which the function has been called</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Consumables&quot;</span><span class="p">]</span>
 
+        <span class="c1"># consumables = self.sim.modules[&quot;HealthSystem&quot;].parameters[&quot;Consumables&quot;]</span>
         <span class="c1"># Define the consumable package code</span>
-        <span class="n">pkg_code_eclampsia_and_spe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Intervention_Pkg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Management of eclampsia&#39;</span><span class="p">,</span>
-                            <span class="s1">&#39;Intervention_Pkg_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="n">all_available</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-            <span class="n">pkg_codes</span><span class="o">=</span><span class="p">[</span><span class="n">pkg_code_eclampsia_and_spe</span><span class="p">])</span>
+        <span class="c1"># # pkg_code_eclampsia_and_spe = pd.unique(</span>
+        <span class="c1"># #     consumables.loc[consumables[&#39;Intervention_Pkg&#39;] == &#39;Management of eclampsia&#39;,</span>
+        <span class="c1"># #                     &#39;Intervention_Pkg_Code&#39;])[0]</span>
+        <span class="c1">#</span>
+        <span class="c1"># all_available = hsi_event.get_all_consumables(</span>
+        <span class="c1">#     pkg_codes=[pkg_code_eclampsia_and_spe])</span>
+        <span class="c1"># remove use of package_codes</span>
+        <span class="n">all_available</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="c1"># If available deliver the treatment</span>
         <span class="k">if</span> <span class="n">all_available</span><span class="p">:</span>
@@ -1792,28 +1805,35 @@
 <span class="sd">        :param hsi_event: HSI event in which the function has been called</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Consumables&quot;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&quot;HealthSystem&quot;].parameters[&quot;Consumables&quot;]</span>
 
         <span class="c1"># Define consumables and check their availability</span>
-        <span class="n">item_code_benpen</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Benzathine benzylpenicillin, powder for injection, 2.4 million IU&#39;</span><span class="p">,</span>
-                            <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_wfi</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Water for injection, 10ml_Each_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_needle</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Syringe, needle + swab&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Gloves, exam, latex, disposable, pair&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="n">consumables_abx_for_prom</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_benpen</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="n">item_code_wfi</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_needle</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                          <span class="n">item_code_gloves</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+        <span class="c1"># item_code_benpen = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] ==</span>
+        <span class="c1">#     &#39;Benzathine benzylpenicillin, powder for injection, 2.4 million IU&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_wfi = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Water for injection, 10ml_Each_CMST&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_needle = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Syringe, needle + swab&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_gloves = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Gloves, exam, latex, disposable, pair&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="n">item_code_benpen</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_wfi</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_needle</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># consumables_abx_for_prom = {</span>
+        <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+        <span class="c1">#     &#39;Item_Code&#39;: {item_code_benpen: 4, item_code_wfi: 1, item_code_needle: 1,</span>
+        <span class="c1">#                   item_code_gloves: 1}}</span>
 
         <span class="c1"># Then query if these consumables are available during this HSI</span>
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
-            <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_abx_for_prom</span><span class="p">)</span>
+        <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+        <span class="c1">#     hsi_event=hsi_event,</span>
+        <span class="c1">#     cons_req_as_footprint=consumables_abx_for_prom)</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">}</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_benpen</span><span class="p">])</span> <span class="ow">and</span> \
             <span class="p">(</span><span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_wfi</span><span class="p">])</span> <span class="ow">and</span> \
@@ -1831,31 +1851,39 @@
 <span class="sd">        :param hsi_event: HSI event in which the function has been called</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Consumables&quot;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&quot;HealthSystem&quot;].parameters[&quot;Consumables&quot;]</span>
 
         <span class="c1"># Define the consumables and check their availability</span>
-        <span class="n">item_code_benpen</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Benzathine benzylpenicillin, powder for injection, 2.4 million IU&#39;</span><span class="p">,</span>
-                            <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_genta</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Gentamycin, injection, 40 mg/ml in 2 ml vial&#39;</span><span class="p">,</span>
-                            <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_wfi</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Water for injection, 10ml_Each_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_needle</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Syringe, needle + swab&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Gloves, exam, latex, disposable, pair&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="n">consumables_abx_for_chorio</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_benpen</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="n">item_code_genta</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_wfi</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">item_code_needle</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-                          <span class="n">item_code_gloves</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+        <span class="c1"># item_code_benpen = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] ==</span>
+        <span class="c1">#     &#39;Benzathine benzylpenicillin, powder for injection, 2.4 million IU&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_genta = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Gentamycin, injection, 40 mg/ml in 2 ml vial&#39;,</span>
+        <span class="c1">#                     &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_wfi = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Water for injection, 10ml_Each_CMST&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_needle = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Syringe, needle + swab&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="c1"># item_code_gloves = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Gloves, exam, latex, disposable, pair&#39;, &#39;Item_Code&#39;])[0]</span>
+        <span class="n">item_code_benpen</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_genta</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_wfi</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_needle</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">item_code_gloves</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># consumables_abx_for_chorio = {</span>
+        <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+        <span class="c1">#     &#39;Item_Code&#39;: {item_code_benpen: 4, item_code_genta: 1, item_code_wfi: 1, item_code_needle: 1,</span>
+        <span class="c1">#                   item_code_gloves: 1}}</span>
 
         <span class="c1"># Then query if these consumables are available during this HSI</span>
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span>
-            <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_abx_for_chorio</span><span class="p">)</span>
+        <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+        <span class="c1">#     hsi_event=hsi_event,</span>
+        <span class="c1">#     cons_req_as_footprint=consumables_abx_for_chorio)</span>
+        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+            <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="p">}</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_benpen</span><span class="p">])</span> <span class="ow">and</span> \
             <span class="p">(</span><span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_genta</span><span class="p">])</span> <span class="ow">and</span> \
@@ -1939,7 +1967,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;CareOfWomenDuringPregnancy_FirstAntenatalCareContact&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;AntenatalFirst&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="n">facility_level_of_this_hsi</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">!=</span> <span class="mi">0</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;0&#39;</span><span class="p">}</span>  <span class="c1"># TODO: also not None, but that causes error in doc build</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 <div class="viewcode-block" id="HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.care_of_women_during_pregnancy.html#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
@@ -1960,13 +1988,13 @@
             <span class="c1"># We generate the facility type that this HSI is occurring at (dependent on facility level) - we currently</span>
             <span class="c1"># assume women will present to the same facility level and type for any future ANC visits</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;1a&#39;</span><span class="p">,</span> <span class="s1">&#39;1b&#39;</span><span class="p">):</span>
                 <span class="c1"># Assume a 50/50 chance of health centre or hospital in level 1, however this will need editing</span>
                 <span class="n">facility_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s1">&#39;health_centre&#39;</span><span class="p">,</span> <span class="s1">&#39;hospital&#39;</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ac_facility_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">facility_type</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;anc_facility_type&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">facility_type</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="s1">&#39;4&#39;</span><span class="p">):</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;anc_facility_type&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;hospital&#39;</span><span class="p">)</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ac_facility_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;hospital&#39;</span>
 
@@ -2628,13 +2656,13 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">CareOfWomenDuringPregnancy</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;CareOfWomenDuringPregnancy_PresentsForInductionOfLabour&#39;</span>
 
         <span class="n">the_appt_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
         <span class="n">the_appt_footprint</span><span class="p">[</span><span class="s1">&#39;Over5OPD&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="n">the_appt_footprint</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 <div class="viewcode-block" id="HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.care_of_women_during_pregnancy.html#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
@@ -2672,7 +2700,7 @@
         <span class="n">the_appt_footprint</span><span class="p">[</span><span class="s1">&#39;Over5OPD&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="n">the_appt_footprint</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 <div class="viewcode-block" id="HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.care_of_women_during_pregnancy.html#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
@@ -2687,7 +2715,7 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;msg&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Mother </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1"> has presented at HSI_CareOfWomenDuringPregnancy_Maternal&#39;</span>
                                          <span class="sa">f</span><span class="s1">&#39;EmergencyAssessment to seek care for a complication &#39;</span><span class="p">)</span>
 
-            <span class="n">facility_level</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]))</span>
+            <span class="n">facility_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s1">&#39;1a&#39;</span><span class="p">,</span> <span class="s1">&#39;1b&#39;</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>  <span class="c1"># todo note choice</span>
 
             <span class="n">admission</span> <span class="o">=</span> <span class="n">HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;CareOfWomenDuringPregnancy&#39;</span><span class="p">],</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
@@ -3005,7 +3033,7 @@
         <span class="n">the_appt_footprint</span><span class="p">[</span><span class="s1">&#39;ANCSubsequent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="n">the_appt_footprint</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 <div class="viewcode-block" id="HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.care_of_women_during_pregnancy.html#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
@@ -3032,7 +3060,7 @@
             <span class="c1"># If she is determined to still be anaemic she is admitted for additional treatment via the inpatient event</span>
             <span class="k">elif</span> <span class="n">fbc_result</span> <span class="o">==</span> <span class="s1">&#39;mild&#39;</span> <span class="ow">or</span> <span class="n">fbc_result</span> <span class="o">==</span> <span class="s1">&#39;moderate&#39;</span> <span class="ow">or</span> <span class="n">fbc_result</span> <span class="o">==</span> <span class="s1">&#39;severe&#39;</span><span class="p">:</span>
 
-                <span class="n">facility_level</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]))</span>
+                <span class="n">facility_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s1">&#39;1a&#39;</span><span class="p">,</span> <span class="s1">&#39;1b&#39;</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>  <span class="c1"># todo note choice</span>
 
                 <span class="n">admission</span> <span class="o">=</span> <span class="n">HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;CareOfWomenDuringPregnancy&#39;</span><span class="p">],</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
@@ -3070,12 +3098,12 @@
         <span class="n">the_appt_footprint</span><span class="p">[</span><span class="s1">&#39;ANCSubsequent&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="n">the_appt_footprint</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 <div class="viewcode-block" id="HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.care_of_women_during_pregnancy.html#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
         <span class="n">mother</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">]</span>
 
         <span class="kn">from</span> <span class="nn">tlo.methods.pregnancy_supervisor</span> <span class="kn">import</span> <span class="n">GestationalDiabetesGlycaemicControlEvent</span>
@@ -3103,18 +3131,23 @@
                 <span class="k">if</span> <span class="n">mother</span><span class="o">.</span><span class="n">ac_gest_diab_on_treatment</span> <span class="o">==</span> <span class="s1">&#39;diet_exercise&#39;</span><span class="p">:</span>
 
                     <span class="c1"># Currently we assume women are given enough tablets to last the length of their pregnancy</span>
-                    <span class="n">approx_days_of_pregnancy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">40</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ps_gestational_age_in_weeks&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">7</span>
+                    <span class="c1"># approx_days_of_pregnancy = (40 - df.at[person_id, &#39;ps_gestational_age_in_weeks&#39;]) * 7</span>
 
-                    <span class="n">item_code_oral_antidiabetics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                        <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Glibenclamide 5mg_1000_CMST&#39;</span><span class="p">,</span> <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="c1"># item_code_oral_antidiabetics = pd.unique(</span>
+                    <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Glibenclamide 5mg_1000_CMST&#39;, &#39;Item_Code&#39;])[0]</span>
+                    <span class="n">item_code_oral_antidiabetics</span> <span class="o">=</span> <span class="mi">0</span>
 
-                    <span class="n">consumables_anti_diabs</span> <span class="o">=</span> <span class="p">{</span>
-                        <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-                        <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_oral_antidiabetics</span><span class="p">:</span> <span class="n">approx_days_of_pregnancy</span> <span class="o">*</span> <span class="mi">2</span><span class="p">}}</span>  <span class="c1"># dose 5mg BD</span>
+                    <span class="c1"># consumables_anti_diabs = {</span>
+                    <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+                    <span class="c1">#     &#39;Item_Code&#39;: {item_code_oral_antidiabetics: approx_days_of_pregnancy * 2}}  # dose 5mg BD</span>
 
-                    <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-                        <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
-                        <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_anti_diabs</span><span class="p">)</span>
+                    <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+                    <span class="c1">#     hsi_event=self,</span>
+                    <span class="c1">#     cons_req_as_footprint=consumables_anti_diabs)</span>
+                    <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+                        <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+                    <span class="p">}</span>
 
                     <span class="c1"># If the meds are available women are started on that treatment</span>
                     <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_oral_antidiabetics</span><span class="p">]:</span>
@@ -3142,17 +3175,22 @@
                 <span class="c1"># blood sugar- they are started on insulin</span>
                 <span class="k">if</span> <span class="n">mother</span><span class="o">.</span><span class="n">ac_gest_diab_on_treatment</span> <span class="o">==</span> <span class="s1">&#39;orals&#39;</span><span class="p">:</span>
 
-                    <span class="n">item_code_oral_insulin</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                        <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Insulin soluble 100 IU/ml, 10ml_each_CMST&#39;</span><span class="p">,</span>
-                                        <span class="s1">&#39;Item_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="c1"># item_code_oral_insulin = pd.unique(</span>
+                    <span class="c1">#     consumables.loc[consumables[&#39;Items&#39;] == &#39;Insulin soluble 100 IU/ml, 10ml_each_CMST&#39;,</span>
+                    <span class="c1">#                     &#39;Item_Code&#39;])[0]</span>
+                    <span class="n">item_code_oral_insulin</span> <span class="o">=</span> <span class="mi">0</span>
 
-                    <span class="n">consumables_insulin</span> <span class="o">=</span> <span class="p">{</span>
-                        <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="p">{},</span>
-                        <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code_oral_insulin</span><span class="p">:</span> <span class="mi">5</span><span class="p">}}</span>
+                    <span class="c1"># consumables_insulin = {</span>
+                    <span class="c1">#     &#39;Intervention_Package_Code&#39;: {},</span>
+                    <span class="c1">#     &#39;Item_Code&#39;: {item_code_oral_insulin: 5}}</span>
 
-                    <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-                        <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
-                        <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">consumables_insulin</span><span class="p">)</span>
+                    <span class="c1"># outcome_of_request_for_consumables = self.sim.modules[&#39;HealthSystem&#39;].request_consumables(</span>
+                    <span class="c1">#     hsi_event=self,</span>
+                    <span class="c1">#     cons_req_as_footprint=consumables_insulin)</span>
+                    <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s1">&#39;Intervention_Package_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">),</span>
+                        <span class="s1">&#39;Item_Code&#39;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+                    <span class="p">}</span>
 
                     <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">[</span><span class="s1">&#39;Item_Code&#39;</span><span class="p">][</span><span class="n">item_code_oral_insulin</span><span class="p">]:</span>
                         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ac_gest_diab_on_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;insulin&#39;</span>
@@ -3211,7 +3249,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;CareOfWomenDuringPregnancy_PostAbortionCaseManagement&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;InpatientDays&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># any hospital?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({</span><span class="s1">&#39;general_bed&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">})</span></div>
 
@@ -3220,7 +3258,7 @@
         <span class="n">mother</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">]</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span>
         <span class="n">abortion_complications</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">abortion_complications</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">mother</span><span class="o">.</span><span class="n">is_alive</span><span class="p">:</span>
             <span class="k">return</span>
@@ -3229,12 +3267,13 @@
         <span class="k">assert</span> <span class="n">abortion_complications</span><span class="o">.</span><span class="n">has_any</span><span class="p">([</span><span class="n">person_id</span><span class="p">],</span> <span class="s1">&#39;sepsis&#39;</span><span class="p">,</span> <span class="s1">&#39;haemorrhage&#39;</span><span class="p">,</span> <span class="s1">&#39;injury&#39;</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="c1"># Check the availability of consumables</span>
-        <span class="n">pkg_code_infection</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Intervention_Pkg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Post-abortion case management&#39;</span><span class="p">,</span>
-                            <span class="s1">&#39;Intervention_Pkg_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># pkg_code_infection = pd.unique(</span>
+        <span class="c1">#     consumables.loc[consumables[&#39;Intervention_Pkg&#39;] == &#39;Post-abortion case management&#39;,</span>
+        <span class="c1">#                     &#39;Intervention_Pkg_Code&#39;])[0]</span>
 
-        <span class="n">all_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-            <span class="n">pkg_codes</span><span class="o">=</span><span class="p">[</span><span class="n">pkg_code_infection</span><span class="p">])</span>
+        <span class="c1"># all_available = self.get_all_consumables(</span>
+        <span class="c1">#     pkg_codes=[pkg_code_infection])</span>
+        <span class="n">all_available</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="c1"># If consumables are available then individual interventions can be delivered</span>
         <span class="k">if</span> <span class="n">all_available</span><span class="p">:</span>
@@ -3278,13 +3317,13 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;MajorSurg&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({</span><span class="s1">&#39;general_bed&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">})</span></div>
 
 <div class="viewcode-block" id="HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.care_of_women_during_pregnancy.html#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
+        <span class="c1"># consumables = self.sim.modules[&#39;HealthSystem&#39;].parameters[&#39;Consumables&#39;]</span>
         <span class="n">mother</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">mother</span><span class="o">.</span><span class="n">is_alive</span><span class="p">:</span>
@@ -3298,11 +3337,12 @@
                                          <span class="sa">f</span><span class="s1">&#39;presenting and will now undergo treatment&#39;</span><span class="p">)</span>
 
         <span class="c1"># We define the required consumables and check their availability</span>
-        <span class="n">ectopic_pkg</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Intervention_Pkg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Ectopic case management&#39;</span><span class="p">,</span>
-                                                <span class="s1">&#39;Intervention_Pkg_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># ectopic_pkg = pd.unique(consumables.loc[consumables[&#39;Intervention_Pkg&#39;] == &#39;Ectopic case management&#39;,</span>
+        <span class="c1">#                                         &#39;Intervention_Pkg_Code&#39;])[0]</span>
 
-        <span class="n">all_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-            <span class="n">pkg_codes</span><span class="o">=</span><span class="p">[</span><span class="n">ectopic_pkg</span><span class="p">])</span>
+        <span class="c1"># all_available = self.get_all_consumables(</span>
+        <span class="c1">#     items_codes=[self.module.item)</span>
+        <span class="n">all_available</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># remove use of package_codes</span>
 
         <span class="c1"># If they are available then treatment can go ahead</span>
         <span class="k">if</span> <span class="n">all_available</span><span class="p">:</span>
@@ -3386,7 +3426,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -3394,40 +3433,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Nov 09, 2021.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Jan 19, 2022.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

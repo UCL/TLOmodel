@@ -1,76 +1,34 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.healthburden &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../index.html" class="icon icon-home"> TLOmodel
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -78,18 +36,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -103,71 +50,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
           <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
           <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
       <li>tlo.methods.healthburden</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.healthburden</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">This Module runs the counting of DALYS</span>
@@ -202,6 +109,7 @@
         <span class="c1"># instance variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">multi_index</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLostStacked</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">YearsLivedWithDisability</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">recognised_modules_names</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">causes_of_disability</span> <span class="o">=</span> <span class="kc">None</span></div>
@@ -250,6 +158,7 @@
 
         <span class="c1"># Create the YLL and YLD storage data-frame (using sex/age_range/year multi-index)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">multi_index</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLostStacked</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">multi_index</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">YearsLivedWithDisability</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">multi_index</span><span class="p">)</span>
 
         <span class="c1"># 2) Collect the module that will use this HealthBurden module</span>
@@ -333,13 +242,27 @@
                 <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Years of live lost by the declared cause_of_death, &#39;</span>
                             <span class="s1">&#39;broken down by year, sex, age-group&#39;</span>
             <span class="p">)</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLostStacked</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="n">key</span><span class="o">=</span><span class="s1">&#39;yll_by_causes_of_death_stacked&#39;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">row</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Years of live lost by the declared cause_of_death, &#39;</span>
+                            <span class="s1">&#39;broken down by year, sex, age-group&#39;</span>
+            <span class="p">)</span>
 
         <span class="c1"># 3) Log total DALYS recorded (YLD + LYL) (by the labels declared)</span>
-        <span class="n">dalys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_dalys</span><span class="p">()</span>
+        <span class="n">dalys</span><span class="p">,</span> <span class="n">dalys_stacked</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_dalys</span><span class="p">()</span>
         <span class="c1"># - dump to log, line-by-line</span>
         <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">dalys</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="n">key</span><span class="o">=</span><span class="s1">&#39;dalys&#39;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">row</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                <span class="n">description</span><span class="o">=</span><span class="s1">&#39;DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability&#39;</span>
+                            <span class="s1">&#39;, broken down by year, sex, age-group&#39;</span>
+            <span class="p">)</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">dalys_stacked</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="n">key</span><span class="o">=</span><span class="s1">&#39;dalys_stacked&#39;</span><span class="p">,</span>
                 <span class="n">data</span><span class="o">=</span><span class="n">row</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
                 <span class="n">description</span><span class="o">=</span><span class="s1">&#39;DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability&#39;</span>
                             <span class="s1">&#39;, broken down by year, sex, age-group&#39;</span>
@@ -349,15 +272,22 @@
         <span class="sd">&quot;&quot;&quot;Compute total DALYS (by label), by age, sex and year. Do this by summing the YLD and LYL with respect to the</span>
 <span class="sd">         label of the corresponding cause of each, and give output by label.&quot;&quot;&quot;</span>
 
-        <span class="n">yld</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLivedWithDisability</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+        <span class="k">def</span> <span class="nf">add_duplicated_columns</span><span class="p">(</span><span class="n">_df</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">_df</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+        <span class="n">yld</span> <span class="o">=</span> <span class="n">add_duplicated_columns</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">YearsLivedWithDisability</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
             <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">causes_of_disability</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">label</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLivedWithDisability</span><span class="o">.</span><span class="n">columns</span><span class="p">}</span>
-        <span class="p">)</span>
+        <span class="p">))</span>
 
-        <span class="n">yll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+        <span class="n">yll</span> <span class="o">=</span> <span class="n">add_duplicated_columns</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
             <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">causes_of_death</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">label</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="o">.</span><span class="n">columns</span><span class="p">}</span>
-        <span class="p">)</span>
+        <span class="p">))</span>
 
-        <span class="k">return</span> <span class="n">yld</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">yll</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
+        <span class="n">yll_stacked</span> <span class="o">=</span> <span class="n">add_duplicated_columns</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLostStacked</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+            <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">causes_of_death</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">label</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="o">.</span><span class="n">columns</span><span class="p">}</span>
+        <span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">yld</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">yll</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">yld</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">yll_stacked</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HealthBurden.get_daly_weight"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.HealthBurden.get_daly_weight">[docs]</a>    <span class="k">def</span> <span class="nf">get_daly_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequlae_code</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -389,32 +319,49 @@
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multi_index</span><span class="p">)</span>
 
         <span class="c1"># date from which years of life are lost</span>
-        <span class="n">start_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+        <span class="n">date_of_death</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
 
-        <span class="c1"># data to count up to for years of life lost (the earliest of the age_limit or end of simulation)</span>
-        <span class="n">end_date</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">end_date</span><span class="p">,</span> <span class="p">(</span><span class="n">date_of_birth</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Age_Limit_For_YLL&#39;</span><span class="p">])))</span>
-
-        <span class="c1"># get the years of life lost split out by year and age-group</span>
-        <span class="n">yll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decompose_yll_by_age_and_time</span><span class="p">(</span><span class="n">start_date</span><span class="o">=</span><span class="n">start_date</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="n">end_date</span><span class="p">,</span> <span class="n">date_of_birth</span><span class="o">=</span><span class="n">date_of_birth</span><span class="p">)</span>
-
+        <span class="c1"># Get the years of life lost split out by year and age-group (counting years of life lost up to the earliest of</span>
+        <span class="c1"># the age_limit or end of simulation)</span>
+        <span class="n">yll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decompose_yll_by_age_and_time</span><span class="p">(</span><span class="n">start_date</span><span class="o">=</span><span class="n">date_of_death</span><span class="p">,</span>
+                                                 <span class="n">end_date</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span>
+                                                     <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">end_date</span><span class="p">,</span>
+                                                     <span class="p">(</span><span class="n">date_of_birth</span> <span class="o">+</span>
+                                                      <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Age_Limit_For_YLL&#39;</span><span class="p">]))</span>
+                                                 <span class="p">),</span>
+                                                 <span class="n">date_of_birth</span><span class="o">=</span><span class="n">date_of_birth</span>
+                                                 <span class="p">)</span>
         <span class="c1"># augment the multi-index of yll with sex so that it is sex/age_range/year</span>
         <span class="n">yll</span><span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sex</span>
-        <span class="n">yll</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">yll</span> <span class="o">=</span> <span class="n">yll</span><span class="o">.</span><span class="n">reorder_levels</span><span class="p">([</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">])</span>
+        <span class="n">yll</span> <span class="o">=</span> <span class="n">yll</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">reorder_levels</span><span class="p">([</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">])</span>
+
+        <span class="c1"># Get the years of live lost &quot;stacked&quot; (where all the life-years lost up to the age_limit are ascribed to the</span>
+        <span class="c1"># year of death)</span>
+        <span class="n">yll_stacked</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decompose_yll_by_age_and_time</span><span class="p">(</span>
+            <span class="n">start_date</span><span class="o">=</span><span class="n">date_of_death</span><span class="p">,</span>
+            <span class="n">end_date</span><span class="o">=</span><span class="n">date_of_birth</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Age_Limit_For_YLL&#39;</span><span class="p">]),</span>
+            <span class="n">date_of_birth</span><span class="o">=</span><span class="n">date_of_birth</span>
+        <span class="p">)</span>
+        <span class="n">yll_stacked</span> <span class="o">=</span> <span class="n">yll_stacked</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">yll_stacked</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">date_of_death</span><span class="o">.</span><span class="n">year</span>
+        <span class="n">yll_stacked</span><span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sex</span>
+        <span class="n">yll_stacked</span> <span class="o">=</span> <span class="n">yll_stacked</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">],</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">reorder_levels</span><span class="p">([</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">])</span>
 
         <span class="c1"># Add the years-of-life-lost from this death to the overall YLL dataframe keeping track</span>
         <span class="k">if</span> <span class="n">cause_of_death</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
             <span class="c1"># cause has not been added to the LifeYearsLost dataframe, so make a new columns</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="p">[</span><span class="n">cause_of_death</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLostStacked</span><span class="p">[</span><span class="n">cause_of_death</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
 
         <span class="c1"># Add the life-years-lost from this death to the running total in LifeYearsLost dataframe</span>
-        <span class="n">indx_before</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="o">.</span><span class="n">index</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="p">[</span><span class="n">cause_of_death</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="p">[</span><span class="n">cause_of_death</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">yll</span><span class="p">[</span><span class="s1">&#39;person_years&#39;</span><span class="p">],</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">indx_after</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="o">.</span><span class="n">index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="p">[</span><span class="n">cause_of_death</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="p">[</span><span class="n">cause_of_death</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+            <span class="n">yll</span><span class="p">[</span><span class="s1">&#39;person_years&#39;</span><span class="p">],</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLostStacked</span><span class="p">[</span><span class="n">cause_of_death</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLostStacked</span><span class="p">[</span><span class="n">cause_of_death</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+            <span class="n">yll_stacked</span><span class="p">[</span><span class="s1">&#39;person_years&#39;</span><span class="p">],</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="c1"># check that the index of the YLL dataframe is not changed</span>
-        <span class="k">assert</span> <span class="n">indx_after</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">indx_before</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">indx_after</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multi_index</span><span class="p">)</span></div>
+        <span class="c1"># Check that the index of the YLL dataframe is not changed</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLost</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multi_index</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">YearsLifeLostStacked</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">multi_index</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HealthBurden.decompose_yll_by_age_and_time"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.HealthBurden.decompose_yll_by_age_and_time">[docs]</a>    <span class="k">def</span> <span class="nf">decompose_yll_by_age_and_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_date</span><span class="p">,</span> <span class="n">end_date</span><span class="p">,</span> <span class="n">date_of_birth</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -572,7 +519,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -580,40 +526,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Nov 09, 2021.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Jan 19, 2022.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

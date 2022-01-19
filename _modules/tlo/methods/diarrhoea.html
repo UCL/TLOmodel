@@ -1,76 +1,34 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.diarrhoea &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../index.html" class="icon icon-home"> TLOmodel
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -78,18 +36,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -103,71 +50,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
           <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
           <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
       <li>tlo.methods.diarrhoea</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.diarrhoea</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Childhood Diarrhoea Module</span>
@@ -814,23 +721,18 @@
         <span class="k">return</span> <span class="n">average_daly_weight_in_last_month</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Diarrhoea.look_up_consumables"><a class="viewcode-back" href="../../../reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.Diarrhoea.look_up_consumables">[docs]</a>    <span class="k">def</span> <span class="nf">look_up_consumables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Look up and store the consumables used in each of the HSI.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Look up and store the consumables item codes used in each of the HSI.&quot;&quot;&quot;</span>
+        <span class="n">get_item_codes_from_package_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_codes_from_package_name</span>
 
-        <span class="k">def</span> <span class="nf">get_code</span><span class="p">(</span><span class="n">package</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-            <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Consumables&#39;</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">package</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">condition</span> <span class="o">=</span> <span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Intervention_Pkg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">package</span>
-                <span class="n">column</span> <span class="o">=</span> <span class="s1">&#39;Intervention_Pkg_Code&#39;</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">condition</span> <span class="o">=</span> <span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Items&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">item</span>
-                <span class="n">column</span> <span class="o">=</span> <span class="s1">&#39;Item_Code&#39;</span>
-            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">condition</span><span class="p">,</span> <span class="n">column</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;ORS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_code</span><span class="p">(</span><span class="n">package</span><span class="o">=</span><span class="s1">&#39;ORS&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Treatment_Severe_Dehydration&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_code</span><span class="p">(</span><span class="n">package</span><span class="o">=</span><span class="s1">&#39;Treatment of severe diarrhea&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Zinc_Under6mo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_code</span><span class="p">(</span><span class="n">package</span><span class="o">=</span><span class="s1">&#39;Zinc for Children 0-6 months&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Zinc_Over6mo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_code</span><span class="p">(</span><span class="n">package</span><span class="o">=</span><span class="s1">&#39;Zinc for Children 6-59 months&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Antibiotics_for_Dysentery&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_code</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;ORS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_codes_from_package_name</span><span class="p">(</span>
+            <span class="n">package</span><span class="o">=</span><span class="s1">&#39;ORS&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Treatment_Severe_Dehydration&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_codes_from_package_name</span><span class="p">(</span>
+            <span class="n">package</span><span class="o">=</span><span class="s1">&#39;Treatment of severe diarrhea&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Zinc_Under6mo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_codes_from_package_name</span><span class="p">(</span>
+            <span class="n">package</span><span class="o">=</span><span class="s1">&#39;Zinc for Children 0-6 months&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Zinc_Over6mo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_codes_from_package_name</span><span class="p">(</span>
+            <span class="n">package</span><span class="o">=</span><span class="s1">&#39;Zinc for Children 6-59 months&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Antibiotics_for_Dysentery&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_codes_from_package_name</span><span class="p">(</span>
             <span class="n">package</span><span class="o">=</span><span class="s1">&#39;Antibiotics for treatment of dysentery&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Diarrhoea.do_when_presentation_with_diarrhoea"><a class="viewcode-back" href="../../../reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.Diarrhoea.do_when_presentation_with_diarrhoea">[docs]</a>    <span class="k">def</span> <span class="nf">do_when_presentation_with_diarrhoea</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
@@ -854,7 +756,6 @@
 
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># No danger signs but not hospitalized --&gt; Out-patient</span>
-            <span class="c1"># todo - Should children that have no dehydration really get an Outpatient HSI?</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
                 <span class="n">HSI_Diarrhoea_Treatment_Outpatient</span><span class="p">(</span>
                     <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
@@ -874,13 +775,6 @@
 <span class="sd">        * Records that treatment is provided.</span>
 
 <span class="sd">        NB. Provisions for cholera are not included</span>
-
-<span class="sd">        # todo - Zinc is provided to all persons currently. It may be that this should be changed so that it is only</span>
-<span class="sd">        #  provided to those persons who, at the time of the HSI, have had diarrhoea for 13 days or longer.</span>
-
-<span class="sd">        # todo - ORS is provided to all persons currently It may be that it should only be provided to those with</span>
-<span class="sd">        #  &#39;some&#39; dehydration. (It would have no effect -- only matters if the persons has severe dehydration).</span>
-
 <span class="sd">        See this report:</span>
 <span class="sd">          https://apps.who.int/iris/bitstream/handle/10665/104772/9789241506823_Chartbook_eng.pdf (page 3).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -912,22 +806,22 @@
 
         <span class="c1"># ** Implement the procedure for treatment **</span>
         <span class="c1"># STEP ZERO: Get the Zinc consumable (happens irrespective of whether child will die or not)</span>
-        <span class="n">gets_zinc</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-            <span class="n">pkg_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span>
+        <span class="n">gets_zinc</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
+            <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span>
                 <span class="s1">&#39;Zinc_Under6mo&#39;</span> <span class="k">if</span> <span class="n">person</span><span class="o">.</span><span class="n">age_exact_years</span> <span class="o">&lt;</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="s1">&#39;Zinc_Over6mo&#39;</span><span class="p">]</span>
         <span class="p">)</span>
 
         <span class="c1"># STEP ONE: Aim to alleviate dehydration:</span>
         <span class="n">prob_remove_dehydration</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="k">if</span> <span class="n">is_in_patient</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span><span class="n">pkg_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Treatment_Severe_Dehydration&#39;</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Treatment_Severe_Dehydration&#39;</span><span class="p">]):</span>
                 <span class="c1"># In-patient receiving IV fluids (WHO Plan C)</span>
                 <span class="n">prob_remove_dehydration</span> <span class="o">=</span> \
                     <span class="n">p</span><span class="p">[</span><span class="s1">&#39;prob_WHOPlanC_cures_dehydration_if_severe_dehydration&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">dehydration_is_severe</span> \
                     <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;prob_ORS_cures_dehydration_if_non_severe_dehydration&#39;</span><span class="p">]</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span><span class="n">pkg_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;ORS&#39;</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;ORS&#39;</span><span class="p">]):</span>
                 <span class="c1"># Out-patient receving ORS</span>
                 <span class="n">prob_remove_dehydration</span> <span class="o">=</span> \
                     <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;prob_ORS_cures_dehydration_if_severe_dehydration&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">dehydration_is_severe</span> \
@@ -937,8 +831,8 @@
         <span class="n">dehydration_after_treatment</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">prob_remove_dehydration</span> <span class="k">else</span> <span class="n">person</span><span class="o">.</span><span class="n">gi_dehydration</span>
 
         <span class="c1"># STEP TWO: If has bloody diarrhoea (i.e., dysentry), then aim to clear bacterial infection</span>
-        <span class="k">if</span> <span class="n">type_of_diarrhoea_is_bloody</span> <span class="ow">and</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_all_consumables</span><span class="p">(</span>
-            <span class="n">pkg_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Antibiotics_for_Dysentery&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">type_of_diarrhoea_is_bloody</span> <span class="ow">and</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
+            <span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">consumables_used_in_hsi</span><span class="p">[</span><span class="s1">&#39;Antibiotics_for_Dysentery&#39;</span><span class="p">]</span>
         <span class="p">):</span>
             <span class="n">prob_clear_bacterial_infection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;prob_antibiotic_cures_dysentery&#39;</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1551,13 +1445,12 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="n">props_new</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span> <span class="o">=</span> <span class="n">props_new</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
 
         <span class="c1"># Apply symptoms for this episode (these do not affect the course of disease)</span>
-        <span class="k">for</span> <span class="n">symptom</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">get_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pathogen</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">change_symptom</span><span class="p">(</span>
-                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                <span class="n">symptom_string</span><span class="o">=</span><span class="n">symptom</span><span class="p">,</span>
-                <span class="n">add_or_remove</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
-                <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span>
-            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">change_symptom</span><span class="p">(</span>
+            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+            <span class="n">symptom_string</span><span class="o">=</span><span class="n">m</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">get_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pathogen</span><span class="p">),</span>
+            <span class="n">add_or_remove</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+            <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span>
+        <span class="p">)</span>
 
         <span class="c1"># Log this incident case:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
@@ -1698,7 +1591,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;Diarrhoea_Treatment_Outpatient&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;Under5OPD&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 <div class="viewcode-block" id="HSI_Diarrhoea_Treatment_Outpatient.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_Outpatient.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
@@ -1723,7 +1616,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;Diarrhoea_Treatment_Inpatient&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;InpatientDays&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;IPAdmission&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({</span><span class="s1">&#39;general_bed&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 <div class="viewcode-block" id="HSI_Diarrhoea_Treatment_Inpatient.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.diarrhoea.html#tlo.methods.diarrhoea.HSI_Diarrhoea_Treatment_Inpatient.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
@@ -1861,7 +1754,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -1869,40 +1761,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Nov 09, 2021.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Jan 19, 2022.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

@@ -1,76 +1,34 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.alri &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../index.html" class="icon icon-home"> TLOmodel
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -78,18 +36,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -103,71 +50,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
           <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
           <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
       <li>tlo.methods.alri</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.alri</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Childhood Acute Lower Respiratory Infection Module</span>
@@ -302,7 +209,7 @@
     <span class="p">}</span>
 
     <span class="c1"># Make set of all pathogens combined:</span>
-    <span class="n">all_pathogens</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">pathogens</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+    <span class="n">all_pathogens</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">pathogens</span><span class="o">.</span><span class="n">values</span><span class="p">())))</span>
 
     <span class="c1"># Declare Causes of Death</span>
     <span class="n">CAUSES_OF_DEATH</span> <span class="o">=</span> <span class="p">{</span>
@@ -317,20 +224,19 @@
     <span class="p">}</span>
 
     <span class="c1"># Declare the disease types:</span>
-    <span class="n">disease_types</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;pneumonia&#39;</span><span class="p">,</span> <span class="s1">&#39;bronchiolitis&#39;</span><span class="p">,</span> <span class="s1">&#39;other_alri&#39;</span>
-    <span class="p">}</span>
+    <span class="n">disease_types</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span><span class="s1">&#39;pneumonia&#39;</span><span class="p">,</span> <span class="s1">&#39;bronchiolitis&#39;</span><span class="p">,</span> <span class="s1">&#39;other_alri&#39;</span><span class="p">})</span>
 
     <span class="c1"># Declare the Alri complications:</span>
-    <span class="n">complications</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;pneumothorax&#39;</span><span class="p">,</span>
-                     <span class="s1">&#39;pleural_effusion&#39;</span><span class="p">,</span>
-                     <span class="s1">&#39;empyema&#39;</span><span class="p">,</span>
-                     <span class="s1">&#39;lung_abscess&#39;</span><span class="p">,</span>
-                     <span class="s1">&#39;sepsis&#39;</span><span class="p">,</span>
-                     <span class="s1">&#39;meningitis&#39;</span><span class="p">,</span>
-                     <span class="s1">&#39;respiratory_failure&#39;</span><span class="p">,</span>
-                     <span class="s1">&#39;hypoxia&#39;</span>  <span class="c1"># &lt;-- Low implies Sp02&lt;93%&#39;</span>
-                     <span class="p">}</span>
+    <span class="n">complications</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span>
+        <span class="s1">&#39;pneumothorax&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;pleural_effusion&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;empyema&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;lung_abscess&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;sepsis&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;meningitis&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;respiratory_failure&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;hypoxia&#39;</span>  <span class="c1"># &lt;-- Low implies Sp02&lt;93%&#39;</span>
+    <span class="p">})</span>
 
     <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{</span>
         <span class="c1"># Incidence rate by pathogens  -----</span>
@@ -840,7 +746,7 @@
         <span class="c1"># ---- The underlying Alri condition ----</span>
         <span class="s1">&#39;ri_disease_type&#39;</span><span class="p">:</span>
             <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span> <span class="s1">&#39;If infected, what disease type is the person currently suffering from.&#39;</span><span class="p">,</span>
-                     <span class="n">categories</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">disease_types</span><span class="p">)</span>
+                     <span class="n">categories</span><span class="o">=</span><span class="n">disease_types</span>
                      <span class="p">),</span>
 
         <span class="c1"># ---- Treatment Status ----</span>
@@ -919,7 +825,7 @@
             <span class="s1">&#39;respiratory_distress&#39;</span><span class="p">,</span> <span class="s1">&#39;danger_signs&#39;</span>
         <span class="p">}</span>
 
-        <span class="k">for</span> <span class="n">symptom_name</span> <span class="ow">in</span> <span class="n">all_symptoms</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">symptom_name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">all_symptoms</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">symptom_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">generic_symptoms</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">register_symptom</span><span class="p">(</span>
                     <span class="n">Symptom</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">symptom_name</span><span class="p">)</span>
@@ -1174,14 +1080,13 @@
 
 <div class="viewcode-block" id="Alri.impose_symptoms_for_complication"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.Alri.impose_symptoms_for_complication">[docs]</a>    <span class="k">def</span> <span class="nf">impose_symptoms_for_complication</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">complication</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Impose symptoms for a complication.&quot;&quot;&quot;</span>
-        <span class="n">symptoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">symptoms_for_complication</span><span class="p">(</span><span class="n">complication</span><span class="o">=</span><span class="n">complication</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">symptom</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">change_symptom</span><span class="p">(</span>
-                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                <span class="n">symptom_string</span><span class="o">=</span><span class="n">symptom</span><span class="p">,</span>
-                <span class="n">add_or_remove</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
-                <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
-            <span class="p">)</span></div></div>
+        <span class="n">symptoms</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">symptoms_for_complication</span><span class="p">(</span><span class="n">complication</span><span class="o">=</span><span class="n">complication</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">change_symptom</span><span class="p">(</span>
+            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+            <span class="n">symptom_string</span><span class="o">=</span><span class="n">symptoms</span><span class="p">,</span>
+            <span class="n">add_or_remove</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+            <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+        <span class="p">)</span></div></div>
 
 
 <span class="k">class</span> <span class="nc">Models</span><span class="p">:</span>
@@ -1668,14 +1573,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span>
         <span class="n">models</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">models</span>
-
-        <span class="k">for</span> <span class="n">symptom</span> <span class="ow">in</span> <span class="n">models</span><span class="o">.</span><span class="n">symptoms_for_disease</span><span class="p">(</span><span class="n">disease_type</span><span class="o">=</span><span class="n">disease_type</span><span class="p">):</span>
-            <span class="n">m</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">change_symptom</span><span class="p">(</span>
-                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                <span class="n">symptom_string</span><span class="o">=</span><span class="n">symptom</span><span class="p">,</span>
-                <span class="n">add_or_remove</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
-                <span class="n">disease_module</span><span class="o">=</span><span class="n">m</span><span class="p">,</span>
-            <span class="p">)</span></div>
+        <span class="n">symptoms</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">symptoms_for_disease</span><span class="p">(</span><span class="n">disease_type</span><span class="o">=</span><span class="n">disease_type</span><span class="p">))</span>
+        <span class="n">m</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">change_symptom</span><span class="p">(</span>
+            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+            <span class="n">symptom_string</span><span class="o">=</span><span class="n">symptoms</span><span class="p">,</span>
+            <span class="n">add_or_remove</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+            <span class="n">disease_module</span><span class="o">=</span><span class="n">m</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
 <div class="viewcode-block" id="AlriIncidentCase.impose_complications"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.AlriIncidentCase.impose_complications">[docs]</a>    <span class="k">def</span> <span class="nf">impose_complications</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">date_of_outcome</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Choose a set of complications for this person and onset these all instantanesouly.&quot;&quot;&quot;</span>
@@ -1686,13 +1590,13 @@
 
         <span class="n">complications</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">complications</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;ri_complication_</span><span class="si">{</span><span class="n">complication</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">complication</span> <span class="ow">in</span> <span class="n">complications</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">for</span> <span class="n">complication</span> <span class="ow">in</span> <span class="n">complications</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">complication</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">complications</span><span class="p">):</span>
             <span class="n">m</span><span class="o">.</span><span class="n">impose_symptoms_for_complication</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">complication</span><span class="o">=</span><span class="n">complication</span><span class="p">)</span>
 
         <span class="c1"># Consider delayed-onset of complications and schedule events accordingly</span>
         <span class="n">date_of_onset_delayed_complications</span> <span class="o">=</span> <span class="n">random_date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">date_of_outcome</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
         <span class="n">delayed_complications</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">delayed_complications</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">delayed_complication</span> <span class="ow">in</span> <span class="n">delayed_complications</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">delayed_complication</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">delayed_complications</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span>
                 <span class="n">AlriDelayedOnsetComplication</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
                                              <span class="n">complication</span><span class="o">=</span><span class="n">delayed_complication</span><span class="p">,</span>
@@ -1845,7 +1749,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;Alri_GenericTreatment&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;Over5OPD&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 <div class="viewcode-block" id="HSI_Alri_GenericTreatment.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.HSI_Alri_GenericTreatment.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
@@ -1934,8 +1838,7 @@
         <span class="c1"># Check and store parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pathogens</span> <span class="o">=</span> <span class="n">pathogens</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">age_grps_lookup</span> <span class="o">=</span> <span class="n">age_grps</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">unique_age_grps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">age_grps_lookup</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">unique_age_grps</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unique_age_grps</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">age_grps_lookup</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
 
         <span class="c1"># Initialise Tracker</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tracker</span> <span class="o">=</span> <span class="kc">None</span>
@@ -2057,7 +1960,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -2065,40 +1967,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Nov 09, 2021.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Jan 19, 2022.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

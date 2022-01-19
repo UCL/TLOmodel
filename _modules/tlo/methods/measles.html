@@ -1,76 +1,34 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.measles &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../index.html" class="icon icon-home"> TLOmodel
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -78,18 +36,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -103,71 +50,31 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
           <li><a href="../../index.html">Module code</a> &raquo;</li>
-        
           <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
-        
       <li>tlo.methods.measles</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for tlo.methods.measles</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">os</span>
@@ -186,26 +93,7 @@
 
 
 <div class="viewcode-block" id="Measles"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles">[docs]</a><span class="k">class</span> <span class="nc">Measles</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This module assigns new measles infections to the population</span>
-<span class="sd">        measles vaccination is housed in the epi module</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<div class="viewcode-block" id="Measles.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
-
-        <span class="c1"># Store the symptoms that this module will use:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">symptoms</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;rash&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;fever&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;diarrhoea&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;encephalitis&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;otitis_media&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;respiratory_symptoms&#39;</span><span class="p">,</span>  <span class="c1"># pneumonia</span>
-            <span class="s1">&#39;eye_complaint&#39;</span>
-        <span class="p">}</span></div>
+    <span class="sd">&quot;&quot;&quot;This module represents measles infections and disease.&quot;&quot;&quot;</span>
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">,</span> <span class="s1">&#39;SymptomManager&#39;</span><span class="p">}</span>
 
@@ -267,6 +155,24 @@
         <span class="s1">&#39;otitis_media&#39;</span>
     <span class="p">}</span>
 
+<div class="viewcode-block" id="Measles.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
+
+        <span class="c1"># Store the symptoms that this module will use:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">symptoms</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;rash&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;fever&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;diarrhoea&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;encephalitis&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;otitis_media&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;respiratory_symptoms&#39;</span><span class="p">,</span>  <span class="c1"># pneumonia</span>
+            <span class="s1">&#39;eye_complaint&#39;</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumables</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (will store item_codes for consumables used in HSI)</span></div>
+
 <div class="viewcode-block" id="Measles.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Read parameter values from file</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -323,14 +229,21 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s2">&quot;me_on_treatment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="Measles.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Schedule measles event to start straight away. Each month it will assign new infections&quot;&quot;&quot;</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MeaslesEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MeaslesLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MeaslesLoggingFortnightEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MeaslesLoggingAnnualEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
 
-        <span class="sd">&quot;&quot;&quot;schedule measles event to start straight away</span>
-<span class="sd">        each month it will assign new infections</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MeaslesEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MeaslesLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MeaslesLoggingFortnightEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MeaslesLoggingAnnualEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span></div>
+        <span class="c1"># Look-up item_codes for the consumables used in the associated HSI</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumables</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;vit_A&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Vitamin A, caplet, 100,000 IU&quot;</span><span class="p">),</span>
+            <span class="s1">&#39;severe_diarrhoea&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_codes_from_package_name</span><span class="p">(</span><span class="s2">&quot;Treatment of severe diarrhea&quot;</span><span class="p">),</span>
+            <span class="s1">&#39;severe_pneumonia&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_codes_from_package_name</span><span class="p">(</span><span class="s2">&quot;Treatment of severe pneumonia&quot;</span><span class="p">)</span>
+        <span class="p">}</span></div>
 
 <div class="viewcode-block" id="Measles.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual</span>
@@ -436,7 +349,7 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;me_date_measles&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
 
         <span class="c1"># assign symptoms</span>
-        <span class="n">symptom_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">symptoms</span>
+        <span class="n">symptom_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">symptoms</span><span class="p">)</span>
 
         <span class="n">ref_age</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;age_years&quot;</span><span class="p">]</span>
         <span class="c1"># age limit for symptom data is 30 years</span>
@@ -444,27 +357,26 @@
             <span class="n">ref_age</span> <span class="o">=</span> <span class="mi">30</span>
 
         <span class="c1"># read probabilities of symptoms by age</span>
-        <span class="n">symptom_prob</span> <span class="o">=</span> <span class="n">symptom_prob</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">symptom_prob</span><span class="o">.</span><span class="n">age</span> <span class="o">==</span> <span class="n">ref_age</span><span class="p">]</span>
+        <span class="n">symptom_prob</span> <span class="o">=</span> <span class="n">symptom_prob</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">symptom_prob</span><span class="o">.</span><span class="n">age</span> <span class="o">==</span> <span class="n">ref_age</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;symptom&quot;</span><span class="p">,</span> <span class="s2">&quot;probability&quot;</span><span class="p">]]</span>
+        <span class="c1"># map to a series of probabilities indexed by symptom key</span>
+        <span class="n">symptom_prob</span> <span class="o">=</span> <span class="n">symptom_prob</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;symptom&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">probability</span>
 
         <span class="c1"># symptom onset</span>
         <span class="n">symp_onset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">21</span><span class="p">))</span>
 
         <span class="c1"># everybody gets rash, fever and eye complaint, other symptoms assigned with age-specific probability</span>
-        <span class="k">for</span> <span class="n">symptom</span> <span class="ow">in</span> <span class="n">symptom_list</span><span class="p">:</span>
 
-            <span class="n">specific_symptom_prob</span> <span class="o">=</span> <span class="n">symptom_prob</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">symptom_prob</span><span class="o">.</span><span class="n">symptom</span> <span class="o">==</span> <span class="n">symptom</span><span class="p">,</span> <span class="s2">&quot;probability&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-
-            <span class="c1"># random sample whether person will have symptom</span>
-            <span class="k">if</span> <span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">specific_symptom_prob</span><span class="p">:</span>
-                <span class="c1"># schedule symptom onset</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">change_symptom</span><span class="p">(</span>
-                    <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                    <span class="n">symptom_string</span><span class="o">=</span><span class="n">symptom</span><span class="p">,</span>
-                    <span class="n">add_or_remove</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
-                    <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;Measles&quot;</span><span class="p">],</span>
-                    <span class="n">date_of_onset</span><span class="o">=</span><span class="n">symp_onset</span><span class="p">,</span>
-                    <span class="n">duration_in_days</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span>  <span class="c1"># same duration for all symptoms</span>
-                <span class="p">)</span>
+        <span class="c1"># random sample which symptoms a person will have</span>
+        <span class="n">active_symptoms</span> <span class="o">=</span> <span class="p">[</span><span class="n">sym</span> <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="n">symptom_list</span> <span class="k">if</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">symptom_prob</span><span class="p">[</span><span class="n">sym</span><span class="p">]]</span>
+        <span class="c1"># schedule symptoms onset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">change_symptom</span><span class="p">(</span>
+            <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+            <span class="n">symptom_string</span><span class="o">=</span><span class="n">active_symptoms</span><span class="p">,</span>
+            <span class="n">add_or_remove</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+            <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
+            <span class="n">date_of_onset</span><span class="o">=</span><span class="n">symp_onset</span><span class="p">,</span>
+            <span class="n">duration_in_days</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span>  <span class="c1"># same duration for all symptoms</span>
+        <span class="p">)</span>
 
         <span class="c1"># schedule symptom resolution without treatment - this only occurs if death doesn&#39;t happen first</span>
         <span class="n">symp_resolve</span> <span class="o">=</span> <span class="n">symp_onset</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">14</span><span class="p">))</span>
@@ -473,7 +385,7 @@
         <span class="c1"># todo separate probability for people with HIV</span>
 
         <span class="c1"># probability of death</span>
-        <span class="k">if</span> <span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">symptom_prob</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">symptom_prob</span><span class="o">.</span><span class="n">symptom</span> <span class="o">==</span> <span class="s2">&quot;death&quot;</span><span class="p">,</span> <span class="s2">&quot;probability&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">symptom_prob</span><span class="p">[</span><span class="s2">&quot;death&quot;</span><span class="p">]:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;MeaslesOnsetEvent&quot;</span><span class="p">,</span>
                          <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;This is MeaslesOnsetEvent, scheduling measles death for </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
@@ -572,7 +484,7 @@
         <span class="c1"># Define the necessary information for an HSI</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;Measles_Treatment&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="n">the_appt_footprint</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 <div class="viewcode-block" id="HSI_Measles_Treatment.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.HSI_Measles_Treatment.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
@@ -580,45 +492,21 @@
                      <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;HSI_Measles_Treatment: treat person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2"> for measles&quot;</span><span class="p">)</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-
-        <span class="c1"># treatment combinations available</span>
-        <span class="n">consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;Consumables&quot;</span><span class="p">]</span>
-        <span class="n">item_code1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s2">&quot;Items&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Vitamin A, caplet, 100,000 IU&quot;</span><span class="p">,</span> <span class="s2">&quot;Item_Code&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="n">package_code1</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Intervention_Pkg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Treatment of severe diarrhea&#39;</span><span class="p">,</span>
-                            <span class="s1">&#39;Intervention_Pkg_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="n">package_code2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">consumables</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;Intervention_Pkg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Treatment of severe pneumonia&#39;</span><span class="p">,</span>
-                            <span class="s1">&#39;Intervention_Pkg_Code&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">symptoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
 
         <span class="c1"># for non-complicated measles</span>
-        <span class="n">the_cons_footprint</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code1</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
-        <span class="p">}</span>
+        <span class="n">item_codes</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;vit_A&#39;</span><span class="p">]]</span>
 
         <span class="c1"># for measles with severe diarrhoea</span>
-        <span class="k">if</span> <span class="s2">&quot;diarrhoea&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="p">):</span>
-            <span class="n">the_cons_footprint</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">package_code1</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
-                <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code1</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
-            <span class="p">}</span>
+        <span class="k">if</span> <span class="s2">&quot;diarrhoea&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
+            <span class="n">item_codes</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;severe_diarrhoea&#39;</span><span class="p">]</span>
 
         <span class="c1"># for measles with pneumonia</span>
-        <span class="k">if</span> <span class="s2">&quot;respiratory_symptoms&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="p">):</span>
-            <span class="n">the_cons_footprint</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;Intervention_Package_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">package_code2</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
-                <span class="s2">&quot;Item_Code&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">item_code1</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
-            <span class="p">}</span>
+        <span class="k">if</span> <span class="s2">&quot;respiratory_symptoms&quot;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
+            <span class="n">item_codes</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">consumables</span><span class="p">[</span><span class="s1">&#39;severe_pneumonia&#39;</span><span class="p">]</span>
 
         <span class="c1"># request the treatment</span>
-        <span class="n">outcome_of_request_for_consumables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">request_consumables</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">cons_req_as_footprint</span><span class="o">=</span><span class="n">the_cons_footprint</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">outcome_of_request_for_consumables</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="p">):</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;HSI_Measles_Treatment&quot;</span><span class="p">,</span>
                          <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;HSI_Measles_Treatment: giving required measles treatment to person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
@@ -749,7 +637,6 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
 
@@ -757,40 +644,25 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Nov 09, 2021.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Jan 19, 2022.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

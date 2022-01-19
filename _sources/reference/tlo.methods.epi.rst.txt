@@ -109,7 +109,7 @@ tlo.methods.epi module
 
      **Class attributes:**
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Demography'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
@@ -130,6 +130,8 @@ tlo.methods.epi module
      .. automethod:: report_daly_values
 
      .. automethod:: increment_dose
+
+     .. automethod:: get_item_codes
 
 
 
@@ -312,8 +314,6 @@ tlo.methods.epi module
      .. automethod:: treatment_id
 
      .. automethod:: apply
-
-     .. automethod:: request_vax_consumables
 
      .. automethod:: did_not_run
 

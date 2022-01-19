@@ -18,36 +18,36 @@ tlo.methods.healthsystem module
         * - Item
           - Type
           - Description
-        * - BedCapacity
-          - DATA_FRAME
-          - Data on the number of beds available of each type by facility_id
-        * - Officer_Types
-          - DATA_FRAME
-          - The names of the types of health workers ("officers")
-        * - Daily_Capabilities
-          - DATA_FRAME
-          - The capabilities by facility and officer type available each day
-        * - Appt_Types_Table
-          - DATA_FRAME
-          - The names of the type of appointments with the health system
-        * - Appt_Time_Table
-          - DICT
-          - The time taken for each appointment, according to officer and facility type.
-        * - ApptType_By_FacLevel
-          - LIST
-          - Indicates whether an appointment type can occur at a facility level.
         * - Master_Facilities_List
           - DATA_FRAME
           - Listing of all health facilities.
-        * - Facilities_For_Each_District
-          - DICT
-          - Mapping between a district and all of the health facilities to which its                       population have access.
-        * - Consumables
+        * - Officer_Types_Table
+          - DATA_FRAME
+          - The names of the types of health workers ("officers")
+        * - Appt_Types_Table
+          - DATA_FRAME
+          - The names of the type of appointments with the health system
+        * - Appt_Offered_By_Facility_Level
+          - DATA_FRAME
+          - Table indicating whether or not each appointment is offered at each facility level.
+        * - Appt_Time_Table
+          - DATA_FRAME
+          - The time taken for each appointment, according to officer and facility type.
+        * - Daily_Capabilities_actual
+          - DATA_FRAME
+          - The capabilities (minutes of time available of each type of officer in each facility) based on the _estimated current_ number and distribution of staff estimated.
+        * - Daily_Capabilities_funded
+          - DATA_FRAME
+          - The capabilities (minutes of time available of each type of officer in each facility) based on the _potential_ number and distribution of staff estimated (i.e. those positions that can be funded).
+        * - Daily_Capabilities_funded_plus
+          - DATA_FRAME
+          - The capabilities (minutes of time available of each type of officer in each facility) based on the _potential_ number and distribution of staff estimated, with adjustments to permit each appointment type that should be run at facility level to do so in every district.
+        * - Consumables_OneHealth
           - DATA_FRAME
           - List of consumables used in each intervention and their costs.
-        * - Consumables_Cost_List
+        * - BedCapacity
           - DATA_FRAME
-          - List of each consumable item and its cost
+          - Data on the number of beds available of each type by facility_id
         * - Service_Availability
           - LIST
           - List of services to be available.
@@ -62,9 +62,6 @@ tlo.methods.healthsystem module
         * - Item
           - Type
           - Description
-        * - hs_dist_to_facility
-          - REAL
-          - The distance for each person to their nearest clinic (of any type)
         * - hs_is_inpatient
           - BOOL
           - Whether or not the person is currently an in-patient at any medical facility
@@ -81,21 +78,23 @@ tlo.methods.healthsystem module
 
      .. automethod:: read_parameters
 
-     .. automethod:: process_consumables_file
-
      .. automethod:: pre_initialise_population
 
      .. automethod:: initialise_population
 
      .. automethod:: initialise_simulation
 
-     .. automethod:: set_service_availability
-
      .. automethod:: on_birth
 
      .. automethod:: on_simulation_end
 
-     .. automethod:: register_disease_module
+     .. automethod:: process_human_resources_files
+
+     .. automethod:: process_consumables_file
+
+     .. automethod:: format_daily_capabilities
+
+     .. automethod:: set_service_availability
 
      .. automethod:: schedule_hsi_event
 
@@ -105,13 +104,9 @@ tlo.methods.healthsystem module
 
      .. automethod:: broadcast_healthsystem_interaction
 
-     .. automethod:: reformat_daily_capabilities
-
      .. automethod:: get_capabilities_today
 
      .. automethod:: get_blank_appt_footprint
-
-     .. automethod:: get_blank_cons_footprint
 
      .. automethod:: get_prob_seek_care
 
@@ -121,11 +116,7 @@ tlo.methods.healthsystem module
 
      .. automethod:: get_squeeze_factors
 
-     .. automethod:: request_consumables
-
-     .. automethod:: check_consumables_footprint_format
-
-     .. automethod:: get_consumables_as_individual_items
+     .. automethod:: _request_consumables
 
      .. automethod:: determine_availability_of_consumables_today
 
@@ -133,11 +124,15 @@ tlo.methods.healthsystem module
 
      .. automethod:: log_current_capabilities
 
-     .. automethod:: find_events_for_person
-
      .. automethod:: remove_beddays_footprint
 
+     .. automethod:: find_events_for_person
+
      .. automethod:: reset_queue
+
+     .. automethod:: get_item_codes_from_package_name
+
+     .. automethod:: get_item_code_from_item_name
 
 
 
@@ -171,7 +166,7 @@ tlo.methods.healthsystem module
 
      **Class attributes:**
 
-     bed_days_allocated_to_this_event : <property object at 0x7f8309e05630>
+     bed_days_allocated_to_this_event : <property object at 0x7f897701b720>
 
      **Functions (defined or overridden in class HSI_Event):**
 
@@ -189,7 +184,7 @@ tlo.methods.healthsystem module
 
      .. automethod:: run
 
-     .. automethod:: get_all_consumables
+     .. automethod:: get_consumables
 
      .. automethod:: make_beddays_footprint
 

@@ -112,7 +112,7 @@ tlo.methods.malaria module
           - Date of symptom start for clinical infection
         * - ma_date_death
           - DATE
-          - Date of scheduled death due to malaria
+          - Date of death due to malaria
         * - ma_tx
           - BOOL
           - Currently on anti-malarial treatment
@@ -142,13 +142,13 @@ tlo.methods.malaria module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Malaria': <tlo.methods.causes.Cause object at 0x7f830a08f4f0>}
+     CAUSES_OF_DEATH : {'Malaria': <tlo.methods.causes.Cause object at 0x7f89771ee070>}
 
-     CAUSES_OF_DISABILITY : {'Malaria': <tlo.methods.causes.Cause object at 0x7f830a08f580>}
+     CAUSES_OF_DISABILITY : {'Malaria': <tlo.methods.causes.Cause object at 0x7f89771ee100>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'SymptomManager', 'Contraception', 'Demography'}
+     INIT_DEPENDENCIES : {'Contraception', 'SymptomManager', 'Demography', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 

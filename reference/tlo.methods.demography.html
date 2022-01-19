@@ -1,78 +1,37 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>tlo.methods.demography module &mdash; TLOmodel 0.1.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
-
-  
-  
+      <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
     <link rel="shortcut icon" href="../_static/favicon.png"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="tlo.methods.depression module" href="tlo.methods.depression.html" />
     <link rel="prev" title="tlo.methods.contraception module" href="tlo.methods.contraception.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../index.html" class="icon icon-home"> TLOmodel
-          
-
-          
           </a>
-
-          
-            
-            
               <div class="version">
                 0.1.0
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -80,18 +39,7 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
@@ -105,86 +53,42 @@
 <li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">TLOmodel</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-        
           <li><a href="index.html">Reference</a> &raquo;</li>
-        
           <li><a href="tlo.html">tlo package</a> &raquo;</li>
-        
           <li><a href="tlo.methods.html">tlo.methods package</a> &raquo;</li>
-        
       <li>tlo.methods.demography module</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-          
             <a href="../_sources/reference/tlo.methods.demography.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="module-tlo.methods.demography">
-<span id="tlo-methods-demography-module"></span><h1>tlo.methods.demography module<a class="headerlink" href="#module-tlo.methods.demography" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="module-tlo.methods.demography">
+<span id="tlo-methods-demography-module"></span><h1>tlo.methods.demography module<a class="headerlink" href="#module-tlo.methods.demography" title="Permalink to this headline"></a></h1>
 <p>The core demography module and its associated events.
 * Sets initial population size
 * Determines the ‘is_alive’, age-related, and residential location properties.
 * Runs the OtherDeathPoll which represents the deaths due to causes other than those represented by disease modules.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Demography</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Demography</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography" title="Permalink to this definition"></a></dt>
 <dd><p>The core demography module.</p>
 <p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
 <p><strong>PARAMETERS:</strong></p>
@@ -213,15 +117,19 @@
 <td><p>DICT</p></td>
 <td><p>Mapping from district_num to region name</p></td>
 </tr>
-<tr class="row-odd"><td><p>all_cause_mortality_schedule</p></td>
+<tr class="row-odd"><td><p>districts_in_region</p></td>
+<td><p>DICT</p></td>
+<td><p>Set of districts (by name) that are within a region (by name)</p></td>
+</tr>
+<tr class="row-even"><td><p>all_cause_mortality_schedule</p></td>
 <td><p>DATA_FRAME</p></td>
 <td><p>All-cause age-specific mortality rates from WPP</p></td>
 </tr>
-<tr class="row-even"><td><p>fraction_of_births_male</p></td>
+<tr class="row-odd"><td><p>fraction_of_births_male</p></td>
 <td><p>REAL</p></td>
 <td><p>Birth Sex Ratio</p></td>
 </tr>
-<tr class="row-odd"><td><p>gbd_causes_of_death_data</p></td>
+<tr class="row-even"><td><p>gbd_causes_of_death_data</p></td>
 <td><p>DATA_FRAME</p></td>
 <td><p>Proportion of deaths in each age/sex group attributable to each possible cause of death in the GBD dataset.</p></td>
 </tr>
@@ -297,11 +205,11 @@
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>AGE_RANGE_CATEGORIES : [‘0-4’, ‘5-9’, ‘10-14’, ‘15-19’, ‘20-24’, ‘25-29’, ‘30-34’, ‘35-39’, ‘40-44’, ‘45-49’, ‘50-54’, ‘55-59’, ‘60-64’, ‘65-69’, ‘70-74’, ‘75-79’, ‘80-84’, ‘85-89’, ‘90-94’, ‘95-99’, ‘100+’]</p>
-<p>AGE_RANGE_LOOKUP : defaultdict(&lt;function create_age_range_lookup.&lt;locals&gt;.&lt;lambda&gt; at 0x7f8309f41ee0&gt;, {0: ‘0-4’, 1: ‘0-4’, 2: ‘0-4’, 3: ‘0-4’, 4: ‘0-4’, 5: ‘5-9’, 6: ‘5-9’, 7: ‘5-9’, 8: ‘5-9’, 9: ‘5-9’, 10: ‘10-14’, 11: ‘10-14’, 12: ‘10-14’, 13: ‘10-14’, 14: ‘10-14’, 15: ‘15-19’, 16: ‘15-19’, 17: ‘15-19’, 18: ‘15-19’, 19: ‘15-19’, 20: ‘20-24’, 21: ‘20-24’, 22: ‘20-24’, 23: ‘20-24’, 24: ‘20-24’, 25: ‘25-29’, 26: ‘25-29’, 27: ‘25-29’, 28: ‘25-29’, 29: ‘25-29’, 30: ‘30-34’, 31: ‘30-34’, 32: ‘30-34’, 33: ‘30-34’, 34: ‘30-34’, 35: ‘35-39’, 36: ‘35-39’, 37: ‘35-39’, 38: ‘35-39’, 39: ‘35-39’, 40: ‘40-44’, 41: ‘40-44’, 42: ‘40-44’, 43: ‘40-44’, 44: ‘40-44’, 45: ‘45-49’, 46: ‘45-49’, 47: ‘45-49’, 48: ‘45-49’, 49: ‘45-49’, 50: ‘50-54’, 51: ‘50-54’, 52: ‘50-54’, 53: ‘50-54’, 54: ‘50-54’, 55: ‘55-59’, 56: ‘55-59’, 57: ‘55-59’, 58: ‘55-59’, 59: ‘55-59’, 60: ‘60-64’, 61: ‘60-64’, 62: ‘60-64’, 63: ‘60-64’, 64: ‘60-64’, 65: ‘65-69’, 66: ‘65-69’, 67: ‘65-69’, 68: ‘65-69’, 69: ‘65-69’, 70: ‘70-74’, 71: ‘70-74’, 72: ‘70-74’, 73: ‘70-74’, 74: ‘70-74’, 75: ‘75-79’, 76: ‘75-79’, 77: ‘75-79’, 78: ‘75-79’, 79: ‘75-79’, 80: ‘80-84’, 81: ‘80-84’, 82: ‘80-84’, 83: ‘80-84’, 84: ‘80-84’, 85: ‘85-89’, 86: ‘85-89’, 87: ‘85-89’, 88: ‘85-89’, 89: ‘85-89’, 90: ‘90-94’, 91: ‘90-94’, 92: ‘90-94’, 93: ‘90-94’, 94: ‘90-94’, 95: ‘95-99’, 96: ‘95-99’, 97: ‘95-99’, 98: ‘95-99’, 99: ‘95-99’})</p>
+<p>AGE_RANGE_LOOKUP : defaultdict(&lt;function create_age_range_lookup.&lt;locals&gt;.&lt;lambda&gt; at 0x7f897709eee0&gt;, {0: ‘0-4’, 1: ‘0-4’, 2: ‘0-4’, 3: ‘0-4’, 4: ‘0-4’, 5: ‘5-9’, 6: ‘5-9’, 7: ‘5-9’, 8: ‘5-9’, 9: ‘5-9’, 10: ‘10-14’, 11: ‘10-14’, 12: ‘10-14’, 13: ‘10-14’, 14: ‘10-14’, 15: ‘15-19’, 16: ‘15-19’, 17: ‘15-19’, 18: ‘15-19’, 19: ‘15-19’, 20: ‘20-24’, 21: ‘20-24’, 22: ‘20-24’, 23: ‘20-24’, 24: ‘20-24’, 25: ‘25-29’, 26: ‘25-29’, 27: ‘25-29’, 28: ‘25-29’, 29: ‘25-29’, 30: ‘30-34’, 31: ‘30-34’, 32: ‘30-34’, 33: ‘30-34’, 34: ‘30-34’, 35: ‘35-39’, 36: ‘35-39’, 37: ‘35-39’, 38: ‘35-39’, 39: ‘35-39’, 40: ‘40-44’, 41: ‘40-44’, 42: ‘40-44’, 43: ‘40-44’, 44: ‘40-44’, 45: ‘45-49’, 46: ‘45-49’, 47: ‘45-49’, 48: ‘45-49’, 49: ‘45-49’, 50: ‘50-54’, 51: ‘50-54’, 52: ‘50-54’, 53: ‘50-54’, 54: ‘50-54’, 55: ‘55-59’, 56: ‘55-59’, 57: ‘55-59’, 58: ‘55-59’, 59: ‘55-59’, 60: ‘60-64’, 61: ‘60-64’, 62: ‘60-64’, 63: ‘60-64’, 64: ‘60-64’, 65: ‘65-69’, 66: ‘65-69’, 67: ‘65-69’, 68: ‘65-69’, 69: ‘65-69’, 70: ‘70-74’, 71: ‘70-74’, 72: ‘70-74’, 73: ‘70-74’, 74: ‘70-74’, 75: ‘75-79’, 76: ‘75-79’, 77: ‘75-79’, 78: ‘75-79’, 79: ‘75-79’, 80: ‘80-84’, 81: ‘80-84’, 82: ‘80-84’, 83: ‘80-84’, 84: ‘80-84’, 85: ‘85-89’, 86: ‘85-89’, 87: ‘85-89’, 88: ‘85-89’, 89: ‘85-89’, 90: ‘90-94’, 91: ‘90-94’, 92: ‘90-94’, 93: ‘90-94’, 94: ‘90-94’, 95: ‘95-99’, 96: ‘95-99’, 97: ‘95-99’, 98: ‘95-99’, 99: ‘95-99’})</p>
 <p><strong>Functions (defined or overridden in class Demography):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.__init__" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.__init__" title="Permalink to this definition"></a></dt>
 <dd><p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
 generator.</p>
@@ -314,7 +222,7 @@ generator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.read_parameters">
-<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.read_parameters" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.read_parameters" title="Permalink to this definition"></a></dt>
 <dd><p>Read parameter values from file, if required.
 Loads the ‘Interpolated Pop Structure’ worksheet from the Demography Excel workbook.
 :param data_folder: path of a folder supplied to the Simulation containing data files.</p>
@@ -325,7 +233,7 @@ Loads the ‘Interpolated Pop Structure’ worksheet from the Demography Excel w
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.pre_initialise_population">
-<span class="sig-name descname"><span class="pre">pre_initialise_population</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.pre_initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.pre_initialise_population" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">pre_initialise_population</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.pre_initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.pre_initialise_population" title="Permalink to this definition"></a></dt>
 <dd><ol class="arabic simple">
 <li><p>Store all the cause of death represented in the imported GBD data</p></li>
 <li><p>Process the declarations of causes of death made by the disease modules</p></li>
@@ -335,7 +243,7 @@ Loads the ‘Interpolated Pop Structure’ worksheet from the Demography Excel w
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.initialise_population">
-<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.initialise_population" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.initialise_population" title="Permalink to this definition"></a></dt>
 <dd><p>Set our property values for the initial population.
 This method is called by the simulation when creating the initial population, and is
 responsible for assigning initial values, for every individual, of those properties
@@ -345,7 +253,7 @@ responsible for assigning initial values, for every individual, of those propert
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.initialise_simulation">
-<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.initialise_simulation" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.initialise_simulation" title="Permalink to this definition"></a></dt>
 <dd><ul class="simple">
 <li><p>Schedule the age updating</p></li>
 <li><p>Output to the log the dicts that can be used for mapping from causes of death defined here, and those defined</p></li>
@@ -355,7 +263,7 @@ responsible for assigning initial values, for every individual, of those propert
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.on_birth">
-<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.on_birth" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.on_birth" title="Permalink to this definition"></a></dt>
 <dd><p>Initialise our properties for a newborn individual.
 This is called by the simulation whenever a new person is born.
 :param mother_id: the mother for this child
@@ -364,14 +272,14 @@ This is called by the simulation whenever a new person is born.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.on_simulation_end">
-<span class="sig-name descname"><span class="pre">on_simulation_end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.on_simulation_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.on_simulation_end" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">on_simulation_end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.on_simulation_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.on_simulation_end" title="Permalink to this definition"></a></dt>
 <dd><p>Things to do at end of the simulation:
 * Compute and log the scaling-factor</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.process_causes_of_death">
-<span class="sig-name descname"><span class="pre">process_causes_of_death</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.process_causes_of_death"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.process_causes_of_death" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">process_causes_of_death</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.process_causes_of_death"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.process_causes_of_death" title="Permalink to this definition"></a></dt>
 <dd><ol class="arabic simple">
 <li><p>Register all causes of deaths defined by Module</p></li>
 <li><p>Define the “Other” causes of death (that is managed in this module by the OtherDeathPoll)</p></li>
@@ -381,7 +289,7 @@ This is called by the simulation whenever a new person is born.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.do_death">
-<span class="sig-name descname"><span class="pre">do_death</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">originating_module</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><span class="pre">tlo.core.Module</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.do_death"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.do_death" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">do_death</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">originating_module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><span class="pre">tlo.core.Module</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.do_death"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.do_death" title="Permalink to this definition"></a></dt>
 <dd><p>Register and log the death of an individual from a specific cause.
 * ‘individual_id’ is the index in the population.props dataframe to the (one) person.
 * ‘cause’ is the “tlo cause” that is defined by the disease module.
@@ -390,7 +298,7 @@ This is called by the simulation whenever a new person is born.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.get_gbd_causes_of_death_not_represented_in_disease_modules">
-<span class="sig-name descname"><span class="pre">get_gbd_causes_of_death_not_represented_in_disease_modules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">causes_of_death</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.get_gbd_causes_of_death_not_represented_in_disease_modules"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.get_gbd_causes_of_death_not_represented_in_disease_modules" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_gbd_causes_of_death_not_represented_in_disease_modules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">causes_of_death</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.get_gbd_causes_of_death_not_represented_in_disease_modules"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.get_gbd_causes_of_death_not_represented_in_disease_modules" title="Permalink to this definition"></a></dt>
 <dd><p>Find the causes of death in the GBD datasets that are not represented within the causes of death defined in the
 modules registered in this simulation.
 :return: set of gbd_causes of death that are not represented in disease modules</p>
@@ -398,20 +306,20 @@ modules registered in this simulation.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.create_mappers_from_causes_of_death_to_label">
-<span class="sig-name descname"><span class="pre">create_mappers_from_causes_of_death_to_label</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.create_mappers_from_causes_of_death_to_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.create_mappers_from_causes_of_death_to_label" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">create_mappers_from_causes_of_death_to_label</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.create_mappers_from_causes_of_death_to_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.create_mappers_from_causes_of_death_to_label" title="Permalink to this definition"></a></dt>
 <dd><p>Use a helper function to create mappers for causes of death to label.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.calc_py_lived_in_last_year">
-<span class="sig-name descname"><span class="pre">calc_py_lived_in_last_year</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">delta=&lt;DateOffset:</span> <span class="pre">years=1&gt;</span></em>, <em class="sig-param"><span class="pre">mask=None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.calc_py_lived_in_last_year"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.calc_py_lived_in_last_year" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">calc_py_lived_in_last_year</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delta=&lt;DateOffset:</span> <span class="pre">years=1&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.calc_py_lived_in_last_year"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.calc_py_lived_in_last_year" title="Permalink to this definition"></a></dt>
 <dd><p>This is a helper method to compute the person-years that were lived in the previous year by age.
 It outputs a pd.DataFrame with the index being single year of age, 0 to 99.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.compute_scaling_factor">
-<span class="sig-name descname"><span class="pre">compute_scaling_factor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.compute_scaling_factor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.compute_scaling_factor" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">compute_scaling_factor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.compute_scaling_factor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.compute_scaling_factor" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the scaling factor, if it is possible to do so.</p>
 <p>The scaling factor is the ratio of {Real Population} to {Model Pop Size}. It is used to multiply model outputs
 in order to produce statistics that will be of the same scale as the real population.</p>
@@ -428,7 +336,7 @@ returned).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.Demography.compute_initial_population_scaling_factor">
-<span class="sig-name descname"><span class="pre">compute_initial_population_scaling_factor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.compute_initial_population_scaling_factor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.compute_initial_population_scaling_factor" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">compute_initial_population_scaling_factor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#Demography.compute_initial_population_scaling_factor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.Demography.compute_initial_population_scaling_factor" title="Permalink to this definition"></a></dt>
 <dd><p>Compute ratio of initial population to estimated population in 2010.</p>
 <p>Uses the total of the per-region estimated populations in 2010 used to
 initialise the simulation population as the baseline figure, with this value
@@ -454,14 +362,14 @@ corresponding to the 2010 projected population from <a class="reference internal
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.demography.AgeUpdateEvent">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">AgeUpdateEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">age_range_lookup</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#AgeUpdateEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.AgeUpdateEvent" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AgeUpdateEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">age_range_lookup</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#AgeUpdateEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.AgeUpdateEvent" title="Permalink to this definition"></a></dt>
 <dd><p>This event updates the age_exact_years, age_years and age_range columns for the population based
 on the current simulation date</p>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class AgeUpdateEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.AgeUpdateEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">age_range_lookup</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#AgeUpdateEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.AgeUpdateEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">age_range_lookup</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#AgeUpdateEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.AgeUpdateEvent.__init__" title="Permalink to this definition"></a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -476,7 +384,7 @@ on the current simulation date</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.AgeUpdateEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#AgeUpdateEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.AgeUpdateEvent.apply" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#AgeUpdateEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.AgeUpdateEvent.apply" title="Permalink to this definition"></a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -490,7 +398,7 @@ on the current simulation date</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.demography.OtherDeathPoll">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">OtherDeathPoll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#OtherDeathPoll"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.OtherDeathPoll" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OtherDeathPoll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#OtherDeathPoll"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.OtherDeathPoll" title="Permalink to this definition"></a></dt>
 <dd><p>This event causes deaths to persons from cause that are _not_ being modelled explicitly by a disease module.
 It does this by computing the GBD death rates that are implied by all the causes of death other than those that are
 represented in the disease module registered in this simulation.</p>
@@ -498,7 +406,7 @@ represented in the disease module registered in this simulation.</p>
 <p><strong>Functions (defined or overridden in class OtherDeathPoll):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.OtherDeathPoll.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#OtherDeathPoll.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.OtherDeathPoll.__init__" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#OtherDeathPoll.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.OtherDeathPoll.__init__" title="Permalink to this definition"></a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -513,7 +421,7 @@ represented in the disease module registered in this simulation.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.OtherDeathPoll.get_mort_risk_per_poll">
-<span class="sig-name descname"><span class="pre">get_mort_risk_per_poll</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#OtherDeathPoll.get_mort_risk_per_poll"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.OtherDeathPoll.get_mort_risk_per_poll" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_mort_risk_per_poll</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#OtherDeathPoll.get_mort_risk_per_poll"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.OtherDeathPoll.get_mort_risk_per_poll" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the death-rates to use (i.e., those from causes of death defined in <cite>self.causes_to_represent</cite>).
 This is based on using the WPP schedule for all-cause deaths and scaling by the proportion of deaths caused by
 those caused defined in <cite>self.causes_to_represent</cite> (as per the latest available GBD data).
@@ -522,19 +430,19 @@ These mortality rates are used to compute a risk of death per person per occurre
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.OtherDeathPoll.get_all_cause_mort_risk_per_poll">
-<span class="sig-name descname"><span class="pre">get_all_cause_mort_risk_per_poll</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#OtherDeathPoll.get_all_cause_mort_risk_per_poll"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.OtherDeathPoll.get_all_cause_mort_risk_per_poll" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_all_cause_mort_risk_per_poll</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#OtherDeathPoll.get_all_cause_mort_risk_per_poll"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.OtherDeathPoll.get_all_cause_mort_risk_per_poll" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the all-cause risk of death per poll</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.OtherDeathPoll.get_proportion_of_deaths_to_represent_as_other_deaths">
-<span class="sig-name descname"><span class="pre">get_proportion_of_deaths_to_represent_as_other_deaths</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#OtherDeathPoll.get_proportion_of_deaths_to_represent_as_other_deaths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.OtherDeathPoll.get_proportion_of_deaths_to_represent_as_other_deaths" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_proportion_of_deaths_to_represent_as_other_deaths</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#OtherDeathPoll.get_proportion_of_deaths_to_represent_as_other_deaths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.OtherDeathPoll.get_proportion_of_deaths_to_represent_as_other_deaths" title="Permalink to this definition"></a></dt>
 <dd><p>Compute the fraction of deaths that will be reprsented by the OtherDeathPoll</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.OtherDeathPoll.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#OtherDeathPoll.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.OtherDeathPoll.apply" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#OtherDeathPoll.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.OtherDeathPoll.apply" title="Permalink to this definition"></a></dt>
 <dd><p>Randomly select some persons to die of the ‘Other’ tlo cause (the causes of death that are not represented
 by the disease modules).</p>
 </dd></dl>
@@ -543,7 +451,7 @@ by the disease modules).</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.demography.InstantaneousDeath">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">InstantaneousDeath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#InstantaneousDeath"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.InstantaneousDeath" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">InstantaneousDeath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#InstantaneousDeath"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.InstantaneousDeath" title="Permalink to this definition"></a></dt>
 <dd><p>Call the do_death function to cause the person to die.</p>
 <p>Note that no checking is done here. (Checking is done within <cite>do_death</cite> which can also be called directly.)</p>
 <p>The ‘individual_id’ is the index in the population.props dataframe. It is for _one_ person only.
@@ -553,7 +461,7 @@ The ‘module’ passed to this event is the disease module that is causing the 
 <p><strong>Functions (defined or overridden in class InstantaneousDeath):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.InstantaneousDeath.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#InstantaneousDeath.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.InstantaneousDeath.__init__" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#InstantaneousDeath.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.InstantaneousDeath.__init__" title="Permalink to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -568,7 +476,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.InstantaneousDeath.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#InstantaneousDeath.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.InstantaneousDeath.apply" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#InstantaneousDeath.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.InstantaneousDeath.apply" title="Permalink to this definition"></a></dt>
 <dd><p>Apply this event to the given person.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -582,12 +490,12 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.demography.DemographyLoggingEvent">
-<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">DemographyLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#DemographyLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.DemographyLoggingEvent" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DemographyLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#DemographyLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.DemographyLoggingEvent" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class DemographyLoggingEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.DemographyLoggingEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#DemographyLoggingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.DemographyLoggingEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#DemographyLoggingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.DemographyLoggingEvent.__init__" title="Permalink to this definition"></a></dt>
 <dd><p>Logging event running every year.
 * Update internal storage of population size
 * Output statistics to the log</p>
@@ -595,7 +503,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.demography.DemographyLoggingEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#DemographyLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.DemographyLoggingEvent.apply" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/demography.html#DemographyLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.demography.DemographyLoggingEvent.apply" title="Permalink to this definition"></a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -607,56 +515,39 @@ constructor, but may also take further keyword arguments.</p>
 
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="tlo.methods.depression.html" class="btn btn-neutral float-right" title="tlo.methods.depression module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="tlo.methods.contraception.html" class="btn btn-neutral float-left" title="tlo.methods.contraception module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tlo.methods.depression.html" class="btn btn-neutral float-right" title="tlo.methods.depression module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">
-        Last updated on Nov 09, 2021.
-      </span>
-
-    </p>
+      <span class="lastupdated">Last updated on Jan 19, 2022.
+      </span></p>
   </div>
-    
-    
-    
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>
