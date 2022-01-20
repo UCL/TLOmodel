@@ -38,7 +38,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 10000
+popsize = 100000
 
 # set up the log config
 log_config = {
@@ -88,22 +88,20 @@ sim.modules["Tb"].parameters["tb_high_risk_distr"] = pd.read_excel(
 )
 
 # change tb mixing parameter to allow more between-district transmission
-sim.modules["Tb"].parameters["mixing_parameter"] = 1
-sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 1.5
-sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.998
-# sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = 0.3
-# sim.modules["Hiv"].parameters["temporal_trend_art_initiation"] = 3.5  # multipl model 0.3 * (yr*param)
+# sim.modules["Tb"].parameters["mixing_parameter"] = 1
+# sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 1.5
+# sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.998
 
 # todo remove
 sim.modules["Hiv"].parameters["beta"] = 0.13
-sim.modules["Tb"].parameters["transmission_rate"] = 2.35
+sim.modules["Tb"].parameters["transmission_rate"] = 1.85
 
-sim.modules["Hiv"].parameters["rr_start_art_if_aids_symptoms"] = 5
-sim.modules["Hiv"].parameters["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 1.0
+# sim.modules["Hiv"].parameters["rr_start_art_if_aids_symptoms"] = 5
+# sim.modules["Hiv"].parameters["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 1.0
 
 # drugs and appts should always be available as health system disabled to remove constraints
-sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1
-sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_appointment_not_available"] = 1
+# sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1
+# sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_appointment_not_available"] = 1
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

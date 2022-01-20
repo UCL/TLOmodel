@@ -46,6 +46,12 @@ extracted = extract_results(
 res = summarize(extracted, only_mean=True).iloc[-1]
 res.name = "z"
 
+# combine the outputs and export results to csv
+params['draw'] = params.index
+combined_output = params.pivot(index="draw", columns="module_param", values="value")
+combined_output["deviance"] = res.values
+combined_output.to_csv(outputspath / ("LHC_outputs" + ".csv"))
+
 # 4) Create a heatmap:
 grid = get_grid(params, res)
 fig, ax = plt.subplots()
