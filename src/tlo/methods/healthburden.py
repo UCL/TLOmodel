@@ -194,17 +194,20 @@ class HealthBurden(Module):
         """Compute total DALYS (by label), by age, sex and year. Do this by summing the YLD and LYL with respect to the
          label of the corresponding cause of each, and give output by label."""
 
-        yld = self.YearsLivedWithDisability.rename(
+        def add_duplicated_columns(_df):
+            return _df.groupby(_df.columns, axis=1).sum()
+
+        yld = add_duplicated_columns(self.YearsLivedWithDisability.rename(
             columns={c: self.causes_of_disability[c].label for c in self.YearsLivedWithDisability.columns}
-        )
+        ))
 
-        yll = self.YearsLifeLost.rename(
+        yll = add_duplicated_columns(self.YearsLifeLost.rename(
             columns={c: self.sim.modules['Demography'].causes_of_death[c].label for c in self.YearsLifeLost.columns}
-        )
+        ))
 
-        yll_stacked = self.YearsLifeLostStacked.rename(
+        yll_stacked = add_duplicated_columns(self.YearsLifeLostStacked.rename(
             columns={c: self.sim.modules['Demography'].causes_of_death[c].label for c in self.YearsLifeLost.columns}
-        )
+        ))
 
         return yld.add(yll, fill_value=0), yld.add(yll_stacked, fill_value=0)
 
