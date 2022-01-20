@@ -8,5 +8,5 @@ def test_parse_log():
 
     output = parse_log_file(log_file)
 
-    assert 'tlo.methods.epilepsy' in output
+    assert output.has_key('tlo.methods.epilepsy')
     assert set(output['tlo.methods.epilepsy'].keys()) == {'incidence_epilepsy', 'epilepsy_logging'}
