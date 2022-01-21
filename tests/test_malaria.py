@@ -1,9 +1,9 @@
 import os
+import random
 from pathlib import Path
 
 import pandas as pd
 import pytest
-import random
 
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
