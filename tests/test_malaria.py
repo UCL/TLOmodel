@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+import random
 
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
@@ -22,6 +23,7 @@ from tlo.methods.healthsystem import HSI_Event
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 12, 31)
 popsize = 500
+seed = random.randint(0, 50000)
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
@@ -38,7 +40,7 @@ def check_dtypes(simulation):
 
 
 def register_sim():
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(
@@ -113,7 +115,7 @@ def test_remove_malaria_test(tmpdir):
     service_availability = list([" "])  # no treatments available
 
     end_date = Date(2018, 12, 31)
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(
@@ -296,7 +298,7 @@ def test_dx_algorithm_for_non_malaria_outcomes():
     def make_blank_simulation():
         popsize = 200  # smallest population size that works
 
-        sim = Simulation(start_date=start_date, seed=0)
+        sim = Simulation(start_date=start_date, seed=seed)
 
         # Register the appropriate modules
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
