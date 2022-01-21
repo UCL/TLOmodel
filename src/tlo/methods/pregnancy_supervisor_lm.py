@@ -55,7 +55,7 @@ def induced_abortion_death(self, df, rng=None, **externals):
     params = self.parameters
     result = pd.Series(data=params['prob_induced_abortion_death'], index=df.index)
 
-    result[df.ac_post_abortion_care_interventions > 0] *= params['treatment_effect_post_abortion_care']
+    result[df.ac_received_post_abortion_care] *= params['treatment_effect_post_abortion_care']
 
     return result
 
@@ -84,7 +84,7 @@ def spontaneous_abortion_death(self, df, rng=None, **externals):
     params = self.parameters
     result = pd.Series(data=params['prob_spontaneous_abortion_death'], index=df.index)
 
-    result[df.ac_post_abortion_care_interventions > 0] *= params['treatment_effect_post_abortion_care']
+    result[df.ac_received_post_abortion_care] *= params['treatment_effect_post_abortion_care']
 
     return result
 

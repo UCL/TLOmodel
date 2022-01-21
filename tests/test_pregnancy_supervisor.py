@@ -560,9 +560,9 @@ def test_run_all_births_end_ectopic_no_care_seeking():
     events = [e.__class__ for d, e in events]
     assert pregnancy_supervisor.EctopicPregnancyEvent in events
 
-    # run the ectopic even and check she is no longer pregnant and will expereince rupture as she hasnt sought care
+    # run the ectopic even and check she is no longer pregnant and will experince rupture as she hasnt sought care
     sim.date = sim.date + pd.DateOffset(weeks=7)
-    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 10
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 8
 
     ectopic_event = pregnancy_supervisor.EctopicPregnancyEvent(individual_id=mother_id,
                                                                module=sim.modules['PregnancySupervisor'])
@@ -573,7 +573,7 @@ def test_run_all_births_end_ectopic_no_care_seeking():
     events = [e.__class__ for d, e in events]
     assert pregnancy_supervisor.EctopicPregnancyRuptureEvent in events
 
-    # Run the rupture event, check rupture has occured and that death has been scheduled
+    # Run the rupture event, check rupture has occurred and that death has been scheduled
     rupture_event = pregnancy_supervisor.EctopicPregnancyRuptureEvent(individual_id=mother_id,
                                                                       module=sim.modules['PregnancySupervisor'])
     rupture_event.apply(mother_id)
@@ -583,7 +583,7 @@ def test_run_all_births_end_ectopic_no_care_seeking():
     events = [e.__class__ for d, e in events]
     assert pregnancy_supervisor.EarlyPregnancyLossDeathEvent in events
 
-    # run the death event checking death has occured as expected
+    # run the death event checking death has occurred as expected
     death_event = pregnancy_supervisor.EarlyPregnancyLossDeathEvent(individual_id=mother_id,
                                                                     module=sim.modules['PregnancySupervisor'],
                                                                     cause='ectopic_pregnancy')

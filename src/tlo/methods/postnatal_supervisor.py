@@ -85,6 +85,8 @@ class PostnatalSupervisor(Module):
             Types.LIST, 'probability of mild, moderate or severe secondary PPH'),
         'cfr_secondary_postpartum_haemorrhage': Parameter(
             Types.LIST, 'case fatality rate for secondary pph'),
+        'rr_death_from_pph_with_anaemia': Parameter(
+            Types.LIST, 'relative risk of death from PPH in women with anaemia'),
 
         # HYPERTENSIVE DISORDERS
         'prob_htn_resolves': Parameter(
@@ -438,8 +440,6 @@ class PostnatalSupervisor(Module):
         received_abx_for_prom = pd.Series(False, index=df.index)
         endometritis = pd.Series(False, index=df.index)
         chorio_in_preg = pd.Series(False, index=df.index)
-
-        # todo: will crash if NA values included in externals - although this shouldnt happen if women are in the MNI
 
         if 'mode_of_delivery' in mni_df.columns:
             mode_of_delivery = pd.Series(mni_df['mode_of_delivery'], index=df.index)
@@ -845,7 +845,7 @@ class PostnatalSupervisor(Module):
             for cause in causes:
                 risk = {f'{cause}': params[f'cfr_{cause}']}
                 if (cause == 'secondary_postpartum_haemorrhage') and (mother.pn_anaemia_following_pregnancy != 'none'):
-                    risk[cause] = risk[cause] * 1.5  # todo: replace with parameter
+                    risk[cause] = risk[cause] * params['rr_death_from_pph_with_anaemia']
                 risks.update(risk)
 
             # Calculate overall risk of death

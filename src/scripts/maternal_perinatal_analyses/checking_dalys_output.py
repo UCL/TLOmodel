@@ -1,4 +1,6 @@
-import os
+import pandas as pd
+import numpy as np
+
 from pathlib import Path
 from tlo.analysis.utils import parse_log_file
 
@@ -133,8 +135,6 @@ dalys_from_simulation = dalys_2010['Neonatal Disorders'].sum()
 print('actual neonatal dalys', dalys_from_simulation)
 
 # Tim's checks
-import pandas as pd
-import numpy as np
 
 # number of deaths:
 deaths = output['tlo.methods.demography']['death']

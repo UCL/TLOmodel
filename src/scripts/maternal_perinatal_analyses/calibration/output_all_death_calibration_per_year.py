@@ -14,7 +14,7 @@ scenario_filename = 'standard_mph_calibration.py'  # <-- update this to look at 
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_10k(parity)_standard_mph_calibration-2022-01-14T154213Z/death'
+graph_location = 'ouput_graphs_10k_standard_mph_calibration-2022-01-18T142306Z/death'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)
@@ -26,7 +26,7 @@ sim_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
 daly_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
 # todo: replace with something more clever at some point
 
-#read in daly data
+# read in daly data
 dalys_data = pd.read_csv(Path('./resources/gbd') / 'ResourceFile_Deaths_and_DALYS_GBD2019.CSV')
 
 
@@ -273,6 +273,7 @@ scaled_deaths = extract_results(
 
 deaths = get_mean_and_quants_from_str_df(scaled_deaths, 'Maternal Disorders')
 
+
 def extract_deaths_gbd_data(group):
     dalys_df = dalys_data.loc[(dalys_data['measure_name'] == 'Deaths') &
                               (dalys_data['cause_name'] == f'{group} disorders') & (dalys_data['Year'] > 2009)]
@@ -352,7 +353,9 @@ for cause, tr in zip(simplified_causes, trs):
     elif cause == 'severe_pre_eclampsia':
         spe_deaths = get_mean_and_quants_from_str_df(death_results, 'severe_pre_eclampsia')[0]
         ec_deaths = get_mean_and_quants_from_str_df(death_results, 'eclampsia')[0]
-        deaths = [x + y for x, y in zip(spe_deaths, ec_deaths)]
+        # we are choosing to include SGH deaths in SPE
+        sgh_deaths = get_mean_and_quants_from_str_df(death_results, 'severe_gestational_hypertension')[0]
+        deaths = [x + y + z for x, y, z in zip(spe_deaths, ec_deaths, sgh_deaths)]
 
     elif cause == 'postpartum_haemorrhage':
         p_deaths = get_mean_and_quants_from_str_df(death_results, 'postpartum_haemorrhage')[0]
@@ -435,13 +438,22 @@ simplified_df = props_df.transpose()
 simplified_df['Abortion'] = simplified_df['induced_abortion'] + simplified_df['spontaneous_abortion']
 simplified_df['Severe PE/Eclampsia'] = simplified_df['severe_pre_eclampsia'] + simplified_df['eclampsia']
 simplified_df['PPH'] = simplified_df['postpartum_haemorrhage'] + simplified_df['secondary_postpartum_haemorrhage']
-simplified_df['Sepsis'] = simplified_df['postpartum_sepsis'] + simplified_df['intrapartum_sepsis'] + \
-                          simplified_df['antenatal_sepsis']
+
+simplified_df['Sepsis'] = pd.Series(0, index=sim_years)
+if 'postpartum_sepsis' in simplified_df.columns:
+    simplified_df['Sepsis'] = simplified_df['Sepsis'] + simplified_df['postpartum_sepsis']
+if 'intrapartum_sepsis' in simplified_df.columns:
+    simplified_df['Sepsis'] = simplified_df['Sepsis'] + simplified_df['intrapartum_sepsis']
+if 'antenatal_sepsis' in simplified_df.columns:
+    simplified_df['Sepsis'] = simplified_df['Sepsis'] + simplified_df['antenatal_sepsis']
+
 
 for column in ['postpartum_haemorrhage', 'secondary_postpartum_haemorrhage', 'severe_pre_eclampsia', 'eclampsia',
+               'severe_gestational_hypertension',
                'induced_abortion', 'spontaneous_abortion', 'intrapartum_sepsis', 'postpartum_sepsis',
                'antenatal_sepsis']:
-    simplified_df = simplified_df.drop(columns=[column])
+    if column in simplified_df.columns:
+        simplified_df = simplified_df.drop(columns=[column])
 
 all_labels = list()
 labels_10 = list()
@@ -546,10 +558,10 @@ total_ab_deaths = [x + y for x, y in zip(ia_deaths, sa_deaths)]
 cfr = [(x/y) * 100 for x, y in zip(total_ab_deaths, total_ab_cases)]
 simple_line_chart(cfr, tr, 'Year', 'Total CFR', 'Yearly CFR for Abortion (combined)', 'combined_abortion_cfr_per_year')
 
-total_spec_cases = [x + y for x, y in zip(mean_spe, mean_ec)]
+total_spec_cases = [x + y + z for x, y, z in zip(mean_spe, mean_ec, mean_sgh)]
 spe_deaths = get_mean_and_quants_from_str_df(death_results, 'severe_pre_eclampsia')[0]
 ec_deaths = get_mean_and_quants_from_str_df(death_results, 'eclampsia')[0]
-total_spec_deaths = [x + y for x, y in zip(spe_deaths, ec_deaths)]
+total_spec_deaths = [x + y + z for x, y, z in zip(spe_deaths, ec_deaths, sgh_deaths)]
 cfr = [(x/y) * 100 for x, y in zip(total_spec_deaths, total_spec_cases)]
 simple_line_chart(cfr, tr, 'Year', 'Total CFR', 'Yearly CFR for Severe Pre-eclampsia/Eclampsia',
                   'combined_spe_ec_cfr_per_year')
@@ -821,6 +833,7 @@ def extract_dalys_gbd_data(group):
 
     return [gbd_dalys, gbd_dalys_lq, gbd_dalys_uq]
 
+
 maternal_gbd_dalys = extract_dalys_gbd_data('Maternal')
 neonatal_gbd_dalys = extract_dalys_gbd_data('Neonatal')
 
@@ -847,6 +860,7 @@ def extract_dalys_tlo_model(group):
 
     return [stacked_dalys, stacked_dalys_lq, stacked_dalys_uq]
 
+
 maternal_dalys = extract_dalys_tlo_model('Maternal')
 neonatal_dalys = extract_dalys_tlo_model('Neonatal')
 
@@ -864,6 +878,7 @@ def get_daly_graphs(group, dalys, gbd_estimate):
     plt.legend()
     plt.savefig(f'./outputs/sejjj49@ucl.ac.uk/{graph_location}/{group}_dalys_stacked.png')
     plt.show()
+
 
 get_daly_graphs('Maternal', maternal_dalys, maternal_gbd_dalys)
 get_daly_graphs('Neonatal', neonatal_dalys, neonatal_gbd_dalys)

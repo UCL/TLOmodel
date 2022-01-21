@@ -419,6 +419,7 @@ def test_anc_contacts_that_should_not_run_wont_run():
     df.at[mother_id, 'date_of_last_pregnancy'] = start_date
     df.at[mother_id, 'ps_date_of_anc1'] = start_date + pd.DateOffset(weeks=8)
     sim.modules['Labour'].set_date_of_labour(mother_id)
+    sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
 
     updated_mother_id = int(mother_id)
 
@@ -452,7 +453,7 @@ def test_anc_contacts_that_should_not_run_wont_run():
     # run
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 10
 
-    first_anc.apply(person_id=updated_mother_id, squeeze_factor=10)
+    first_anc.apply(person_id=updated_mother_id, squeeze_factor=1001)  # todo: replace
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 0)
     assert pd.isnull(df.at[mother_id, 'ac_date_next_contact'])
 
@@ -921,10 +922,8 @@ def test_scheduling_and_treatment_effect_of_post_abortion_care():
         module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     pac.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
-    # Check that this mother, who has all possible complications, correctly receives all possible treatments
-    assert sim.modules['CareOfWomenDuringPregnancy'].pac_interventions.has_all(mother_id, 'antibiotics')
-    assert sim.modules['CareOfWomenDuringPregnancy'].pac_interventions.has_all(mother_id, 'injury_repair')
-    assert sim.modules['CareOfWomenDuringPregnancy'].pac_interventions.has_all(mother_id, 'blood_products')
+    # Check that this mother receives treatments
+    assert df.at[mother_id, 'ac_received_post_abortion_care']
 
     # Define the death event
     death_event = pregnancy_supervisor.EarlyPregnancyLossDeathEvent(module=sim.modules['PregnancySupervisor'],
@@ -936,7 +935,7 @@ def test_scheduling_and_treatment_effect_of_post_abortion_care():
         LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1,
-            Predictor('ac_post_abortion_care_interventions').when('>0', 0))
+            Predictor('ac_received_post_abortion_care').when(True, 0))
 
     # Run the death event
     death_event.apply(mother_id)
@@ -946,9 +945,7 @@ def test_scheduling_and_treatment_effect_of_post_abortion_care():
 
     # Check that the mni will be deleted on the next daly poll and that treatment properties have been reset
     assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delete_mni'])
-    assert not sim.modules['CareOfWomenDuringPregnancy'].pac_interventions.has_all(mother_id, 'antibiotics')
-    assert not sim.modules['CareOfWomenDuringPregnancy'].pac_interventions.has_all(mother_id, 'injury_repair')
-    assert not sim.modules['CareOfWomenDuringPregnancy'].pac_interventions.has_all(mother_id, 'blood_products')
+    assert not df.at[mother_id, 'ac_received_post_abortion_care']
 
 
 def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management():

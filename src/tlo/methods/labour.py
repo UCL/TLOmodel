@@ -54,14 +54,14 @@ class Labour(Module):
         self.item_codes_lab_consumables = dict()
 
     INIT_DEPENDENCIES = {
-        'Demography', 'Lifestyle', 'HealthSystem', 'PregnancySupervisor',
+        'Demography', 'PostnatalSupervisor', 'CareOfWomenDuringPregnancy', 'Lifestyle', 'PregnancySupervisor',
+        'HealthSystem'
     }
 
     ADDITIONAL_DEPENDENCIES = {
-        'CareOfWomenDuringPregnancy',
         'Contraception',
         'NewbornOutcomes',
-        'PostnatalSupervisor'
+        'Hiv'
     }
 
     METADATA = {
@@ -595,7 +595,7 @@ class Labour(Module):
 
         #  we store different potential treatments for postpartum haemorrhage via bistet
         self.pph_treatment = BitsetHandler(self.sim.population, 'la_postpartum_haem_treatment',
-                                           ['uterotonics', 'manual_removal_placenta', 'surgery', 'hysterectomy'])
+                                           ['manual_removal_placenta', 'surgery', 'hysterectomy'])
 
         #  ----------------------------ASSIGNING PARITY AT BASELINE --------------------------------------------------
         # This equation predicts the parity of each woman at baseline (who is of reproductive age)
@@ -697,6 +697,10 @@ class Labour(Module):
             [get_item_code_from_name('Water for injection, 10ml_Each_CMST')] + \
             [get_item_code_from_name('Syringe, needle + swab')] + \
             [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
+
+        # --------------------------------------- ORAL ANTIHYPERTENSIVES ---------------------------------------------
+        self.item_codes_lab_consumables['oral_antihypertensives'] = \
+            [get_item_code_from_name('Methyldopa 250mg_1000_CMST')]
 
         # ----------------------------------  SEVERE PRE-ECLAMPSIA/ECLAMPSIA  -----------------------------------------
         self.item_codes_lab_consumables['severe_pre_eclampsia'] = \
@@ -942,7 +946,7 @@ class Labour(Module):
         df.at[child_id, 'la_pn_checks_maternal'] = 0
         df.at[child_id, 'la_iron_folic_acid_postnatal'] = False
 
-    def further_on_birth_labour(self, mother_id, child_id):
+    def further_on_birth_labour(self, mother_id):
         """
         This function is called by the on_birth function of NewbornOutcomes module. This function contains additional
         code related to the labour module that should be ran on_birth for all births - it has been
@@ -961,8 +965,6 @@ class Labour(Module):
         # Store only live births to a mother parity
         if not df.at[mother_id, 'la_intrapartum_still_birth']:
             df.at[mother_id, 'la_parity'] += 1  # Only live births contribute to parity
-            logger.info(key='live_birth', data={'mother': mother_id, 'child': child_id,
-                                                'ga': df.at[mother_id, 'ps_gestational_age_in_weeks']})
 
         # Currently we assume women who received antihypertensive in the antenatal period will continue to use them
         if df.at[mother_id, 'ac_gest_htn_on_treatment']:
@@ -1477,6 +1479,7 @@ class Labour(Module):
 
             # Log the death (eventually this can be removed)
             cause_of_death = self.rng.choice(causes, p=probs)
+            logger.info(key='cause_specific_mortality_fractions', data=risks)
 
             # And enact the death via demography
             self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=f'{cause_of_death}',
@@ -1539,7 +1542,7 @@ class Labour(Module):
                 mni[individual_id]['retained_placenta'] = False
                 mni[individual_id]['uterine_atony'] = False
                 self.pph_treatment.unset(
-                    [individual_id], 'uterotonics', 'manual_removal_placenta', 'surgery', 'hysterectomy')
+                    [individual_id], 'manual_removal_placenta', 'surgery', 'hysterectomy')
 
         # ================================ SCHEDULE POSTNATAL WEEK ONE EVENT =====================================
         # For women who have survived first 24 hours after birth we reset all the key labour variables and
@@ -1764,9 +1767,12 @@ class Labour(Module):
                 # women with severe pre-eclampsia and eclampsia
                 if avail:
                     df.at[person_id, 'la_maternal_hypertension_treatment'] = True
-                    df.at[person_id, 'la_gest_htn_on_treatment'] = True
 
-            # TODO: add consumables for orals
+                    avail = hsi_event.get_consumables(
+                        item_codes=self.item_codes_lab_consumables['oral_antihypertensives'])
+
+                    if avail:
+                        df.at[person_id, 'la_gest_htn_on_treatment'] = True
 
     def assessment_and_treatment_of_eclampsia(self, hsi_event, labour_stage):
         """
@@ -2044,7 +2050,7 @@ class Labour(Module):
         params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        if not mni[person_id]['retained_placenta'] and not self.pph_treatment.has_all(person_id, 'uterotonics'):
+        if not mni[person_id]['retained_placenta']:
 
             # We apply a probability that surgical techniques will be effective
             treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
@@ -2089,10 +2095,9 @@ class Labour(Module):
         params = self.current_parameters
         df = self.sim.population.props
 
+        # Check consumables
         avail = hsi_event.get_consumables(item_codes=self.item_codes_lab_consumables['blood_transfusion'])
 
-        # If they're available, the event happens
-        # TODO: this will mostly negate the effect of anaemia on risk of death from PPH...
         if avail:
             mni[person_id]['received_blood_transfusion'] = True
 
@@ -2856,12 +2861,11 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
 
         # LOG CONSUMABLES FOR DELIVERY...
         # We assume all deliveries require this basic package of consumables
-        # todo: still not full sure about this
         consumables = self.get_consumables(item_codes=self.module.item_codes_lab_consumables['delivery'],
                                            return_individual_results=True)
         key_consumable_avail = list(consumables.values())[0]
 
-        # If the clean delivery kit consumable is availble, we assume women benift from clean delivery
+        # If the clean delivery kit consumable is available, we assume women benefit from clean delivery
         if key_consumable_avail:
             mni[person_id]['clean_birth_practices'] = True
 

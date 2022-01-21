@@ -195,6 +195,10 @@ class NewbornOutcomes(Module):
             Types.LIST, 'case fatality rate for newborns with congenital digestive anomalies'),
         'cfr_other_anomaly': Parameter(
             Types.LIST, 'case fatality rate for newborns with other congenital anomalies'),
+        'prob_cba_death_by_age_group': Parameter(
+            Types.LIST, 'probabilities that death from a congenital birth anomaly will occur once the individual '
+                        'reaches the following age groups: early neonatal, late neonatal, post neonatal 1-4 years,'
+                        ' 5-9 years, 10 -14 years or 15-69 years'),
 
         # BREASTFEEDING...
         'prob_early_breastfeeding_hb': Parameter(
@@ -769,17 +773,41 @@ class NewbornOutcomes(Module):
                 # Log the death (eventually this can be removed)
                 cause_of_death = self.rng.choice(causes, p=probs)
 
-                if cause_of_death == 'preterm_other':
+                if individual_id in nci:
+                    del nci[individual_id]
 
-                    # If the death is associated with prematurity we scatter those deaths across the first 2 weeks
+                # If the death is associated with prematurity we scatter those deaths across the first 2 weeks
+                if cause_of_death == 'preterm_other':
                     random_draw = self.rng.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
                                                   p=params['prob_preterm_death_by_day'])
                     death_date = self.sim.date + DateOffset(days=int(random_draw))
+
+                # Similarly, if death is associated with congential anomaly we schedule death across the life coarse to
+                # align with GBD estimates
+                elif 'anomaly' in cause_of_death:
+
+                    days_per_year = 365.25
+                    # Generate the minimum and maximum number of days within the age group to allow for random
+                    # distribution within each group
+                    days_per_age_group = \
+                        {'early_n': [0, 6],
+                         'late_n': [7, 28],
+                         'post_n': [29, 364],
+                         '1-4': [days_per_year, ((5 * days_per_year) - 1)],
+                         '5-9': [(5 * days_per_year), ((10 * days_per_year) - 1)],
+                         '10-14': [(10 * days_per_year), ((15 * days_per_year) - 1)],
+                         '15-69': [(15 * days_per_year), ((70 * days_per_year) - 1)]}
+
+                    random_draw = self.rng.choice(list(days_per_age_group.keys()),
+                                                  p=params['prob_cba_death_by_age_group'])
+
+                    onset_day = self.rng.randint(days_per_age_group[random_draw][0],
+                                                 days_per_age_group[random_draw][1])
+
+                    death_date = self.sim.date + DateOffset(days=onset_day)
+
                 else:
                     death_date = self.sim.date
-
-                if individual_id in nci:
-                    del nci[individual_id]
 
                 self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
                                                                       cause=f'{cause_of_death}'), death_date)
@@ -819,6 +847,9 @@ class NewbornOutcomes(Module):
                                          f'complications after birth')
 
         choice = self.rng.choice
+
+        if individual_id not in nci:
+            return
 
         if nci[individual_id]['ga_at_birth'] < 32:
             if self.rng.random_sample() < params['prob_mild_disability_preterm_<32weeks']:
@@ -1059,7 +1090,6 @@ class NewbornOutcomes(Module):
 
         # Finally we log the second live birth and add another to the womans parity
         df.at[mother_id, 'la_parity'] += 1
-        logger.info(key='live_birth', data={'mother': mother_id, 'child': child_two})
 
     def schedule_pnc(self, child_id):
         """
@@ -1468,16 +1498,12 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
 
         # This HSI contains the interventions delivered as part of a full postnatal check of the newborn after birth -
         # this include newborns who delivered at home or in facility
-        # todo: fix this...
         if nci[person_id]['delivery_setting'] == 'health_centre':
             facility_type_code = 'hc'
         elif nci[person_id]['delivery_setting'] == 'hospital':
             facility_type_code = 'hp'
         elif nci[person_id]['delivery_setting'] == 'home_birth':
-            if self.ACCEPTED_FACILITY_LEVEL == 2:
-                facility_type_code = 'hp'
-            else:
-                facility_type_code = self.module.rng.choice(['hc', 'hp'])
+            facility_type_code = self.module.rng.choice(['hc', 'hp'])
 
         # First the newborn is assessed for sepsis and treated if needed
         if squeeze_factor < params['squeeze_threshold_sepsis_treatment']:

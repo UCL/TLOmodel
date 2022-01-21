@@ -14,7 +14,7 @@ scenario_filename = 'standard_mph_calibration.py'  # <-- update this to look at 
 
 # %% Declare usual paths:
 outputspath = Path('./outputs/sejjj49@ucl.ac.uk/')
-graph_location = 'output_graphs_30k_standard_mph_calibration-2021-11-18T095751Z'
+graph_location = 'ouput_graphs_10k_standard_mph_calibration-2022-01-18T142306Z'
 rfp = Path('./resources')
 
 # Find results folder (most recent run generated using that scenario_filename)

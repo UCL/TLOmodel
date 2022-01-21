@@ -706,7 +706,6 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
     # now set surgery success to 0 and check that hysterectomy occurred
     params['success_rate_pph_surgery'] = 0
     sim.modules['Labour'].pph_treatment.unset(mother_id, 'surgery')
-    sim.modules['Labour'].pph_treatment.unset(mother_id, 'uterotonics')
     pp_cemonc_event.apply(person_id=updated_id, squeeze_factor=0.0)
 
     assert df.at[mother_id, 'la_has_had_hysterectomy']
