@@ -20,7 +20,7 @@ from tlo.methods import (
 from tlo.methods.healthsystem import HSI_Event
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
+end_date = Date(2015, 12, 31)
 popsize = 500
 
 try:
@@ -82,11 +82,16 @@ def test_sims(tmpdir):
     assert not any((df.sex == "M") & (df.ma_clinical_preg_counter > 0))
 
     # check symptoms are being assigned - fever assigned to all clinical cases
-    for person in df.index[df.is_alive & (df.ma_inf_type == "clinical")]:
+    for person in df.index[
+        df.is_alive
+        & (df.ma_inf_type == "clinical")
+        & (sim.date >= df.ma_date_symptoms)
+        & (sim.date < df.ma_date_symptoms + pd.DateOffset(days=sim.modules["Malaria"].parameters["dur_clin"]))
+    ]:
         assert "fever" in sim.modules["SymptomManager"].has_what(person)
         assert "Malaria" in sim.modules["SymptomManager"].causes_of(person, "fever")
 
-    # if symptoms due to malaria, check malaria properties correctly set
+        # if symptoms due to malaria, check malaria properties correctly set
     for person in df.index[df.is_alive]:
         if "Malaria" in sim.modules["SymptomManager"].causes_of(person, "fever"):
             assert not pd.isnull(df.at[person, "ma_date_infected"])
@@ -108,7 +113,7 @@ def test_sims(tmpdir):
 def test_remove_malaria_test(tmpdir):
     service_availability = list([" "])  # no treatments available
 
-    end_date = Date(2011, 1, 1)
+    end_date = Date(2018, 12, 31)
     sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
