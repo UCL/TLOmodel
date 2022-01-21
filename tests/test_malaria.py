@@ -93,7 +93,6 @@ def test_sims(tmpdir):
         assert "Malaria" in sim.modules["SymptomManager"].causes_of(person, "fever")
 
     # if symptoms due to malaria, check malaria properties correctly set
-    # todo anyone assigned "none" should have no symptoms also
     for person in df.index[df.is_alive]:
         if "Malaria" in sim.modules["SymptomManager"].causes_of(person, "fever"):
             assert not pd.isnull(df.at[person, "ma_date_infected"])
@@ -407,7 +406,7 @@ def test_severe_malaria_deaths(tmpdir):
 
     # should not cause death but result in cure
     assert df.at[person_id, 'is_alive']
-    assert df.at[person_id, "ma_inf_type"] == "asym"
+    assert df.at[person_id, "ma_inf_type"] == "none"
 
     # -------------- treatment failure for severe malaria -------------- #
     sim = register_sim()

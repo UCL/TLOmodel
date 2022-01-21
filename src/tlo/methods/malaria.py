@@ -1222,7 +1222,6 @@ class MalariaParasiteClearanceEvent(RegularEvent, PopulationScopeEventMixin):
                             (df.ma_inf_type == "asym") &
                             (df.ma_date_infected < (self.sim.date - DateOffset(days=p["dur_asym"])))]
 
-        # todo check should be asym - no symptoms
         df.loc[asym_inf, "ma_inf_type"] = "none"
         df.loc[asym_inf, "ma_is_infected"] = False
 
