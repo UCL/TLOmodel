@@ -1889,7 +1889,7 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FirstAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AntenatalFirst': 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
-        assert self.ACCEPTED_FACILITY_LEVEL != 0
+        assert self.ACCEPTED_FACILITY_LEVEL not in {'0'}  # TODO: also not None, but that causes error in doc build
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2578,7 +2578,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour'
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PresentsForInductionOfLabour'
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1
@@ -3171,7 +3171,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PostAbortionCaseManagement'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'  # any hospital?
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 3})
 

@@ -10,7 +10,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import Metadata, demography
+from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
@@ -139,7 +139,7 @@ class Malaria(Module):
         "ma_date_symptoms": Property(
             Types.DATE, "Date of symptom start for clinical infection"
         ),
-        "ma_date_death": Property(Types.DATE, "Date of scheduled death due to malaria"),
+        "ma_date_death": Property(Types.DATE, "Date of death due to malaria"),
         "ma_tx": Property(Types.BOOL, "Currently on anti-malarial treatment"),
         "ma_date_tx": Property(
             Types.DATE, "Date treatment started for most recent malaria episode"
@@ -321,45 +321,54 @@ class Malaria(Module):
         df.loc[alive & df.age_exact_years.between(0.5, 1), "ma_age_edited"] = 0.5
         df.loc[alive_over_one, "ma_age_edited"] = df.loc[alive_over_one, "age_years"].astype(float)
 
+        # select new infections
         alive_uninfected = alive & ~df.ma_is_infected
         now_infected = _draw_incidence_for("monthly_prob_inf", alive_uninfected)
         df.loc[now_infected, "ma_is_infected"] = True
         df.loc[now_infected, "ma_date_infected"] = now  # TODO: scatter dates across month
         df.loc[now_infected, "ma_inf_type"] = "asym"
 
+        # select all currently infected
         alive_infected = alive & df.ma_is_infected
 
+        # draw from currently asymptomatic to allocate clinical cases
         alive_infected_asym = alive_infected & (df.ma_inf_type == "asym")
         now_clinical = _draw_incidence_for("monthly_prob_clin", alive_infected_asym)
         df.loc[now_clinical, "ma_inf_type"] = "clinical"
-        df.loc[now_clinical, "ma_date_symptoms"] = now
+        df.loc[now_clinical, "ma_date_infected"] = now  # updated infection date
         df.loc[now_clinical, "ma_clinical_counter"] += 1
 
+        # draw from clinical cases to allocate severe cases - draw from all currently clinical cases
         alive_infected_clinical = alive_infected & (df.ma_inf_type == "clinical")
         now_severe = _draw_incidence_for("monthly_prob_sev", alive_infected_clinical)
         df.loc[now_severe, "ma_inf_type"] = "severe"
-        df.loc[now_severe, "ma_date_symptoms"] = now
+        df.loc[now_severe, "ma_date_infected"] = now  # updated infection date
 
-        alive_now_infected_pregnant = alive_infected_clinical & (df.ma_date_infected == now) & df.is_pregnant
+        alive_now_infected_pregnant = now_clinical & (df.ma_date_infected == now) & df.is_pregnant
         df.loc[alive_now_infected_pregnant, "ma_clinical_preg_counter"] += 1
 
         # ----------------------------------- CLINICAL MALARIA SYMPTOMS -----------------------------------
         # clinical - can't use now_clinical, because some clinical may have become severe
-        clin = df.index[df.is_alive & (df.ma_inf_type == "clinical") & (df.ma_date_symptoms == now)]
+        clin = df.index[df.is_alive & (df.ma_inf_type == "clinical") & (df.ma_date_infected == now)]
 
         # update clinical symptoms for all new clinical infections
         self.clinical_symptoms(df, clin)
+        # check symptom onset occurs in one week
+        assert (df.loc[clin, "ma_date_infected"] < df.loc[clin, "ma_date_symptoms"]).all()
 
         # ----------------------------------- SEVERE MALARIA SYMPTOMS -----------------------------------
 
         # SEVERE CASES
-        severe = df.is_alive & (df.ma_inf_type == "severe") & (df.ma_date_symptoms == now)
+        severe = df.is_alive & (df.ma_inf_type == "severe") & (df.ma_date_infected == now)
+
         children = severe & (df.age_exact_years < 5)
         adult = severe & (df.age_exact_years >= 5)
 
         # update symptoms for all new severe infections
         self.severe_symptoms(df, df.index[children], child=True)
         self.severe_symptoms(df, df.index[adult], child=False)
+        # check symptom onset occurs in one week
+        assert (df.loc[severe, "ma_date_infected"] < df.loc[severe, "ma_date_symptoms"]).all()
 
         # ----------------------------------- SCHEDULED DEATHS -----------------------------------
         # schedule deaths within the next week
@@ -370,10 +379,13 @@ class Malaria(Module):
         death = df.index[severe][random_draw < (p["cfr"] * p["mortality_adjust"])]
 
         for person in death:
+
             logger.debug(key='message',
                          data=f'MalariaEvent: scheduling malaria death for person {person}')
 
-            random_date = rng.randint(low=0, high=7)
+            # symptom onset occurs one week after infection
+            # death occurs 1-7 days after symptom onset, 8+ days after infection
+            random_date = rng.randint(low=8, high=14)
             random_days = pd.to_timedelta(random_date, unit="d")
 
             death_event = MalariaDeathEvent(
@@ -513,20 +525,21 @@ class Malaria(Module):
         rng = self.rng
         now = self.sim.date
 
-        # TODO this schedules symptom onset on 1st of each month for everybody
-        df.loc[clinical_index, "ma_date_symptoms"] = now
+        date_symptom_onset = now + pd.DateOffset(days=7)
+
+        df.loc[clinical_index, "ma_date_symptoms"] = date_symptom_onset
 
         symptom_list = {"fever", "headache", "vomiting", "stomachache"}
 
-        for symptom in symptom_list:
-            # this also schedules symptom resolution in 5 days
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(clinical_index),
-                symptom_string=symptom,
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=p["dur_clin"],
-            )
+        # this also schedules symptom resolution in 5 days
+        self.sim.modules["SymptomManager"].change_symptom(
+            person_id=list(clinical_index),
+            symptom_string=symptom_list,
+            add_or_remove="+",
+            disease_module=self,
+            date_of_onset=date_symptom_onset,
+            duration_in_days=p["dur_clin"],
+        )
 
         # additional risk of severe anaemia in pregnancy
         pregnant_infected = df.is_alive & (df.ma_inf_type == "clinical") & (df.ma_date_infected == now) & df.is_pregnant
@@ -539,6 +552,7 @@ class Malaria(Module):
                     symptom_string="severe_anaemia",
                     add_or_remove="+",
                     disease_module=self,
+                    date_of_onset=date_symptom_onset,
                     duration_in_days=None,
                 )
 
@@ -550,24 +564,28 @@ class Malaria(Module):
         :param severe_index: the indices of new clinical cases
         :param child: to apply severe symptoms to children (otherwise applied to adults)
         """
+        # If no indices specified exit straight away
+        if (len(severe_index) == 0):
+            return
+
         df = population
         p = self.parameters
         rng = self.rng
-        now = self.sim.date
+        date_symptom_onset = self.sim.date + pd.DateOffset(days=7)
 
-        df.loc[severe_index, "ma_date_symptoms"] = now
+        df.loc[severe_index, "ma_date_symptoms"] = date_symptom_onset
 
         # general symptoms - applied to all
         symptom_list = {"fever", "headache", "vomiting", "stomachache"}
 
-        for symptom in symptom_list:
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(severe_index),
-                symptom_string=symptom,
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=None,
-            )
+        self.sim.modules["SymptomManager"].change_symptom(
+            person_id=list(severe_index),
+            symptom_string=symptom_list,
+            add_or_remove="+",
+            disease_module=self,
+            date_of_onset=date_symptom_onset,
+            duration_in_days=None,
+        )
 
         # symptoms specific to severe cases
         # get range of probabilities of each symptom for severe cases for children and adults
@@ -577,30 +595,34 @@ class Malaria(Module):
             range_symp = range_symp.loc[range_symp.age_group == "0_5"]
         else:
             range_symp = range_symp.loc[range_symp.age_group == "5_60"]
-
-        symptom_list_severe = list(range_symp.symptom)
+        range_symp = range_symp.set_index("symptom")
+        symptom_list_severe = list(range_symp.index)
 
         # assign symptoms
-        for person in severe_index:
 
-            for symptom in symptom_list_severe:
-
-                # random sample whether child will have symptom
-                symptom_probability = rng.uniform(
-                    low=range_symp.loc[range_symp.symptom == symptom, "prop_lower"],
-                    high=range_symp.loc[range_symp.symptom == symptom, "prop_upper"],
-                    size=1
-                )[0]
-
-                if self.rng.random_sample(size=1) < symptom_probability:
-                    # schedule symptom onset
-                    self.sim.modules["SymptomManager"].change_symptom(
-                        person_id=person,
-                        symptom_string=symptom,
-                        add_or_remove="+",
-                        disease_module=self,
-                        duration_in_days=None,
-                    )
+        for symptom in symptom_list_severe:
+            # Let u ~ Uniform(0, 1) and p ~ Uniform(prop_lower, prop_upper),
+            # then the probability of the event (u < p) is (prop_lower + prop_upper) / 2
+            # That is the probability of b == True in the following code snippet
+            #     b = rng.uniform() < rng.uniform(low=prop_lower, high=prop_upper)
+            # and this one
+            #     b = rng.uniform() < (prop_lower + prop_upper) / 2
+            # are equivalent.
+            persons_gaining_symptom = severe_index[
+                rng.uniform(size=len(severe_index))
+                < (
+                    range_symp.at[symptom, "prop_lower"]
+                    + range_symp.at[symptom, "prop_upper"]
+                ) / 2
+            ]
+            # schedule symptom onset
+            self.sim.modules["SymptomManager"].change_symptom(
+                person_id=persons_gaining_symptom,
+                symptom_string=symptom,
+                add_or_remove="+",
+                disease_module=self,
+                duration_in_days=None,
+            )
 
     def check_if_fever_is_caused_by_malaria(self, person_id, hsi_event):
         """Run by an HSI when an adult presents with fever"""
@@ -703,28 +725,45 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
         if not df.at[individual_id, "is_alive"]:
             return
 
+        # death should only occur if severe malaria case
+        assert df.at[individual_id, "ma_inf_type"] == "severe"
+
         # if on treatment, will reduce probability of death
         # use random number generator - currently param treatment_adjustment set to 0.5
         if df.at[individual_id, "ma_tx"]:
             prob = self.module.rng.rand()
 
+            # if draw -> death
             if prob < self.module.parameters["treatment_adjustment"]:
-                self.sim.schedule_event(
-                    demography.InstantaneousDeath(
-                        self.module, individual_id, cause=self.cause
-                    ),
-                    self.sim.date,
-                )
+                self.sim.modules['Demography'].do_death(
+                    individual_id=individual_id, cause=self.cause, originating_module=self.module)
+
+                # self.sim.schedule_event(
+                #     demography.InstantaneousDeath(
+                #         self.module, individual_id, cause=self.cause
+                #     ),
+                #     self.sim.date,
+                # )
 
                 df.at[individual_id, "ma_date_death"] = self.sim.date
 
+            # else if draw does not result in death -> cure
+            else:
+                df.at[individual_id, "ma_tx"] = False
+                df.loc[individual_id, "ma_inf_type"] = "asym"
+                # df.loc[individual_id, "ma_date_symptoms"] = pd.NaT
+
+        # if not on treatment - death will occur
         else:
-            self.sim.schedule_event(
-                demography.InstantaneousDeath(
-                    self.module, individual_id, cause=self.cause
-                ),
-                self.sim.date,
-            )
+            self.sim.modules['Demography'].do_death(
+                individual_id=individual_id, cause=self.cause, originating_module=self.module)
+
+            # self.sim.schedule_event(
+            #     demography.InstantaneousDeath(
+            #         self.module, individual_id, cause=self.cause
+            #     ),
+            #     self.sim.date,
+            # )
 
             df.at[individual_id, "ma_date_death"] = self.sim.date
 
@@ -746,13 +785,13 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["LabPOC"] = 1
+        the_appt_footprint["ConWithDCSA"] = 1
         # print(the_appt_footprint)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Malaria_RDT"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '0'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -875,12 +914,12 @@ class HSI_Malaria_non_complicated_treatment_age0_5(HSI_Event, IndividualScopeEve
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Under5OPD"] = 1  # This requires one out patient
+        the_appt_footprint["ConWithDCSA"] = 1  # This requires one out patient
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Malaria_treatment_child0_5"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '0'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1011,7 +1050,7 @@ class HSI_Malaria_complicated_treatment_child(HSI_Event, IndividualScopeEventMix
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Malaria_treatment_complicated_child"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1054,7 +1093,7 @@ class HSI_Malaria_complicated_treatment_adult(HSI_Event, IndividualScopeEventMix
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Malaria_treatment_complicated_adult"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1076,7 +1115,8 @@ class HSI_Malaria_complicated_treatment_adult(HSI_Event, IndividualScopeEventMix
                 df.at[person_id, "ma_tx_counter"] += 1
 
     def did_not_run(self):
-        logger.debug("HSI_Malaria_tx_compl_adult: did not run")
+        logger.debug(key='message',
+                     data='HSI_Malaria_tx_compl_adult: did not run')
         pass
 
 
@@ -1130,35 +1170,25 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------
 class MalariaCureEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(days=5))
+        super().__init__(module, frequency=DateOffset(days=3))
 
     def apply(self, population):
         logger.debug(key='message', data='MalariaCureEvent: symptom resolution for malaria cases')
 
         df = self.sim.population.props
 
-        # select people with clinical malaria and symptoms for at least 5 days
-        # or severe cases on treatment for at least 7 days
-        clinical_inf = df.index[df.is_alive &
-                                (df.ma_inf_type == "clinical") &
-                                (df.ma_date_symptoms < (self.sim.date - DateOffset(days=5)))]
+        # select people with clinical malaria and treatment for at least 3 days
+        clinical_and_treated = df.index[df.is_alive &
+                                        (df.ma_inf_type == "clinical") &
+                                        (df.ma_date_tx < (self.sim.date - DateOffset(days=3)))]
 
-        severe_inf = df.index[df.is_alive &
-                              (df.ma_inf_type == "severe") &
-                              (df.ma_date_tx < (self.sim.date - DateOffset(days=7)))]
-
-        # clear symptoms
-        all_cured = clinical_inf.union(severe_inf) if len(severe_inf) else clinical_inf
-
-        for idx in all_cured:
-            self.sim.modules["SymptomManager"].clear_symptoms(
-                person_id=idx, disease_module=self.module
-            )
+        self.sim.modules["SymptomManager"].clear_symptoms(
+            person_id=clinical_and_treated, disease_module=self.module
+        )
 
         # change properties
-        df.loc[all_cured, "ma_tx"] = False
-        df.loc[all_cured, "ma_inf_type"] = "asym"
-        df.loc[all_cured, "ma_date_symptoms"] = pd.NaT
+        df.loc[clinical_and_treated, "ma_tx"] = False
+        df.loc[clinical_and_treated, "ma_inf_type"] = "asym"
 
 
 class MalariaParasiteClearanceEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1325,7 +1355,6 @@ class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        # todo this could be PfPR in 2-10 yr olds and clinical incidence too
         # ------------------------------------ PREVALENCE OF INFECTION ------------------------------------
         infected = (
             df[df.is_alive & df.ma_is_infected].groupby("district_num_of_residence").size()

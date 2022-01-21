@@ -85,6 +85,7 @@ def test_using_parameter_or_argument_to_set_service_availability():
     assert sim.modules['HealthSystem'].service_availability == service_availability_arg
 
 
+@pytest.mark.slow
 def test_run_with_healthsystem_no_disease_modules_defined():
     sim = Simulation(start_date=start_date, seed=0)
 
@@ -107,6 +108,7 @@ def test_run_with_healthsystem_no_disease_modules_defined():
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_run_no_interventions_allowed(tmpdir):
     # There should be no events run or scheduled
 
@@ -158,6 +160,7 @@ def test_run_no_interventions_allowed(tmpdir):
     assert not any(sim.population.props['mi_status'] == 'P')  # No cures
 
 
+@pytest.mark.slow
 def test_run_in_mode_0_with_capacity(tmpdir):
     # Events should run and there be no squeeze factors
     # (Mode 0 -> No Constraints)
@@ -199,6 +202,7 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.slow
 def test_run_in_mode_0_no_capacity(tmpdir):
     # Every events should run (no did_not_run) and no squeeze factors
     # (Mode 0 -> No Constraints)
@@ -240,6 +244,7 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.slow
 def test_run_in_mode_1_with_capacity(tmpdir):
     # All events should run with some zero squeeze factors
     # (Mode 1 -> elastic constraints)
@@ -281,6 +286,7 @@ def test_run_in_mode_1_with_capacity(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.slow
 def test_run_in_mode_1_with_no_capacity(tmpdir):
     # Events should run but with high squeeze factors
     # (Mode 1 -> elastic constraints)
@@ -324,6 +330,7 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.slow
 def test_run_in_mode_2_with_capacity(tmpdir):
     # All events should run
     # (Mode 2 -> hard constraints)
@@ -365,6 +372,7 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.slow
 @pytest.mark.group2
 def test_run_in_mode_2_with_no_capacity(tmpdir):
     # No individual level events should run and the log should contain events with a flag showing that all individual
@@ -411,6 +419,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
 
 
 # todo - need some better tests for consumables
+@pytest.mark.slow
 def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
     # Events should run and there be no squeeze factors
     # (Mode 0 -> No Constraints)
@@ -449,10 +458,11 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
     assert 0 == len([v for v in output['tlo.methods.healthsystem']['Consumables']['Item_NotAvailable'] if v != '{}'])
     assert 0 < len([v for v in output['tlo.methods.healthsystem']['Consumables']['Item_Available'] if v != '{}'])
 
-    # Check that some Mockitis cured Occured (though health system)
+    # Check that some mockitis cured occured (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.slow
 @pytest.mark.group2
 def test_run_in_with_hs_disabled(tmpdir):
     # All events should run but no logging from healthsystem
@@ -498,6 +508,7 @@ def test_run_in_with_hs_disabled(tmpdir):
     assert any(['HSIEventWrapper' in str(ev_name) for ev_name in list_of_ev_name])
 
 
+@pytest.mark.slow
 def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
     # All events should run
     # (Mode 2 -> hard constraints)
@@ -537,6 +548,7 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.slow
 def test_all_appt_types_can_run():
     """Check that if an appointment type is declared as one that can run at a facility-type of level `x` that it can
     run at the level for persons in any district."""
@@ -636,7 +648,6 @@ def test_all_appt_types_can_run():
     if len(error_msg):
         for _line in error_msg:
             print(_line)
-        pd.DataFrame(error_msg).to_csv('error_dump.txt', index=False, header=False)
 
     assert 0 == len(error_msg)
 
