@@ -491,17 +491,16 @@ class LogsDict(dict):
     """a class that parses logs on demand. it returns an object that behaves like a dictionary."""
 
     def __init__(self, file_names_and_paths, metadata):
-        # initialise class with a dictionary containing module name as a key and full file path as a value
+        # initialise class with a log_file paths and metadata
         self.logfile_names_and_paths: Dict[str, str] = file_names_and_paths
         self.all_metadata = metadata
 
     def __setitem__(self, key, item):
-        # restrict setting of dictionary items
+        # restrict resetting of dictionary items
         raise NotImplementedError
 
     def __getitem__(self, key):
-        # check if the requested key is found and return parsed logs if true. if key is not found return found
-        # nothing statement
+        # check if the requested key is found and return parsed logs if true else return KeyError
         if key in self.logfile_names_and_paths:
             result_df = _parse_log_file_inner_loop(self.logfile_names_and_paths[key].name)
             if len(self.all_metadata) > 0:
@@ -512,7 +511,7 @@ class LogsDict(dict):
             return KeyError
 
     def has_key(self, k):
-        # check if the requested key is found in dictionary. return true is found and false if not
+        # return true if key to log_file is found else false
         return k in self.logfile_names_and_paths
 
     def update(self, *args, **kwargs):
