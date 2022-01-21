@@ -1183,6 +1183,7 @@ class MalariaCureEvent(RegularEvent, PopulationScopeEventMixin):
 
         df = self.sim.population.props
 
+        # TREATED
         # select people with malaria and treatment for at least 3 days
         # if treated, will clear symptoms and parasitaemia
         # this will also clear parasitaemia for asymptomatic cases picked up by routine rdt
@@ -1195,8 +1196,10 @@ class MalariaCureEvent(RegularEvent, PopulationScopeEventMixin):
 
         # change properties
         df.loc[infected_and_treated, "ma_tx"] = False
+        df.loc[infected_and_treated, "ma_is_infected"] = False
         df.loc[infected_and_treated, "ma_inf_type"] = "none"
 
+        # UNTREATED
         # if not treated, self-cure occurs after 6 days of symptoms
         # but parasites remain in blood
         clinical_not_treated = df.index[df.is_alive &
