@@ -86,7 +86,6 @@ def test_sims(tmpdir):
         df.is_alive
         & (df.ma_inf_type == "clinical")
         & (sim.date >= df.ma_date_symptoms)
-        & (sim.date < df.ma_date_symptoms + pd.DateOffset(days=sim.modules["Malaria"].parameters["dur_clin"]))
     ]:
         assert "fever" in sim.modules["SymptomManager"].has_what(person)
         assert "Malaria" in sim.modules["SymptomManager"].causes_of(person, "fever")

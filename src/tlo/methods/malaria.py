@@ -1212,7 +1212,6 @@ class MalariaCureEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[clinical_and_treated, "ma_inf_type"] = "asym"
 
 
-
 class MalariaParasiteClearanceEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(days=30.5))
