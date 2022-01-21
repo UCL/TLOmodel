@@ -738,32 +738,23 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
                 self.sim.modules['Demography'].do_death(
                     individual_id=individual_id, cause=self.cause, originating_module=self.module)
 
-                # self.sim.schedule_event(
-                #     demography.InstantaneousDeath(
-                #         self.module, individual_id, cause=self.cause
-                #     ),
-                #     self.sim.date,
-                # )
-
                 df.at[individual_id, "ma_date_death"] = self.sim.date
 
             # else if draw does not result in death -> cure
             else:
                 df.at[individual_id, "ma_tx"] = False
-                df.loc[individual_id, "ma_inf_type"] = "asym"
-                # df.loc[individual_id, "ma_date_symptoms"] = pd.NaT
+                df.at[individual_id, "ma_inf_type"] = "none"
+                df.at[individual_id, "ma_is_infected"] = False
+
+                # clear symptoms
+                self.sim.modules["SymptomManager"].clear_symptoms(
+                    person_id=individual_id, disease_module=self.module
+                )
 
         # if not on treatment - death will occur
         else:
             self.sim.modules['Demography'].do_death(
                 individual_id=individual_id, cause=self.cause, originating_module=self.module)
-
-            # self.sim.schedule_event(
-            #     demography.InstantaneousDeath(
-            #         self.module, individual_id, cause=self.cause
-            #     ),
-            #     self.sim.date,
-            # )
 
             df.at[individual_id, "ma_date_death"] = self.sim.date
 
@@ -1188,7 +1179,8 @@ class MalariaCureEvent(RegularEvent, PopulationScopeEventMixin):
         # if treated, will clear symptoms and parasitaemia
         # this will also clear parasitaemia for asymptomatic cases picked up by routine rdt
         infected_and_treated = df.index[df.is_alive &
-                                        (df.ma_date_tx < (self.sim.date - DateOffset(days=3)))]
+                                        (df.ma_date_tx < (self.sim.date - DateOffset(days=3))) &
+                                        (df.ma_inf_type != "severe")]
 
         self.sim.modules["SymptomManager"].clear_symptoms(
             person_id=infected_and_treated, disease_module=self.module
