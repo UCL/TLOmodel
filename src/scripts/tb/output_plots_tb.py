@@ -492,9 +492,13 @@ plt.show()
 
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
-list_of_paths = outputpath.glob('*.log')
+list_of_paths = outputpath.glob('*.log')  # gets latest log file
 latest_path = max(list_of_paths, key=lambda p: p.stat().st_ctime)
 
+# latest_path = sim.log_filepath
+# tlo.methods.deviance_measure.log written after log file below:
+# outputs\deviance__2022-01-20T105927.log
+# latest_path = "outputs\deviance__2022-01-20T105927.log"
 death_compare = compare_number_of_deaths(latest_path, resourcefilepath)
 
 # include all ages and both sexes

@@ -38,11 +38,11 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 100000
+popsize = 50000
 
 # set up the log config
 log_config = {
-    "filename": "deviance",
+    "filename": "deviance_calibrated",
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
@@ -93,8 +93,8 @@ sim.modules["Tb"].parameters["tb_high_risk_distr"] = pd.read_excel(
 # sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.998
 
 # todo remove
-sim.modules["Hiv"].parameters["beta"] = 0.13
-sim.modules["Tb"].parameters["transmission_rate"] = 1.85
+sim.modules["Hiv"].parameters["beta"] = 0.1
+sim.modules["Tb"].parameters["transmission_rate"] = 2.28
 
 # sim.modules["Hiv"].parameters["rr_start_art_if_aids_symptoms"] = 5
 # sim.modules["Hiv"].parameters["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 1.0

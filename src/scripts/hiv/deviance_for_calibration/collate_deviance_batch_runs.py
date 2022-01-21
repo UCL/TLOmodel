@@ -1,5 +1,6 @@
 
 from pathlib import Path
+import pandas as pd
 
 import matplotlib.pyplot as plt
 
@@ -41,8 +42,9 @@ extracted = extract_results(
     key="deviance_measure",
     column="deviance_measure",
 )
+extracted.to_csv(outputspath / ("full_LHC_outputs" + ".csv"))
 
-# 3) Get summary of the results for that log-element (only mean and the value at then of the simulation)
+# 3) Get summary of the results for that log-element
 res = summarize(extracted, only_mean=True).iloc[-1]
 res.name = "z"
 
@@ -52,15 +54,17 @@ combined_output = params.pivot(index="draw", columns="module_param", values="val
 combined_output["deviance"] = res.values
 combined_output.to_csv(outputspath / ("LHC_outputs" + ".csv"))
 
-# 4) Create a heatmap:
-grid = get_grid(params, res)
+
+# plot the deviance against parameters
 fig, ax = plt.subplots()
-c = ax.pcolormesh(
-    grid["Hiv:beta"], grid["Tb:transmission_rate"], grid["z"], shading="nearest"
-)
+sc = ax.scatter(combined_output["Hiv:beta"],
+                combined_output["Tb:transmission_rate"],
+                c=combined_output["deviance"],
+                cmap="GnBu", s=400)
 ax.set_title("Deviance measure")
 plt.xlabel("Hiv: transmission rate")
 plt.ylabel("Tb: transmission rate")
-fig.colorbar(c, ax=ax)
+fig.colorbar(sc, ax=ax)
 plt.show()
+
 

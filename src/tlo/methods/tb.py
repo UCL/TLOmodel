@@ -1677,7 +1677,6 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             # if screening indicates presumptive tb
 
             # refer for HIV testing: all ages
-            # todo reinstate
             if "Hiv" in self.sim.modules:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=hiv.HSI_Hiv_TestAndRefer(
