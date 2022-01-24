@@ -1140,7 +1140,7 @@ class NewbornOutcomes(Module):
         params = self.current_parameters
         nci = self.newborn_care_info
 
-        self.sim.modules['Labour'].further_on_birth_labour(mother_id, child_id)
+        self.sim.modules['Labour'].further_on_birth_labour(mother_id)
 
         # We check that the baby has survived labour and has been delivered (even if the mother did not survive)
         if (df.at[mother_id, 'is_alive'] and not df.at[mother_id, 'la_intrapartum_still_birth']) or \

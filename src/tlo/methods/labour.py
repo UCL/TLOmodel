@@ -2729,7 +2729,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
 
         # If the mother survived labour but experienced a stillbirth we reset all the relevant pregnancy variables now
         if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'la_intrapartum_still_birth']:
-            self.sim.modules['Labour'].further_on_birth_labour(mother_id, child_id='none')
+            self.sim.modules['Labour'].further_on_birth_labour(mother_id)
             self.sim.modules['PregnancySupervisor'].further_on_birth_pregnancy_supervisor(mother_id)
             self.sim.modules['PostnatalSupervisor'].further_on_birth_postnatal_supervisor(mother_id)
             self.sim.modules['CareOfWomenDuringPregnancy'].further_on_birth_care_of_women_in_pregnancy(mother_id)
