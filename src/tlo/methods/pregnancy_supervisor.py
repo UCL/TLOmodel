@@ -2286,7 +2286,7 @@ class OverrideKeyParameterForAnalysis(Event, PopulationScopeEventMixin):
         if params['switch_anc_coverage']:
             target = params['target_anc_coverage_for_analysis']
             params['odds_early_init_anc4'] = 1
-            mean = self.module.ps_linear_modek['early_initiation_anc4'].predict(
+            mean = self.module.ps_linear_models['early_initiation_anc4'].predict(
                     df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
                     year=self.sim.date.year).mean()
 

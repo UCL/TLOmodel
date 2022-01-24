@@ -1479,7 +1479,7 @@ class Labour(Module):
 
             # Log the death (eventually this can be removed)
             cause_of_death = self.rng.choice(causes, p=probs)
-            logger.info(key='cause_specific_mortality_fractions', data=risks)
+            # logger.info(key='cause_specific_mortality_fractions', data=risks)  # todo: fix
 
             # And enact the death via demography
             self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=f'{cause_of_death}',
