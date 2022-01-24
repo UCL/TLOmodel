@@ -1,7 +1,12 @@
 """
-This script generates estimates of availability of consumables used by disease modules.
+This script generates estimates of availability of consumables used by disease modules:
 
-It create one row for each consumable for availability at a specific facility and month when the data is extracted from
+* ResourceFile_Consumables_availability_and_usage.csv (a large file that gives consumable availability and usage).
+* ResourceFile_Consumables_availability_small.csv (estimate of consumable available - smaller file for use in the simulation).
+
+N.B. The file uses `ResourceFile_Consumables_matched.csv` as an input.
+
+It creates one row for each consumable for availability at a specific facility and month when the data is extracted from
 the OpenLMIS dataset and one row for each consumable for availability aggregated across all facilities when the data is
 extracted from the Harmonised Health Facility Assessment 2018/19.
 
@@ -9,6 +14,7 @@ Consumable availability is measured as probability of stockout at any point in t
 
 Data from OpenLMIS includes closing balance, quantity received, quantity dispensed, and average monthly consumption
 for each month by facility.
+
 """
 import datetime
 # Import Statements and initial declarations
@@ -17,10 +23,11 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import calendar
 
 # Set local Dropbox source
-dropboxpath = Path("/Users/sakshimohan/Dropbox (Personal)/Thanzi la Onse/05 - Resources/\
-Module-healthsystem/consumables raw files/")
+path_to_dropbox = Path('/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE')  # <-- point to the TLO dropbox locally
+path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/consumables raw files/"
 
 # define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -32,7 +39,7 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 # remember to set working directory to TLOmodel/
 outputfilepath = Path("./outputs")
 resourcefilepath = Path("./resources")
-datafilepath = Path("./../../Documents/health_systems/data")
+path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
 
 
 # Define necessary functions
@@ -50,7 +57,7 @@ def change_colnames(df, NameChangeList):  # Change column names
 #########################################################################################
 
 # Import 2018 data
-lmis_df = pd.read_csv(dropboxpath / 'ResourceFile_LMIS_2018.csv', low_memory=False)
+lmis_df = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'ResourceFile_LMIS_2018.csv', low_memory=False)
 
 # 1. BASIC CLEANING ##
 # Rename columns
@@ -263,7 +270,7 @@ lmis = lmis.reset_index()
 
 # 5.1 --- Load and clean data ---
 # Import matched list of consumanbles
-consumables_df = pd.read_csv(resourcefilepath / 'ResourceFile_consumables_matched.csv', low_memory=False)
+consumables_df = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False)
 cond = consumables_df['matching_status'] == 'Remove'
 consumables_df = consumables_df[~cond]  # Remove items which were removed due to updates or the existence of duplicates
 
@@ -349,7 +356,7 @@ unmatched_consumables = pd.merge(unmatched_consumables, matched_consumables[['it
 unmatched_consumables = unmatched_consumables[unmatched_consumables['item_y'].isna()]
 
 # ** Extract stock availability data from HHFA and clean data **
-hhfa_df = pd.read_excel(open(dropboxpath / 'ResourceFile_hhfa_consumables.xlsx', 'rb'), sheet_name='hhfa_data')
+hhfa_df = pd.read_excel(open(path_to_files_in_the_tlo_dropbox / 'ResourceFile_hhfa_consumables.xlsx', 'rb'), sheet_name='hhfa_data')
 
 # Use the ratio of availability rates between levels 1b on one hand and levels 2 and 3 on the other to extrapolate
 # availability rates for levels 2 and 3 from the HHFA data
@@ -454,11 +461,20 @@ for var in ['district', 'fac_name', 'month']:
     stkout_df.loc[cond, var] = 'NA'
 
 # --- 6.6 Export final stockout dataframe --- #
-stkout_df.to_csv(resourcefilepath / "ResourceFile_consumable_availability.csv")
+stkout_df.to_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
+
+# --- 6.7 Generate smaller file with only stock-out estimates for use in model run --- #
+sf = stkout_df[['item_code', 'month', 'district', 'fac_type_tlo', 'available_prop']].dropna()
+sf = sf.drop(index=sf.index[(sf.month == 'NA') | (sf.district == 'NA')])
+sf.month = sf.month.map(dict(zip(calendar.month_name[1:13], range(1, 13))))
+sf.item_code = sf.item_code.astype(int)
+sf['fac_type_tlo'] = sf['fac_type_tlo'].str.replace("Facility_level_", "")
+sf.to_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv", index=False)
+
 
 # 8. CALIBRATION TO HHFA DATA, 2018/19 ##
 #########################################################################################
-# --- 8.1 Prepare calibratino dataframe --- ##
+# --- 8.1 Prepare calibration dataframe --- ##
 # i. Prepare calibration data from HHFA
 hhfa_calibration_df = hhfa_df[['item_code', 'consumable_name_tlo', 'item_hhfa', 'available_prop_hhfa_Facility_level_0',
                                'available_prop_hhfa_Facility_level_1a', 'available_prop_hhfa_Facility_level_1b',
