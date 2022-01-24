@@ -118,9 +118,12 @@ class HealthSystem(Module):
                               'to permit each appointment type that should be run at facility level to do so in every '
                               'district.'),
 
-        # Availability of Consumables
+        # Consumables
         'Consumables_OneHealth': Parameter(Types.DATA_FRAME,
-                                           'List of consumables used in each intervention and their costs.'),
+                                           'Data imported from the OneHealth Tool on consumable items, packages and '
+                                           'costs.'),
+        'Consumables_availability_small': Parameter(Types.DATA_FRAME,
+                                           'Estimated availability of consumables in the LMIS dataset.'),
 
         # Infrastructure and Equipment
         'BedCapacity': Parameter(Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
@@ -271,9 +274,13 @@ class HealthSystem(Module):
                 path_to_resourcefiles_for_healthsystem / 'human_resources' / f'{_i}' /
                 'ResourceFile_Daily_Capabilities.csv')
 
-        # Read in ResourceFile_Consumables and then process it to create the data structures needed
+        # Read in ResourceFile_Consumables
         self.parameters['Consumables_OneHealth'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables.csv')
+            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_OneHealth.csv')
+        self.parameters['Consumables_Lmis'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_Lmis.csv')
+        self.parameters['Consumables_matched'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_matched.csv')
 
         # Data on the number of beds available of each type by facility_id
         self.parameters['BedCapacity'] = pd.read_csv(
@@ -285,7 +292,7 @@ class HealthSystem(Module):
     def pre_initialise_population(self):
         """Do processing following `read_parameters` prior to generating the population."""
         self.process_human_resources_files()
-        self.consumables.process_consumables_df(df=self.parameters['Consumables_OneHealth'])
+        self.consumables.process_consumables_df(df=self.parameters['Consumables_Lmis'])
         self.bed_days.pre_initialise_population()
 
     def initialise_population(self, population):
