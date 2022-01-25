@@ -150,4 +150,4 @@ class Consumables:
     def _get_item_code_from_item_name(self, item: str) -> int:
         """Helper function to provide the item_code (an int) when provided with the name of the item"""
         lookups = self.hs_module.parameters['item_and_package_code_lookups']
-        return pd.unique(lookups.loc[lookups["Items"] == item, "Item_Code"])[0]
+        return int(pd.unique(lookups.loc[lookups["Items"] == item, "Item_Code"])[0])

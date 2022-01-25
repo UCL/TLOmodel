@@ -289,8 +289,42 @@ def test_use_get_consumables_with_different_inputs_for_item_codes():
     )
 
 
+
 # todo strict mode to cause errors
 
-# todo - _get_item_codes_from_package_name(self, package: str) -> dict:
 
-# todo - _get_item_code_from_item_name
+
+def test_get_item_code_from_item_name():
+    """Check that can use `get_item_code_from_item_name` to retrieve the correct `item_code`."""
+    lookup = pd.read_csv(
+        resourcefilepath / "healthsystem" / "consumables" / "ResourceFile_Consumables_Items_and_Packages.csv").set_index('Item_Code')
+
+    sim = get_sim_with_dummy_module_registered()
+    get_item_code_from_item_name = sim.modules['HealthSystem'].get_item_code_from_item_name
+
+    example_item_names = [
+        "Syringe, autodisposable, BCG, 0.1 ml, with needle",
+        "Pentavalent vaccine (DPT, Hep B, Hib)",
+        "Pneumococcal vaccine"
+    ]
+
+    for _item_name in example_item_names:
+        _item_code = get_item_code_from_item_name(_item_name)
+        assert isinstance(_item_code, int)
+        assert lookup.loc[_item_code].Items == _item_name
+
+# todo - this one!
+def test_get_item_codes_from_package_name():
+    """Check that can use `get_item_codes_from_package_name` to retrieve the correct `item_code`."""
+    lookup = pd.read_csv(
+        resourcefilepath / "healthsystem" / "consumables" / "ResourceFile_Consumables_Items_and_Packages.csv").set_index('Item_Code')
+
+    sim = get_sim_with_dummy_module_registered()
+    get_item_codes_from_package_name = sim.modules['HealthSystem'].get_item_codes_from_package_name
+    example_package_names = ["Measles rubella vaccine",
+                     "HPV vaccine",
+                     "Tetanus toxoid (pregnant women)"]
+
+
+
+
