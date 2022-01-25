@@ -905,6 +905,44 @@ class Alri(Module):
         self.consumables_used_in_hsi['Fluid_Maintenance'] = \
             [get_item_code(item='Tube, nasogastric CH 8_each_CMST')]
 
+    def pneumonia_classification(self, person_id, hsi_event):
+        """Based on symptoms presented, classify WHO-pneumonia severity."""
+
+        df = self.sim.population.props
+        facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
+
+        symptoms = hsi_event.sim.modules['SymptomManager'].has_what(person_id=person_id)
+        # TODO: get other danger signs in iCCM when issue 429 is resolved
+        # iccm_danger_signs = symptoms.append() other symptoms child may have that is considered severe in iCCM
+
+        classification = ''
+
+        # ----- For children over 2 months and under 5 years of age -----
+        if (df.at[person_id, 'age_exact_years'] >= 1/6) & (df.at[person_id, 'age_exact_years'] < 5):
+
+            # IMCI non-severe pneumonia -----
+            if 'tachypnoea' in symptoms and (
+                    ('chest_indrawing' not in symptoms) and ('danger_signs' not in symptoms)):
+                classification = 'fast_breathing_pneumonia'
+            if 'chest_indrawing' in symptoms and ('danger_signs' not in symptoms):
+                classification = 'chest_indrawing_pneumonia'
+
+            # IMCI severe pneumonia -----
+            if 'danger_signs' in symptoms:
+                classification = 'danger_signs_pneumonia'
+
+            # IMCI common cold (no pneumonia) -----
+            if ('cough' in symptoms) or ('difficult_breathing' in symptoms) and (
+                ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
+                    ('danger_signs' not in symptoms)):
+                classification = 'common_cold'
+
+        # ----- For infants under 2 months of age -----
+        if df.at[person_id, 'age_exact_years'] < 1/6:
+            classification = 'very_severe_disease'
+
+        return classification   # todo: add pulse oximetry read
+
     def end_episode(self, person_id):
         """End the episode infection for a person (i.e. reset all properties to show no current infection or
         complications).
