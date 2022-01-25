@@ -587,6 +587,11 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of relapse by day 14 on 5-day amoxicillin for non-severe pneumonia'
                       ),
+        '1st_line_antibiotic_treatment_failure_by_day2':
+            Parameter(Types.REAL,
+                      'probability of treatment failure by day 2 '
+                      'of first line antibiotic treatment for severe pneumonia'
+                      ),
 
     }
 
@@ -643,6 +648,11 @@ class Alri(Module):
         'ri_ALRI_tx_start_date': Property(Types.DATE,
                                           'start date of Alri treatment for current episode (pd.NaT is not infected or'
                                           ' treatment has not begun)'),
+        'ri_treatment_failure_or_relapse':
+            Property(Types.BOOL, 'Receiving recommended treatment, '
+                                 'not improving by day 6 or relapsed by day 14 for non-complicated cases,'
+                                 'not improving by day 2 for complicated cases '
+                     ),
     }
 
     def __init__(self, name=None, resourcefilepath=None, log_indivdual=None, do_checks=False):
