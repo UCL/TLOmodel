@@ -195,7 +195,7 @@ def test_module_dependencies_allow_initialisation(sim, module_class):
         )
     except Exception:
         pytest.fail(
-            f"Module {module_class.__name__} appears to having missing dependency "
+            f'Module {module_class.__name__} appears to be missing dependency '
             f"declarations required to run initialise_population and "
             f"initialise_simulation. The INIT_DEPENDENCIES class attribute should "
             f"specify any modules needing to be initialised before this module "
