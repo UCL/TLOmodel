@@ -366,6 +366,10 @@ class Tb(Module):
             Types.REAL,
             "probability of being retained on IPT every 6 months if still eligible",
         ),
+        "age_eligibility_for_ipt": Parameter(
+            Types.REAL,
+            "eligibility criteria (years of age) for IPT given to contacts of TB cases",
+        ),
         "ipt_start_date": Parameter(
             Types.INT,
             "year from which IPT is available for paediatric contacts of diagnosed active TB cases",
@@ -1782,7 +1786,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
                 # randomly sample from <5 yr olds within district
                 ipt_eligible = df.loc[
-                    (df.age_years <= 5)
+                    (df.age_years <= p["age_eligibility_for_ipt"])
                     & ~df.tb_diagnosed
                     & df.is_alive
                     & (df.district_of_residence == district)
