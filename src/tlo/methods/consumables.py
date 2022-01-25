@@ -24,16 +24,16 @@ class Consumables:
     items are deemed not available; if 'average' then such items are deemed available with a probability equal to the
     average availability of other items (given the same other factor: district, facility_level etc); if 'error' than
     the simulation is terminated with an AssertionError if a request for such an item is made.
-    todo - maybe Simplify just to average and error; pipe this through to healthsystem
+    todo - maybe Simplify this control just to average and error; pipe this through to healthsystem
     """
 
     def __init__(self, hs_module, cons_availabilty: str, if_unrecognised: str = None) -> None:
         self.hs_module = hs_module
 
-        assert cons_availabilty in ['none', 'default', 'all'], "Argument `cons_availability` not recognised."
+        assert cons_availabilty in ['none', 'default', 'all'], "Argument `cons_availability` is not recognised."
         self.cons_availability = cons_availabilty
 
-        assert if_unrecognised in [None, 'average', 'error'], "Argument `if_unrecognised` not recognised."
+        assert if_unrecognised in [None, 'average', 'error'], "Argument `if_unrecognised` is not recognised."
         self.if_unrecognised = if_unrecognised if if_unrecognised is not None else 'average'
 
         self.item_codes = set()  # All item_codes that are recognised.
@@ -48,7 +48,7 @@ class Consumables:
         * Saves the data as `self.prob_item_codes_available`
         * Saves the set of all recognised item_codes to `self.item_codes`
         """
-        _df = df
+        _df = df.copy()
         _df['Facility_Level'] = _df['fac_type_tlo'].astype(
             pd.CategoricalDtype(
                 categories=self.hs_module.sim.modules['HealthSystem']._facility_levels))

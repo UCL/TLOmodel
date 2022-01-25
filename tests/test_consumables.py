@@ -15,6 +15,8 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 
 def any_warnings_about_item_code(recorded_warnings):
+    """Helper function to determine if any of the recorded warnings is the one created when an Item_Code is not
+    recognised."""
     return len([_r for _r in recorded_warnings if str(_r.message).startswith('Item_Code')]) > 0
 
 
@@ -74,7 +76,7 @@ def get_dummy_hsi_event_instance(module, accepted_facility_level='1a'):
             self.ALERT_OTHER_DISEASES = []
 
         def apply(self, person_id, squeeze_factor):
-            """Requests all consumables."""
+            """Requests all recognised consumables."""
             self.get_consumables(
                 item_codes=list(self.sim.modules['HealthSystem'].consumables.item_codes),
                 to_log=True,
@@ -86,14 +88,11 @@ def get_dummy_hsi_event_instance(module, accepted_facility_level='1a'):
 
 def test_consumables_availability_options():
     """Check that the options for `cons_availability` in the Consumables class work as expected."""
-
-    # Create simulation and hsi_event
     sim = get_sim_with_dummy_module_registered()
     hsi_event = get_dummy_hsi_event_instance(module=sim.modules['DummyModule'])
 
-    # Create dataframe for the availability of consumables
+    # Create data for the availability of consumables
     intrinsic_availability = {0: True, 1: False}
-
     df = create_dummy_data_for_cons_availability(intrinsic_availability,
                                                  districts=[sim.population.props.at[0, 'district_of_residence']],
                                                  months=[1],
@@ -120,13 +119,11 @@ def test_consumables_availability_options():
 
 def test_outputs_to_log(tmpdir):
     """Check that logging from Consumables is as expected."""
-
-    # Create simulation
     sim = get_sim_with_dummy_module_registered(tmpdir=tmpdir, run=False)
     sim.make_initial_population(n=100)
 
-    # Edit the `initialise_simulation` method of DummyModule so that, during the simulation, an HSI is run which
-    # requests consumables.
+    # Edit the `initialise_simulation` method of DummyModule so that, during the simulation, an HSI is which requests
+    # consumables.
     def schedule_hsi_that_will_request_consumables(sim):
         """Drop-in replacement for `initialise_simulation` in the DummyModule module."""
         sim.modules['HealthSystem'].schedule_hsi_event(
@@ -138,7 +135,7 @@ def test_outputs_to_log(tmpdir):
 
     sim.modules['DummyModule'].initialise_simulation = schedule_hsi_that_will_request_consumables
 
-    # Change the Consumables availability
+    # Determine the availability of consumables
     intrinsic_availability = {0: True, 1: False}
     sim.modules['HealthSystem'].consumables.process_consumables_df(
         create_dummy_data_for_cons_availability(intrinsic_availability,
@@ -149,7 +146,7 @@ def test_outputs_to_log(tmpdir):
 
     sim.simulate(end_date=sim.start_date + pd.DateOffset(days=1))
 
-    # Check that log is created
+    # Check that log is created and the content is as expected.
     cons_log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['Consumables']
     assert len(cons_log)
     assert cons_log.loc[cons_log.index[0], 'Item_Available'] == "{0: 1}"  # Item 0 (1 requested) is available
@@ -197,7 +194,7 @@ def test_unrecognised_consumables_lead_to_warning_and_controlled_behaviour():
     # Determine the expected results given the option
     options_for_cons_availability = {"all", "none", "default"}
 
-    # Check that for each option for `cons_availability` the result is as expected.
+    # Check that for each option for `cons_availability` a warning is generated for an unrecognised item_code.
     for _option in options_for_cons_availability:
         cons = Consumables(sim.modules['HealthSystem'], cons_availabilty=_option)
         cons.process_consumables_df(df)
