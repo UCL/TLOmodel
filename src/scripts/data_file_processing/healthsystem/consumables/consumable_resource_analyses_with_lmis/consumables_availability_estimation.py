@@ -474,6 +474,21 @@ sf.item_code = sf.item_code.astype(int)
 sf['fac_type_tlo'] = sf['fac_type_tlo'].str.replace("Facility_level_", "")
 sf.to_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv", index=False)
 
+# --- 6.8 Checks that the exported file has the properties required of it by the model code. --- #
+
+# Check that we have a complete set of estimates, for every region & facility_type, as defined in the model.
+districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
+fac_levels = {'1a', '1b', '2', '3'}
+
+assert set(sf['district']) == districts, \
+    "Districts defined in the file do not match the definitions in the model."
+assert set(sf['fac_type_tlo']) == fac_levels, \
+    "Facility Levels defined in the file do not match the definitions in the model."
+
+any_entry = (sf.groupby(by=['district', 'fac_type_tlo']).size() > 0).unstack().fillna(False)
+assert any_entry[['1a', '1b', '2']].all().all(), \
+    "There are some regions and facility-types combinations for which no estimates are given."
+
 
 # 8. CALIBRATION TO HHFA DATA, 2018/19 ##
 #########################################################################################
