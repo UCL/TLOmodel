@@ -139,6 +139,11 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                 sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
                     person_id=person_id, hsi_event=hsi_event)
 
+        if ('cough' in symptoms) or ('difficult_breathing' in symptoms):
+            if 'Alri' in sim.modules:
+                sim.modules['Alri'].assess_child_with_cough_or_difficult_breathing(
+                    person_id=person_id, hsi_event=hsi_event)
+
         if "Malaria" in sim.modules:
             if 'fever' in symptoms:
                 malaria_test_result = sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
