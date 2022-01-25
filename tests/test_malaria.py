@@ -20,7 +20,7 @@ from tlo.methods import (
 from tlo.methods.healthsystem import HSI_Event
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
+end_date = Date(2015, 12, 31)
 popsize = 500
 
 try:
@@ -82,12 +82,11 @@ def test_sims(sim):
     # check clinical malaria in pregnancy counter not including males
     assert not any((df.sex == "M") & (df.ma_clinical_preg_counter > 0))
 
-    # check symptoms are being assigned - fever assigned to all clinical cases in symptomatic period
+    # check symptoms are being assigned - fever assigned to all clinical cases
     for person in df.index[
         df.is_alive
         & (df.ma_inf_type == "clinical")
         & (sim.date >= df.ma_date_symptoms)
-        & (sim.date < df.ma_date_symptoms + pd.DateOffset(days=sim.modules["Malaria"].parameters["dur_clin"]))
     ]:
         assert "fever" in sim.modules["SymptomManager"].has_what(person)
         assert "Malaria" in sim.modules["SymptomManager"].causes_of(person, "fever")
@@ -115,7 +114,7 @@ def test_remove_malaria_test(seed):
 
     service_availability = list([" "])  # no treatments available
 
-    end_date = Date(2011, 1, 1)
+    end_date = Date(2018, 12, 31)
     sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
@@ -201,6 +200,7 @@ def test_dx_algorithm_for_malaria_outcomes(sim):
         popsize = 200  # smallest population size that works
 
         sim.make_initial_population(n=popsize)
+        sim.modules['Malaria'].parameters['sensitivity_rdt'] = 1.0
         sim.simulate(end_date=start_date)
 
         # Create the HSI event that is notionally doing the call on diagnostic algorithm
@@ -264,27 +264,28 @@ def test_dx_algorithm_for_malaria_outcomes(sim):
 
     # Set up the person - clinical malaria and aged <5 years:
     df = sim.population.props
-    df.at[0, 'ma_is_infected'] = True
-    df.at[0, 'ma_date_infected'] = sim.date
-    df.at[0, 'ma_date_symptoms'] = sim.date
-    df.at[0, 'ma_inf_type'] = 'severe'
+    person_id = 1
+
+    df.at[person_id, 'ma_is_infected'] = True
+    df.at[person_id, 'ma_date_infected'] = sim.date
+    df.at[person_id, 'ma_date_symptoms'] = sim.date
+    df.at[person_id, 'ma_inf_type'] = 'severe'
 
     symptom_list = {"fever", "headache", "vomiting", "stomachache"}
 
     for symptom in symptom_list:
         # no symptom resolution
         sim.modules['SymptomManager'].change_symptom(
-            person_id=0,
+            person_id=person_id,
             symptom_string=symptom,
             disease_module=sim.modules['Malaria'],
             add_or_remove='+'
         )
 
-    person_id = 0
     assert "fever" in sim.modules["SymptomManager"].has_what(person_id)
 
     assert sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
-        person_id=0,
+        person_id=person_id,
         hsi_event=hsi_event
     ) == "severe_malaria"
 
@@ -403,7 +404,7 @@ def test_severe_malaria_deaths_perfect_treatment(sim):
 
     # should not cause death but result in cure
     assert df.at[person_id, 'is_alive']
-    assert df.at[person_id, "ma_inf_type"] == "asym"
+    assert df.at[person_id, "ma_inf_type"] == "none"
 
 
 def test_severe_malaria_deaths_treatment_failure(sim):
