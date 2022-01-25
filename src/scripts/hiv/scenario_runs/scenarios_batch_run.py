@@ -50,6 +50,15 @@ from tlo.scenario import BaseScenario
 number_of_draws = 20
 runs_per_draw = 5
 
+# set up dicts of parameters which change between scenarios
+# scenario 1: improved HIV service delivery
+# scenario 2: expand IPT
+# scenario 3: expand Xpert
+# scenario 4: HIV service, IPT and Xpert
+# baseline
+
+age_eligibility_for_ipt
+
 
 class TestScenario(BaseScenario):
     # this imports the resource filepath automatically
