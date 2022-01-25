@@ -318,6 +318,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     df = hsi_event.sim.population.props
     symptoms = hsi_event.sim.modules['SymptomManager'].has_what(person_id=person_id)
     schedule_hsi = hsi_event.sim.modules["HealthSystem"].schedule_hsi_event
+    age = df.at[person_id, 'age_years']
 
     if 'PregnancySupervisor' in sim.modules:
 
@@ -430,3 +431,10 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             person_id=person_id
         )
         schedule_hsi(event, priority=1, topen=sim.date)
+
+    if age < 5:
+        # ----------------------------------- CHILD < 5 -----------------------------------
+        if ('cough' in symptoms) or ('difficult_breathing' in symptoms):
+            if 'Alri' in sim.modules:
+                sim.modules['Alri'].assess_child_with_cough_or_difficult_breathing(
+                    person_id=person_id, hsi_event=hsi_event)
