@@ -22,6 +22,7 @@ from tlo.methods.healthsystem import HSI_Event
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 12, 31)
 popsize = 500
+seed = 10
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
