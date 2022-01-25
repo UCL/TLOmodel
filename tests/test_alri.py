@@ -677,7 +677,7 @@ def test_treatment(tmpdir):
     # Run the 'do_alri_treatment' function
     sim.modules['Alri'].do_alri_treatment(person_id=person_id,
                                           hsi_event=hsi_event,
-                                          treatment='Treatment_Severe_Pneumonia')
+                                          treatment='IMCI_Treatment_severe_pneumonia')
 
     # Run the death event that was originally scheduled) - this should have no effect and the person should not die
     sim.date = date_of_scheduled_death
