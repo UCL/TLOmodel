@@ -1,4 +1,5 @@
 import warnings
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -151,3 +152,26 @@ class Consumables:
         """Helper function to provide the item_code (an int) when provided with the name of the item"""
         lookups = self.hs_module.parameters['item_and_package_code_lookups']
         return int(pd.unique(lookups.loc[lookups["Items"] == item, "Item_Code"])[0])
+
+
+def create_dummy_data_for_cons_availability(intrinsic_availability: Dict[int, bool] = {0: False, 1: True},
+                                            districts: List[str] = None,
+                                            months: List[int] = [1],
+                                            facility_levels: List[int] = ['1a']
+                                            ) -> pd.DataFrame:
+    """Returns a pd.DataFrame that is a dummy for the imported `ResourceFile_Consumables.csv`.
+    By default, it describes the availability of two items, one of which is always available, and one of which is
+    never available."""
+    list_of_items = []
+    for _item, _avail in intrinsic_availability.items():
+        for _district in districts:
+            for _month in months:
+                for _fac_level in facility_levels:
+                    list_of_items.append({
+                        'item_code': _item,
+                        'district': _district,
+                        'month': _month,
+                        'fac_type_tlo': _fac_level,
+                        'available_prop': _avail
+                    })
+    return pd.DataFrame(data=list_of_items)

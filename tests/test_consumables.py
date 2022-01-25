@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Dict, List
 
 import pandas as pd
 import pytest
@@ -9,7 +8,7 @@ from tlo import Date, Module, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import Metadata, demography, healthsystem
-from tlo.methods.consumables import Consumables
+from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_availability
 from tlo.methods.healthsystem import HSI_Event
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -85,29 +84,6 @@ def get_dummy_hsi_event_instance(module, accepted_facility_level='1a'):
     return HSI_Dummy(module=module, person_id=0)
 
 
-def create_dummy_df_for_cons(intrinsic_availability: Dict[int, bool] = {0: False, 1: True},
-                             districts: List[str] = None,
-                             months: List[int] = [1],
-                             facility_levels: List[int] = ['1a']
-                             ) -> pd.DataFrame:
-    """Returns a pd.DataFrame that is a dummy for the imported `ResourceFile_Consumables.csv`, which has two items,
-    one of which is always available, and one of which is never available."""
-    list_of_items = []
-    for _item, _avail in intrinsic_availability.items():
-        for _district in districts:
-            for _month in months:
-                for _fac_level in facility_levels:
-                    list_of_items.append({
-                        'item_code': _item,
-                        'district': _district,
-                        'month': _month,
-                        'fac_type_tlo': _fac_level,
-                        'available_prop': _avail
-                    })
-
-    return pd.DataFrame(data=list_of_items)
-
-
 def test_consumables_availability_options():
     """Check that the options for `cons_availability` in the Consumables class work as expected."""
 
@@ -118,11 +94,11 @@ def test_consumables_availability_options():
     # Create dataframe for the availability of consumables
     intrinsic_availability = {0: True, 1: False}
 
-    df = create_dummy_df_for_cons(intrinsic_availability,
-                                  districts=[sim.population.props.at[0, 'district_of_residence']],
-                                  months=[1],
-                                  facility_levels=['1a']
-                                  )
+    df = create_dummy_data_for_cons_availability(intrinsic_availability,
+                                                 districts=[sim.population.props.at[0, 'district_of_residence']],
+                                                 months=[1],
+                                                 facility_levels=['1a']
+                                                 )
 
     # Determine the expected results given the option
     options_and_expected_results = {
@@ -165,10 +141,10 @@ def test_outputs_to_log(tmpdir):
     # Change the Consumables availability
     intrinsic_availability = {0: True, 1: False}
     sim.modules['HealthSystem'].consumables.process_consumables_df(
-        create_dummy_df_for_cons(intrinsic_availability,
-                                 districts=[sim.population.props.at[0, 'district_of_residence']],
-                                 months=[1],
-                                 facility_levels=['1a'])
+        create_dummy_data_for_cons_availability(intrinsic_availability,
+                                                districts=[sim.population.props.at[0, 'district_of_residence']],
+                                                months=[1],
+                                                facility_levels=['1a'])
     )
 
     sim.simulate(end_date=sim.start_date + pd.DateOffset(days=1))
@@ -211,11 +187,11 @@ def test_unrecognised_consumables_lead_to_warning_and_controlled_behaviour():
     hsi_event = get_dummy_hsi_event_instance(module=sim.modules['DummyModule'])
 
     # Create dataframe for the availability of consumables (only one).
-    df = create_dummy_df_for_cons(intrinsic_availability={0: True},
-                                  districts=[sim.population.props.at[0, 'district_of_residence']],
-                                  months=[1],
-                                  facility_levels=['1a']
-                                  )
+    df = create_dummy_data_for_cons_availability(intrinsic_availability={0: True},
+                                                 districts=[sim.population.props.at[0, 'district_of_residence']],
+                                                 months=[1],
+                                                 facility_levels=['1a']
+                                                 )
     item_code_that_is_not_recognised = 1
 
     # Determine the expected results given the option
@@ -257,10 +233,10 @@ def test_use_get_consumables_with_different_inputs_for_item_codes():
                               **{_i: 0.0 for _i in item_code_not_available}}
 
     hs.consumables.process_consumables_df(
-        df=create_dummy_df_for_cons(intrinsic_availability=intrinsic_availability,
-                                    districts=[sim.population.props.at[0, 'district_of_residence']],
-                                    months=[1],
-                                    facility_levels=['1a'])
+        df=create_dummy_data_for_cons_availability(intrinsic_availability=intrinsic_availability,
+                                                   districts=[sim.population.props.at[0, 'district_of_residence']],
+                                                   months=[1],
+                                                   facility_levels=['1a'])
     )
     hs.consumables._refresh_availability_of_consumables()
 
@@ -290,10 +266,6 @@ def test_use_get_consumables_with_different_inputs_for_item_codes():
 
 
 
-# todo strict mode to cause errors
-
-
-
 def test_get_item_code_from_item_name():
     """Check that can use `get_item_code_from_item_name` to retrieve the correct `item_code`."""
     lookup = pd.read_csv(
@@ -313,7 +285,7 @@ def test_get_item_code_from_item_name():
         assert isinstance(_item_code, int)
         assert lookup.loc[_item_code].Items == _item_name
 
-# todo - this one!
+
 def test_get_item_codes_from_package_name():
     """Check that can use `get_item_codes_from_package_name` to retrieve the correct `item_code`."""
     lookup = pd.read_csv(
@@ -321,10 +293,17 @@ def test_get_item_codes_from_package_name():
 
     sim = get_sim_with_dummy_module_registered()
     get_item_codes_from_package_name = sim.modules['HealthSystem'].get_item_codes_from_package_name
-    example_package_names = ["Measles rubella vaccine",
-                     "HPV vaccine",
-                     "Tetanus toxoid (pregnant women)"]
 
+    example_package_names = [
+        "Measles rubella vaccine",
+        "HPV vaccine",
+        "Tetanus toxoid (pregnant women)"
+    ]
+
+    for _pkg_name in example_package_names:
+        _item_codes = get_item_codes_from_package_name(_pkg_name)
+        assert isinstance(_item_codes, dict)
+        assert lookup.loc[lookup.Intervention_Pkg == _pkg_name, 'Expected_Units_Per_Case'].to_dict() == _item_codes
 
 
 

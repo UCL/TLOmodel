@@ -18,6 +18,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.consumables import create_dummy_data_for_cons_availability
 from tlo.methods.dxmanager import DxManager, DxTest
 from tlo.methods.healthsystem import HSI_Event
 
@@ -73,16 +74,20 @@ def bundle():
         def apply(self, person_id, squeeze_factor):
             pass
 
-    hsi_event = HSI_Dummy(module=sim.modules['Mockitis'], person_id=-99)
+    hsi_event = HSI_Dummy(module=sim.modules['Mockitis'], person_id=0)
 
     # Create consumable codes that are always and never available
-    cons_items = sim.modules['HealthSystem'].cons_available_today['Item_Code']
-
     item_code_for_consumable_that_is_not_available = 0
     item_code_for_consumable_that_is_available = 1
-
-    cons_items.loc[item_code_for_consumable_that_is_not_available, cons_items.columns] = False
-    cons_items.loc[item_code_for_consumable_that_is_available, cons_items.columns] = True
+    sim.modules['HealthSystem'].consumables.process_consumables_df(
+        df=create_dummy_data_for_cons_availability(
+            intrinsic_availability={item_code_for_consumable_that_is_not_available: 0.0,
+                                    item_code_for_consumable_that_is_available: 1.0},
+            districts=sim.population.props.district_of_residence.dtype.categories,
+            facility_levels=['0'],
+            months=[1])
+    )
+    sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables()
 
     assert hsi_event.get_consumables(item_codes=item_code_for_consumable_that_is_available)
     assert not hsi_event.get_consumables(item_codes=item_code_for_consumable_that_is_not_available)
