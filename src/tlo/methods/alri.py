@@ -664,6 +664,9 @@ class Alri(Module):
         # dict to hold the DALY weights
         self.daly_wts = dict()
 
+        # store the consumables needed
+        self.consumables_used_in_hsi = dict()
+
         # Pointer to store the logging event used by this module
         self.logging_event = None
 
@@ -771,6 +774,9 @@ class Alri(Module):
                   self.parameters['days_between_treatment_and_cure']))
         # 14 days max duration of an episode (natural history) + 14 days to allow treatment
 
+        # Look-up and store the consumables that are required for each HSI
+        self.look_up_consumables()
+
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
         This is called by the simulation whenever a new person is born.
@@ -824,6 +830,80 @@ class Alri(Module):
         # add prefix to label according to the name of the causes of disability declared
         daly_values_by_pathogen = daly_values_by_pathogen.add_prefix('ALRI_')
         return daly_values_by_pathogen
+
+    def look_up_consumables(self):
+        """Look up and store the consumables item codes used in each of the HSI."""
+
+        get_item_codes_from_package = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+
+        # packages
+        self.consumables_used_in_hsi['Treatment_Non_severe_Pneumonia'] = \
+            get_item_codes_from_package(package='Pneumonia treatment (children)')
+        self.consumables_used_in_hsi['Treatment_Severe_Pneumonia'] = \
+            get_item_codes_from_package(package='Treatment of severe pneumonia')
+
+        # ------------- Community (iCCM) -------------
+        # Treatment of non-severe pneumonia in the community
+        self.consumables_used_in_hsi['iCCM_Treatment_non_severe_pneumonia'] = \
+            [get_item_code(item='Paracetamol, tablet, 100 mg')] + \
+            [get_item_code(item='Amoxycillin 250mg_1000_CMST')]
+
+        # Referral process in the community for severe pneumonia
+        self.consumables_used_in_hsi['First_dose_antibiotic_for_referral_iCCM'] = \
+            [get_item_code(item='Amoxycillin 250mg_1000_CMST')]
+
+        # ------------- Health centres (IMCI) -------------
+        # Treatment of non-severe pneumonia in the health facility
+        self.consumables_used_in_hsi['IMCI_Treatment_non_severe_pneumonia'] = \
+            get_item_codes_from_package(package='Pneumonia treatment (children)')
+
+        # Referral process at health centres for severe cases
+        self.consumables_used_in_hsi['First_dose_antibiotic_for_referral_IMCI'] = \
+            [get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST')] + \
+            [get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST')] + \
+            [get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST')] + \
+            [get_item_code(item='Syringe, needle + swab')]
+
+        # ------------- Hospital (IMCI) -------------
+        # First line of antibiotics for severe pneumonia
+        self.consumables_used_in_hsi['1st_line_Antibiotic_Therapy_for_Severe_Pneumonia'] = \
+            [get_item_code(item='Benzylpenicillin 3g (5MU), PFR_each_CMST')] + \
+            [get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST')] + \
+            [get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST')] + \
+            [get_item_code(item='Syringe, needle + swab')]
+
+        # Second line of antibiotics for severe pneumonia
+        self.consumables_used_in_hsi['2nd_line_Antibiotic_Therapy_for_Severe_Pneumonia'] = \
+            [get_item_code(item='Ceftriaxone 1g, PFR_each_CMST')] + \
+            [get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST')] + \
+            [get_item_code(item='Syringe, needle + swab')]
+
+        # Second line of antibiotics for severe pneumonia, if Staph is suspected
+        self.consumables_used_in_hsi['2nd_line_Antibiotic_Therapy_for_Severe_Staph_Pneumonia'] = \
+            [get_item_code(item='cloxacillin 500 mg, powder for injection_50_IDA')] + \
+            [get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST')] + \
+            [get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST')] + \
+            [get_item_code(item='Syringe, needle + swab')] + \
+            [get_item_code(item='Cloxacillin discs 5mcg_50_CMST')]
+
+        # Oxygen for hypoxaemia
+        self.consumables_used_in_hsi['Oxygen_Therapy'] = \
+            [get_item_code(item='Oxygen, 1000 liters, primarily with oxygen concentrators')] + \
+            [get_item_code(item='Nasal prongs')]
+
+        # X-ray scan
+        self.consumables_used_in_hsi['X_ray_scan'] = \
+            [get_item_code(item='X-ray')]
+
+        # Treat wheeze
+        self.consumables_used_in_hsi['Brochodilator_and_Steroids'] = \
+            [get_item_code(item='Salbutamol, syrup, 2 mg/5 ml')] + \
+            [get_item_code(item='Prednisolone 5mg_100_CMST')]
+
+        # Maintenance of fluids via nasograstric tube
+        self.consumables_used_in_hsi['Fluid_Maintenance'] = \
+            [get_item_code(item='Tube, nasogastric CH 8_each_CMST')]
 
     def end_episode(self, person_id):
         """End the episode infection for a person (i.e. reset all properties to show no current infection or
