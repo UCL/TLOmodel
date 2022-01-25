@@ -119,17 +119,18 @@ class HealthSystem(Module):
                               'district.'),
 
         # Consumables
-        'one_health_lookups': Parameter(Types.DATA_FRAME,
-                                        'Data imported from the OneHealth Tool on consumable items, packages and '
-                                        'costs.'),
-        'availability_estimates': Parameter(Types.DATA_FRAME,
-                                            'Estimated availability of consumables in the LMIS dataset.'),
+        'item_and_package_code_lookups': Parameter(
+            Types.DATA_FRAME, 'Data imported from the OneHealth Tool on consumable items, packages and costs.'),
+        'availability_estimates': Parameter(
+            Types.DATA_FRAME, 'Estimated availability of consumables in the LMIS dataset.'),
 
         # Infrastructure and Equipment
-        'BedCapacity': Parameter(Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
+        'BedCapacity': Parameter(
+            Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
 
         # Service Availability
-        'Service_Availability': Parameter(Types.LIST, 'List of services to be available.')
+        'Service_Availability': Parameter(
+            Types.LIST, 'List of services to be available.')
     }
 
     PROPERTIES = {
@@ -275,8 +276,8 @@ class HealthSystem(Module):
                 'ResourceFile_Daily_Capabilities.csv')
 
         # Read in ResourceFile_Consumables
-        self.parameters['one_health_lookups'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_OneHealth.csv')
+        self.parameters['item_and_package_code_lookups'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_Items_and_Packages.csv')
         self.parameters['availability_estimates'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_availability_small.csv')
 
