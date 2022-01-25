@@ -144,9 +144,10 @@ class Consumables:
         """Helper function to provide the item codes and quantities in a dict of the form {<item_code>:<quantity>} for
          a given package name."""
         lookups = self.hs_module.parameters['item_and_package_code_lookups']
-        return lookups.loc[
+        ser = lookups.loc[
             lookups['Intervention_Pkg'] == package, ['Item_Code', 'Expected_Units_Per_Case']].set_index(
-            'Item_Code')['Expected_Units_Per_Case'].apply(np.ceil).astype(int).to_dict()
+            'Item_Code')['Expected_Units_Per_Case'].apply(np.ceil).astype(int)
+        return ser.groupby(ser.index).sum().to_dict()  # de-duplicate index before converting to dict
 
     def _get_item_code_from_item_name(self, item: str) -> int:
         """Helper function to provide the item_code (an int) when provided with the name of the item"""

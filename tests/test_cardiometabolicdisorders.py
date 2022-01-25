@@ -323,7 +323,7 @@ def make_simulation_health_system_disabled():
 
 
 # helper function to run the sim with the healthcare system disabled
-def make_simulation_health_system_functional(cons_availability='default'):
+def make_simulation_health_system_functional(cons_availability='all'):
     """Make the simulation with the healthcare system enabled and no cons constraints
     """
     sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
@@ -784,10 +784,6 @@ def test_no_availability_of_consumables_for_conditions():
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
 
-        # Make consumables not available
-        sim.modules['HealthSystem'].prob_item_codes_available *= 0.0
-        sim.modules['HealthSystem'].determine_availability_of_consumables_today()
-
         df = sim.population.props
 
         # Get target person and make them have condition, diagnosed and on medication
@@ -825,10 +821,6 @@ def test_no_availability_of_consumables_for_events():
 
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
-
-        # Make consumables not available
-        sim.modules['HealthSystem'].prob_item_codes_available *= 0.0
-        sim.modules['HealthSystem'].determine_availability_of_consumables_today()
 
         df = sim.population.props
 

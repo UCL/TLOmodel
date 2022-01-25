@@ -18,7 +18,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 # Set local Dropbox source
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
     '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE')
@@ -176,7 +175,6 @@ wb = wb[['Intervention_Cat',
          'Unit_Cost']]
 
 assert not pd.isnull(wb).any().any()
-
 
 
 # ----------

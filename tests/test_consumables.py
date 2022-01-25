@@ -265,11 +265,11 @@ def test_use_get_consumables_with_different_inputs_for_item_codes():
     )
 
 
-
 def test_get_item_code_from_item_name():
     """Check that can use `get_item_code_from_item_name` to retrieve the correct `item_code`."""
     lookup = pd.read_csv(
-        resourcefilepath / "healthsystem" / "consumables" / "ResourceFile_Consumables_Items_and_Packages.csv").set_index('Item_Code')
+        resourcefilepath / "healthsystem" / "consumables" / "ResourceFile_Consumables_Items_and_Packages.csv"
+    ).set_index('Item_Code')
 
     sim = get_sim_with_dummy_module_registered()
     get_item_code_from_item_name = sim.modules['HealthSystem'].get_item_code_from_item_name
@@ -289,7 +289,8 @@ def test_get_item_code_from_item_name():
 def test_get_item_codes_from_package_name():
     """Check that can use `get_item_codes_from_package_name` to retrieve the correct `item_code`."""
     lookup = pd.read_csv(
-        resourcefilepath / "healthsystem" / "consumables" / "ResourceFile_Consumables_Items_and_Packages.csv").set_index('Item_Code')
+        resourcefilepath / "healthsystem" / "consumables" / "ResourceFile_Consumables_Items_and_Packages.csv"
+    ).set_index('Item_Code')
 
     sim = get_sim_with_dummy_module_registered()
     get_item_codes_from_package_name = sim.modules['HealthSystem'].get_item_codes_from_package_name
@@ -303,7 +304,10 @@ def test_get_item_codes_from_package_name():
     for _pkg_name in example_package_names:
         _item_codes = get_item_codes_from_package_name(_pkg_name)
         assert isinstance(_item_codes, dict)
-        assert lookup.loc[lookup.Intervention_Pkg == _pkg_name, 'Expected_Units_Per_Case'].to_dict() == _item_codes
-
-
-
+        res_from_lookup = \
+            lookup.loc[lookup.Intervention_Pkg == _pkg_name, 'Expected_Units_Per_Case'].astype(int).sort_index()
+        pd.testing.assert_series_equal(
+            res_from_lookup.groupby(res_from_lookup.index).sum(),
+            pd.Series(_item_codes).sort_index(),
+            check_names=False
+        )
