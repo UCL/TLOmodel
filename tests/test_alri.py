@@ -23,7 +23,6 @@ from tlo.methods import (
 from tlo.methods.alri import (
     AlriCureEvent,
     AlriDeathEvent,
-    AlriDelayedOnsetComplication,
     AlriIncidentCase,
     AlriNaturalRecoveryEvent,
     AlriPollingEvent,
@@ -83,18 +82,13 @@ def test_integrity_of_linear_models(tmpdir):
     models = Models(alri)
 
     # --- compute_risk_of_acquisition & incidence_equations_by_pathogen:
-    # if no vaccine and very high risk:
-    # make risk of vaccine high:
-    for patho in alri.all_pathogens:
-        models.p[f'base_inc_rate_ALRI_by_{patho}'] = [0.5] * len(models.p[f'base_inc_rate_ALRI_by_{patho}'])
-    models.make_model_for_acquisition_risk()
-
-    # ensure no one has the relevant vaccines:
+    # 1) if no vaccine:
     df['va_pneumo_all_doses'] = False
     df['va_hib_all_doses'] = False
+    models.make_model_for_acquisition_risk()
 
     for pathogen in alri.all_pathogens:
-        res = models.compute_risk_of_aquisition(
+        res = models.compute_risk_of_acquisition(
             pathogen=pathogen,
             df=df.loc[df.is_alive & (df.age_years < 5)]
         )
@@ -102,27 +96,30 @@ def test_integrity_of_linear_models(tmpdir):
         assert not res.isna().any()
         assert 'float64' == res.dtype.name
 
-    # pneumococcal vaccine: if efficacy of vaccine is perfect, whomever has vaccine should have no risk of infection
+    # 2) If there are vaccines:
+    # 2a) pneumococcal vaccine: if efficacy of vaccine is perfect, whoever has vaccine should have no risk of infection
     # from Strep_pneumoniae_PCV13
-    models.p['rr_infection_strep_with_pneumococcal_vaccine'] = 0.0
+    models.p['rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y'] = 0.0
+    models.p['rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y'] = 0.0
     df['va_pneumo_all_doses'] = True
-    assert (0.0 == models.compute_risk_of_aquisition(
+    assert (0.0 == models.compute_risk_of_acquisition(
         pathogen='Strep_pneumoniae_PCV13',
         df=df.loc[df.is_alive & (df.age_years < 5)])
             ).all()
 
-    # pneumococcal vaccine: if efficacy of vaccine is perfect, whomever has vaccine should have no risk of infection
-    # from Strep_pneumoniae_PCV13
-    models.p['rr_infection_hib_haemophilus_vaccine'] = 0.0
+    # hib vaccine: if efficacy of vaccine is perfect, whoever has vaccine should have no risk of infection
+    # from Hib (H.influenzae type-b)
+    models.p['rr_Hib_ALRI_with_Hib_vaccine'] = 0.0
     df['va_hib_all_doses'] = True
-    assert (0.0 == models.compute_risk_of_aquisition(
+    assert (0.0 == models.compute_risk_of_acquisition(
         pathogen='Hib',
         df=df.loc[df.is_alive & (df.age_years < 5)])
             ).all()
 
     # --- determine_disease_type
     # set efficacy of pneumococcal vaccine to be 100% (i.e. 0 relative risk of infection)
-    models.p['rr_infection_strep_with_pneumococcal_vaccine'] = 0.0
+    models.p['rr_Strep_pneum_VT_ALRI_with_PCV13_age<2y'] = 0.0
+    models.p['rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y'] = 0.0
     for patho in alri.all_pathogens:
         for age in range(0, 100):
             for va_pneumo_all_doses in [True, False]:
@@ -130,6 +127,8 @@ def test_integrity_of_linear_models(tmpdir):
                     models.determine_disease_type_and_secondary_bacterial_coinfection(
                         age=age,
                         pathogen=patho,
+                        va_hib_all_doses=True,
+
                         va_pneumo_all_doses=va_pneumo_all_doses
                     )
 
@@ -137,11 +136,12 @@ def test_integrity_of_linear_models(tmpdir):
 
                 if patho in alri.pathogens['bacterial']:
                     assert pd.isnull(bacterial_coinfection)
-                elif patho in alri.pathogens['fungal']:
+                elif patho in alri.pathogens['fungal/other']:
                     assert pd.isnull(bacterial_coinfection)
                 else:
                     # viral primary infection- may have a bacterial coinfection or may not:
-                    assert pd.isnull(bacterial_coinfection) or bacterial_coinfection in alri.pathogens['bacterial']
+                    assert pd.isnull(bacterial_coinfection) or \
+                           bacterial_coinfection in alri.pathogens['bacterial']
                     # check that if has had pneumococcal vaccine they are not coinfected with `Strep_pneumoniae_PCV13`
                     if va_pneumo_all_doses:
                         assert bacterial_coinfection != 'Strep_pneumoniae_PCV13'
@@ -150,42 +150,15 @@ def test_integrity_of_linear_models(tmpdir):
     for patho in alri.all_pathogens:
         for coinf in (alri.pathogens['bacterial'] + [np.nan]):
             for disease_type in alri.disease_types:
-                df.loc[person_id, [
-                    'ri_primary_pathogen',
-                    'ri_secondary_bacterial_pathogen',
-                    'ri_disease_type']
-                ] = (
-                    patho,
-                    coinf,
-                    disease_type
-                )
-                res = models.complications(person_id)
 
+                res = models.get_complications_that_onset(disease_type=disease_type,
+                                                          primary_path_is_bacterial=(
+                                                              patho in sim.modules['Alri'].pathogens['bacterial']
+                                                          ),
+                                                          has_secondary_bacterial_inf=pd.notnull(coinf)
+                                                          )
                 assert isinstance(res, set)
                 assert all([c in alri.complications for c in res])
-
-    # --- delayed_complications
-    for ri_complication_sepsis in [True, False]:
-        for ri_complication_pneumothorax in [True, False]:
-            for ri_complication_respiratory_failure in [True, False]:
-                for ri_complication_lung_abscess in [True, False]:
-                    for ri_complication_empyema in [True, False]:
-                        df.loc[person_id, [
-                            'ri_complication_sepsis',
-                            'ri_complication_pneumothorax',
-                            'ri_complication_respiratory_failure',
-                            'ri_complication_lung_abscess',
-                            'ri_complication_empyema']
-                        ] = (
-                            ri_complication_sepsis,
-                            ri_complication_pneumothorax,
-                            ri_complication_respiratory_failure,
-                            ri_complication_lung_abscess,
-                            ri_complication_empyema
-                        )
-                        res = models.delayed_complications(person_id=person_id)
-                        assert isinstance(res, set)
-                        assert all([c in ['sepsis', 'respiratory_failure'] for c in res])
 
     # --- symptoms_for_disease
     for disease_type in alri.disease_types:
@@ -195,7 +168,7 @@ def test_integrity_of_linear_models(tmpdir):
 
     # --- symptoms_for_complication
     for complication in alri.complications:
-        res = models.symptoms_for_complication(complication)
+        res = models.symptoms_for_complication(complication, oxygen_saturation='<90%')
         assert isinstance(res, set)
         assert all([s in sim.modules['SymptomManager'].symptom_names for s in res])
 
@@ -205,8 +178,6 @@ def test_integrity_of_linear_models(tmpdir):
             'ri_disease_type',
             'age_years',
             'ri_complication_sepsis',
-            'ri_complication_respiratory_failure',
-            'ri_complication_meningitis',
             'hv_inf',
             'un_clinical_acute_malnutrition',
             'nb_low_birth_weight_status']
@@ -214,14 +185,12 @@ def test_integrity_of_linear_models(tmpdir):
             disease_type,
             0,
             False,
-            False,
-            False,
             True,
             'SAM',
             'low_birth_weight'
         )
-        res = models.death(person_id)
-        assert isinstance(res, bool)
+        res = models.will_die_of_alri(person_id)
+        assert isinstance(res, (bool, np.bool_))
 
 
 def test_basic_run(tmpdir):
@@ -238,9 +207,14 @@ def test_basic_run(tmpdir):
 def test_basic_run_lasting_two_years(tmpdir):
     """Check logging results in a run of the model for two years, with daily property config checking"""
     dur = pd.DateOffset(years=2)
-    popsize = 500
+    popsize = 2000
     sim = get_sim(tmpdir)
     sim.make_initial_population(n=popsize)
+
+    # increase death risk
+    params = sim.modules['Alri'].parameters
+    params['baseline_odds_alri_death'] *= 5.0
+
     sim.simulate(end_date=start_date + dur)
 
     # Read the log for the population counts of incidence:
@@ -294,13 +268,12 @@ def test_nat_hist_recovery(tmpdir):
     # make probability of death 0% (not using a lambda function because code uses the keyword argument for clarity)
     def death(person_id):
         return False
-    sim.modules['Alri'].models.death = death
+    sim.modules['Alri'].models.will_die_of_alri = death
 
     # make probability of symptoms very high
     params = sim.modules['Alri'].parameters
     all_symptoms = {
-        'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'chest_pain', 'cyanosis',
-        'respiratory_distress', 'danger_signs'
+        'cough', 'difficult_breathing', 'tachypoea', 'chest_indrawing', 'danger_signs'
     }
     for p in params:
         if any([p.startswith(f"prob_{symptom}") for symptom in all_symptoms]):
@@ -372,9 +345,9 @@ def test_nat_hist_death(tmpdir):
     sim.event_queue.queue = []  # clear the queue
 
     # make probability of death 100% (not using a lambda function because code uses the keyword argument for clarity)
-    def death(person_id):
+    def __will_die_of_alri(person_id):
         return True
-    sim.modules['Alri'].models.death = death
+    sim.modules['Alri'].models.will_die_of_alri = __will_die_of_alri
 
     # Get person to use:
     df = sim.population.props
@@ -433,7 +406,7 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
     # make probability of death 0% (not using a lambda function because code uses the keyword argument for clarity)
     def death(person_id):
         return False
-    sim.modules['Alri'].models.death = death
+    sim.modules['Alri'].models.will_die_of_alri = death
 
     # Get person to use:
     df = sim.population.props
@@ -508,7 +481,7 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     # make probability of death 100% (not using a lambda function because code uses the keyword argument for clarity)
     def death(person_id):
         return True
-    sim.modules['Alri'].models.death = death
+    sim.modules['Alri'].models.will_die_of_alri = death
 
     # Get person to use:
     df = sim.population.props
@@ -573,6 +546,9 @@ def test_immediate_onset_complications(tmpdir):
 
     # make risk of immediate onset complications be 100% (so that person has all the complications)
     params = sim.modules['Alri'].parameters
+    params['prob_pulmonary_complications_in_pneumonia'] = 1.0
+    params['prob_bacteraemia_in_pneumonia'] = 1.0
+    params['prob_progression_to_sepsis_with_bacteraemia'] = 1.0
     for p in params:
         if any([p.startswith(f'prob_{c}') for c in sim.modules['Alri'].complications]):
             params[p] = 1.0
@@ -592,12 +568,17 @@ def test_immediate_onset_complications(tmpdir):
     incidentcase = AlriIncidentCase(module=sim.modules['Alri'], person_id=person_id, pathogen=pathogen)
     incidentcase.apply(person_id=person_id)
 
-    # Check has some complications ['pneumothorax', 'pleural_effusion', 'sepsis', 'hypoxia'] are present for all
-    #  disease causes by viruses
-    complications_cols = [
-        f"ri_complication_{complication}" for complication in ['pneumothorax', 'pleural_effusion', 'sepsis', 'hypoxia']
-    ]
-    assert df.loc[person_id, complications_cols].all()
+    # Check has some complications ['pneumothorax', 'pleural_effusion', 'hypoxaemia'] are present for pneumonia disease
+    # caused by viruses
+    if df.at[person_id, 'ri_disease_type'] == 'pneumonia':
+        complications_cols = [
+            f"ri_complication_{complication}" for complication in
+            ['pneumothorax', 'pleural_effusion', 'hypoxaemia']]
+        assert df.loc[person_id, complications_cols].all()
+
+    # Check SpO2<93% if hypoxaemia is present
+    if df.at[person_id, 'ri_complication_hypoxaemia']:
+        assert df.at[person_id, 'ri_SpO2_level'] != '>=93%'
 
 
 def test_no_immediate_onset_complications(tmpdir):
@@ -610,6 +591,8 @@ def test_no_immediate_onset_complications(tmpdir):
 
     # make risk of immediate-onset complications be 0%
     params = sim.modules['Alri'].parameters
+    params['prob_pulmonary_complications_in_pneumonia'] = 0.0
+    params['prob_bacteraemia_in_pneumonia'] = 0.0
     for p in params:
         if any([p.startswith(f'prob_{c}') for c in sim.modules['Alri'].complications]):
             params[p] = 0.0
@@ -634,71 +617,6 @@ def test_no_immediate_onset_complications(tmpdir):
     assert not df.loc[person_id, complications_cols].any()
 
 
-def test_delayed_onset_complications(tmpdir):
-    """Check that if the probability of each delayed onset complications is 100%, then a person will have all of those
-    complications onset with a delay.
-    """
-    dur = pd.DateOffset(days=0)
-    popsize = 100
-    sim = get_sim(tmpdir)
-
-    # make risk of immediate-onset complications be 100% for those complications that are required for onset of
-    # other delayed complications (and 0% for immediate onset of the complications that will be delayed onset)
-    params = sim.modules['Alri'].parameters
-    for p in params:
-        if any([p.startswith(f'prob_{c}') for c in {'pneumothorax', 'lung_abscess', 'empyema'}]):
-            params[p] = 1.0
-        elif any([p.startswith(f'prob_{c}') for c in {'respiratory_failure', 'sepsis'}]):
-            params[p] = 0.0
-
-    # make risk of delayed-onset complications be 100%
-    params['prob_pneumothorax_to_respiratory_failure'] = 1.0
-    params['prob_lung_abscess_to_sepsis'] = 1.0
-    params['prob_empyema_to_sepsis'] = 1.0
-
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date + dur)
-    sim.event_queue.queue = []  # clear the queue
-
-    # Get person to use:
-    df = sim.population.props
-    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-    person_id = under5s.index[0]
-    assert not df.loc[person_id, 'ri_current_infection_status']
-
-    # Run incident case:
-    pathogen = 'other_Strepto_Enterococci'
-    # <-- a bacterial infection can lead to delayed symptoms of sepsis and respiratory_failure
-    incidentcase = AlriIncidentCase(module=sim.modules['Alri'], person_id=person_id, pathogen=pathogen)
-    incidentcase.apply(person_id=person_id)
-
-    # Check has does not have the complications that will be delayed onset
-    person = df.loc[person_id]
-    assert not person['ri_complication_respiratory_failure']
-    assert not person['ri_complication_sepsis']
-
-    # Check has delayed onset complication events scheduled (total of two) and at an appropriate time
-    delayed_onset_event_tuples = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-                                  isinstance(event_tuple[1], AlriDelayedOnsetComplication)]
-    assert 2 == len(delayed_onset_event_tuples)
-    dates_of_delayedonset = [event_tuple[0] for event_tuple in delayed_onset_event_tuples]
-    assert all([d == dates_of_delayedonset[0] for d in dates_of_delayedonset])
-
-    date_of_outcome = person[['ri_scheduled_recovery_date', 'ri_scheduled_death_date']][
-        ~person[['ri_scheduled_recovery_date', 'ri_scheduled_death_date']].isna()].values[0]
-    assert sim.date <= dates_of_delayedonset[0] <= date_of_outcome
-
-    # run the delayed onset event
-    sim.date = dates_of_delayedonset[0]
-    for event_tuple in delayed_onset_event_tuples:
-        event_tuple[1].apply(person_id=person_id)
-
-    # check that they now have delayed onset complications (respiratory_failure and sepsis)
-    person = df.loc[person_id]
-    assert person['ri_complication_respiratory_failure']
-    assert person['ri_complication_sepsis']
-
-
 def test_treatment(tmpdir):
     """Test that providing a treatment prevent death and causes there to be a CureEvent Scheduled"""
 
@@ -713,7 +631,7 @@ def test_treatment(tmpdir):
     # make probability of death 100% (not using a lambda function because code uses the keyword argument for clarity)
     def death(person_id):
         return True
-    sim.modules['Alri'].models.death = death
+    sim.modules['Alri'].models.will_die_of_alri = death
 
     # Get person to use:
     df = sim.population.props
