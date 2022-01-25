@@ -2,7 +2,8 @@
 
 import os
 from pathlib import Path
-from random import shuffle, seed as set_seed
+from random import seed as set_seed
+from random import shuffle
 from types import GeneratorType
 
 import pytest
