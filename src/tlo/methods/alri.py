@@ -1208,33 +1208,6 @@ class Alri(Module):
         # Resolve all the symptoms immediately
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id, disease_module=self)
 
-    # def do_treatment(self, person_id, prob_of_cure):
-    #     """Helper function that enacts the effects of a treatment to Alri caused by a pathogen.
-    #     It will only do something if the Alri is caused by a pathogen (this module).
-    #     * Log the treatment
-    #     * Prevent any death event that may be scheduled from occuring (prior to the cure event)
-    #     * Schedules the cure event, at which the episode is ended
-    #     """
-    #
-    #     df = self.sim.population.props
-    #     person = df.loc[person_id]
-    #
-    #     # Do nothing if the person is not alive
-    #     if not person.is_alive:
-    #         return
-    #
-    #     # Do nothing if the person is not infected with a pathogen that can cause ALRI
-    #     if not person['ri_current_infection_status']:
-    #         return
-    #
-    #     # Record that the person is now on treatment:
-    #     df.loc[person_id, ['ri_on_treatment', 'ri_ALRI_tx_start_date']] = [True, self.sim.date]
-    #
-    #     # Determine if the treatment is effective
-    #     if prob_of_cure > self.rng.rand():
-    #         # Cancel the death
-    #         self.cancel_death_and_schedule_cure(person_id)
-
     def cancel_death_and_schedule_cure(self, person_id):
         """Cancels a scheduled date of death due to Alri for a person, and schedules the CureEvent.
         This is called within do_alri_treatment function.
@@ -1937,32 +1910,6 @@ class AlriDeathEvent(Event, IndividualScopeEventMixin):
 # ==================================== HEALTH SYSTEM INTERACTION EVENTS ====================================
 # ---------------------------------------------------------------------------------------------------------
 
-# class HSI_Alri_GenericTreatment(HSI_Event, IndividualScopeEventMixin):
-#     """This is a template for the HSI interaction events. It just shows the checks to use each time."""
-#
-#     def __init__(self, module, person_id):
-#         super().__init__(module, person_id=person_id)
-#
-#         self.TREATMENT_ID = 'Alri_GenericTreatment'
-#         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-#         self.ACCEPTED_FACILITY_LEVEL = '1a'
-#         self.ALERT_OTHER_DISEASES = []
-#
-#     def apply(self, person_id, squeeze_factor):
-#         """Do the treatment"""
-#
-#         df = self.sim.population.props
-#         person = df.loc[person_id]
-#
-#         # Exit if the person is not alive or is not currently infected:
-#         if not (person.is_alive and person.ri_current_infection_status):
-#             return
-#
-#         # For example, say that probability of cure = 1.0
-#         prob_of_cure = 1.0
-#         self.module.do_treatment(person_id=person_id, prob_of_cure=prob_of_cure)
-
-
 class HSI_IMCI_Pneumonia_Treatment(HSI_Event, IndividualScopeEventMixin):
     """
     HSI event for treating cough and/ or difficult breathing at the primary level (health centres)
@@ -1975,7 +1922,6 @@ class HSI_IMCI_Pneumonia_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
-
 
     def apply(self, person_id, squeeze_factor):
         """Do the treatment"""
