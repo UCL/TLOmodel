@@ -1,28 +1,22 @@
 import os
-import warnings
 from pathlib import Path
+from typing import Dict, List
 
-import numpy as np
 import pandas as pd
 import pytest
 
-from tlo import Date, Module, Simulation, logging
+from tlo import Date, Module, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin
-from tlo.methods import (
-    Metadata,
-    demography,
-    healthsystem,
-
-)
+from tlo.methods import Metadata, demography, healthsystem
 from tlo.methods.consumables import Consumables
 from tlo.methods.healthsystem import HSI_Event
 
-try:
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-except NameError:
-    # running interactively
-    resourcefilepath = 'resources'
+resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+
+
+def any_warnings_about_item_code(recorded_warnings):
+    return len([_r for _r in recorded_warnings if str(_r.message).startswith('Item_Code')]) > 0
 
 
 def get_sim_with_dummy_module_registered(tmpdir=None, run=True):
@@ -47,7 +41,7 @@ def get_sim_with_dummy_module_registered(tmpdir=None, run=True):
             'directory': tmpdir,
         }
     else:
-        _log_config=None
+        _log_config = None
 
     start_date = Date(2010, 1, 1)
     sim = Simulation(start_date=start_date, seed=0, log_config=_log_config)
@@ -67,9 +61,11 @@ def get_sim_with_dummy_module_registered(tmpdir=None, run=True):
 
     return sim
 
+
 def get_dummy_hsi_event_instance(module, accepted_facility_level='1a'):
     """Make an HSI Event that runs for person_id=0 and request consumables, and for which its parent is the
     identified module."""
+
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
@@ -79,6 +75,7 @@ def get_dummy_hsi_event_instance(module, accepted_facility_level='1a'):
             self.ALERT_OTHER_DISEASES = []
 
         def apply(self, person_id, squeeze_factor):
+            """Requests all consumables."""
             self.get_consumables(
                 item_codes=list(self.sim.modules['HealthSystem'].consumables.item_codes),
                 to_log=True,
@@ -87,33 +84,32 @@ def get_dummy_hsi_event_instance(module, accepted_facility_level='1a'):
 
     return HSI_Dummy(module=module, person_id=0)
 
-def create_dummy_df_for_cons(intrinsic_availability: dict = None) -> pd.DataFrame:
+
+def create_dummy_df_for_cons(intrinsic_availability: Dict[int, bool] = {0: False, 1: True},
+                             districts: List[str] = None,
+                             months: List[int] = [1],
+                             facility_levels: List[int] = ['1a']
+                             ) -> pd.DataFrame:
     """Returns a pd.DataFrame that is a dummy for the imported `ResourceFile_Consumables.csv`, which has two items,
     one of which is always available, and one of which is never available."""
-
-    if not intrinsic_availability:
-        _intrinsic_availability = {0: False, 1: True}
-    else:
-        _intrinsic_availability = intrinsic_availability
-
     list_of_items = []
-    for k, v in _intrinsic_availability.items():
-        list_of_items.append({
-            'Item_Code': k,
-            'Available_Facility_Level_0': 1.0 if v else 0.0,
-            'Available_Facility_Level_1a': 1.0 if v else 0.0,
-            'Available_Facility_Level_1b': 1.0 if v else 0.0,
-            'Available_Facility_Level_2': 1.0 if v else 0.0,
-            'Available_Facility_Level_3': 1.0 if v else 0.0,
-            'Intervention_Pkg_Code': 0,
-            'Expected_Units_Per_Case': 1
-        })
+    for _item, _avail in intrinsic_availability.items():
+        for _district in districts:
+            for _month in months:
+                for _fac_level in facility_levels:
+                    list_of_items.append({
+                        'item_code': _item,
+                        'district': _district,
+                        'month': _month,
+                        'fac_type_tlo': _fac_level,
+                        'available_prop': _avail
+                    })
 
     return pd.DataFrame(data=list_of_items)
 
+
 def test_consumables_availability_options():
     """Check that the options for `cons_availability` in the Consumables class work as expected."""
-    # todo refactor to pass in the 'original' availability and let that form the part of the test
 
     # Create simulation and hsi_event
     sim = get_sim_with_dummy_module_registered()
@@ -121,7 +117,12 @@ def test_consumables_availability_options():
 
     # Create dataframe for the availability of consumables
     intrinsic_availability = {0: True, 1: False}
-    df = create_dummy_df_for_cons(intrinsic_availability)
+
+    df = create_dummy_df_for_cons(intrinsic_availability,
+                                  districts=[sim.population.props.at[0, 'district_of_residence']],
+                                  months=[1],
+                                  facility_levels=['1a']
+                                  )
 
     # Determine the expected results given the option
     options_and_expected_results = {
@@ -131,8 +132,7 @@ def test_consumables_availability_options():
     }
 
     # Check that for each option for `cons_availability` the result is as expected.
-    for _cons_availability_option, _expected_result in options_and_expected_results.items() :
-
+    for _cons_availability_option, _expected_result in options_and_expected_results.items():
         cons = Consumables(sim.modules['HealthSystem'], cons_availabilty=_cons_availability_option)
         cons.process_consumables_df(df)
         cons.processing_at_start_of_new_day()
@@ -141,11 +141,13 @@ def test_consumables_availability_options():
             hsi_event, item_codes={_item_code: 1 for _item_code in range(2)}, to_log=False
         )
 
+
 def test_outputs_to_log(tmpdir):
     """Check that logging from Consumables is as expected."""
 
     # Create simulation
     sim = get_sim_with_dummy_module_registered(tmpdir=tmpdir, run=False)
+    sim.make_initial_population(n=100)
 
     # Edit the `initialise_simulation` method of DummyModule so that, during the simulation, an HSI is run which
     # requests consumables.
@@ -157,17 +159,29 @@ def test_outputs_to_log(tmpdir):
             tclose=None,
             priority=0
         )
+
     sim.modules['DummyModule'].initialise_simulation = schedule_hsi_that_will_request_consumables
 
-    # Simulate
-    sim.make_initial_population(n=100)
+    # Change the Consumables availability
+    intrinsic_availability = {0: True, 1: False}
+    sim.modules['HealthSystem'].consumables.process_consumables_df(
+        create_dummy_df_for_cons(intrinsic_availability,
+                                 districts=[sim.population.props.at[0, 'district_of_residence']],
+                                 months=[1],
+                                 facility_levels=['1a'])
+    )
+
     sim.simulate(end_date=sim.start_date + pd.DateOffset(days=1))
 
     # Check that log is created
     cons_log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['Consumables']
     assert len(cons_log)
+    assert cons_log.loc[cons_log.index[0], 'Item_Available'] == "{0: 1}"  # Item 0 (1 requested) is available
+    assert cons_log.loc[cons_log.index[0], 'Item_NotAvailable'] == "{1: 1}"  # Item 1 (1 requested) is not available
 
-def test_every_declared_consumable():
+
+@pytest.mark.slow
+def test_every_declared_consumable_for_every_possible_hsi():
     """Check that every item_code that is declared can be requested from a person at every district and facility_level.
     """
     sim = get_sim_with_dummy_module_registered(run=True)
@@ -187,27 +201,49 @@ def test_every_declared_consumable():
                     )
                     hsi_event.get_consumables(item_codes=_item_code)
 
-    assert 0 == len(recorded_warnings)
+    assert not any_warnings_about_item_code(recorded_warnings)
 
-def test_unrecognised_consumables_lead_to_warning():
-    """Check that every item_code that is declared can be requested from a person at every district and facility_level.
-    """
-    sim = get_sim_with_dummy_module_registered(run=True)
-    hs = sim.modules['HealthSystem']
-    cons = hs.consumables
-    hs.consumables._refresh_availability_of_consumables()
 
-    _item_code_that_is_not_recognised = max(cons.item_codes) + 10000000
+def test_unrecognised_consumables_lead_to_warning_and_controlled_behaviour():
+    """Check that when using an item_code that is not recognised, a working result is returned but a warning is
+    issued."""
+    sim = get_sim_with_dummy_module_registered()
+    hsi_event = get_dummy_hsi_event_instance(module=sim.modules['DummyModule'])
 
-    with pytest.warns(UserWarning):
-        hsi_event = get_dummy_hsi_event_instance(
-            module=sim.modules['DummyModule'],
-        )
-        hsi_event.get_consumables(item_codes=_item_code_that_is_not_recognised)
+    # Create dataframe for the availability of consumables (only one).
+    df = create_dummy_df_for_cons(intrinsic_availability={0: True},
+                                  districts=[sim.population.props.at[0, 'district_of_residence']],
+                                  months=[1],
+                                  facility_levels=['1a']
+                                  )
+    item_code_that_is_not_recognised = 1
+
+    # Determine the expected results given the option
+    options_for_cons_availability = {"all", "none", "default"}
+
+    # Check that for each option for `cons_availability` the result is as expected.
+    for _option in options_for_cons_availability:
+        cons = Consumables(sim.modules['HealthSystem'], cons_availabilty=_option)
+        cons.process_consumables_df(df)
+        cons.processing_at_start_of_new_day()
+
+        with pytest.warns(UserWarning) as recorded_warnings:
+            _result = cons._request_consumables(
+                hsi_event, item_codes={item_code_that_is_not_recognised: 1}, to_log=False
+            )
+            assert isinstance(_result, dict)
+            assert isinstance(_result[item_code_that_is_not_recognised], bool)
+
+            if _option == "all":
+                assert _result[item_code_that_is_not_recognised] is True
+            elif _option == "none":
+                assert _result[item_code_that_is_not_recognised] is False
+
+        assert any_warnings_about_item_code(recorded_warnings)
 
 
 def test_use_get_consumables_with_different_inputs_for_item_codes():
-    """Test that the helper function 'get_consumables' in the base class of the HSI works as expectewd with different
+    """Test that the helper function 'get_consumables' in the base class of the HSI works as expected with different
     forms of input for item_codes."""
 
     sim = get_sim_with_dummy_module_registered()
@@ -217,8 +253,15 @@ def test_use_get_consumables_with_different_inputs_for_item_codes():
     # Manually edit availability probabilities to force some items to be (not) available
     item_code_is_available = [0, 1]
     item_code_not_available = [2, 3]
-    hs.consumables.prob_item_codes_available.loc[item_code_is_available] = 1
-    hs.consumables.prob_item_codes_available.loc[item_code_not_available] = 0
+    intrinsic_availability = {**{_i: 1.0 for _i in item_code_is_available},
+                              **{_i: 0.0 for _i in item_code_not_available}}
+
+    hs.consumables.process_consumables_df(
+        df=create_dummy_df_for_cons(intrinsic_availability=intrinsic_availability,
+                                    districts=[sim.population.props.at[0, 'district_of_residence']],
+                                    months=[1],
+                                    facility_levels=['1a'])
+    )
     hs.consumables._refresh_availability_of_consumables()
 
     # Test using item_codes in different input format and with different output formats
@@ -246,5 +289,8 @@ def test_use_get_consumables_with_different_inputs_for_item_codes():
     )
 
 
+# todo strict mode to cause errors
 
+# todo - _get_item_codes_from_package_name(self, package: str) -> dict:
 
+# todo - _get_item_code_from_item_name

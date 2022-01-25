@@ -606,4 +606,3 @@ def test_all_appt_types_can_run():
             print(_line)
 
     assert 0 == len(error_msg)
-

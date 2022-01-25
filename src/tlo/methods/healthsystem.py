@@ -119,11 +119,11 @@ class HealthSystem(Module):
                               'district.'),
 
         # Consumables
-        'Consumables_OneHealth': Parameter(Types.DATA_FRAME,
-                                           'Data imported from the OneHealth Tool on consumable items, packages and '
-                                           'costs.'),
-        'Consumables_availability_small': Parameter(Types.DATA_FRAME,
-                                           'Estimated availability of consumables in the LMIS dataset.'),
+        'one_health_lookups': Parameter(Types.DATA_FRAME,
+                                        'Data imported from the OneHealth Tool on consumable items, packages and '
+                                        'costs.'),
+        'availability_estimates': Parameter(Types.DATA_FRAME,
+                                            'Estimated availability of consumables in the LMIS dataset.'),
 
         # Infrastructure and Equipment
         'BedCapacity': Parameter(Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
@@ -275,12 +275,10 @@ class HealthSystem(Module):
                 'ResourceFile_Daily_Capabilities.csv')
 
         # Read in ResourceFile_Consumables
-        self.parameters['Consumables_OneHealth'] = pd.read_csv(
+        self.parameters['one_health_lookups'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_OneHealth.csv')
-        self.parameters['Consumables_Lmis'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_Lmis.csv')
-        self.parameters['Consumables_matched'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_matched.csv')
+        self.parameters['availability_estimates'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_availability_small.csv')
 
         # Data on the number of beds available of each type by facility_id
         self.parameters['BedCapacity'] = pd.read_csv(
@@ -292,7 +290,7 @@ class HealthSystem(Module):
     def pre_initialise_population(self):
         """Do processing following `read_parameters` prior to generating the population."""
         self.process_human_resources_files()
-        self.consumables.process_consumables_df(df=self.parameters['Consumables_Lmis'])
+        self.consumables.process_consumables_df(df=self.parameters['availability_estimates'])
         self.bed_days.pre_initialise_population()
 
     def initialise_population(self, population):
@@ -1081,7 +1079,6 @@ class HealthSystem(Module):
         return self.consumables._get_item_code_from_item_name(item)
 
 
-
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
     This is the HealthSystemScheduler. It is an event that occurs every day, inspects the calls on the healthsystem
@@ -1111,7 +1108,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # 0) Refresh information ready for new day:
         self.module.bed_days.processing_at_start_of_new_day()
         self.module.consumables.processing_at_start_of_new_day()
-
 
         # - Create hold-over list (will become a heapq). This will hold events that cannot occur today before they are
         #  added back to the heapq
@@ -1437,7 +1433,7 @@ class HSI_Event:
         _to_log = to_log if not hs_module.disable else False
 
         # Checking the availability and logging:
-        rtn = hs_module.consumables._request_consumables(self,item_codes=_item_codes, to_log=_to_log)
+        rtn = hs_module.consumables._request_consumables(self, item_codes=_item_codes, to_log=_to_log)
 
         # Return result in expected format:
         if not return_individual_results:

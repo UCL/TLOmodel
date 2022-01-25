@@ -2,7 +2,8 @@
 This script generates estimates of availability of consumables used by disease modules:
 
 * ResourceFile_Consumables_availability_and_usage.csv (a large file that gives consumable availability and usage).
-* ResourceFile_Consumables_availability_small.csv (estimate of consumable available - smaller file for use in the simulation).
+* ResourceFile_Consumables_availability_small.csv (estimate of consumable available - smaller file for use in the
+ simulation).
 
 N.B. The file uses `ResourceFile_Consumables_matched.csv` as an input.
 
@@ -16,6 +17,7 @@ Data from OpenLMIS includes closing balance, quantity received, quantity dispens
 for each month by facility.
 
 """
+import calendar
 import datetime
 # Import Statements and initial declarations
 from pathlib import Path
@@ -23,10 +25,10 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import calendar
 
 # Set local Dropbox source
-path_to_dropbox = Path('/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE')  # <-- point to the TLO dropbox locally
+path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
+    '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE')
 path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/consumables raw files/"
 
 # define a timestamp for script outputs
@@ -356,7 +358,8 @@ unmatched_consumables = pd.merge(unmatched_consumables, matched_consumables[['it
 unmatched_consumables = unmatched_consumables[unmatched_consumables['item_y'].isna()]
 
 # ** Extract stock availability data from HHFA and clean data **
-hhfa_df = pd.read_excel(open(path_to_files_in_the_tlo_dropbox / 'ResourceFile_hhfa_consumables.xlsx', 'rb'), sheet_name='hhfa_data')
+hhfa_df = pd.read_excel(open(path_to_files_in_the_tlo_dropbox / 'ResourceFile_hhfa_consumables.xlsx', 'rb'),
+                        sheet_name='hhfa_data')
 
 # Use the ratio of availability rates between levels 1b on one hand and levels 2 and 3 on the other to extrapolate
 # availability rates for levels 2 and 3 from the HHFA data
