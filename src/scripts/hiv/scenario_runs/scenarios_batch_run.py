@@ -63,6 +63,11 @@ class TestScenario(BaseScenario):
         self.number_of_draws = number_of_draws
         self.runs_per_draw = runs_per_draw
 
+        self.calibrated_parameters = pd.read_excel(
+            os.path.join(self.resources, "ResourceFile_HIV.xlsx"),
+            sheet_name="calibrated_parameters",
+        )
+
     def log_configuration(self):
         return {
             'filename': 'deviance_runs',
@@ -100,13 +105,14 @@ class TestScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         # define the parameters for each scenario here
+        # then return the hiv/tb transmission rates for each scenario
 
         return {
             'Hiv': {
-                'beta': self.sampled_parameters.hiv[draw_number],
+                'beta': self.calibrated_parameters.hiv[draw_number],
             },
             'Tb': {
-                'transmission_rate': self.sampled_parameters.tb[draw_number],
+                'transmission_rate': self.calibrated_parameters.tb[draw_number],
             },
         }
 
