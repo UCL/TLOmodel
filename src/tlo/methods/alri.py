@@ -900,6 +900,11 @@ class Alri(Module):
             [get_item_code(item='Oxygen, 1000 liters, primarily with oxygen concentrators')] + \
             [get_item_code(item='Nasal prongs')]
 
+        # Pulse oximetry
+        self.consumables_used_in_hsi['Pulse_oximetry'] = \
+            [get_item_code(item='Oxygen, 1000 liters, primarily with oxygen concentrators')]
+        # use oxygen code to fill in consumable availability for pulse oximetry
+
         # X-ray scan
         self.consumables_used_in_hsi['X_ray_scan'] = \
             [get_item_code(item='X-ray')]
@@ -913,7 +918,7 @@ class Alri(Module):
         self.consumables_used_in_hsi['Fluid_Maintenance'] = \
             [get_item_code(item='Tube, nasogastric CH 8_each_CMST')]
 
-    def pneumonia_classification(self, person_id, hsi_event):
+    def pneumonia_classification(self, person_id, hsi_event, oximeter_available):
         """Based on symptoms presented, classify WHO-pneumonia severity."""
 
         df = self.sim.population.props
@@ -954,10 +959,10 @@ class Alri(Module):
             else:
                 raise ValueError('facility_level is not recognised')
 
-            # # # # # Check for availability of pulse oximeter and re-classify # # # #
-            # if oximeter_available:
-            #     if df.at[person_id, 'ri_SpO2_level'] == '<90%':
-            #         classification = 'severe_pneumonia'
+            # # # # Check for availability of pulse oximeter and re-classify # # # #
+            if oximeter_available:
+                if df.at[person_id, 'ri_SpO2_level'] == '<90%':
+                    classification = 'severe_pneumonia'
 
         # ----- For infants under 2 months of age -----
         if df.at[person_id, 'age_exact_years'] < 1/6:
@@ -966,7 +971,9 @@ class Alri(Module):
             else:
                 raise ValueError('classification for young infant is not recognised')
 
-        return classification   # todo: add pulse oximetry read
+        return classification
+
+        # todo: add sensitivity and specificity of pulse oximetry?
 
     def assess_child_with_cough_or_difficult_breathing(self, person_id, hsi_event):
         """This routine is called when cough or difficulty breathing is a symptom for a child attending
@@ -981,8 +988,11 @@ class Alri(Module):
         if not (person.is_alive and person.ri_current_infection_status):
             return
 
+        # check availability of pulse oximetry
+        oximeter_available = hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['Pulse_oximetry'])
+
         # get the disease classification (iCCM/IMCI)
-        classification = self.pneumonia_classification(person_id, hsi_event)
+        classification = self.pneumonia_classification(person_id, hsi_event, oximeter_available)
 
         # -----------------------------------------------------------------------------------------------------
         # # # # Treatment plans # # # #
