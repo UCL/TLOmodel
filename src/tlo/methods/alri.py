@@ -995,23 +995,25 @@ class Alri(Module):
         # Record that the person is now on treatment:
         df.loc[person_id, ['ri_on_treatment', 'ri_ALRI_tx_start_date']] = [True, self.sim.date]
 
-        # Determine if the treatment is effective
-        if prob_of_cure > self.rng.rand():
-            # Cancel the death
-            self.cancel_death_date(person_id)
-
-            # Schedule the CureEvent
-            cure_date = self.sim.date + DateOffset(days=self.parameters['days_between_treatment_and_cure'])
-            self.sim.schedule_event(AlriCureEvent(self, person_id), cure_date)
-
-    def cancel_death_date(self, person_id):
-        """Cancels a scheduled date of death due to Alri for a person. This is called within do_treatment_alri function,
-        and prior to the scheduling the CureEvent to prevent deaths happening in the time between
-        a treatment being given and the cure event occurring.
+    def cancel_death_and_schedule_cure(self, person_id):
+        """Cancels a scheduled date of death due to Alri for a person, and schedules the CureEvent.
+        This is called within do_alri_treatment function.
+        Cancelling scheduled death date prior to the scheduling the CureEvent prevent deaths happening
+        in the time between a treatment being given and the cure event occurring.
         :param person_id:
         :return:
         """
+        df = self.sim.population.props
+
+        # cancel death date
         self.sim.population.props.at[person_id, 'ri_scheduled_death_date'] = pd.NaT
+
+        # Determine cure date, and update recovery date
+        cure_date = self.sim.date + DateOffset(days=self.parameters['days_between_treatment_and_cure'])
+        df.at[person_id, 'ri_scheduled_recovery_date'] = cure_date
+
+        # Schedule the CureEvent
+        self.sim.schedule_event(AlriCureEvent(self, person_id), cure_date)
 
     def check_properties(self):
         """This is used in debugging to make sure that the configuration of properties is correct"""
