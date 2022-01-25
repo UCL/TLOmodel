@@ -202,6 +202,7 @@ def test_dx_algorithm_for_malaria_outcomes():
         sim = register_sim()
 
         sim.make_initial_population(n=popsize)
+        sim.modules['Malaria'].parameters['sensitivity_rdt'] = 1.0
         sim.simulate(end_date=start_date)
 
         # Create the HSI event that is notionally doing the call on diagnostic algorithm
@@ -265,27 +266,28 @@ def test_dx_algorithm_for_malaria_outcomes():
 
     # Set up the person - clinical malaria and aged <5 years:
     df = sim.population.props
-    df.at[0, 'ma_is_infected'] = True
-    df.at[0, 'ma_date_infected'] = sim.date
-    df.at[0, 'ma_date_symptoms'] = sim.date
-    df.at[0, 'ma_inf_type'] = 'severe'
+    person_id = 1
+
+    df.at[person_id, 'ma_is_infected'] = True
+    df.at[person_id, 'ma_date_infected'] = sim.date
+    df.at[person_id, 'ma_date_symptoms'] = sim.date
+    df.at[person_id, 'ma_inf_type'] = 'severe'
 
     symptom_list = {"fever", "headache", "vomiting", "stomachache"}
 
     for symptom in symptom_list:
         # no symptom resolution
         sim.modules['SymptomManager'].change_symptom(
-            person_id=0,
+            person_id=person_id,
             symptom_string=symptom,
             disease_module=sim.modules['Malaria'],
             add_or_remove='+'
         )
 
-    person_id = 0
     assert "fever" in sim.modules["SymptomManager"].has_what(person_id)
 
     assert sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
-        person_id=0,
+        person_id=person_id,
         hsi_event=hsi_event
     ) == "severe_malaria"
 

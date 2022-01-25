@@ -635,12 +635,12 @@ class Malaria(Module):
 
         true_malaria_infection_type = self.sim.population.props.at[person_id, "ma_inf_type"]
 
-        if dx_result:
-            if true_malaria_infection_type == "severe":
-                return "severe_malaria"
+        # severe malaria infection always returns positive RDT
+        if true_malaria_infection_type == "severe":
+            return "severe_malaria"
 
-            elif true_malaria_infection_type in ("clinical", "asym"):
-                return "clinical_malaria"
+        elif dx_result and true_malaria_infection_type in ("clinical", "asym"):
+            return "clinical_malaria"
 
         else:
             return "negative_malaria_test"
