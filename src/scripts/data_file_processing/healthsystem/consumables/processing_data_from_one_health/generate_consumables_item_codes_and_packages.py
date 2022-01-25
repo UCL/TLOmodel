@@ -6,6 +6,8 @@ Two files are used:
 * A data extraction from the original EHP work (provided to us by Matthoas Arnold)
 * A data extraction from the OneHealth tool (provided to us by the Palladium Health Group)
 
+In addition - some bespoke item codes are added here with our own specific definitions attached.
+
 We use these to create `ResourceFile_Consumables_Items_and_Packages.csv`, which provides the definitions of the
 `item_code` and `package_code` and estimates of unit costs.
 
@@ -226,5 +228,92 @@ cons = pd.concat([wb, only_in_oh], axis=0, ignore_index=True, sort=False)
 # Also, these have not been cross-checked against the Malawi treatment guidelines or 'sense-checked'
 # --------------
 
+
+# --------------
+# Now, add in new bespoke definitions of item_codes:
+
+"""
+This is the text that was originally pasted at the bottom of the resource file:
+
+Added by JC,Misc,-99,"Forceps, obstetric",2669,1.0,0.0,0.85,0.9,0.95,0.99,0.9  XXX
+Added by JC,Misc,-99,"Vacuum, obstetric",2670,1.0,0.0,0.85,0.9,0.95,0.99,0.9 XX
+Added by TM,Misc,-99,First-line ART regimen: adult,2671,1.0,0.0,0.85,0.9,0.95,0.99,0.9 XX
+Added by TM,Misc,-99,First line ART regimen: older child,2672,1.0,0.0,0.85,0.9,0.95,0.99,0.9
+Added by TM,Misc,-99,First line ART regimen: young child,2673,1.0,0.0,0.85,0.9,0.95,0.99,0.9
+Added by TM,Misc,-99,Pre-exposure prophlaxis for HIV,2674,1.0,0.0,0.85,0.9,0.95,0.99,0.9
+
+"""
+
+cons = cons.append({
+    'Intervention_Cat': "Added by JC",
+    'Intervention_Pkg': "Misc",
+    'Intervention_Pkg_Code': -99,
+    'Items': "Forceps, obstetric",
+    'Item_Code': 2669,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': 1.0},
+    ignore_index=True
+)
+
+cons = cons.append({
+    'Intervention_Cat': "Added by JC",
+    'Intervention_Pkg': "Misc",
+    'Intervention_Pkg_Code': -99,
+    'Items': "Vacuum, obstetric",
+    'Item_Code': 2670,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': 1.0},
+    ignore_index=True
+)
+
+cons = cons.append({
+    'Intervention_Cat': "Added by TM",
+    'Intervention_Pkg': "Misc",
+    'Intervention_Pkg_Code': -99,
+    'Items': "First-line ART regimen: adult",
+    'Item_Code': 2671,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': 1.0},
+    ignore_index=True
+)
+
+cons = cons.append({
+    'Intervention_Cat': "Added by TM",
+    'Intervention_Pkg': "Misc",
+    'Intervention_Pkg_Code': -99,
+    'Items': "First line ART regimen: older child",
+    'Item_Code': 2672,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': 1.0},
+    ignore_index=True
+)
+
+cons = cons.append({
+    'Intervention_Cat': "Added by TM",
+    'Intervention_Pkg': "Misc",
+    'Intervention_Pkg_Code': -99,
+    'Items': "First line ART regimen: young child",
+    'Item_Code': 2673,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': 1.0},
+    ignore_index=True
+)
+
+cons = cons.append({
+    'Intervention_Cat': "Added by TM",
+    'Intervention_Pkg': "Misc",
+    'Intervention_Pkg_Code': -99,
+    'Items': "Pre-exposure prophlaxis for HIV",
+    'Item_Code': 2674,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': 1.0},
+    ignore_index=True
+)
+
+# --------------
+# --------------
+# --------------
+# --------------
+
 # Save:
-cons.set_index('Item_Code').to_csv(path_for_new_resourcefiles / 'ResourceFile_Consumables_Items_and_Packages.csv')
+cons.to_csv(path_for_new_resourcefiles / 'ResourceFile_Consumables_Items_and_Packages.csv', index=False)
