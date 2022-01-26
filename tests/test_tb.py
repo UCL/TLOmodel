@@ -1,4 +1,4 @@
-""" Tests for for the TB Module """
+""" Tests for the TB Module """
 
 from pathlib import Path
 import os

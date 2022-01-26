@@ -378,6 +378,14 @@ class Tb(Module):
             Types.REAL,
             "probability that a presumptive mdr case will have access to xpert test",
         ),
+        "scenario": Parameter(
+            Types.INT,
+            "integer value labelling the scenario to be run: default is 0"
+        ),
+        "scenario_start_date": Parameter(
+            Types.DATE,
+            "date from which different scenarios are run"
+        )
     }
 
     def read_parameters(self, data_folder):
@@ -860,7 +868,7 @@ class Tb(Module):
 
     def initialise_simulation(self, sim):
         """
-        * 1) Schedule the Main TB Regular Polling Event
+        * 1) Schedule the regular TB events
         * 2) Schedule the Logging Event
         * 3) Define the DxTests
         * 4) Define the treatment options
@@ -872,6 +880,8 @@ class Tb(Module):
         sim.schedule_event(TbEndTreatmentEvent(self), sim.date + DateOffset(days=30.5))
         sim.schedule_event(TbRelapseEvent(self), sim.date + DateOffset(months=1))
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
+
+        sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
 
         # 2) Logging
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=364))
@@ -1080,6 +1090,34 @@ class Tb(Module):
 # # ---------------------------------------------------------------------------
 # #   TB infection event
 # # ---------------------------------------------------------------------------
+class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
+    """ This event exists just to change parameters or functions
+    depending on the scenario for projections which has been set
+    scenario 0 is the default which uses baseline parameters
+
+    It only occurs once at param: scenario_start_date,
+    called by initialise_simulation
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=100))
+
+    def apply(self, population):
+
+        p = self.module.parameters
+        scenario = p["scenario"]
+
+        logger.debug(
+            key="message", data=f"ScenarioSetupEvent: scenario {scenario}"
+        )
+
+        # baseline scenario 0: no change to parameters/functions
+        if scenario == 0:
+            return
+
+        if scenario == 2:
+            # change IPT eligibility to all years
+            p["age_eligibility_for_ipt"] = 100
 
 
 class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1217,6 +1255,11 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         tb_idx = df.index[
             df.is_alive & (df.tb_inf != "active") & (random_draw < risk_tb)
         ]
+
+        logger.debug(
+            key="message",
+            data=f"TbRegularPollingEvent assigning new infections for persons {tb_idx}"
+        )
 
         df.loc[tb_idx, "tb_inf"] = "latent"
         df.loc[tb_idx, "tb_date_latent"] = now
@@ -1783,8 +1826,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             if (district in p["tb_high_risk_distr"].district_name.values.any()) & (
                 self.module.rng.rand() < ipt_coverage_paed.values
             ):
-
-                # randomly sample from <5 yr olds within district
+                # randomly sample from eligible population within district
                 ipt_eligible = df.loc[
                     (df.age_years <= p["age_eligibility_for_ipt"])
                     & ~df.tb_diagnosed

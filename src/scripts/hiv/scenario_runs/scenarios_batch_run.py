@@ -51,13 +51,16 @@ number_of_draws = 20
 runs_per_draw = 5
 
 # set up dicts of parameters which change between scenarios
+# scenario 0: baseline
 # scenario 1: improved HIV service delivery
 # scenario 2: expand IPT
 # scenario 3: expand Xpert
 # scenario 4: HIV service, IPT and Xpert
-# baseline
 
-age_eligibility_for_ipt
+scenarios = [0, 1, 2, 3, 4]
+
+
+
 
 
 class TestScenario(BaseScenario):
