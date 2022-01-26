@@ -1,11 +1,16 @@
 """Unit tests for utility functions."""
+import os
+from pathlib import Path
+from typing import Dict
 
 import numpy as np
 import pandas as pd
 import pytest
 
 import tlo.util
-from tlo import Date
+from tlo import Date, Simulation
+from tlo.analysis.utils import LogsDict, parse_log_file
+from tlo.methods import demography
 
 
 @pytest.fixture
@@ -207,3 +212,35 @@ def test_sample_outcome(tmpdir):
     for op in ['A', 'B', 'C']:
         prob = probs.loc[2, op]
         assert res[2].value_counts()[op] == pytest.approx(probs.loc[2, op] * n, abs=2 * np.sqrt(n * prob * (1 - prob)))
+
+
+def test_logs_parsing(tmpdir):
+    """a function to test the  functionalities of LogDict class inside utils.py"""
+
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    start_date = Date(2010, 1, 1)
+    end_date = Date(2012, 1, 1)
+    popsize = 200
+
+    # add file handler for the purpose of logging
+    sim = Simulation(start_date=start_date, seed=0, log_config={
+        'filename': 'logs_dict_class',
+        'directory': tmpdir,
+    })
+
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+    )
+
+    # Create a simulation
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    file_path = sim.log_filepath
+    output = parse_log_file(file_path)
+
+    # check parse_log_file methods worked as expected - expected keys has to be in the LogsDict class
+    assert output.has_key('tlo.methods.demography')
+
+    # check that metadata is within the selected key
+    assert '_metadata' in output['tlo.methods.demography'].keys()
