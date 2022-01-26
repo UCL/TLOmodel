@@ -771,6 +771,7 @@ class PostnatalSupervisor(Module):
         :param upper_and_lower_day_limits: 2 value list of the first and last day of each week of the neonatal period
         """
         df = self.sim.population.props
+        nci = self.sim.modules['NewbornOutcomes'].newborn_care_info
 
         # Here we apply risk of late onset neonatal sepsis (sepsis onsetting after day 7) to newborns
         onset_sepsis = self.apply_linear_model(
@@ -781,7 +782,8 @@ class PostnatalSupervisor(Module):
 
         df.loc[onset_sepsis.loc[onset_sepsis].index, 'pn_sepsis_late_neonatal'] = True
         for person in onset_sepsis.loc[onset_sepsis].index:
-            self.sim.modules['NewbornOutcomes'].newborn_care_info[person]['sepsis_postnatal'] = True
+            if person in nci:
+                nci[person]['sepsis_postnatal'] = True
 
             logger.info(key='newborn_complication', data={'newborn': person,
                                                           'type': 'late_onset_sepsis'})
