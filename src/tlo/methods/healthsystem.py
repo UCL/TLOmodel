@@ -287,20 +287,12 @@ class HealthSystem(Module):
         self.bed_days.pre_initialise_population()
 
     def initialise_population(self, population):
-        # todo - move this to initialise simulation
-        # If capabilities coefficient was not explicitly specified, use ratio of initial
-        # population size to estimated actual population in 2010
-        if self.capabilities_coefficient is None:
-            demography_module = self.sim.modules['Demography']
-            self.capabilities_coefficient = (
-                demography_module.compute_initial_population_scaling_factor(
-                    population.initial_size
-                )
-            )
-
         self.bed_days.initialise_population(population.props)
 
     def initialise_simulation(self, sim):
+        # If capabilities coefficient was not explicitly specified, use initial population scaling factor
+        if self.capabilities_coefficient is None:
+            self.capabilities_coefficient = self.sim.modules['Demography'].initial_model_to_data_popsize_ratio
 
         # Set the tracker in preparation for the simulation
         self.bed_days.initialise_beddays_tracker()
