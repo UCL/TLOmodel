@@ -35,29 +35,13 @@ def _parse_log_file_inner_loop(filepath, level: int = logging.INFO):
     return output_logs
 
 
-def parse_log_file(log_filepath, level: int = logging.INFO):
-    """Parses logged output from a TLO run and returns Pandas dataframes.
-
-    The dictionary returned has the format::
-
-        {
-            <logger 1 name>: {
-                               <log key 1>: <pandas dataframe>,
-                               <log key 2>: <pandas dataframe>,
-                               <log key 3>: <pandas dataframe>
-                             },
-
-            <logger 2 name>: {
-                               <log key 4>: <pandas dataframe>,
-                               <log key 5>: <pandas dataframe>,
-                               <log key 6>: <pandas dataframe>
-                             },
-            ...
-        }
+def parse_log_file(log_filepath):
+    """Parses logged output from a TLO run, split it into smaller logfiles and returns a class containing paths to
+    these split logfiles.
 
     :param log_filepath: file path to log file
     :param level: logging level to be parsed for structured logging
-    :return: dictionary of parsed log data
+    :return: a class containing paths to split logfiles
     """
     print(f'Processing log file {log_filepath}')
     uuid_to_module_name: Dict[str, str] = dict()  # uuid to module name
@@ -89,16 +73,8 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
     for file_handle in module_name_to_filehandle.values():
         file_handle.close()
 
-    # parse each module-specific log file and collect the results into a single dictionary. metadata about each log
-    # is returned in the same key '_metadata', so it needs to be collected separately and then merged back in.
-    metadata = dict()
-    for file_handle in module_name_to_filehandle.values():
-        module_specific_logs = _parse_log_file_inner_loop(file_handle.name, level)
-        # sometimes there is nothing to be parsed at a given level, so no metadata
-        if '_metadata' in module_specific_logs:
-            metadata.update(module_specific_logs['_metadata'])
-
-    return LogsDict(module_name_to_filehandle, metadata)
+    # return an object that accepts as an argument a dictionary containing paths to split logfiles
+    return LogsDict(module_name_to_filehandle)
 
 
 def write_log_to_excel(filename, log_dataframes):
@@ -488,30 +464,47 @@ def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
 
 
 class LogsDict(dict):
-    """a class that parses logs on demand. it returns an object that behaves like a dictionary."""
+    """Parses module-specific log files and returns Pandas dataframes.
 
-    def __init__(self, file_names_and_paths, metadata):
-        # initialise class with a log_file paths and metadata
+        The dictionary returned has the format::
+
+            {
+                <logger 1 name>: {
+                                   <log key 1>: <pandas dataframe>,
+                                   <log key 2>: <pandas dataframe>,
+                                   <log key 3>: <pandas dataframe>
+                                 },
+
+                <logger 2 name>: {
+                                   <log key 4>: <pandas dataframe>,
+                                   <log key 5>: <pandas dataframe>,
+                                   <log key 6>: <pandas dataframe>
+                                 },
+                ...
+            } """
+
+    def __init__(self, file_names_and_paths):
+        # initialise class with module-specific log files paths
         self.logfile_names_and_paths: Dict[str, str] = file_names_and_paths
-        self.all_metadata = metadata
 
     def __setitem__(self, key, item):
         # restrict resetting of dictionary items
         raise NotImplementedError
 
     def __getitem__(self, key):
-        # check if the requested key is found and return parsed logs if true else return KeyError
+        # check if the requested key is found in a dictionary containing module name and log file paths. if key
+        # is found, return parsed logs else return KeyError
         if key in self.logfile_names_and_paths:
             result_df = _parse_log_file_inner_loop(self.logfile_names_and_paths[key].name)
-            if len(self.all_metadata) > 0:
-                result_df[key]['_metadata'] = self.all_metadata
+            # get metadata for the selected log file and merge it all with the selected key
+            result_df[key]['_metadata'] = result_df['_metadata']
             return result_df[key]
 
         else:
             return KeyError
 
     def has_key(self, k):
-        # return true if key to log_file is found else false
+        # return true if key is found in module specific log files dictionary else return false
         return k in self.logfile_names_and_paths
 
     def update(self, *args, **kwargs):
