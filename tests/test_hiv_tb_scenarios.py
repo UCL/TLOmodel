@@ -26,13 +26,6 @@ except NameError:
     resourcefilepath = 'resources'
 
 
-def check_dtypes(simulation):
-    # check types of columns
-    df = simulation.population.props
-    orig = simulation.population.new_row
-    assert (df.dtypes == orig.dtypes).all()
-
-
 def get_sim():
     """
     register all necessary modules for the tests to run
@@ -138,7 +131,7 @@ def test_scenario_ipt_expansion():
 
     idx_of_ipt_candidates = [x[2] for x in list_of_events]
     ages_of_ipt_candidates = df.loc[idx_of_ipt_candidates, "age_exact_years"]
-    assert (ages_of_ipt_candidates <= 5).all()
+    assert (ages_of_ipt_candidates < 6).all()
 
     # run ScenarioSetupEvent - should change parameter "age_eligibility_for_ipt"
     progression_event = tb.ScenarioSetupEvent(module=sim.modules['Tb'])
@@ -188,7 +181,7 @@ def test_scenario_ipt_expansion():
 
     idx_of_ipt_candidates = [x[2] for x in list_of_events]
     ages_of_ipt_candidates = df.loc[idx_of_ipt_candidates, "age_exact_years"]
-    assert (ages_of_ipt_candidates <= 5).all()
+    assert (ages_of_ipt_candidates < 6).all()
 
     # ---------- change scenario to 2 ---------- #
     # reset population
@@ -257,7 +250,7 @@ def test_scenario_ipt_expansion():
 
     idx_of_ipt_candidates = [x[2] for x in list_of_events]
     ages_of_ipt_candidates = df.loc[idx_of_ipt_candidates, "age_exact_years"]
-    assert (ages_of_ipt_candidates <= 5).all()
+    assert (ages_of_ipt_candidates < 6).all()
 
     # run ScenarioSetupEvent - should change parameter "age_eligibility_for_ipt"
     progression_event = tb.ScenarioSetupEvent(module=sim.modules['Tb'])
@@ -286,7 +279,7 @@ def test_scenario_ipt_expansion():
             duration_in_days=None,
         )
 
-    # run HSI_Tb_ScreeningAndRefer for person 1
+    # run HSI_Tb_ScreeningAndRefer for person 3
     # check ages again of those scheduled for HSI_Tb_Start_or_Continue_Ipt
     assert "tb_sputum_test" in sim.modules["HealthSystem"].dx_manager.dx_tests
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
@@ -308,7 +301,7 @@ def test_scenario_ipt_expansion():
     idx_of_ipt_candidates = [x[2] for x in list_of_events]
     ages_of_ipt_candidates = df.loc[idx_of_ipt_candidates, "age_exact_years"]
     # make sure at least one candidate is over 5 years old
-    assert (ages_of_ipt_candidates > 5).any()
+    assert (ages_of_ipt_candidates > 6).any()
 
 
 
