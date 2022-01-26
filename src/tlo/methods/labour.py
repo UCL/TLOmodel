@@ -54,12 +54,12 @@ class Labour(Module):
         self.item_codes_lab_consumables = dict()
 
     INIT_DEPENDENCIES = {
-        'Demography', 'PostnatalSupervisor', 'CareOfWomenDuringPregnancy', 'Lifestyle', 'PregnancySupervisor',
-        'HealthSystem'
+        'Demography'
     }
 
     ADDITIONAL_DEPENDENCIES = {
-        'Contraception',
+        'PostnatalSupervisor', 'CareOfWomenDuringPregnancy', 'Lifestyle', 'PregnancySupervisor',
+        'HealthSystem', 'Contraception',
         'NewbornOutcomes',
         'Hiv'
     }
@@ -705,18 +705,37 @@ class Labour(Module):
         # ----------------------------------  SEVERE PRE-ECLAMPSIA/ECLAMPSIA  -----------------------------------------
         self.item_codes_lab_consumables['severe_pre_eclampsia'] = \
             [get_item_code_from_name('Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule')] + \
-            [get_item_code_from_name('Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml')] + \
+            [get_item_code_from_name('Misoprostol, tablet, 200 mcg')] + \
+            [get_item_code_from_name('Oxytocin, injection, 10 IU in 1 ml ampoule')] + \
             [get_item_code_from_name('Sodium chloride, injectable solution, 0,9 %, 500 ml')] + \
             [get_item_code_from_name('Cannula iv  (winged with injection pot) 20_each_CMST')] + \
-            [get_item_code_from_name('Giving set iv administration + needle 15 drops/ml_each_CMST')] + \
-            [get_item_code_from_name('Foley catheter')] + \
-            [get_item_code_from_name('Bag, urine, collecting, 2000 ml')] + \
+            [get_item_code_from_name('IV giving/infusion set, with needle')] + \
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')] + \
+            [get_item_code_from_name('Oxygen, 1000 liters, primarily with oxygen cylinders')] + \
+            [get_item_code_from_name('Complete blood count')] + \
+            [get_item_code_from_name('Blood collecting tube, 5 ml')] + \
             [get_item_code_from_name('Syringe, needle + swab')] + \
-            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
+            [get_item_code_from_name('Foley catheter')] + \
+            [get_item_code_from_name('Bag, urine, collecting, 2000 ml')]
 
         # -------------------------------------  OBSTRUCTED LABOUR  ---------------------------------------------------
-        # todo: this package is not finished
-        self.item_codes_lab_consumables['obstructed_labour'] = get_item_code_from_pkg('Management of obstructed labour')
+        self.item_codes_lab_consumables['obstructed_labour'] = \
+            [get_item_code_from_name('Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml')] + \
+            [get_item_code_from_name('Ampicillin, powder for injection, 500 mg, vial')] + \
+            [get_item_code_from_name('Gentamycin, injection, 40 mg/ml in 2 ml vial')] + \
+            [get_item_code_from_name('Sodium chloride, injectable solution, 0,9 %, 500 ml')] + \
+            [get_item_code_from_name('Cannula iv  (winged with injection pot) 20_each_CMST')] + \
+            [get_item_code_from_name('IV giving/infusion set, with needle')] + \
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')] + \
+            [get_item_code_from_name('Complete blood count')] + \
+            [get_item_code_from_name('Blood collecting tube, 5 ml')] + \
+            [get_item_code_from_name('Syringe, needle + swab')] + \
+            [get_item_code_from_name('Foley catheter')] + \
+            [get_item_code_from_name('Bag, urine, collecting, 2000 ml')] + \
+            [get_item_code_from_name('Paracetamol 500mg _1000_CMST')] + \
+            [get_item_code_from_name('Pethidine, 50 mg/ml, 2 ml ampoule')] + \
+            [get_item_code_from_name('Gauze, swabs 8-ply 10cm x 10cm_100_CMST')] + \
+            [get_item_code_from_name('Suture pack')]
 
         # -------------------------------------  OBSTETRIC FORCEPS  ---------------------------------------------------
         self.item_codes_lab_consumables['forceps'] = get_item_code_from_name('Forceps, obstetric')
@@ -725,9 +744,11 @@ class Labour(Module):
         self.item_codes_lab_consumables['vacuum'] = get_item_code_from_name('Vacuum, obstetric')
 
         # -------------------------------------  MATERNAL SEPSIS  -----------------------------------------------------
+        # todo: helen allott recommended clindamycin but not available as IV
         self.item_codes_lab_consumables['maternal_sepsis'] = \
             [get_item_code_from_name('Ampicillin, powder for injection, 500 mg, vial')] + \
             [get_item_code_from_name('Gentamycin, injection, 40 mg/ml in 2 ml vial')] + \
+            [get_item_code_from_name('Metronidazole, injection, 500 mg in 100 ml vial')] + \
             [get_item_code_from_name('Metronidazole, injection, 500 mg in 100 ml vial')] + \
             [get_item_code_from_name('Cannula iv  (winged with injection pot) 20_each_CMST')] + \
             [get_item_code_from_name('Oxygen, 1000 liters, primarily with oxygen cylinders')] + \
@@ -736,13 +757,17 @@ class Labour(Module):
             [get_item_code_from_name('Foley catheter')] + \
             [get_item_code_from_name('Bag, urine, collecting, 2000 ml')] + \
             [get_item_code_from_name('Syringe, needle + swab')] + \
-            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')] + \
+            [get_item_code_from_name('Complete blood count')] + \
+            [get_item_code_from_name('Blood collecting tube, 5 ml')] + \
+            [get_item_code_from_name('Syringe, needle + swab')]
 
         # -------------------------------------  ACTIVE MANAGEMENT THIRD STAGE  ---------------------------------------
         self.item_codes_lab_consumables['amtsl'] = \
             get_item_code_from_pkg('Active management of the 3rd stage of labour')
 
         # -------------------------------------  POSTPARTUM HAEMORRHAGE  ---------------------------------------
+        # TODO: helen allott recommended tranexamic acid - not availble
         self.item_codes_lab_consumables['pph'] = \
             [get_item_code_from_name('Oxytocin, injection, 10 IU in 1 ml ampoule')] + \
             [get_item_code_from_name('Misoprostol, tablet, 200 mcg')] + \
@@ -753,7 +778,10 @@ class Labour(Module):
             [get_item_code_from_name('Foley catheter')] + \
             [get_item_code_from_name('Giving set iv administration + needle 15 drops/ml_each_CMST')] + \
             [get_item_code_from_name('Syringe, needle + swab')] + \
-            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')] + \
+            [get_item_code_from_name('Complete blood count')] + \
+            [get_item_code_from_name('Blood collecting tube, 5 ml')] + \
+            [get_item_code_from_name('Syringe, needle + swab')]
 
         # -------------------------------------  BLOOD TRANSFUSION  ---------------------------------------
         self.item_codes_lab_consumables['blood_transfusion'] = \

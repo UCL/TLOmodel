@@ -39,13 +39,13 @@ class PregnancySupervisor(Module):
         # This variable will store a Bitset handler for the property ps_abortion_complications
         self.abortion_complications = None
 
-    INIT_DEPENDENCIES = {'Demography', 'Malaria', 'Labour', 'CareOfWomenDuringPregnancy', 'Hiv', 'Lifestyle',
-                         'CardioMetabolicDisorders'}
+    INIT_DEPENDENCIES = {'Demography'}
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
     ADDITIONAL_DEPENDENCIES = {
-         'Contraception', 'HealthSystem'}
+         'Contraception', 'HealthSystem', 'Labour', 'Malaria', 'CareOfWomenDuringPregnancy', 'Hiv', 'Lifestyle',
+         'CardioMetabolicDisorders'}
 
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHBURDEN}

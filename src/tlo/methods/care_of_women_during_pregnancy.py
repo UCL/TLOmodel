@@ -218,47 +218,47 @@ class CareOfWomenDuringPregnancy(Module):
         get_item_code_from_name = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         # -------------------------------------------- ECTOPIC PREGNANCY ---------------------------------------------
-        self.item_codes_preg_consumables['ectopic_pregnancy'] =\
-            [get_item_code_from_name('Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg')] + \
-            [get_item_code_from_name('Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml')] + \
+        self.item_codes_preg_consumables['ectopic_pregnancy'] = \
+            [get_item_code_from_name('Halothane (fluothane)_250ml_CMST')] + \
             [get_item_code_from_name('Sodium chloride, injectable solution, 0,9 %, 500 ml')] + \
+            [get_item_code_from_name('Paracetamol, tablet, 500 mg')] + \
+            [get_item_code_from_name('Pethidine, 50 mg/ml, 2 ml ampoule')] + \
             [get_item_code_from_name('Syringe, needle + swab')] + \
             [get_item_code_from_name('Suture pack')] + \
             [get_item_code_from_name('Gauze pad, 10 x 10 cm, sterile')] + \
-            [get_item_code_from_name('Ampicillin, powder for injection, 500 mg, vial')] + \
-            [get_item_code_from_name('Gentamycin, injection, 40 mg/ml in 2 ml vial')] + \
-            [get_item_code_from_name('Metronidazole, injection, 500 mg in 100 ml vial')] + \
-            [get_item_code_from_name('Paracetamol, tablet, 500 mg')] + \
-            [get_item_code_from_name('Pethidine, 50 mg/ml, 2 ml ampoule')]
+            [get_item_code_from_name('Cannula iv  (winged with injection pot) 20_each_CMST')] + \
+            [get_item_code_from_name('Scalpel blade size 22 (individually wrapped)_100_CMST')] + \
+            [get_item_code_from_name('Chlorhexidine 1.5% solution_5_CMST')]
 
         # ------------------------------------------- POST ABORTION CARE - GENERAL  -----------------------------------
         self.item_codes_preg_consumables['post_abortion_care'] = \
             [get_item_code_from_name('Misoprostol, tablet, 200 mcg')] + \
-            [get_item_code_from_name('Paracetamol, tablet, 500 mg')] + \
-            [get_item_code_from_name('Ampicillin, powder for injection, 500 mg, vial')] + \
-            [get_item_code_from_name('Gentamycin, injection, 40 mg/ml in 2 ml vial')] + \
-            [get_item_code_from_name('Metronidazole, injection, 500 mg in 100 ml vial')] + \
-            [get_item_code_from_name('Tetracycline, tablet, 500 mg')] + \
-            [get_item_code_from_name('Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml')] + \
+            [get_item_code_from_name('Metronidazole 200mg_1000_CMST')] + \
+            [get_item_code_from_name('Complete blood count')] + \
+            [get_item_code_from_name('Blood collecting tube, 5 ml')] + \
             [get_item_code_from_name('Syringe, needle + swab')] + \
-            [get_item_code_from_name('Methylergometrine, Injection  0.2 mg/ml, 1 ml amp')] + \
-            [get_item_code_from_name('Pethidine, 50 mg/ml, 2 ml ampoule')] +\
-            [get_item_code_from_name('Sodium chloride, injectable solution, 0,9 %, 500 ml')]
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')] + \
+            [get_item_code_from_name('Paracetamol, tablet, 500 mg')] + \
+            [get_item_code_from_name('Pethidine, 50 mg/ml, 2 ml ampoule')]
 
         # ------------------------------------------- POST ABORTION CARE - SEPSIS -------------------------------------
-        # todo: edit
         self.item_codes_preg_consumables['post_abortion_care_sepsis'] = \
-            [get_item_code_from_name('Misoprostol, tablet, 200 mcg')] + \
-            [get_item_code_from_name('Paracetamol, tablet, 500 mg')] + \
             [get_item_code_from_name('Ampicillin, powder for injection, 500 mg, vial')] + \
             [get_item_code_from_name('Gentamycin, injection, 40 mg/ml in 2 ml vial')] + \
             [get_item_code_from_name('Metronidazole, injection, 500 mg in 100 ml vial')] + \
-            [get_item_code_from_name('Tetracycline, tablet, 500 mg')] + \
-            [get_item_code_from_name('Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml')] + \
-            [get_item_code_from_name('Syringe, needle + swab')] + \
-            [get_item_code_from_name('Methylergometrine, Injection  0.2 mg/ml, 1 ml amp')] + \
-            [get_item_code_from_name('Pethidine, 50 mg/ml, 2 ml ampoule')] + \
-            [get_item_code_from_name('Sodium chloride, injectable solution, 0,9 %, 500 ml')]
+            [get_item_code_from_name('Sodium chloride, injectable solution, 0,9 %, 500 ml')] + \
+            [get_item_code_from_name('Cannula iv  (winged with injection pot) 20_each_CMST')] + \
+            [get_item_code_from_name('IV giving/infusion set, with needle')] + \
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')] + \
+            [get_item_code_from_name('Oxygen, 1000 liters, primarily with oxygen cylinders')]
+
+        # ------------------------------------------- POST ABORTION CARE - SHOCK -------------------------------------
+        self.item_codes_preg_consumables['post_abortion_care_shock'] = \
+            [get_item_code_from_name('Sodium chloride, injectable solution, 0,9 %, 500 ml')] + \
+            [get_item_code_from_name('Cannula iv  (winged with injection pot) 20_each_CMST')] + \
+            [get_item_code_from_name('IV giving/infusion set, with needle')] + \
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')] + \
+            [get_item_code_from_name('Oxygen, 1000 liters, primarily with oxygen cylinders')]
 
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
         self.item_codes_preg_consumables['blood_test_equipment'] = \
@@ -327,6 +327,7 @@ class CareOfWomenDuringPregnancy(Module):
         # ---------------------------------------- BLOOD TRANSFUSION -------------------------------------------------
         self.item_codes_preg_consumables['blood_transfusion'] = \
             [get_item_code_from_name('Blood, one unit')] + \
+            [get_item_code_from_name('Cannula iv  (winged with injection pot) 20_each_CMST')] + \
             [get_item_code_from_name('IV giving/infusion set, with needle')] + \
             [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
 
@@ -341,11 +342,26 @@ class CareOfWomenDuringPregnancy(Module):
             [get_item_code_from_name('Syringe, needle + swab')] + \
             [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
 
-        # ---------------------------------------- MAGNESIUM SULFATE ------------------------------------------------
+        # ---------------------------------------- MAGNESIUM SULPHATE ------------------------------------------------
         self.item_codes_preg_consumables['magnesium_sulfate'] = \
             [get_item_code_from_name('Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule')] + \
             [get_item_code_from_name('Syringe, needle + swab')] + \
             [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
+
+        # ---------------------------------------- MANAGEMENT OF ECLAMPSIA --------------------------------------------
+        self.item_codes_preg_consumables['eclampsia_management'] = \
+            [get_item_code_from_name('Misoprostol, tablet, 200 mcg')] + \
+            [get_item_code_from_name('Oxytocin, injection, 10 IU in 1 ml ampoule')] + \
+            [get_item_code_from_name('Sodium chloride, injectable solution, 0,9 %, 500 ml')] + \
+            [get_item_code_from_name('Cannula iv  (winged with injection pot) 20_each_CMST')] + \
+            [get_item_code_from_name('IV giving/infusion set, with needle')] + \
+            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')] + \
+            [get_item_code_from_name('Oxygen, 1000 liters, primarily with oxygen cylinders')] + \
+            [get_item_code_from_name('Complete blood count')] + \
+            [get_item_code_from_name('Blood collecting tube, 5 ml')] + \
+            [get_item_code_from_name('Syringe, needle + swab')] + \
+            [get_item_code_from_name('Foley catheter')] + \
+            [get_item_code_from_name('Bag, urine, collecting, 2000 ml')]
 
         # -------------------------------------- ANTIBIOTICS FOR PROM ------------------------------------------------
         self.item_codes_preg_consumables['abx_for_prom'] = \
@@ -1367,9 +1383,13 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
 
-        consumables = hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['magnesium_sulfate'],
-                                                return_individual_results=True)
-        key_consumable_avail = list(consumables.values())[0]
+        # todo: finalise decision on conditioning
+        hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['eclampsia_management'])
+
+        mag_consumables = hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['magnesium_sulfate'],
+                                                    return_individual_results=True)
+
+        key_consumable_avail = list(mag_consumables.values())[0]
 
         # If available deliver the treatment
         if key_consumable_avail:
@@ -2703,33 +2723,39 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             return
 
         # Request baseline PAC consumables
-        self.get_consumables(item_codes=self.module.item_codes_preg_consumables['post_abortion_care'])
+        baseline_cons = self.get_consumables(item_codes=self.module.item_codes_preg_consumables['post_abortion_care'])
+        # todo: add equipment for uterine evacuation for TLO version 2.0
+        # todo: specify key consumables instead of groups (await calibration)
 
-        # todo: would be good to add equipment for uterine evacuation here
-
-        # Then we determine if a woman gets treatment for her complication depending on consumable availbility
+        # Then we determine if a woman gets treatment for her complication depending on availability of the baseline
+        # consumables plus additional consumables required for management of her specific complication
         if abortion_complications.has_any([person_id], 'sepsis', first=True):
 
             cons_for_sepsis_pac = self.get_consumables(
-                item_codes=self.module.item_codes_preg_consumables['post_abortion_care_sepsis'],
-                return_individual_results=True)
-            key_cons = list(cons_for_sepsis_pac.values())[0]
+                item_codes=self.module.item_codes_preg_consumables['post_abortion_care_sepsis'])
 
-            if key_cons:
+            if cons_for_sepsis_pac and baseline_cons:
                 df.at[person_id, 'ac_received_post_abortion_care'] = True
 
         elif abortion_complications.has_any([person_id], 'haemorrhage', first=True):
 
-            cons_for_haemorrhage_pac = self.get_consumables(
-                item_codes=self.module.item_codes_preg_consumables['blood_transfusion'],
-                return_individual_results=True)
-            key_cons = list(cons_for_haemorrhage_pac.values())[0]
+            cons_for_haemorrhage = self.get_consumables(
+                item_codes=self.module.item_codes_preg_consumables['blood_transfusion'])
 
-            if key_cons:
+            cons_for_shock = self.get_consumables(
+                item_codes=self.module.item_codes_preg_consumables['post_abortion_care_shock'])
+
+            if cons_for_haemorrhage and cons_for_shock and baseline_cons:
                 df.at[person_id, 'ac_received_post_abortion_care'] = True
 
-        elif abortion_complications.has_any([person_id], 'other', first=True) or abortion_complications.has_any(
-                                                                                 [person_id], 'injury', first=True):
+        elif abortion_complications.has_any([person_id], 'injury', first=True):
+            cons_for_shock = self.get_consumables(
+                item_codes=self.module.item_codes_preg_consumables['post_abortion_care_shock'])
+
+            if cons_for_shock and baseline_cons:
+                df.at[person_id, 'ac_received_post_abortion_care'] = True
+
+        elif abortion_complications.has_any([person_id], 'other', first=True) and baseline_cons:
             df.at[person_id, 'ac_received_post_abortion_care'] = True
 
     def did_not_run(self):

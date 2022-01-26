@@ -329,6 +329,7 @@ def test_perfect_run_of_anc_contacts_no_constraints():
 
     # The woman has experienced progression of her disease between appointments
     df.at[mother_id, 'ps_htn_disorders'] = 'severe_pre_eclamp'
+    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['new_onset_spe'] = True
 
     fifth_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 5)
