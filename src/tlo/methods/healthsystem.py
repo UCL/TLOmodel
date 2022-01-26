@@ -234,15 +234,18 @@ class HealthSystem(Module):
         if record_hsi_event_details:
             self.hsi_event_details = set()
 
-        # Create the Consumables class to handle all requests for consumables (override an argument of
-        # `cons_availability` to `all` if the whole HealthSystem module is disabled).
-        self.consumables = Consumables(self, cons_availabilty='all' if self.disable else cons_availability)
+        # Determine what the the `cons_availability` parameter in the Consumables class should be: it should be `all`
+        # if the HealthSystem is disabled.
+        self._cons_availability = 'all' if self.disable else cons_availability
 
         # Create the Diagnostic Test Manager to store and manage all Diagnostic Test
         self.dx_manager = DxManager(self)
 
         # Create the instance of BedDays to record usage of in-patient bed days
         self.bed_days = BedDays(self)
+
+        # Create the pointer that will be to the instance of Consumables used to determine availability of consumables.
+        self.consumables = None
 
         # Create pointer for the HealthSystemScheduler event
         self.healthsystemscheduler = None
@@ -289,10 +292,12 @@ class HealthSystem(Module):
         self.parameters['Service_Availability'] = ['*']
 
     def pre_initialise_population(self):
-        """Do processing following `read_parameters` prior to generating the population."""
+        """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
         self.process_human_resources_files()
-        self.consumables.process_consumables_df(df=self.parameters['availability_estimates'])
         self.bed_days.pre_initialise_population()
+        self.consumables = Consumables(data=self.parameters['availability_estimates'],
+                                       rng=self.rng,
+                                       cons_availabilty=self._cons_availability)
 
     def initialise_population(self, population):
         # todo - move this to initialise simulation
@@ -312,6 +317,9 @@ class HealthSystem(Module):
 
         # Set the tracker in preparation for the simulation
         self.bed_days.initialise_beddays_tracker()
+
+        # Set the consumables modules in preparation for the simulation
+        self.consumables.processing_at_start_of_new_day(sim.date)
 
         # Capture list of disease modules:
         self.recognised_modules_names = [
@@ -1073,11 +1081,13 @@ class HealthSystem(Module):
     def get_item_codes_from_package_name(self, package: str) -> dict:
         """Helper function to provide the item codes and quantities in a dict of the form {<item_code>:<quantity>} for
          a given package name."""
-        return self.consumables._get_item_codes_from_package_name(package)
+        return self.consumables._get_item_codes_from_package_name(
+            self.parameters['item_and_package_code_lookups'], package)
 
     def get_item_code_from_item_name(self, item: str) -> int:
         """Helper function to provide the item_code (an int) when provided with the name of the item"""
-        return self.consumables._get_item_code_from_item_name(item)
+        return self.consumables._get_item_code_from_item_name(
+            self.parameters['item_and_package_code_lookups'], item)
 
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
@@ -1108,7 +1118,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # 0) Refresh information ready for new day:
         self.module.bed_days.processing_at_start_of_new_day()
-        self.module.consumables.processing_at_start_of_new_day()
+        self.module.consumables.processing_at_start_of_new_day(self.sim.date)
 
         # - Create hold-over list (will become a heapq). This will hold events that cannot occur today before they are
         #  added back to the heapq
@@ -1340,6 +1350,7 @@ class HSI_Event:
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
         self._received_info_about_bed_days = None
         self._cached_time_requests = {}
+        self._facility_id = 1  # todo - write this when it gets added to scheduler
 
     @property
     def bed_days_allocated_to_this_event(self):
@@ -1434,7 +1445,10 @@ class HSI_Event:
         _to_log = to_log if not hs_module.disable else False
 
         # Checking the availability and logging:
-        rtn = hs_module.consumables._request_consumables(self, item_codes=_item_codes, to_log=_to_log)
+        rtn = hs_module.consumables._request_consumables(item_codes=_item_codes,
+                                                         to_log=_to_log,
+                                                         facility_id=self._facility_id,
+                                                         treatment_id=self.TREATMENT_ID)
 
         # Return result in expected format:
         if not return_individual_results:
