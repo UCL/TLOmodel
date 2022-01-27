@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -19,7 +20,10 @@ def run_sim(tmpdir,
             no_discontinuation=False,
             incr_prob_of_failure=False,
             popsize=1000,
-            end_date=Date(2011, 12, 31)
+            end_date=Date(2011, 12, 31),
+            no_changes_in_contraception=False,
+            no_initial_contraception_use=False,
+            equalised_risk_of_preg=None,
             ):
     """Run basic checks on function of contraception module"""
 
@@ -68,9 +72,15 @@ def run_sim(tmpdir,
         contraception.Contraception(resourcefilepath=resourcefilepath, use_healthsystem=use_healthsystem),
         contraception.SimplifiedPregnancyAndLabour(),
 
-        # - Dummy HIV module (as contraception requires the property hv_inf)
-        DummyHivModule()
+        # - Dummy HIV module (as contraception requires the property hv_inf): but set prevalence to be 0%
+        DummyHivModule(hiv_prev=0.0)
     )
+    states = sim.modules['Contraception'].all_contraception_states
+
+    if no_initial_contraception_use:
+        sim.modules['Contraception'].parameters['Method_Use_In_2010'].loc[:, 'not_using'] = 1.0
+        sim.modules['Contraception'].parameters['Method_Use_In_2010'].loc[:, list(states - {'not_using'})] = 0.0
+
     sim.make_initial_population(n=popsize)
     __check_dtypes(sim)
     __check_properties(sim.population.props)
@@ -85,6 +95,25 @@ def run_sim(tmpdir,
         sim.modules['Contraception'].processed_params['p_pregnancy_with_contraception_per_month'] = \
             (sim.modules['Contraception'].processed_params['p_pregnancy_with_contraception_per_month'] * 100).clip(
                 upper=1.0)
+
+    if no_changes_in_contraception:
+        # Make there be no changes over time in the risk of starting/stopping a contraceptive
+        sim.modules['Contraception'].processed_params['p_start_per_month'] = zero_param(
+            sim.modules['Contraception'].processed_params['p_start_per_month']
+        )
+        sim.modules['Contraception'].processed_params['p_stop_per_month'] = zero_param(
+            sim.modules['Contraception'].processed_params['p_stop_per_month']
+        )
+        sim.modules['Contraception'].processed_params['p_switch_from_per_month'] *= 0.0
+
+        sim.modules['Contraception'].processed_params['p_start_after_birth']['not_using'] = 1.0
+        sim.modules['Contraception'].processed_params['p_start_after_birth'][list(states - {'not_using'})] = 0.0
+
+    if equalised_risk_of_preg is not None:
+        sim.modules['Contraception'].processed_params['p_pregnancy_no_contraception_per_month'].loc[:, :] = \
+            equalised_risk_of_preg
+        sim.modules['Contraception'].processed_params['p_pregnancy_with_contraception_per_month'].loc[:, :] = \
+            equalised_risk_of_preg
 
     if not run:
         return sim
@@ -234,11 +263,23 @@ def test_pregnancies_and_births_occurring(tmpdir):
     # Check births
     births = logs['tlo.methods.demography']['on_birth']
     assert len(births) > 0
-    assert set(births['mother']).issubset(set(pregs['woman_id']))
+
+    # Check that births are occurring during the first 9 months of the simulation (from unidentified mothers).
+    after9months = pd.to_datetime(births.date) >= (sim.start_date + pd.DateOffset(months=9))
+    assert len(births[~after9months])
+
+    # Check that unidentified mothers are given as the mother for some (but not all) of the births before 9 months.
+    assert -1 in births.loc[~after9months, 'mother'].values
+
+    # Check that after 9 months, every birth has a specific mother identified (i.e. not mother_id = -1)
+    assert (births.loc[after9months, 'mother'] != -1).all()
+
+    # Check that, for any birth associated with a mother, the mother was pregnant
+    assert (set(births.loc[after9months, 'mother']) - {-1}).issubset(set(pregs['woman_id']))
 
 
 def test_woman_starting_contraceptive_after_birth(tmpdir):
-    """Check that woman can start a contraceptive after birth."""
+    """Check that woman re-start the same contraceptive after birth."""
     sim = run_sim(tmpdir=tmpdir, run=False)
 
     # Select a woman to be a mother
@@ -336,30 +377,24 @@ def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir):
 
 @pytest.mark.slow
 def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_level(tmpdir):
-    """Check that if someone is on a method that requires an HSI, and if consumable is not available and/or the health
-    system cannot do the appointment, then that the person defaults to not using after they become due for a
-    maintenance appointment."""
+    """Check that if someone is on a method that requires an HSI for maintenance, and if consumable is not available
+     and/or the health system cannot do the appointment, then that the person defaults to not using after they become
+     due for a maintenance appointment."""
 
     def check_that_persons_on_contraceptive_default(sim):
-        """Edit parameters, run simulation and do checks; women start on a contraceptive, and those who are on a
-        contraceptive that requires HSI and consumables default by the end of the simulation."""
-
-        # Let there be no chance of starting, switching or discontinuing (everyone would maintain if HSI/cons available)
-        pp = sim.modules['Contraception'].processed_params
-        pp['p_start_per_month'] = zero_param(pp['p_start_per_month'])
-        pp['p_start_after_birth'] *= 0.0
-        pp['p_stop_per_month'] = zero_param(pp['p_stop_per_month'])
-        pp['p_switch_from_per_month'] *= 0.0
+        """Before simulaton starts, put women on a contraceptive, and make some due an appointment. Then run the
+        simulation. Check that those who are on a contraceptive that requires HSI and consumables default to "not_using"
+        by the end of the simulation."""
 
         df = sim.population.props
         contraceptives = list(sim.modules['Contraception'].all_contraception_states)
 
-        # Set that person_id=0-10 are woman on each of the contraceptive and due an appointment next month (these women
-        # will default if on a contraceptive that requires a consumable).
+        # Set that person_id=0-10 are woman on each of the contraceptive and are due an appointment next month (these
+        # women will default if on a contraceptive that requires a consumable).
         person_ids_due_appt = list(range(len(contraceptives)))
 
-        # Set that person_id=12-25 are women each of the contraceptives and not due an appointment during the simulation
-        # These women will not default.
+        # Set that person_id=12-25 are women each of the contraceptives and are not due an appointment during the
+        # simulation. These women will not default.
         person_ids_not_due_appt = [i + len(contraceptives) for i in person_ids_due_appt]
 
         for i, contraceptive in enumerate(contraceptives):
@@ -389,12 +424,13 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
         sim.simulate(end_date=sim.start_date + pd.DateOffset(months=3))
         __check_no_illegal_switches(sim)
 
-        # Those on a contraceptive that requires HSI for maintenance should have defaulted to "not_using"
+        # Those on a contraceptive that requires HSI for maintenance should have defaulted to "not_using".
+        # NB. All defaulters will move to "not_using" because not other kind of natural switching is allowed in this
+        #  simulation.
         for i, _c in enumerate(contraceptives):
-            # These due an appointment will have defaulted if they are on a contraceptive that requires HSI/consumables
 
             if _c in sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on:
-                assert df.at[person_ids_due_appt[i], "co_contraception"] == 'not_using'
+                assert df.at[person_ids_due_appt[i], "co_contraception"] == "not_using"
             else:
                 assert df.at[person_ids_due_appt[i], "co_contraception"] == _c
 
@@ -406,6 +442,7 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
                   use_healthsystem=True,
                   healthsystem_disable_and_reject_all=True,
                   consumables_available=True,
+                  no_changes_in_contraception=True,
                   run=False,
                   popsize=50
                   )
@@ -416,6 +453,7 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
                   use_healthsystem=True,
                   disable=False,
                   consumables_available=False,
+                  no_changes_in_contraception=True,
                   run=False,
                   popsize=50
                   )
@@ -445,9 +483,12 @@ def test_defaulting_off_method_if_no_healthsystem_at_population_level(tmpdir):
     states_that_may_require_HSI_to_switch_to = sim.modules['Contraception'].states_that_may_require_HSI_to_switch_to
     changes = log["contraception_change"]
     assert not changes["switch_to"].isin(states_that_may_require_HSI_to_switch_to).any()
-    assert (changes.loc[changes["switch_from"].isin(states_that_may_require_HSI_to_switch_to), "switch_to"]
-            == "not_using"
-            ).all()
+
+    # Check that all switches from things that require an HSI are to not something that does not require HSI
+    states_that_do_require_HSI_to_switch_to = \
+        sim.modules['Contraception'].all_contraception_states - states_that_may_require_HSI_to_switch_to
+    assert changes.loc[changes["switch_from"].isin(states_that_may_require_HSI_to_maintain_on), "switch_to"].isin(
+        states_that_do_require_HSI_to_switch_to).all()
 
 
 @pytest.mark.slow
@@ -466,6 +507,8 @@ def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir):
 
     states_that_may_require_HSI_to_switch_to = sim.modules['Contraception'].states_that_may_require_HSI_to_switch_to
     states_that_may_require_HSI_to_maintain_on = sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on
+    states_that_do_require_HSI_to_switch_to = \
+        sim.modules['Contraception'].all_contraception_states - states_that_may_require_HSI_to_switch_to
 
     # Check that, after six months of simulation time, no one is on a contraceptive that requires a consumable for
     # maintenance.
@@ -480,11 +523,11 @@ def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir):
     changes = log["contraception_change"]
     assert not changes["switch_to"].isin(states_that_may_require_HSI_to_switch_to).any()
 
-    # ... but are switching_from them to "not_using"
+    # ... but are only switching_from them to something that does not require an HSI to switch to (mostly "not_using",
+    # but others if the switch was "natural")
     assert changes["switch_from"].isin(states_that_may_require_HSI_to_maintain_on).any()
-    assert (
-        changes.loc[changes["switch_from"].isin(states_that_may_require_HSI_to_maintain_on), "switch_to"] == "not_using"
-    ).all()
+    assert changes.loc[changes["switch_from"].isin(states_that_may_require_HSI_to_maintain_on), "switch_to"].isin(
+        states_that_do_require_HSI_to_switch_to).all()
 
 
 @pytest.mark.slow
@@ -514,3 +557,67 @@ def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir):
             format_log(parse_log_file(sim_uses_healthsystem.log_filepath)['tlo.methods.contraception'][key]),
             format_log(parse_log_file(sim_does_not_use_healthsystem.log_filepath)['tlo.methods.contraception'][key])
         )
+
+
+def test_correct_number_of_live_births_created(tmpdir):
+    """Check that the actual number of births simulated (in one month) matches expectations"""
+
+    # Run a simulation in which every woman has the same chance of becoming pregnant.
+    _risk_of_pregnancy = 0.05
+    sim = run_sim(tmpdir,
+                  end_date=Date(2010, 11, 1),
+                  popsize=100_000,
+                  disable=True,
+                  equalised_risk_of_preg=_risk_of_pregnancy
+                  )
+    log = parse_log_file(sim.log_filepath)
+
+    age_group_lookup = sim.modules['Demography'].AGE_RANGE_LOOKUP
+    adult_age_groups = ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']
+
+    def get_births_in_a_month_by_age_range_of_mother_at_pregnancy(_df, year, month):
+        _df = _df.drop(_df.index[_df.mother == -1])  # ignore pregnancies generated in first 9mo by other method
+        _df = _df.assign(year=_df['date'].dt.year)
+        _df = _df.assign(month=_df['date'].dt.month)
+        _df['mother_age_range'] = _df['mother_age_at_pregnancy'].map(age_group_lookup)
+        return _df.loc[(_df.year == year) & (_df.month == month)].groupby(by='mother_age_range').size()
+
+    def get_num_adult_women_in_a_year_by_age_range(_df, year):
+        _df = _df.assign(year=_df['date'].dt.year)
+        _df = _df.set_index(_df['year'], drop=True)
+        return _df.loc[year, adult_age_groups]
+
+    # Compute the ASFR for the month of October 2010 (the first month when pregnancies could occur caused by
+    # the Contraception Module's parameters for pregnancy risk, at the beginning of which no woman is pregnant.)
+    av_num_adult_women_in_2010 = get_num_adult_women_in_a_year_by_age_range(
+        log["tlo.methods.demography"]["age_range_f"], year=2010)
+
+    num_births_in_Oct2010 = get_births_in_a_month_by_age_range_of_mother_at_pregnancy(
+        log["tlo.methods.demography"]["on_birth"], year=2010, month=10)
+    totfr_per_month_Oct2010 = num_births_in_Oct2010.sum() / av_num_adult_women_in_2010.sum()
+
+    _prob_live_birth = sim.modules['Labour'].parameters['prob_live_birth']
+
+    assert np.isclose(totfr_per_month_Oct2010, _risk_of_pregnancy * _prob_live_birth, rtol=0.10)
+
+
+def test_initial_distribution_of_contraception(tmpdir):
+    """Check that the initial population distribution has the expected distribution of use of contraceptive methods."""
+
+    sim = run_sim(tmpdir, end_date=Date(2010, 1, 1), popsize=100_000)  # large simulation, run just to initialise pop
+
+    df = sim.population.props
+    pp = sim.modules['Contraception'].processed_params
+
+    adult_age_groups = ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']
+    age_group_lookup = sim.modules['Demography'].AGE_RANGE_LOOKUP
+
+    # 1) Check that initial distribution of use of contraceptives matches the parameters for initial distribution
+    expected = pp['initial_method_use']
+    expected_by_age_range = expected.groupby(expected.index.map(age_group_lookup)).mean()
+
+    actual = df.loc[df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)
+                    ].groupby(by=['co_contraception', 'age_range']).size().sort_index().unstack().T.apply(
+        lambda row: row / row.sum(), axis=1
+    ).loc[adult_age_groups]
+    assert (abs(actual - expected_by_age_range) < 0.03).all().all()

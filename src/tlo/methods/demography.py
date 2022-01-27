@@ -39,6 +39,7 @@ class Demography(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.initial_model_to_data_popsize_ratio = None  # will store scaling factor
         self.popsize_by_year = dict()  # will store total population size each year
         self.causes_of_death = dict()  # will store all the causes of death that are possible in the simulation
         self.gbd_causes_of_death = set()  # will store all the causes of death defined in the GBD data
@@ -183,13 +184,12 @@ class Demography(Module):
         )
 
     def initialise_population(self, population):
-        """Set our property values for the initial population.
-        This method is called by the simulation when creating the initial population, and is
-        responsible for assigning initial values, for every individual, of those properties
-        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-        :param population: the population of individuals
-        """
+        """Set properties for this module and compute the initial population scaling factor"""
         df = population.props
+
+        # Compute the initial population scaling factor
+        self.initial_model_to_data_popsize_ratio = \
+            self.compute_initial_model_to_data_popsize_ratio(population.initial_size)
 
         init_pop = self.parameters['pop_2010']
         init_pop['prob'] = init_pop['Count'] / init_pop['Count'].sum()
@@ -229,20 +229,26 @@ class Demography(Module):
 
     def initialise_simulation(self, sim):
         """
-        * Schedule the age updating
-        * Output to the log the dicts that can be used for mapping from causes of death defined here, and those defined
-        in the GBD datasets, to a common 'label'.
+        * Schedule the AgeUpdateEvent, the OtherDeathPoll and the DemographyLoggingEvent
+        * Output to the log the initial population scaling factor.
         """
-        # Update age information every day
+        # Update age information every day (first time after one day)
         sim.schedule_event(AgeUpdateEvent(self, self.AGE_RANGE_LOOKUP), sim.date + DateOffset(days=1))
 
-        # check all population to determine if person should die (from causes other than those
-        # explicitly modelled) (repeats every month)
-        self.other_death_poll = OtherDeathPoll(self)
-        sim.schedule_event(self.other_death_poll, sim.date + DateOffset(months=1))
-
         # Launch the repeating event that will store statistics about the population structure
-        sim.schedule_event(DemographyLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(DemographyLoggingEvent(self), sim.date)
+
+        # Create (and store pointer to) the OtherDeathPoll and schedule first occurrence immediately
+        self.other_death_poll = OtherDeathPoll(self)
+        sim.schedule_event(self.other_death_poll, sim.date)
+
+        # Log the initial population scaling-factor
+        logger.info(
+            key='scaling_factor',
+            data={'scaling_factor': 1.0 / self.initial_model_to_data_popsize_ratio},
+            description='The data-to-model scaling factor (based on the initial population size, used to multiply-up'
+                        'results so that they correspond to the real population size'
+        )
 
         # Check that the simulation does not run too long
         if self.sim.end_date.year >= 2100:
@@ -259,6 +265,12 @@ class Demography(Module):
 
         fraction_of_births_male = self.parameters['fraction_of_births_male'][self.sim.date.year]
 
+        # Determine characteristics that are inherited from mother (and if no mother, from a randomly selected person)
+        _id_inherit_from = mother_id if mother_id != -1 else rng.choice(df.index[df.is_alive])
+        _district_num_of_residence = df.at[_id_inherit_from, 'district_num_of_residence']
+        _district_of_residence = df.at[_id_inherit_from, 'district_of_residence']
+        _region_of_residence = df.at[_id_inherit_from, 'region_of_residence']
+
         child = {
             'is_alive': True,
             'date_of_birth': self.sim.date,
@@ -266,35 +278,28 @@ class Demography(Module):
             'cause_of_death': np.nan,
             'sex': 'M' if rng.random_sample() < fraction_of_births_male else 'F',
             'mother_id': mother_id,
-            'district_num_of_residence': df.at[mother_id, 'district_num_of_residence'],
-            'district_of_residence': df.at[mother_id, 'district_of_residence'],
-            'region_of_residence': df.at[mother_id, 'region_of_residence'],
+            'district_num_of_residence': _district_num_of_residence,
+            'district_of_residence': _district_of_residence,
+            'region_of_residence': _region_of_residence,
             'age_exact_years': 0.0,
             'age_years': 0,
             'age_range': self.AGE_RANGE_LOOKUP[0]
         }
-
         df.loc[child_id, child.keys()] = child.values()
 
         # Log the birth:
+        _mother_age_at_birth = df.at[mother_id, 'age_years'] if mother_id != -1 else -1
+        _mother_age_at_pregnancy = int(
+            (df.at[mother_id, 'date_of_last_pregnancy'] - df.at[mother_id, 'date_of_birth'])
+            / np.timedelta64(1, 'Y')) if mother_id != -1 else -1
+
         logger.info(
             key='on_birth',
             data={'mother': mother_id,
                   'child': child_id,
-                  'mother_age': df.at[mother_id, 'age_years']}
+                  'mother_age': _mother_age_at_birth,
+                  'mother_age_at_pregnancy': _mother_age_at_pregnancy}
         )
-
-    def on_simulation_end(self):
-        """Things to do at end of the simulation:
-        * Compute and log the scaling-factor
-        """
-        sf = self.compute_scaling_factor()
-        if not np.isnan(sf):
-            logger.info(
-                key='scaling_factor',
-                data={'scaling_factor': sf},
-                description='The scaling factor (if can be computed)'
-            )
 
     def process_causes_of_death(self):
         """
@@ -464,37 +469,8 @@ class Demography(Module):
 
         return py
 
-    def compute_scaling_factor(self):
-        """
-        Compute the scaling factor, if it is possible to do so.
-
-        The scaling factor is the ratio of {Real Population} to {Model Pop Size}. It is used to multiply model outputs
-        in order to produce statistics that will be of the same scale as the real population.
-
-        It is estimated by comparing the population size with the national census in the year that the census was
-        conducted.
-
-        If the simulation does not include that year, the scaling factor cannot be computed (in which case, np.nan is
-        returned).
-
-        :return: floating point number that is the scaling factor, or np.nan if it cannot be computed.
-        """
-
-        # Get Census data
-        year_of_census = 2018
-        census_popsize = pd.read_csv(
-            Path(self.resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv"
-        )['Count'].sum()
-
-        # Get model total population size in that same year
-        if year_of_census not in self.popsize_by_year:
-            return np.nan
-        else:
-            model_popsize_in_year_of_census = self.popsize_by_year[year_of_census]
-            return census_popsize / model_popsize_in_year_of_census
-
-    def compute_initial_population_scaling_factor(self, initial_population):
-        """Compute ratio of initial population to estimated population in 2010.
+    def compute_initial_model_to_data_popsize_ratio(self, initial_population_size):
+        """Compute ratio of initial model population size to estimated population size in 2010.
 
         Uses the total of the per-region estimated populations in 2010 used to
         initialise the simulation population as the baseline figure, with this value
@@ -504,12 +480,11 @@ class Demography(Module):
         Economic and Social Affairs. URL:
         https://population.un.org/wpp/Download/Standard/Population/
 
-        :param initial_population: Initial population to calculate ratio for.
+        :param initial_population_size: Initial population size to calculate ratio for.
 
         :returns: Ratio of ``initial_population`` to 2010 baseline population.
         """
-        baseline_total_population = self.parameters['pop_2010']['Count'].sum()
-        return initial_population / baseline_total_population
+        return initial_population_size / self.parameters['pop_2010']['Count'].sum()
 
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
@@ -699,76 +674,3 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Output the person-years lived by single year of age in the past year
         py = self.module.calc_py_lived_in_last_year()
         logger.info(key='person_years', data=py.to_dict())
-
-
-def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False):
-    """
-
-    DO NOT USE THIS FUNCTION IN NEW CODE --- IT IS PROVIDED TO ENABLE LEGACY CODE TO RUN.
-
-    This helper function scales certain outputs so that they can create statistics for the whole population.
-    e.g. Population Size, Number of deaths are scaled by the factor of {Model Pop Size at Start of Simulation} to {
-    {Real Population at the same time}.
-
-    NB. This file gives precedence to the Malawi Population Census
-
-    :param parsed_output: The outputs from parse_output
-    :param resourcefilepath: The resourcefilepath
-    :return: a new version of parsed_output that includes certain variables scaled
-    """
-
-    print("DO NOT USE THIS FUNCTION IN NEW CODE --- IT IS PROVIDED TO ENABLE LEGACY CODE TO RUN.")
-    print()
-    print('The scaling factor can found in the log key=scaling_factor')
-
-    # Get information about the real population size (Malawi Census in 2018)
-    cens_tot = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")[
-        'Count'].sum()
-    cens_yr = 2018
-
-    # Get information about the model population size in 2018 (and fail if no 2018)
-    model_res = parsed_output['tlo.methods.demography']['population']
-    model_res['year'] = pd.to_datetime(model_res.date).dt.year
-
-    assert cens_yr in model_res.year.values, "Model results do not contain the year of the census, so cannot scale"
-    model_tot = model_res.loc[model_res['year'] == cens_yr, 'total'].values[0]
-
-    # Calculate ratio for scaling
-    ratio_data_to_model = cens_tot / model_tot
-
-    if rtn_scaling_ratio:
-        return ratio_data_to_model
-
-    # Do the scaling on selected columns in the parsed outputs:
-    o = parsed_output.copy()
-
-    # Multiply population count summaries by ratio
-    o['tlo.methods.demography']['population']['male'] *= ratio_data_to_model
-    o['tlo.methods.demography']['population']['female'] *= ratio_data_to_model
-    o['tlo.methods.demography']['population']['total'] *= ratio_data_to_model
-
-    o['tlo.methods.demography']['age_range_m'].iloc[:, 1:] *= ratio_data_to_model
-    o['tlo.methods.demography']['age_range_f'].iloc[:, 1:] *= ratio_data_to_model
-
-    # For individual-level reporting, construct groupby's and then multiply by ratio
-    # 1) Counts of numbers of death by year/age/cause
-    deaths = o['tlo.methods.demography']['death']
-    deaths.index = pd.to_datetime(deaths['date'])
-    deaths['year'] = deaths.index.year.astype(int)
-
-    deaths_groupby_scaled = deaths[['year', 'sex', 'age', 'cause', 'person_id']].groupby(
-        by=['year', 'sex', 'age', 'cause']).count().unstack(fill_value=0).stack() * ratio_data_to_model
-    deaths_groupby_scaled.rename(columns={'person_id': 'count'}, inplace=True)
-    o['tlo.methods.demography'].update({'death_groupby_scaled': deaths_groupby_scaled})
-
-    # 2) Counts of numbers of births by year/age-of-mother
-    births = o['tlo.methods.demography']['on_birth']
-    births.index = pd.to_datetime(births['date'])
-    births['year'] = births.index.year
-    births_groupby_scaled = \
-        births[['year', 'mother_age', 'mother']].groupby(by=['year', 'mother_age']).count() \
-        * ratio_data_to_model
-    births_groupby_scaled.rename(columns={'mother': 'count'}, inplace=True)
-    o['tlo.methods.demography'].update({'birth_groupby_scaled': births_groupby_scaled})
-
-    return o
