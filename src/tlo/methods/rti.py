@@ -5190,7 +5190,7 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
         # injury and take the max value
         # filter out injuries which won't be life threatening if not treated
         untreated_injuries = [code for code in untreated_injuries if code in life_threatening_injuries]
-        prob_deaths = []
+        prob_deaths = [0]
         for injury in untreated_injuries:
             for severity_level in untreated_dict:
                 if injury in untreated_dict[severity_level][0]:
@@ -5223,6 +5223,8 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
                     df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = \
                         self.sim.end_date + DateOffset(days=1)
                     assert df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] > self.sim.date
+                    # all injuries are handled by major surgery here, remove the untreated injury code
+                    df.loc[person_id, 'rt_injuries_for_major_surgery'].remove(injury)
                 else:
                     # check if the injury has a heal time associated with no treamtent
                     if injury in self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS.keys():
