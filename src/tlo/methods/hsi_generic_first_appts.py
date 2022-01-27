@@ -39,7 +39,9 @@ from tlo.methods.prostate_cancer import (
     HSI_ProstateCancer_Investigation_Following_Pelvic_Pain,
     HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms,
 )
-
+from tlo.methods.epilepsy import (
+    HSI_Epilepsy_Start_Anti_Epileptic,
+)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -411,6 +413,13 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     if 'CardioMetabolicDisorders' in sim.modules:
         sim.modules['CardioMetabolicDisorders'].determine_if_will_be_investigated_events(person_id=person_id)
 
+    if "Epilepsy" in sim.modules:
+        if 'seizures' in symptoms:
+            schedule_hsi(HSI_Epilepsy_Start_Anti_Epileptic(person_id=person_id,
+                                                           module=sim.modules['Epilepsy']),
+                         priority=0,
+                         topen=sim.date,
+                         tclose=None)
     # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
     if 'craving_sandwiches' in symptoms:
         event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
