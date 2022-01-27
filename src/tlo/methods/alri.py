@@ -1394,8 +1394,8 @@ class Models:
                                      p['rr_ALRI_incomplete_measles_immunisation']),
                     Predictor().when('(hv_inf == True) & (hv_art!= "on_VL_suppressed")', p['rr_ALRI_HIV/AIDS']),
                     Predictor('un_clinical_acute_malnutrition').when('SAM', p['rr_ALRI_underweight']),
-                    Predictor('nb_breastfeeding_status').when('exclusive', 1.0)
-                                                        .otherwise(p['rr_ALRI_non_exclusive_breastfeeding'])
+                    Predictor().when('(nb_breastfeeding_status != "exclusive") & (age_exact_years < 1/6)',
+                                     p['rr_ALRI_non_exclusive_breastfeeding'])
                 )
 
             # Unpack `target_prob_by_age` to a dict with keys that match `age_years_exact` = 0, 1, 2, 3, 4
