@@ -481,8 +481,6 @@ stkout_df.loc[stkout_df.duplicated(['fac_type_tlo',  'district', 'month', 'item_
 # 1) Smaller file size
 # 2) Indexed by the 'Facility_ID' used in the model (which is an amalgmation of district and facility_level, defined in the Master Facilities List.
 
-# todo - why duplicates?????
-
 # unify the set within each facility_id
 
 mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
@@ -562,6 +560,9 @@ sf_merge.loc[sf_merge.fac_type_tlo == '4', 'Facility_ID'] = fac_id_of_fac_level4
 
 # Now, take averages because more than one set of records is forming the estimates for the level 3 facilities
 sf_final = sf_merge.groupby(by=['Facility_ID', 'month', 'item_code'])['available_prop'].mean().reset_index()
+
+# todo: Conform a common set of item_codes for all facilities, imputing 0.0 if it's never recognised.
+# todo: If a month is missing for a particular facility, imput it with the average for that facility
 
 # Check that we have a complete set of estimates, for every region & facility_type, as defined in the model.
 check_format_of_consumables_file(df=sf_final)
