@@ -63,6 +63,7 @@ def get_mother_id_from_dataframe(sim):
     women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
     mother_id = women_repro.index[0]
     df.at[mother_id, 'is_pregnant'] = True
+    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
 
     sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
     sim.modules['Labour'].set_labour_mni_variables(mother_id)
