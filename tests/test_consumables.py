@@ -305,17 +305,30 @@ def test_outputs_to_log(tmpdir):
 # Checks involving the actual ResourceFile used by default in the simulations
 # ----------------------------------------------------------------------------
 
+def check_format_of_consumables_file(df):
+    """Check that we have a complete set of estimates, for every region & facility_type, as defined in the model."""
+    mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
+    fac_ids = set(mfl.loc[mfl.Facility_Level != '5'].Facility_ID)
+    months = set(range(1, 13))
+
+    assert set(df.columns) == {'Facility_ID', 'month', 'item_code', 'available_prop'}
+
+    # Check that there are set of entries for every Facility_ID for every month
+    any_entry = (df.groupby(by=['Facility_ID', 'month']).size() > 0).unstack().fillna(False)
+    assert set(any_entry.index) == fac_ids
+    assert set(any_entry.columns) == months
+    assert any_entry.any(axis=1).all()  # Every facility has at least an entry for one month
+    assert any_entry.all(axis=0).all()  # Every facility has an entry for every month
+
+    # Check that every entry for a probability is a float on [0,1]
+    assert (df.available_prop <= 1.0).all() and (df.available_prop >= 0.0).all()
+
 def test_check_format_of_consumables_file():
-    # # Check that we have a complete set of estimates, for every region & facility_type, as defined in the model.
-    # districts = set(self.hs_module.sim.modules['Demography'].PROPERTIES['district_of_residence'].categories)
-    # fac_levels = self.hs_module.sim.modules['HealthSystem']._facility_levels
-    # assert set(df['district']) == districts
-    # assert set(df['fac_type_tlo']) == fac_levels
-    #
-    # any_entry = (df.groupby(by=['district', 'fac_type_tlo']).size() > 0).unstack().fillna(False)
-    # assert any_entry[['1a', '1b', '2']].all().all()
-    print("****THIS IS PENDING****")
-    pass
+    """Run the check on the file used by default for the Consumables data"""
+    check_format_of_consumables_file(pd.read_csv(
+        resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_availability_small.csv'
+    ))
+
 
 @pytest.mark.slow
 def test_every_declared_consumable_for_every_possible_hsi_using_actual_data():
@@ -342,6 +355,7 @@ def test_every_declared_consumable_for_every_possible_hsi_using_actual_data():
 
     print("****THIS IS PENDING****")
     pass
+
 
 def test_get_item_code_from_item_name():
     """Check that can use `get_item_code_from_item_name` to retrieve the correct `item_code`."""

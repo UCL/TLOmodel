@@ -27,6 +27,8 @@ import numpy as np
 import pandas as pd
 
 # Set local Dropbox source
+from tests.test_consumables import test_check_format_of_consumables_file, check_format_of_consumables_file
+
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
     '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE')
 path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/consumables raw files/"
@@ -466,28 +468,105 @@ for var in ['district', 'fac_name', 'month']:
 # --- 6.6 Export final stockout dataframe --- #
 stkout_df.to_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
 
-# --- 6.7 Generate smaller file with only stock-out estimates for use in model run --- #
+# --- 6.7 Generate file for use in model run --- #
+# 1) Smaller file size
+# 2) Indexed by the 'Facility_ID' used in the model (which is an amalgmation of district and facility_level, defined in the Master Facilities List.
+
+# todo - why duplicates?????
+# todo - negatives
+# unify the set within each facility_id
+
+mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
+districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
+fac_levels = {'0', '1a', '1b', '2', '3', '4'}
+
 sf = stkout_df[['item_code', 'month', 'district', 'fac_type_tlo', 'available_prop']].dropna()
 sf = sf.drop(index=sf.index[(sf.month == 'NA') | (sf.district == 'NA')])
 sf.month = sf.month.map(dict(zip(calendar.month_name[1:13], range(1, 13))))
 sf.item_code = sf.item_code.astype(int)
 sf['fac_type_tlo'] = sf['fac_type_tlo'].str.replace("Facility_level_", "")
-sf.to_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv", index=False)
+
+# Do some mapping to make the Districts line-up with the definition of Districts in the model
+rename_and_collapse_to_model_districts = {
+    'Nkhota Kota': 'Nkhotakota',
+    'Mzimba South': 'Mzimba',
+    'Mzimba North': 'Mzimba',
+    'Nkhata bay': 'Nkhata Bay',
+}
+
+sf['district_std'] = sf['district'].replace(rename_and_collapse_to_model_districts)
+# Take averages (now that 'Mzimba' is mapped-to by both 'Mzimba South' and 'Mzimba North'.)
+sf = sf.groupby(by=['district_std', 'fac_type_tlo', 'month', 'item_code'])['available_prop'].mean().reset_index()
+
+# Fill in missing data:
+# 1) Cities to get same results as their respective regions
+copy_source_to_destination = {
+    'Mzimba': 'Mzuzu City',
+    'Lilongwe': 'Lilongwe City',
+    'Zomba': 'Zomba City',
+    'Blantyre': 'Blantyre City'
+}
+
+for source, destination in copy_source_to_destination.items():
+    new_rows = sf.loc[sf.district_std == source].copy()
+    new_rows.district_std = destination
+    sf = sf.append(new_rows)
+
+# 2) Fill in Likoma (for which no data) with the means
+means = sf.loc[sf.fac_type_tlo.isin(['1a', '1b', '2'])].groupby(by=['fac_type_tlo', 'month', 'item_code'])['available_prop'].mean().reset_index()
+new_rows = means.copy()
+new_rows['district_std'] = 'Likoma'
+sf = sf.append(new_rows)
+
+assert sorted(set(districts)) == sorted(set(pd.unique(sf.district_std)))
+
+
+# 3) copy the results for 'Mwanza/1b' to be equal to 'Mwanza/1a'.
+mwanza_1a = sf.loc[(sf.district_std == 'Mwanza') & (sf.fac_type_tlo == '1a')]
+mwanza_1b = sf.loc[(sf.district_std == 'Mwanza') & (sf.fac_type_tlo == '1a')].copy().assign(fac_type_tlo='1b')
+sf = sf.append(mwanza_1b)
+
+# 4) Copy all the results to create a level 0 with an availability equal to half that in the respective 1a
+all_1a = sf.loc[sf.fac_type_tlo == '1a']
+all_0 = sf.loc[sf.fac_type_tlo == '1a'].copy().assign(fac_type_tlo='0')
+all_0.available_prop *= 0.5
+sf = sf.append(all_0)
+
+# Now, merge-in facility_id
+sf_merge = sf.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
+              left_on=['district_std', 'fac_type_tlo'],
+              right_on=['District', 'Facility_Level'], how='left', indicator=True)
+
+
+# 5) Assign the Facility_IDs for those facilities that are regional/national level;
+# For facilities of level 3, find which region they correspond to:
+districts_with_regional_level_fac = pd.unique(sf_merge.loc[sf_merge.fac_type_tlo == '3'].district_std)
+district_to_region_mapping = dict()
+for _district in districts_with_regional_level_fac:
+    _region = mfl.loc[mfl.District == _district].Region.values[0]
+    _fac_id = mfl.loc[(mfl.Facility_Level == '3') & (mfl.Region == _region)].Facility_ID.values[0]
+    sf_merge.loc[(sf_merge.fac_type_tlo == '3') & (sf_merge.district_std == _district), 'Facility_ID'] = _fac_id
+
+# National Level
+fac_id_of_fac_level4 = mfl.loc[mfl.Facility_Level == '4'].Facility_ID.values[0]
+sf_merge.loc[sf_merge.fac_type_tlo == '4', 'Facility_ID'] = fac_id_of_fac_level4
+
+# Now, take averages because more than one set of records is forming the estimates for the level 3 facilities
+sf_final = sf_merge.groupby(by=['Facility_ID', 'month', 'item_code'])['available_prop'].mean().reset_index()
+
+# Check that we have a complete set of estimates, for every region & facility_type, as defined in the model.
+check_format_of_consumables_file(df=sf_final)
+
+# Save
+sf_final.to_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv", index=False)
+
+
+
+
 
 # --- 6.8 Checks that the exported file has the properties required of it by the model code. --- #
 
-# Check that we have a complete set of estimates, for every region & facility_type, as defined in the model.
-districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
-fac_levels = {'1a', '1b', '2', '3'}
 
-assert set(sf['district']) == districts, \
-    "Districts defined in the file do not match the definitions in the model."
-assert set(sf['fac_type_tlo']) == fac_levels, \
-    "Facility Levels defined in the file do not match the definitions in the model."
-
-any_entry = (sf.groupby(by=['district', 'fac_type_tlo']).size() > 0).unstack().fillna(False)
-assert any_entry[['1a', '1b', '2']].all().all(), \
-    "There are some regions and facility-types combinations for which no estimates are given."
 
 
 # 8. CALIBRATION TO HHFA DATA, 2018/19 ##
