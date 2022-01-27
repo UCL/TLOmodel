@@ -469,16 +469,20 @@ for var in ['district', 'fac_name', 'month']:
 stkout_df.to_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
 
 stkout_df = stkout_df.drop(index=stkout_df.index[pd.isnull(stkout_df.available_prop)])
-assert (stkout_df.available_prop >= 0.0).all()
-assert (stkout_df.available_prop <= 1.0).all()
+assert (stkout_df.available_prop >= 0.0).all(), "Negative values!?"
+assert (stkout_df.available_prop <= 1.0).all(), "Values greater than 1.0 !?"
 print(stkout_df.loc[(~(stkout_df.available_prop >= 0.0)) | (~(stkout_df.available_prop <= 1.0))].available_prop)
+
+assert stkout_df.duplicated(['fac_type_tlo',  'district', 'month', 'item_code']).any(), "Duplicates?!"
+
+stkout_df.loc[stkout_df.duplicated(['fac_type_tlo',  'district', 'month', 'item_code'])]
 
 # --- 6.7 Generate file for use in model run --- #
 # 1) Smaller file size
 # 2) Indexed by the 'Facility_ID' used in the model (which is an amalgmation of district and facility_level, defined in the Master Facilities List.
 
 # todo - why duplicates?????
-# todo - negatives
+
 # unify the set within each facility_id
 
 mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
