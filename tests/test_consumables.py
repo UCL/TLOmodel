@@ -343,7 +343,7 @@ def test_every_declared_consumable_for_every_possible_hsi_using_actual_data():
     #     for _disrict in sim.modules['Demography'].PROPERTIES['district_of_residence'].categories:
     #         # Change the district of person 0 (for whom the HSI is created.)
     #         sim.population.props.at[0, 'district_of_residence'] = _disrict
-    #         for _accepted_facility_level in (hs._facility_levels - {'4'}):
+    #         for _accepted_facility_level in (hs._facility_levels - {'5'}):
     #             for _item_code in cons.item_codes:
     #                 hsi_event = get_dummy_hsi_event_instance(
     #                     module=sim.modules['DummyModule'],
@@ -352,8 +352,9 @@ def test_every_declared_consumable_for_every_possible_hsi_using_actual_data():
     #                 hsi_event.get_consumables(item_codes=_item_code)
     #
     # assert not any_warnings_about_item_code(recorded_warnings)
+    # todo - elaborate for changing month!
 
-    print("****THIS IS PENDING****")
+    print("****THIS IS PENDING HAVING A WORKING RESOURCEFILE****")
     pass
 
 
@@ -399,4 +400,3 @@ def test_get_item_codes_from_package_name():
             pd.Series(_item_codes).sort_index(),
             check_names=False
         )
-
