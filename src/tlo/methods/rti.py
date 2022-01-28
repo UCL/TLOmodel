@@ -2894,7 +2894,7 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
                             # if they have sought medical care and it hasn't been provided, we need to make sure only
                             # the untreated injuries have a recovery date assigned here
                             code_has_recovery_time = code in self.module.NO_TREATMENT_RECOVERY_TIMES_IN_DAYS.keys()
-                            code_is_left_untreated in df.loc[person, 'rt_injuries_left_untreated']
+                            code_is_left_untreated = code in df.loc[person, 'rt_injuries_left_untreated']
                             if code_has_recovery_time & code_is_left_untreated:
                                 df.loc[person, 'rt_date_to_remove_daly'][columns] = \
                                     self.sim.date + DateOffset(
