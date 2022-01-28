@@ -42,7 +42,7 @@ extracted = extract_results(
     key="deviance_measure",
     column="deviance_measure",
 )
-extracted.to_csv(outputspath / ("full_LHC_outputs" + ".csv"))
+extracted.to_csv(outputspath / ("full_LHC_outputs2" + ".csv"))
 
 # 3) Get summary of the results for that log-element
 res = summarize(extracted, only_mean=True).iloc[-1]
@@ -52,7 +52,7 @@ res.name = "z"
 params['draw'] = params.index
 combined_output = params.pivot(index="draw", columns="module_param", values="value")
 combined_output["deviance"] = res.values
-combined_output.to_csv(outputspath / ("LHC_outputs" + ".csv"))
+combined_output.to_csv(outputspath / ("LHC_outputs2" + ".csv"))
 
 
 # plot the deviance against parameters

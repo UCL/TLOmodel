@@ -87,21 +87,9 @@ sim.modules["Tb"].parameters["tb_high_risk_distr"] = pd.read_excel(
     resourcefilepath / "ResourceFile_TB.xlsx", sheet_name="all_districts"
 )
 
-# change tb mixing parameter to allow more between-district transmission
-# sim.modules["Tb"].parameters["mixing_parameter"] = 1
-# sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 1.5
-# sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.998
-
 # todo remove
-sim.modules["Hiv"].parameters["beta"] = 0.1
-sim.modules["Tb"].parameters["transmission_rate"] = 2.28
-
-# sim.modules["Hiv"].parameters["rr_start_art_if_aids_symptoms"] = 5
-# sim.modules["Hiv"].parameters["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 1.0
-
-# drugs and appts should always be available as health system disabled to remove constraints
-# sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1
-# sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_appointment_not_available"] = 1
+sim.modules["Hiv"].parameters["beta"] = 0.127623113
+sim.modules["Tb"].parameters["transmission_rate"] = 1.798219139
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
