@@ -4791,27 +4791,10 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 ['Treated injury code not removed', self.treated_code]
             df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
         else:
-            # If the surgery was a life-saving surgery, then send them to RTI_No_Medical_Intervention_Death_Event
-            life_threatening_injuries = ['133a', '133b', '133c', '133d', '134a', '134b', '135',  # TBI
-                                         '112',  # Depressed skull fracture
-                                         'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135',  # Perm TBI
-                                         '342', '343', '361', '363',  # Injuries to neck
-                                         '414', '441', '443', '463', '453a', '453b',  # Severe chest trauma
-                                         '782b',  # Unilateral arm amputation
-                                         '783',  # Bilateral arm amputation
-                                         '883',  # Unilateral lower limb amputation
-                                         '884',  # Bilateral lower limb amputation
-                                         '552', '553', '554'  # Internal organ injuries
-                                         ]
-            if (self.treated_code in life_threatening_injuries) & df.loc[person_id, 'is_alive']:
-                self.sim.schedule_event(RTI_No_Lifesaving_Medical_Intervention_Death_Event(self.module, person_id),
-                                        self.sim.date)
-            else:
-                self.module.rti_do_for_major_surgeries(person_id=person_id,
-                                                       count=len(df.loc[person_id, 'rt_injuries_for_major_surgery']))
-                if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
-                    df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
-                # schedule in a recovery date that is a week in the future
+            self.module.rti_do_for_major_surgeries(person_id=person_id,
+                                                   count=len(df.loc[person_id, 'rt_injuries_for_major_surgery']))
+            if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
+                df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
             return hs.get_blank_appt_footprint()
 
     def did_not_run(self, person_id):
@@ -5106,28 +5089,36 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
         self.prob_death_TBI_SCI_no_treatment = p['prob_death_TBI_SCI_no_treatment']
         self.prob_death_fractures_no_treatment = p['prob_death_fractures_no_treatment']
         self.prop_death_burns_no_treatment = p['prop_death_burns_no_treatment']
+        self.prob_death_MAIS3 = p['prob_death_MAIS3']
+        self.prob_death_MAIS4 = p['prob_death_MAIS4']
+        self.prob_death_MAIS5 = p['prob_death_MAIS5']
+        self.prob_death_MAIS6 = p['prob_death_MAIS6']
+
         self.allowed_interventions = p['allowed_interventions']
 
     def apply(self, person_id):
-        # self.scheduled_death = 0
-        df = self.sim.population.props
-        # create a dictionary to store the injuries and corresponding probability of death for untreated injuries
-        untreated_dict = {'non-lethal': [['241', '291', '322', '323', '461', '442', '1101', '2101', '3101', '4101',
-                                          '5101', '7101', '8101', '722', '822a', '822b'], 0],
-                          'severe': [['133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135', '342', '343',
-                                      '361', '363', '414', '441', '443', '453a', '453b', '463', '552', '553', '554',
-                                      '673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676',
-                                      '782a', '782b', '782c', '783', '882', '883', '884', 'P133', 'P133a', 'P133b',
-                                      'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135', 'P673', 'P673a', 'P673b',
-                                      'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676', 'P782a', 'P782b',
-                                      'P782c', 'P783', 'P882', 'P883', 'P884', '813bo', '813co', '813do', '813eo'],
-                                     self.prob_death_TBI_SCI_no_treatment],
-                          'fracture': [['112', '113', '211', '212', '412', '612', '712', '712a', '712b', '712c', '811',
-                                        '812', '813', '813a', '813b', '813c'], self.prob_death_fractures_no_treatment],
-                          'burn': [['1114', '2114', '3113', '4113', '5113', '7113', '8113'],
-                                   self.prop_death_burns_no_treatment]
-                          }
+        probabilities_of_death = {
+            '1': 0,
+            '2': 0,
+            '3': self.prob_death_MAIS3,
+            '4': self.prob_death_MAIS4,
+            '5': self.prob_death_MAIS5,
+            '6': self.prob_death_MAIS6
+        }
+        life_threatening_injuries = ['133a', '133b', '133c', '133d', '134a', '134b', '135',  # TBI
+                                     '112',  # Depressed skull fracture
+                                     'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135',  # Perm TBI
+                                     '342', '343', '361', '363',  # Injuries to neck
+                                     '414', '441', '443', '463', '453a', '453b',  # Severe chest trauma
+                                     '782b',  # Unilateral arm amputation
+                                     '783',  # Bilateral arm amputation
+                                     '883',  # Unilateral lower limb amputation
+                                     '884',  # Bilateral lower limb amputation
+                                     '552', '553', '554'  # Internal organ injuries
+                                     ]
 
+        df = self.sim.population.props
+        untreated_injuries = []
         persons_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         non_empty_injuries = persons_injuries[persons_injuries != "none"]
         non_empty_injuries = non_empty_injuries.dropna(axis=1)
@@ -5160,34 +5151,16 @@ class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeE
             condition_to_remove_column = injury_treated_elsewhere or injury_not_treated_by_major_surgery
             if condition_to_remove_column:
                 non_empty_injuries = non_empty_injuries.drop(col, axis=1)
-
-        untreated_injuries = []
-        life_threatening_injuries = ['133a', '133b', '133c', '133d', '134a', '134b', '135',  # TBI
-                                     '112',  # Depressed skull fracture
-                                     'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135',  # Perm TBI
-                                     '342', '343', '361', '363',  # Injuries to neck
-                                     '414', '441', '443', '463', '453a', '453b',  # Severe chest trauma
-                                     '782b',  # Unilateral arm amputation
-                                     '783',  # Bilateral arm amputation
-                                     '883',  # Unilateral lower limb amputation
-                                     '884',  # Bilateral lower limb amputation
-                                     '552', '553', '554'  # Internal organ injuries
-                                     ]
-        # Find which injuries are left untreated by finding injuries which haven't been set a recovery time
         for col in non_empty_injuries:
             if pd.isnull(df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1]):
                 untreated_injuries.append(df.at[person_id, col])
-        # people can have multiple untreated injuries, most serious injury will be used to determine the likelihood of
-        # their passing, so create an empty list to store probabilities of death associated with this person's untreated
-        # injury and take the max value
-        # filter out injuries which won't be life threatening if not treated
         untreated_injuries = [code for code in untreated_injuries if code in life_threatening_injuries]
-        prob_deaths = [0]
+        mais_scores = [1]
         for injury in untreated_injuries:
-            for severity_level in untreated_dict:
-                if injury in untreated_dict[severity_level][0]:
-                    prob_deaths.append(untreated_dict[severity_level][1])
-        prob_death = max(prob_deaths)
+            mais_scores.append(self.module.ASSIGN_INJURIES_AND_DALY_CHANGES[injury][0][-1])
+        max_untreated_injury = max(mais_scores)
+        prob_death = probabilities_of_death[str(max_untreated_injury)]
+
         randfordeath = self.module.rng.random_sample(size=1)
         if randfordeath < prob_death:
             df.loc[person_id, 'rt_unavailable_med_death'] = True
