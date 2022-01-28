@@ -1105,6 +1105,8 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
 
         p = self.module.parameters
+        # consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        hs = self.sim.modules["HealthSystem"]
         scenario = p["scenario"]
 
         logger.debug(
@@ -1115,9 +1117,16 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 0:
             return
 
+        # change IPT eligibility to all years
         if scenario == 2:
-            # change IPT eligibility to all years
             p["age_eligibility_for_ipt"] = 100
+
+        # change first-line paediatric treatment to shorter duration
+        # todo this will change options for ALL children, not just minimal TB cases
+        if scenario == 5:
+            self.module.item_codes_for_consumables_required['tb_tx_child'] = \
+                hs.get_item_codes_from_package_name(
+                    "First line treatment for new TB cases for children shorter")
 
 
 class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):

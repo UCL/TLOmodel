@@ -36,8 +36,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 50000
+end_date = Date(2014, 1, 1)
+popsize = 1000
 
 # set up the log config
 log_config = {
@@ -83,6 +83,9 @@ sim.register(
 sim.modules["Tb"].parameters["tb_high_risk_distr"] = pd.read_excel(
     resourcefilepath / "ResourceFile_TB.xlsx", sheet_name="all_districts"
 )
+
+# choose the scenario, 0=baseline, 5=shorter paediatric treatment
+sim.modules["Tb"].parameters["scenario"] = 0
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
