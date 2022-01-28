@@ -46,8 +46,9 @@ log_config = {
     "custom_levels": {
         "*": logging.WARNING,
         "tlo.methods.hiv": logging.INFO,
-        "tlo.methods.tb": logging.DEBUG,
+        "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
+        "tlo.methods.healthsystem": logging.INFO,
     },
 }
 
@@ -66,7 +67,7 @@ sim.register(
         cons_availability="all",  # mode for consumable constraints (if ignored, all consumables available)
         ignore_priority=True,  # do not use the priority information in HSI event to schedule
         capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
-        disable=True,  # disables the healthsystem (no constraints and no logging) and every HSI runs
+        disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
         disable_and_reject_all=False,  # disable healthsystem and no HSI runs
         store_hsi_events_that_have_run=False,  # convenience function for debugging
     ),
