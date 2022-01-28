@@ -1830,10 +1830,10 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             district = person["district_of_residence"]
             ipt = self.module.parameters["ipt_coverage"]
             ipt_year = ipt.loc[ipt.year == self.sim.date.year]
-            ipt_coverage_paed = ipt_year.coverage_paediatric
+            ipt_coverage_paed = ipt_year.coverage_paediatric.values[0]
 
             if (district in p["tb_high_risk_distr"].district_name.values) & (
-                self.module.rng.rand() < ipt_coverage_paed[0]
+                self.module.rng.rand() < ipt_coverage_paed
             ):
                 # randomly sample from eligible population within district
                 ipt_eligible = df.loc[
