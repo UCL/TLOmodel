@@ -536,7 +536,7 @@ class LogsDict(dict):
         else:
             return KeyError
 
-    def has_key(self, k):
+    def key_in_logs_dict(self, k):
         # return true if key is found in module specific log files dictionary else return false
         return k in self.logfile_names_and_paths
 

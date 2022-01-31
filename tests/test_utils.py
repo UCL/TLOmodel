@@ -1,15 +1,13 @@
 """Unit tests for utility functions."""
 import os
 from pathlib import Path
-from typing import Dict
-
 import numpy as np
 import pandas as pd
 import pytest
 
 import tlo.util
 from tlo import Date, Simulation
-from tlo.analysis.utils import LogsDict, parse_log_file
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography
 
 
@@ -240,7 +238,7 @@ def test_logs_parsing(tmpdir):
     output = parse_log_file(file_path)
 
     # check parse_log_file methods worked as expected - expected keys has to be in the LogsDict class
-    assert output.has_key('tlo.methods.demography')
+    assert output.key_in_logs_dict('tlo.methods.demography')
 
     # check that metadata is within the selected key
     assert '_metadata' in output['tlo.methods.demography'].keys()
