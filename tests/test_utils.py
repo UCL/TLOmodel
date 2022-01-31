@@ -1,15 +1,13 @@
 """Unit tests for utility functions."""
 import os
 from pathlib import Path
-from typing import Dict
-
 import numpy as np
 import pandas as pd
 import pytest
 
 import tlo.util
 from tlo import Date, Simulation
-from tlo.analysis.utils import LogsDict, parse_log_file
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography
 
 
