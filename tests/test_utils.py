@@ -240,7 +240,7 @@ def test_logs_parsing(tmpdir):
     output = parse_log_file(file_path)
 
     # check parse_log_file methods worked as expected - expected keys has to be in the LogsDict class
-    assert output.has_key('tlo.methods.demography')
+    assert 'tlo.methods.demography' in output
 
     # check that metadata is within the selected key
     assert '_metadata' in output['tlo.methods.demography'].keys()

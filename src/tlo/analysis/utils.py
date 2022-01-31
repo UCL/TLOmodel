@@ -536,9 +536,9 @@ class LogsDict(dict):
         else:
             return KeyError
 
-    def has_key(self, k):
-        # return true if key is found in module specific log files dictionary else return false
-        return k in self.logfile_names_and_paths
+    def __contains__(self, k):
+        # return true if key is found in module specific log files dictionary else return KeyError
+        return True if k in self.logfile_names_and_paths else KeyError
 
     def update(self, *args, **kwargs):
         raise NotImplementedError

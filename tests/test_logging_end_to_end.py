@@ -173,7 +173,7 @@ class TestParseLogAtLoggingLevel:
     def test_same_level(self, log_path):
         parsed_log = parse_log_file(log_path, level=logging.INFO)
 
-        assert parsed_log.has_key('tlo.test')
+        assert 'tlo.test' in parsed_log
 
     def test_parse_log_at_higher_level(self, log_path):
         parsed_log = parse_log_file(log_path, level=logging.CRITICAL)
@@ -183,4 +183,4 @@ class TestParseLogAtLoggingLevel:
     def test_parse_log_at_lower_level(self, log_path):
         parsed_log = parse_log_file(log_path, level=logging.DEBUG)
 
-        assert parsed_log.has_key('tlo.test')
+        assert 'tlo.test' in parsed_log
