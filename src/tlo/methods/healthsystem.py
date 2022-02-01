@@ -31,7 +31,8 @@ class FacilityInfo(NamedTuple):
     """Information about a specific health facility."""
     id: int
     name: str
-
+    level: str
+    region: str
 
 class AppointmentSubunit(NamedTuple):
     """Component of an appointment relating to a specific officer type."""
@@ -395,7 +396,9 @@ class HealthSystem(Module):
                 facilities_per_level_and_district[facility_tuple.Facility_Level][facility_tuple.District] = \
                     FacilityInfo(
                         id=facility_tuple.Facility_ID,
-                        name=facility_tuple.Facility_Name
+                        name=facility_tuple.Facility_Name,
+                        level=facility_tuple.Facility_Level,
+                        region=facility_tuple.Region
                     )
 
             elif pd.isnull(facility_tuple.District) and pd.notnull(facility_tuple.Region):
@@ -404,7 +407,9 @@ class HealthSystem(Module):
                     facilities_per_level_and_district[facility_tuple.Facility_Level][_district] = \
                         FacilityInfo(
                             id=facility_tuple.Facility_ID,
-                            name=facility_tuple.Facility_Name
+                            name=facility_tuple.Facility_Name,
+                            level=facility_tuple.Facility_Level,
+                            region=facility_tuple.Region
                         )
 
             elif (
@@ -417,7 +422,9 @@ class HealthSystem(Module):
                     facilities_per_level_and_district[facility_tuple.Facility_Level][_district] = \
                         FacilityInfo(
                             id=facility_tuple.Facility_ID,
-                            name=facility_tuple.Facility_Name
+                            name=facility_tuple.Facility_Name,
+                            level=facility_tuple.Facility_Level,
+                            region=facility_tuple.Region
                         )
 
         # Check that there is facility of every level for every district:
@@ -656,7 +663,7 @@ class HealthSystem(Module):
         # differ for each instance of an HSI_Event subclass even when their other
         # attributes are shared
         if not isinstance(hsi_event.target, tlo.population.Population):
-            footprint = self.get_appt_footprint_as_time_request(hsi_event=hsi_event)
+            footprint = hsi_event._cached_time_requests
             if not self._officers_with_availability.issuperset(footprint.keys()):
                 logger.warning(
                     key="message",
@@ -700,6 +707,11 @@ class HealthSystem(Module):
 
             # Write the facility_id at which this HSI will occur:
             hsi_event._facility_id = self.get_facility_info(hsi_event)
+
+            # Write the time requirements for staff of the appointments to the HSI:
+            hsi_event._cached_time_requests = self._get_appt_footprint_as_time_request(
+                appt_footprint=hsi_event.EXPECTED_APPT_FOOTPRINT, facility_id=hsi_event._facility_id
+            )
 
             # Create a tuple to go into the heapq
             # (NB. the sorting is done ascending and by the order of the items in the tuple)
@@ -855,70 +867,53 @@ class HealthSystem(Module):
         # district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL
         return self._facilities_for_each_district[the_level][the_district]
 
-    def get_appt_footprint_as_time_request(self, hsi_event, actual_appt_footprint=None):
+    def _get_appt_footprint_as_time_request(self, facility_id, appt_footprint):
         """
-        This will take an HSI event and return the required appointments in terms of the
+        This will take an APPT_FOOTPRINT and return the required appointments in terms of the
         time required of each Officer Type in each Facility ID.
         The index will identify the Facility ID and the Officer Type in the same format
         as is used in Daily_Capabilities.
-
-        :param hsi_event: The HSI event
-        :param actual_appt_footprint: The actual appt footprint (optional) if different
+        :params facility_id: The facility_id at which the appointment occurs
+        :param appt_footprint: The actual appt footprint (optional) if different
             to that in the HSI event.
         :return: A Counter that gives the times required for each officer-type in each
             facility_ID, where this time is non-zero.
         """
-        # If specified use actual_appt_footprint otherwise use EXPECTED_APPT_FOOTPRINT
-        the_appt_footprint = (
-            hsi_event.EXPECTED_APPT_FOOTPRINT if actual_appt_footprint is None else
-            actual_appt_footprint
-        )
-        # Check in time request cache in event if a time request corresponding to the
-        # current relevant event attributes and appointment footprint has previously
-        # been stored, and if so return this
-        cache_key = (
-            hsi_event.target,
-            hsi_event.ACCEPTED_FACILITY_LEVEL,
-            tuple(the_appt_footprint)
-        )
-        cached_time_request = hsi_event._cached_time_requests.get(cache_key)
-        if cached_time_request is not None:
-            return cached_time_request
 
-        # No entry in cache so compute time request
-
-        # Appointment times for each facility and officer combination
-        appt_times = self._appt_times
-
-        # Facility level required by this event
-        the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
-
-        # Get the (one) health_facility available to this person (based on their
-        # district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL:
-        the_facility = self.get_facility_info(hsi_event)
+        the_facility_level = self._get_info_about_facility(facility_id)['level']
 
         # Accumulate appointment times for specified footprint using times from
         # appointment times table
+        # Appointment times for each facility and officer combination
+        appt_times = self._appt_times
+
         appt_footprint_times = Counter()
-        for appt_type in the_appt_footprint:
+        for appt_type in appt_footprint:
             try:
                 appt_info_list = appt_times[the_facility_level][appt_type]
             except KeyError as e:
                 raise KeyError(
-                    f"The time needed for this appointment is not defined for the specified facility level: "
-                    f"TREATMENT_ID={hsi_event.TREATMENT_ID}, "
+                    f"The time needed for an appointment is not defined for the specified facility level: "
                     f"appt_type={appt_type}, "
                     f"facility_level={the_facility_level}."
                 ) from e
+
             for appt_info in appt_info_list:
                 appt_footprint_times[
-                    f"FacilityID_{the_facility.id}_Officer_{appt_info.officer_type}"
+                    f"FacilityID_{facility_id.id}_Officer_{appt_info.officer_type}"
                 ] += appt_info.time_taken
 
-        # Cache the time request to avoid having to recompute on subsequent calls
-        hsi_event._cached_time_requests[cache_key] = appt_footprint_times
-
         return appt_footprint_times
+
+    def _get_info_about_facility(self, facility_id: int):
+        """Return information about a particular facility_id."""
+        facility_info = self.parameters['Master_Facilities_List'].set_index('Facility_ID').loc[facility_id] # todo should should be the index already!
+        return FacilityInfo(
+            id=facility_id,
+            name=facility_info.Facility_Name,
+            level=facility_info.Facility_Level,
+            region=facility_info.Region
+        )
 
     def get_squeeze_factors(self, footprints_per_event, total_footprint, current_capabilities):
         """
@@ -1169,6 +1164,19 @@ class HealthSystem(Module):
         return pd.unique(consumables.loc[consumables["Items"] == item, "Item_Code"])[0]
 
 
+
+
+class Facility:
+    """This class represents one particular Facility and the human resources, consumables, and beds it has available."""
+    def __init__(self, facility_id):
+        self.facility_id = facility_id
+
+        # Define the container for calls for health system interaction events
+        self.HSI_EVENT_QUEUE = []
+        self.hsi_event_queue_counter = 0  # Counter to help with the sorting in the heapq
+
+
+
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
     This is the HealthSystemScheduler. It is an event that occurs every day, inspects the calls on the healthsystem
@@ -1282,7 +1290,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # each officer-type in each facility_id.
 
             footprints_of_all_individual_level_hsi_event = [
-                self.module.get_appt_footprint_as_time_request(hsi_event=(event_tuple.hsi_event))
+                event_tuple.hsi_event._cached_time_requests
                 for event_tuple in list_of_individual_hsi_event_tuples_due_today
             ]
 
@@ -1342,7 +1350,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         assert self.module.appt_footprint_is_valid(actual_appt_footprint)
 
                         # Update load factors:
-                        updated_call = self.module.get_appt_footprint_as_time_request(
+                        updated_call = self.module._get_appt_footprint_as_time_request(
                             event, actual_appt_footprint)
                         original_call = footprints_of_all_individual_level_hsi_event[ev_num]
                         footprints_of_all_individual_level_hsi_event[ev_num] = updated_call
@@ -1434,7 +1442,7 @@ class HSI_Event:
         # Private information about this HSI
         self._received_info_about_bed_days = None
         self._cached_time_requests = {}
-        self._facility_id = None   # todo write to this at scheduler
+        self._facility_id = None
 
     @property
     def bed_days_allocated_to_this_event(self):
@@ -1572,6 +1580,11 @@ class HSI_Event:
             "values"
         )
 
+    def _initialise(self):
+        """Initialise the HSI:
+        * Set the facility_id
+        * Compute time requirements
+        """
 
 class HSIEventWrapper(Event):
     """This is wrapper that contains an HSI event.
