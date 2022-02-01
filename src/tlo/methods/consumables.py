@@ -93,6 +93,7 @@ class Consumables:
 
         :param facility_id: The facility_id from which the request for consumables originates
         :param item_codes: dict of the form {<item_code>: <quantity>} for the items requested
+        :param optional_item_codes: di
         :param to_log: whether the request is logged.
         :return:
         """

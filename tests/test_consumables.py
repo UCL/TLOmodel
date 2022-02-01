@@ -23,7 +23,7 @@ def any_warnings_about_item_code(recorded_warnings):
 
 
 def test_using_recognised_item_codes():
-    """Test the functionality of the `Consumables` class using an idealised data on items."""
+    """Test the functionality of the `Consumables` class with a recognising item_code."""
     # Prepare inputs for the Consumables class (normally provided by the `HealthSystem` module).
     data = create_dummy_data_for_cons_availability(
         intrinsic_availability={0: 0.0, 1: 1.0},
@@ -220,7 +220,7 @@ def get_dummy_hsi_event_instance(module, accepted_facility_level='1a'):
     return HSI_Dummy(module=module, person_id=0)
 
 
-def test_use_get_consumables_by_hsi():
+def test_use_get_consumables_by_hsi_method_get_consumables():
     """Test that the helper function 'get_consumables' in the base class of the HSI works as expected with different
     forms of input for item_codes."""
 
@@ -261,6 +261,35 @@ def test_use_get_consumables_by_hsi():
     )
     assert {item_code_is_available[0]: True, item_code_not_available[0]: False} == hsi_event.get_consumables(
         item_codes={item_code_is_available[0]: 10, item_code_not_available[0]: 10},
+        return_individual_results=True
+    )
+
+    #  Using `optional_item_codes` argument in the `get_consumables` method on the HSI Base Class should result in those
+    #  consumables being checked for availability (and the requet logged), but the availability/non-availability of
+    #  these items does not affect the summary result (a `bool` returned indicating availability/non-availability of the
+    #  items reuested). This is useful when a large set of items may be used, but the viability of a subsequent
+    #  operation depends only on a subset.
+
+    # Request both consumables in usual fashion: as one in not available, overall result is False
+    assert False is hsi_event.get_consumables(item_codes=[item_code_is_available[0], item_code_not_available[0]])
+
+    # Make request with the non-available consumable being optional: as the non-optional one is available, result is True
+    assert True is hsi_event.get_consumables(item_codes=item_code_is_available[0],
+                                             optional_item_codes=item_code_not_available[0])
+
+    # Make request with the non-available consumable being non-optional: result is False
+    assert False is hsi_event.get_consumables(item_codes=item_code_not_available[0],
+                                              optional_item_codes=item_code_is_available[0])
+
+    # If the only consumables requested are optional, then the result is always True
+    assert True is hsi_event.get_consumables(item_codes=[], optional_item_codes=item_code_not_available[0])
+    assert True is hsi_event.get_consumables(item_codes=None, optional_item_codes=item_code_not_available[0])
+    assert True is hsi_event.get_consumables(optional_item_codes=item_code_not_available[0])
+
+    # Check that option `return_individual_results` works as expected when using `optional_item_codes`
+    assert {item_code_is_available[0]: True, item_code_not_available[0]: False} == hsi_event.get_consumables(
+        item_codes=item_code_is_available[0],
+        optional_item_codes=item_code_not_available[0],
         return_individual_results=True
     )
 
