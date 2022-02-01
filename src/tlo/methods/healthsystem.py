@@ -1342,7 +1342,7 @@ class HSI_Event:
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
         self._received_info_about_bed_days = None
         self._cached_time_requests = {}
-        self._facility_id = 1  # todo - write this when it gets added to scheduler
+        self._facility_id = None  # todo - write this when it gets added to scheduler
 
     @property
     def bed_days_allocated_to_this_event(self):
