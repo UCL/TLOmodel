@@ -185,10 +185,10 @@ def test_baby_born_has_no_symptoms():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + DateOffset(days=1))
 
-    # do a birth
+    # do a birth (from a randomly chosen mother)
     df = sim.population.props
-
     mother_id = df.loc[df.sex == 'F'].index[0]
+    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date - DateOffset(months=9)
 
     person_id = sim.do_birth(mother_id)
 

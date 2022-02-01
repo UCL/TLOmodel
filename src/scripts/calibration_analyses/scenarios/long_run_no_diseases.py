@@ -20,17 +20,20 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2099, 12, 31)
-        self.pop_size = 20_000  # <- recommended population size for the runs
+        self.end_date = Date(2049, 12, 31)
+        self.pop_size = 50_000  # <- recommended population size for the runs is 50k
         self.number_of_draws = 1  # <- one scenario
-        self.runs_per_draw = 1  # <- repeated this many times
+        self.runs_per_draw = 5  # <- repeated this many times
 
     def log_configuration(self):
         return {
             'filename': 'long_run_no_diseases',  # <- (specified only for local running)
             'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
-                '*': logging.INFO,
+                '*': logging.WARNING,
+                'tlo.methods.population': logging.INFO,
+                'tlo.methods.demography': logging.INFO,
+                'tlo.methods.contraception': logging.INFO
             }
         }
 
@@ -40,7 +43,8 @@ class LongRun(BaseScenario):
             demography.Demography(resourcefilepath=self.resources),
 
             # - Contraception and replacement for Labour etc.
-            contraception.Contraception(resourcefilepath=self.resources, use_healthsystem=False),
+            contraception.Contraception(resourcefilepath=self.resources,
+                                        use_healthsystem=False),
             contraception.SimplifiedPregnancyAndLabour(),
 
             # - Supporting Modules required by Contraception

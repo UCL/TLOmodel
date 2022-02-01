@@ -346,7 +346,7 @@ class Module:
 
         This is called by the simulation whenever a new person is born.
 
-        :param mother: the mother for this child
+        :param mother: the mother for this child (can be -1 if the mother is not identified).
         :param child: the new child
         """
         raise NotImplementedError
