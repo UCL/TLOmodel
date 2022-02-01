@@ -698,6 +698,9 @@ class HealthSystem(Module):
         # If all is correct and the hsi event is allowed then add this request to the queue of HSI_EVENT_QUEUE
         if allowed:
 
+            # Write the facility_id at which this HSI will occur:
+            hsi_event._facility_id = self.get_facility_info(hsi_event)
+
             # Create a tuple to go into the heapq
             # (NB. the sorting is done ascending and by the order of the items in the tuple)
             # Pos 0: priority,
@@ -1427,8 +1430,11 @@ class HSI_Event:
         self.ACCEPTED_FACILITY_LEVEL = None
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
+
+        # Private information about this HSI
         self._received_info_about_bed_days = None
         self._cached_time_requests = {}
+        self._facility_id = None   # todo write to this at scheduler
 
     @property
     def bed_days_allocated_to_this_event(self):
