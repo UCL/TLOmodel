@@ -37,8 +37,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 50000
+end_date = Date(2014, 1, 1)
+popsize = 150000
 
 # set up the log config
 log_config = {
@@ -46,7 +46,7 @@ log_config = {
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
-        "tlo.methods.deviance_measure": logging.INFO,
+        # "tlo.methods.deviance_measure": logging.INFO,
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
@@ -79,7 +79,7 @@ sim.register(
     epi.Epi(resourcefilepath=resourcefilepath),
     hiv.Hiv(resourcefilepath=resourcefilepath),
     tb.Tb(resourcefilepath=resourcefilepath),
-    deviance_measure.Deviance(resourcefilepath=resourcefilepath),
+    # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
 
 # change IPT high-risk districts to all districts for national-level model

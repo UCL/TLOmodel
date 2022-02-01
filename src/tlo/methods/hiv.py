@@ -536,12 +536,12 @@ class Hiv(Module):
         # prob of infection based on age and sex in baseline year (2010:
         prevalence_db = params["hiv_prev"]
         prev_2010 = prevalence_db.loc[
-            prevalence_db.year == 2010, ["age_from", "sex", "prevalence_simplified"]
+            prevalence_db.year == 2010, ["age_from", "sex", "prop_hiv_mw2021_v14"]
         ]
         prev_2010 = prev_2010.rename(columns={"age_from": "age_years"})
         prob_of_infec = df.loc[df.is_alive, ["age_years", "sex"]].merge(
             prev_2010, on=["age_years", "sex"], how="left"
-        )["prevalence_simplified"]
+        )["prop_hiv_mw2021_v14"]
 
         # probability based on risk factors
         rel_prob_by_risk_factor = LinearModel.multiplicative(
@@ -788,7 +788,7 @@ class Hiv(Module):
         )
 
         # 2) Schedule the Logging Event
-        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=364))
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=0))
 
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
@@ -844,14 +844,15 @@ class Hiv(Module):
 
         # Schedule the AIDS death events for those who have got AIDS already
         for person_id in has_aids_idx:
+            # todo reset
             # schedule a HSI_Test_and_Refer otherwise initial AIDS rates and deaths are far too high
-            date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 60))
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
-                priority=1,
-                topen=date_test,
-                tclose=self.sim.date + pd.DateOffset(days=365),
-            )
+            # date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 60))
+            # self.sim.modules["HealthSystem"].schedule_hsi_event(
+            #     hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
+            #     priority=1,
+            #     topen=date_test,
+            #     tclose=self.sim.date + pd.DateOffset(days=365),
+            # )
 
             date_aids_death = (
                 self.sim.date + self.get_time_from_aids_to_death()

@@ -478,6 +478,14 @@ class Tb(Module):
             Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
         )
 
+        # linear model for risk of active tb in baseline population 2010
+        # need to cluster majority of cases in plhiv
+        self.lm["active_tb_2010"] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            (p["incidence_active_tb_2010_per100k"]/100000),
+            Predictor("hv_inf").when(True, p["rr_tb_aids"]),
+        )
+
         # adults progressing to active disease
         self.lm["active_tb"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
@@ -654,16 +662,25 @@ class Tb(Module):
         now = self.sim.date
         p = self.parameters
 
-        eligible_for_active_tb = df.loc[df.is_alive & (df.tb_inf == "uninfected")].index
+        # risk active tb determined by hiv status
+        prob_active = self.lm["active_tb_2010"].predict(
+            df.loc[df.is_alive & (df.tb_inf == "uninfected")]
+        )  # this will return pd.Series of probabilities of active infection for each person alive
 
-        sample_active_tb = self.rng.random_sample(len(eligible_for_active_tb)) < (
-            p["incidence_active_tb_2010_per100k"] / 100000
-        )
-        active_tb_idx = eligible_for_active_tb[sample_active_tb]
+        new_active = self.rng.random_sample(len(prob_active)) < prob_active
+        active_tb_idx = new_active[new_active].index
+        ###################################
+
+        # eligible_for_active_tb = df.loc[df.is_alive & (df.tb_inf == "uninfected")].index
+        #
+        # sample_active_tb = self.rng.random_sample(len(eligible_for_active_tb)) < (
+        #     p["incidence_active_tb_2010_per100k"] / 100000
+        # )
+        # active_tb_idx = eligible_for_active_tb[sample_active_tb]
 
         df.loc[active_tb_idx, "tb_strain"] = "ds"
 
-        # allocate some active infections as mdr-tb
+        # a]llocate some active infections as mdr-tb
         # from active_tb_idx - sample prop_mdr2010 and allocate as mdr
         sample_mdr = self.rng.random_sample(len(active_tb_idx)) < (p["prop_mdr2010"])
         active_mdr_tb_idx = active_tb_idx[sample_mdr]
