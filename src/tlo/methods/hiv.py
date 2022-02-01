@@ -1597,14 +1597,6 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
         if (df.at[person_id, "hv_art"] == "on_VL_suppressed") and (self.cause != 'AIDS_TB'):
             return
 
-        # need to discount some AIDS cases caused by HIV only
-        # as AIDS caused by TB is now modelled separately
-        # todo this should be delayed and not discounted
-        # if (self.cause == 'AIDS_non_TB') and (
-        #     self.module.rng.random_sample() < self.module.parameters['discount_aids_due_to_tb']
-        # ):
-        #     return
-
         # if eligible for aids onset (not treated with ART or currently has active TB):
         # Update Symptoms
         self.sim.modules["SymptomManager"].change_symptom(
@@ -1617,18 +1609,27 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
         # Schedule AidsDeath
         date_of_aids_death = self.sim.date + self.module.get_time_from_aids_to_death()
 
-        self.sim.schedule_event(
-            event=HivAidsDeathEvent(
-                person_id=person_id, module=self.module, cause=self.cause
-            ),
-            date=date_of_aids_death,
-        )
+        if self.cause == "AIDS_non_TB":
+            self.sim.schedule_event(
+                event=HivAidsDeathEvent(
+                    person_id=person_id, module=self.module, cause=self.cause
+                ),
+                date=date_of_aids_death,
+            )
+
+        else:
+            self.sim.schedule_event(
+                event=HivAidsTbDeathEvent(
+                    person_id=person_id, module=self.module, cause=self.cause
+                ),
+                date=date_of_aids_death,
+            )
 
 
 class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
     """
     Causes someone to die of AIDS, if they are not VL suppressed on ART.
-    if death scheduled by tb-aids, death dependent on tb treatment status
+    if death scheduled by tb-aids, death event is HivAidsTbDeathEvent
     """
 
     def __init__(self, module, person_id, cause):
@@ -1644,12 +1645,51 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
             return
 
         # Do nothing if person is now on ART and VL suppressed (non VL suppressed has no effect)
-        # and cause of death is not TB
-        if (df.at[person_id, "hv_art"] == "on_VL_suppressed") and (self.cause != 'AIDS_TB'):
+        # only if no current TB infection
+        if (df.at[person_id, "hv_art"] == "on_VL_suppressed") and (
+            df.at[person_id, "tb_inf"] != "active"):
+            return
+
+        # off ART, no TB infection
+        if (df.at[person_id, "hv_art"] != "on_VL_suppressed") and (
+            df.at[person_id, "tb_inf"] != "active"):
+            # cause is HIV (no TB)
+            self.sim.modules["Demography"].do_death(
+                individual_id=person_id,
+                cause="AIDS_non_TB",
+                originating_module=self.module,
+            )
+
+        # off ART, active TB infection
+        if (df.at[person_id, "hv_art"] != "on_VL_suppressed") and (
+            df.at[person_id, "tb_inf"] == "active"):
+            # cause is HIV_TB
+            self.sim.modules["Demography"].do_death(
+                individual_id=person_id,
+                cause="AIDS_TB",
+                originating_module=self.module,
+            )
+
+
+class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
+    """
+    Causes someone to die of AIDS-TB, death dependent on tb treatment status
+    """
+
+    def __init__(self, module, person_id, cause):
+        super().__init__(module, person_id=person_id)
+
+        self.cause = cause
+
+    def apply(self, person_id):
+        df = self.sim.population.props
+
+        # Check person is_alive
+        if not df.at[person_id, "is_alive"]:
             return
 
         # if aids-tb but on treatment for tb, reduce probability of death
-        if (self.cause == 'AIDS_TB') and df.at[person_id, 'tb_on_treatment']:
+        if (df.at[person_id, "tb_inf"] == "active") and df.at[person_id, 'tb_on_treatment']:
             prob = self.module.rng.rand()
 
             if prob < self.module.parameters["aids_tb_treatment_adjustment"]:
@@ -1658,18 +1698,22 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
                     cause="AIDS_TB",
                     originating_module=self.module,
                 )
+            else:
+                # reschedule the aids death event
+                date_of_aids_death = self.sim.date + self.module.get_time_from_aids_to_death()
 
-        elif (self.cause == "AIDS_TB") and not df.at[person_id, 'tb_on_treatment']:
+                self.sim.schedule_event(
+                    event=HivAidsDeathEvent(
+                        person_id=person_id, module=self.module, cause="AIDS_non_TB"
+                    ),
+                    date=date_of_aids_death,
+                )
+
+        # aids-tb and not on tb treatment
+        elif (df.at[person_id, "tb_inf"] == "active") and not df.at[person_id, 'tb_on_treatment']:
             # Cause the death to happen immediately, cause defined by TB status
             self.sim.modules["Demography"].do_death(
                 individual_id=person_id, cause="AIDS_TB", originating_module=self.module
-            )
-        else:
-            # cause is HIV (no TB) and not virally suppressed
-            self.sim.modules["Demography"].do_death(
-                individual_id=person_id,
-                cause="AIDS_non_TB",
-                originating_module=self.module,
             )
 
 
