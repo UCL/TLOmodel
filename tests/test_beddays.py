@@ -835,6 +835,7 @@ def test_bed_days_allocation_information_is_provided_to_HSI():
 
 
 def test_bed_days_association_with_appt_footprint():
+    """Check that helper function works which adds the in-patient admission appointment type to the APPT_FOOTPRINT. """
     _add_inpatient_admission_to_appt_footprint = BedDays(hs_module=None).add_inpatient_admission_to_appt_footprint
 
     footprint_without_inpatient_admission = {'Under5OPD': 1}
@@ -852,3 +853,6 @@ def test_bed_days_association_with_appt_footprint():
     # If the in-patient admission is wrong, then it is corrected:
     assert footprint_with_inpatient_admission == \
            _add_inpatient_admission_to_appt_footprint(footprint_with_inpatient_admission_wrongly)
+
+
+# todo test that `get_inpatient_appts` works as expected
