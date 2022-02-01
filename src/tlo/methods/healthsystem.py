@@ -614,6 +614,13 @@ class HealthSystem(Module):
                 # Correct formatted EXPECTED_APPT_FOOTPRINT
                 assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT)
 
+                # If there are bed-days specified, add (if needed) the in-patient admission Appointment Type.
+                # (HSI that require a bed for one or more days always need such an appointment, but this may have been
+                # missed in the declaration of the `EXPECTED_APPPT_FOOTPRINT` in the HSI.)
+                if sum(hsi_event.BEDDAYS_FOOTPRINT.values()):
+                    hsi_event.EXPECTED_APPT_FOOTPRINT = self.bed_days.add_inpatient_admission_to_appt_footprint(
+                        hsi_event.EXPECTED_APPT_FOOTPRINT)
+
                 # That it has an acceptable 'ACCEPTED_FACILITY_LEVEL' attribute
                 assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels, \
                     f"In the HSI with TREATMENT_ID={hsi_event.TREATMENT_ID}, the ACCEPTED_FACILITY_LEVEL (=" \
@@ -1429,6 +1436,7 @@ class HSI_Event:
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
         self._received_info_about_bed_days = None
         self._cached_time_requests = {}
+        self._facility_id = None  # todo - write this when it gets added to scheduler
 
     @property
     def bed_days_allocated_to_this_event(self):

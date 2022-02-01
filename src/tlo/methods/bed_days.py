@@ -389,3 +389,13 @@ class BedDays:
         df.loc[df.is_alive, "hs_is_inpatient"] = \
             (df.loc[df.is_alive, exit_cols].notnull() & (
                 df.loc[df.is_alive, exit_cols] >= self.hs_module.sim.date)).any(axis=1)
+
+    @staticmethod
+    def add_inpatient_admission_to_appt_footprint(appt_footprint):
+        """Return an APPT_FOOTPRINT with the addition (if not already present) of the in-patient admission appointment.
+        """
+
+        # Define the appointment type that should be present in any appt_footprint that includes bed-days:
+        IN_PATIENT_APPT_FOOTPRINT = {'IPAdmission': 1}
+
+        return {**appt_footprint, **IN_PATIENT_APPT_FOOTPRINT}

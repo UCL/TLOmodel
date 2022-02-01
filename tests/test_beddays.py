@@ -832,3 +832,23 @@ def test_bed_days_allocation_information_is_provided_to_HSI():
 
     # Return the information provided to the HSI
     assert {'bed_A': 1, 'bed_B': 5} == sim.modules['DummyModule'].hsi_event._received_info_about_bed_days
+
+
+def test_bed_days_association_with_appt_footprint():
+    _add_inpatient_admission_to_appt_footprint = BedDays(hs_module=None).add_inpatient_admission_to_appt_footprint
+
+    footprint_without_inpatient_admission = {'Under5OPD': 1}
+    footprint_with_inpatient_admission = {'Under5OPD': 1, 'IPAdmission': 1}
+    footprint_with_inpatient_admission_wrongly = {'Under5OPD': 1, 'IPAdmission': 99}
+
+    # If in-patient admission appointment is present already, no change is made:
+    assert footprint_with_inpatient_admission == \
+           _add_inpatient_admission_to_appt_footprint(footprint_with_inpatient_admission)
+
+    # If in-patient admission appointment is not present, is it added:
+    assert footprint_with_inpatient_admission == \
+           _add_inpatient_admission_to_appt_footprint(footprint_without_inpatient_admission)
+
+    # If the in-patient admission is wrong, then it is corrected:
+    assert footprint_with_inpatient_admission == \
+           _add_inpatient_admission_to_appt_footprint(footprint_with_inpatient_admission_wrongly)
