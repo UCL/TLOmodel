@@ -1203,6 +1203,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # - Update Bed Days trackers:
         self.module.bed_days.processing_at_start_of_new_day()
 
+        # - Get number of InPatientDay appointment types (by facility_id) that are required for in-patients
+        inpatient_appts = self.module.bed_days.get_inpatient_appts()
+
         # - Determine the availability of consumables today based on their probabilities
         self.module.determine_availability_of_consumables_today()
 
@@ -1274,6 +1277,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # 3) Get the capabilities that are available today and prepare dataframe to store all the calls for today
         current_capabilities = self.module.get_capabilities_today()
+
+        # 3.1) Subtract from the current_capabilities the time required to service the in-patient appointments
+        # (inpatient_appts).
+        # todo - this is pending the refactor of healthsystem (because currently haven't got the helper functions to enable this).
+
 
         if not list_of_individual_hsi_event_tuples_due_today:
             # Empty counter for log_current_capabilities call below

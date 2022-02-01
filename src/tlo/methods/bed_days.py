@@ -4,6 +4,7 @@ This is the Bed days class.
 It maintains a current record of the availability and usage of beds in the healthcare system.
 
 """
+import operator
 
 import pandas as pd
 
@@ -15,6 +16,10 @@ from tlo import Property, Types, logging
 
 logger = logging.getLogger('tlo.methods.healthsystem')
 
+# Define the appointment types that should be associated with the use of bed-days (of any type), for a given number of
+# patients
+IN_PATIENT_ADMISSION = lambda _num_pts: {'IPAdmission': _num_pts}
+IN_PATIENT_DAY = lambda _num_pts: {'InpatientDays': _num_pts}
 
 class BedDays:
     """
@@ -394,8 +399,18 @@ class BedDays:
     def add_inpatient_admission_to_appt_footprint(appt_footprint):
         """Return an APPT_FOOTPRINT with the addition (if not already present) of the in-patient admission appointment.
         """
+        return {**appt_footprint, **IN_PATIENT_ADMISSION(1)}
 
-        # Define the appointment type that should be present in any appt_footprint that includes bed-days:
-        IN_PATIENT_APPT_FOOTPRINT = {'IPAdmission': 1}
+    def get_inpatient_appts(self) -> dict:
+        """Return a dict of the {<facility_id>: APPT_FOOTPRINT} giving the total APPT_FOOTPRINT required for the
+        servicing of the in-patients (in beds of any types), by Facility_ID."""
 
-        return {**appt_footprint, **IN_PATIENT_APPT_FOOTPRINT}
+        bed_capacity = self.hs_module.parameters['BedCapacity'].set_index('Facility_ID')
+
+        total_inpatients = pd.DataFrame([
+            (bed_capacity[_bed_type] - self.bed_tracker[_bed_type].loc[self.hs_module.sim.date]).to_dict()
+            for _bed_type in self.bed_types
+        ]).sum().to_dict()
+
+        return {k: IN_PATIENT_DAY(v) for k, v in total_inpatients.items()}
+
