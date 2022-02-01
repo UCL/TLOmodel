@@ -725,8 +725,8 @@ class Tb(Module):
             # if HIV+, schedule death directly to occur during 2010
             if df.at[person_id, "hv_inf"]:
                 self.sim.schedule_event(
-                    event=self.sim.modules["Hiv"].HivAidsTbDeathEvent(
-                        person_id=person_id, module=self, cause="AIDS_TB"
+                    hiv.HivAidsTbDeathEvent(
+                        module=self, person_id=person_id, cause="AIDS_TB"
                     ),
                     date=now + pd.DateOffset(days=self.rng.randint(0, 365)),
                 )
@@ -920,7 +920,7 @@ class Tb(Module):
         sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
 
         # 2) Logging
-        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=364))
+        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=0))
 
         # 3) -------- Define the DxTests and get the consumables required --------
 

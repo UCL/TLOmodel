@@ -1674,6 +1674,7 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
 class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
     """
     Causes someone to die of AIDS-TB, death dependent on tb treatment status
+    can be called by Tb or Hiv module
     """
 
     def __init__(self, module, person_id, cause):
@@ -1692,19 +1693,23 @@ class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
         if (df.at[person_id, "tb_inf"] == "active") and df.at[person_id, 'tb_on_treatment']:
             prob = self.module.rng.rand()
 
-            if prob < self.module.parameters["aids_tb_treatment_adjustment"]:
+            # treatment adjustment reduces probability of death
+            if prob < self.sim.modules["Hiv"].parameters["aids_tb_treatment_adjustment"]:
                 self.sim.modules["Demography"].do_death(
                     individual_id=person_id,
                     cause="AIDS_TB",
                     originating_module=self.module,
                 )
             else:
-                # reschedule the aids death event
-                date_of_aids_death = self.sim.date + self.module.get_time_from_aids_to_death()
+                # if they survive, reschedule the aids death event
+                # module calling rescheduled AIDS death should be Hiv (not TB)
+                date_of_aids_death = self.sim.date + self.sim.modules["Hiv"].get_time_from_aids_to_death()
 
                 self.sim.schedule_event(
                     event=HivAidsDeathEvent(
-                        person_id=person_id, module=self.module, cause="AIDS_non_TB"
+                        person_id=person_id,
+                        module=self.sim.modules["Hiv"],
+                        cause="AIDS_non_TB"
                     ),
                     date=date_of_aids_death,
                 )
