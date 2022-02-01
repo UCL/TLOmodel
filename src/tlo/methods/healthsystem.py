@@ -296,6 +296,10 @@ class HealthSystem(Module):
         if self.capabilities_coefficient is None:
             self.capabilities_coefficient = self.sim.modules['Demography'].initial_model_to_data_popsize_ratio
 
+        # Make the facilities
+
+
+
         # Set the tracker in preparation for the simulation
         self.bed_days.initialise_beddays_tracker()
 
