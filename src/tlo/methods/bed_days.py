@@ -4,8 +4,6 @@ This is the Bed days class.
 It maintains a current record of the availability and usage of beds in the healthcare system.
 
 """
-import operator
-
 import pandas as pd
 
 from tlo import Property, Types, logging
@@ -18,8 +16,9 @@ logger = logging.getLogger('tlo.methods.healthsystem')
 
 # Define the appointment types that should be associated with the use of bed-days (of any type), for a given number of
 # patients
-IN_PATIENT_ADMISSION = lambda _num_pts: {'IPAdmission': _num_pts}
-IN_PATIENT_DAY = lambda _num_pts: {'InpatientDays': _num_pts}
+IN_PATIENT_ADMISSION = {'IPAdmission': 1}
+IN_PATIENT_DAY = {'InpatientDays': 1}
+
 
 class BedDays:
     """
@@ -399,7 +398,7 @@ class BedDays:
     def add_inpatient_admission_to_appt_footprint(appt_footprint):
         """Return an APPT_FOOTPRINT with the addition (if not already present) of the in-patient admission appointment.
         """
-        return {**appt_footprint, **IN_PATIENT_ADMISSION(1)}
+        return {**appt_footprint, **IN_PATIENT_ADMISSION}
 
     def get_inpatient_appts(self) -> dict:
         """Return a dict of the {<facility_id>: APPT_FOOTPRINT} giving the total APPT_FOOTPRINT required for the
@@ -412,5 +411,8 @@ class BedDays:
             for _bed_type in self.bed_types
         ]).sum().to_dict()
 
-        return {k: IN_PATIENT_DAY(v) for k, v in total_inpatients.items()}
+        def multiply_footprint(_footprint, _num):
+            """Multiply the number of appointments of each type in a footprint by a number"""
+            return {k: v * _num for k, v in _footprint}
 
+        return {k: multiply_footprint(IN_PATIENT_DAY, v) for k, v in total_inpatients.items()}

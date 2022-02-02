@@ -856,8 +856,4 @@ def test_bed_days_association_with_appt_footprint():
 
 
 # todo test that `get_inpatient_appts` works as expected
-
 # todo scaling should affect number of beds
-# todo maternity beds
-
-
