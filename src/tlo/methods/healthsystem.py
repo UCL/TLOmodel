@@ -1479,32 +1479,6 @@ class HSI_Event:
         self.post_apply_hook()
         return updated_appt_footprint
 
-    def _return_item_codes_in_dict(self, item_codes: Union[None, np.integer, int, list, set, dict]) -> dict:
-        """Convert an argument for 'item_codes` (provided as int, list, set or dict) into the format
-        dict(<item_code>:quantity)."""
-
-        if item_codes is None:
-            return {}
-
-        if isinstance(item_codes, (int, np.integer)):
-            return {int(item_codes): 1}
-
-        elif isinstance(item_codes, list):
-            if not all([isinstance(i, (int, np.integer)) for i in item_codes]):
-                raise ValueError("item_codes must be integers")
-            return {int(i): 1 for i in item_codes}
-
-        elif isinstance(item_codes, dict):
-            if not all(
-                [(isinstance(i, (int, np.integer)) and isinstance(item_codes[i], (int, np.integer)))
-                 for i in item_codes]
-            ):
-                raise ValueError("item_codes must be integers and quantities must be integers.")
-            return {int(i): int(q) for i, q in item_codes.items()}
-
-        else:
-            raise ValueError("The item_codes are given in an unrecognised format")
-
     def get_consumables(self,
                         item_codes: Optional[Union[np.integer, int, list, set, dict]] = None,
                         optional_item_codes: Optional[Union[np.integer, int, list, set, dict]] = None,
@@ -1529,6 +1503,32 @@ class HSI_Event:
         Note that disease module can use the `get_item_codes_from_package_name` and `get_item_code_from_item_name`
          methods in the `HealthSystem` module to find item_codes.
         """
+
+        def _return_item_codes_in_dict(self, item_codes: Union[None, np.integer, int, list, set, dict]) -> dict:
+            """Convert an argument for 'item_codes` (provided as int, list, set or dict) into the format
+            dict(<item_code>:quantity)."""
+
+            if item_codes is None:
+                return {}
+
+            if isinstance(item_codes, (int, np.integer)):
+                return {int(item_codes): 1}
+
+            elif isinstance(item_codes, list):
+                if not all([isinstance(i, (int, np.integer)) for i in item_codes]):
+                    raise ValueError("item_codes must be integers")
+                return {int(i): 1 for i in item_codes}
+
+            elif isinstance(item_codes, dict):
+                if not all(
+                    [(isinstance(i, (int, np.integer)) and isinstance(item_codes[i], (int, np.integer)))
+                     for i in item_codes]
+                ):
+                    raise ValueError("item_codes must be integers and quantities must be integers.")
+                return {int(i): int(q) for i, q in item_codes.items()}
+
+            else:
+                raise ValueError("The item_codes are given in an unrecognised format")
 
         _item_codes = self._return_item_codes_in_dict(item_codes)
         _optional_item_codes = self._return_item_codes_in_dict(optional_item_codes)
