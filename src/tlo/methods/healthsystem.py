@@ -1505,7 +1505,6 @@ class HSI_Event:
         else:
             raise ValueError("The item_codes are given in an unrecognised format")
 
-
     def get_consumables(self,
                         item_codes: Optional[Union[np.integer, int, list, set, dict]] = None,
                         optional_item_codes: Optional[Union[np.integer, int, list, set, dict]] = None,
@@ -1535,11 +1534,8 @@ class HSI_Event:
         _optional_item_codes = self._return_item_codes_in_dict(optional_item_codes)
 
         # Checking the availability and logging:
-        rtn = self.sim.modules['HealthSystem']._request_consumables(self, item_codes=_item_codes, to_log=to_log)
-        rtn = self.sim.modules['HealthSystem']._request_consumables(item_codes={**_item_codes, **_optional_item_codes},
-                                                         to_log=to_log,
-                                                         facility_id=self._facility_id,
-                                                         treatment_id=self.TREATMENT_ID)
+        rtn = self.sim.modules['HealthSystem']._request_consumables(
+            hsi_event=self, item_codes={**_item_codes, **_optional_item_codes}, to_log=to_log)
 
         # Return result in expected format:
         if not return_individual_results:
@@ -1547,7 +1543,6 @@ class HSI_Event:
             return all([v for k, v in rtn.items() if k in _item_codes])
         else:
             return rtn
-
 
     def make_beddays_footprint(self, dict_of_beddays):
         """Helper function to make a correctly-formed 'bed-days footprint'"""
