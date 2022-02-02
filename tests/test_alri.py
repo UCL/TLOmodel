@@ -794,20 +794,13 @@ def test_use_of_HSI_GenericFirstApptAtFacilityLevel0(tmpdir):
     hsi = HSI_GenericFirstApptAtFacilityLevel0(person_id=person_id, module=sim.modules['HealthSeekingBehaviour'])
     hsi.run(squeeze_factor=0.0)
 
-    print(df.at[person_id, 'age_exact_years'])
-    print(hsi.sim.modules['SymptomManager'].has_what(person_id=person_id))
-    print(df.at[person_id, 'ri_SpO2_level'])
-    classification = sim.modules['Alri'].imci_pneumonia_classification(
-        person_id, hsi_event=hsi, oximeter_available=True)
-    print(classification)
-
     # Check that person is now on treatment:
     assert df.at[person_id, 'ri_on_treatment']
     assert sim.date == df.at[person_id, 'ri_ALRI_tx_start_date']
 
 
-def test_use_HSI_GenericEmergencyFirstApptAtFacilityLevel1(tmpdir):
-    """Check that the (Generic) HSI at facility level 0 works"""
+def test_use_HSI_level_1_and_2(tmpdir):
+    """Check that the HSI at facility level 1a, 1b and 2 work"""
     dur = pd.DateOffset(days=0)
     popsize = 100
     sim = get_sim(tmpdir)
@@ -836,13 +829,14 @@ def test_use_HSI_GenericEmergencyFirstApptAtFacilityLevel1(tmpdir):
     assert not df.at[person_id, 'ri_on_treatment']
     assert pd.isnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
 
-    # Run the HSI event
-    hsi = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=person_id, module=sim.modules['HealthSeekingBehaviour'])
-    hsi.run(squeeze_factor=0.0)
+    # Run the HSI events
+    hsi_generic_level1b = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
+        person_id=person_id, module=sim.modules['HealthSeekingBehaviour'])
+    hsi_imci_level1 = HSI_IMCI_Pneumonia_Treatment(person_id=person_id, module=sim.modules['Alri'])
+    hsi_imci_level2 = HSI_Hospital_Inpatient_Pneumonia_Treatment(person_id=person_id, module=sim.modules['Alri'])
 
-    print(df.at[person_id, 'age_exact_years'])
-    print(hsi.sim.modules['SymptomManager'].has_what(person_id=person_id))
-
-    # Check that person is now on treatment:
-    assert df.at[person_id, 'ri_on_treatment']
-    assert sim.date == df.at[person_id, 'ri_ALRI_tx_start_date']
+    for hsi in [hsi_generic_level1b, hsi_imci_level1, hsi_imci_level2]:
+        hsi.run(squeeze_factor=0.0)
+        # Check that person is now on treatment:
+        assert df.at[person_id, 'ri_on_treatment']
+        assert sim.date == df.at[person_id, 'ri_ALRI_tx_start_date']
