@@ -847,9 +847,16 @@ class Alri(Module):
         get_item_codes_from_package = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
+        # Treatment of non-severe pneumonia in the health facility (TLO package)
+        self.consumables_used_in_hsi['IMCI_Treatment_non_severe_pneumonia'] = \
+            get_item_codes_from_package(package='Pneumonia treatment (children)')
+        # Treatment severe pneumonia in hospital (TLO package)
+        self.consumables_used_in_hsi['IMCI_Treatment_severe_pneumonia'] = \
+            get_item_codes_from_package(package='Treatment of severe pneumonia')
+
         # ------------- Community (iCCM) -------------
         # Treatment of non-severe pneumonia in the community
-        self.consumables_used_in_hsi['iCCM_Treatment_non_severe_pneumonia'] = \
+        self.consumables_used_in_hsi['iCCM_Antibiotic_Therapy_for_pneumonia'] = \
             [get_item_code(item='Paracetamol, tablet, 100 mg')] + \
             [get_item_code(item='Amoxycillin 250mg_1000_CMST')]
 
@@ -858,9 +865,13 @@ class Alri(Module):
             [get_item_code(item='Amoxycillin 250mg_1000_CMST')]
 
         # ------------- Health centres (IMCI) -------------
-        # Treatment of non-severe pneumonia in the health facility
-        self.consumables_used_in_hsi['IMCI_Treatment_non_severe_pneumonia'] = \
-            get_item_codes_from_package(package='Pneumonia treatment (children)')
+
+        # Treatment at health centres for severe cases if no referral
+        self.consumables_used_in_hsi['IMCI_Antibiotic_therapy_for_severe_pneumonia'] = \
+            [get_item_code(item='Ampicillin injection 500mg, PFR_each_CMST')] + \
+            [get_item_code(item='Gentamicin Sulphate 40mg/ml, 2ml_each_CMST')] + \
+            [get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST')] + \
+            [get_item_code(item='Syringe, needle + swab')]
 
         # Referral process at health centres for severe cases
         self.consumables_used_in_hsi['First_dose_antibiotic_for_referral_IMCI'] = \
@@ -869,10 +880,25 @@ class Alri(Module):
             [get_item_code(item='Cannula iv  (winged with injection pot) 16_each_CMST')] + \
             [get_item_code(item='Syringe, needle + swab')]
 
+        # Referral process at health centres for HIV exposed/infected (oral amoxicillin)
+        self.consumables_used_in_hsi['First_dose_amoxicillin_for_HIV_referral_IMCI'] = \
+            [get_item_code(item='Amoxycillin 250mg_1000_CMST')]
+
+        # Antibiotics for non-severe pneumonia - oral amoxicillin for 5 days
+        self.consumables_used_in_hsi['Amoxicillin_suspension_or_tablet'] = \
+            [get_item_code(item='Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST')] + \
+            [get_item_code(item='Amoxycillin 250mg_1000_CMST')]
+
+        # Bronchodilator
+        self.consumables_used_in_hsi['Inhaled_Brochodilator'] = \
+            [get_item_code(item='Salbutamol sulphate 1mg/ml, 5ml_each_CMST')]
+        # if not available inhaled bronchodilator, give oral
+        self.consumables_used_in_hsi['Brochodilator_syrup'] = \
+            [get_item_code(item='Salbutamol, syrup, 2 mg/5 ml')]
+        self.consumables_used_in_hsi['Brochodilator_tablet'] = \
+            [get_item_code(item='Salbutamol, tablet, 4 mg')]
+
         # ------------- Hospital (IMCI) -------------
-        # Treatment severe pneumonia in hospital
-        self.consumables_used_in_hsi['IMCI_Treatment_severe_pneumonia'] = \
-            get_item_codes_from_package(package='Treatment of severe pneumonia')
 
         # First line of antibiotics for severe pneumonia
         self.consumables_used_in_hsi['1st_line_Antibiotic_Therapy_for_Severe_Pneumonia'] = \
@@ -911,7 +937,7 @@ class Alri(Module):
 
         # Treat wheeze
         self.consumables_used_in_hsi['Brochodilator_and_Steroids'] = \
-            [get_item_code(item='Salbutamol, syrup, 2 mg/5 ml')] + \
+            [get_item_code(item='Salbutamol sulphate 1mg/ml, 5ml_each_CMST')] + \
             [get_item_code(item='Prednisolone 5mg_100_CMST')]
 
         # Maintenance of fluids via nasograstric tube
