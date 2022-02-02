@@ -141,7 +141,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
         if ('cough' in symptoms) or ('difficult_breathing' in symptoms):
             if 'Alri' in sim.modules:
-                sim.modules['Alri'].assess_child_with_cough_or_difficult_breathing(
+                sim.modules['Alri'].assess_and_classify_cough_or_difficult_breathing_level0(
                     person_id=person_id, hsi_event=hsi_event)
 
         if "Malaria" in sim.modules:
@@ -436,5 +436,5 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
         # ----------------------------------- CHILD < 5 -----------------------------------
         if ('cough' in symptoms) or ('difficult_breathing' in symptoms):
             if 'Alri' in sim.modules:
-                sim.modules['Alri'].assess_child_with_cough_or_difficult_breathing(
+                sim.modules['Alri'].assess_and_classify_cough_or_difficult_breathing_level1(
                     person_id=person_id, hsi_event=hsi_event)

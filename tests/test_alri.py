@@ -720,7 +720,10 @@ def test_use_of_HSI(tmpdir):
     sim.event_queue.queue = []  # clear the queue
 
     # make probability of death 100%
-    sim.modules['Alri'].p_death = LinearModel.multiplicative()
+    # sim.modules['Alri'].p_death = LinearModel.multiplicative()
+    def death(person_id):
+        return True
+    sim.modules['Alri'].models.will_die_of_alri = death
 
     # Get person to use:
     df = sim.population.props
@@ -740,6 +743,11 @@ def test_use_of_HSI(tmpdir):
     # Run the HSI event
     hsi = HSI_GenericFirstApptAtFacilityLevel0(person_id=person_id, module=sim.modules['HealthSeekingBehaviour'])
     hsi.run(squeeze_factor=0.0)
+
+    # Run both HSIs in case of referral from level 0
+    for hsi in [HSI_IMCI_Pneumonia_Treatment, HSI_Hospital_Inpatient_Pneumonia_Treatment]:
+        hsi_event = hsi(person_id=person_id, module=sim.modules['Alri'])
+        hsi_event.run(squeeze_factor=0.0)
 
     # Check that person is now on treatment:
     assert df.at[person_id, 'ri_on_treatment']
