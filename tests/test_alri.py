@@ -32,7 +32,8 @@ from tlo.methods.alri import (
     HSI_IMCI_Pneumonia_Treatment,
 )
 from tlo.methods.healthseekingbehaviour import (
-    HSI_GenericFirstApptAtFacilityLevel0
+    HSI_GenericFirstApptAtFacilityLevel0,
+    HSI_GenericEmergencyFirstApptAtFacilityLevel1
 )
 
 # Path to the resource files used by the disease and intervention methods
@@ -621,6 +622,56 @@ def test_no_immediate_onset_complications(tmpdir):
     assert not df.loc[person_id, complications_cols].any()
 
 
+def test_imci_classifications(tmpdir):
+    """Check that the iCCM/IMCI pneumonia classifications are correct """
+
+    dur = pd.DateOffset(days=0)
+    popsize = 100
+    sim = get_sim(tmpdir)
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + dur)
+    sim.event_queue.queue = []  # clear the queue
+
+    # make probability of death 100%
+    def death(person_id):
+        return True
+    sim.modules['Alri'].models.will_die_of_alri = death
+
+    # Get person to use:
+    df = sim.population.props
+    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+    person_id = under5s.index[0]
+    assert not df.loc[person_id, 'ri_current_infection_status']
+
+    # Run incident case:
+    pathogen = list(sim.modules['Alri'].all_pathogens)[0]
+    incidentcase = AlriIncidentCase(person_id=person_id, pathogen=pathogen, module=sim.modules['Alri'])
+    incidentcase.apply(person_id=person_id)
+
+    # Check not on treatment:
+    assert not df.at[person_id, 'ri_on_treatment']
+    assert pd.isnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
+
+    # Run the HSI event from Generic first appt
+    for hsi in [HSI_GenericFirstApptAtFacilityLevel0, HSI_GenericEmergencyFirstApptAtFacilityLevel1]:
+        hsi_event = hsi(person_id=person_id, module=sim.modules['HealthSeekingBehaviour'])
+
+    for availability in [True, False]:
+        classification = sim.modules['Alri'].imci_pneumonia_classification(
+            person_id, hsi_event=hsi_event, oximeter_available=availability)
+        assert classification is not None
+
+    # Run the HSI event from ALRI module
+    for hsi in [HSI_IMCI_Pneumonia_Treatment, HSI_Hospital_Inpatient_Pneumonia_Treatment]:
+        hsi_event = hsi(person_id=person_id, module=sim.modules['Alri'])
+
+    for availability in [True, False]:
+        classification = sim.modules['Alri'].imci_pneumonia_classification(
+            person_id, hsi_event=hsi_event, oximeter_available=availability)
+        assert classification is not None
+
+
 def test_treatment(tmpdir):
     """Test that providing a treatment prevent death and causes there to be a CureEvent Scheduled"""
 
@@ -709,8 +760,8 @@ def test_treatment(tmpdir):
     assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
 
 
-def test_use_of_HSI(tmpdir):
-    """Check that the HSI template works"""
+def test_use_of_HSI_GenericFirstApptAtFacilityLevel0(tmpdir):
+    """Check that the (Generic) HSI at facility level 0 works"""
     dur = pd.DateOffset(days=0)
     popsize = 100
     sim = get_sim(tmpdir)
@@ -720,7 +771,52 @@ def test_use_of_HSI(tmpdir):
     sim.event_queue.queue = []  # clear the queue
 
     # make probability of death 100%
-    # sim.modules['Alri'].p_death = LinearModel.multiplicative()
+    def death(person_id):
+        return True
+    sim.modules['Alri'].models.will_die_of_alri = death
+
+    # Get person to use (only over 2 months old):
+    df = sim.population.props
+    under5s = df.loc[df.is_alive & ((df['age_exact_years'] >= 1/6) & (df['age_years'] < 5))]
+    person_id = under5s.index[0]
+    assert not df.loc[person_id, 'ri_current_infection_status']
+
+    # Run incident case:
+    pathogen = list(sim.modules['Alri'].all_pathogens)[0]
+    incidentcase = AlriIncidentCase(person_id=person_id, pathogen=pathogen, module=sim.modules['Alri'])
+    incidentcase.apply(person_id=person_id)
+
+    # Check not on treatment:
+    assert not df.at[person_id, 'ri_on_treatment']
+    assert pd.isnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
+
+    # Run the HSI event
+    hsi = HSI_GenericFirstApptAtFacilityLevel0(person_id=person_id, module=sim.modules['HealthSeekingBehaviour'])
+    hsi.run(squeeze_factor=0.0)
+
+    print(df.at[person_id, 'age_exact_years'])
+    print(hsi.sim.modules['SymptomManager'].has_what(person_id=person_id))
+    print(df.at[person_id, 'ri_SpO2_level'])
+    classification = sim.modules['Alri'].imci_pneumonia_classification(
+        person_id, hsi_event=hsi, oximeter_available=True)
+    print(classification)
+
+    # Check that person is now on treatment:
+    assert df.at[person_id, 'ri_on_treatment']
+    assert sim.date == df.at[person_id, 'ri_ALRI_tx_start_date']
+
+
+def test_use_HSI_GenericEmergencyFirstApptAtFacilityLevel1(tmpdir):
+    """Check that the (Generic) HSI at facility level 0 works"""
+    dur = pd.DateOffset(days=0)
+    popsize = 100
+    sim = get_sim(tmpdir)
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + dur)
+    sim.event_queue.queue = []  # clear the queue
+
+    # make probability of death 100%
     def death(person_id):
         return True
     sim.modules['Alri'].models.will_die_of_alri = death
@@ -741,13 +837,11 @@ def test_use_of_HSI(tmpdir):
     assert pd.isnull(df.at[person_id, 'ri_ALRI_tx_start_date'])
 
     # Run the HSI event
-    hsi = HSI_GenericFirstApptAtFacilityLevel0(person_id=person_id, module=sim.modules['HealthSeekingBehaviour'])
+    hsi = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=person_id, module=sim.modules['HealthSeekingBehaviour'])
     hsi.run(squeeze_factor=0.0)
 
-    # Run both HSIs in case of referral from level 0
-    for hsi in [HSI_IMCI_Pneumonia_Treatment, HSI_Hospital_Inpatient_Pneumonia_Treatment]:
-        hsi_event = hsi(person_id=person_id, module=sim.modules['Alri'])
-        hsi_event.run(squeeze_factor=0.0)
+    print(df.at[person_id, 'age_exact_years'])
+    print(hsi.sim.modules['SymptomManager'].has_what(person_id=person_id))
 
     # Check that person is now on treatment:
     assert df.at[person_id, 'ri_on_treatment']
