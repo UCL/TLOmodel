@@ -214,7 +214,11 @@ assert abs(21_407 - pd.DataFrame(num_beds).sum().sum()) < 20
 pd.DataFrame(num_beds).to_csv(outputfile, index_label='Facility_ID')
 
 
-# Cross-check with Table 38
+# %% Cross-check with Table 38, which gives numbers of beds per 10k population
+
 # todo
 # tab38 = pd.read_excel(workingfile, sheet_name='Table_38')
 # tab38.columns = clean_up_index(tab38.columns)
+
+# todo - plot number of 10k in these estimates and table 38
+
