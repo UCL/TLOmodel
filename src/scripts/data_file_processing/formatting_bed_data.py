@@ -259,3 +259,25 @@ plt.close(fig)
 
 
 # %% Plots to describe the data
+
+beds_by_region_and_level = num_beds.merge(
+    mfl, left_index=True, right_on='Facility_ID'
+).groupby(by=['Region', 'Facility_Level'])[list(bed_types.keys())].sum().sum(axis=1)
+
+fig, ax = plt.subplots()
+beds_by_region_and_level.unstack().plot.bar(ax=ax, stacked=True)
+ax.set_title('Total Number of Bed In Each Region, by Facility Level')
+ax.set_ylabel('Number of beds')
+fig.tight_layout()
+fig.show()
+
+bed_by_type_and_level = num_beds.merge(
+    mfl, left_index=True, right_on='Facility_ID'
+).groupby(by=['Facility_Level'])[list(bed_types.keys())].sum()
+
+fig, ax = plt.subplots()
+bed_by_type_and_level.drop(index=['5']).plot.bar(ax=ax, stacked=True)
+ax.set_title('Number of Beds of Each Type, By Facility Level')
+ax.set_ylabel('Number of beds')
+fig.tight_layout()
+fig.show()
