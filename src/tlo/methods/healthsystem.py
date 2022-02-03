@@ -1504,7 +1504,7 @@ class HSI_Event:
          methods in the `HealthSystem` module to find item_codes.
         """
 
-        def _return_item_codes_in_dict(self, item_codes: Union[None, np.integer, int, list, set, dict]) -> dict:
+        def _return_item_codes_in_dict(item_codes: Union[None, np.integer, int, list, set, dict]) -> dict:
             """Convert an argument for 'item_codes` (provided as int, list, set or dict) into the format
             dict(<item_code>:quantity)."""
 
@@ -1530,8 +1530,8 @@ class HSI_Event:
             else:
                 raise ValueError("The item_codes are given in an unrecognised format")
 
-        _item_codes = self._return_item_codes_in_dict(item_codes)
-        _optional_item_codes = self._return_item_codes_in_dict(optional_item_codes)
+        _item_codes = _return_item_codes_in_dict(item_codes)
+        _optional_item_codes = _return_item_codes_in_dict(optional_item_codes)
 
         # Checking the availability and logging:
         rtn = self.sim.modules['HealthSystem']._request_consumables(
