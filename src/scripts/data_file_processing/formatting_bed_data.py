@@ -3,13 +3,16 @@ the Resource File that is used by the BedDays class in the HealthSystem module:
 
 * ResourceFile_Bed_Capacity.csv
 
+N.B. A known issue that we do not have beds allocated to any level 4 or 5 facilities.
+
 """
 
 from collections import defaultdict
 from pathlib import Path
 
-import pandas as pd
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 resourcefilepath = Path('./resources')
 
@@ -26,7 +29,7 @@ workingfile = (path_to_dropbox /
 # TARGET OUTPUT FILE:
 outputfile = resourcefilepath / "healthsystem" / "infrastructure_and_equipment" / "ResourceFile_Bed_Capacity.csv"
 
-# %% Define the function that does the estimation
+
 def estimate_beds_by_facility_id(beds_by_district: pd.Series, beds_by_level: pd.Series) -> pd.Series:
     """Use information on the numbers of bed by district and beds by level to impute the number at each Facility_ID."""
 
@@ -64,7 +67,7 @@ def estimate_beds_by_facility_id(beds_by_district: pd.Series, beds_by_level: pd.
     assert set(beds_by_district.index) == districts
     assert not beds_by_district.index.duplicated().any()
 
-    pc_of_beds_by_district = beds_by_district/beds_by_district.sum()
+    pc_of_beds_by_district = beds_by_district / beds_by_district.sum()
 
     pc_of_beds_by_region = {
         _region: (
@@ -92,7 +95,7 @@ def estimate_beds_by_facility_id(beds_by_district: pd.Series, beds_by_level: pd.
     for _fac_id, _info in fac_id.iterrows():
 
         if _info.Facility_Level == "0":
-            _num_beds = 0
+            _num_beds = 0.0
 
         elif _info.Facility_Level in district_level_facility_levels:
             _num_beds = pc_of_beds_by_district[_info.District] * beds_by_level[_info.Facility_Level]
@@ -106,18 +109,20 @@ def estimate_beds_by_facility_id(beds_by_district: pd.Series, beds_by_level: pd.
 
         beds_by_fac_id[_fac_id] = _num_beds
 
-    x = pd.Series(data=beds_by_fac_id, name='num_beds')
-    x.index.name = 'Facility_ID'
-
     # Do the logical checks on non-integer numbers so that they don't fail due to rounding errors
+    x = pd.Series(data=beds_by_fac_id)  # Make into pd.Series to make these logical checks easier.
     assert set(x.index) == set(mfl['Facility_ID'])
     assert not x.index.duplicated().any()
     assert not pd.isnull(x).any()
     assert x.sum() == beds_by_level.sum()
 
-    # Return a integers
+    # Return results in a dict and with the counts of beds as integers.
     return x.round().astype(int).to_dict()
 
+
+def clean_up_index(_idx):
+    """Standardize format of strings in an index."""
+    return _idx.str.strip(" ").str.replace(" ", "_").str.lower()
 
 
 # %% Definitional things
@@ -126,7 +131,7 @@ def estimate_beds_by_facility_id(beds_by_district: pd.Series, beds_by_level: pd.
 bed_types = {
     'maternity_bed': {'maternity_beds', 'kangaroo_beds'},
     'delivery_bed': {'delivery_beds'},
-    'general_bed': None,    # <-- This will be "all beds" minus all other types of defined bed.
+    'general_bed': None,  # <-- This will be "all beds" minus all other types of defined bed.
 }
 
 # Districts and Regions:
@@ -152,10 +157,11 @@ map_to_level = {
 }
 
 # %% Load Working files
-tab501 = pd.read_excel(workingfile, sheet_name='Table_5-01')
 
-# basic cleaning up of names
-clean_up_index = lambda _cols: _cols.str.strip(" ").str.replace(" ", "_").str.lower()
+tab501 = pd.read_excel(workingfile, sheet_name='Table_5-01')
+# <-- "Malawi Emergency Obstetric and Neborn Care Needs Assesement, 2014"
+
+
 tab501.columns = clean_up_index(tab501.columns)
 
 # Get number of beds, split by District
@@ -167,6 +173,7 @@ beds_by_district.index = beds_by_district.index.str.strip()
 beds_by_level = tab501.iloc[3:8][['', 'all_beds', 'maternity_beds', 'kangaroo_beds', 'delivery_beds']]
 beds_by_level = beds_by_level.set_index(beds_by_level.columns[0])
 beds_by_level.index = clean_up_index(beds_by_level.index)
+
 
 # Combine types of beds to get beds in the types needed for the model
 def compute_bed_number_custom_type(_df: pd.DataFrame, _bed_types: dict) -> pd.DataFrame:
@@ -186,6 +193,7 @@ def compute_bed_number_custom_type(_df: pd.DataFrame, _bed_types: dict) -> pd.Da
     df = df.clip(lower=0.0)  # One place has more "maternity beds" than "all beds"!
     assert (df >= 0).all().all()
     return df.round().astype(int)
+
 
 beds_by_district = compute_bed_number_custom_type(beds_by_district, bed_types)
 beds_by_level = compute_bed_number_custom_type(beds_by_level, bed_types)
@@ -213,17 +221,44 @@ assert abs(21_407 - num_beds.sum().sum()) < 20
 num_beds['non_bed_space'] = 0
 num_beds.loc[num_beds.sum(axis=1) > 0, 'non_bed_space'] = 1_000
 
-
 # %% Save:
 num_beds.to_csv(outputfile, index_label='Facility_ID')
 
-
-
 # %% Cross-check with Table 38, which gives numbers of beds per 10k population
 
-# todo
-# tab38 = pd.read_excel(workingfile, sheet_name='Table_38')
-# tab38.columns = clean_up_index(tab38.columns)
+pop_by_district = popdata.groupby(by='District')['Count'].sum()
+beds_by_district = num_beds.merge(
+    mfl[['Facility_ID', 'District']], left_index=True, right_on='Facility_ID'
+).groupby(by='District')[list(bed_types.keys())].sum().sum(axis=1)  # excluding those at the regional level
+beds_per_10k = beds_by_district.div(pop_by_district / 10_000)
+
+# Load comparator data:
+tab38 = pd.read_excel(workingfile,
+                      sheet_name='Table_38')  # <-- "Malawi Harmonized Health Facility Assesement 2018/2019 Report"
+tab38.columns = clean_up_index(tab38.columns)
+tab38 = tab38.rename(columns={tab38.columns[0]: 'District'})
+in_patient_beds_per_10k = tab38[['District', 'number_of_inpatient_beds/10_000_population']].copy()
+in_patient_beds_per_10k['District'] = in_patient_beds_per_10k['District'].str.strip()
+in_patient_beds_per_10k = in_patient_beds_per_10k.set_index('District')
+in_patient_beds_per_10k = in_patient_beds_per_10k.sort_index()['number_of_inpatient_beds/10_000_population']
+
+fig, ax = plt.subplots(nrows=2, ncols=1)
+ax[0].bar(beds_per_10k.index, beds_per_10k.values)
+ax[0].axhline(beds_per_10k.mean(), color='r')
+ax[0].set_title('Rates Implied in ResourceFile')
+ax[0].set_ylim([0, 60])
+ax[0].tick_params(axis='x', labelrotation=90)
+ax[1].bar(in_patient_beds_per_10k.index, in_patient_beds_per_10k.values)
+ax[1].axhline(in_patient_beds_per_10k.mean(), color='r')
+ax[1].set_title('Rates Reported in HHFA')
+ax[1].set_ylim([0, 60])
+ax[1].tick_params(axis='x', labelrotation=90)
+fig.tight_layout()
+fig.show()
+plt.close(fig)
+
+
+# %% Plots to describe the data
+
 
 # todo - plot number of 10k in these estimates and table 38
-
