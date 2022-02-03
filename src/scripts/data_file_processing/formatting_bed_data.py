@@ -26,7 +26,6 @@ workingfile = (path_to_dropbox /
 # TARGET OUTPUT FILE:
 outputfile = resourcefilepath / "healthsystem" / "infrastructure_and_equipment" / "ResourceFile_Bed_Capacity.csv"
 
-
 # %% Define the function that does the estimation
 def estimate_beds_by_facility_id(beds_by_district: pd.Series, beds_by_level: pd.Series) -> pd.Series:
     """Use information on the numbers of bed by district and beds by level to impute the number at each Facility_ID."""
@@ -123,13 +122,11 @@ def estimate_beds_by_facility_id(beds_by_district: pd.Series, beds_by_level: pd.
 
 # %% Definitional things
 
-# The Facility_Level to which each type of facility name attaches.
-map_to_level = {
-    'central_hospital': "3",
-    'district_hospital': "2",
-    'rural/_community_hosp': "1b",
-    'other_hospital': "1b",
-    'health_centre': "1a"
+# Definition of Bed types & Hierarchy, and (where applicable) the mapping to the types defined in the source data.
+bed_types = {
+    'maternity_bed': {'maternity_beds', 'kangaroo_beds'},
+    'delivery_bed': {'delivery_beds'},
+    'general_bed': None,    # <-- This will be "all beds" minus all other types of defined bed.
 }
 
 # Districts and Regions:
@@ -145,15 +142,14 @@ mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "Resource
 fac_id = mfl.set_index('Facility_ID')[['Region', 'District', 'Facility_Level']]
 district_level_facility_levels = ("1a", "1b", "2")
 
-# Bed types
-# todo - how about we collapse them all together?
-# todo - would a general bed be lower in the hierarchy?
-bed_types = {
-    'delivery_bed': {'delivery_beds'},
-    'maternity_bed': {'maternity_beds', 'kangaroo_beds'},
-    'general_bed': None,  # <-- This will be "all beds" minus all other types of defined bed.
+# The Facility_Level to which each type of facility name attaches.
+map_to_level = {
+    'central_hospital': "3",
+    'district_hospital': "2",
+    'rural/_community_hosp': "1b",
+    'other_hospital': "1b",
+    'health_centre': "1a"
 }
-
 
 # %% Load Working files
 tab501 = pd.read_excel(workingfile, sheet_name='Table_5-01')
@@ -201,21 +197,25 @@ for _bed_type in bed_types:
     # assert 0 == beds_by_level[_bed_type].sum() - beds_by_district[_bed_type].sum()
 
 # Compute the number of beds in each custom type:
-num_beds = {
+num_beds = pd.DataFrame({
     _bed_type: estimate_beds_by_facility_id(
         beds_by_district=beds_by_district[_bed_type],
         beds_by_level=beds_by_level[_bed_type]
     )
     for _bed_type in bed_types
-}
+})
 
 # Check that we have the right total number of beds (after allowing for some inconsistency in the input data.)
-assert abs(21_407 - pd.DataFrame(num_beds).sum().sum()) < 20
+assert abs(21_407 - num_beds.sum().sum()) < 20
 
-# todo - Add in a type of bed "non_bed_space": Equal to the half the number of beds?
+# %% Add in a type of bed "non_bed_space", to which all requeets for beds default. The capacity is essentially
+#  not limited in facilities in which there is at least one other type of bed available.
+num_beds['non_bed_space'] = 0
+num_beds.loc[num_beds.sum(axis=1) > 0, 'non_bed_space'] = 1_000
 
-# Save:
-pd.DataFrame(num_beds).to_csv(outputfile, index_label='Facility_ID')
+
+# %% Save:
+num_beds.to_csv(outputfile, index_label='Facility_ID')
 
 
 
