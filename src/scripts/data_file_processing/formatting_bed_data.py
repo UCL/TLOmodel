@@ -259,6 +259,3 @@ plt.close(fig)
 
 
 # %% Plots to describe the data
-
-
-# todo - plot number of 10k in these estimates and table 38

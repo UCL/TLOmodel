@@ -15,11 +15,19 @@ from tlo.methods.healthsystem import HSI_Event
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
+bed_types = list(pd.read_csv(
+    resourcefilepath / "healthsystem" / "infrastructure_and_equipment" / "ResourceFile_Bed_Capacity.csv").set_index(
+    'Facility_ID').columns)
+
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
 popsize = 200
 
 """Suite of tests to examine the use of BedDays class when initialised by the HealthSystem Module"""
+
+def test_bed_days_resourcefile_defines_non_bed_space():
+    """Check that "non_bed_space" is defined as the lowest type of bed. """
+    assert 'non_bed_space' == bed_types[-1]
 
 
 def test_beddays_in_isolation(tmpdir):
@@ -86,6 +94,8 @@ def check_dtypes(simulation):
 def test_bed_days_basics(tmpdir):
     """Check all the basic functionality about bed-days footprints and capacity management by the health-system"""
 
+    req_for_beds = {k: i for i, k in enumerate(bed_types, start=10) if k != 'non_bed_space'}
+
     class DummyModule(Module):
         METADATA = {Metadata.USES_HEALTHSYSTEM}
 
@@ -119,10 +129,7 @@ def test_bed_days_basics(tmpdir):
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
             self.ACCEPTED_FACILITY_LEVEL = '2'
             self.ALERT_OTHER_DISEASES = []
-            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({
-                'high_dependency_bed': 10,
-                'general_bed': 5
-            })
+            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint(req_for_beds)
 
         def apply(self, person_id, squeeze_factor):
             print(f'squeeze-factor is {squeeze_factor}')
@@ -168,8 +175,8 @@ def test_bed_days_basics(tmpdir):
     hs.bed_days.check_beddays_footprint_format(hsi_bd.BEDDAYS_FOOTPRINT)
 
     # 3) Check that helper-function to make footprints works as expected:
-    assert {'non_bed_space': 0, 'general_bed': 0, 'high_dependency_bed': 0} == hsi_nobd.BEDDAYS_FOOTPRINT
-    assert {'non_bed_space': 0, 'general_bed': 5, 'high_dependency_bed': 10} == hsi_bd.BEDDAYS_FOOTPRINT
+    assert {k: 0 for k in bed_types} == hsi_nobd.BEDDAYS_FOOTPRINT
+    assert {**req_for_beds, **{"non_bed_space": 0}} == hsi_bd.BEDDAYS_FOOTPRINT
 
     # 4) Check that can schedule an HSI with a bed-day footprint
     hs.schedule_hsi_event(hsi_event=hsi_nobd, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1), priority=0)
@@ -243,6 +250,8 @@ def test_bed_days_basics(tmpdir):
 def test_bed_days_property_is_inpatient(tmpdir):
     """Check that the is_inpatient property is controlled correctly and kept in sync with the bed-tracker"""
 
+    _bed_type = bed_types[0]
+
     class DummyModule(Module):
         METADATA = {Metadata.USES_HEALTHSYSTEM}
 
@@ -310,7 +319,7 @@ def test_bed_days_property_is_inpatient(tmpdir):
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
             self.ACCEPTED_FACILITY_LEVEL = '2'
             self.ALERT_OTHER_DISEASES = []
-            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
+            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({_bed_type: 5})
 
         def apply(self, person_id, squeeze_factor):
             pass
@@ -334,7 +343,7 @@ def test_bed_days_property_is_inpatient(tmpdir):
 
     # Load the logged tracker for general beds
     log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
-    tracker = log['bed_tracker_general_bed'].drop(columns={'date'}).set_index('date_of_bed_occupancy')
+    tracker = log[f'bed_tracker_{_bed_type}'].drop(columns={'date'}).set_index('date_of_bed_occupancy')
     tracker.index = pd.to_datetime(tracker.index)
 
     # Load the in-patient status store:
@@ -369,6 +378,7 @@ def test_bed_days_property_is_inpatient(tmpdir):
 
 def test_bed_days_released_on_death(tmpdir):
     """Check that bed-days scheduled to be occupied are released upon the death of the person"""
+    _bed_type = bed_types[0]
     days_simulation_duration = 20
 
     class DummyModule(Module):
@@ -429,7 +439,7 @@ def test_bed_days_released_on_death(tmpdir):
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
             self.ACCEPTED_FACILITY_LEVEL = '2'
             self.ALERT_OTHER_DISEASES = []
-            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 10})
+            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({_bed_type: 10})
 
         def apply(self, person_id, squeeze_factor):
             pass
@@ -457,7 +467,7 @@ def test_bed_days_released_on_death(tmpdir):
 
     # Load the logged tracker for general beds
     log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
-    tracker = log['bed_tracker_general_bed'].drop(columns={'date'}).set_index('date_of_bed_occupancy')
+    tracker = log[f'bed_tracker_{_bed_type}'].drop(columns={'date'}).set_index('date_of_bed_occupancy')
     tracker.index = pd.to_datetime(tracker.index)
 
     # compute beds occupied
@@ -478,6 +488,7 @@ def test_bed_days_released_on_death(tmpdir):
 
 def test_bed_days_basics_with_healthsystem_disabled():
     """Check basic functionality of bed-days class when the health-system has been disabled"""
+    _bed_type = bed_types[0]
 
     class DummyModule(Module):
         METADATA = {Metadata.USES_HEALTHSYSTEM}
@@ -513,8 +524,7 @@ def test_bed_days_basics_with_healthsystem_disabled():
             self.ACCEPTED_FACILITY_LEVEL = '2'
             self.ALERT_OTHER_DISEASES = []
             self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({
-                'high_dependency_bed': 10,
-                'general_bed': 5
+                _bed_type: 10,
             })
 
         def apply(self, person_id, squeeze_factor):
@@ -537,8 +547,7 @@ def test_bed_days_basics_with_healthsystem_disabled():
     hs.parameters['BedCapacity'] = pd.DataFrame(
         data={
             'Facility_ID': [128, 129, 130],  # <-- the level 2 facilities for each region,
-            'high_dependency_bed': 0,
-            'general_bed': 0
+            _bed_type: 0,
         }
     )
 
@@ -547,7 +556,7 @@ def test_bed_days_basics_with_healthsystem_disabled():
 
     person_id = 0
 
-    # ensure we can run an hsi event without errors
+    # ensure we can run a hsi event without errors
     hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=person_id)
     hsi_bd.apply(person_id=person_id, squeeze_factor=0.0)
     assert hsi_bd.this_ran
