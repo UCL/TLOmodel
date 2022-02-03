@@ -25,6 +25,7 @@ popsize = 200
 
 """Suite of tests to examine the use of BedDays class when initialised by the HealthSystem Module"""
 
+
 def test_bed_days_resourcefile_defines_non_bed_space():
     """Check that "non_bed_space" is defined as the lowest type of bed. """
     assert 'non_bed_space' == bed_types[-1]
