@@ -146,9 +146,11 @@ fac_id = mfl.set_index('Facility_ID')[['Region', 'District', 'Facility_Level']]
 district_level_facility_levels = ("1a", "1b", "2")
 
 # Bed types
+# todo - how about we collapse them all together?
+# todo - would a general bed be lower in the hierarchy?
 bed_types = {
-    'delivery_bed': {'kangaroo_beds', 'delivery_beds'},
-    'maternity_bed': {'maternity_beds'},
+    'delivery_bed': {'delivery_beds'},
+    'maternity_bed': {'maternity_beds', 'kangaroo_beds'},
     'general_bed': None,  # <-- This will be "all beds" minus all other types of defined bed.
 }
 
@@ -210,8 +212,11 @@ num_beds = {
 # Check that we have the right total number of beds (after allowing for some inconsistency in the input data.)
 assert abs(21_407 - pd.DataFrame(num_beds).sum().sum()) < 20
 
+# todo - Add in a type of bed "non_bed_space": Equal to the half the number of beds?
+
 # Save:
 pd.DataFrame(num_beds).to_csv(outputfile, index_label='Facility_ID')
+
 
 
 # %% Cross-check with Table 38, which gives numbers of beds per 10k population
