@@ -67,7 +67,6 @@ def predict_rds_preterm(self, df, rng=None, **externals):
 
 def predict_not_breathing_at_birth(self, df, rng=None, **externals):
     """individual level"""
-    # person = df.iloc[0]
     params = self.parameters
     result = params['prob_failure_to_transition']
 
@@ -76,7 +75,6 @@ def predict_not_breathing_at_birth(self, df, rng=None, **externals):
 
 def predict_retinopathy(self, df, rng=None, **externals):
     """individual level"""
-    # person = df.iloc[0]
     params = self.parameters
     result = params['prob_retinopathy_preterm']
 
@@ -85,7 +83,6 @@ def predict_retinopathy(self, df, rng=None, **externals):
 
 def predict_care_seeking_for_complication(self, df, rng=None, **externals):
     """individual level"""
-    # person = df.iloc[0]
     params = self.parameters
     result = params['prob_care_seeking_for_complication']
 

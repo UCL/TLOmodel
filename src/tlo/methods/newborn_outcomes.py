@@ -6,7 +6,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
-from tlo.methods import Metadata, demography, newborn_outcomes_lm
+from tlo.methods import Metadata, demography, newborn_outcomes_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
@@ -64,8 +64,8 @@ class NewbornOutcomes(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'early_onset_neonatal_sepsis': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
-        'late_onset_neonatal_sepsis': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'early_onset_sepsis': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
+        'late_onset_sepsis': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
         'encephalopathy': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
         'neonatal_respiratory_depression': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
         'preterm_other': Cause(gbd_causes='Neonatal disorders', label='Neonatal Disorders'),
@@ -217,6 +217,40 @@ class NewbornOutcomes(Module):
         'prob_timings_pnc_newborns': Parameter(
             Types.LIST, 'probabilities that a postnatal check will happen before or after 48 hours alive'),
 
+        # DISABILITY WEIGHT PROBABILITIES
+        'probs_for_mild_preterm_daly_wts_<32wks': Parameter(
+            Types.LIST, 'Probabilities (sum to one) that a newborn delivered at less than 32 weeks AND experiencing '
+                        'mild impairment will accrue the DALY weight 357 ("mild motor and cognitive impairment") or '
+                        'DALY weight 371 ("mild motor impairment")'),
+        'probs_for_sev_preterm_daly_wts_<32wks': Parameter(
+            Types.LIST, 'Probabilities (sum to one) that a newborn delivered at less than 32 weeks AND experiencing '
+                        'moderate/severe impairment will accrue the DALY weight 378 ("moderate motor impairment") or '
+                        'DALY weight 383 ("severe motor impairment")'),
+        'probs_for_mild_preterm_daly_wts_>32wks': Parameter(
+            Types.LIST, 'Probabilities (sum to one) that a newborn delivered at greater than 32 weeks AND experiencing '
+                        'mild impairment will accrue the DALY weight 357 ("mild motor and cognitive impairment") or '
+                        'DALY weight 371 ("mild motor impairment")'),
+        'probs_for_sev_preterm_daly_wts_>32wks': Parameter(
+            Types.LIST, 'Probabilities (sum to one) that a newborn delivered at less than 32 weeks AND experiencing '
+                        'moderate/severe impairment will accrue the DALY weight 378 ("moderate motor impairment") or '
+                        'DALY weight 383 ("severe motor impairment")'),
+        'probs_for_mild_enceph_daly_wts': Parameter(
+            Types.LIST, 'Probabilities (sum to one) that a newborn delivered who develops encephalopathy AND '
+                        'experiencing mild impairment will accrue the DALY weight 419 ("mild motor and cognitive'
+                        ' impairment") or DALY weight 416 ("mild motor impairment")'),
+        'probs_for_sev_enceph_daly_wts': Parameter(
+            Types.LIST, 'Probabilities (sum to one) that a newborn delivered who develops encephalopathy AND '
+                        'experiencing moderate/severe impairment will accrue the DALY weight 411 ("moderate motor  '
+                        ' impairment") or DALY weight 410 ("severe motor impairment")'),
+        'probs_for_mild_sepsis_daly_wts': Parameter(
+            Types.LIST, 'Probabilities (sum to one) that a newborn delivered who develops sepsis AND '
+                        'experiencing mild impairment will accrue the DALY weight 411 ("mild motor and cognitive'
+                        ' impairment") or DALY weight 431 ("mild motor impairment")'),
+        'probs_for_sev_sepsis_daly_wts': Parameter(
+            Types.LIST, 'Probabilities (sum to one) that a newborn delivered who develops sepsis AND '
+                        'experiencing moderate/severe impairment will accrue the DALY weight 438 ("moderate motor  '
+                        ' impairment") or DALY weight 435 ("severe motor impairment")'),
+
         # TREATMENT...
         'treatment_effect_inj_abx_sep': Parameter(
             Types.LIST, 'effect of injectable antibiotics treatment on reducing mortality from sepsis'),
@@ -315,8 +349,7 @@ class NewbornOutcomes(Module):
         self.load_parameters_from_dataframe(parameter_dataframe)
 
         # For the first period (2010-2015) we use the first value in each list as a parameter
-        for key, value in self.parameters.items():
-            self.current_parameters[key] = self.parameters[key][0]
+        pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module
         if 'HealthBurden' in self.sim.modules:
@@ -384,47 +417,47 @@ class NewbornOutcomes(Module):
         get_item_code_from_name = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         get_item_code_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
 
+        get_list_of_items = lambda _list_of_item_names: [get_item_code_from_name(_name) for _name in
+                                                         _list_of_item_names]
         # -------------------------------------------- VITAMIN K ------------------------------------------
-        self.item_codes_nb_consumables['vitamin_k'] =\
-            [get_item_code_from_name('vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA')] + \
-            [get_item_code_from_name('Syringe, needle + swab')] + \
-            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
+        self.item_codes_nb_consumables['vitamin_k'] = get_list_of_items(
+            ['vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA',
+             'Syringe, needle + swab',
+             'Gloves, exam, latex, disposable, pair'])
 
         # -------------------------------------------- EYE CARE  ------------------------------------------
-        self.item_codes_nb_consumables['eye_care'] = \
-            [get_item_code_from_name('Tetracycline eye ointment 1%_3.5_CMST')]
-
+        self.item_codes_nb_consumables['eye_care'] = get_list_of_items(
+            ['Tetracycline eye ointment 1%_3.5_CMST'])
         # -------------------------------------------- RESUSCITATION ------------------------------------------
         self.item_codes_nb_consumables['resuscitation'] = \
             get_item_code_from_pkg('Neonatal resuscitation (institutional)')
 
         # ------------------------------------- SEPSIS - FULL SUPPORTIVE CARE ---------------------------------------
-        self.item_codes_nb_consumables['sepsis_supportive_care'] = \
-            [get_item_code_from_name('Benzylpenicillin 1g (1MU), PFR_Each_CMST')] + \
-            [get_item_code_from_name('Gentamicin 40mg/ml, 2ml_each_CMST')] + \
-            [get_item_code_from_name('Oxygen, 1000 liters, primarily with oxygen cylinders')] + \
-            [get_item_code_from_name('Dextrose (glucose) 5%, 1000ml_each_CMST')] + \
-            [get_item_code_from_name('Tube, feeding CH 8_each_CMST')] + \
-            [get_item_code_from_name('Cannula iv  (winged with injection pot) 20_each_CMST')] + \
-            [get_item_code_from_name('IV giving/infusion set, with needle')] + \
-            [get_item_code_from_name('Syringe, needle + swab')] + \
-            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
+        self.item_codes_nb_consumables['sepsis_supportive_care'] = get_list_of_items(
+            ['Benzylpenicillin 1g (1MU), PFR_Each_CMST',
+             'Gentamicin 40mg/ml, 2ml_each_CMST',
+             'Oxygen, 1000 liters, primarily with oxygen cylinders',
+             'Dextrose (glucose) 5%, 1000ml_each_CMST',
+             'Tube, feeding CH 8_each_CMST',
+             'Cannula iv  (winged with injection pot) 20_each_CMST' ,
+             'IV giving/infusion set, with needle',
+             'Syringe, needle + swab',
+             'Gloves, exam, latex, disposable, pair',
+             ])
 
         # ---------------------------------------- SEPSIS - ANTIBIOTICS ---------------------------------------------
-        self.item_codes_nb_consumables['sepsis_abx'] =\
-            [get_item_code_from_name('Benzylpenicillin 1g (1MU), PFR_Each_CMST')] + \
-            [get_item_code_from_name('Gentamicin 40mg/ml, 2ml_each_CMST')] + \
-            [get_item_code_from_name('Cannula iv  (winged with injection pot) 20_each_CMST')] + \
-            [get_item_code_from_name('IV giving/infusion set, with needle')] + \
-            [get_item_code_from_name('Gloves, exam, latex, disposable, pair')]
+        self.item_codes_nb_consumables['sepsis_abx'] = get_list_of_items(
+            ['Benzylpenicillin 1g (1MU), PFR_Each_CMST',
+             'Gentamicin 40mg/ml, 2ml_each_CMST',
+             'Cannula iv  (winged with injection pot) 20_each_CMST',
+             'IV giving/infusion set, with needle',
+             'Gloves, exam, latex, disposable, pair',
+             ])
 
     def initialise_simulation(self, sim):
         # We call the following function to store the required consumables for the simulation run within the appropriate
         # dictionary
         self.get_and_store_newborn_item_codes()
-
-        # Register logging event
-        sim.schedule_event(NewbornOutcomesLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # ======================================= LINEAR MODEL EQUATIONS ==============================================
         # All linear equations used in this module are stored within the nb_newborn_equations
@@ -694,128 +727,63 @@ class NewbornOutcomes(Module):
         nci = self.newborn_care_info
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.current_parameters
-        child = df.loc[individual_id]
 
         logger.debug(key='msg', data=f'set_death_status for newborn {individual_id}')
 
-        # First we create a list of possible causes of death for each newborn according to the complications they have
-        # experienced since birth
-        causes = list()
+        # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
+        # (either from one or multiple causes) and if death occurs returns the cause
+        potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause(
+            self, target='neonate', individual_id=individual_id)
 
-        if child.nb_early_onset_neonatal_sepsis or child.pn_sepsis_early_neonatal:
-            causes.append('early_onset_neonatal_sepsis')
+        # If a cause is returned death is scheduled
+        if potential_cause_of_death:
 
-        if child.pn_sepsis_late_neonatal:
-            causes.append('late_onset_neonatal_sepsis')
+            logger.debug(key='msg', data=f'Newborns {individual_id} has died following birth ')
+            df.at[individual_id, 'nb_death_after_birth'] = True
 
-        if not nci[individual_id]['passed_through_week_one']:
+            if individual_id in nci:
+                del nci[individual_id]
 
-            if child.nb_encephalopathy == 'mild_enceph' or child.nb_encephalopathy == 'moderate_enceph' or \
-               child.nb_encephalopathy == 'severe_enceph':
-                causes.append('encephalopathy')
-
-            if child.nb_not_breathing_at_birth and (child.nb_encephalopathy == 'none') and \
-               (~child.nb_preterm_respiratory_distress):
-                causes.append('neonatal_respiratory_depression')
-
-            if child.nb_early_preterm or child.nb_late_preterm:
-                causes.append('preterm_other')
-
-            if child.nb_preterm_respiratory_distress:
-                causes.append('respiratory_distress_syndrome')
-
-            if self.congeintal_anomalies.has_all(individual_id, 'heart'):
-                causes.append('congenital_heart_anomaly')
-            if self.congeintal_anomalies.has_all(individual_id, 'limb_musc_skeletal'):
-                causes.append('limb_or_musculoskeletal_anomaly')
-            if self.congeintal_anomalies.has_all(individual_id, 'urogenital'):
-                causes.append('urogenital_anomaly')
-            if self.congeintal_anomalies.has_all(individual_id, 'digestive'):
-                causes.append('digestive_anomaly')
-            if self.congeintal_anomalies.has_all(individual_id, 'other'):
-                causes.append('other_anomaly')
-
-        # Using this list we predict the probability of death from each complications associated linear model for death
-        # and store this in a dictionary
-        if causes:
-            risks = dict()
-
-            for cause in causes:
-                if f'{cause}_death' in self.nb_linear_models.keys():
-                    risk = {f'{cause}': self.nb_linear_models[f'{cause}_death'].predict(
-                        df.loc[[individual_id]])[individual_id]}
-                else:
-                    risk = {f'{cause}': params[f'cfr_{cause}']}
-
-                risks.update(risk)
-
-            # Next calculate the overall risk of death from one or more complications
-            result = 1
-
-            for cause in risks:
-                result *= (1 - risks[cause])
-
-            # If random draw is less that the total risk of death, she will die and the primary cause is then determined
-            if self.rng.random_sample() < (1 - result):
-                logger.debug(key='msg', data=f'Newborns {individual_id} has died following birth ')
-
-                df.at[individual_id, 'nb_death_after_birth'] = True
-
-                denominator = sum(risks.values())
-
-                probs = list()
-
-                # Cycle over each cause in the dictionary and divide by the sum of the probabilities
-                for cause in risks:
-                    risks[cause] = risks[cause] / denominator
-                    probs.append(risks[cause])
-
-                # Log the death (eventually this can be removed)
-                cause_of_death = self.rng.choice(causes, p=probs)
-
-                if individual_id in nci:
-                    del nci[individual_id]
-
-                # If the death is associated with prematurity we scatter those deaths across the first 2 weeks
-                if cause_of_death == 'preterm_other':
-                    random_draw = self.rng.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+            # If the death is associated with prematurity we scatter those deaths across the first 2 weeks
+            if potential_cause_of_death == 'preterm_other':
+                random_draw = self.rng.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
                                                   p=params['prob_preterm_death_by_day'])
-                    death_date = self.sim.date + DateOffset(days=int(random_draw))
+                death_date = self.sim.date + DateOffset(days=int(random_draw))
 
-                # Similarly, if death is associated with congential anomaly we schedule death across the life coarse to
-                # align with GBD estimates
-                elif 'anomaly' in cause_of_death:
+            # Similarly, if death is associated with congential anomaly we schedule death across the life coarse to
+            # align with GBD estimates
+            elif 'anomaly' in potential_cause_of_death:
 
-                    days_per_year = 365.25
-                    # Generate the minimum and maximum number of days within the age group to allow for random
-                    # distribution within each group
-                    days_per_age_group = \
-                        {'early_n': [0, 6],
-                         'late_n': [7, 28],
-                         'post_n': [29, 364],
-                         '1-4': [days_per_year, ((5 * days_per_year) - 1)],
-                         '5-9': [(5 * days_per_year), ((10 * days_per_year) - 1)],
-                         '10-14': [(10 * days_per_year), ((15 * days_per_year) - 1)],
-                         '15-69': [(15 * days_per_year), ((70 * days_per_year) - 1)]}
+                days_per_year = 365.25
+                # Generate the minimum and maximum number of days within the age group to allow for random
+                # distribution within each group
+                days_per_age_group = \
+                    {'early_n': [0, 6],
+                     'late_n': [7, 28],
+                     'post_n': [29, 364],
+                     '1-4': [days_per_year, ((5 * days_per_year) - 1)],
+                     '5-9': [(5 * days_per_year), ((10 * days_per_year) - 1)],
+                     '10-14': [(10 * days_per_year), ((15 * days_per_year) - 1)],
+                     '15-69': [(15 * days_per_year), ((70 * days_per_year) - 1)]}
 
-                    random_draw = self.rng.choice(list(days_per_age_group.keys()),
-                                                  p=params['prob_cba_death_by_age_group'])
+                random_draw = self.rng.choice(list(days_per_age_group.keys()),
+                                             p=params['prob_cba_death_by_age_group'])
 
-                    onset_day = self.rng.randint(days_per_age_group[random_draw][0],
-                                                 days_per_age_group[random_draw][1])
+                onset_day = self.rng.randint(days_per_age_group[random_draw][0],
+                                             days_per_age_group[random_draw][1])
 
-                    death_date = self.sim.date + DateOffset(days=onset_day)
+                death_date = self.sim.date + DateOffset(days=onset_day)
 
-                else:
-                    death_date = self.sim.date
-
-                self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
-                                                                      cause=f'{cause_of_death}'), death_date)
-            # Reset variables
             else:
-                df.at[individual_id, 'nb_early_onset_neonatal_sepsis'] = False
-                df.at[individual_id, 'pn_sepsis_early_neonatal'] = False
-                df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
+                death_date = self.sim.date
+
+            self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
+                                                                  cause=potential_cause_of_death), death_date)
+        # Reset variables
+        else:
+            df.at[individual_id, 'nb_early_onset_neonatal_sepsis'] = False
+            df.at[individual_id, 'pn_sepsis_early_neonatal'] = False
+            df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
 
         # Finally we schedule the postnatal week one event
         if individual_id in nci:
@@ -827,7 +795,7 @@ class NewbornOutcomes(Module):
         mother_id = df.loc[individual_id, 'mother_id']
         if not df.at[mother_id, 'is_alive']:
             if (mother_id in mni) and \
-                (~df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
+                (not df.at[mother_id, 'ps_multiple_pregnancy'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
                                                                 (mni[mother_id]['twin_count'] == 2))):
                 del mni[mother_id]
 
@@ -846,39 +814,46 @@ class NewbornOutcomes(Module):
         logger.debug(key='message', data=f'Child {individual_id} will have now their DALYs calculated following '
                                          f'complications after birth')
 
-        choice = self.rng.choice
-
         if individual_id not in nci:
             return
 
+        self.rng.choice(('none', 'non_exclusive', 'exclusive'), p=params['prob_breastfeeding_type'])
         if nci[individual_id]['ga_at_birth'] < 32:
             if self.rng.random_sample() < params['prob_mild_disability_preterm_<32weeks']:
-                df.at[individual_id, 'nb_preterm_birth_disab'] = choice(['mild_motor_and_cog', 'mild_motor'])
+                df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
+                    ('mild_motor_and_cog', 'mild_motor'), p=params['probs_for_mild_preterm_daly_wts_<32wks'])
 
             elif self.rng.random_sample() < params['prob_mod_severe_disability_preterm_<32weeks']:
-                df.at[individual_id, 'nb_preterm_birth_disab'] = choice(['moderate_motor', 'severe_motor'])
+                df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
+                    ('moderate_motor', 'severe_motor'), p=params['probs_for_sev_preterm_daly_wts_<32wks'])
 
         elif 32 <= nci[individual_id]['ga_at_birth'] < 37:
             if self.rng.random_sample() < params['prob_mild_disability_preterm_32_36weeks']:
-                df.at[individual_id, 'nb_preterm_birth_disab'] = choice(['mild_motor_and_cog', 'mild_motor'])
+                df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
+                    ('mild_motor_and_cog', 'mild_motor'), p=params['probs_for_mild_preterm_daly_wts_>32wks'])
 
             elif self.rng.random_sample() < params['prob_mod_severe_disability_preterm_32_36weeks']:
-                df.at[individual_id, 'nb_preterm_birth_disab'] = choice(['moderate_motor', 'severe_motor'])
+                df.at[individual_id, 'nb_preterm_birth_disab'] = self.rng.choice(
+                    ('moderate_motor', 'severe_motor'), p=params['probs_for_sev_preterm_daly_wts_>32wks'])
 
         if child.nb_encephalopathy != 'none':
             if self.rng.random_sample() < params['prob_mild_impairment_post_enceph']:
-                df.at[individual_id, 'nb_encephalopathy_disab'] = choice(['mild_motor_and_cog', 'mild_motor'])
+                df.at[individual_id, 'nb_encephalopathy_disab'] = self.rng.choice(
+                    ('mild_motor_and_cog', 'mild_motor'), p=params['probs_for_mild_enceph_daly_wts'])
 
             elif self.rng.random_sample() < params['prob_mod_severe_impairment_post_enceph']:
-                df.at[individual_id, 'nb_encephalopathy_disab'] = choice(['moderate_motor', 'severe_motor'])
+                df.at[individual_id, 'nb_encephalopathy_disab'] = self.rng.choice(
+                    ('moderate_motor', 'severe_motor'), p=params['probs_for_sev_enceph_daly_wts'])
 
         # n.b. no data data on sepsis long term outcomes, using encephalopathy data as a proxy for now...
         if child.nb_early_onset_neonatal_sepsis or nci[individual_id]['sepsis_postnatal']:
             if self.rng.random_sample() < params['prob_mild_impairment_post_enceph']:
-                df.at[individual_id, 'nb_neonatal_sepsis_disab'] = choice(['mild_motor_and_cog', 'mild_motor'])
+                df.at[individual_id, 'nb_neonatal_sepsis_disab'] = self.rng.choice(
+                    ('mild_motor_and_cog', 'mild_motor'), p=params['probs_for_mild_sepsis_daly_wts'])
 
             elif self.rng.random_sample() < params['prob_mod_severe_impairment_post_enceph']:
-                df.at[individual_id, 'nb_neonatal_sepsis_disab'] = choice(['moderate_motor', 'severe_motor'])
+                df.at[individual_id, 'nb_neonatal_sepsis_disab'] = self.rng.choice(
+                    ('moderate_motor', 'severe_motor'), p=params['probs_for_sev_sepsis_daly_wts'])
 
         del nci[individual_id]
 
@@ -931,7 +906,7 @@ class NewbornOutcomes(Module):
 
         # We determine breastfeeding for non-twins or first born twins (second born twins will match first born for
         # breastfeeding type)
-        if ~df.at[person_id, 'nb_is_twin'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
+        if not df.at[person_id, 'nb_is_twin'] or (df.at[mother_id, 'ps_multiple_pregnancy'] and
                                                mni[mother_id]['twin_count'] == 1):
 
             # First we determine the 'type' of breastfeeding this newborn will receive
@@ -979,13 +954,6 @@ class NewbornOutcomes(Module):
             # Store treatment as a property of the newborn used to apply treatment effect
             df.at[person_id, 'nb_kangaroo_mother_care'] = True
 
-    def immunisations(self, child_id):
-        """
-        This is a placeholder. Will house/call immunisation events for newborns
-        :param child_id: child_id
-        """
-        pass
-
     def hiv_screening_for_at_risk_newborns(self, child_id):
         """
         This function schedules immediate HIV screening for newborns of mothers who are HIV positive. Additional
@@ -996,7 +964,7 @@ class NewbornOutcomes(Module):
         child_id = int(child_id)
 
         if 'Hiv' in self.sim.modules:
-            if ~df.at[child_id, 'hv_diagnosed']:
+            if not df.at[child_id, 'hv_diagnosed']:
 
                 if df.at[child_id, 'nb_pnc_check'] == 1:
                     logger.debug(key='message', data=f'Neonate {child_id} is receiving HIV screening after birth')
@@ -1193,7 +1161,7 @@ class NewbornOutcomes(Module):
             df.at[child_id, 'nb_is_twin'] = True
             m['twin_count'] = 2
 
-        elif ~df.at[mother_id, 'ps_multiple_pregnancy']:
+        elif not df.at[mother_id, 'ps_multiple_pregnancy']:
             df.at[child_id, 'nb_is_twin'] = False
             df.at[child_id, 'nb_twin_sibling_id'] = -1
 
@@ -1247,11 +1215,11 @@ class NewbornOutcomes(Module):
 
         # Check no children born at term or postterm women are incorrectly categorised as preterm
         if m['labour_state'] == 'term_labour':
-            assert ~df.at[child_id, 'nb_early_preterm']
-            assert ~df.at[child_id, 'nb_late_preterm']
+            assert not df.at[child_id, 'nb_early_preterm']
+            assert not df.at[child_id, 'nb_late_preterm']
         if m['labour_state'] == 'postterm_labour':
-            assert ~df.at[child_id, 'nb_early_preterm']
-            assert ~df.at[child_id, 'nb_late_preterm']
+            assert not df.at[child_id, 'nb_early_preterm']
+            assert not df.at[child_id, 'nb_late_preterm']
 
         if df.at[child_id, 'is_alive']:
 
@@ -1354,7 +1322,7 @@ class NewbornOutcomes(Module):
                     self.set_death_status(child_id)
 
         # Finally we call the following functions to conduct logging/update variables related to pregnancy
-        if ~df.at[mother_id, 'ps_multiple_pregnancy'] or\
+        if not df.at[mother_id, 'ps_multiple_pregnancy'] or\
             (df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 2)) or \
            (df.at[mother_id, 'ps_multiple_pregnancy'] and m['single_twin_still_birth']):
 
@@ -1551,8 +1519,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
             if squeeze_factor < params['squeeze_threshold_kmc']:
                 self.module.kangaroo_mother_care(self)
 
-            # Finally these newborns will receive immunisation and HIV screening if at risk
-                self.module.immunisations(person_id)
+                # Finally these newborns will receive  HIV screening if at risk
                 self.module.hiv_screening_for_at_risk_newborns(person_id)
 
         self.module.set_death_status(person_id)
@@ -1656,17 +1623,3 @@ class BreastfeedingStatusUpdateEventTwoYears(Event, IndividualScopeEventMixin):
             return
 
         df.at[individual_id, 'nb_breastfeeding_status'] = 'none'
-
-
-class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    """ This is NewbornOutcomesLoggingEvent. The event runs every year and calculates yearly
-    incidence of key outcomes following birth, and logs them in a dataframe to be used by analysis
-    files """
-    def __init__(self, module):
-        self.repeat = 1
-        super().__init__(module, frequency=DateOffset(years=self.repeat))
-
-    def apply(self, population):
-        # df = self.sim.population.props
-
-        pass

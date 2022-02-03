@@ -120,11 +120,11 @@ def test_event_scheduling_for_labour_onset_and_home_birth_no_care_seeking():
     mni[mother_id]['test_run'] = True
 
     params['test_care_seeking_probs'] = [1, 0, 0]
-    params['odds_will_attend_pnc'] = 0
-    params['cfr_pp_sepsis'] = 0
-    params['cfr_pp_eclampsia'] = 0
-    params['cfr_severe_pre_eclamp'] = 0
-    params['cfr_pp_pph'] = 0
+    params['odds_will_attend_pnc'] = 0.0
+    params['cfr_pp_sepsis'] = 0.0
+    params['cfr_pp_eclampsia'] = 0.0
+    params['cfr_severe_pre_eclamp'] = 0.0
+    params['cfr_pp_pph'] = 0.0
 
     # define and run labour onset event
     labour_onset = labour.LabourOnsetEvent(individual_id=mother_id, module=sim.modules['Labour'])
@@ -150,7 +150,7 @@ def test_event_scheduling_for_labour_onset_and_home_birth_no_care_seeking():
     sim.event_queue.queue.clear()
 
     # Set care seeking odds to 0 (as changes event sequence if women seek care- tested later)
-    params['prob_careseeking_for_complication'] = 0
+    params['prob_careseeking_for_complication'] = 0.0
 
     # Stop possibility of care seeking if she has developed a complication
     mni[mother_id]['squeeze_to_high_for_hsi_pp'] = True
@@ -188,8 +188,8 @@ def test_event_scheduling_for_care_seeking_during_home_birth():
     # Force the woman to experience some complications and force that she will seek care
     mni[mother_id]['delivery_setting'] = 'home_birth'
 
-    params['prob_obstruction_cpd'] = 1
-    params['prob_careseeking_for_complication'] = 1
+    params['prob_obstruction_cpd'] = 1.0
+    params['prob_careseeking_for_complication'] = 1.0
 
     # Run the intrapartum home birth event
     home_birth = labour.LabourAtHomeEvent(individual_id=mother_id, module=sim.modules['Labour'])
@@ -224,7 +224,7 @@ def test_event_scheduling_for_care_seeking_during_home_birth():
     sim.date = sim.date + pd.DateOffset(days=5)
 
     # force a complication
-    params['prob_pph_uterine_atony'] = 1
+    params['prob_pph_uterine_atony'] = 1.0
 
     # run postpartum home event
     home_birth_pp = labour.BirthAndPostnatalOutcomesEvent(mother_id=mother_id, module=sim.modules['Labour'])
@@ -338,12 +338,12 @@ def test_application_of_risk_of_complications_in_intrapartum_and_postpartum_phas
 
     # Force all complications and preceding complications to occur
     params = sim.modules['Labour'].current_parameters
-    params['prob_obstruction_cpd'] = 1
-    params['prob_obstruction_malpos_malpres'] = 1
-    params['prob_placental_abruption_during_labour'] = 1
-    params['prob_aph_placental_abruption_labour'] = 1
-    params['prob_sepsis_chorioamnionitis'] = 1
-    params['prob_uterine_rupture'] = 1
+    params['prob_obstruction_cpd'] = 1.0
+    params['prob_obstruction_malpos_malpres'] = 1.0
+    params['prob_placental_abruption_during_labour'] = 1.0
+    params['prob_aph_placental_abruption_labour'] = 1.0
+    params['prob_sepsis_chorioamnionitis'] = 1.0
+    params['prob_uterine_rupture'] = 1.0
 
     # Call the function responsible to applying risk of complications
     for complication in ['obstruction_cpd', 'obstruction_malpos_malpres',
@@ -360,13 +360,13 @@ def test_application_of_risk_of_complications_in_intrapartum_and_postpartum_phas
     assert sim.population.props.at[mother_id, 'la_uterine_rupture']
 
     # Now repeat this process checking the application of risk of complications in the immediate postpartum period
-    params['prob_sepsis_endometritis'] = 1
-    params['prob_sepsis_urinary_tract'] = 1
-    params['prob_sepsis_skin_soft_tissue'] = 1
-    params['prob_sepsis_other_maternal_infection_pp'] = 1
-    params['prob_pph_uterine_atony'] = 1
-    params['prob_pph_retained_placenta'] = 1
-    params['prob_pph_other_causes'] = 1
+    params['prob_sepsis_endometritis'] = 1.0
+    params['prob_sepsis_urinary_tract'] = 1.0
+    params['prob_sepsis_skin_soft_tissue'] = 1.0
+    params['prob_sepsis_other_maternal_infection_pp'] = 1.0
+    params['prob_pph_uterine_atony'] = 1.0
+    params['prob_pph_retained_placenta'] = 1.0
+    params['prob_pph_other_causes'] = 1.0
 
     for complication in ['sepsis_endometritis', 'sepsis_urinary_tract', 'sepsis_skin_soft_tissue',
                          'pph_uterine_atony', 'pph_retained_placenta', 'pph_other']:
@@ -389,13 +389,13 @@ def test_logic_within_death_and_still_birth_events():
 
     # set the intercept values for the death LMs to 1 to force death to occur
     params = sim.modules['Labour'].current_parameters
-    params['cfr_sepsis'] = 1
-    params['cfr_eclampsia'] = 1
-    params['cfr_severe_pre_eclamp'] = 1
-    params['cfr_aph'] = 1
-    params['cfr_uterine_rupture'] = 1
-    params['cfr_severe_pre_eclamp'] = 1
-    params['cfr_pp_pph'] = 1
+    params['cfr_sepsis'] = 1.0
+    params['cfr_eclampsia'] = 1.0
+    params['cfr_severe_pre_eclamp'] = 1.0
+    params['cfr_aph'] = 1.0
+    params['cfr_uterine_rupture'] = 1.0
+    params['cfr_severe_pre_eclamp'] = 1.0
+    params['cfr_pp_pph'] = 1.0
 
     df.at[mother_id, 'is_pregnant'] = True
 
@@ -460,14 +460,14 @@ def test_logic_within_death_and_still_birth_events():
     sim.modules['Labour'].set_labour_mni_variables(mother_id)
 
     # set risk of death to 0 but set risk of stillbirth to 1
-    params['cfr_sepsis'] = 0
-    params['cfr_eclampsia'] = 0
-    params['cfr_severe_pre_eclamp'] = 0
-    params['cfr_aph'] = 0
-    params['cfr_uterine_rupture'] = 0
-    params['cfr_severe_pre_eclamp'] = 0
-    params['cfr_pp_pph'] = 0
-    params['prob_ip_still_birth'] = 1
+    params['cfr_sepsis'] = 0.0
+    params['cfr_eclampsia'] = 0.0
+    params['cfr_severe_pre_eclamp'] = 0.0
+    params['cfr_aph'] = 0.0
+    params['cfr_uterine_rupture'] = 0.0
+    params['cfr_severe_pre_eclamp'] = 0.0
+    params['cfr_pp_pph'] = 0.0
+    params['prob_ip_still_birth'] = 1.0
 
     # run the event again and check the correct variables have been updated to signify stillbirth
     death_event.apply(mother_id)
@@ -545,7 +545,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     # Remove CPD as a cause and set probability of AVD being successful to 1, call the function and check she has
     # undergone instrumental delivery
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['cpd'] = False
-    params['prob_successful_assisted_vaginal_delivery'] = 1
+    params['prob_successful_assisted_vaginal_delivery'] = 1.0
     sim.modules['Labour'].assessment_and_treatment_of_obstructed_labour_via_avd(hsi_event=hsi_event)
     assert (mni[mother_id]['mode_of_delivery'] == 'instrumental')
 
@@ -580,7 +580,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     # Finally check treatment for postpartum haem. Set probablity that uterotonics will stop bleeding to 1
     df.at[mother_id, 'la_postpartum_haem'] = True
     mni[mother_id]['uterine_atony'] = True
-    params['prob_haemostatis_uterotonics'] = 1
+    params['prob_haemostatis_uterotonics'] = 1.0
 
     # Run the event and check that the woman is referred for blood but not surgery. And that treatment is stored in
     # bitset property
@@ -589,7 +589,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     assert not mni[mother_id]['referred_for_surgery']
 
     # Reset those properties and set the probability of successful medical management to 0
-    params['prob_haemostatis_uterotonics'] = 0
+    params['prob_haemostatis_uterotonics'] = 0.0
     df.at[mother_id, 'la_postpartum_haem'] = True
 
     # Call treatment function and check she has correctly been referred for surgical management and blood
@@ -605,12 +605,12 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     mni[mother_id]['retained_placenta'] = True
 
     # Now assume the bleed is due to retained placenta, set probablity of bedside removal to 1 and call function
-    params['prob_successful_manual_removal_placenta'] = 1
+    params['prob_successful_manual_removal_placenta'] = 1.0
     sim.modules['Labour'].assessment_and_treatment_of_pph_retained_placenta(hsi_event=hsi_event)
     assert not mni[mother_id]['referred_for_blood']
     assert not mni[mother_id]['referred_for_surgery']
 
-    params['prob_successful_manual_removal_placenta'] = 0
+    params['prob_successful_manual_removal_placenta'] = 0.0
     mni[mother_id]['retained_placenta'] = True
     df.at[mother_id, 'la_postpartum_haem'] = True
 
@@ -648,7 +648,7 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
     df.at[mother_id, 'la_uterine_rupture'] = True
 
     # Force success rate of surgery to 1
-    params['success_rate_uterine_repair'] = 1
+    params['success_rate_uterine_repair'] = 1.0
 
     # Run the surgery and check the treatment has been delivered
     ip_cemonc_event.apply(person_id=updated_id, squeeze_factor=0.0)
@@ -657,7 +657,7 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
 
     # Now set the success rate of repair to 0 and run the event again, check this time the woman has undergone
     # hysterectomy
-    params['success_rate_uterine_repair'] = 0
+    params['success_rate_uterine_repair'] = 0.0
     ip_cemonc_event.apply(person_id=updated_id, squeeze_factor=0.0)
     assert df.at[mother_id, 'la_has_had_hysterectomy']
 
@@ -685,7 +685,7 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
     df.at[mother_id, 'la_date_most_recent_delivery'] = sim.date + pd.DateOffset(days=4)
 
     # force surgery to be successful
-    params['success_rate_pph_surgery'] = 1
+    params['success_rate_pph_surgery'] = 1.0
 
     # run event, check the women underwent successful surgery and didnt have a hysterectomy
     pp_cemonc_event.apply(person_id=updated_id, squeeze_factor=0.0)
@@ -704,7 +704,7 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
     df.at[mother_id, 'la_postpartum_haem'] = True
 
     # now set surgery success to 0 and check that hysterectomy occurred
-    params['success_rate_pph_surgery'] = 0
+    params['success_rate_pph_surgery'] = 0.0
     sim.modules['Labour'].pph_treatment.unset(mother_id, 'surgery')
     pp_cemonc_event.apply(person_id=updated_id, squeeze_factor=0.0)
 

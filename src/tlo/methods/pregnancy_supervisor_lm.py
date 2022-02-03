@@ -2,7 +2,11 @@ import pandas as pd
 
 
 def preterm_labour(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability of preterm labour onset for a subset of
+    the population. In this model the 'intercept' value varies dependent on a womans gestational age to generate the
+    correct distribution of early/late preterm births
+    """
     params = self.parameters
     result = pd.Series(data=1, index=df.index)
 
@@ -20,7 +24,10 @@ def preterm_labour(self, df, rng=None, **externals):
 
 
 def placenta_praevia(self, df, rng=None, **externals):
-    """population level"""
+    """
+Population level linear model which returns a df containing the probability of placenta praevia for a subset of
+    the population at initiation of pregnancy.
+    """
     params = self.parameters
     result = pd.Series(data=params['prob_placenta_praevia'], index=df.index)
 
@@ -30,7 +37,11 @@ def placenta_praevia(self, df, rng=None, **externals):
 
 
 def antepartum_haem(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability of antepartum haemorrhage for a subset
+    of the population at different time points of pregnancy. We assume no risk of bleeding in the absence of
+    predictors included in the model. We therefore use an additive approach to determine risk of bleeding
+    """
     params = self.parameters
     result = pd.Series(data=0, index=df.index)
 
@@ -41,7 +52,11 @@ def antepartum_haem(self, df, rng=None, **externals):
 
 
 def ectopic_pregnancy_death(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability of death following ectopic pregnancy
+    for a subset of the population following onset of disease and potential treatment. Risk of death is only modified in
+    the presence of treatment
+    """
     params = self.parameters
     result = pd.Series(data=params['prob_ectopic_pregnancy_death'], index=df.index)
 
@@ -51,7 +66,11 @@ def ectopic_pregnancy_death(self, df, rng=None, **externals):
 
 
 def induced_abortion_death(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability of death following induced abortion
+    for a subset of the population following onset of disease and potential treatment. Risk of death is only modified in
+    the presence of treatment
+    """
     params = self.parameters
     result = pd.Series(data=params['prob_induced_abortion_death'], index=df.index)
 
@@ -61,7 +80,11 @@ def induced_abortion_death(self, df, rng=None, **externals):
 
 
 def spontaneous_abortion(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability of spontaneous abortion for a subset
+    of the population at different time points of pregnancy. In this model the 'intercept' value varies dependent on a
+    womans gestational age to generate the correct distribution of miscarriage by gestational age.
+    """
     params = self.parameters
     result = pd.Series(data=1, index=df.index)
 
@@ -80,7 +103,11 @@ def spontaneous_abortion(self, df, rng=None, **externals):
 
 
 def spontaneous_abortion_death(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability of death following spontaneous abortion
+    for a subset of the population following onset of disease and potential treatment. Risk of death is only modified in
+    the presence of treatment
+    """
     params = self.parameters
     result = pd.Series(data=params['prob_spontaneous_abortion_death'], index=df.index)
 
@@ -90,7 +117,11 @@ def spontaneous_abortion_death(self, df, rng=None, **externals):
 
 
 def maternal_anaemia(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability anaemia onset for a subset of the
+    population during each month of pregnancy. Risk of onset is predicted by both treatment and disease status
+    (malaria/HIV)
+    """
     params = self.parameters
     result = pd.Series(data=params['baseline_prob_anaemia_per_month'], index=df.index)
 
@@ -102,7 +133,10 @@ def maternal_anaemia(self, df, rng=None, **externals):
 
 
 def gest_diab(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability gestational diabetes onset for a subset
+    of the population during set months of pregnancy.
+    """
     params = self.parameters
     result = pd.Series(data=params['prob_gest_diab_per_month'], index=df.index)
 
@@ -112,7 +146,10 @@ def gest_diab(self, df, rng=None, **externals):
 
 
 def gest_htn(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability gestational hypertension onset for a
+    subset of the population during set months of pregnancy.
+    """
     params = self.parameters
     result = pd.Series(data=params['prob_gest_htn_per_month'], index=df.index)
 
@@ -123,7 +160,10 @@ def gest_htn(self, df, rng=None, **externals):
 
 
 def pre_eclampsia(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability mild pre-eclampsia onset for a
+    subset of the population during set months of pregnancy.
+    """
     params = self.parameters
     result = pd.Series(data=params['prob_pre_eclampsia_per_month'], index=df.index)
 
@@ -137,7 +177,10 @@ def pre_eclampsia(self, df, rng=None, **externals):
 
 
 def placental_abruption(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability of placental abruption onset for a
+    subset of the population during set months of pregnancy.
+    """
     params = self.parameters
     result = pd.Series(data=params['prob_placental_abruption_per_month'], index=df.index)
 
@@ -148,7 +191,10 @@ def placental_abruption(self, df, rng=None, **externals):
 
 
 def antenatal_stillbirth(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability of antenatal stillbirth for a
+    subset of the population during set months of pregnancy.
+    """
     params = self.parameters
     result = pd.Series(data=params['prob_still_birth_per_month'], index=df.index)
 
@@ -175,7 +221,11 @@ def antenatal_stillbirth(self, df, rng=None, **externals):
 
 
 def early_initiation_anc4(self, df, rng=None, **externals):
-    """population level"""
+    """
+    Population level linear model which returns a df containing the probability of attending at least four antenatal
+    care visits, with the first visit prior to 5 months, during pregnancy to subset of the population. This is a
+    logistic model and the parameters are odds/odds ratios therefore the result is converted to a probability
+    """
     params = self.parameters
     result = pd.Series(data=params['odds_early_init_anc4'], index=df.index)
 

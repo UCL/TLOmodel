@@ -164,22 +164,22 @@ def test_perfect_run_of_anc_contacts_no_constraints():
 
     # ensure care seeking will continue for all ANC visits
     params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
-    params['prob_anc_continues'] = 1
+    params['prob_anc_continues'] = 1.0
 
     # Set parameters used to determine if HCW will deliver intervention (if consumables available) to 1
-    params['prob_intervention_delivered_urine_ds'] = 1
-    params['prob_intervention_delivered_bp'] = 1
-    params['prob_intervention_delivered_depression_screen'] = 1
-    params['prob_intervention_delivered_ifa'] = 1
-    params['prob_adherent_ifa'] = 1
-    params['prob_intervention_delivered_bep'] = 1
-    params['prob_intervention_delivered_llitn'] = 1
-    params['prob_intervention_delivered_iptp'] = 1
-    params['prob_intervention_delivered_hiv_test'] = 1
-    params['prob_intervention_delivered_poct'] = 1
-    params['prob_intervention_delivered_tt'] = 1
-    params['sensitivity_blood_test_glucose'] = 1
-    params['specificity_blood_test_glucose'] = 1
+    params['prob_intervention_delivered_urine_ds'] = 1.0
+    params['prob_intervention_delivered_bp'] = 1.0
+    params['prob_intervention_delivered_depression_screen'] = 1.0
+    params['prob_intervention_delivered_ifa'] = 1.0
+    params['prob_adherent_ifa'] = 1.0
+    params['prob_intervention_delivered_bep'] = 1.0
+    params['prob_intervention_delivered_llitn'] = 1.0
+    params['prob_intervention_delivered_iptp'] = 1.0
+    params['prob_intervention_delivered_hiv_test'] = 1.0
+    params['prob_intervention_delivered_poct'] = 1.0
+    params['prob_intervention_delivered_tt'] = 1.0
+    params['sensitivity_blood_test_glucose'] = 1.0
+    params['specificity_blood_test_glucose'] = 1.0
 
     # Register the anc HSIs
     first_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
@@ -412,7 +412,7 @@ def test_anc_contacts_that_should_not_run_wont_run():
     mother_id = run_sim_for_0_days_get_mother_id(sim)
 
     params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
-    params['prob_anc_continues'] = 1
+    params['prob_anc_continues'] = 1.0
 
     # Set key pregnancy variables
     df = sim.population.props
@@ -538,7 +538,7 @@ def test_daisy_chain_care_seeking_logic_to_ensure_certain_number_of_contact():
     # For women who are not predetermined to attend at least 4 anc contact we use a probability to determine if they
     # will return for the next visit. Here we set that to 0 and check that no event has been sheduled
     params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
-    params['prob_anc_continues'] = 0
+    params['prob_anc_continues'] = 0.0
 
     sim.modules['CareOfWomenDuringPregnancy'].antenatal_care_scheduler(individual_id=updated_mother_id,
                                                                        visit_to_be_scheduled=3,
@@ -562,8 +562,8 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     params['specificity_fbc_hb_test'] = 1.0
 
     # Set treatment parameters to 1
-    params['treatment_effect_blood_transfusion_anaemia'] = 1
-    params['prob_adherent_ifa'] = 1
+    params['treatment_effect_blood_transfusion_anaemia'] = 1.0
+    params['prob_adherent_ifa'] = 1.0
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
@@ -714,7 +714,7 @@ def test_initiation_of_treatment_for_gestational_diabetes_during_antenatal_inpat
 
     # Set the probability that diet and exercise alone will controll this womans diabetes to 0
     params = sim.modules['PregnancySupervisor'].current_parameters
-    params['prob_glycaemic_control_diet_exercise'] = 0
+    params['prob_glycaemic_control_diet_exercise'] = 0.0
 
     # Run the event
     glyc_event = pregnancy_supervisor.GestationalDiabetesGlycaemicControlEvent(
@@ -741,7 +741,7 @@ def test_initiation_of_treatment_for_gestational_diabetes_during_antenatal_inpat
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes in hsi_events  # noqa: E501
 
     # Set the probability that oral medication alone will control this womans diabetes to 0
-    params['prob_glycaemic_control_orals'] = 0
+    params['prob_glycaemic_control_orals'] = 0.0
 
     # run the event and check
     glyc_event.apply(mother_id)

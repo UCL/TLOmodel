@@ -64,14 +64,14 @@ def set_all_women_as_pregnant_and_reset_baseline_parity(sim):
 def turn_off_antenatal_pregnancy_loss(sim):
     """Set all parameters which output probability of pregnancy loss to 0"""
     params = sim.modules['PregnancySupervisor'].current_parameters
-    params['prob_ectopic_pregnancy'] = 0
-    params['prob_induced_abortion_per_month'] = 0
-    params['prob_still_birth_per_month'] = 0
+    params['prob_ectopic_pregnancy'] = 0.0
+    params['prob_induced_abortion_per_month'] = 0.0
+    params['prob_still_birth_per_month'] = 0.0
 
     sim.modules['PregnancySupervisor'].ps_linear_models['spontaneous_abortion'] = \
         LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            0)
+            0.0)
 
 
 def register_modules():
@@ -267,8 +267,8 @@ def test_application_of_risk_of_twin_pregnancy():
 
     # set risk of twin birth to one
     params = sim.modules['PregnancySupervisor'].current_parameters
-    params['prob_multiples'] = 1
-    params['prob_ectopic_pregnancy'] = 0
+    params['prob_multiples'] = 1.0
+    params['prob_ectopic_pregnancy'] = 0.0
 
     df = sim.population.props
     women = df.loc[df.is_alive & (df.sex == 'F') & df.is_pregnant]
@@ -305,20 +305,20 @@ def test_spontaneous_abortion_ends_pregnancies_as_expected():
 
     # Set risk of miscarriage to 1 (block other pregnancy loss)
     params = sim.modules['PregnancySupervisor'].current_parameters
-    params['prob_ectopic_pregnancy'] = 0
-    params['prob_induced_abortion_per_month'] = 0
+    params['prob_ectopic_pregnancy'] = 0.0
+    params['prob_induced_abortion_per_month'] = 0.0
 
     sim.modules['PregnancySupervisor'].ps_linear_models['spontaneous_abortion'] = \
         LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            1)
+            1.0)
 
     # Run the event
     pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
     pregnancy_sup.apply(sim.population)
 
     # Check all important variables are updated
-    assert ~df.loc[women.index, 'is_pregnant'].all().all()
+    assert not df.loc[women.index, 'is_pregnant'].any().any()
     assert (df.loc[women.index, 'ps_prev_spont_abortion']).all().all()
     assert (df.loc[women.index, 'ps_gestational_age_in_weeks'] == 0).all().all()
     assert pd.isnull(df.loc[women.index, 'la_due_date_current_pregnancy']).all().all()
@@ -338,14 +338,14 @@ def test_induced_abortion_ends_pregnancies_as_expected():
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     params = sim.modules['PregnancySupervisor'].current_parameters
-    params['prob_ectopic_pregnancy'] = 0
+    params['prob_ectopic_pregnancy'] = 0.0
     sim.modules['PregnancySupervisor'].ps_linear_models['spontaneous_abortion'] = \
         LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            0)
+            0.0)
 
     # set risk of abortion to 1
-    params['prob_induced_abortion_per_month'] = 1
+    params['prob_induced_abortion_per_month'] = 1.0
 
     # Define women of interest in the population
     df = sim.population.props
@@ -387,26 +387,26 @@ def test_abortion_complications():
                     LinearModelType.MULTIPLICATIVE,
                     1)
             weeks = 2
-            params['prob_spontaneous_abortion_death'] = 1
+            params['prob_spontaneous_abortion_death'] = 1.0
 
         else:
             sim.modules['PregnancySupervisor'].ps_linear_models['spontaneous_abortion'] = \
                 LinearModel(
                     LinearModelType.MULTIPLICATIVE,
-                    0)
-            params['prob_induced_abortion_per_month'] = 1
-            params['prob_induced_abortion_death'] = 1
+                    0.0)
+            params['prob_induced_abortion_per_month'] = 1.0
+            params['prob_induced_abortion_death'] = 1.0
             weeks = 6
 
         # Set risk of complications and care seeking to 1 - set treatment to 100% effective
-        params['prob_complicated_sa'] = 1
-        params['prob_complicated_ia'] = 1
-        params['prob_seek_care_pregnancy_loss'] = 1
-        params['prob_haemorrhage_post_abortion'] = 1
-        params['prob_sepsis_post_abortion'] = 1
-        params['prob_injury_post_abortion'] = 1
-        params['prob_ectopic_pregnancy'] = 0
-        params['treatment_effect_post_abortion_care'] = 0
+        params['prob_complicated_sa'] = 1.0
+        params['prob_complicated_ia'] = 1.0
+        params['prob_seek_care_pregnancy_loss'] = 1.0
+        params['prob_haemorrhage_post_abortion'] = 1.0
+        params['prob_sepsis_post_abortion'] = 1.0
+        params['prob_injury_post_abortion'] = 1.0
+        params['prob_ectopic_pregnancy'] = 0.0
+        params['treatment_effect_post_abortion_care'] = 0.0
 
         df = sim.population.props
         pregnant_women = df.loc[df.is_alive & df.is_pregnant]
@@ -487,19 +487,19 @@ def test_still_births_ends_pregnancies_as_expected():
 
     # Only allow pregnancy loss from stillbirth
     params = sim.modules['PregnancySupervisor'].current_parameters
-    params['prob_ectopic_pregnancy'] = 0
-    params['prob_induced_abortion_per_month'] = 0
+    params['prob_ectopic_pregnancy'] = 0.0
+    params['prob_induced_abortion_per_month'] = 0.0
 
     sim.modules['PregnancySupervisor'].ps_linear_models['spontaneous_abortion'] = \
         LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            0)
+            0.0)
     sim.modules['PregnancySupervisor'].ps_linear_models['early_onset_labour'] = \
         LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            0)
+            0.0)
 
-    params['prob_still_birth_per_month'] = 1
+    params['prob_still_birth_per_month'] = 1.0
 
     # select the relevant women
     df = sim.population.props
@@ -535,10 +535,10 @@ def test_run_all_births_end_ectopic_no_care_seeking():
 
     # We force all pregnancies to be ectopic, never trigger care seeking, always lead to rupture and death
     params = sim.modules['PregnancySupervisor'].current_parameters
-    params['prob_ectopic_pregnancy'] = 1
-    params['prob_seek_care_pregnancy_loss'] = 0
-    params['prob_ectopic_pregnancy_death'] = 1
-    params['treatment_effect_ectopic_pregnancy_treatment'] = 1
+    params['prob_ectopic_pregnancy'] = 1.0
+    params['prob_seek_care_pregnancy_loss'] = 0.0
+    params['prob_ectopic_pregnancy_death'] = 1.0
+    params['treatment_effect_ectopic_pregnancy_treatment'] = 1.0
 
     # generate pregnancies and MNI dictionaries
     df = sim.population.props
@@ -607,14 +607,14 @@ def test_preterm_labour_logic():
     sim.modules['PregnancySupervisor'].ps_linear_models['early_onset_labour'] = \
         LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            1)
+            1.0)
 
     # And stop attendance to ANC
     sim.modules['PregnancySupervisor'].ps_linear_models['early_initiation_anc4'] = \
         LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            0)
-    params['prob_late_initiation_anc4'] = 1
+            0.0)
+    params['prob_late_initiation_anc4'] = 1.0
     params['prob_anc1_months_5_to_9'] = [0, 0, 0, 0, 0, 1]
 
     # Stop any pregnancies ending in pregnancy loss
@@ -719,7 +719,7 @@ def test_pregnancy_supervisor_anaemia():
 
     # Set the risk of anaemia to 1
     params = sim.modules['PregnancySupervisor'].current_parameters
-    params['baseline_prob_anaemia_per_month'] = 1
+    params['baseline_prob_anaemia_per_month'] = 1.0
     params['prob_mild_mod_sev_anaemia'] = [0, 0, 1]
 
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
@@ -754,7 +754,7 @@ def test_pregnancy_supervisor_anaemia():
     df.loc[pregnant_women.index, 'ac_receiving_iron_folic_acid'] = True
 
     # Set treatment effect to 100% (i.e 0)
-    params['treatment_effect_iron_folic_acid_anaemia'] = 0
+    params['treatment_effect_iron_folic_acid_anaemia'] = 0.0
 
     sim.date = sim.date + pd.DateOffset(weeks=5)
     pregnancy_sup.apply(sim.population)
@@ -778,13 +778,13 @@ def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage():
     # haemorrhage will choose to seek care
     params = sim.modules['PregnancySupervisor'].current_parameters
 
-    params['prob_placenta_praevia'] = 1
-    params['prob_placental_abruption_per_month'] = 1
-    params['prob_seek_care_pregnancy_complication'] = 1
+    params['prob_placenta_praevia'] = 1.0
+    params['prob_placental_abruption_per_month'] = 1.0
+    params['prob_seek_care_pregnancy_complication'] = 1.0
 
     # Similarly set the probability that these conditions will trigger haemorrhage to 1
-    params['prob_aph_placenta_praevia'] = 1
-    params['prob_aph_placental_abruption'] = 1
+    params['prob_aph_placenta_praevia'] = 1.0
+    params['prob_aph_placental_abruption'] = 1.0
     # Force all haemorrhage as severe
     params['prob_mod_sev_aph'] = [0, 1]
 
@@ -825,8 +825,8 @@ def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage():
     df.loc[pregnant_women.index, 'ps_emergency_event'] = False
 
     # Set risk of care seeking to 0 and risk of death to 1 so all women who experience haemorrhage should die
-    params['prob_seek_care_pregnancy_complication'] = 0
-    params['prob_antepartum_haemorrhage_death'] = 1
+    params['prob_seek_care_pregnancy_complication'] = 0.0
+    params['prob_antepartum_haemorrhage_death'] = 1.0
 
     # Move date forward again to the next time point in pregnancy risk is applied and run the event
     sim.date = sim.date + pd.DateOffset(weeks=5)
@@ -850,8 +850,8 @@ def test_pregnancy_supervisor_pre_eclampsia_and_progression():
     # Set the monthly risk of pre-eclampsia to 1, ensuring all pregnant women develop the condition the first month
     # risk is applied (22 week)
     params = sim.modules['PregnancySupervisor'].current_parameters
-    params['prob_pre_eclampsia_per_month'] = 1
-    params['treatment_effect_calcium_pre_eclamp'] = 1
+    params['prob_pre_eclampsia_per_month'] = 1.0
+    params['treatment_effect_calcium_pre_eclamp'] = 1.0
 
     # pre-eclampsia/spe/ec
     df = sim.population.props
@@ -872,7 +872,7 @@ def test_pregnancy_supervisor_pre_eclampsia_and_progression():
     # Now we modify the probability that women with mild pre-eclampsia will progress to severe pre-eclampsia when the
     # pregnancy supervisor event is ran at the next key point in their gestation (week 27)
     params['probs_for_mpe_matrix'] = [0, 0, 0, 1, 0]
-    params['prob_seek_care_pregnancy_complication'] = 1
+    params['prob_seek_care_pregnancy_complication'] = 1.0
 
     sim.date = sim.date + pd.DateOffset(weeks=5)
     pregnancy_sup.apply(sim.population)
@@ -894,8 +894,8 @@ def test_pregnancy_supervisor_pre_eclampsia_and_progression():
     sim.event_queue.queue.clear()
 
     # Now we set monthly risk of death from severe pre-eclampsia to 1 and remove care seeking
-    params['prob_severe_pre_eclampsia_death'] = 1
-    params['prob_seek_care_pregnancy_complication'] = 0
+    params['prob_severe_pre_eclampsia_death'] = 1.0
+    params['prob_seek_care_pregnancy_complication'] = 0.0
 
     # prevent womans disease state from changing during the next event run (mechanism of death for eclampsia is
     # different)
@@ -908,7 +908,7 @@ def test_pregnancy_supervisor_pre_eclampsia_and_progression():
     pregnancy_sup.apply(sim.population)
 
     # Check the death has occurred
-    assert not (df.loc[pregnant_women.index, 'is_alive']).all().all()
+    assert not df.loc[pregnant_women.index, 'is_alive'].any().any()
 
 
 def test_pregnancy_supervisor_gestational_hypertension_and_progression():
@@ -922,9 +922,9 @@ def test_pregnancy_supervisor_gestational_hypertension_and_progression():
 
     # set risk of gestational hypertension to 1
     params = sim.modules['PregnancySupervisor'].current_parameters
-    params['prob_pre_eclampsia_per_month'] = 0
-    params['prob_gest_htn_per_month'] = 1
-    params['treatment_effect_gest_htn_calcium'] = 1
+    params['prob_pre_eclampsia_per_month'] = 0.0
+    params['prob_gest_htn_per_month'] = 1.0
+    params['treatment_effect_gest_htn_calcium'] = 1.0
 
     df = sim.population.props
     pregnant_women = df.loc[df.is_alive & df.is_pregnant]
@@ -953,7 +953,7 @@ def test_pregnancy_supervisor_gdm():
     turn_off_antenatal_pregnancy_loss(sim)
 
     params = sim.modules['PregnancySupervisor'].current_parameters
-    params['prob_gest_diab_per_month'] = 1
+    params['prob_gest_diab_per_month'] = 1.0
 
     df = sim.population.props
     pregnant_women = df.loc[df.is_alive & df.is_pregnant]
@@ -991,9 +991,9 @@ def test_pregnancy_supervisor_chorio_and_prom():
 
     # Set risk of PROM to 1
     params = sim.modules['PregnancySupervisor'].current_parameters
-    params['prob_prom_per_month'] = 0
-    params['prob_chorioamnionitis'] = 1
-    params['prob_seek_care_pregnancy_complication'] = 1
+    params['prob_prom_per_month'] = 0.0
+    params['prob_chorioamnionitis'] = 1.0
+    params['prob_seek_care_pregnancy_complication'] = 1.0
 
     df = sim.population.props
     pregnant_women = df.loc[df.is_alive & df.is_pregnant]
@@ -1006,17 +1006,17 @@ def test_pregnancy_supervisor_chorio_and_prom():
     pregnancy_sup.apply(sim.population)
 
     # Check that despite risk of chorio being 1, not one should develop is because PROM cannot occur
-    assert (~df.loc[pregnant_women.index, 'ps_premature_rupture_of_membranes']).all().all()
+    assert not df.loc[pregnant_women.index, 'ps_premature_rupture_of_membranes'].any().any()
 
     sim.date = sim.date + pd.DateOffset(weeks=5)
     pregnancy_sup.apply(sim.population)
 
-    assert (~df.loc[pregnant_women.index, 'ps_premature_rupture_of_membranes']).all().all()
-    assert (~df.loc[pregnant_women.index, 'ps_chorioamnionitis']).all().all()
+    assert not df.loc[pregnant_women.index, 'ps_premature_rupture_of_membranes'].any().any()
+    assert not df.loc[pregnant_women.index, 'ps_chorioamnionitis'].any().any()
 
     params = sim.modules['PregnancySupervisor'].current_parameters
-    params['prob_prom_per_month'] = 1
-    params['prob_chorioamnionitis'] = 1
+    params['prob_prom_per_month'] = 1.0
+    params['prob_chorioamnionitis'] = 1.0
 
     # Clear the event queue
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
@@ -1049,8 +1049,8 @@ def test_pregnancy_supervisor_chorio_and_prom():
     df.loc[pregnant_women.index, 'ps_chorioamnionitis'] = False
 
     # Finally, block care seeking and set risk of death to high
-    params['prob_seek_care_pregnancy_complication'] = 0
-    params['prob_antenatal_sepsis_death'] = 1
+    params['prob_seek_care_pregnancy_complication'] = 0.0
+    params['prob_antenatal_sepsis_death'] = 1.0
 
     # If any pregnancies due on current simulation date push back one day so individuals
     # will still seek care
@@ -1077,7 +1077,7 @@ def test_induction_of_labour_logic():
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     params = sim.modules['PregnancySupervisor'].current_parameters
-    params['prob_seek_care_induction'] = 1
+    params['prob_seek_care_induction'] = 1.0
 
     df = sim.population.props
     pregnant_women = df.loc[df.is_alive & df.is_pregnant]
@@ -1105,7 +1105,7 @@ def test_induction_of_labour_logic():
         (df.loc[pregnant_women.index, 'ps_gestational_age_in_weeks'] - 1)
 
     # block care seeking for induction
-    params['prob_seek_care_induction'] = 0
+    params['prob_seek_care_induction'] = 0.0
 
     # module code divides monthly risk by weeks (assuming 4.5 weeks in a month) so we set the intercept
     # 4.5 times greater than 1 to assure sb will happen
@@ -1113,7 +1113,7 @@ def test_induction_of_labour_logic():
 
     # Check that instead of seeking care for induction women have experience post term stillbirth
     pregnancy_sup.apply(sim.population)
-    assert not (df.loc[pregnant_women.index, 'is_pregnant']).all().all()
+    assert not (df.loc[pregnant_women.index, 'is_pregnant']).any().any()
     assert (df.loc[pregnant_women.index, 'ps_prev_stillbirth']).all().all()
     for person in pregnant_women.index:
         assert sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]['delete_mni']

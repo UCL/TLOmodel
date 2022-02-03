@@ -344,61 +344,6 @@ def extract_results(results_folder: Path,
         return results
 
 
-def extract_str_results(results_folder: Path,
-                        module: str,
-                        key: str,
-                        column: str = None,
-                        index: str = None,
-                        ) -> pd.DataFrame:
-        """Utility function to unpack results
-
-        Produces a dataframe that summaries one series from the log, with column multi-index for the draw/run. If an 'index'
-        component of the log_element is provided, the dataframe uses that index (but note that this will only work if the
-        index is the same in each run).
-        Optionally, instead of a series that exists in the dataframe already, a function can be provided that, when applied
-        to the dataframe indicated, yields a new pd.Series.
-        Optionally, with `do_scaling`, each element is multiplied by the the scaling_factor recorded in the simulation
-        (if available)
-        """
-
-        # get number of draws and numbers of runs
-        info = get_scenario_info(results_folder)
-
-        cols = pd.MultiIndex.from_product(
-            [range(info['number_of_draws']), range(info['runs_per_draw'])],
-            names=["draw", "run"]
-        )
-
-        assert column is not None, "Must specify which column to extract"
-
-        results_index = None
-        if index is not None:
-            # extract the index from the first log, and use this ensure that all other are exactly the same.
-            filename = f"{module}.pickle"
-            df: pd.DataFrame = load_pickled_dataframes(results_folder, draw=0, run=0, name=filename)[module][key]
-            results_index = df[index]
-
-        results = pd.DataFrame(columns=cols)
-        for draw in range(info['number_of_draws']):
-            for run in range(info['runs_per_draw']):
-                try:
-                    df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                    results[draw, run] = df[column]
-
-                    if index is not None:
-                        idx = df[index]
-                        assert idx.equals(results_index), "Indexes are not the same between runs"
-
-                except ValueError:
-                    results[draw, run] = np.nan
-
-        # if 'index' is provided, set this to be the index of the results
-        if index is not None:
-            results.index = results_index
-
-        return results
-
-
 def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False) -> pd.DataFrame:
     """Utility function to compute summary statistics
 
