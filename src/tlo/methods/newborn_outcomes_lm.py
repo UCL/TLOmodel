@@ -55,12 +55,14 @@ def predict_rds_preterm(self, df, rng=None, **externals):
 
     result = params['prob_respiratory_distress_preterm']
 
-    if main_df.at[mother_id, 'nc_diabetes']:
-        result *= params['rr_rds_maternal_diabetes_mellitus']
     if main_df.at[mother_id, 'ps_gest_diab'] != 'none':
         result *= params['rr_rds_maternal_gestational_diab']
     if externals['received_corticosteroids']:
         result *= params['treatment_effect_steroid_preterm']
+
+    if 'CardioMetabolicDisorders' in self.module.sim.modules:
+        if main_df.at[mother_id, 'nc_diabetes']:
+            result *= params['rr_rds_maternal_diabetes_mellitus']
 
     return pd.Series(data=[result], index=df.index)
 
@@ -133,7 +135,7 @@ def predict_neonatal_sepsis_death(self, df, rng=None, **externals):
     """individual level"""
     person = df.iloc[0]
     params = self.parameters
-    result = params['cfr_neonatal_sepsis']
+    result = params['cfr_early_onset_sepsis']
 
     if person['nb_inj_abx_neonatal_sepsis']:
         result *= params['treatment_effect_inj_abx_sep']

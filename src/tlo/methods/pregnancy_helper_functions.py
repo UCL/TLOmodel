@@ -82,23 +82,7 @@ def update_current_parameter_dictionary(self, list_position):
             self.current_parameters[key] = self.parameters[key]
 
 
-def store_dalys_in_mni(self, individual_id, mni_variable):
-    """
-    This function is called across the maternal health modules and stores onset/resolution dates for complications
-    in an indiviudal's MNI dictionary to be used in report_daly_values
-    :param individual_id: individual_id
-    :param mni_variable: key of mni dict being assigned
-    """
-    mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-    # Women no longer in the mni dict cannot accrue disability
-    if individual_id not in mni:
-        return
-
-    mni[individual_id][mni_variable] = self.sim.date
-
-
-def dummy_store_dalys_in_mni(individual_id, mni, mni_variable, date):
+def store_dalys_in_mni(individual_id, mni, mni_variable, date):
     """
     This function is called across the maternal health modules and stores onset/resolution dates for complications
     in an indiviudal's MNI dictionary to be used in report_daly_values
@@ -128,8 +112,6 @@ def check_for_risk_of_death_from_cause(self, target, individual_id):
 
     causes = list()
 
-    # todo: causes need to match
-
     if target == 'mother':
         mother = df.loc[individual_id]
 
@@ -143,14 +125,14 @@ def check_for_risk_of_death_from_cause(self, target, individual_id):
         if mother.ps_antepartum_haemorrhage != 'none' or mother.la_antepartum_haem != 'none':
             causes.append('antepartum_haemorrhage')
 
-        if mother.ps_chorioamnionitis:
+        if mother.ps_chorioamnionitis and (self == self.sim.modules['PregnancySupervisor']):
             causes.append('antenatal_sepsis')
 
         if mother.la_uterine_rupture:
             causes.append('uterine_rupture')
 
-        if mother.la_sepsis or (mother.ps_chorioamnionitis and mother.ac_admitted_for_immediate_delivery != 'none'):
-            # todo: ???? above
+        if mother.la_sepsis or ((self == self.sim.modules['Labour']) and mother.ps_chorioamnionitis and
+                                mother.ac_admitted_for_immediate_delivery != 'none'):
             causes.append('intrapartum_sepsis')
 
         if mother.la_sepsis_pp or mother.pn_sepsis_late_postpartum:
@@ -166,10 +148,10 @@ def check_for_risk_of_death_from_cause(self, target, individual_id):
         child = df.loc[individual_id]
 
         if child.nb_early_onset_neonatal_sepsis or child.pn_sepsis_early_neonatal:
-            causes.append('early_onset_neonatal_sepsis')
+            causes.append('early_onset_sepsis')
 
         if child.pn_sepsis_late_neonatal:
-            causes.append('late_onset_neonatal_sepsis')
+            causes.append('late_onset_sepsis')
 
         if not nci[individual_id]['passed_through_week_one']:
 

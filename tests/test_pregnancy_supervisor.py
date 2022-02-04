@@ -5,25 +5,24 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas.tseries.offsets import DateOffset
+from tlo.analysis.utils import parse_log_file
 
 from tlo import Date, Simulation
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
     care_of_women_during_pregnancy,
-    cardio_metabolic_disorders,
     contraception,
     demography,
-    depression,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     hiv,
     labour,
-    malaria,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
+    pregnancy_helper_functions,
     symptommanager,
 )
 
@@ -74,54 +73,62 @@ def turn_off_antenatal_pregnancy_loss(sim):
             0.0)
 
 
-def register_modules():
+def register_modules(sim):
     """Defines sim variable and registers all modules that can be called when running the full suite of pregnancy
     modules"""
-    sim = Simulation(start_date=start_date, seed=seed)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
-                                           cons_availability='all'),
+                                           cons_availability='all'),  # went set disable=true, cant check HSI queue
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
-                 malaria.Malaria(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath),
-                 )
 
-    return sim
+                 hiv.DummyHivModule(),
+                 )
 
 
 @pytest.mark.slow
-def test_run_core_modules_normal_allocation_of_pregnancy():
+def test_run_core_modules_normal_allocation_of_pregnancy(tmpdir):
     """Runs the simulation using only core modules without manipulation of pregnancy rates or parameters and checks
     dtypes at the end"""
 
-    sim = register_modules()
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+
+    register_modules(sim)
     sim.make_initial_population(n=1000)
     sim.simulate(end_date=Date(2015, 1, 1))
     check_dtypes(sim)
 
+    # check that no errors have been logged during the simulation run
+    output = parse_log_file(sim.log_filepath)
+    assert 'error' not in output['tlo.methods.pregnancy_supervisor']
+    assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
 
 @pytest.mark.slow
-def test_run_core_modules_high_volumes_of_pregnancy():
+def test_run_core_modules_high_volumes_of_pregnancy(tmpdir):
     """Runs the simulation with the core modules and all women of reproductive age being pregnant at the start of the
     simulation"""
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
 
-    sim = register_modules()
+    register_modules(sim)
     sim.make_initial_population(n=5000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=Date(2011, 1, 1))
+    check_dtypes(sim)
+
+    # check that no errors have been logged during the simulation run
+    output = parse_log_file(sim.log_filepath)
+    assert 'error' not in output['tlo.methods.pregnancy_supervisor']
+    assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
 
 
 def test_store_dalys_in_mni_function_and_daly_calculations():
@@ -129,7 +136,9 @@ def test_store_dalys_in_mni_function_and_daly_calculations():
     in the model."""
 
     # Set up sim and run for 0 days
-    sim = register_modules()
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
+
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -138,21 +147,21 @@ def test_store_dalys_in_mni_function_and_daly_calculations():
     # Store functions from pregnancy supervisor as variables
     df = sim.population.props
     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
-    store_dalys_in_mni = sim.modules['PregnancySupervisor'].store_dalys_in_mni
+    store_dalys_in_mni = pregnancy_helper_functions.store_dalys_in_mni
     params = sim.modules['PregnancySupervisor'].parameters
 
     # Select pregnant woman from dataframe and Generate the MNI dictionary
     pregnant_women = df.loc[df.is_alive & df.is_pregnant]
     for woman in pregnant_women.index:
-        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
+        pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], woman)
 
     mother_id = pregnant_women.index[0]
 
     # First we test the logic for 'acute' complications
     # Call store_dalys_in_mni function which is called when any woman experiences one of the complications stored in
     # the mni
-    store_dalys_in_mni(mother_id, 'ectopic_onset')
-    store_dalys_in_mni(mother_id, 'ectopic_rupture_onset')
+    store_dalys_in_mni(mother_id, mni, 'ectopic_onset', sim.date)
+    store_dalys_in_mni(mother_id, mni, 'ectopic_rupture_onset', sim.date)
 
     # Check that the correct date of onset has been captured in the mni dictionary
     assert mni[mother_id]['ectopic_onset'] == sim.date
@@ -180,7 +189,7 @@ def test_store_dalys_in_mni_function_and_daly_calculations():
     # Chronic complications
     # Now we check the logic for complications that acrue daly weights every day
     # Store onset of severe anaemia and check the correct date has been stored
-    store_dalys_in_mni(mother_id, 'severe_anaemia_onset')
+    store_dalys_in_mni(mother_id, mni, 'severe_anaemia_onset', sim.date)
     assert mni[mother_id]['severe_anaemia_onset'] == sim.date
 
     # Move the date forward 1 month and run the report_daly_values
@@ -198,7 +207,7 @@ def test_store_dalys_in_mni_function_and_daly_calculations():
 
     # Move the date forward 2 weeks and set the date of resolution for the complication
     sim.date = sim.date + pd.DateOffset(weeks=2)
-    store_dalys_in_mni(mother_id, 'severe_anaemia_resolution')
+    store_dalys_in_mni(mother_id, mni, 'severe_anaemia_resolution', sim.date)
 
     # Move the date forward another 2 weeks and call report_daly_values. This woman will only have experienced the
     # complication for half the month as it was resolved 2 weeks prior to report_daly_values being called
@@ -221,7 +230,9 @@ def test_store_dalys_in_mni_function_and_daly_calculations():
 def test_calculation_of_gestational_age():
     """This is a simple test to check that when called, the pregnancy supervisor event updates the age of all women's
     gestational age correctly"""
-    sim = register_modules()
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
+
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     turn_off_antenatal_pregnancy_loss(sim)
@@ -235,7 +246,7 @@ def test_calculation_of_gestational_age():
     # Set each pregnant womans conception date as some random date in the past
     pregnant_women = df.loc[df.is_alive & df.is_pregnant]
     for person in pregnant_women.index:
-        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(person)
+        pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], person)
         random_days = sim.modules['PregnancySupervisor'].rng.randint(1, 274)
         df.at[person, 'date_of_last_pregnancy'] = sim.date - pd.DateOffset(days=random_days)
 
@@ -258,7 +269,8 @@ def test_calculation_of_gestational_age():
 def test_application_of_risk_of_twin_pregnancy():
     """Runs the simulation with the core modules, all reproductive age women as pregnant and forces all pregnancies to
     be twins. Other functionality related to or dependent upon twin birth is tested in respective module test files"""
-    sim = register_modules()
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
 
     # Force all reproductive age women to be pregnant
@@ -274,7 +286,7 @@ def test_application_of_risk_of_twin_pregnancy():
     women = df.loc[df.is_alive & (df.sex == 'F') & df.is_pregnant]
     df.loc[women.index, 'date_of_last_pregnancy'] = sim.date - pd.DateOffset(weeks=1)
     for woman in women.index:
-        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
+        pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], woman)
 
     # Run the pregnancy supervisor event
     pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
@@ -289,7 +301,8 @@ def test_application_of_risk_of_twin_pregnancy():
 def test_spontaneous_abortion_ends_pregnancies_as_expected():
     """Test to check that risk of spontaneous abortion is applied as expected within the population and leads to the
     end of pregnancy"""
-    sim = register_modules()
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     starting_population = 100
 
     sim.make_initial_population(n=starting_population)
@@ -301,7 +314,7 @@ def test_spontaneous_abortion_ends_pregnancies_as_expected():
     women = df.loc[df.is_alive & (df.sex == 'F') & df.is_pregnant]
     df.loc[women.index, 'date_of_last_pregnancy'] = sim.date - pd.DateOffset(weeks=2)
     for woman in women.index:
-        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
+        pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], woman)
 
     # Set risk of miscarriage to 1 (block other pregnancy loss)
     params = sim.modules['PregnancySupervisor'].current_parameters
@@ -330,7 +343,8 @@ def test_spontaneous_abortion_ends_pregnancies_as_expected():
 def test_induced_abortion_ends_pregnancies_as_expected():
     """Test to check that risk of induced abortion is applied as expected within the population and leads to the
     end of pregnancy"""
-    sim = register_modules()
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     starting_population = 100
 
     sim.make_initial_population(n=starting_population)
@@ -353,7 +367,7 @@ def test_induced_abortion_ends_pregnancies_as_expected():
     df.loc[women.index, 'co_unintended_preg'] = True
     df.loc[women.index, 'date_of_last_pregnancy'] = sim.date - pd.DateOffset(weeks=6)
     for woman in women.index:
-        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
+        pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], woman)
 
     # Run the event
     pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
@@ -372,7 +386,9 @@ def test_abortion_complications():
      test women seek care and/or experience risk of death as expected """
 
     def check_abortion_logic(abortion_type):
-        sim = register_modules()
+        sim = Simulation(start_date=start_date, seed=seed)
+        register_modules(sim)
+
         starting_population = 100
         sim.make_initial_population(n=starting_population)
         set_all_women_as_pregnant_and_reset_baseline_parity(sim)
@@ -411,7 +427,7 @@ def test_abortion_complications():
         df = sim.population.props
         pregnant_women = df.loc[df.is_alive & df.is_pregnant]
         for woman in pregnant_women.index:
-            sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
+            pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], woman)
 
         # Select one pregnant woman and run the pregnancy supervisor event (populate key variables)
         mother_id = pregnant_women.index[0]
@@ -471,14 +487,15 @@ def test_abortion_complications():
     # Run these check for both types of abortion
     check_abortion_logic('spontaneous')
     check_abortion_logic('induced')
-
+test_abortion_complications()
 
 # todo: still true? (asif)
 @pytest.mark.slow
 def test_still_births_ends_pregnancies_as_expected():
     """Runs the simulation with the core modules and all women of reproductive age as pregnant. Sets antenatal still
     birth risk to 1 and runs checks """
-    sim = register_modules()
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     starting_population = 100
 
     sim.make_initial_population(n=starting_population)
@@ -507,7 +524,7 @@ def test_still_births_ends_pregnancies_as_expected():
     women = df.loc[df.is_alive & (df.sex == 'F') & df.is_pregnant]
     df.loc[women.index, 'date_of_last_pregnancy'] = sim.date - pd.DateOffset(weeks=25)
     for woman in women.index:
-        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
+        pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], woman)
 
     # Run population level event
     pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
@@ -525,7 +542,8 @@ def test_still_births_ends_pregnancies_as_expected():
 
 def test_run_all_births_end_ectopic_no_care_seeking():
     """Test to check that risk of ectopic pregnancy, progression, careseeking and treatment occur as expected"""
-    sim = register_modules()
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     starting_population = 100
     sim.make_initial_population(n=starting_population)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
@@ -544,7 +562,7 @@ def test_run_all_births_end_ectopic_no_care_seeking():
     df = sim.population.props
     pregnant_women = df.loc[df.is_alive & df.is_pregnant]
     for woman in pregnant_women.index:
-        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
+        pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], woman)
 
     # Select one pregnant woman and run the pregnancy supervisor event (populate key variables)
     mother_id = pregnant_women.index[0]
@@ -596,7 +614,8 @@ def test_preterm_labour_logic():
     """Test to check that risk of preterm labour is applied as expected and triggers early labour through correct event
      scheduling """
 
-    sim = register_modules()
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -627,7 +646,7 @@ def test_preterm_labour_logic():
     df = sim.population.props
     pregnant_women = df.loc[df.is_pregnant & df.is_alive]
     for woman in pregnant_women.index:
-        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
+        pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], woman)
 
     # Move the sim date forward
     sim.date = sim.date + pd.DateOffset(weeks=20)
@@ -667,7 +686,8 @@ def test_preterm_labour_logic():
 
 def test_check_first_anc_visit_scheduling():
     """Test to ensure first ANC visit is scheduled for women as expected """
-    sim = register_modules()
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -686,7 +706,7 @@ def test_check_first_anc_visit_scheduling():
     women = df.loc[df.is_alive & (df.sex == 'F') & df.is_pregnant]
     df.loc[women.index, 'date_of_last_pregnancy'] = sim.date - pd.DateOffset(weeks=6)
     for woman in women.index:
-        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
+        pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], woman)
 
     # Define and run the pregnancy supervisor event
     pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
@@ -710,7 +730,8 @@ def test_check_first_anc_visit_scheduling():
 
 def test_pregnancy_supervisor_anaemia():
     """Tests the application of risk of maternal anaemia within the pregnancy supervisor event"""
-    sim = register_modules()
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -728,7 +749,7 @@ def test_pregnancy_supervisor_anaemia():
     df = sim.population.props
     pregnant_women = df.loc[df.is_alive & df.is_pregnant]
     for woman in pregnant_women.index:
-        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
+        pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], woman)
 
     pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
 
@@ -767,7 +788,8 @@ def test_pregnancy_supervisor_anaemia():
 def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage():
     """Tests the application of risk of placenta praevia, abruption and antenatal haemorrhage within the pregnancy
     supervisor event"""
-    sim = register_modules()
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -840,7 +862,8 @@ def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage():
 
 def test_pregnancy_supervisor_pre_eclampsia_and_progression():
     """Tests the application of risk of pre-eclampsia within the pregnancy supervisor event"""
-    sim = register_modules()
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -858,7 +881,7 @@ def test_pregnancy_supervisor_pre_eclampsia_and_progression():
     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
     pregnant_women = df.loc[df.is_alive & df.is_pregnant]
     for woman in pregnant_women.index:
-        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
+        pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], woman)
 
     # Set sim date to when risk of pre-eclampsia is applied
     pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
@@ -913,7 +936,8 @@ def test_pregnancy_supervisor_pre_eclampsia_and_progression():
 
 def test_pregnancy_supervisor_gestational_hypertension_and_progression():
     """Tests the application of risk of gestational_hypertension within the pregnancy supervisor event"""
-    sim = register_modules()
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -929,7 +953,7 @@ def test_pregnancy_supervisor_gestational_hypertension_and_progression():
     df = sim.population.props
     pregnant_women = df.loc[df.is_alive & df.is_pregnant]
     for woman in pregnant_women.index:
-        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
+        pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], woman)
 
     # run the event
     pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
@@ -945,7 +969,8 @@ def test_pregnancy_supervisor_gestational_hypertension_and_progression():
 
 def test_pregnancy_supervisor_gdm():
     """Tests the application of risk of gestational diabetes within the pregnancy supervisor event"""
-    sim = register_modules()
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -958,8 +983,8 @@ def test_pregnancy_supervisor_gdm():
     df = sim.population.props
     pregnant_women = df.loc[df.is_alive & df.is_pregnant]
     for woman in pregnant_women.index:
-        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
-        sim.modules['Labour'].set_labour_mni_variables(woman)
+        pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], woman)
+        pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], woman)
 
     # Run pregnancy supervisor event
     pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
@@ -983,7 +1008,8 @@ def test_pregnancy_supervisor_gdm():
 def test_pregnancy_supervisor_chorio_and_prom():
     """Tests the application of risk of chorioamnionitis and PROM within the pregnancy supervisor event"""
 
-    sim = register_modules()
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -998,7 +1024,7 @@ def test_pregnancy_supervisor_chorio_and_prom():
     df = sim.population.props
     pregnant_women = df.loc[df.is_alive & df.is_pregnant]
     for woman in pregnant_women.index:
-        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
+        pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], woman)
 
     # Run the event
     sim.date = sim.date + pd.DateOffset(weeks=20)
@@ -1070,7 +1096,8 @@ def test_pregnancy_supervisor_chorio_and_prom():
 def test_induction_of_labour_logic():
     """Tests the that woman who are post-term are seeking care for induction of labour"""
 
-    sim = register_modules()
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     turn_off_antenatal_pregnancy_loss(sim)
@@ -1082,7 +1109,7 @@ def test_induction_of_labour_logic():
     df = sim.population.props
     pregnant_women = df.loc[df.is_alive & df.is_pregnant]
     for woman in pregnant_women.index:
-        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
+        pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], woman)
 
     # Run the event, asume all women are now 41 weeks pregnant
     pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])

@@ -55,12 +55,14 @@ def predict_gest_htn_pn(self, df, rng=None, **externals):
 
 def predict_pre_eclampsia_pn(self, df, rng=None, **externals):
     """population level"""
-    params = self.parameters
+    params = self.module.current_parameters
     result = pd.Series(data=params['weekly_prob_pre_eclampsia_pn'], index=df.index)
 
     result[df.li_bmi > 3] *= params['rr_gest_htn_obesity']
-    result[df.nc_hypertension] *= params['rr_pre_eclampsia_chronic_htn']
-    result[df.nc_diabetes] *= params['rr_pre_eclampsia_diabetes_mellitus']
+
+    if 'CardioMetabolicDisorders' in self.module.sim.modules:
+        result[df.nc_hypertension] *= params['rr_pre_eclampsia_chronic_htn']
+        result[df.nc_diabetes] *= params['rr_pre_eclampsia_diabetes_mellitus']
 
     return result
 
@@ -79,10 +81,13 @@ def predict_anaemia_after_pregnancy(self, df, rng=None, **externals):
     p = m.current_parameters
 
     result = pd.Series(data=p['baseline_prob_anaemia_per_week'], index=df.index)
-
-    result[df.hv_inf & (df.hv_art != "not")] *= p['rr_anaemia_hiv_no_art']
-    result[df.ma_is_infected] *= p['rr_anaemia_maternal_malaria']
     result[df.la_iron_folic_acid_postnatal] *= p['treatment_effect_iron_folic_acid_anaemia']
+
+    if 'Hiv' in self.module.sim.modules:
+        result[df.hv_inf & (df.hv_art != "not")] *= p['rr_anaemia_hiv_no_art']
+
+    if 'Malaria' in self.module.sim.modules:
+        result[df.ma_is_infected] *= p['rr_anaemia_maternal_malaria']
 
     return result
 

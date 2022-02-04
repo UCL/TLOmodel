@@ -7,7 +7,7 @@ def preterm_labour(self, df, rng=None, **externals):
     the population. In this model the 'intercept' value varies dependent on a womans gestational age to generate the
     correct distribution of early/late preterm births
     """
-    params = self.parameters
+    params = self.module.current_parameters
     result = pd.Series(data=1, index=df.index)
 
     result[df.ps_gestational_age_in_weeks == 22] *= params['baseline_prob_early_labour_onset'][0]
@@ -17,8 +17,10 @@ def preterm_labour(self, df, rng=None, **externals):
 
     result[df.ps_premature_rupture_of_membranes] *= params['rr_preterm_labour_post_prom']
     result[df.ps_anaemia_in_pregnancy != 'none'] *= params['rr_preterm_labour_anaemia']
-    result[df.ma_is_infected] *= params['rr_preterm_labour_malaria']
     result[df.ps_multiple_pregnancy] *= params['rr_preterm_labour_multiple_pregnancy']
+
+    if 'Malaria' in self.module.sim.modules:
+        result[df.ma_is_infected] *= params['rr_preterm_labour_malaria']
 
     return result
 
@@ -122,12 +124,15 @@ def maternal_anaemia(self, df, rng=None, **externals):
     population during each month of pregnancy. Risk of onset is predicted by both treatment and disease status
     (malaria/HIV)
     """
-    params = self.parameters
+    params = self.module.current_parameters
     result = pd.Series(data=params['baseline_prob_anaemia_per_month'], index=df.index)
 
-    result[df.ma_is_infected] *= params['rr_anaemia_maternal_malaria']
-    result[df.hv_inf & (df.hv_art != 'not')] *= params['rr_anaemia_maternal_malaria']
     result[df.ac_receiving_iron_folic_acid] *= params['treatment_effect_iron_folic_acid_anaemia']
+
+    if 'Malaria' in self.module.sim.modules:
+        result[df.ma_is_infected] *= params['rr_anaemia_maternal_malaria']
+    if 'Hiv' in self.module.sim.modules:
+        result[df.hv_inf & (df.hv_art != 'not')] *= params['rr_anaemia_maternal_malaria']
 
     return result
 
@@ -164,14 +169,16 @@ def pre_eclampsia(self, df, rng=None, **externals):
     Population level linear model which returns a df containing the probability mild pre-eclampsia onset for a
     subset of the population during set months of pregnancy.
     """
-    params = self.parameters
+    params = self.module.current_parameters
     result = pd.Series(data=params['prob_pre_eclampsia_per_month'], index=df.index)
 
     result[df.li_bmi > 3] *= params['rr_pre_eclampsia_obesity']
     result[df.ps_multiple_pregnancy] *= params['rr_pre_eclampsia_multiple_pregnancy']
-    result[df.nc_hypertension] *= params['rr_pre_eclampsia_chronic_htn']
-    result[df.nc_diabetes] *= params['rr_pre_eclampsia_diabetes_mellitus']
     result[df.ac_receiving_calcium_supplements] *= params['treatment_effect_calcium_pre_eclamp']
+
+    if 'CardioMetabolicDisorders' in self.module.sim.modules:
+        result[df.nc_hypertension] *= params['rr_pre_eclampsia_chronic_htn']
+        result[df.nc_diabetes] *= params['rr_pre_eclampsia_diabetes_mellitus']
 
     return result
 
@@ -195,7 +202,7 @@ def antenatal_stillbirth(self, df, rng=None, **externals):
     Population level linear model which returns a df containing the probability of antenatal stillbirth for a
     subset of the population during set months of pregnancy.
     """
-    params = self.parameters
+    params = self.module.current_parameters
     result = pd.Series(data=params['prob_still_birth_per_month'], index=df.index)
 
     result[df.ps_gestational_age_in_weeks == 41] *= params['rr_still_birth_ga_41']
@@ -209,13 +216,17 @@ def antenatal_stillbirth(self, df, rng=None, **externals):
 
     result[df.ps_antepartum_haemorrhage != 'none'] *= params['rr_still_birth_aph']
     result[df.ps_chorioamnionitis] *= params['rr_still_birth_chorio']
-    result[df.nc_hypertension] *= params['rr_still_birth_chronic_htn']
     result[(df.ps_gest_diab == 'controlled') & (df.ac_gest_diab_on_treatment != 'none')] *=\
         (params['rr_still_birth_gest_diab'] * params['treatment_effect_gdm_case_management'])
-
-    result[df.ma_is_infected] *= params['rr_still_birth_maternal_malaria']
-    result[df.nc_diabetes] *= params['rr_still_birth_diab_mellitus']
     result[df.ps_syphilis] *= params['rr_still_birth_maternal_syphilis']
+
+    if 'Malaria' in self.module.sim.modules:
+        result[df.ma_is_infected] *= params['rr_still_birth_maternal_malaria']
+
+    if 'CardioMetabolicDisorders' in self.module.sim.modules:
+        result[df.nc_hypertension] *= params['rr_still_birth_chronic_htn']
+        result[df.nc_diabetes] *= params['rr_still_birth_diab_mellitus']
+
 
     return result
 

@@ -59,11 +59,13 @@ def predict_obstruction_cpd_ip(self, df, rng=None, **externals):
     secondary to cephalopelvic disproportion.
     """
     person = df.iloc[0]
-    params = self.parameters
+    params = self.module.current_parameters
     result = params['prob_obstruction_cpd']
 
-    if person['un_HAZ_category'] == 'HAZ>=-2':
-        result *= params['rr_obstruction_cpd_stunted_mother']
+    if 'Stunting' in self.module.sim.modules:
+        if person['un_HAZ_category'] == 'HAZ>=-2':
+            result *= params['rr_obstruction_cpd_stunted_mother']
+
     if externals['macrosomia']:
         result *= params['rr_obstruction_foetal_macrosomia']
 
@@ -242,13 +244,19 @@ def predict_pph_uterine_atony_pp(self, df, rng=None, **externals):
     haemorrhage due to an atonic uterus following birth
     """
     person = df.iloc[0]
-    params = self.parameters
+    params = self.module.current_parameters
     result = params['prob_pph_uterine_atony']
 
     if externals['amtsl_given']:
         result *= params['treatment_effect_amtsl']
-    if (person['pn_htn_disorders'] != 'none') or person['nc_hypertension']:
+
+    if person['pn_htn_disorders'] != 'none':
         result *= params['rr_pph_ua_hypertension']
+
+    if 'CardioMetabolicDisorders' in self.module.sim.modules:
+        if (person['pn_htn_disorders'] == 'none') and (person['nc_hypertension']):
+            result *= params['rr_pph_ua_hypertension']
+
     if person['ps_multiple_pregnancy']:
         result *= params['rr_pph_ua_multiple_pregnancy']
     if person['la_placental_abruption'] or person['ps_placental_abruption']:

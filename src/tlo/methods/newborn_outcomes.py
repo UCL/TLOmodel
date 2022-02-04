@@ -45,7 +45,7 @@ class NewbornOutcomes(Module):
         # and then define a dictionary which will hold the required consumables for each intervention
         self.item_codes_nb_consumables = dict()
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager', }
+    INIT_DEPENDENCIES = {'Demography', 'HealthSystem'}
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
 
@@ -106,9 +106,9 @@ class NewbornOutcomes(Module):
             Types.LIST, 'relative risk of EONS in newborns whose mothers have PROM'),
         'rr_eons_preterm_neonate': Parameter(
             Types.LIST, 'relative risk of EONS in preterm newborns'),
-        'cfr_neonatal_sepsis': Parameter(
+        'cfr_early_onset_sepsis': Parameter(
             Types.LIST, 'case fatality rate for a neonate due to neonatal sepsis'),
-        'cfr_late_onset_neonatal_sepsis': Parameter(
+        'cfr_late_onset_sepsis': Parameter(
             Types.LIST, 'case fatality rate for a neonate due to neonatal sepsis'),
 
         # NOT BREATHING AT BIRTH....
@@ -507,7 +507,7 @@ class NewbornOutcomes(Module):
                 newborn_outcomes_lm.predict_enceph_death, parameters=params),
 
             # This equation is used to determine a newborns risk of death from sepsis
-            'early_onset_neonatal_sepsis_death': LinearModel.custom(
+            'early_onset_sepsis_death': LinearModel.custom(
                 newborn_outcomes_lm.predict_neonatal_sepsis_death, parameters=params),
 
             # This equation is used to determine a preterm newborns risk of death due to respiratory distress syndrome
@@ -517,7 +517,7 @@ class NewbornOutcomes(Module):
         # Finally we add this warning note to document that HIV testing will not occur if the correct module isnt
         # registered
         if 'Hiv' not in self.sim.modules:
-            logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
+            logger.debug(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
                                                'testing will not happen in newborn care')
 
     def eval(self, eq, person_id):
@@ -639,7 +639,8 @@ class NewbornOutcomes(Module):
                                                           'type': f'{df.at[child_id, "nb_encephalopathy"]}'})
 
             # Check all encephalopathy cases receive a grade
-            assert df.at[child_id, 'nb_encephalopathy'] != 'none'
+            if df.at[child_id, 'nb_encephalopathy'] == 'none':
+                logger.debug(key='error', data=f'Child {child_id} should have developed encephalopathy but didnt')
 
     def apply_risk_of_preterm_respiratory_distress_syndrome(self, child_id):
         """
@@ -703,7 +704,9 @@ class NewbornOutcomes(Module):
         days_post_birth_int = int(days_post_birth_td / np.timedelta64(1, 'D'))
 
         # Ensure that these newborns are less than one week old and scheduled the event accordingly
-        assert days_post_birth_int < 6
+        if not days_post_birth_int < 6:
+            logger.debug(key='error', data=f'Child {individual_id} was older than 6 days when '
+                                           f'PostnatalWeekOneNeonatalEvent was scheduled')
 
         day_for_event = int(self.rng.choice([2, 3, 4, 5, 6], p=params['prob_day_reaches_week_one_event']))
 
@@ -728,8 +731,6 @@ class NewbornOutcomes(Module):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.current_parameters
 
-        logger.debug(key='msg', data=f'set_death_status for newborn {individual_id}')
-
         # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
         # (either from one or multiple causes) and if death occurs returns the cause
         potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause(
@@ -738,7 +739,6 @@ class NewbornOutcomes(Module):
         # If a cause is returned death is scheduled
         if potential_cause_of_death:
 
-            logger.debug(key='msg', data=f'Newborns {individual_id} has died following birth ')
             df.at[individual_id, 'nb_death_after_birth'] = True
 
             if individual_id in nci:
@@ -967,7 +967,6 @@ class NewbornOutcomes(Module):
             if not df.at[child_id, 'hv_diagnosed']:
 
                 if df.at[child_id, 'nb_pnc_check'] == 1:
-                    logger.debug(key='message', data=f'Neonate {child_id} is receiving HIV screening after birth')
                     for days in 0, 41:
                         self.sim.modules['HealthSystem'].schedule_hsi_event(
                             HSI_Hiv_TestAndRefer(person_id=child_id, module=self.sim.modules['Hiv']),
@@ -1214,12 +1213,10 @@ class NewbornOutcomes(Module):
             df.at[child_id, 'nb_late_preterm'] = True
 
         # Check no children born at term or postterm women are incorrectly categorised as preterm
-        if m['labour_state'] == 'term_labour':
-            assert not df.at[child_id, 'nb_early_preterm']
-            assert not df.at[child_id, 'nb_late_preterm']
-        if m['labour_state'] == 'postterm_labour':
-            assert not df.at[child_id, 'nb_early_preterm']
-            assert not df.at[child_id, 'nb_late_preterm']
+        if (m['labour_state'] == 'term_labour') or (m['labour_state'] == 'postterm_labour') :
+            if df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']:
+                logger.debug(key='error', data=f'Child {child_id} has been registered as preterm despite their mother '
+                                               f'delivering at term')
 
         if df.at[child_id, 'is_alive']:
 
@@ -1242,7 +1239,8 @@ class NewbornOutcomes(Module):
                 df.at[child_id, 'nb_clean_birth'] = True
 
             # Check these variables are not unassigned
-            assert nci[child_id]['delivery_setting'] != 'none'
+            if nci[child_id]['delivery_setting'] == 'none':
+                logger.debug(key='error', data=f'Child {child_id} does not have a delivery setting stored')
 
             # --------------------------------------- Breastfeeding -------------------------------------------------
             # Check see if this newborn will start breastfeeding
@@ -1266,8 +1264,6 @@ class NewbornOutcomes(Module):
                                                   p=params['prob_retinopathy_severity'])
 
                     df.at[child_id, 'nb_retinopathy_prem'] = random_draw
-                    logger.debug(key='message', data=f'Neonate {child_id} has developed {random_draw} retinopathy of '
-                                                     f'prematurity')
 
                 # and respiratory distress syndrome
                 self.apply_risk_of_preterm_respiratory_distress_syndrome(child_id)
@@ -1331,7 +1327,7 @@ class NewbornOutcomes(Module):
             self.sim.modules['CareOfWomenDuringPregnancy'].further_on_birth_care_of_women_in_pregnancy(mother_id)
 
     def on_hsi_alert(self, person_id, treatment_id):
-        logger.info(key='message', data=f'This is NewbornOutcomes, being alerted about a health system interaction '
+        logger.debug(key='message', data=f'This is NewbornOutcomes, being alerted about a health system interaction '
                                         f'person {person_id} for: {treatment_id}')
 
     def report_daly_values(self):
@@ -1431,9 +1427,12 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(HSI_Event, I
         params = self.module.current_parameters
 
         # Run some checks on the individual
-        assert self.sim.date == df.at[person_id, 'date_of_birth']
-        assert not df.at[person_id, 'nb_death_after_birth']
-        assert nci[person_id]['delivery_setting'] != 'home_birth'
+        if (not self.sim.date == df.at[person_id, 'date_of_birth'] or
+           df.at[person_id, 'nb_death_after_birth'] or
+           nci[person_id]['delivery_setting'] == 'home_birth'):
+            logger.debug(key='error', data=f'Child {person_id} arrived at CareOfTheNewbornBySkilledAttendantAtBirth '
+                                           f'when they shouldnt have')
+            return
 
         if not df.at[person_id, 'is_alive']:
             return
@@ -1482,12 +1481,18 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
             return
 
         if (nci[person_id]['will_receive_pnc'] == 'early') and not nci[person_id]['passed_through_week_one']:
-            assert self.sim.date < (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2))
-            assert df.at[person_id, 'nb_pnc_check'] == 0
+            if not self.sim.date < (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2)):
+                logger.debug(key='error', data=f'Child {person_id} arrived at early PNC too late')
+
+            if not df.at[person_id, 'nb_pnc_check'] == 0:
+                logger.debug(key='error', data=f'Child {person_id} arrived at early PNC twice')
 
         elif nci[person_id]['will_receive_pnc'] == 'late' and not nci[person_id]['passed_through_week_one']:
-            assert self.sim.date >= (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2))
-            assert df.at[person_id, 'nb_pnc_check'] == 0
+            if not self.sim.date >= (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2)):
+                logger.debug(key='error', data=f'Child {person_id} arrived at late PNC too early')
+
+            if not df.at[person_id, 'nb_pnc_check'] == 0:
+                logger.debug(key='error', data=f'Child {person_id} arrived at late PNC twice')
 
         # Log the PNC check
         logger.info(key='postnatal_check', data={'person_id': person_id,
