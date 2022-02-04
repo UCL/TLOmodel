@@ -138,7 +138,6 @@ def test_perfect_run_of_anc_contacts_no_constraints():
                  epi.Epi(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath))
 
-
     sim.make_initial_population(n=100)
 
     params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
@@ -308,7 +307,6 @@ def test_perfect_run_of_anc_contacts_no_constraints():
 
     third_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 3)
-
 
     # Check that this woman has undergone screening for diabetes, and will be admitted for treatment
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)

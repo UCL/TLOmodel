@@ -2,7 +2,11 @@ import pandas as pd
 
 
 def predict_early_onset_neonatal_sepsis(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of developing early onset neonatal sepsis.
+    Risk increased by the presence of maternal chorioamnionitis, PROM, or prematurity. Risk decreased by clean birth
+    practices, early initiation of breastfeeding and antibiotic therapy for PROM
+    """
     person = df.iloc[0]
     params = self.parameters
 
@@ -26,7 +30,11 @@ def predict_early_onset_neonatal_sepsis(self, df, rng=None, **externals):
 
 
 def predict_encephalopathy(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of developing neonatal encephalopathy
+    Risk increased by the presence of neonatal sepsis, maternal obstructed labour, maternal uterine rupture, or
+    maternal antepartum haemorrhage
+    """
     person = df.iloc[0]
     mother_id = person['mother_id']
     params = self.parameters
@@ -47,7 +55,11 @@ def predict_encephalopathy(self, df, rng=None, **externals):
 
 
 def predict_rds_preterm(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of developing preterm respiratory distress
+    syndrome.  Risk increased by the presence maternal gestational diabetes and diabetes mellitus. Risk decreased by
+    steroid treatment
+    """
     person = df.iloc[0]
     mother_id = person['mother_id']
     params = self.parameters
@@ -67,32 +79,11 @@ def predict_rds_preterm(self, df, rng=None, **externals):
     return pd.Series(data=[result], index=df.index)
 
 
-def predict_not_breathing_at_birth(self, df, rng=None, **externals):
-    """individual level"""
-    params = self.parameters
-    result = params['prob_failure_to_transition']
-
-    return pd.Series(data=[result], index=df.index)
-
-
-def predict_retinopathy(self, df, rng=None, **externals):
-    """individual level"""
-    params = self.parameters
-    result = params['prob_retinopathy_preterm']
-
-    return pd.Series(data=[result], index=df.index)
-
-
-def predict_care_seeking_for_complication(self, df, rng=None, **externals):
-    """individual level"""
-    params = self.parameters
-    result = params['prob_care_seeking_for_complication']
-
-    return pd.Series(data=[result], index=df.index)
-
-
 def predict_preterm_birth_other_death(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of death due to prematurity (other causes)
+    syndrome.  Risk increased by in early preterm neonates and decreased following kangaroo mother care
+    """
     person = df.iloc[0]
     params = self.parameters
     result = params['cfr_preterm_birth']
@@ -106,7 +97,10 @@ def predict_preterm_birth_other_death(self, df, rng=None, **externals):
 
 
 def predict_not_breathing_at_birth_death(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of death due to not breathing at birth.
+    Risk decreased by neonatal resuscitation
+    """
     person = df.iloc[0]
     params = self.parameters
     result = params['cfr_failed_to_transition']
@@ -118,7 +112,10 @@ def predict_not_breathing_at_birth_death(self, df, rng=None, **externals):
 
 
 def predict_enceph_death(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of death due to neonatal encephalopathy
+    Risk decreased by neonatal resuscitation and increased in severe cases.
+    """
     person = df.iloc[0]
     params = self.parameters
     result = params['cfr_enceph']
@@ -132,7 +129,10 @@ def predict_enceph_death(self, df, rng=None, **externals):
 
 
 def predict_neonatal_sepsis_death(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of death due to neonatal sepsis.
+    Risk decreased by treatment (either just antibiotics or full supportive care)
+    """
     person = df.iloc[0]
     params = self.parameters
     result = params['cfr_early_onset_sepsis']
@@ -146,7 +146,10 @@ def predict_neonatal_sepsis_death(self, df, rng=None, **externals):
 
 
 def predict_respiratory_distress_death(self, df, rng=None, **externals):
-    """individual level"""
+    """
+    Individual level linear model which predicts an individuals probability of death due to preterm respiratory
+    distress. Risk decreased by neonatal resuscitation
+    """
     person = df.iloc[0]
     params = self.parameters
     result = params['cfr_respiratory_distress_syndrome']

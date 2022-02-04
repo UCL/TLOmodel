@@ -113,6 +113,7 @@ def test_run_core_modules_normal_allocation_of_pregnancy(tmpdir):
     assert 'error' not in output['tlo.methods.pregnancy_supervisor']
     assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
 
+
 @pytest.mark.slow
 def test_run_core_modules_high_volumes_of_pregnancy(tmpdir):
     """Runs the simulation with the core modules and all women of reproductive age being pregnant at the start of the
@@ -487,7 +488,7 @@ def test_abortion_complications():
     # Run these check for both types of abortion
     check_abortion_logic('spontaneous')
     check_abortion_logic('induced')
-test_abortion_complications()
+
 
 # todo: still true? (asif)
 @pytest.mark.slow

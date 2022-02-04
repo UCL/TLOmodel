@@ -3,28 +3,28 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+from tlo.analysis.utils import parse_log_file
 
 from tlo import Date, Simulation
 from tlo.methods import (
-    cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
     demography,
-    depression,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     hiv,
     labour,
-    malaria,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
+    pregnancy_helper_functions,
     symptommanager,
 )
 
 seed = 8974
+start_date = Date(2010, 1, 1)
 
 # The resource files
 try:
@@ -49,17 +49,16 @@ def find_and_return_hsi_events_list(sim, individual_id):
     return hsi_events
 
 
-def register_modules(cons_availability):
+def register_modules(sim):
     """Register all modules that are required for newborn outcomes to run"""
 
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
-                                           cons_availability=cons_availability),
+                                           cons_availability='all'),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
@@ -67,28 +66,31 @@ def register_modules(cons_availability):
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
-                 malaria.Malaria(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath),
+                 hiv.DummyHivModule(),
                  )
 
     return sim
 
 
 @pytest.mark.slow
-def test_run_and_check_dtypes():
+def test_run_and_check_dtypes(tmpdir):
     """Run the sim for five years and check dtypes at the end """
-    sim = register_modules(cons_availability='default')
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    register_modules(sim)
     sim.make_initial_population(n=1000)
     sim.simulate(end_date=Date(2015, 1, 1))
     check_dtypes(sim)
+
+    # check that no errors have been logged during the simulation run
+    output = parse_log_file(sim.log_filepath)
+    assert 'error' not in output['tlo.methods.newborn_outcomes']
 
 
 def test_to_check_babies_delivered_in_facility_receive_post_birth_care():
     """Test that babies that are born within a health facility are correctly scheduled to receive post delivery care
     following birth """
-    sim = register_modules(cons_availability='default')
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
@@ -101,8 +103,8 @@ def test_to_check_babies_delivered_in_facility_receive_post_birth_care():
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 38
     df.at[mother_id, 'is_pregnant'] = True
 
-    sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
-    sim.modules['Labour'].set_labour_mni_variables(mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
 
     # Set the variable that the mother has delivered at a facility
     mni[mother_id]['delivery_setting'] = 'hospital'
@@ -119,7 +121,8 @@ def test_to_check_babies_delivered_in_facility_receive_post_birth_care():
 def test_to_check_babies_delivered_at_home_dont_receive_post_birth_care():
     """Test that babies that born at home are not incorrectly scheduled to receive post delivery care
     following birth """
-    sim = register_modules(cons_availability='default')
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -133,8 +136,8 @@ def test_to_check_babies_delivered_at_home_dont_receive_post_birth_care():
     df.at[mother_id, 'is_pregnant'] = True
 
     # Populate the minimum set of keys within the mni dict so the on_birth function will run
-    sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
-    sim.modules['Labour'].set_labour_mni_variables(mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
 
     # Set the variable that the mother has delivered at home
     mni[mother_id]['delivery_setting'] = 'home_birth'
@@ -153,14 +156,15 @@ def test_to_check_babies_delivered_at_home_dont_receive_post_birth_care():
 def test_care_seeking_for_babies_delivered_at_home_who_develop_complications():
     """Test that babies that are born at home and develop complications will have care sought for them as expected
     """
-    sim = register_modules(cons_availability='default')
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
 
     # set risk of comps to 1 and force care seeking
     params = sim.modules['NewbornOutcomes'].current_parameters
     params['prob_early_onset_neonatal_sepsis_day_0'] = 1.0
     params['prob_early_breastfeeding_hb'] = 0.0
-    params['prob_pnc_check_newborn'] = 1.0
+    params['prob_care_seeking_for_complication'] = 1.0
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
@@ -172,8 +176,8 @@ def test_care_seeking_for_babies_delivered_at_home_who_develop_complications():
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 38
     df.at[mother_id, 'is_pregnant'] = True
 
-    sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
-    sim.modules['Labour'].set_labour_mni_variables(mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
 
     # set delivery setting for the mother as home_birth
     mni[mother_id]['delivery_setting'] = 'home_birth'
@@ -192,7 +196,8 @@ def test_care_seeking_for_babies_delivered_at_home_who_develop_complications():
 
 def test_twin_and_single_twin_still_birth_logic_for_twins():
     """Test that for women who experience a single twin stillbirth only produce one newborn child as expected"""
-    sim = register_modules(cons_availability='default')
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
@@ -204,8 +209,8 @@ def test_twin_and_single_twin_still_birth_logic_for_twins():
     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 38
     df.at[mother_id, 'is_pregnant'] = True
-    sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
-    sim.modules['Labour'].set_labour_mni_variables(mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
 
     # Show mother is pregnant with twins and has lost one twin during labour
     df.at[mother_id, 'ps_multiple_pregnancy'] = True
@@ -234,7 +239,8 @@ def test_twin_and_single_twin_still_birth_logic_for_twins():
 def test_care_seeking_for_twins_delivered_at_home_who_develop_complications():
     """Test that for twin births, if both develop a complication and care is sought for one twin, care will be received
     by both"""
-    sim = register_modules(cons_availability='default')
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
 
     # set risk of complications to 1 so that both twins develop sepsis immediately following birth and set probability
@@ -256,8 +262,8 @@ def test_care_seeking_for_twins_delivered_at_home_who_develop_complications():
     df.at[mother_id, 'ps_multiple_pregnancy'] = True
     df.at[mother_id, 'is_pregnant'] = True
 
-    sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
-    sim.modules['Labour'].set_labour_mni_variables(mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
 
     mni[mother_id]['delivery_setting'] = 'home_birth'
 
@@ -288,7 +294,8 @@ def test_care_seeking_for_twins_delivered_at_home_who_develop_complications():
 def test_on_birth_applies_risk_of_complications_and_death_in_term_newborns_delivered_at_home_correctly():
     """Test that for neonates born at home that develop complications, care seeking and risk of death is applied as
     expected"""
-    sim = register_modules(cons_availability='default')
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
 
     # set risk of comps to 1 and force care seeking
@@ -325,8 +332,8 @@ def test_on_birth_applies_risk_of_complications_and_death_in_term_newborns_deliv
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 38
     df.at[mother_id, 'is_pregnant'] = True
 
-    sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
-    sim.modules['Labour'].set_labour_mni_variables(mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delivery_setting'] = 'home_birth'
 
     # run on_birth
@@ -355,7 +362,8 @@ def test_on_birth_applies_risk_of_complications_and_death_in_term_newborns_deliv
 def test_on_birth_applies_risk_of_complications_and_death_in_preterm_newborns_delivered_at_home_correctly():
     """Test that for preterm neonates (who are at risk of a different complication set) that born at home and develop
      complications, care seeking and risk of death is applied as expected"""
-    sim = register_modules(cons_availability='default')
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
 
     # set risk of comps to 1 and force care seeking
@@ -374,8 +382,8 @@ def test_on_birth_applies_risk_of_complications_and_death_in_preterm_newborns_de
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 32
     df.at[mother_id, 'is_pregnant'] = True
 
-    sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
-    sim.modules['Labour'].set_labour_mni_variables(mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
 
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delivery_setting'] = 'home_birth'
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['labour_state'] = 'early_preterm_labour'
@@ -397,7 +405,8 @@ def test_on_birth_applies_risk_of_complications_and_death_in_preterm_newborns_de
 def test_newborn_sba_hsi_deliveries_resuscitation_treatment_as_expected():
     """ Test that resuscitation treatment is delivered as expected to newborns in respiratory distress who deliver in
     facilities """
-    sim = register_modules(cons_availability='all')
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
 
     # set risk of comps very high and force care seeking
@@ -417,8 +426,8 @@ def test_newborn_sba_hsi_deliveries_resuscitation_treatment_as_expected():
     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
     df.at[mother_id, 'is_pregnant'] = True
 
-    sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
-    sim.modules['Labour'].set_labour_mni_variables(mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
 
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delivery_setting'] = 'health_centre'
 
@@ -443,7 +452,8 @@ def test_newborn_sba_hsi_deliveries_resuscitation_treatment_as_expected():
 
 def test_newborn_postnatal_check_hsi_delivers_treatment_as_expected():
     """ Test that interventions delivered as part of PNC are delivered as expected to newborns with complications"""
-    sim = register_modules(cons_availability='all')
+    sim = Simulation(start_date=start_date, seed=seed)
+    register_modules(sim)
     sim.make_initial_population(n=100)
 
     # set risk of comps very high and force care seeking
@@ -462,8 +472,8 @@ def test_newborn_postnatal_check_hsi_delivers_treatment_as_expected():
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 32
     df.at[mother_id, 'is_pregnant'] = True
 
-    sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(mother_id)
-    sim.modules['Labour'].set_labour_mni_variables(mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delivery_setting'] = 'health_centre'
 
     # do the birth

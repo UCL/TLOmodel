@@ -871,7 +871,7 @@ class PregnancySupervisor(Module):
 
         elif params['anc_service_structure'] == 4:
             first_anc_appt = HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
-                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id)
+                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id, visit_number=1)
 
         self.sim.modules['HealthSystem'].schedule_hsi_event(first_anc_appt, priority=0,
                                                             topen=first_anc_date,

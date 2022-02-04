@@ -7,6 +7,18 @@ import pandas as pd
 import numpy as np
 
 
+def get_list_of_items(self, item_list):
+    """
+    Uses get_item_code_from_item_name to return item codes for a list of named items
+    :param self: module
+    :param item_list: items for code look up
+    """
+    item_code_function = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+    codes = [item_code_function(item) for item in item_list]
+
+    return codes
+
+
 def scale_linear_model_at_initialisation(self, model, parameter_key):
     """
     This function scales the intercept value of linear models according to the distribution of predictor values
@@ -116,7 +128,7 @@ def check_for_risk_of_death_from_cause(self, target, individual_id):
         mother = df.loc[individual_id]
 
         if (mother.ps_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe']) or \
-          (mother.pn_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe']):
+           (mother.pn_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe']):
             causes.append('severe_pre_eclampsia')
 
         if mother.ps_htn_disorders == 'eclampsia' or mother.pn_htn_disorders == 'eclampsia':
@@ -207,7 +219,7 @@ def check_for_risk_of_death_from_cause(self, target, individual_id):
             elif self == self.sim.modules['PostnatalSupervisor']:
                 risk = {cause: params[f'cfr_{cause}']}
                 if (cause == 'secondary_postpartum_haemorrhage') and \
-                    (df.at[individual_id, 'pn_anaemia_following_pregnancy'] != 'none'):
+                   (df.at[individual_id, 'pn_anaemia_following_pregnancy'] != 'none'):
 
                     risk[cause] = risk[cause] * params['rr_death_from_pph_with_anaemia']
 
