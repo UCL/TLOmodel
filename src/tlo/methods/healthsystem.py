@@ -1480,15 +1480,21 @@ class HSI_Event:
         return updated_appt_footprint
 
     def get_consumables(self,
-                        item_codes: Union[np.integer, int, list, set, dict],
-                        to_log=True,
-                        return_individual_results=False
+                        item_codes: Optional[Union[np.integer, int, list, set, dict]] = None,
+                        optional_item_codes: Optional[Union[np.integer, int, list, set, dict]] = None,
+                        to_log: Optional[bool] = True,
+                        return_individual_results: Optional[bool] = False
                         ) -> Union[bool, dict]:
         """Function to allow for getting and checking of entire set of consumables. All requests for consumables should
         use this function.
-        :param item_codes: The item code(s) (and quantities) of the consumables that are requested. This can be an `int`
-         (the item_code needed [assume quantity=1]), a `list` or `set` (the collection  of item_codes [for each assuming
-          quantity=1]), or a `dict` (of the form <item_code>:<quantity>).
+        :param item_codes: The item code(s) (and quantities) of the consumables that are requested and which determine
+        the summary result for availability/non-availability. This can be an `int` (the item_code needed [assume
+        quantity=1]), a `list` or `set` (the collection  of item_codes [for each assuming quantity=1]), or a `dict`
+        (of the form <item_code>:<quantity>).
+        :param optional_item_codes: The item code(s) (and quantities) of the consumables that are requested and which do
+         not determine the summary result for availability/non-availability. (Same format as `item_codes`). This is
+         useful when a large set of items may be used, but the viability of a subsequent operation depends only on a
+         subset.
         :param return_individual_results: If True returns a `dict` giving the availability of each item_code requested
         (otherwise gives a `bool` indicating if all the item_codes requested are available).
         :param to_log: If True, logs the request.
@@ -1498,32 +1504,43 @@ class HSI_Event:
          methods in the `HealthSystem` module to find item_codes.
         """
 
-        # Check format of item_codes argument and construct the dict(<item_code>:quantity) if not provided directly:
-        if isinstance(item_codes, (int, np.integer)):
-            _item_codes = {int(item_codes): 1}
+        def _return_item_codes_in_dict(item_codes: Union[None, np.integer, int, list, set, dict]) -> dict:
+            """Convert an argument for 'item_codes` (provided as int, list, set or dict) into the format
+            dict(<item_code>:quantity)."""
 
-        elif isinstance(item_codes, list):
-            if not all([isinstance(i, (int, np.integer)) for i in item_codes]):
-                raise ValueError("item_codes must be integers")
-            _item_codes = {int(i): 1 for i in item_codes}
+            if item_codes is None:
+                return {}
 
-        elif isinstance(item_codes, dict):
-            if not all(
-                [(isinstance(i, (int, np.integer)) and isinstance(item_codes[i], (int, np.integer)))
-                 for i in item_codes]
-            ):
-                raise ValueError("item_codes must be integers and quantities must be integers.")
-            _item_codes = {int(i): int(q) for i, q in item_codes.items()}
+            if isinstance(item_codes, (int, np.integer)):
+                return {int(item_codes): 1}
 
-        else:
-            raise ValueError("The item_codes are given in an unrecognised format")
+            elif isinstance(item_codes, list):
+                if not all([isinstance(i, (int, np.integer)) for i in item_codes]):
+                    raise ValueError("item_codes must be integers")
+                return {int(i): 1 for i in item_codes}
+
+            elif isinstance(item_codes, dict):
+                if not all(
+                    [(isinstance(i, (int, np.integer)) and isinstance(item_codes[i], (int, np.integer)))
+                     for i in item_codes]
+                ):
+                    raise ValueError("item_codes must be integers and quantities must be integers.")
+                return {int(i): int(q) for i, q in item_codes.items()}
+
+            else:
+                raise ValueError("The item_codes are given in an unrecognised format")
+
+        _item_codes = _return_item_codes_in_dict(item_codes)
+        _optional_item_codes = _return_item_codes_in_dict(optional_item_codes)
 
         # Checking the availability and logging:
-        rtn = self.sim.modules['HealthSystem']._request_consumables(self, item_codes=_item_codes, to_log=to_log)
+        rtn = self.sim.modules['HealthSystem']._request_consumables(
+            hsi_event=self, item_codes={**_item_codes, **_optional_item_codes}, to_log=to_log)
 
         # Return result in expected format:
         if not return_individual_results:
-            return all(rtn.values())
+            # Determine if all results for all the `item_codes` are True (discarding results from optional_item_codes).
+            return all([v for k, v in rtn.items() if k in _item_codes])
         else:
             return rtn
 
