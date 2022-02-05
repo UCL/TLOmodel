@@ -187,8 +187,10 @@ def test_cause_of_death_being_registered(tmpdir):
 
     # Run the analysis file:
     results = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=rfp)
-    # Check the number of deaths in model represented is right
-    assert (results['model'].sum() * 5.0) == approx(len(output['tlo.methods.demography']['death']))
+    # Check the number of deaths in model represented is right (allowing for the scaling factor)
+    assert (results['model'].sum() * 5.0) == approx(len(output['tlo.methods.demography']['death'])
+                                                    / sim.modules['Demography'].initial_model_to_data_popsize_ratio
+                                                    )
 
 
 @pytest.mark.slow
@@ -207,12 +209,12 @@ def test_calc_of_scaling_factor(tmpdir):
         demography.Demography(resourcefilepath=rfp),
     )
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=Date(2019, 12, 31))
+    sim.simulate(end_date=sim.start_date)
 
     # Check that the scaling factor is calculated in the log correctly:
     output = parse_log_file(sim.log_filepath)
     sf = output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor']
-    assert sf == approx(19e6 / popsize, rel=0.10)
+    assert sf == approx(14.5e6 / popsize, rel=0.10)
 
 
 def test_py_calc(simulation):

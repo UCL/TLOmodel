@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
 from tlo.util import random_date, sample_outcome, transition_states
@@ -14,7 +15,12 @@ logger.setLevel(logging.INFO)
 
 class Contraception(Module):
     """Contraception module covering baseline contraception methods use, failure (i.e., pregnancy),
-    Switching contraceptive methods, and discontinuation rates by age."""
+    Switching contraceptive methods, and discontinuation rates by age.
+    Calibration is done in two stages:
+    (i) A scaling factor on the risk of pregnancy (`scaling_factor_on_monthly_risk_of_pregnancy`) is used to induce the
+     correct number of age-specific births initially, given the initial pattern of contraceptive use;
+    (ii) Trends over time in the risk of starting (`time_age_trend_in_initiation`) and stopping
+    (`time_age_trend_in_stopping`) of contraceptives are used to induce the correct trend in the number of births."""
 
     INIT_DEPENDENCIES = {'Demography'}
 
@@ -46,10 +52,6 @@ class Contraception(Module):
         'Initiation_ByAge': Parameter(Types.DATA_FRAME,
                                       'The effect of age on the probability of starting use of contraceptive (add one '
                                       'for multiplicative effect).'),
-        'Initiation_ByYear': Parameter(Types.DATA_FRAME,
-                                       'The age-specific effect of calendar year on the probability of starting use of'
-                                       ' contraceptive (multiplicative effect). Values are chosen so as to induce a '
-                                       'trend in age-specific fertility consistent with the WPP estimates.'),
         'Initiation_AfterBirth': Parameter(Types.DATA_FRAME,
                                            'The probability of a woman starting a contraceptive immidiately after birth'
                                            ', by method.'),
@@ -58,11 +60,7 @@ class Contraception(Module):
         'Discontinuation_ByAge': Parameter(Types.DATA_FRAME,
                                            'The effect of age on the probability of discontinuing use of contraceptive '
                                            '(add one for multiplicative effect).'),
-        'Discontinuation_ByYear': Parameter(Types.DATA_FRAME,
-                                            'The age-specific effect of calendar year on the probability of '
-                                            'discontinuing use of contraceptive (multiplicative effect). Values are '
-                                            'chosen so as to induce a trend in age-specific fertility consistent with '
-                                            'the WPP estimates.'),
+
         'Prob_Switch_From': Parameter(Types.DATA_FRAME,
                                       'The probability per month that a women switches from one form of contraceptive '
                                       'to another, conditional that she will not discontinue use of the method.'),
@@ -72,30 +70,31 @@ class Contraception(Module):
         'days_between_appts_for_maintenance': Parameter(Types.INT,
                                                         'The number of days between successive family planning '
                                                         'appointments for women that are maintaining the use of a '
-                                                        'method.')
+                                                        'method.'),
+        'age_specific_fertility_rates': Parameter(
+            Types.DATA_FRAME, 'Data table from official source (WPP) for age-specific fertility rates and calendar '
+                              'period'),
+
+        'scaling_factor_on_monthly_risk_of_pregnancy': Parameter(
+            Types.LIST, "Scaling factor (by age-group: 15-19, 20-24, ..., 45-49) on the monthly risk of pregnancy and "
+                        "contraceptive failure rate. This value is found through calibration so that, at the beginning "
+                        "of the simulation, the age-specific monthly probability of a woman having a live birth matches"
+                        " the WPP age-specific fertility rate value for the same year.")
     }
+
+    all_contraception_states = {
+        'not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
+        'periodic_abstinence', 'withdrawal', 'other_traditional'
+    }
+    # These are the 11 categories of contraception ('not_using' + 10 methods) from the DHS analysis of initiation,
+    # discontinuation, failure and switching rates.
+    # 'other modern' includes Male sterilization, Female Condom, Emergency contraception;
+    # 'other traditional' includes lactational amenohroea (LAM),  standard days method (SDM), 'other traditional
+    #  method').
 
     PROPERTIES = {
         'co_contraception': Property(Types.CATEGORICAL, 'Current contraceptive method',
-                                     categories=[
-                                         'not_using',
-                                         'pill',
-                                         'IUD',
-                                         'injections',
-                                         'implant',
-                                         'male_condom',
-                                         'female_sterilization',
-                                         'other_modern',
-                                         'periodic_abstinence',
-                                         'withdrawal',
-                                         'other_traditional'
-                                     ]),
-        # These are the 11 categories of contraception ('not_using' + 10 methods) from the DHS analysis of initiation,
-        # discontinuation, failure and switching rates.
-        # 'other modern' includes Male sterilization, Female Condom, Emergency contraception;
-        # 'other traditional' includes lactational amenohroea (LAM),  standard days method (SDM), 'other traditional
-        #  method').
-
+                                     categories=sorted(all_contraception_states)),
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
         'date_of_last_pregnancy': Property(Types.DATE, 'Date that the most recent or current pregnancy began.'),
         'co_unintended_preg': Property(Types.BOOL, 'Whether the most recent or current pregnancy was unintended.'),
@@ -113,10 +112,9 @@ class Contraception(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        self.use_healthsystem = use_healthsystem  # True: initiation and switches to contraception require an HSI;
-        # False: initiation and switching do not occur through an HSI
+        self.use_healthsystem = use_healthsystem  # if True: initiation and switches to contraception require an HSI;
+        # if False: initiation and switching do not occur through an HSI
 
-        self.all_contraception_states = set(self.PROPERTIES['co_contraception'].categories)
         self.states_that_may_require_HSI_to_switch_to = {'male_condom', 'injections', 'other_modern', 'IUD', 'pill',
                                                          'female_sterilization', 'implant'}
         self.states_that_may_require_HSI_to_maintain_on = {'injections', 'other_modern', 'IUD', 'pill', 'implant'}
@@ -141,11 +139,9 @@ class Contraception(Module):
             'Failure_ByMethod',
             'Initiation_ByAge',
             'Initiation_ByMethod',
-            'Initiation_ByYear',
             'Initiation_AfterBirth',
             'Discontinuation_ByMethod',
             'Discontinuation_ByAge',
-            'Discontinuation_ByYear',
             'Prob_Switch_From',
             'Prob_Switch_From_And_To',
         ]
@@ -153,9 +149,12 @@ class Contraception(Module):
         for sheet in sheet_names:
             self.parameters[sheet] = workbook[sheet]
 
-        # Declare values for additional parameters (hard-coded for now)
-        self.parameters['rr_fail_under25'] = 2.2  # From Guttmacher analysis.
-        self.parameters['days_between_appts_for_maintenance'] = 180
+        # Declare values for other parameters
+        self.load_parameters_from_dataframe(workbook['Parameters'])
+
+        # Import the Age-specific fertility rate data from WPP
+        self.parameters['age_specific_fertility_rates'] = \
+            pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
     def pre_initialise_population(self):
         """Process parameters before initialising population and simulation"""
@@ -194,13 +193,14 @@ class Contraception(Module):
         * Schedule the ContraceptionPoll and ContraceptionLoggingEvent
         * Retrieve the consumables codes for the consumables used
         * Create second random number generator
+        * Schedule births to occur during the first 9 months of the simulation
         """
-
-        # Schedule first occurrences of Contraception Poll to occur at the beginning of the simulation
-        sim.schedule_event(ContraceptionPoll(self), sim.date)
 
         # Schedule the first occurrence of the Logging event to occur at the beginning of the simulation
         sim.schedule_event(ContraceptionLoggingEvent(self), sim.date)
+
+        # Schedule first occurrences of Contraception Poll to occur at the beginning of the simulation
+        sim.schedule_event(ContraceptionPoll(self), sim.date)
 
         # Retrieve the consumables codes for the consumables used
         if self.use_healthsystem:
@@ -209,6 +209,9 @@ class Contraception(Module):
         # Create second random number generator
         self.rng2 = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
 
+        # Schedule births to occur during the first 9 months of the simulation
+        self.schedule_births_for_first_9_months()
+
     def on_birth(self, mother_id, child_id):
         """
         * 1) Formally end the pregnancy
@@ -216,23 +219,18 @@ class Contraception(Module):
         """
         df = self.sim.population.props
 
-        self.end_pregnancy(person_id=mother_id)
+        if mother_id != -1:
+            self.end_pregnancy(person_id=mother_id)
 
         # Initialise child's properties:
-        df.loc[child_id, (
-            'co_contraception',
-            'is_pregnant',
-            'date_of_last_pregnancy',
-            'co_unintended_preg',
-            'co_date_of_last_fp_appt'
-        )
-        ] = (
-            'not_using',
-            False,
-            pd.NaT,
-            False,
-            pd.NaT
-        )
+        new_properties = {
+            'co_contraception': 'not_using',
+            'is_pregnant': False,
+            'date_of_last_pregnancy': pd.NaT,
+            'co_unintended_preg': False,
+            'co_date_of_last_fp_appt': pd.NaT,
+        }
+        df.loc[child_id, new_properties.keys()] = new_properties.values()
 
     def end_pregnancy(self, person_id):
         """End the pregnancy. Reset pregnancy status and may initiate a contraceptive method.
@@ -246,6 +244,12 @@ class Contraception(Module):
         """Process parameters that have been read-in."""
 
         processed_params = dict()
+
+        def expand_to_age_years(values_by_age_groups, ages_by_year):
+            _d = dict(zip(['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49'], values_by_age_groups))
+            return np.array(
+                [_d[self.sim.modules['Demography'].AGE_RANGE_LOOKUP[_age_year]] for _age_year in ages_by_year]
+            )
 
         def initial_method_use():
             """Generate the distribution of method use by age for the start of the simulation."""
@@ -274,8 +278,7 @@ class Contraception(Module):
                 "age_years")
 
             # Year effect
-            year_effect = self.parameters['Initiation_ByYear'].set_index('year')
-            assert set(year_effect.columns) == set(range(15, 50))
+            year_effect = time_age_trend_in_initiation()
 
             # Assemble into age-specific data-frame:
             p_init = dict()
@@ -324,8 +327,7 @@ class Contraception(Module):
             p_stop_by_method = self.parameters['Discontinuation_ByMethod'].loc[0]
             age_effect = 1.0 + self.parameters['Discontinuation_ByAge'].set_index('age')['r_discont_age'].rename_axis(
                 "age_years")
-            year_effect = self.parameters['Discontinuation_ByYear'].set_index('year')
-            assert set(year_effect.columns) == set(range(15, 50))
+            year_effect = time_age_trend_in_stopping()
 
             # Probability of initiation by age for each method
             p_stop = dict()
@@ -344,6 +346,36 @@ class Contraception(Module):
 
             return p_stop
 
+        def time_age_trend_in_initiation():
+            """The age-specific effect of calendar year on the probability of starting use of contraceptive
+            (multiplicative effect). Values are chosen to induce a trend in age-specific fertility consistent with
+             the WPP estimates."""
+
+            _years = np.arange(2010, 2101)
+            _ages = np.arange(15, 50)
+
+            _init_over_time = np.exp(+0.05 * np.minimum(2020 - 2010, (_years - 2010))) * np.maximum(1.0, np.exp(
+                +0.01 * (_years - 2020)))
+            _init_over_time_modification_by_age = 1.0 / expand_to_age_years([1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], _ages)
+            _init = np.outer(_init_over_time, _init_over_time_modification_by_age)
+
+            return pd.DataFrame(index=_years, columns=_ages, data=_init)
+
+        def time_age_trend_in_stopping():
+            """The age-specific effect of calendar year on the probability of discontinuing use of contraceptive
+            (multiplicative effect). Values are chosen to induce a trend in age-specific fertility consistent with
+            the WPP estimates."""
+
+            _years = np.arange(2010, 2101)
+            _ages = np.arange(15, 50)
+
+            _discont_over_time = np.exp(-0.05 * np.minimum(2020 - 2010, (_years - 2010))) * np.minimum(1.0, np.exp(
+                -0.01 * (_years - 2020)))
+            _discont_over_time_modification_by_age = expand_to_age_years([1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], _ages)
+            _discont = np.outer(_discont_over_time, _discont_over_time_modification_by_age)
+
+            return pd.DataFrame(index=_years, columns=_ages, data=_discont)
+
         def contraception_initiation_after_birth():
             """Get the probability of a woman starting a contraceptive following giving birth."""
 
@@ -358,15 +390,29 @@ class Contraception(Module):
 
             return p_start_after_birth
 
+        def scaling_factor_on_monthly_risk_of_pregnancy():
+            """A scaling factor on the monthly risk of pregnancy, chosen to give the correct number of live-births
+            initially, given the initial pattern of contraceptive use."""
+
+            # first scaling factor is that worked out from the calibration script
+            scaling_factor_as_dict = dict(zip(
+                ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49'],
+                self.parameters['scaling_factor_on_monthly_risk_of_pregnancy']
+            ))
+
+            AGE_RANGE_LOOKUP = self.sim.modules['Demography'].AGE_RANGE_LOOKUP
+            _ages = range(15, 50)
+            return pd.Series(
+                index=_ages,
+                data=[scaling_factor_as_dict[AGE_RANGE_LOOKUP[_age_year]] for _age_year in _ages]
+            )
+
         def pregnancy_no_contraception():
             """Get the probability per month of a woman becoming pregnant if she is not using any contraceptive method.
             """
 
-            def convert_annual_prob_to_monthly_prob(p_annual):
-                return 1 - np.exp(np.log(1 - p_annual) / 12)
-
             # Get the probability of being pregnant if not HIV-positive
-            p_pregnancy_no_contraception_per_month_nohiv = self.parameters['Pregnancy_NotUsing_In_2010']\
+            p_pregnancy_no_contraception_per_month_nohiv = self.parameters['Pregnancy_NotUsing_In_2010'] \
                 .set_index('age')['AnnualProb'].rename_axis('age_years').apply(convert_annual_prob_to_monthly_prob)
 
             # Compute the probability of being pregnant if HIV-positive
@@ -387,7 +433,7 @@ class Contraception(Module):
                 1.0 - np.power(1.0 - p_pregnancy_no_contraception_per_month['hv_inf_False'], 12)
             ).all()
 
-            return p_pregnancy_no_contraception_per_month
+            return p_pregnancy_no_contraception_per_month.mul(scaling_factor_on_monthly_risk_of_pregnancy(), axis=0)
 
         def pregnancy_with_contraception():
             """Get the probability per month of a woman becoming pregnant if she is using a contraceptive method."""
@@ -409,7 +455,7 @@ class Contraception(Module):
                 self.all_contraception_states - {"not_using"})
             assert (0.0 == p_pregnancy_with_contraception_per_month['female_sterilization']).all()
 
-            return p_pregnancy_with_contraception_per_month
+            return p_pregnancy_with_contraception_per_month.mul(scaling_factor_on_monthly_risk_of_pregnancy(), axis=0)
 
         processed_params['initial_method_use'] = initial_method_use()
         processed_params['p_start_per_month'] = contraception_initiation()
@@ -417,8 +463,8 @@ class Contraception(Module):
         processed_params['p_stop_per_month'] = contraception_stop()
         processed_params['p_start_after_birth'] = contraception_initiation_after_birth()
 
-        processed_params['p_pregnancy_no_contraception_per_month'] = 1.75 * pregnancy_no_contraception()
-        processed_params['p_pregnancy_with_contraception_per_month'] = 1.75 * pregnancy_with_contraception()
+        processed_params['p_pregnancy_no_contraception_per_month'] = pregnancy_no_contraception()
+        processed_params['p_pregnancy_with_contraception_per_month'] = pregnancy_with_contraception()
 
         return processed_params
 
@@ -427,16 +473,7 @@ class Contraception(Module):
 
         # Allocate the woman to a contraceptive status
         probs = self.processed_params['p_start_after_birth']
-        new_contraceptive = self.rng.choice(
-            probs.index,
-            p=probs.values
-        )
-
-        # ... but don't allow female sterilization to any woman below 30: reset to 'not_using'
-        if (self.sim.population.props.at[mother_id, 'age_years'] < 30) and (
-            new_contraceptive == 'female_sterilization'
-        ):
-            new_contraceptive = 'not_using'
+        new_contraceptive = self.rng.choice(probs.index, p=probs.values)
 
         # Do the change in contraceptive
         self.schedule_batch_of_contraceptive_changes(ids=[mother_id], old=['not_using'], new=[new_contraceptive])
@@ -475,7 +512,6 @@ class Contraception(Module):
         date_of_last_appt = df.loc[ids, "co_date_of_last_fp_appt"].to_dict()
 
         for _woman_id, _old, _new in zip(ids, old, new):
-
             # Does this change require an HSI?
             is_a_switch = _old != _new
             reqs_appt = _new in self.states_that_may_require_HSI_to_switch_to if is_a_switch \
@@ -528,6 +564,43 @@ class Contraception(Module):
                     },
                     description='All changes in contraception use'
                     )
+
+    def schedule_births_for_first_9_months(self):
+        """Schedule births to occur during the first 9 months of the simulation. This is necessary because at initiation
+        no women are pregnant, so the first births generated endogenously (through pregnancy -> gestation -> labour)
+        occur after 9 months of simulation time. This method examines age-specific fertility rate data and causes there
+        to be the appropriate number of births, scattered uniformly over the first 9 months of the simulation. These are
+         "direct live births" that are not subjected to any of the processes (e.g. risk of loss of pregnancy, or risk
+         of death to mother) represented in the `PregnancySupervisor`, `CareOfWomenDuringPregnancy` or `Labour`."""
+
+        risk_of_birth = get_medium_variant_asfr_from_wpp_resourcefile(
+            dat=self.parameters['age_specific_fertility_rates'], months_exposure=9)
+
+        df = self.sim.population.props
+        prob_birth = df.loc[
+            (df.sex == 'F') & df.is_alive & ~df.is_pregnant]['age_range'].map(
+            risk_of_birth[self.sim.date.year]).fillna(0)
+
+        # determine which women will get pregnant
+        give_birth_women_ids = prob_birth.index[
+            (self.rng.random_sample(size=len(prob_birth)) < prob_birth)
+        ]
+
+        # schedule births:
+        for _id in give_birth_women_ids:
+            self.sim.schedule_event(DirectBirth(person_id=None, module=self),
+                                    random_date(self.sim.date, self.sim.date + pd.DateOffset(months=9), self.rng)
+                                    )
+
+
+class DirectBirth(Event, IndividualScopeEventMixin):
+    """Do birth, with the mother_id set to -1 (we do not associate the child with a particular mother)."""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        self.sim.do_birth(-1)
 
 
 class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
@@ -706,16 +779,17 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # Get the women who are using a contraceptive that may fail and who may become pregnant (i.e., women who
         # are not in labour, have been pregnant in the last month, have previously had a hysterectomy, can get
         # pregnant.)
-        possible_to_fail = ((df.sex == 'F') &
-                            df.is_alive &
-                            ~df.is_pregnant &
-                            ~df.la_currently_in_labour &
-                            ~df.la_has_had_hysterectomy &
-                            df.age_years.between(self.age_low, self.age_high) &
-                            ~df.co_contraception.isin(['not_using', 'female_sterilization']) &
-                            ~df.la_is_postpartum &
-                            ~df.ps_ectopic_pregnancy.isin(['not_ruptured', 'ruptured'])
-                            )
+        possible_to_fail = (
+            df.is_alive
+            & (df.sex == 'F')
+            & ~df.is_pregnant
+            & df.age_years.between(self.age_low, self.age_high)
+            & ~df.co_contraception.isin(['not_using', 'female_sterilization'])
+            & ~df.la_currently_in_labour
+            & ~df.la_has_had_hysterectomy
+            & ~df.la_is_postpartum
+            & ~df.ps_ectopic_pregnancy.isin(['not_ruptured', 'ruptured'])
+        )
 
         if possible_to_fail.sum():
             # Get probability of method failure for each individual
@@ -739,15 +813,15 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
         # Get the subset of women who are not using a contraceptive and who may become pregnant
         subset = (
-            (df.sex == 'F') &
-            df.is_alive &
-            df.age_years.between(self.age_low, self.age_high) &
-            ~df.is_pregnant &
-            (df.co_contraception == 'not_using') &
-            ~df.la_currently_in_labour &
-            ~df.la_has_had_hysterectomy &
-            ~df.la_is_postpartum &
-            ~df.ps_ectopic_pregnancy.isin(['not_ruptured', 'ruptured'])
+            df.is_alive
+            & (df.sex == 'F')
+            & ~df.is_pregnant
+            & df.age_years.between(self.age_low, self.age_high)
+            & (df.co_contraception == 'not_using')
+            & ~df.la_currently_in_labour
+            & ~df.la_has_had_hysterectomy
+            & ~df.la_is_postpartum
+            & ~df.ps_ectopic_pregnancy.isin(['not_ruptured', 'ruptured'])
         )
 
         if subset.sum():
@@ -769,24 +843,22 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
 
         for w in women_id:
-            woman = df.loc[w]
+            woman = df.loc[w, ['co_contraception', 'age_years']]
+            method_before_pregnancy = woman['co_contraception']
 
             # Determine if this is unintended or not. (We say that it is 'unintended' if the women is using a
             # contraceptive when she becomes pregnant.)
-            unintended = (woman['co_contraception'] != 'not_using')
+            unintended = (method_before_pregnancy != 'not_using')
 
-            # Update properties (including that she is no longer on any contraception)
-            df.loc[w, (
-                'co_contraception',
-                'is_pregnant',
-                'date_of_last_pregnancy',
-                'co_unintended_preg'
-            )] = (
-                'not_using',
-                True,
-                self.sim.date,
-                unintended
-            )
+            # Update properties (including that she is no longer on any contraception; and store the method used prior
+            # pregnancy).
+            new_properties = {
+                'co_contraception': 'not_using',
+                'is_pregnant': True,
+                'date_of_last_pregnancy': self.sim.date,
+                'co_unintended_preg': unintended,
+            }
+            df.loc[w, new_properties.keys()] = new_properties.values()
 
             # Set date of labour in the Labour module
             self.sim.modules['Labour'].set_date_of_labour(w)
@@ -796,7 +868,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
                         data={
                             'woman_id': w,
                             'age_years': woman['age_years'],
-                            'contraception': woman['co_contraception'],
+                            'contraception': method_before_pregnancy,
                             'unintended': unintended
                         },
                         description='pregnancy following the failure of contraceptive method')
@@ -810,14 +882,22 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = population.props
 
-        # Make value_counts (NB. sort_index ensures the resulting dict has keys in the same order,
-        # which is requirement of the logging.)
-        value_counts = df.loc[df.is_alive & (df.sex == 'F'), 'co_contraception'].value_counts().sort_index().to_dict()
-
-        # Log summary of usage of contraceptives
+        # Log summary of usage of contraceptives (without age-breakdown)
+        # (NB. sort_index ensures the resulting dict has keys in the same order, which is requirement of the logging.)
         logger.info(key='contraception_use_summary',
-                    data=value_counts,
-                    description='Counts of women on each type of contraceptive at a point each time (yearly).')
+                    data=df.loc[
+                        df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49), 'co_contraception'
+                    ].value_counts().sort_index().to_dict(),
+                    description='Counts of women on each type of contraceptive at a point in time.')
+
+        # Log summary of usage of contraceptives (with age-breakdown)
+        logger.info(key='contraception_use_summary_by_age',
+                    data=flatten_multi_index_series_into_dict_for_logging(
+                        df.loc[
+                            df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)
+                            ].groupby(by=['co_contraception', 'age_range']).size().sort_index()
+                    ),
+                    description='Counts of women, by age-range, on each type of contraceptive at a point in time.')
 
 
 class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin):
@@ -892,7 +972,9 @@ class SimplifiedPregnancyAndLabour(Module):
 
     METADATA = {}
 
-    PARAMETERS = {}
+    PARAMETERS = {
+        'prob_live_birth': Parameter(Types.REAL, 'Probability that a pregnancy results in a live birth.')
+    }
 
     PROPERTIES = {
         'la_currently_in_labour': Property(Types.BOOL, 'whether this woman is currently in labour'),
@@ -910,7 +992,8 @@ class SimplifiedPregnancyAndLabour(Module):
         super().__init__(name='Labour')
 
     def read_parameters(self, *args):
-        pass
+        self.parameters['prob_live_birth'] = 0.67
+        # This is a reasonable estimate for the current versions of the Labour and other modules
 
     def initialise_population(self, population):
         df = population.props
@@ -919,7 +1002,7 @@ class SimplifiedPregnancyAndLabour(Module):
         df.loc[df.is_alive, 'la_is_postpartum'] = False
         df.loc[df.is_alive, 'ps_ectopic_pregnancy'] = np.NAN
 
-    def initialise_simulation(self,  *args):
+    def initialise_simulation(self, *args):
         pass
 
     def on_birth(self, mother_id, child_id):
@@ -931,18 +1014,15 @@ class SimplifiedPregnancyAndLabour(Module):
 
     def set_date_of_labour(self, person_id):
         """This is a drop-in replacement for the method in Labour that triggers the processes that determine the outcome
-        of a pregnancy. The probability of a live birth is hard-coded at 67%, which is a reasonable estimate for the
-        current versions of the Labour and other modules."""
-
-        prob_live_birth = 0.67
+        of a pregnancy."""
 
         self.sim.schedule_event(EndOfPregnancyEvent(module=self,
                                                     person_id=person_id,
-                                                    live_birth=(self.rng.rand() > prob_live_birth)
+                                                    live_birth=(self.rng.rand() < self.parameters['prob_live_birth'])
                                                     ),
                                 random_date(
-                                    self.sim.date + pd.DateOffset(months=8, days=14),
-                                    self.sim.date + pd.DateOffset(months=8, days=44),
+                                    self.sim.date + pd.DateOffset(months=9) - pd.DateOffset(days=14),
+                                    self.sim.date + pd.DateOffset(months=9) + pd.DateOffset(days=14),
                                     self.rng)
                                 )
 
@@ -961,3 +1041,44 @@ class EndOfPregnancyEvent(Event, IndividualScopeEventMixin):
             self.sim.do_birth(person_id)
         else:
             self.sim.modules['Contraception'].end_pregnancy(person_id)
+
+
+# -----------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------
+#
+# Helper functions
+#
+# -----------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------
+
+def get_medium_variant_asfr_from_wpp_resourcefile(dat: pd.DataFrame, months_exposure: int) -> dict:
+    """Process the data on age-specific fertility rates into a form that can be used to quickly map
+    age-ranges to an age-specific fertility rate (for the "Medium Variant" in the WPP data source).
+    :param dat: Raw form of the data in `ResourceFile_ASFR_WPP.csv`
+    :param months_exposure: The time (in integer number of months) over which the risk of pregnancy should be
+    computed.
+    :returns: a dict, keyed by year, giving a dataframe of risk of pregnancy over a the period, by age """
+
+    dat = dat.drop(dat[~dat.Variant.isin(['WPP_Estimates', 'WPP_Medium variant'])].index)
+    dat['Period-Start'] = dat['Period'].str.split('-').str[0].astype(int)
+    dat['Period-End'] = dat['Period'].str.split('-').str[1].astype(int)
+    years = range(min(dat['Period-Start'].values), 1 + max(dat['Period-End'].values))
+
+    # Convert the rates for asfr (rate of live-birth per year) to a rate per the frequency of this event repeating
+    dat['asfr_per_period'] = convert_annual_prob_to_monthly_prob(dat['asfr'], num_months=months_exposure)
+
+    asfr = dict()  # format is {year: {age-range: asfr}}
+    for year in years:
+        asfr[year] = dat.loc[
+            (year >= dat['Period-Start']) & (year <= dat['Period-End'])
+            ].set_index('Age_Grp')['asfr_per_period'].to_dict()
+
+    return asfr
+
+
+def convert_annual_prob_to_monthly_prob(p_annual, num_months=1):
+    return 1.0 - ((1.0 - p_annual) ** (num_months / 12.0))
+
+
+def convert_monthly_prob_to_annual_prob(p_monthly):
+    return 1.0 - ((1.0 - p_monthly) ** 12.0)

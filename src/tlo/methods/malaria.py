@@ -538,7 +538,7 @@ class Malaria(Module):
             add_or_remove="+",
             disease_module=self,
             date_of_onset=date_symptom_onset,
-            duration_in_days=p["dur_clin"],
+            duration_in_days=None,  # remove duration as symptoms cleared by MalariaCureEvent
         )
 
         # additional risk of severe anaemia in pregnancy
@@ -565,7 +565,7 @@ class Malaria(Module):
         :param child: to apply severe symptoms to children (otherwise applied to adults)
         """
         # If no indices specified exit straight away
-        if (len(severe_index) == 0):
+        if len(severe_index) == 0:
             return
 
         df = population
@@ -635,12 +635,12 @@ class Malaria(Module):
 
         true_malaria_infection_type = self.sim.population.props.at[person_id, "ma_inf_type"]
 
-        if dx_result:
-            if true_malaria_infection_type == "severe":
-                return "severe_malaria"
+        # severe malaria infection always returns positive RDT
+        if true_malaria_infection_type == "severe":
+            return "severe_malaria"
 
-            elif true_malaria_infection_type in ("clinical", "asym"):
-                return "clinical_malaria"
+        elif dx_result and true_malaria_infection_type in ("clinical", "asym"):
+            return "clinical_malaria"
 
         else:
             return "negative_malaria_test"
@@ -738,32 +738,23 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
                 self.sim.modules['Demography'].do_death(
                     individual_id=individual_id, cause=self.cause, originating_module=self.module)
 
-                # self.sim.schedule_event(
-                #     demography.InstantaneousDeath(
-                #         self.module, individual_id, cause=self.cause
-                #     ),
-                #     self.sim.date,
-                # )
-
                 df.at[individual_id, "ma_date_death"] = self.sim.date
 
             # else if draw does not result in death -> cure
             else:
                 df.at[individual_id, "ma_tx"] = False
-                df.loc[individual_id, "ma_inf_type"] = "asym"
-                # df.loc[individual_id, "ma_date_symptoms"] = pd.NaT
+                df.at[individual_id, "ma_inf_type"] = "none"
+                df.at[individual_id, "ma_is_infected"] = False
+
+                # clear symptoms
+                self.sim.modules["SymptomManager"].clear_symptoms(
+                    person_id=individual_id, disease_module=self.module
+                )
 
         # if not on treatment - death will occur
         else:
             self.sim.modules['Demography'].do_death(
                 individual_id=individual_id, cause=self.cause, originating_module=self.module)
-
-            # self.sim.schedule_event(
-            #     demography.InstantaneousDeath(
-            #         self.module, individual_id, cause=self.cause
-            #     ),
-            #     self.sim.date,
-            # )
 
             df.at[individual_id, "ma_date_death"] = self.sim.date
 
@@ -1173,22 +1164,47 @@ class MalariaCureEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(days=3))
 
     def apply(self, population):
+        """
+        this is a regular event which cures people currently on treatment for malaria
+        and clears symptoms for those not on treatment
+        it also clears parasites if treated
+        """
+
         logger.debug(key='message', data='MalariaCureEvent: symptom resolution for malaria cases')
 
         df = self.sim.population.props
 
-        # select people with clinical malaria and treatment for at least 3 days
-        clinical_and_treated = df.index[df.is_alive &
-                                        (df.ma_inf_type == "clinical") &
-                                        (df.ma_date_tx < (self.sim.date - DateOffset(days=3)))]
+        # TREATED
+        # select people with malaria and treatment for at least 3 days
+        # if treated, will clear symptoms and parasitaemia
+        # this will also clear parasitaemia for asymptomatic cases picked up by routine rdt
+        infected_and_treated = df.index[df.is_alive &
+                                        (df.ma_date_tx < (self.sim.date - DateOffset(days=3))) &
+                                        (df.ma_inf_type != "severe")]
 
         self.sim.modules["SymptomManager"].clear_symptoms(
-            person_id=clinical_and_treated, disease_module=self.module
+            person_id=infected_and_treated, disease_module=self.module
         )
 
         # change properties
-        df.loc[clinical_and_treated, "ma_tx"] = False
-        df.loc[clinical_and_treated, "ma_inf_type"] = "asym"
+        df.loc[infected_and_treated, "ma_tx"] = False
+        df.loc[infected_and_treated, "ma_is_infected"] = False
+        df.loc[infected_and_treated, "ma_inf_type"] = "none"
+
+        # UNTREATED
+        # if not treated, self-cure occurs after 6 days of symptoms
+        # but parasites remain in blood
+        clinical_not_treated = df.index[df.is_alive &
+                                        (df.ma_inf_type == "clinical") &
+                                        (df.ma_date_infected < (self.sim.date - DateOffset(days=6))) &
+                                        ~df.ma_tx]
+
+        self.sim.modules["SymptomManager"].clear_symptoms(
+            person_id=clinical_not_treated, disease_module=self.module
+        )
+
+        # change properties
+        df.loc[clinical_not_treated, "ma_inf_type"] = "asym"
 
 
 class MalariaParasiteClearanceEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1203,6 +1219,7 @@ class MalariaParasiteClearanceEvent(RegularEvent, PopulationScopeEventMixin):
 
         # select people infected at least 100 days ago
         asym_inf = df.index[df.is_alive &
+                            (df.ma_inf_type == "asym") &
                             (df.ma_date_infected < (self.sim.date - DateOffset(days=p["dur_asym"])))]
 
         df.loc[asym_inf, "ma_inf_type"] = "none"
