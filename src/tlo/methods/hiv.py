@@ -395,7 +395,6 @@ class Hiv(Module):
             self.daly_wts["aids"] = self.sim.modules["HealthBurden"].get_daly_weight(19)
 
         # 2)  Declare the Symptoms.
-        # todo reset this to appropriately high level if needed
         self.sim.modules["SymptomManager"].register_symptom(
             Symptom(
                 name="aids_symptoms",
@@ -424,14 +423,14 @@ class Hiv(Module):
             Predictor("li_urban").when(False, p["rr_rural"]),
             Predictor("li_wealth",
                       conditions_are_mutually_exclusive=True
-                      ) .when(2, p["rr_windex_poorer"])
-                        .when(3, p["rr_windex_middle"])
-                        .when(4, p["rr_windex_richer"])
-                        .when(5, p["rr_windex_richest"]),
+                      ).when(2, p["rr_windex_poorer"])
+                .when(3, p["rr_windex_middle"])
+                .when(4, p["rr_windex_richer"])
+                .when(5, p["rr_windex_richest"]),
             Predictor("li_ed_lev",
                       conditions_are_mutually_exclusive=True
-                      ) .when(2, p["rr_edlevel_primary"])
-                        .when(3, p["rr_edlevel_secondary"]),
+                      ).when(2, p["rr_edlevel_primary"])
+                .when(3, p["rr_edlevel_secondary"]),
             Predictor("hv_behaviour_change").when(True, p["rr_behaviour_change"]),
         )
 
@@ -441,7 +440,7 @@ class Hiv(Module):
                 "age_years",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True,
-            )   .when("<20", p["infection_to_death_weibull_scale_1519"])
+            ).when("<20", p["infection_to_death_weibull_scale_1519"])
                 .when(".between(20, 24)", p["infection_to_death_weibull_scale_2024"])
                 .when(".between(25, 29)", p["infection_to_death_weibull_scale_2529"])
                 .when(".between(30, 34)", p["infection_to_death_weibull_scale_3034"])
@@ -456,7 +455,7 @@ class Hiv(Module):
                 "age_years",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True,
-            )   .when("<20", p["infection_to_death_weibull_shape_1519"])
+            ).when("<20", p["infection_to_death_weibull_shape_1519"])
                 .when(".between(20, 24)", p["infection_to_death_weibull_shape_2024"])
                 .when(".between(25, 29)", p["infection_to_death_weibull_shape_2529"])
                 .when(".between(30, 34)", p["infection_to_death_weibull_shape_3034"])
@@ -521,7 +520,6 @@ class Hiv(Module):
         self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
 
         self.initialise_baseline_art(population)  # allocate baseline art coverage
-        # todo remove this to get 100% linkage and adherence
         self.initialise_baseline_tested(population)  # allocate baseline testing coverage
 
     def initialise_baseline_prevalence(self, population):
@@ -549,13 +547,13 @@ class Hiv(Module):
             Predictor("li_is_circ").when(True, params["rr_circumcision"]),
             Predictor("li_urban").when(False, params["rr_rural"]),
             Predictor("li_wealth", conditions_are_mutually_exclusive=True)
-            .when(2, params["rr_windex_poorer"])
-            .when(3, params["rr_windex_middle"])
-            .when(4, params["rr_windex_richer"])
-            .when(5, params["rr_windex_richest"]),
+                .when(2, params["rr_windex_poorer"])
+                .when(3, params["rr_windex_middle"])
+                .when(4, params["rr_windex_richer"])
+                .when(5, params["rr_windex_richest"]),
             Predictor("li_ed_lev", conditions_are_mutually_exclusive=True)
-            .when(2, params["rr_edlevel_primary"])
-            .when(3, params["rr_edlevel_secondary"])
+                .when(2, params["rr_edlevel_primary"])
+                .when(3, params["rr_edlevel_secondary"])
         ).predict(df.loc[df.is_alive])
 
         # Rescale relative probability of infection so that its average is 1.0 within each age/sex group
@@ -729,7 +727,6 @@ class Hiv(Module):
 
         adult_test_index = []
         if hiv_test_deficit > 0:
-
             # sample number_deficit from remaining undiagnosed pop
             adult_undiagnosed = df.loc[df.is_alive
                                        & df.hv_inf
@@ -844,7 +841,6 @@ class Hiv(Module):
 
         # Schedule the AIDS death events for those who have got AIDS already
         for person_id in has_aids_idx:
-            # todo reset
             # schedule a HSI_Test_and_Refer otherwise initial AIDS rates and deaths are far too high
             # date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 60))
             # self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -1213,13 +1209,11 @@ class Hiv(Module):
         # use iloc to index by position as index will change by year
         return_prob = prob_art.loc[(prob_art.year == current_year), "value"].iloc[0]
 
-        # todo adjustments to compensate for historical low art coverage
         # the reported art coverage reflects current situation, not jus new initiations
         # so new initiations must be even higher to result in overall reported level
         # adjust new initiations to reflect current estimates
         # may return prob > 1
         # return_prob = return_prob * 1.95
-        # todo set this dx->tx very high, people can drop-out / have poor vs
         return_prob = 0.99
 
         return return_prob
@@ -1477,11 +1471,11 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # reduce testing rates by 0.8 to account for additional testing through ANC/symptoms
         testing_rate_children = test_rates.loc[
-            test_rates.year == current_year, "annual_testing_rate_children"
-        ].values[0] * 0.6
+                                    test_rates.year == current_year, "annual_testing_rate_children"
+                                ].values[0] * 0.6
         testing_rate_adults = test_rates.loc[
-            test_rates.year == current_year, "annual_testing_rate_adults"
-        ].values[0] * 0.6
+                                  test_rates.year == current_year, "annual_testing_rate_adults"
+                              ].values[0] * 0.6
         random_draw = rng.random_sample(size=len(df))
 
         child_tests_idx = df.loc[
@@ -1618,11 +1612,16 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
             )
 
         else:
+            # cause is active TB
+            # death scheduled between 6-12 months from now
+            date_of_aids_tb_death = self.sim.date + \
+                                    pd.DateOffset(months=self.module.rng.randint(6, 12))
+
             self.sim.schedule_event(
                 event=HivAidsTbDeathEvent(
                     person_id=person_id, module=self.module, cause=self.cause
                 ),
-                date=date_of_aids_death,
+                date=date_of_aids_tb_death,
             )
 
 
@@ -1630,6 +1629,8 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
     """
     Causes someone to die of AIDS, if they are not VL suppressed on ART.
     if death scheduled by tb-aids, death event is HivAidsTbDeathEvent
+    if death scheduled by hiv but person also has active TB, cause of
+    death is AIDS_TB
     """
 
     def __init__(self, module, person_id, cause):
@@ -1689,8 +1690,7 @@ class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"]:
             return
 
-        # if aids-tb but on treatment for tb, reduce probability of death
-        if (df.at[person_id, "tb_inf"] == "active") and df.at[person_id, 'tb_on_treatment']:
+        if df.at[person_id, 'tb_on_treatment']:
             prob = self.module.rng.rand()
 
             # treatment adjustment reduces probability of death
@@ -1715,7 +1715,7 @@ class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
                 )
 
         # aids-tb and not on tb treatment
-        elif (df.at[person_id, "tb_inf"] == "active") and not df.at[person_id, 'tb_on_treatment']:
+        elif not df.at[person_id, 'tb_on_treatment']:
             # Cause the death to happen immediately, cause defined by TB status
             self.sim.modules["Demography"].do_death(
                 individual_id=person_id, cause="AIDS_TB", originating_module=self.module
@@ -2111,7 +2111,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
             p = self.module.parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"]
             if self.module.rng.random_sample() >= p:
-
                 return
 
             # If person 'decides to' seek another appointment, schedule a new HSI appointment for tomorrow.

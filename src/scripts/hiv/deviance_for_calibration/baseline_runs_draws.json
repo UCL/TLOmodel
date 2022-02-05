@@ -1,0 +1,12 @@
+{
+  "scenario_script_path": "src/scripts/hiv/deviance_for_calibration/baseline_runs.py",
+  "scenario_seed": 3108,
+  "runs_per_draw": 5,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 1035678335,
+      "parameters": null
+    }
+  ]
+}

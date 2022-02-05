@@ -36,7 +36,7 @@ class Tb(Module):
         self.district_list = list()
         self.item_codes_for_consumables_required = dict()
 
-        # tb outputs needed for calibration
+        # tb outputs needed for calibration/
         keys = ["date",
                 "num_new_active_tb",
                 "tbPrevLatent"
@@ -148,8 +148,8 @@ class Tb(Module):
         "prob_latent_tb_15plus": Parameter(
             Types.REAL, "probability of latent infection in ages 15+"
         ),
-        "incidence_active_tb_2010_per100k": Parameter(
-            Types.REAL, "incidence of active tb in 2010 per 100,000 population"
+        "incidence_active_tb_2010": Parameter(
+            Types.REAL, "incidence of active tb in 2010 in all ages"
         ),
         "transmission_rate": Parameter(Types.REAL, "TB transmission rate, calibrated"),
         "mixing_parameter": Parameter(
@@ -403,7 +403,8 @@ class Tb(Module):
 
         p = self.parameters
 
-        # assume cases distributed equally across districts!!
+        # assume cases distributed equally across districts
+        # todo this is not used for national-level model
         p["prop_active_2010"] = workbook["cases2010district"]
 
         p["pulm_tb"] = workbook["pulm_tb"]
@@ -482,15 +483,14 @@ class Tb(Module):
         # need to cluster majority of cases in plhiv
         self.lm["active_tb_2010"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            (p["incidence_active_tb_2010_per100k"]/100000),
-            Predictor("hv_inf").when(True, p["rr_tb_aids"]),
+            (p["incidence_active_tb_2010"]),
+            Predictor("hv_inf").when(True, p["rr_tb_hiv"]),
         )
 
         # adults progressing to active disease
         self.lm["active_tb"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p["prog_active"],
-            Predictor("va_bcg_all_doses").when(True, p["rr_tb_bcg"]),
             # hiv- and on ipt
             Predictor().when(
                 "(tb_on_ipt == True) & (hv_inf == False)", p["rr_ipt_adult"]
@@ -654,7 +654,7 @@ class Tb(Module):
 
         # whole population susceptible to latent infection, risk determined by age
         prob_latent = self.lm["latent_tb_2010"].predict(
-            df.loc[df.is_alive & (df.tb_inf == "uninfected")]
+            df.loc[df.is_alive]
         )  # this will return pd.Series of probabilities of latent infection for each person alive
 
         new_latent = self.rng.random_sample(len(prob_latent)) < prob_latent
@@ -675,9 +675,9 @@ class Tb(Module):
 
     def baseline_active(self, population):
         """
-        sample from the baseline population to assign active tb infections
-        using 2010 incidence estimates
+        this is new incidence active tb cases which will occur through 2010
         no differences in baseline active tb by age/sex
+        active infections will cluster in plhiv
         """
 
         df = population.props
@@ -686,14 +686,18 @@ class Tb(Module):
 
         # risk active tb determined by hiv status
         prob_active = self.lm["active_tb_2010"].predict(
-            df.loc[df.is_alive & (df.tb_inf == "uninfected")]
+            df.loc[df.is_alive]
         )  # this will return pd.Series of probabilities of active infection for each person alive
 
-        new_active = self.rng.random_sample(len(prob_active)) < prob_active
+        mean_prob_active = prob_active.mean()
+        scaled_prob_active = prob_active / mean_prob_active
+        overall_prob_active = scaled_prob_active * p["incidence_active_tb_2010"]
+
+        new_active = self.rng.random_sample(len(overall_prob_active)) < overall_prob_active
         active_tb_idx = new_active[new_active].index
         df.loc[active_tb_idx, "tb_strain"] = "ds"
 
-        # a]llocate some active infections as mdr-tb
+        # allocate some active infections as mdr-tb
         # from active_tb_idx - sample prop_mdr2010 and allocate as mdr
         sample_mdr = self.rng.random_sample(len(active_tb_idx)) < (p["prop_mdr2010"])
         active_mdr_tb_idx = active_tb_idx[sample_mdr]
@@ -704,31 +708,26 @@ class Tb(Module):
             active_mdr_tb_idx
         )  # join indices (checked)
 
-        # assign as current latent cases, active progression will be scheduled
+        # -------- change individual properties for active disease --------
         df.loc[all_new_active, "tb_inf"] = "latent"
         df.loc[all_new_active, "tb_date_latent"] = now
-        df.loc[all_new_active, "tb_scheduled_date_active"] = now
 
-        # tb_scheduled_date_active is picked up by regular event TbActiveEvent and properties updated at that point
+        # schedule active onset for time now up to end of 2010
+        # tb_scheduled_date_active is picked up by regular event TbActiveEvent
+        # and properties updated at that point
         for person_id in all_new_active:
+            date_active = now + pd.DateOffset(days=self.rng.randint(0, 365))
+            df.at[person_id, "tb_scheduled_date_active"] = date_active
+
             # schedule screening / testing for proportion of baseline active cases
             if self.rng.random_sample() < p["rate_testing_baseline_active"]:
                 # set HSI for 30 days after active onset, as active poll occurs monthly
                 # need to ensure properties are updated before screening
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Tb_ScreeningAndRefer(person_id=person_id, module=self),
-                    topen=now + pd.DateOffset(days=self.rng.randint(30, 60)),
+                    topen=date_active + pd.DateOffset(days=30),
                     tclose=None,
                     priority=0,
-                )
-
-            # if HIV+, schedule death directly to occur during 2010
-            if df.at[person_id, "hv_inf"]:
-                self.sim.schedule_event(
-                    hiv.HivAidsTbDeathEvent(
-                        module=self, person_id=person_id, cause="AIDS_TB"
-                    ),
-                    date=now + pd.DateOffset(days=self.rng.randint(0, 365)),
                 )
 
     def progression_to_active(self, population):
@@ -912,7 +911,7 @@ class Tb(Module):
 
         # 1) Regular events
         sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(months=0))
-        sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(years=0))
+        sim.schedule_event(TbRegularPollingEvent(self), sim.date + DateOffset(years=1))
         sim.schedule_event(TbEndTreatmentEvent(self), sim.date + DateOffset(days=30.5))
         sim.schedule_event(TbRelapseEvent(self), sim.date + DateOffset(months=1))
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
@@ -920,7 +919,7 @@ class Tb(Module):
         sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
 
         # 2) Logging
-        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=364))
 
         # 3) -------- Define the DxTests and get the consumables required --------
 
