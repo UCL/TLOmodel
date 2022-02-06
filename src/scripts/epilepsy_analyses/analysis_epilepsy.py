@@ -26,8 +26,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012,  1, 1)
-popsize = 19000
+end_date = Date(2015,  1, 1)
+popsize = 1900000
 
 # Establish the simulation object
 log_config = {
@@ -68,7 +68,7 @@ prop_seiz_stat_1 = pd.Series(
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
 prop_seiz_stat_1.plot()
 plt.title('Proportion of people with epilepsy but no current seizures')
-plt.ylim(0, 0.10)
+plt.ylim(0, 0.05)
 plt.show()
 
 prop_seiz_stat_2 = pd.Series(
@@ -76,7 +76,7 @@ prop_seiz_stat_2 = pd.Series(
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
 prop_seiz_stat_2.plot()
 plt.title('Proportion of people with infrequent epilepsy seizures')
-plt.ylim(0, 1.00)
+plt.ylim(0, 0.02)
 plt.show()
 
 prop_seiz_stat_3 = pd.Series(
@@ -84,7 +84,7 @@ prop_seiz_stat_3 = pd.Series(
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
 prop_seiz_stat_3.plot()
 plt.title('Proportion of people with frequent epilepsy seizures')
-plt.ylim(0, 0.1)
+plt.ylim(0, 0.005)
 plt.show()
 
 n_seiz_stat_1_3 = pd.Series(
@@ -132,7 +132,7 @@ n_epi_death = pd.Series(
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
 n_epi_death.plot()
 plt.title('Number of deaths from epilepsy')
-plt.ylim(0, 500)
+plt.ylim(0, 50 )
 plt.show()
 
 n_antiep = pd.Series(
@@ -140,7 +140,7 @@ n_antiep = pd.Series(
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
 n_antiep.plot()
 plt.title('Number of people on antiepileptics')
-plt.ylim(0, 500000)
+plt.ylim(0, 50000)
 plt.show()
 
 epi_death_rate = pd.Series(

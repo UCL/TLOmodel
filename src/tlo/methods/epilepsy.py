@@ -490,24 +490,26 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables_OneHealth']
         # Define the consumables
         # todo: set back below to False
         anti_epileptics_available = True
+
+        """
         # first choice is phenobarbitone
         item_code_phenobarbitone = pd.unique(
             consumables.loc[consumables['Items'] == 'Phenobarbitone  30mg_1000_CMST', 'Item_Code'])[0]
         consumables_phenobarbitone = {
             'Intervention_Package_Code': {},
             'Item_Code': {item_code_phenobarbitone: 1}}
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem']._request_consumables(
             hsi_event=self,
             cons_req_as_footprint=consumables_phenobarbitone,
             to_log=True
         )
         if outcome_of_request_for_consumables['Item_Code'][item_code_phenobarbitone]:
             anti_epileptics_available = True
- #          logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+            logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
         else:
             item_code_carbamazepine = pd.unique(
                 consumables.loc[consumables['Items'] == 'Carbamazepine 200mg_1000_CMST', 'Item_Code'])[0]
@@ -521,7 +523,7 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
             )
             if outcome_of_request_for_consumables['Item_Code'][item_code_carbamazepine]:
                 anti_epileptics_available = True
-#               logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+                logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
             else:
                 item_code_phenytoin = pd.unique(
                     consumables.loc[consumables['Items'] == 'Phenytoin sodium 100mg_1000_CMST', 'Item_Code'])[0]
@@ -535,8 +537,8 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
                 )
                 if outcome_of_request_for_consumables['Item_Code'][item_code_phenytoin]:
                     anti_epileptics_available = True
-#                   logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
-
+                    logger.debug(key='debug', data='@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+        """
         if anti_epileptics_available:
            df.at[person_id, 'ep_antiep'] = True
 
