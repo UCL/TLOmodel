@@ -1,34 +1,76 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
   <title>tlo.methods.demography &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+
+  
+  
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
+  
+
+  
+  
+
+  
+
+  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/js/theme.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav"> 
+<body class="wy-body-for-nav">
+
+   
   <div class="wy-grid-for-nav">
+    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
+          
+
+          
             <a href="../../../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
           </a>
+
+          
+            
+            
               <div class="version">
                 0.1.0
               </div>
+            
+          
+
+          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -36,7 +78,18 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -50,31 +103,71 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
+            
+          
         </div>
+        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
+        
       </nav>
 
+
       <div class="wy-nav-content">
+        
         <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
+    
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
           <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
           <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
+        
       <li>tlo.methods.demography</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
+        
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-             
+            
   <h1>Source code for tlo.methods.demography</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">The core demography module and its associated events.</span>
@@ -117,6 +210,7 @@
 <div class="viewcode-block" id="Demography.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_model_to_data_popsize_ratio</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># will store scaling factor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">popsize_by_year</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>  <span class="c1"># will store total population size each year</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">causes_of_death</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>  <span class="c1"># will store all the causes of death that are possible in the simulation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gbd_causes_of_death</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># will store all the causes of death defined in the GBD data</span>
@@ -261,13 +355,12 @@
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Demography.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Set our property values for the initial population.</span>
-<span class="sd">        This method is called by the simulation when creating the initial population, and is</span>
-<span class="sd">        responsible for assigning initial values, for every individual, of those properties</span>
-<span class="sd">        &#39;owned&#39; by this module, i.e. those declared in the PROPERTIES dictionary above.</span>
-<span class="sd">        :param population: the population of individuals</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Set properties for this module and compute the initial population scaling factor&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
+
+        <span class="c1"># Compute the initial population scaling factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_model_to_data_popsize_ratio</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">compute_initial_model_to_data_popsize_ratio</span><span class="p">(</span><span class="n">population</span><span class="o">.</span><span class="n">initial_size</span><span class="p">)</span>
 
         <span class="n">init_pop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;pop_2010&#39;</span><span class="p">]</span>
         <span class="n">init_pop</span><span class="p">[</span><span class="s1">&#39;prob&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">init_pop</span><span class="p">[</span><span class="s1">&#39;Count&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">init_pop</span><span class="p">[</span><span class="s1">&#39;Count&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
@@ -307,20 +400,26 @@
 
 <div class="viewcode-block" id="Demography.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        * Schedule the age updating</span>
-<span class="sd">        * Output to the log the dicts that can be used for mapping from causes of death defined here, and those defined</span>
-<span class="sd">        in the GBD datasets, to a common &#39;label&#39;.</span>
+<span class="sd">        * Schedule the AgeUpdateEvent, the OtherDeathPoll and the DemographyLoggingEvent</span>
+<span class="sd">        * Output to the log the initial population scaling factor.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Update age information every day</span>
+        <span class="c1"># Update age information every day (first time after one day)</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">AgeUpdateEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">AGE_RANGE_LOOKUP</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
-        <span class="c1"># check all population to determine if person should die (from causes other than those</span>
-        <span class="c1"># explicitly modelled) (repeats every month)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">other_death_poll</span> <span class="o">=</span> <span class="n">OtherDeathPoll</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">other_death_poll</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-
         <span class="c1"># Launch the repeating event that will store statistics about the population structure</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">DemographyLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">DemographyLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+
+        <span class="c1"># Create (and store pointer to) the OtherDeathPoll and schedule first occurrence immediately</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">other_death_poll</span> <span class="o">=</span> <span class="n">OtherDeathPoll</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">other_death_poll</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+
+        <span class="c1"># Log the initial population scaling-factor</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="n">key</span><span class="o">=</span><span class="s1">&#39;scaling_factor&#39;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;scaling_factor&#39;</span><span class="p">:</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_model_to_data_popsize_ratio</span><span class="p">},</span>
+            <span class="n">description</span><span class="o">=</span><span class="s1">&#39;The data-to-model scaling factor (based on the initial population size, used to multiply-up&#39;</span>
+                        <span class="s1">&#39;results so that they correspond to the real population size&#39;</span>
+        <span class="p">)</span>
 
         <span class="c1"># Check that the simulation does not run too long</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">end_date</span><span class="o">.</span><span class="n">year</span> <span class="o">&gt;=</span> <span class="mi">2100</span><span class="p">:</span>
@@ -337,6 +436,12 @@
 
         <span class="n">fraction_of_births_male</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;fraction_of_births_male&#39;</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">]</span>
 
+        <span class="c1"># Determine characteristics that are inherited from mother (and if no mother, from a randomly selected person)</span>
+        <span class="n">_id_inherit_from</span> <span class="o">=</span> <span class="n">mother_id</span> <span class="k">if</span> <span class="n">mother_id</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">])</span>
+        <span class="n">_district_num_of_residence</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">_id_inherit_from</span><span class="p">,</span> <span class="s1">&#39;district_num_of_residence&#39;</span><span class="p">]</span>
+        <span class="n">_district_of_residence</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">_id_inherit_from</span><span class="p">,</span> <span class="s1">&#39;district_of_residence&#39;</span><span class="p">]</span>
+        <span class="n">_region_of_residence</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">_id_inherit_from</span><span class="p">,</span> <span class="s1">&#39;region_of_residence&#39;</span><span class="p">]</span>
+
         <span class="n">child</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;is_alive&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
             <span class="s1">&#39;date_of_birth&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
@@ -344,35 +449,28 @@
             <span class="s1">&#39;cause_of_death&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
             <span class="s1">&#39;sex&#39;</span><span class="p">:</span> <span class="s1">&#39;M&#39;</span> <span class="k">if</span> <span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">fraction_of_births_male</span> <span class="k">else</span> <span class="s1">&#39;F&#39;</span><span class="p">,</span>
             <span class="s1">&#39;mother_id&#39;</span><span class="p">:</span> <span class="n">mother_id</span><span class="p">,</span>
-            <span class="s1">&#39;district_num_of_residence&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;district_num_of_residence&#39;</span><span class="p">],</span>
-            <span class="s1">&#39;district_of_residence&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;district_of_residence&#39;</span><span class="p">],</span>
-            <span class="s1">&#39;region_of_residence&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;region_of_residence&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;district_num_of_residence&#39;</span><span class="p">:</span> <span class="n">_district_num_of_residence</span><span class="p">,</span>
+            <span class="s1">&#39;district_of_residence&#39;</span><span class="p">:</span> <span class="n">_district_of_residence</span><span class="p">,</span>
+            <span class="s1">&#39;region_of_residence&#39;</span><span class="p">:</span> <span class="n">_region_of_residence</span><span class="p">,</span>
             <span class="s1">&#39;age_exact_years&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
             <span class="s1">&#39;age_years&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
             <span class="s1">&#39;age_range&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">AGE_RANGE_LOOKUP</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="p">}</span>
-
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="n">child</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
 
         <span class="c1"># Log the birth:</span>
+        <span class="n">_mother_age_at_birth</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">mother_id</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">_mother_age_at_pregnancy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;date_of_last_pregnancy&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;date_of_birth&#39;</span><span class="p">])</span>
+            <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">))</span> <span class="k">if</span> <span class="n">mother_id</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="n">key</span><span class="o">=</span><span class="s1">&#39;on_birth&#39;</span><span class="p">,</span>
             <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;mother&#39;</span><span class="p">:</span> <span class="n">mother_id</span><span class="p">,</span>
                   <span class="s1">&#39;child&#39;</span><span class="p">:</span> <span class="n">child_id</span><span class="p">,</span>
-                  <span class="s1">&#39;mother_age&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]}</span>
+                  <span class="s1">&#39;mother_age&#39;</span><span class="p">:</span> <span class="n">_mother_age_at_birth</span><span class="p">,</span>
+                  <span class="s1">&#39;mother_age_at_pregnancy&#39;</span><span class="p">:</span> <span class="n">_mother_age_at_pregnancy</span><span class="p">}</span>
         <span class="p">)</span></div>
-
-<div class="viewcode-block" id="Demography.on_simulation_end"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.on_simulation_end">[docs]</a>    <span class="k">def</span> <span class="nf">on_simulation_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Things to do at end of the simulation:</span>
-<span class="sd">        * Compute and log the scaling-factor</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">sf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_scaling_factor</span><span class="p">()</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">sf</span><span class="p">):</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="n">key</span><span class="o">=</span><span class="s1">&#39;scaling_factor&#39;</span><span class="p">,</span>
-                <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;scaling_factor&#39;</span><span class="p">:</span> <span class="n">sf</span><span class="p">},</span>
-                <span class="n">description</span><span class="o">=</span><span class="s1">&#39;The scaling factor (if can be computed)&#39;</span>
-            <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Demography.process_causes_of_death"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.process_causes_of_death">[docs]</a>    <span class="k">def</span> <span class="nf">process_causes_of_death</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -542,37 +640,8 @@
 
         <span class="k">return</span> <span class="n">py</span></div>
 
-<div class="viewcode-block" id="Demography.compute_scaling_factor"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.compute_scaling_factor">[docs]</a>    <span class="k">def</span> <span class="nf">compute_scaling_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Compute the scaling factor, if it is possible to do so.</span>
-
-<span class="sd">        The scaling factor is the ratio of {Real Population} to {Model Pop Size}. It is used to multiply model outputs</span>
-<span class="sd">        in order to produce statistics that will be of the same scale as the real population.</span>
-
-<span class="sd">        It is estimated by comparing the population size with the national census in the year that the census was</span>
-<span class="sd">        conducted.</span>
-
-<span class="sd">        If the simulation does not include that year, the scaling factor cannot be computed (in which case, np.nan is</span>
-<span class="sd">        returned).</span>
-
-<span class="sd">        :return: floating point number that is the scaling factor, or np.nan if it cannot be computed.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="c1"># Get Census data</span>
-        <span class="n">year_of_census</span> <span class="o">=</span> <span class="mi">2018</span>
-        <span class="n">census_popsize</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
-            <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;demography&quot;</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_PopulationSize_2018Census.csv&quot;</span>
-        <span class="p">)[</span><span class="s1">&#39;Count&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-
-        <span class="c1"># Get model total population size in that same year</span>
-        <span class="k">if</span> <span class="n">year_of_census</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">popsize_by_year</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">model_popsize_in_year_of_census</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">popsize_by_year</span><span class="p">[</span><span class="n">year_of_census</span><span class="p">]</span>
-            <span class="k">return</span> <span class="n">census_popsize</span> <span class="o">/</span> <span class="n">model_popsize_in_year_of_census</span></div>
-
-<div class="viewcode-block" id="Demography.compute_initial_population_scaling_factor"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.compute_initial_population_scaling_factor">[docs]</a>    <span class="k">def</span> <span class="nf">compute_initial_population_scaling_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_population</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute ratio of initial population to estimated population in 2010.</span>
+<div class="viewcode-block" id="Demography.compute_initial_model_to_data_popsize_ratio"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.Demography.compute_initial_model_to_data_popsize_ratio">[docs]</a>    <span class="k">def</span> <span class="nf">compute_initial_model_to_data_popsize_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_population_size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute ratio of initial model population size to estimated population size in 2010.</span>
 
 <span class="sd">        Uses the total of the per-region estimated populations in 2010 used to</span>
 <span class="sd">        initialise the simulation population as the baseline figure, with this value</span>
@@ -582,12 +651,11 @@
 <span class="sd">        Economic and Social Affairs. URL:</span>
 <span class="sd">        https://population.un.org/wpp/Download/Standard/Population/</span>
 
-<span class="sd">        :param initial_population: Initial population to calculate ratio for.</span>
+<span class="sd">        :param initial_population_size: Initial population size to calculate ratio for.</span>
 
 <span class="sd">        :returns: Ratio of ``initial_population`` to 2010 baseline population.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">baseline_total_population</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;pop_2010&#39;</span><span class="p">][</span><span class="s1">&#39;Count&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">initial_population</span> <span class="o">/</span> <span class="n">baseline_total_population</span></div></div>
+        <span class="k">return</span> <span class="n">initial_population_size</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;pop_2010&#39;</span><span class="p">][</span><span class="s1">&#39;Count&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span></div></div>
 
 
 <div class="viewcode-block" id="AgeUpdateEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.demography.html#tlo.methods.demography.AgeUpdateEvent">[docs]</a><span class="k">class</span> <span class="nc">AgeUpdateEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
@@ -777,82 +845,10 @@
         <span class="c1"># Output the person-years lived by single year of age in the past year</span>
         <span class="n">py</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">calc_py_lived_in_last_year</span><span class="p">()</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;person_years&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">py</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span></div></div>
-
-
-<span class="k">def</span> <span class="nf">scale_to_population</span><span class="p">(</span><span class="n">parsed_output</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="p">,</span> <span class="n">rtn_scaling_ratio</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-
-<span class="sd">    DO NOT USE THIS FUNCTION IN NEW CODE --- IT IS PROVIDED TO ENABLE LEGACY CODE TO RUN.</span>
-
-<span class="sd">    This helper function scales certain outputs so that they can create statistics for the whole population.</span>
-<span class="sd">    e.g. Population Size, Number of deaths are scaled by the factor of {Model Pop Size at Start of Simulation} to {</span>
-<span class="sd">    {Real Population at the same time}.</span>
-
-<span class="sd">    NB. This file gives precedence to the Malawi Population Census</span>
-
-<span class="sd">    :param parsed_output: The outputs from parse_output</span>
-<span class="sd">    :param resourcefilepath: The resourcefilepath</span>
-<span class="sd">    :return: a new version of parsed_output that includes certain variables scaled</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;DO NOT USE THIS FUNCTION IN NEW CODE --- IT IS PROVIDED TO ENABLE LEGACY CODE TO RUN.&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;The scaling factor can found in the log key=scaling_factor&#39;</span><span class="p">)</span>
-
-    <span class="c1"># Get information about the real population size (Malawi Census in 2018)</span>
-    <span class="n">cens_tot</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;demography&quot;</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_PopulationSize_2018Census.csv&quot;</span><span class="p">)[</span>
-        <span class="s1">&#39;Count&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-    <span class="n">cens_yr</span> <span class="o">=</span> <span class="mi">2018</span>
-
-    <span class="c1"># Get information about the model population size in 2018 (and fail if no 2018)</span>
-    <span class="n">model_res</span> <span class="o">=</span> <span class="n">parsed_output</span><span class="p">[</span><span class="s1">&#39;tlo.methods.demography&#39;</span><span class="p">][</span><span class="s1">&#39;population&#39;</span><span class="p">]</span>
-    <span class="n">model_res</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">model_res</span><span class="o">.</span><span class="n">date</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">year</span>
-
-    <span class="k">assert</span> <span class="n">cens_yr</span> <span class="ow">in</span> <span class="n">model_res</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="s2">&quot;Model results do not contain the year of the census, so cannot scale&quot;</span>
-    <span class="n">model_tot</span> <span class="o">=</span> <span class="n">model_res</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">model_res</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">cens_yr</span><span class="p">,</span> <span class="s1">&#39;total&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-
-    <span class="c1"># Calculate ratio for scaling</span>
-    <span class="n">ratio_data_to_model</span> <span class="o">=</span> <span class="n">cens_tot</span> <span class="o">/</span> <span class="n">model_tot</span>
-
-    <span class="k">if</span> <span class="n">rtn_scaling_ratio</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">ratio_data_to_model</span>
-
-    <span class="c1"># Do the scaling on selected columns in the parsed outputs:</span>
-    <span class="n">o</span> <span class="o">=</span> <span class="n">parsed_output</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-
-    <span class="c1"># Multiply population count summaries by ratio</span>
-    <span class="n">o</span><span class="p">[</span><span class="s1">&#39;tlo.methods.demography&#39;</span><span class="p">][</span><span class="s1">&#39;population&#39;</span><span class="p">][</span><span class="s1">&#39;male&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">ratio_data_to_model</span>
-    <span class="n">o</span><span class="p">[</span><span class="s1">&#39;tlo.methods.demography&#39;</span><span class="p">][</span><span class="s1">&#39;population&#39;</span><span class="p">][</span><span class="s1">&#39;female&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">ratio_data_to_model</span>
-    <span class="n">o</span><span class="p">[</span><span class="s1">&#39;tlo.methods.demography&#39;</span><span class="p">][</span><span class="s1">&#39;population&#39;</span><span class="p">][</span><span class="s1">&#39;total&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">ratio_data_to_model</span>
-
-    <span class="n">o</span><span class="p">[</span><span class="s1">&#39;tlo.methods.demography&#39;</span><span class="p">][</span><span class="s1">&#39;age_range_m&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">*=</span> <span class="n">ratio_data_to_model</span>
-    <span class="n">o</span><span class="p">[</span><span class="s1">&#39;tlo.methods.demography&#39;</span><span class="p">][</span><span class="s1">&#39;age_range_f&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">*=</span> <span class="n">ratio_data_to_model</span>
-
-    <span class="c1"># For individual-level reporting, construct groupby&#39;s and then multiply by ratio</span>
-    <span class="c1"># 1) Counts of numbers of death by year/age/cause</span>
-    <span class="n">deaths</span> <span class="o">=</span> <span class="n">o</span><span class="p">[</span><span class="s1">&#39;tlo.methods.demography&#39;</span><span class="p">][</span><span class="s1">&#39;death&#39;</span><span class="p">]</span>
-    <span class="n">deaths</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">deaths</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">])</span>
-    <span class="n">deaths</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">deaths</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-
-    <span class="n">deaths_groupby_scaled</span> <span class="o">=</span> <span class="n">deaths</span><span class="p">[[</span><span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">,</span> <span class="s1">&#39;cause&#39;</span><span class="p">,</span> <span class="s1">&#39;person_id&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
-        <span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">,</span> <span class="s1">&#39;cause&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">stack</span><span class="p">()</span> <span class="o">*</span> <span class="n">ratio_data_to_model</span>
-    <span class="n">deaths_groupby_scaled</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;person_id&#39;</span><span class="p">:</span> <span class="s1">&#39;count&#39;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">o</span><span class="p">[</span><span class="s1">&#39;tlo.methods.demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;death_groupby_scaled&#39;</span><span class="p">:</span> <span class="n">deaths_groupby_scaled</span><span class="p">})</span>
-
-    <span class="c1"># 2) Counts of numbers of births by year/age-of-mother</span>
-    <span class="n">births</span> <span class="o">=</span> <span class="n">o</span><span class="p">[</span><span class="s1">&#39;tlo.methods.demography&#39;</span><span class="p">][</span><span class="s1">&#39;on_birth&#39;</span><span class="p">]</span>
-    <span class="n">births</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">births</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">])</span>
-    <span class="n">births</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">births</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">year</span>
-    <span class="n">births_groupby_scaled</span> <span class="o">=</span> \
-        <span class="n">births</span><span class="p">[[</span><span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="s1">&#39;mother_age&#39;</span><span class="p">,</span> <span class="s1">&#39;mother&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="s1">&#39;mother_age&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">count</span><span class="p">()</span> \
-        <span class="o">*</span> <span class="n">ratio_data_to_model</span>
-    <span class="n">births_groupby_scaled</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;mother&#39;</span><span class="p">:</span> <span class="s1">&#39;count&#39;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">o</span><span class="p">[</span><span class="s1">&#39;tlo.methods.demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;birth_groupby_scaled&#39;</span><span class="p">:</span> <span class="n">births_groupby_scaled</span><span class="p">})</span>
-
-    <span class="k">return</span> <span class="n">o</span>
 </pre></div>
 
            </div>
+           
           </div>
           <footer>
 
@@ -860,25 +856,40 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Jan 19, 2022.
-      </span></p>
-  </div>
+      <span class="lastupdated">
+        Last updated on Feb 07, 2022.
+      </span>
 
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
         </div>
       </div>
+
     </section>
+
   </div>
-  <script>
+  
+
+  <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

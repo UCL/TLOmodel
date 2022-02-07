@@ -1,34 +1,76 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
   <title>tlo.methods.malaria &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+
+  
+  
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
+  
+
+  
+  
+
+  
+
+  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/js/theme.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav"> 
+<body class="wy-body-for-nav">
+
+   
   <div class="wy-grid-for-nav">
+    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
+          
+
+          
             <a href="../../../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
           </a>
+
+          
+            
+            
               <div class="version">
                 0.1.0
               </div>
+            
+          
+
+          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -36,7 +78,18 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -50,31 +103,71 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
+            
+          
         </div>
+        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
+        
       </nav>
 
+
       <div class="wy-nav-content">
+        
         <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
+    
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
           <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
           <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
+        
       <li>tlo.methods.malaria</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
+        
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-             
+            
   <h1>Source code for tlo.methods.malaria</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">this is the malaria module which assigns malaria infections to the population: asymptomatic, clinical and severe</span>
@@ -616,7 +709,7 @@
             <span class="n">add_or_remove</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
             <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
             <span class="n">date_of_onset</span><span class="o">=</span><span class="n">date_symptom_onset</span><span class="p">,</span>
-            <span class="n">duration_in_days</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;dur_clin&quot;</span><span class="p">],</span>
+            <span class="n">duration_in_days</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># remove duration as symptoms cleared by MalariaCureEvent</span>
         <span class="p">)</span>
 
         <span class="c1"># additional risk of severe anaemia in pregnancy</span>
@@ -643,7 +736,7 @@
 <span class="sd">        :param child: to apply severe symptoms to children (otherwise applied to adults)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># If no indices specified exit straight away</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">severe_index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">severe_index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span>
@@ -713,12 +806,12 @@
 
         <span class="n">true_malaria_infection_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ma_inf_type&quot;</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="n">dx_result</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">true_malaria_infection_type</span> <span class="o">==</span> <span class="s2">&quot;severe&quot;</span><span class="p">:</span>
-                <span class="k">return</span> <span class="s2">&quot;severe_malaria&quot;</span>
+        <span class="c1"># severe malaria infection always returns positive RDT</span>
+        <span class="k">if</span> <span class="n">true_malaria_infection_type</span> <span class="o">==</span> <span class="s2">&quot;severe&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;severe_malaria&quot;</span>
 
-            <span class="k">elif</span> <span class="n">true_malaria_infection_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;clinical&quot;</span><span class="p">,</span> <span class="s2">&quot;asym&quot;</span><span class="p">):</span>
-                <span class="k">return</span> <span class="s2">&quot;clinical_malaria&quot;</span>
+        <span class="k">elif</span> <span class="n">dx_result</span> <span class="ow">and</span> <span class="n">true_malaria_infection_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;clinical&quot;</span><span class="p">,</span> <span class="s2">&quot;asym&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s2">&quot;clinical_malaria&quot;</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="s2">&quot;negative_malaria_test&quot;</span></div></div>
@@ -816,32 +909,23 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_death</span><span class="p">(</span>
                     <span class="n">individual_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">,</span> <span class="n">cause</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cause</span><span class="p">,</span> <span class="n">originating_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">)</span>
 
-                <span class="c1"># self.sim.schedule_event(</span>
-                <span class="c1">#     demography.InstantaneousDeath(</span>
-                <span class="c1">#         self.module, individual_id, cause=self.cause</span>
-                <span class="c1">#     ),</span>
-                <span class="c1">#     self.sim.date,</span>
-                <span class="c1"># )</span>
-
                 <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s2">&quot;ma_date_death&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
 
             <span class="c1"># else if draw does not result in death -&gt; cure</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-                <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s2">&quot;ma_inf_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;asym&quot;</span>
-                <span class="c1"># df.loc[individual_id, &quot;ma_date_symptoms&quot;] = pd.NaT</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s2">&quot;ma_inf_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s2">&quot;ma_is_infected&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+                <span class="c1"># clear symptoms</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">clear_symptoms</span><span class="p">(</span>
+                    <span class="n">person_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">,</span> <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span>
+                <span class="p">)</span>
 
         <span class="c1"># if not on treatment - death will occur</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_death</span><span class="p">(</span>
                 <span class="n">individual_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">,</span> <span class="n">cause</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cause</span><span class="p">,</span> <span class="n">originating_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">)</span>
-
-            <span class="c1"># self.sim.schedule_event(</span>
-            <span class="c1">#     demography.InstantaneousDeath(</span>
-            <span class="c1">#         self.module, individual_id, cause=self.cause</span>
-            <span class="c1">#     ),</span>
-            <span class="c1">#     self.sim.date,</span>
-            <span class="c1"># )</span>
 
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s2">&quot;ma_date_death&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span></div></div>
 
@@ -1251,22 +1335,47 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="MalariaCureEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaCureEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        this is a regular event which cures people currently on treatment for malaria</span>
+<span class="sd">        and clears symptoms for those not on treatment</span>
+<span class="sd">        it also clears parasites if treated</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;MalariaCureEvent: symptom resolution for malaria cases&#39;</span><span class="p">)</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
-        <span class="c1"># select people with clinical malaria and treatment for at least 3 days</span>
-        <span class="n">clinical_and_treated</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span>
-                                        <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_inf_type</span> <span class="o">==</span> <span class="s2">&quot;clinical&quot;</span><span class="p">)</span> <span class="o">&amp;</span>
-                                        <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_date_tx</span> <span class="o">&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">3</span><span class="p">)))]</span>
+        <span class="c1"># TREATED</span>
+        <span class="c1"># select people with malaria and treatment for at least 3 days</span>
+        <span class="c1"># if treated, will clear symptoms and parasitaemia</span>
+        <span class="c1"># this will also clear parasitaemia for asymptomatic cases picked up by routine rdt</span>
+        <span class="n">infected_and_treated</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span>
+                                        <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_date_tx</span> <span class="o">&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">3</span><span class="p">)))</span> <span class="o">&amp;</span>
+                                        <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_inf_type</span> <span class="o">!=</span> <span class="s2">&quot;severe&quot;</span><span class="p">)]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">clear_symptoms</span><span class="p">(</span>
-            <span class="n">person_id</span><span class="o">=</span><span class="n">clinical_and_treated</span><span class="p">,</span> <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span>
+            <span class="n">person_id</span><span class="o">=</span><span class="n">infected_and_treated</span><span class="p">,</span> <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span>
         <span class="p">)</span>
 
         <span class="c1"># change properties</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">clinical_and_treated</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">clinical_and_treated</span><span class="p">,</span> <span class="s2">&quot;ma_inf_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;asym&quot;</span></div></div>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">infected_and_treated</span><span class="p">,</span> <span class="s2">&quot;ma_tx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">infected_and_treated</span><span class="p">,</span> <span class="s2">&quot;ma_is_infected&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">infected_and_treated</span><span class="p">,</span> <span class="s2">&quot;ma_inf_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
+
+        <span class="c1"># UNTREATED</span>
+        <span class="c1"># if not treated, self-cure occurs after 6 days of symptoms</span>
+        <span class="c1"># but parasites remain in blood</span>
+        <span class="n">clinical_not_treated</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span>
+                                        <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_inf_type</span> <span class="o">==</span> <span class="s2">&quot;clinical&quot;</span><span class="p">)</span> <span class="o">&amp;</span>
+                                        <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_date_infected</span> <span class="o">&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">6</span><span class="p">)))</span> <span class="o">&amp;</span>
+                                        <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">ma_tx</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">clear_symptoms</span><span class="p">(</span>
+            <span class="n">person_id</span><span class="o">=</span><span class="n">clinical_not_treated</span><span class="p">,</span> <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span>
+        <span class="p">)</span>
+
+        <span class="c1"># change properties</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">clinical_not_treated</span><span class="p">,</span> <span class="s2">&quot;ma_inf_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;asym&quot;</span></div></div>
 
 
 <div class="viewcode-block" id="MalariaParasiteClearanceEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaParasiteClearanceEvent">[docs]</a><span class="k">class</span> <span class="nc">MalariaParasiteClearanceEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
@@ -1281,6 +1390,7 @@
 
         <span class="c1"># select people infected at least 100 days ago</span>
         <span class="n">asym_inf</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span>
+                            <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_inf_type</span> <span class="o">==</span> <span class="s2">&quot;asym&quot;</span><span class="p">)</span> <span class="o">&amp;</span>
                             <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_date_infected</span> <span class="o">&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;dur_asym&quot;</span><span class="p">])))]</span>
 
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">asym_inf</span><span class="p">,</span> <span class="s2">&quot;ma_inf_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
@@ -1474,6 +1584,7 @@
 </pre></div>
 
            </div>
+           
           </div>
           <footer>
 
@@ -1481,25 +1592,40 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Jan 19, 2022.
-      </span></p>
-  </div>
+      <span class="lastupdated">
+        Last updated on Feb 07, 2022.
+      </span>
 
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
         </div>
       </div>
+
     </section>
+
   </div>
-  <script>
+  
+
+  <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

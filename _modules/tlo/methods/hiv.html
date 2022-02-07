@@ -1,34 +1,76 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
   <title>tlo.methods.hiv &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+
+  
+  
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
+  
+
+  
+  
+
+  
+
+  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/js/theme.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav"> 
+<body class="wy-body-for-nav">
+
+   
   <div class="wy-grid-for-nav">
+    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
+          
+
+          
             <a href="../../../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
           </a>
+
+          
+            
+            
               <div class="version">
                 0.1.0
               </div>
+            
+          
+
+          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -36,7 +78,18 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -50,31 +103,71 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
+            
+          
         </div>
+        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
+        
       </nav>
 
+
       <div class="wy-nav-content">
+        
         <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
+    
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
           <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
           <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
+        
       <li>tlo.methods.hiv</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
+        
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-             
+            
   <h1>Source code for tlo.methods.hiv</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">The HIV Module</span>
@@ -820,37 +913,37 @@
 
         <span class="c1"># ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------</span>
         <span class="c1">#  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY</span>
-        <span class="n">mother</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mother_id</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">mother_id</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">mother</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mother_id</span><span class="p">]</span>
+            <span class="n">mother_infected_prior_to_pregnancy</span> <span class="o">=</span> <span class="n">mother</span><span class="o">.</span><span class="n">hv_inf</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">mother</span><span class="o">.</span><span class="n">hv_date_inf</span> <span class="o">&lt;=</span> <span class="n">mother</span><span class="o">.</span><span class="n">date_of_last_pregnancy</span><span class="p">)</span>
+            <span class="n">mother_infected_during_pregnancy</span> <span class="o">=</span> <span class="n">mother</span><span class="o">.</span><span class="n">hv_inf</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">mother</span><span class="o">.</span><span class="n">hv_date_inf</span> <span class="o">&gt;</span> <span class="n">mother</span><span class="o">.</span><span class="n">date_of_last_pregnancy</span><span class="p">)</span>
 
-        <span class="n">mother_infected_prior_to_pregnancy</span> <span class="o">=</span> <span class="n">mother</span><span class="o">.</span><span class="n">hv_inf</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">mother</span><span class="o">.</span><span class="n">hv_date_inf</span> <span class="o">&lt;=</span> <span class="n">mother</span><span class="o">.</span><span class="n">date_of_last_pregnancy</span><span class="p">)</span>
-        <span class="n">mother_infected_during_pregnancy</span> <span class="o">=</span> <span class="n">mother</span><span class="o">.</span><span class="n">hv_inf</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">mother</span><span class="o">.</span><span class="n">hv_date_inf</span> <span class="o">&gt;</span> <span class="n">mother</span><span class="o">.</span><span class="n">date_of_last_pregnancy</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">mother_infected_prior_to_pregnancy</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">mother</span><span class="o">.</span><span class="n">hv_art</span> <span class="o">==</span> <span class="s2">&quot;on_VL_suppressed&quot;</span><span class="p">:</span>
+                    <span class="c1">#  mother has existing infection, mother ON ART and VL suppressed at time of delivery</span>
+                    <span class="n">child_infected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;prob_mtct_treated&quot;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># mother was infected prior to prgenancy but is not on VL suppressed at time of delivery</span>
+                    <span class="n">child_infected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;prob_mtct_untreated&quot;</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="n">mother_infected_prior_to_pregnancy</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">mother</span><span class="o">.</span><span class="n">hv_art</span> <span class="o">==</span> <span class="s2">&quot;on_VL_suppressed&quot;</span><span class="p">:</span>
-                <span class="c1">#  mother has existing infection, mother ON ART and VL suppressed at time of delivery</span>
-                <span class="n">child_infected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;prob_mtct_treated&quot;</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">mother_infected_during_pregnancy</span><span class="p">:</span>
+                <span class="c1">#  mother has incident infection during pregnancy, NO ART</span>
+                <span class="n">child_infected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;prob_mtct_incident_preg&quot;</span><span class="p">]</span>
+
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># mother was infected prior to prgenancy but is not on VL suppressed at time of delivery</span>
-                <span class="n">child_infected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;prob_mtct_untreated&quot;</span><span class="p">]</span>
+                <span class="c1"># mother is not infected</span>
+                <span class="n">child_infected</span> <span class="o">=</span> <span class="kc">False</span>
 
-        <span class="k">elif</span> <span class="n">mother_infected_during_pregnancy</span><span class="p">:</span>
-            <span class="c1">#  mother has incident infection during pregnancy, NO ART</span>
-            <span class="n">child_infected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;prob_mtct_incident_preg&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">child_infected</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">do_new_infection</span><span class="p">(</span><span class="n">child_id</span><span class="p">)</span>
 
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># mother is not infected</span>
-            <span class="n">child_infected</span> <span class="o">=</span> <span class="kc">False</span>
-
-        <span class="k">if</span> <span class="n">child_infected</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">do_new_infection</span><span class="p">(</span><span class="n">child_id</span><span class="p">)</span>
-
-        <span class="c1"># ----------------------------------- MTCT - DURING BREASTFEEDING --------------------------</span>
-        <span class="c1"># If child is not infected and is being breastfed, then expose them to risk of MTCT through breastfeeding</span>
-        <span class="c1"># TODO: note for AT/TH - neonatal breastfeeding property replaced HIV temp property as discussed 19/02/21.</span>
-        <span class="c1">#  We need to make sure newborn outcomes on_birth is always called before HIV so breastfeeding status is set</span>
-        <span class="c1">#  prior to this function being called</span>
-        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">child_infected</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;nb_breastfeeding_status&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;none&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">mother</span><span class="o">.</span><span class="n">hv_inf</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mtct_during_breastfeeding</span><span class="p">(</span><span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">)</span></div>
+            <span class="c1"># ----------------------------------- MTCT - DURING BREASTFEEDING --------------------------</span>
+            <span class="c1"># If child is not infected and is being breastfed, then expose them to risk of MTCT through breastfeeding</span>
+            <span class="c1"># TODO: note for AT/TH - neonatal breastfeeding property replaced HIV temp property as discussed 19/02/21.</span>
+            <span class="c1">#  We need to make sure newborn outcomes on_birth is always called before HIV so breastfeeding status is set</span>
+            <span class="c1">#  prior to this function being called</span>
+            <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">child_infected</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;nb_breastfeeding_status&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;none&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">mother</span><span class="o">.</span><span class="n">hv_inf</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mtct_during_breastfeeding</span><span class="p">(</span><span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Hiv.on_hsi_alert"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv.html#tlo.methods.hiv.Hiv.on_hsi_alert">[docs]</a>    <span class="k">def</span> <span class="nf">on_hsi_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
@@ -2014,6 +2107,7 @@
 </pre></div>
 
            </div>
+           
           </div>
           <footer>
 
@@ -2021,25 +2115,40 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Jan 19, 2022.
-      </span></p>
-  </div>
+      <span class="lastupdated">
+        Last updated on Feb 07, 2022.
+      </span>
 
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
         </div>
       </div>
+
     </section>
+
   </div>
-  <script>
+  
+
+  <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

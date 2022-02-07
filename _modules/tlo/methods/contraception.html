@@ -1,34 +1,76 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
+  
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
   <title>tlo.methods.contraception &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+
+  
+  
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
+  
+
+  
+  
+
+  
+
+  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/js/theme.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav"> 
+<body class="wy-body-for-nav">
+
+   
   <div class="wy-grid-for-nav">
+    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
+          
+
+          
             <a href="../../../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
           </a>
+
+          
+            
+            
               <div class="version">
                 0.1.0
               </div>
+            
+          
+
+          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -36,7 +78,18 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
@@ -50,31 +103,71 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
 </ul>
 
+            
+          
         </div>
+        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">TLOmodel</a>
+        
       </nav>
 
+
       <div class="wy-nav-content">
+        
         <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
+    
       <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
           <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
           <li><a href="../methods.html">tlo.methods</a> &raquo;</li>
+        
       <li>tlo.methods.contraception</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
+        
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-             
+            
   <h1>Source code for tlo.methods.contraception</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
@@ -82,6 +175,7 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">tlo.analysis.utils</span> <span class="kn">import</span> <span class="n">flatten_multi_index_series_into_dict_for_logging</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.healthsystem</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
 <span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">random_date</span><span class="p">,</span> <span class="n">sample_outcome</span><span class="p">,</span> <span class="n">transition_states</span>
@@ -92,7 +186,12 @@
 
 <div class="viewcode-block" id="Contraception"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception">[docs]</a><span class="k">class</span> <span class="nc">Contraception</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Contraception module covering baseline contraception methods use, failure (i.e., pregnancy),</span>
-<span class="sd">    Switching contraceptive methods, and discontinuation rates by age.&quot;&quot;&quot;</span>
+<span class="sd">    Switching contraceptive methods, and discontinuation rates by age.</span>
+<span class="sd">    Calibration is done in two stages:</span>
+<span class="sd">    (i) A scaling factor on the risk of pregnancy (`scaling_factor_on_monthly_risk_of_pregnancy`) is used to induce the</span>
+<span class="sd">     correct number of age-specific births initially, given the initial pattern of contraceptive use;</span>
+<span class="sd">    (ii) Trends over time in the risk of starting (`time_age_trend_in_initiation`) and stopping</span>
+<span class="sd">    (`time_age_trend_in_stopping`) of contraceptives are used to induce the correct trend in the number of births.&quot;&quot;&quot;</span>
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">}</span>
 
@@ -124,10 +223,6 @@
         <span class="s1">&#39;Initiation_ByAge&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span>
                                       <span class="s1">&#39;The effect of age on the probability of starting use of contraceptive (add one &#39;</span>
                                       <span class="s1">&#39;for multiplicative effect).&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;Initiation_ByYear&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span>
-                                       <span class="s1">&#39;The age-specific effect of calendar year on the probability of starting use of&#39;</span>
-                                       <span class="s1">&#39; contraceptive (multiplicative effect). Values are chosen so as to induce a &#39;</span>
-                                       <span class="s1">&#39;trend in age-specific fertility consistent with the WPP estimates.&#39;</span><span class="p">),</span>
         <span class="s1">&#39;Initiation_AfterBirth&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span>
                                            <span class="s1">&#39;The probability of a woman starting a contraceptive immidiately after birth&#39;</span>
                                            <span class="s1">&#39;, by method.&#39;</span><span class="p">),</span>
@@ -136,11 +231,7 @@
         <span class="s1">&#39;Discontinuation_ByAge&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span>
                                            <span class="s1">&#39;The effect of age on the probability of discontinuing use of contraceptive &#39;</span>
                                            <span class="s1">&#39;(add one for multiplicative effect).&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;Discontinuation_ByYear&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span>
-                                            <span class="s1">&#39;The age-specific effect of calendar year on the probability of &#39;</span>
-                                            <span class="s1">&#39;discontinuing use of contraceptive (multiplicative effect). Values are &#39;</span>
-                                            <span class="s1">&#39;chosen so as to induce a trend in age-specific fertility consistent with &#39;</span>
-                                            <span class="s1">&#39;the WPP estimates.&#39;</span><span class="p">),</span>
+
         <span class="s1">&#39;Prob_Switch_From&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span>
                                       <span class="s1">&#39;The probability per month that a women switches from one form of contraceptive &#39;</span>
                                       <span class="s1">&#39;to another, conditional that she will not discontinue use of the method.&#39;</span><span class="p">),</span>
@@ -150,30 +241,31 @@
         <span class="s1">&#39;days_between_appts_for_maintenance&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span>
                                                         <span class="s1">&#39;The number of days between successive family planning &#39;</span>
                                                         <span class="s1">&#39;appointments for women that are maintaining the use of a &#39;</span>
-                                                        <span class="s1">&#39;method.&#39;</span><span class="p">)</span>
+                                                        <span class="s1">&#39;method.&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;age_specific_fertility_rates&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;Data table from official source (WPP) for age-specific fertility rates and calendar &#39;</span>
+                              <span class="s1">&#39;period&#39;</span><span class="p">),</span>
+
+        <span class="s1">&#39;scaling_factor_on_monthly_risk_of_pregnancy&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s2">&quot;Scaling factor (by age-group: 15-19, 20-24, ..., 45-49) on the monthly risk of pregnancy and &quot;</span>
+                        <span class="s2">&quot;contraceptive failure rate. This value is found through calibration so that, at the beginning &quot;</span>
+                        <span class="s2">&quot;of the simulation, the age-specific monthly probability of a woman having a live birth matches&quot;</span>
+                        <span class="s2">&quot; the WPP age-specific fertility rate value for the same year.&quot;</span><span class="p">)</span>
     <span class="p">}</span>
+
+    <span class="n">all_contraception_states</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;not_using&#39;</span><span class="p">,</span> <span class="s1">&#39;pill&#39;</span><span class="p">,</span> <span class="s1">&#39;IUD&#39;</span><span class="p">,</span> <span class="s1">&#39;injections&#39;</span><span class="p">,</span> <span class="s1">&#39;implant&#39;</span><span class="p">,</span> <span class="s1">&#39;male_condom&#39;</span><span class="p">,</span> <span class="s1">&#39;female_sterilization&#39;</span><span class="p">,</span> <span class="s1">&#39;other_modern&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;periodic_abstinence&#39;</span><span class="p">,</span> <span class="s1">&#39;withdrawal&#39;</span><span class="p">,</span> <span class="s1">&#39;other_traditional&#39;</span>
+    <span class="p">}</span>
+    <span class="c1"># These are the 11 categories of contraception (&#39;not_using&#39; + 10 methods) from the DHS analysis of initiation,</span>
+    <span class="c1"># discontinuation, failure and switching rates.</span>
+    <span class="c1"># &#39;other modern&#39; includes Male sterilization, Female Condom, Emergency contraception;</span>
+    <span class="c1"># &#39;other traditional&#39; includes lactational amenohroea (LAM),  standard days method (SDM), &#39;other traditional</span>
+    <span class="c1">#  method&#39;).</span>
 
     <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;co_contraception&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span> <span class="s1">&#39;Current contraceptive method&#39;</span><span class="p">,</span>
-                                     <span class="n">categories</span><span class="o">=</span><span class="p">[</span>
-                                         <span class="s1">&#39;not_using&#39;</span><span class="p">,</span>
-                                         <span class="s1">&#39;pill&#39;</span><span class="p">,</span>
-                                         <span class="s1">&#39;IUD&#39;</span><span class="p">,</span>
-                                         <span class="s1">&#39;injections&#39;</span><span class="p">,</span>
-                                         <span class="s1">&#39;implant&#39;</span><span class="p">,</span>
-                                         <span class="s1">&#39;male_condom&#39;</span><span class="p">,</span>
-                                         <span class="s1">&#39;female_sterilization&#39;</span><span class="p">,</span>
-                                         <span class="s1">&#39;other_modern&#39;</span><span class="p">,</span>
-                                         <span class="s1">&#39;periodic_abstinence&#39;</span><span class="p">,</span>
-                                         <span class="s1">&#39;withdrawal&#39;</span><span class="p">,</span>
-                                         <span class="s1">&#39;other_traditional&#39;</span>
-                                     <span class="p">]),</span>
-        <span class="c1"># These are the 11 categories of contraception (&#39;not_using&#39; + 10 methods) from the DHS analysis of initiation,</span>
-        <span class="c1"># discontinuation, failure and switching rates.</span>
-        <span class="c1"># &#39;other modern&#39; includes Male sterilization, Female Condom, Emergency contraception;</span>
-        <span class="c1"># &#39;other traditional&#39; includes lactational amenohroea (LAM),  standard days method (SDM), &#39;other traditional</span>
-        <span class="c1">#  method&#39;).</span>
-
+                                     <span class="n">categories</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span><span class="n">all_contraception_states</span><span class="p">)),</span>
         <span class="s1">&#39;is_pregnant&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;Whether this individual is currently pregnant&#39;</span><span class="p">),</span>
         <span class="s1">&#39;date_of_last_pregnancy&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATE</span><span class="p">,</span> <span class="s1">&#39;Date that the most recent or current pregnancy began.&#39;</span><span class="p">),</span>
         <span class="s1">&#39;co_unintended_preg&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;Whether the most recent or current pregnancy was unintended.&#39;</span><span class="p">),</span>
@@ -191,10 +283,9 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">use_healthsystem</span> <span class="o">=</span> <span class="n">use_healthsystem</span>  <span class="c1"># True: initiation and switches to contraception require an HSI;</span>
-        <span class="c1"># False: initiation and switching do not occur through an HSI</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_healthsystem</span> <span class="o">=</span> <span class="n">use_healthsystem</span>  <span class="c1"># if True: initiation and switches to contraception require an HSI;</span>
+        <span class="c1"># if False: initiation and switching do not occur through an HSI</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">all_contraception_states</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PROPERTIES</span><span class="p">[</span><span class="s1">&#39;co_contraception&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">categories</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">states_that_may_require_HSI_to_switch_to</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;male_condom&#39;</span><span class="p">,</span> <span class="s1">&#39;injections&#39;</span><span class="p">,</span> <span class="s1">&#39;other_modern&#39;</span><span class="p">,</span> <span class="s1">&#39;IUD&#39;</span><span class="p">,</span> <span class="s1">&#39;pill&#39;</span><span class="p">,</span>
                                                          <span class="s1">&#39;female_sterilization&#39;</span><span class="p">,</span> <span class="s1">&#39;implant&#39;</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">states_that_may_require_HSI_to_maintain_on</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;injections&#39;</span><span class="p">,</span> <span class="s1">&#39;other_modern&#39;</span><span class="p">,</span> <span class="s1">&#39;IUD&#39;</span><span class="p">,</span> <span class="s1">&#39;pill&#39;</span><span class="p">,</span> <span class="s1">&#39;implant&#39;</span><span class="p">}</span>
@@ -219,11 +310,9 @@
             <span class="s1">&#39;Failure_ByMethod&#39;</span><span class="p">,</span>
             <span class="s1">&#39;Initiation_ByAge&#39;</span><span class="p">,</span>
             <span class="s1">&#39;Initiation_ByMethod&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;Initiation_ByYear&#39;</span><span class="p">,</span>
             <span class="s1">&#39;Initiation_AfterBirth&#39;</span><span class="p">,</span>
             <span class="s1">&#39;Discontinuation_ByMethod&#39;</span><span class="p">,</span>
             <span class="s1">&#39;Discontinuation_ByAge&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;Discontinuation_ByYear&#39;</span><span class="p">,</span>
             <span class="s1">&#39;Prob_Switch_From&#39;</span><span class="p">,</span>
             <span class="s1">&#39;Prob_Switch_From_And_To&#39;</span><span class="p">,</span>
         <span class="p">]</span>
@@ -231,9 +320,12 @@
         <span class="k">for</span> <span class="n">sheet</span> <span class="ow">in</span> <span class="n">sheet_names</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">sheet</span><span class="p">]</span> <span class="o">=</span> <span class="n">workbook</span><span class="p">[</span><span class="n">sheet</span><span class="p">]</span>
 
-        <span class="c1"># Declare values for additional parameters (hard-coded for now)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;rr_fail_under25&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">2.2</span>  <span class="c1"># From Guttmacher analysis.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;days_between_appts_for_maintenance&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">180</span></div>
+        <span class="c1"># Declare values for other parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_parameters_from_dataframe</span><span class="p">(</span><span class="n">workbook</span><span class="p">[</span><span class="s1">&#39;Parameters&#39;</span><span class="p">])</span>
+
+        <span class="c1"># Import the Age-specific fertility rate data from WPP</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;age_specific_fertility_rates&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;demography&#39;</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_ASFR_WPP.csv&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Contraception.pre_initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.pre_initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Process parameters before initialising population and simulation&quot;&quot;&quot;</span>
@@ -272,20 +364,24 @@
 <span class="sd">        * Schedule the ContraceptionPoll and ContraceptionLoggingEvent</span>
 <span class="sd">        * Retrieve the consumables codes for the consumables used</span>
 <span class="sd">        * Create second random number generator</span>
+<span class="sd">        * Schedule births to occur during the first 9 months of the simulation</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="c1"># Schedule first occurrences of Contraception Poll to occur at the beginning of the simulation</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">ContraceptionPoll</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
 
         <span class="c1"># Schedule the first occurrence of the Logging event to occur at the beginning of the simulation</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">ContraceptionLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+
+        <span class="c1"># Schedule first occurrences of Contraception Poll to occur at the beginning of the simulation</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">ContraceptionPoll</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
 
         <span class="c1"># Retrieve the consumables codes for the consumables used</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_healthsystem</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">cons_codes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_item_code_for_each_contraceptive</span><span class="p">()</span>
 
         <span class="c1"># Create second random number generator</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rng2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># Schedule births to occur during the first 9 months of the simulation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedule_births_for_first_9_months</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Contraception.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -294,23 +390,18 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">end_pregnancy</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">mother_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mother_id</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">end_pregnancy</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">mother_id</span><span class="p">)</span>
 
         <span class="c1"># Initialise child&#39;s properties:</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="p">(</span>
-            <span class="s1">&#39;co_contraception&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;is_pregnant&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;date_of_last_pregnancy&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;co_unintended_preg&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;co_date_of_last_fp_appt&#39;</span>
-        <span class="p">)</span>
-        <span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s1">&#39;not_using&#39;</span><span class="p">,</span>
-            <span class="kc">False</span><span class="p">,</span>
-            <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span><span class="p">,</span>
-            <span class="kc">False</span><span class="p">,</span>
-            <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
-        <span class="p">)</span></div>
+        <span class="n">new_properties</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;co_contraception&#39;</span><span class="p">:</span> <span class="s1">&#39;not_using&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;is_pregnant&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s1">&#39;date_of_last_pregnancy&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span><span class="p">,</span>
+            <span class="s1">&#39;co_unintended_preg&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s1">&#39;co_date_of_last_fp_appt&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="n">new_properties</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span> <span class="o">=</span> <span class="n">new_properties</span><span class="o">.</span><span class="n">values</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Contraception.end_pregnancy"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.end_pregnancy">[docs]</a>    <span class="k">def</span> <span class="nf">end_pregnancy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;End the pregnancy. Reset pregnancy status and may initiate a contraceptive method.</span>
@@ -324,6 +415,12 @@
         <span class="sd">&quot;&quot;&quot;Process parameters that have been read-in.&quot;&quot;&quot;</span>
 
         <span class="n">processed_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">expand_to_age_years</span><span class="p">(</span><span class="n">values_by_age_groups</span><span class="p">,</span> <span class="n">ages_by_year</span><span class="p">):</span>
+            <span class="n">_d</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">([</span><span class="s1">&#39;15-19&#39;</span><span class="p">,</span> <span class="s1">&#39;20-24&#39;</span><span class="p">,</span> <span class="s1">&#39;25-29&#39;</span><span class="p">,</span> <span class="s1">&#39;30-34&#39;</span><span class="p">,</span> <span class="s1">&#39;35-39&#39;</span><span class="p">,</span> <span class="s1">&#39;40-44&#39;</span><span class="p">,</span> <span class="s1">&#39;45-49&#39;</span><span class="p">],</span> <span class="n">values_by_age_groups</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">_d</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">AGE_RANGE_LOOKUP</span><span class="p">[</span><span class="n">_age_year</span><span class="p">]]</span> <span class="k">for</span> <span class="n">_age_year</span> <span class="ow">in</span> <span class="n">ages_by_year</span><span class="p">]</span>
+            <span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">initial_method_use</span><span class="p">():</span>
             <span class="sd">&quot;&quot;&quot;Generate the distribution of method use by age for the start of the simulation.&quot;&quot;&quot;</span>
@@ -352,8 +449,7 @@
                 <span class="s2">&quot;age_years&quot;</span><span class="p">)</span>
 
             <span class="c1"># Year effect</span>
-            <span class="n">year_effect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Initiation_ByYear&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">year_effect</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+            <span class="n">year_effect</span> <span class="o">=</span> <span class="n">time_age_trend_in_initiation</span><span class="p">()</span>
 
             <span class="c1"># Assemble into age-specific data-frame:</span>
             <span class="n">p_init</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
@@ -402,8 +498,7 @@
             <span class="n">p_stop_by_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Discontinuation_ByMethod&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">age_effect</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Discontinuation_ByAge&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;age&#39;</span><span class="p">)[</span><span class="s1">&#39;r_discont_age&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">rename_axis</span><span class="p">(</span>
                 <span class="s2">&quot;age_years&quot;</span><span class="p">)</span>
-            <span class="n">year_effect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Discontinuation_ByYear&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">year_effect</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+            <span class="n">year_effect</span> <span class="o">=</span> <span class="n">time_age_trend_in_stopping</span><span class="p">()</span>
 
             <span class="c1"># Probability of initiation by age for each method</span>
             <span class="n">p_stop</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
@@ -422,6 +517,36 @@
 
             <span class="k">return</span> <span class="n">p_stop</span>
 
+        <span class="k">def</span> <span class="nf">time_age_trend_in_initiation</span><span class="p">():</span>
+            <span class="sd">&quot;&quot;&quot;The age-specific effect of calendar year on the probability of starting use of contraceptive</span>
+<span class="sd">            (multiplicative effect). Values are chosen to induce a trend in age-specific fertility consistent with</span>
+<span class="sd">             the WPP estimates.&quot;&quot;&quot;</span>
+
+            <span class="n">_years</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2010</span><span class="p">,</span> <span class="mi">2101</span><span class="p">)</span>
+            <span class="n">_ages</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+
+            <span class="n">_init_over_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">+</span><span class="mf">0.05</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">2020</span> <span class="o">-</span> <span class="mi">2010</span><span class="p">,</span> <span class="p">(</span><span class="n">_years</span> <span class="o">-</span> <span class="mi">2010</span><span class="p">)))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+                <span class="o">+</span><span class="mf">0.01</span> <span class="o">*</span> <span class="p">(</span><span class="n">_years</span> <span class="o">-</span> <span class="mi">2020</span><span class="p">)))</span>
+            <span class="n">_init_over_time_modification_by_age</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">expand_to_age_years</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span> <span class="n">_ages</span><span class="p">)</span>
+            <span class="n">_init</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">_init_over_time</span><span class="p">,</span> <span class="n">_init_over_time_modification_by_age</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">_years</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">_ages</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">_init</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">time_age_trend_in_stopping</span><span class="p">():</span>
+            <span class="sd">&quot;&quot;&quot;The age-specific effect of calendar year on the probability of discontinuing use of contraceptive</span>
+<span class="sd">            (multiplicative effect). Values are chosen to induce a trend in age-specific fertility consistent with</span>
+<span class="sd">            the WPP estimates.&quot;&quot;&quot;</span>
+
+            <span class="n">_years</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2010</span><span class="p">,</span> <span class="mi">2101</span><span class="p">)</span>
+            <span class="n">_ages</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+
+            <span class="n">_discont_over_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.05</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">2020</span> <span class="o">-</span> <span class="mi">2010</span><span class="p">,</span> <span class="p">(</span><span class="n">_years</span> <span class="o">-</span> <span class="mi">2010</span><span class="p">)))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+                <span class="o">-</span><span class="mf">0.01</span> <span class="o">*</span> <span class="p">(</span><span class="n">_years</span> <span class="o">-</span> <span class="mi">2020</span><span class="p">)))</span>
+            <span class="n">_discont_over_time_modification_by_age</span> <span class="o">=</span> <span class="n">expand_to_age_years</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span> <span class="n">_ages</span><span class="p">)</span>
+            <span class="n">_discont</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">_discont_over_time</span><span class="p">,</span> <span class="n">_discont_over_time_modification_by_age</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">_years</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">_ages</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">_discont</span><span class="p">)</span>
+
         <span class="k">def</span> <span class="nf">contraception_initiation_after_birth</span><span class="p">():</span>
             <span class="sd">&quot;&quot;&quot;Get the probability of a woman starting a contraceptive following giving birth.&quot;&quot;&quot;</span>
 
@@ -436,15 +561,29 @@
 
             <span class="k">return</span> <span class="n">p_start_after_birth</span>
 
+        <span class="k">def</span> <span class="nf">scaling_factor_on_monthly_risk_of_pregnancy</span><span class="p">():</span>
+            <span class="sd">&quot;&quot;&quot;A scaling factor on the monthly risk of pregnancy, chosen to give the correct number of live-births</span>
+<span class="sd">            initially, given the initial pattern of contraceptive use.&quot;&quot;&quot;</span>
+
+            <span class="c1"># first scaling factor is that worked out from the calibration script</span>
+            <span class="n">scaling_factor_as_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span>
+                <span class="p">[</span><span class="s1">&#39;15-19&#39;</span><span class="p">,</span> <span class="s1">&#39;20-24&#39;</span><span class="p">,</span> <span class="s1">&#39;25-29&#39;</span><span class="p">,</span> <span class="s1">&#39;30-34&#39;</span><span class="p">,</span> <span class="s1">&#39;35-39&#39;</span><span class="p">,</span> <span class="s1">&#39;40-44&#39;</span><span class="p">,</span> <span class="s1">&#39;45-49&#39;</span><span class="p">],</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;scaling_factor_on_monthly_risk_of_pregnancy&#39;</span><span class="p">]</span>
+            <span class="p">))</span>
+
+            <span class="n">AGE_RANGE_LOOKUP</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">AGE_RANGE_LOOKUP</span>
+            <span class="n">_ages</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+                <span class="n">index</span><span class="o">=</span><span class="n">_ages</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="n">scaling_factor_as_dict</span><span class="p">[</span><span class="n">AGE_RANGE_LOOKUP</span><span class="p">[</span><span class="n">_age_year</span><span class="p">]]</span> <span class="k">for</span> <span class="n">_age_year</span> <span class="ow">in</span> <span class="n">_ages</span><span class="p">]</span>
+            <span class="p">)</span>
+
         <span class="k">def</span> <span class="nf">pregnancy_no_contraception</span><span class="p">():</span>
             <span class="sd">&quot;&quot;&quot;Get the probability per month of a woman becoming pregnant if she is not using any contraceptive method.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
 
-            <span class="k">def</span> <span class="nf">convert_annual_prob_to_monthly_prob</span><span class="p">(</span><span class="n">p_annual</span><span class="p">):</span>
-                <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">p_annual</span><span class="p">)</span> <span class="o">/</span> <span class="mi">12</span><span class="p">)</span>
-
             <span class="c1"># Get the probability of being pregnant if not HIV-positive</span>
-            <span class="n">p_pregnancy_no_contraception_per_month_nohiv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Pregnancy_NotUsing_In_2010&#39;</span><span class="p">]</span>\
+            <span class="n">p_pregnancy_no_contraception_per_month_nohiv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Pregnancy_NotUsing_In_2010&#39;</span><span class="p">]</span> \
                 <span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;age&#39;</span><span class="p">)[</span><span class="s1">&#39;AnnualProb&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">rename_axis</span><span class="p">(</span><span class="s1">&#39;age_years&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">convert_annual_prob_to_monthly_prob</span><span class="p">)</span>
 
             <span class="c1"># Compute the probability of being pregnant if HIV-positive</span>
@@ -465,7 +604,7 @@
                 <span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">p_pregnancy_no_contraception_per_month</span><span class="p">[</span><span class="s1">&#39;hv_inf_False&#39;</span><span class="p">],</span> <span class="mi">12</span><span class="p">)</span>
             <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
 
-            <span class="k">return</span> <span class="n">p_pregnancy_no_contraception_per_month</span>
+            <span class="k">return</span> <span class="n">p_pregnancy_no_contraception_per_month</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">scaling_factor_on_monthly_risk_of_pregnancy</span><span class="p">(),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">pregnancy_with_contraception</span><span class="p">():</span>
             <span class="sd">&quot;&quot;&quot;Get the probability per month of a woman becoming pregnant if she is using a contraceptive method.&quot;&quot;&quot;</span>
@@ -487,7 +626,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">all_contraception_states</span> <span class="o">-</span> <span class="p">{</span><span class="s2">&quot;not_using&quot;</span><span class="p">})</span>
             <span class="k">assert</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">==</span> <span class="n">p_pregnancy_with_contraception_per_month</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
 
-            <span class="k">return</span> <span class="n">p_pregnancy_with_contraception_per_month</span>
+            <span class="k">return</span> <span class="n">p_pregnancy_with_contraception_per_month</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">scaling_factor_on_monthly_risk_of_pregnancy</span><span class="p">(),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;initial_method_use&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">initial_method_use</span><span class="p">()</span>
         <span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;p_start_per_month&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">contraception_initiation</span><span class="p">()</span>
@@ -495,8 +634,8 @@
         <span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;p_stop_per_month&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">contraception_stop</span><span class="p">()</span>
         <span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;p_start_after_birth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">contraception_initiation_after_birth</span><span class="p">()</span>
 
-        <span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;p_pregnancy_no_contraception_per_month&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.75</span> <span class="o">*</span> <span class="n">pregnancy_no_contraception</span><span class="p">()</span>
-        <span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;p_pregnancy_with_contraception_per_month&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.75</span> <span class="o">*</span> <span class="n">pregnancy_with_contraception</span><span class="p">()</span>
+        <span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;p_pregnancy_no_contraception_per_month&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pregnancy_no_contraception</span><span class="p">()</span>
+        <span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;p_pregnancy_with_contraception_per_month&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pregnancy_with_contraception</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">processed_params</span></div>
 
@@ -505,16 +644,7 @@
 
         <span class="c1"># Allocate the woman to a contraceptive status</span>
         <span class="n">probs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;p_start_after_birth&#39;</span><span class="p">]</span>
-        <span class="n">new_contraceptive</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
-            <span class="n">probs</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
-            <span class="n">p</span><span class="o">=</span><span class="n">probs</span><span class="o">.</span><span class="n">values</span>
-        <span class="p">)</span>
-
-        <span class="c1"># ... but don&#39;t allow female sterilization to any woman below 30: reset to &#39;not_using&#39;</span>
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">30</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
-            <span class="n">new_contraceptive</span> <span class="o">==</span> <span class="s1">&#39;female_sterilization&#39;</span>
-        <span class="p">):</span>
-            <span class="n">new_contraceptive</span> <span class="o">=</span> <span class="s1">&#39;not_using&#39;</span>
+        <span class="n">new_contraceptive</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">probs</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">probs</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
 
         <span class="c1"># Do the change in contraceptive</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">schedule_batch_of_contraceptive_changes</span><span class="p">(</span><span class="n">ids</span><span class="o">=</span><span class="p">[</span><span class="n">mother_id</span><span class="p">],</span> <span class="n">old</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;not_using&#39;</span><span class="p">],</span> <span class="n">new</span><span class="o">=</span><span class="p">[</span><span class="n">new_contraceptive</span><span class="p">])</span></div>
@@ -553,7 +683,6 @@
         <span class="n">date_of_last_appt</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">ids</span><span class="p">,</span> <span class="s2">&quot;co_date_of_last_fp_appt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
 
         <span class="k">for</span> <span class="n">_woman_id</span><span class="p">,</span> <span class="n">_old</span><span class="p">,</span> <span class="n">_new</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">old</span><span class="p">,</span> <span class="n">new</span><span class="p">):</span>
-
             <span class="c1"># Does this change require an HSI?</span>
             <span class="n">is_a_switch</span> <span class="o">=</span> <span class="n">_old</span> <span class="o">!=</span> <span class="n">_new</span>
             <span class="n">reqs_appt</span> <span class="o">=</span> <span class="n">_new</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">states_that_may_require_HSI_to_switch_to</span> <span class="k">if</span> <span class="n">is_a_switch</span> \
@@ -605,7 +734,44 @@
                         <span class="s1">&#39;switch_to&#39;</span><span class="p">:</span> <span class="n">new</span><span class="p">,</span>
                     <span class="p">},</span>
                     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;All changes in contraception use&#39;</span>
-                    <span class="p">)</span></div></div>
+                    <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Contraception.schedule_births_for_first_9_months"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.schedule_births_for_first_9_months">[docs]</a>    <span class="k">def</span> <span class="nf">schedule_births_for_first_9_months</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Schedule births to occur during the first 9 months of the simulation. This is necessary because at initiation</span>
+<span class="sd">        no women are pregnant, so the first births generated endogenously (through pregnancy -&gt; gestation -&gt; labour)</span>
+<span class="sd">        occur after 9 months of simulation time. This method examines age-specific fertility rate data and causes there</span>
+<span class="sd">        to be the appropriate number of births, scattered uniformly over the first 9 months of the simulation. These are</span>
+<span class="sd">         &quot;direct live births&quot; that are not subjected to any of the processes (e.g. risk of loss of pregnancy, or risk</span>
+<span class="sd">         of death to mother) represented in the `PregnancySupervisor`, `CareOfWomenDuringPregnancy` or `Labour`.&quot;&quot;&quot;</span>
+
+        <span class="n">risk_of_birth</span> <span class="o">=</span> <span class="n">get_medium_variant_asfr_from_wpp_resourcefile</span><span class="p">(</span>
+            <span class="n">dat</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;age_specific_fertility_rates&#39;</span><span class="p">],</span> <span class="n">months_exposure</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="n">prob_birth</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+            <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">sex</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">is_pregnant</span><span class="p">][</span><span class="s1">&#39;age_range&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
+            <span class="n">risk_of_birth</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">])</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># determine which women will get pregnant</span>
+        <span class="n">give_birth_women_ids</span> <span class="o">=</span> <span class="n">prob_birth</span><span class="o">.</span><span class="n">index</span><span class="p">[</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">prob_birth</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">prob_birth</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="c1"># schedule births:</span>
+        <span class="k">for</span> <span class="n">_id</span> <span class="ow">in</span> <span class="n">give_birth_women_ids</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">DirectBirth</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">),</span>
+                                    <span class="n">random_date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">9</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
+                                    <span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="DirectBirth"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.DirectBirth">[docs]</a><span class="k">class</span> <span class="nc">DirectBirth</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Do birth, with the mother_id set to -1 (we do not associate the child with a particular mother).&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DirectBirth.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.DirectBirth.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DirectBirth.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.DirectBirth.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">do_birth</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="ContraceptionPoll"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll">[docs]</a><span class="k">class</span> <span class="nc">ContraceptionPoll</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
@@ -784,16 +950,17 @@
         <span class="c1"># Get the women who are using a contraceptive that may fail and who may become pregnant (i.e., women who</span>
         <span class="c1"># are not in labour, have been pregnant in the last month, have previously had a hysterectomy, can get</span>
         <span class="c1"># pregnant.)</span>
-        <span class="n">possible_to_fail</span> <span class="o">=</span> <span class="p">((</span><span class="n">df</span><span class="o">.</span><span class="n">sex</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">)</span> <span class="o">&amp;</span>
-                            <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span>
-                            <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">is_pregnant</span> <span class="o">&amp;</span>
-                            <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">la_currently_in_labour</span> <span class="o">&amp;</span>
-                            <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">la_has_had_hysterectomy</span> <span class="o">&amp;</span>
-                            <span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">age_low</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">age_high</span><span class="p">)</span> <span class="o">&amp;</span>
-                            <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">co_contraception</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s1">&#39;not_using&#39;</span><span class="p">,</span> <span class="s1">&#39;female_sterilization&#39;</span><span class="p">])</span> <span class="o">&amp;</span>
-                            <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">la_is_postpartum</span> <span class="o">&amp;</span>
-                            <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">ps_ectopic_pregnancy</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s1">&#39;not_ruptured&#39;</span><span class="p">,</span> <span class="s1">&#39;ruptured&#39;</span><span class="p">])</span>
-                            <span class="p">)</span>
+        <span class="n">possible_to_fail</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">sex</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">is_pregnant</span>
+            <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">age_low</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">age_high</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">co_contraception</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s1">&#39;not_using&#39;</span><span class="p">,</span> <span class="s1">&#39;female_sterilization&#39;</span><span class="p">])</span>
+            <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">la_currently_in_labour</span>
+            <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">la_has_had_hysterectomy</span>
+            <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">la_is_postpartum</span>
+            <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">ps_ectopic_pregnancy</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s1">&#39;not_ruptured&#39;</span><span class="p">,</span> <span class="s1">&#39;ruptured&#39;</span><span class="p">])</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">possible_to_fail</span><span class="o">.</span><span class="n">sum</span><span class="p">():</span>
             <span class="c1"># Get probability of method failure for each individual</span>
@@ -817,15 +984,15 @@
 
         <span class="c1"># Get the subset of women who are not using a contraceptive and who may become pregnant</span>
         <span class="n">subset</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">sex</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">)</span> <span class="o">&amp;</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">age_low</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">age_high</span><span class="p">)</span> <span class="o">&amp;</span>
-            <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">is_pregnant</span> <span class="o">&amp;</span>
-            <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">co_contraception</span> <span class="o">==</span> <span class="s1">&#39;not_using&#39;</span><span class="p">)</span> <span class="o">&amp;</span>
-            <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">la_currently_in_labour</span> <span class="o">&amp;</span>
-            <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">la_has_had_hysterectomy</span> <span class="o">&amp;</span>
-            <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">la_is_postpartum</span> <span class="o">&amp;</span>
-            <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">ps_ectopic_pregnancy</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s1">&#39;not_ruptured&#39;</span><span class="p">,</span> <span class="s1">&#39;ruptured&#39;</span><span class="p">])</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">sex</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">is_pregnant</span>
+            <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">age_low</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">age_high</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">co_contraception</span> <span class="o">==</span> <span class="s1">&#39;not_using&#39;</span><span class="p">)</span>
+            <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">la_currently_in_labour</span>
+            <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">la_has_had_hysterectomy</span>
+            <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">la_is_postpartum</span>
+            <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">ps_ectopic_pregnancy</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s1">&#39;not_ruptured&#39;</span><span class="p">,</span> <span class="s1">&#39;ruptured&#39;</span><span class="p">])</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">subset</span><span class="o">.</span><span class="n">sum</span><span class="p">():</span>
@@ -847,24 +1014,22 @@
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
         <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">women_id</span><span class="p">:</span>
-            <span class="n">woman</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">w</span><span class="p">]</span>
+            <span class="n">woman</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">w</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;co_contraception&#39;</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]]</span>
+            <span class="n">method_before_pregnancy</span> <span class="o">=</span> <span class="n">woman</span><span class="p">[</span><span class="s1">&#39;co_contraception&#39;</span><span class="p">]</span>
 
             <span class="c1"># Determine if this is unintended or not. (We say that it is &#39;unintended&#39; if the women is using a</span>
             <span class="c1"># contraceptive when she becomes pregnant.)</span>
-            <span class="n">unintended</span> <span class="o">=</span> <span class="p">(</span><span class="n">woman</span><span class="p">[</span><span class="s1">&#39;co_contraception&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;not_using&#39;</span><span class="p">)</span>
+            <span class="n">unintended</span> <span class="o">=</span> <span class="p">(</span><span class="n">method_before_pregnancy</span> <span class="o">!=</span> <span class="s1">&#39;not_using&#39;</span><span class="p">)</span>
 
-            <span class="c1"># Update properties (including that she is no longer on any contraception)</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">w</span><span class="p">,</span> <span class="p">(</span>
-                <span class="s1">&#39;co_contraception&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;is_pregnant&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;date_of_last_pregnancy&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;co_unintended_preg&#39;</span>
-            <span class="p">)]</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="s1">&#39;not_using&#39;</span><span class="p">,</span>
-                <span class="kc">True</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                <span class="n">unintended</span>
-            <span class="p">)</span>
+            <span class="c1"># Update properties (including that she is no longer on any contraception; and store the method used prior</span>
+            <span class="c1"># pregnancy).</span>
+            <span class="n">new_properties</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;co_contraception&#39;</span><span class="p">:</span> <span class="s1">&#39;not_using&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;is_pregnant&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;date_of_last_pregnancy&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
+                <span class="s1">&#39;co_unintended_preg&#39;</span><span class="p">:</span> <span class="n">unintended</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">w</span><span class="p">,</span> <span class="n">new_properties</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span> <span class="o">=</span> <span class="n">new_properties</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
 
             <span class="c1"># Set date of labour in the Labour module</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Labour&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_date_of_labour</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
@@ -874,7 +1039,7 @@
                         <span class="n">data</span><span class="o">=</span><span class="p">{</span>
                             <span class="s1">&#39;woman_id&#39;</span><span class="p">:</span> <span class="n">w</span><span class="p">,</span>
                             <span class="s1">&#39;age_years&#39;</span><span class="p">:</span> <span class="n">woman</span><span class="p">[</span><span class="s1">&#39;age_years&#39;</span><span class="p">],</span>
-                            <span class="s1">&#39;contraception&#39;</span><span class="p">:</span> <span class="n">woman</span><span class="p">[</span><span class="s1">&#39;co_contraception&#39;</span><span class="p">],</span>
+                            <span class="s1">&#39;contraception&#39;</span><span class="p">:</span> <span class="n">method_before_pregnancy</span><span class="p">,</span>
                             <span class="s1">&#39;unintended&#39;</span><span class="p">:</span> <span class="n">unintended</span>
                         <span class="p">},</span>
                         <span class="n">description</span><span class="o">=</span><span class="s1">&#39;pregnancy following the failure of contraceptive method&#39;</span><span class="p">)</span></div></div>
@@ -888,14 +1053,22 @@
 <div class="viewcode-block" id="ContraceptionLoggingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionLoggingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
-        <span class="c1"># Make value_counts (NB. sort_index ensures the resulting dict has keys in the same order,</span>
-        <span class="c1"># which is requirement of the logging.)</span>
-        <span class="n">value_counts</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">sex</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">),</span> <span class="s1">&#39;co_contraception&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
-
-        <span class="c1"># Log summary of usage of contraceptives</span>
+        <span class="c1"># Log summary of usage of contraceptives (without age-breakdown)</span>
+        <span class="c1"># (NB. sort_index ensures the resulting dict has keys in the same order, which is requirement of the logging.)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;contraception_use_summary&#39;</span><span class="p">,</span>
-                    <span class="n">data</span><span class="o">=</span><span class="n">value_counts</span><span class="p">,</span>
-                    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Counts of women on each type of contraceptive at a point each time (yearly).&#39;</span><span class="p">)</span></div></div>
+                    <span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                        <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">sex</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">49</span><span class="p">),</span> <span class="s1">&#39;co_contraception&#39;</span>
+                    <span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Counts of women on each type of contraceptive at a point in time.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Log summary of usage of contraceptives (with age-breakdown)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;contraception_use_summary_by_age&#39;</span><span class="p">,</span>
+                    <span class="n">data</span><span class="o">=</span><span class="n">flatten_multi_index_series_into_dict_for_logging</span><span class="p">(</span>
+                        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                            <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">sex</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">49</span><span class="p">)</span>
+                            <span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;co_contraception&#39;</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+                    <span class="p">),</span>
+                    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Counts of women, by age-range, on each type of contraceptive at a point in time.&#39;</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HSI_Contraception_FamilyPlanningAppt"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt">[docs]</a><span class="k">class</span> <span class="nc">HSI_Contraception_FamilyPlanningAppt</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
@@ -970,7 +1143,9 @@
 
     <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;prob_live_birth&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;Probability that a pregnancy results in a live birth.&#39;</span><span class="p">)</span>
+    <span class="p">}</span>
 
     <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;la_currently_in_labour&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;whether this woman is currently in labour&#39;</span><span class="p">),</span>
@@ -988,7 +1163,8 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Labour&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SimplifiedPregnancyAndLabour.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
-        <span class="k">pass</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;prob_live_birth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.67</span></div>
+        <span class="c1"># This is a reasonable estimate for the current versions of the Labour and other modules</span>
 
 <div class="viewcode-block" id="SimplifiedPregnancyAndLabour.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -997,7 +1173,7 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;la_is_postpartum&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;ps_ectopic_pregnancy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">NAN</span></div>
 
-<div class="viewcode-block" id="SimplifiedPregnancyAndLabour.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<div class="viewcode-block" id="SimplifiedPregnancyAndLabour.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
 <div class="viewcode-block" id="SimplifiedPregnancyAndLabour.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
@@ -1009,18 +1185,15 @@
 
 <div class="viewcode-block" id="SimplifiedPregnancyAndLabour.set_date_of_labour"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.set_date_of_labour">[docs]</a>    <span class="k">def</span> <span class="nf">set_date_of_labour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;This is a drop-in replacement for the method in Labour that triggers the processes that determine the outcome</span>
-<span class="sd">        of a pregnancy. The probability of a live birth is hard-coded at 67%, which is a reasonable estimate for the</span>
-<span class="sd">        current versions of the Labour and other modules.&quot;&quot;&quot;</span>
-
-        <span class="n">prob_live_birth</span> <span class="o">=</span> <span class="mf">0.67</span>
+<span class="sd">        of a pregnancy.&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">EndOfPregnancyEvent</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
                                                     <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                                                    <span class="n">live_birth</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">prob_live_birth</span><span class="p">)</span>
+                                                    <span class="n">live_birth</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;prob_live_birth&#39;</span><span class="p">])</span>
                                                     <span class="p">),</span>
                                 <span class="n">random_date</span><span class="p">(</span>
-                                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">days</span><span class="o">=</span><span class="mi">14</span><span class="p">),</span>
-                                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">days</span><span class="o">=</span><span class="mi">44</span><span class="p">),</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">14</span><span class="p">),</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">14</span><span class="p">),</span>
                                     <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
                                 <span class="p">)</span></div></div>
 
@@ -1039,9 +1212,51 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">do_birth</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Contraception&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">end_pregnancy</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span></div></div>
+
+
+<span class="c1"># -----------------------------------------------------------------------------------------------------------</span>
+<span class="c1"># -----------------------------------------------------------------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1"># Helper functions</span>
+<span class="c1">#</span>
+<span class="c1"># -----------------------------------------------------------------------------------------------------------</span>
+<span class="c1"># -----------------------------------------------------------------------------------------------------------</span>
+
+<span class="k">def</span> <span class="nf">get_medium_variant_asfr_from_wpp_resourcefile</span><span class="p">(</span><span class="n">dat</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">months_exposure</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Process the data on age-specific fertility rates into a form that can be used to quickly map</span>
+<span class="sd">    age-ranges to an age-specific fertility rate (for the &quot;Medium Variant&quot; in the WPP data source).</span>
+<span class="sd">    :param dat: Raw form of the data in `ResourceFile_ASFR_WPP.csv`</span>
+<span class="sd">    :param months_exposure: The time (in integer number of months) over which the risk of pregnancy should be</span>
+<span class="sd">    computed.</span>
+<span class="sd">    :returns: a dict, keyed by year, giving a dataframe of risk of pregnancy over a the period, by age &quot;&quot;&quot;</span>
+
+    <span class="n">dat</span> <span class="o">=</span> <span class="n">dat</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">dat</span><span class="p">[</span><span class="o">~</span><span class="n">dat</span><span class="o">.</span><span class="n">Variant</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s1">&#39;WPP_Estimates&#39;</span><span class="p">,</span> <span class="s1">&#39;WPP_Medium variant&#39;</span><span class="p">])]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="n">dat</span><span class="p">[</span><span class="s1">&#39;Period-Start&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dat</span><span class="p">[</span><span class="s1">&#39;Period&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">dat</span><span class="p">[</span><span class="s1">&#39;Period-End&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dat</span><span class="p">[</span><span class="s1">&#39;Period&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">years</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">dat</span><span class="p">[</span><span class="s1">&#39;Period-Start&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">),</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="n">dat</span><span class="p">[</span><span class="s1">&#39;Period-End&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">))</span>
+
+    <span class="c1"># Convert the rates for asfr (rate of live-birth per year) to a rate per the frequency of this event repeating</span>
+    <span class="n">dat</span><span class="p">[</span><span class="s1">&#39;asfr_per_period&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">convert_annual_prob_to_monthly_prob</span><span class="p">(</span><span class="n">dat</span><span class="p">[</span><span class="s1">&#39;asfr&#39;</span><span class="p">],</span> <span class="n">num_months</span><span class="o">=</span><span class="n">months_exposure</span><span class="p">)</span>
+
+    <span class="n">asfr</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>  <span class="c1"># format is {year: {age-range: asfr}}</span>
+    <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="n">years</span><span class="p">:</span>
+        <span class="n">asfr</span><span class="p">[</span><span class="n">year</span><span class="p">]</span> <span class="o">=</span> <span class="n">dat</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+            <span class="p">(</span><span class="n">year</span> <span class="o">&gt;=</span> <span class="n">dat</span><span class="p">[</span><span class="s1">&#39;Period-Start&#39;</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">year</span> <span class="o">&lt;=</span> <span class="n">dat</span><span class="p">[</span><span class="s1">&#39;Period-End&#39;</span><span class="p">])</span>
+            <span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;Age_Grp&#39;</span><span class="p">)[</span><span class="s1">&#39;asfr_per_period&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">asfr</span>
+
+
+<span class="k">def</span> <span class="nf">convert_annual_prob_to_monthly_prob</span><span class="p">(</span><span class="n">p_annual</span><span class="p">,</span> <span class="n">num_months</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">((</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">p_annual</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="n">num_months</span> <span class="o">/</span> <span class="mf">12.0</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">convert_monthly_prob_to_annual_prob</span><span class="p">(</span><span class="n">p_monthly</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">((</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">p_monthly</span><span class="p">)</span> <span class="o">**</span> <span class="mf">12.0</span><span class="p">)</span>
 </pre></div>
 
            </div>
+           
           </div>
           <footer>
 
@@ -1049,25 +1264,40 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Jan 19, 2022.
-      </span></p>
-  </div>
+      <span class="lastupdated">
+        Last updated on Feb 07, 2022.
+      </span>
 
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
         </div>
       </div>
+
     </section>
+
   </div>
-  <script>
+  
+
+  <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

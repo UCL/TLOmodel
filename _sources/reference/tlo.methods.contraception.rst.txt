@@ -39,9 +39,6 @@ tlo.methods.contraception module
         * - Initiation_ByAge
           - DATA_FRAME
           - The effect of age on the probability of starting use of contraceptive (add one for multiplicative effect).
-        * - Initiation_ByYear
-          - DATA_FRAME
-          - The age-specific effect of calendar year on the probability of starting use of contraceptive (multiplicative effect). Values are chosen so as to induce a trend in age-specific fertility consistent with the WPP estimates.
         * - Initiation_AfterBirth
           - DATA_FRAME
           - The probability of a woman starting a contraceptive immidiately after birth, by method.
@@ -51,9 +48,6 @@ tlo.methods.contraception module
         * - Discontinuation_ByAge
           - DATA_FRAME
           - The effect of age on the probability of discontinuing use of contraceptive (add one for multiplicative effect).
-        * - Discontinuation_ByYear
-          - DATA_FRAME
-          - The age-specific effect of calendar year on the probability of discontinuing use of contraceptive (multiplicative effect). Values are chosen so as to induce a trend in age-specific fertility consistent with the WPP estimates.
         * - Prob_Switch_From
           - DATA_FRAME
           - The probability per month that a women switches from one form of contraceptive to another, conditional that she will not discontinue use of the method.
@@ -63,6 +57,12 @@ tlo.methods.contraception module
         * - days_between_appts_for_maintenance
           - INT
           - The number of days between successive family planning appointments for women that are maintaining the use of a method.
+        * - age_specific_fertility_rates
+          - DATA_FRAME
+          - Data table from official source (WPP) for age-specific fertility rates and calendar period
+        * - scaling_factor_on_monthly_risk_of_pregnancy
+          - LIST
+          - Scaling factor (by age-group: 15-19, 20-24, ..., 45-49) on the monthly risk of pregnancy and contraceptive failure rate. This value is found through calibration so that, at the beginning of the simulation, the age-specific monthly probability of a woman having a live birth matches the WPP age-specific fertility rate value for the same year.
 
 
      **PROPERTIES:**
@@ -76,7 +76,7 @@ tlo.methods.contraception module
           - Description
         * - co_contraception
           - CATEGORICAL
-          - Current contraceptive method.  Possible values are: [not_using, pill, IUD, injections, implant, male_condom, female_sterilization, other_modern, periodic_abstinence, withdrawal, other_traditional, ]
+          - Current contraceptive method.  Possible values are: [IUD, female_sterilization, implant, injections, male_condom, not_using, other_modern, other_traditional, periodic_abstinence, pill, withdrawal, ]
         * - is_pregnant
           - BOOL
           - Whether this individual is currently pregnant
@@ -101,6 +101,8 @@ tlo.methods.contraception module
      METADATA : {}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthSystem'}
+
+     all_contraception_states : {'other_traditional', 'female_sterilization', 'other_modern', 'implant', 'periodic_abstinence', 'withdrawal', 'IUD', 'male_condom', 'injections', 'pill', 'not_using'}
 
      **Functions (defined or overridden in class Contraception):**
 
@@ -127,6 +129,26 @@ tlo.methods.contraception module
      .. automethod:: schedule_batch_of_contraceptive_changes
 
      .. automethod:: do_and_log_individual_contraception_change
+
+     .. automethod:: schedule_births_for_first_9_months
+
+
+
+
+
+
+
+
+.. autoclass:: DirectBirth
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class DirectBirth):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
 
 
 
@@ -208,6 +230,20 @@ tlo.methods.contraception module
 .. autoclass:: SimplifiedPregnancyAndLabour
 
      Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - prob_live_birth
+          - REAL
+          - Probability that a pregnancy results in a live birth.
 
 
      **PROPERTIES:**

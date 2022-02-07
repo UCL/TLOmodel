@@ -61,7 +61,7 @@ tlo.methods.simplified_births module
 
      **Class attributes:**
 
-     ALTERNATIVE_TO : {'Contraception', 'NewbornOutcomes', 'Labour', 'PostnatalSupervisor', 'PregnancySupervisor'}
+     ALTERNATIVE_TO : {'Labour', 'PregnancySupervisor', 'NewbornOutcomes', 'Contraception', 'PostnatalSupervisor'}
 
      INIT_DEPENDENCIES : {'Demography'}
 
@@ -94,8 +94,6 @@ tlo.methods.simplified_births module
      **Functions (defined or overridden in class SimplifiedBirthsPoll):**
 
      .. automethod:: __init__
-
-     .. automethod:: process_asfr_data
 
      .. automethod:: apply
 
