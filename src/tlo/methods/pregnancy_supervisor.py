@@ -2045,7 +2045,7 @@ class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
 
         logger.debug(key='msg', data='Now updating parameters in the maternal and perinatal health modules...')
 
-        for module in [self,
+        for module in [self.module,
                        self.sim.modules['CareOfWomenDuringPregnancy'],
                        self.sim.modules['Labour'],
                        self.sim.modules['NewbornOutcomes'],

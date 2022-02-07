@@ -105,7 +105,7 @@ def test_run_core_modules_normal_allocation_of_pregnancy(tmpdir):
 
     register_modules(sim)
     sim.make_initial_population(n=1000)
-    sim.simulate(end_date=Date(2015, 1, 1))
+    sim.simulate(end_date=Date(2015, 2, 1))   # run to ensure ParameterUpdateEvent is called and works
     check_dtypes(sim)
 
     # check that no errors have been logged during the simulation run
