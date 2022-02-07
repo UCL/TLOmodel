@@ -563,12 +563,13 @@ def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir, seed):
         )
 
 
-def test_correct_number_of_live_births_created(tmpdir):
+def test_correct_number_of_live_births_created(tmpdir, seed):
     """Check that the actual number of births simulated (in one month) matches expectations"""
 
     # Run a simulation in which every woman has the same chance of becoming pregnant.
     _risk_of_pregnancy = 0.05
     sim = run_sim(tmpdir,
+                  seed=seed,
                   end_date=Date(2010, 11, 1),
                   popsize=100_000,
                   disable=True,
@@ -605,10 +606,10 @@ def test_correct_number_of_live_births_created(tmpdir):
     assert np.isclose(totfr_per_month_Oct2010, _risk_of_pregnancy * _prob_live_birth, rtol=0.10)
 
 
-def test_initial_distribution_of_contraception(tmpdir):
+def test_initial_distribution_of_contraception(tmpdir, seed):
     """Check that the initial population distribution has the expected distribution of use of contraceptive methods."""
 
-    sim = run_sim(tmpdir, end_date=Date(2010, 1, 1), popsize=100_000)  # large simulation, run just to initialise pop
+    sim = run_sim(tmpdir, seed=seed, end_date=Date(2010, 1, 1), popsize=100_000)  # large simulation, run just to initialise pop
 
     df = sim.population.props
     pp = sim.modules['Contraception'].processed_params
