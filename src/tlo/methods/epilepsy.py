@@ -79,12 +79,6 @@ class Epilepsy(Module):
         'base_prob_3m_seiz_stat_none_infreq': Parameter(
             Types.REAL, 'base probability per 3 months of seizure status nonenow if current infrequent'
         ),
-        'base_prob_3m_antiepileptic': Parameter(
-            Types.REAL, 'base probability per 3 months of starting antiepileptic, if frequent seizures'
-        ),
-        'rr_antiepileptic_seiz_infreq': Parameter(
-            Types.REAL, 'relative rate of starting antiepileptic if infrequent seizures'
-        ),
         'base_prob_3m_stop_antiepileptic': Parameter(
             Types.REAL, 'base probability per 3 months of stopping antiepileptic, if nonenow seizures'
         ),
@@ -273,8 +267,6 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         self.base_prob_3m_seiz_stat_none_freq = p['base_prob_3m_seiz_stat_none_freq']
         self.base_prob_3m_seiz_stat_none_infreq = p['base_prob_3m_seiz_stat_none_infreq']
         self.base_prob_3m_seiz_stat_infreq_none = p['base_prob_3m_seiz_stat_infreq_none']
-        self.base_prob_3m_antiepileptic = p['base_prob_3m_antiepileptic']
-        self.rr_antiepileptic_seiz_infreq = p['rr_antiepileptic_seiz_infreq']
         self.base_prob_3m_stop_antiepileptic = p['base_prob_3m_stop_antiepileptic']
         self.rr_stop_antiepileptic_seiz_infreq_or_freq = p['rr_stop_antiepileptic_seiz_infreq_or_freq']
         self.base_prob_3m_epi_death = p['base_prob_3m_epi_death']
@@ -407,6 +399,9 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
             disease_module=self.module
         )
 
+# todo: seizures while not on on anti-epileptic leads to call HSI_Epilepsy_Start_Anti_Epileptic
+
+
 
 class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
@@ -468,10 +463,9 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'n_antiep': n_antiep
                     })
 
-        individual = df.loc[[17]]
+        individual = df.loc[[2]]
 
         logger.info(key='individual_check', data=individual, description='following an individual through simulation')
-
 
 class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
     """
