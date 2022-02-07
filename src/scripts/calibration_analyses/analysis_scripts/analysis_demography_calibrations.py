@@ -1,7 +1,14 @@
 """
 Plot to demonstrate correspondence between model and data outputs wrt births, population size and total deaths.
 
-This uses the results of the Scenario defined in: src/scripts/long_run/long_run.py
+This uses the results of the Scenario defined in:
+
+src/scripts/calibration_analyses/scenarios/long_run_no_diseases.py
+
+or
+
+src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py
+
 """
 
 from pathlib import Path
@@ -23,9 +30,11 @@ from tlo.analysis.utils import (
     make_calendar_period_lookup,
     make_calendar_period_type,
     summarize,
+    unflatten_flattened_multi_index_in_logging,
 )
 
 # %% Declare the name of the file that specified the scenarios used in this run.
+
 scenario_filename = 'long_run_no_diseases.py'  # <-- update this to look at other results
 
 # %% Declare usual paths:
@@ -52,6 +61,11 @@ colors = {
 
 # Define how to call the sexes:
 sexname = lambda x: 'Females' if x == 'F' else 'Males'  # noqa: E731
+
+# Get helpers for age and calendar period aggregation
+agegrps, agegrplookup = make_age_grp_lookup()
+calperiods, calperiodlookup = make_calendar_period_lookup()
+adult_age_groups = ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']
 
 # %% Examine the results folder:
 
@@ -192,14 +206,14 @@ def get_mean_pop_by_age_for_sex_and_year(sex, year):
     if sex == 'F':
         key = "age_range_f"
     else:
-        key = "age_range_f"
+        key = "age_range_m"
 
     num_by_age = summarize(
         extract_results(results_folder,
                         module="tlo.methods.demography",
                         key=key,
                         custom_generate_series=(
-                            lambda df_: df_.loc[pd.to_datetime(df_.date).dt.year == 2010].drop(
+                            lambda df_: df_.loc[pd.to_datetime(df_.date).dt.year == year].drop(
                                 columns=['date']
                             ).melt(
                                 var_name='age_grp'
@@ -213,44 +227,46 @@ def get_mean_pop_by_age_for_sex_and_year(sex, year):
     return num_by_age
 
 
-for year in [2018, 2029]:
+for year in [2010, 2015, 2018, 2029, 2049]:
+    try:
+        # Get WPP data:
+        wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
 
-    # Get WPP data:
-    wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
+        pops = dict()
+        for sex in ['M', 'F']:
+            # Import model results and scale:
+            model = get_mean_pop_by_age_for_sex_and_year(sex, year)
 
-    pops = dict()
-    for sex in ['M', 'F']:
-        # Import model results and scale:
-        model = get_mean_pop_by_age_for_sex_and_year(sex, year)
+            # Make into dataframes for plotting:
+            pops[sex] = {
+                'Model': model,
+                'WPP': wpp_thisyr.loc[sex]
+            }
 
-        # Make into dataframes for plotting:
-        pops[sex] = {
-            'Model': model,
-            'WPP': wpp_thisyr.loc[sex]
-        }
+            if year == 2018:
+                # Import and format Census data, and add to the comparison if the year is 2018 (year of census)
+                pops[sex]['Census'] = cens.loc[cens['Sex'] == sex].groupby(by='Age_Grp')['Count'].sum()
 
-        if year == 2018:
-            # Import and format Census data, and add to the comparison if the year is 2018 (year of census)
-            pops[sex]['Census'] = cens.loc[cens['Sex'] == sex].groupby(by='Age_Grp')['Count'].sum()
+        # Simple plot of population pyramid
+        fig, axes = plt.subplots(ncols=1, nrows=2, sharey=True, sharex=True)
+        labels = ['F', 'M']
+        width = 0.2
+        x = np.arange(len(list(make_age_grp_types().categories)))  # the label locations
+        for i, sex in enumerate(labels):
+            for t, key in enumerate(pops[sex]):
+                axes[i].bar(x=x + (t - 1) * width * 1.2, label=key, height=pops[sex][key] / 1e6, color=colors[key],
+                            width=width)
+            axes[i].set_title(f"{sexname(sex)}: {str(year)}")
+            axes[i].set_ylabel('Population Size (millions)')
 
-    # Simple plot of population pyramid
-    fig, axes = plt.subplots(ncols=1, nrows=2, sharey=True, sharex=True)
-    labels = ['F', 'M']
-    width = 0.2
-    x = np.arange(len(list(make_age_grp_types().categories)))  # the label locations
-    for i, sex in enumerate(labels):
-        for t, key in enumerate(pops[sex]):
-            axes[i].bar(x=x + (t - 1) * width * 1.2, label=key, height=pops[sex][key] / 1e6, color=colors[key],
-                        width=width)
-        axes[i].set_title(f"{sexname(sex)}: {str(year)}")
-        axes[i].set_ylabel('Population Size (millions)')
-
-    axes[1].set_xlabel('Age Group')
-    plt.xticks(x, list(make_age_grp_types().categories), rotation=90)
-    axes[1].legend()
-    fig.tight_layout()
-    plt.savefig(make_graph_file_name(f"Pop_Size_{year}"))
-    plt.show()
+        axes[1].set_xlabel('Age Group')
+        plt.xticks(x, list(make_age_grp_types().categories), rotation=90)
+        axes[1].legend()
+        fig.tight_layout()
+        plt.savefig(make_graph_file_name(f"Pop_Size_{year}"))
+        plt.show()
+    except pd.core.base.DataError:
+        pass
 
 # %% Births: Number over time
 
@@ -264,9 +280,6 @@ births_results = extract_results(
     ),
     do_scaling=True
 )
-
-# zero-out the valyes for 2030 (because the current mdoel run includes 2030 but this skews 5 years averages)
-births_results.loc[2030] = 0
 
 # Aggregate the model outputs into five year periods:
 calperiods, calperiodlookup = make_calendar_period_lookup()
@@ -296,10 +309,11 @@ births = wpp_births.merge(births_model, right_index=True, left_index=True, how='
 births['Census'] = np.nan
 births.at[cens['Period'][0], 'Census'] = cens_births_per_5y_per
 
-# Limit births.index between 2010 and 2030
+# Create a variety of time periods for the plot
 time_period = {
     '1950-2099': births.index,
-    '2010-2030': [(2010 <= int(x[0])) & (int(x[1]) < 2030) for x in births.index.str.split('-')]
+    '2010-2029': [(2010 <= int(x[0])) & (int(x[1]) < 2030) for x in births.index.str.split('-')],
+    '2010-2049': [(2010 <= int(x[0])) & (int(x[1]) < 2050) for x in births.index.str.split('-')]
 }
 
 # Plot:
@@ -345,9 +359,10 @@ for tp in time_period:
 
 # %% Describe patterns of contraceptive usage over time
 
+
 def get_annual_mean_usage(_df):
     _x = _df \
-        .assign(year=df['date'].dt.year) \
+        .assign(year=_df['date'].dt.year) \
         .set_index('year') \
         .drop(columns=['date']) \
         .apply(lambda row: row / row.sum(),
@@ -363,6 +378,7 @@ mean_usage = summarize(extract_results(results_folder,
                                        do_scaling=False),
                        collapse_columns=True
                        )
+order_of_contraceptive_methods = list(mean_usage['mean'].unstack().columns)
 
 # Plot just the means:
 mean_usage_mean = mean_usage['mean'].unstack()
@@ -376,12 +392,139 @@ plt.ylabel('Proportion')
 fig.legend(loc=7)
 fig.tight_layout()
 fig.subplots_adjust(right=0.65)
-plt.savefig(make_graph_file_name("Contraception"))
+plt.savefig(make_graph_file_name("Contraception_1549"))
 plt.show()
 
+
+# %% Describe patterns of contraceptive usage over time and age
+
+def get_usage_by_age_and_year(_df):
+    _x = _df \
+        .assign(year=_df['date'].dt.year) \
+        .set_index('year') \
+        .drop(columns=['date'])
+
+    # restore the multi-index that had to be flattened to pass through the logger"
+    _x = unflatten_flattened_multi_index_in_logging(_x)
+
+    # For each age-range, find distribution across method, and mean of that distribution over the months in the year
+    out = list()
+    for _age in adult_age_groups:
+        q = _x.loc[:, (slice(None), _age)].copy()
+        q.columns = q.columns.droplevel(1)
+        q = pd.DataFrame(q.apply(lambda row: row / row.sum(), axis=1).groupby(q.index).mean().stack())
+        q['age_range'] = _age
+        out.append(q)
+
+    return pd.concat(out).set_index('age_range', append=True)[0]
+
+
+mean_usage_by_age = summarize(extract_results(results_folder,
+                                              module="tlo.methods.contraception",
+                                              key="contraception_use_summary_by_age",
+                                              custom_generate_series=get_usage_by_age_and_year,
+                                              do_scaling=False),
+                              collapse_columns=True,
+                              only_mean=True
+                              ).unstack()
+
+# Plot distribution for each age group:
+for _age in adult_age_groups:
+    distr = mean_usage_by_age[_age].unstack()
+    distr = distr.reindex(columns=order_of_contraceptive_methods)
+    fig, ax = plt.subplots()
+    spacing = (np.arange(len(mean_usage_mean)) % 5) == 0
+    distr.loc[spacing].plot.bar(stacked=True, ax=ax, legend=False)
+    plt.title(f'Proportion Females {_age}y Using Contraceptive Methods')
+    plt.xlabel('Year')
+    plt.ylabel('Proportion')
+
+    fig.legend(loc=7)
+    fig.tight_layout()
+    fig.subplots_adjust(right=0.65)
+    plt.savefig(make_graph_file_name(f"Contraception_{_age}"))
+    plt.show()
+
+
+# %% Age-specific fertility
+
+def get_births_by_year_and_age_range_of_mother_at_pregnancy(_df):
+    _df = _df.drop(_df.index[_df.mother == -1])
+    _df = _df.assign(year=_df['date'].dt.year)
+    _df['mother_age_range'] = _df['mother_age_at_pregnancy'].map(agegrplookup)
+    return _df.groupby(['year', 'mother_age_range'])['year'].count()
+
+
+births_by_mother_age_at_pregnancy = extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="on_birth",
+    custom_generate_series=get_births_by_year_and_age_range_of_mother_at_pregnancy,
+    do_scaling=False
+)
+
+
+def get_num_adult_women_by_age_range(_df):
+    _df = _df.assign(year=_df['date'].dt.year)
+    _df = _df.set_index(_df['year'], drop=True)
+    _df = _df.drop(columns='date')
+    select_col = adult_age_groups
+    ser = _df[select_col].stack()
+    ser.index.names = ['year', 'mother_age_range']
+    return ser
+
+
+num_adult_women = extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="age_range_f",
+    custom_generate_series=get_num_adult_women_by_age_range,
+    do_scaling=False
+)
+
+# Compute age-specific fertility rates
+asfr = summarize(births_by_mother_age_at_pregnancy.div(num_adult_women))
+
+# Get the age-specific fertility rates of the WPP source
+wpp = pd.read_csv(rfp / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+
+
+def expand_by_year(periods, vals, years=range(2010, 2050)):
+    _ser = dict()
+    for y in years:
+        _ser[y] = vals.loc[(periods == calperiodlookup[y])].values[0]
+    return _ser.keys(), _ser.values()
+
+
+fig, ax = plt.subplots(2, 4, sharex=True, sharey=True)
+ax = ax.reshape(-1)
+years = range(2010, 2049)
+for i, _agegrp in enumerate(adult_age_groups):
+    model = asfr.loc[(slice(2011, years[-1]), _agegrp), :].unstack()
+    data = wpp.loc[
+        (wpp.Age_Grp == _agegrp) & wpp.Variant.isin(['WPP_Estimates', 'WPP_Medium variant']), ['Period', 'asfr']
+    ]
+    data_year, data_asfr = expand_by_year(data.Period, data.asfr, years)
+
+    l1 = ax[i].plot(data_year, data_asfr, 'k-', label='WPP')
+    l2 = ax[i].plot(model.index, model[(0, 'mean', _agegrp)], 'r-', label='Model')
+    ax[i].fill_between(model.index, model[(0, 'lower', _agegrp)], model[(0, 'upper', _agegrp)],
+                       color='r', alpha=0.2)
+    ax[i].set_ylim(0, 0.4)
+    ax[i].set_title(f'Age at Pregnancy: {_agegrp}y', fontsize=6)
+    ax[i].set_xlabel('Year')
+    ax[i].set_ylabel('Live births per woman')
+
+ax[-1].set_axis_off()
+fig.legend((l1[0], l2[0]), ('WPP', 'Model'), 'lower right')
+fig.tight_layout()
+fig.savefig(make_graph_file_name("asfr_model_vs_data"))
+fig.show()
+
+
 # %% All-Cause Deaths
-#  todo - fix this ;only do summarize after the groupbys
-#  Get Model ouput (aggregating by year before doing the summarize)
+#  todo - fix this -- only do summarize after the groupbys
+#  Get Model output (aggregating by year before doing the summarize)
 
 results_deaths = extract_results(
     results_folder,
@@ -394,9 +537,6 @@ results_deaths = extract_results(
 )
 
 # Aggregate the model outputs into five year periods for age and time:
-agegrps, agegrplookup = make_age_grp_lookup()
-calperiods, calperiodlookup = make_calendar_period_lookup()
-
 results_deaths = results_deaths.reset_index()
 results_deaths['Age_Grp'] = results_deaths['age'].map(agegrplookup).astype(make_age_grp_types())
 results_deaths['Period'] = results_deaths['year'].map(calperiodlookup).astype(make_calendar_period_type())
