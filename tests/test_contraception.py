@@ -609,7 +609,8 @@ def test_correct_number_of_live_births_created(tmpdir, seed):
 def test_initial_distribution_of_contraception(tmpdir, seed):
     """Check that the initial population distribution has the expected distribution of use of contraceptive methods."""
 
-    sim = run_sim(tmpdir, seed=seed, end_date=Date(2010, 1, 1), popsize=100_000)  # large simulation, run just to initialise pop
+    # large simulation, run just to initialise pop
+    sim = run_sim(tmpdir, seed=seed, end_date=Date(2010, 1, 1), popsize=100_000)
 
     df = sim.population.props
     pp = sim.modules['Contraception'].processed_params
