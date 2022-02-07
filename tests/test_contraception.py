@@ -280,7 +280,7 @@ def test_pregnancies_and_births_occurring(tmpdir, seed):
 
 
 def test_woman_starting_contraceptive_after_birth(tmpdir, seed):
-     """Check that woman re-start the same contraceptive after birth."""
+    """Check that woman re-start the same contraceptive after birth."""
     sim = run_sim(tmpdir=tmpdir, seed=seed, run=False)
 
     # Select a woman to be a mother
