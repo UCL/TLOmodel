@@ -62,6 +62,7 @@ sim.simulate(end_date=end_date)
 
 # %% read the results
 output = parse_log_file(sim.log_filepath)
+# output = parse_log_file(sim.LogFile__2022-02-06T080307.log)
 
 prop_seiz_stat_1 = pd.Series(
  output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_1'].values,
