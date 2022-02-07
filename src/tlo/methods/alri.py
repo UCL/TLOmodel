@@ -3,14 +3,14 @@ Childhood Acute Lower Respiratory Infection Module
 
 Overview
 --------
-Individuals are exposed to the risk of infection by a pathogen (and potentially also with a secondary bacterial
-infection) that can cause one of several type of acute lower respiratory infection (Alri).
-The disease is manifested as either viral pneumonia, bacterial pneumonia or bronchiolitis.
+Individuals are exposed to the risk of infection by a pathogen (and potentially also with a potential bacterial
+co-infection infection) that can cause one of two types of acute lower respiratory infection (Alri) modelled in TLO.
+The disease is manifested as either pneumonia or other alri including bronchiolitis.
 
 During an episode (prior to recovery - either naturally or cured with treatment), symptom are manifest and there may be
 complications (e.g. local pulmonary complication: pleural effusuion, empyema, lung abscess, pneumothorax; and/or
-systemic complications: sepsis, meningitis, and respiratory failure). There is a risk that some of these complications
-are onset after a delay.
+systemic complications: sepsis; and/or complications regarding oxygen exchange: hypoxaemia.
+The complications onset at the time of disease onset
 
 The individual may recover naturally or die. The risk of death depends on the type of disease and the presence of some
 of the complications.
@@ -25,31 +25,15 @@ Outstanding issues
 * Double check parameters and consumables codes for the HSI events.
 * Duration of Alri Event is not informed by data
 
-Questions
-----------
+Following PRs:
+---------------
+PR3: Achieve a basic calibration of the model for incidence and deaths,
+adjusting healthcare seeking behaviour and efficacy of treatment accordingly.
 
-#1:
-'daly_very_severe_ALRI' is never used: is that right?
+PR4: Elaborate the HSI system to the extent needed.
 
-#2:
-There are no probabilities describing the risk of onset of the complication "empyema". There is the risk of empyema
-being delayed onset (i.e. prob_pleural_effusion_to_empyema) and also the risk that "empyema" leads to sepsis
-(prob_empyema_to_sepsis). However, for simplicity  we only have two phases of complication (initial and delayed), so
-this is not represented at the moment. I am not sure if it should be or not.
+Issue #438
 
-#3:
-The risk of death is not affected by delayed-onset complications: should it be?
-
-#4:
-Check that every parameter is used and remove those not used (from definition and from excel). I think that are several
-not being used (e.g prob_respiratory_failure_to_multiorgan_dysfunction and r_progress_to_severe_ALRI) -- perhaps left
- over from an earlier version? Also, please could you tidy-up ResourceFile_Alri.xlsx? If there are sheets that need to
-  remain in there, it would be good if you can explain what each is for on the sheet (and delete anything that is not
-   needed).
-
-#5:
-Is it right that 'danger_signs' is an independent symptom? It seems like this is something that is determined in the
- course of a diagnosis (like in diarrhoea module).
 """
 
 from collections import defaultdict
@@ -669,7 +653,7 @@ class Alri(Module):
         # Initialise the pointer to where the models will be stored:
         self.models = None
 
-        # Maximum duration of an episode (beginning with inection and ending with recovery)
+        # Maximum duration of an episode (beginning with infection and ending with recovery)
         self.max_duration_of_episode = None
 
         # dict to hold the DALY weights
@@ -963,11 +947,11 @@ class Alri(Module):
             # ----- For children over 2 months and under 5 years of age -----
             if (df.at[person_id, 'age_exact_years'] >= 1/6) & (df.at[person_id, 'age_exact_years'] < 5):
 
-                # common cold / no pneumonia
+                # common cold / no pneumonia - the same across all facility levels
                 if (('cough' in symptoms) or ('difficult_breathing' in symptoms)) and (
                     ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
                         ('danger_signs' not in symptoms)):
-                    return 'common_cold'
+                    return 'cough_or_cold'
 
                 # iCCM classifications - HSAs in level 0 ---------------------------------------------------
                 if facility_level == '0':
@@ -984,7 +968,7 @@ class Alri(Module):
                     elif (('cough' in symptoms) or ('difficult_breathing' in symptoms)) and (
                         ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
                             ('danger_signs' not in symptoms)):
-                        return 'common_cold'
+                        return 'cough_or_cold'
                     else:
                         raise ValueError(f'classification not recognised for symptoms: {symptoms}')
 
@@ -999,7 +983,7 @@ class Alri(Module):
                     elif (('cough' in symptoms) or ('difficult_breathing' in symptoms)) and (
                         ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
                             ('danger_signs' not in symptoms)):
-                        return 'common_cold'
+                        return 'cough_or_cold'
                     else:
                         raise ValueError(f'classification not recognised for symptoms: {symptoms}')
 
@@ -1077,7 +1061,7 @@ class Alri(Module):
                     topen=self.sim.date,
                     tclose=None)
 
-        elif classification in ['common_cold', 'cough_or_difficult_breathing']:
+        elif classification in ['cough_or_cold', 'cough_or_difficult_breathing']:
             return  # do nothing
 
         # young infants not handled in iCCM, refer to health facility
@@ -1159,7 +1143,7 @@ class Alri(Module):
                     tclose=None)
 
         # IMCI common cold - do nothing
-        elif classification == 'common_cold':
+        elif classification in ['cough_or_cold', 'cough_or_difficult_breathing']:
             return
         else:
             raise ValueError(f'no treatment_plan recognised for {classification}')
@@ -1222,7 +1206,7 @@ class Alri(Module):
                     tclose=None)  # go down to level 1, closer than another district hospital
 
         # IMCI common cold - do nothing
-        elif classification == 'common_cold':
+        elif classification == 'cough_or_cold':
             return
 
         else:
