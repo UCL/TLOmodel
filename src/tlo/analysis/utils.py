@@ -540,5 +540,55 @@ class LogsDict(dict):
         # return true if key is found in module specific log files dictionary else return KeyError
         return True if k in self.logfile_names_and_paths else KeyError
 
+    def items(self):
+        # parse each module-specific log file and collect the results into a single dictionary. metadata about each log
+        # is returned in the same key '_metadata', so it needs to be collected separately and then merged back in.
+        all_module_logs = dict()
+        metadata = dict()
+        for file_handle in self.logfile_names_and_paths.values():
+            module_specific_logs = _parse_log_file_inner_loop(file_handle.name)
+            all_module_logs.update(module_specific_logs)
+            # sometimes there is nothing to be parsed at a given level, so no metadata
+            if 'metadata_' in module_specific_logs:
+                metadata.update(module_specific_logs['_metadata'])
+
+        if len(metadata) > 0:
+            all_module_logs['_metadata'] = metadata
+
+        return all_module_logs.items()
+
     def update(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def __repr__(self):
+        raise NotImplementedError
+
+    def __len__(self):
+        raise NotImplementedError
+
+    def __delitem__(self, key):
+        raise NotImplementedError
+
+    def clear(self):
+        raise NotImplementedError
+
+    def copy(self):
+        raise NotImplementedError
+
+    def keys(self):
+        raise NotImplementedError
+
+    def values(self):
+        raise NotImplementedError
+
+    def pop(self, *args):
+        raise NotImplementedError
+
+    def __cmp__(self, dict_):
+        raise NotImplementedError
+
+    def __iter__(self):
+        raise NotImplementedError
+
+    def __unicode__(self):
         raise NotImplementedError
