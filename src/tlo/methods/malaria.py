@@ -407,7 +407,10 @@ class Malaria(Module):
         sim.schedule_event(MalariaPollingEventDistrict(self), sim.date + DateOffset(months=1))
 
         sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=1))
-        sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(days=30.5))
+
+        if 'CareOfWomenDuringPregnancy' not in self.sim.modules:
+            sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(days=30.5))
+
         sim.schedule_event(MalariaCureEvent(self), sim.date + DateOffset(days=5))
         sim.schedule_event(MalariaParasiteClearanceEvent(self), sim.date + DateOffset(days=30.5))
 
