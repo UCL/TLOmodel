@@ -189,6 +189,7 @@ def test_perfect_run_of_anc_contacts_no_constraints():
     params['prob_intervention_delivered_bp'] = 1.0
     params['prob_intervention_delivered_depression_screen'] = 1.0
     params['prob_intervention_delivered_ifa'] = 1.0
+    params['prob_intervention_delivered_gdm_test'] = 1.0
     params['prob_adherent_ifa'] = 1.0
     params['prob_intervention_delivered_bep'] = 1.0
     params['prob_intervention_delivered_llitn'] = 1.0
@@ -304,6 +305,7 @@ def test_perfect_run_of_anc_contacts_no_constraints():
     # screening)
     df.at[mother_id, 'ps_gest_diab'] = 'uncontrolled'
     df.at[mother_id, 'ps_prev_gest_diab'] = True
+    df.at[mother_id, 'li_bmi'] = 4
 
     third_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 3)
