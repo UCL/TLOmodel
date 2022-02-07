@@ -780,6 +780,7 @@ class Tb(Module):
         assert not any(elem in fast for elem in eligible_adults)
 
         risk_of_progression = self.lm["active_tb"].predict(df.loc[eligible_adults])
+
         will_progress = (
             self.rng.random_sample(len(risk_of_progression)) < risk_of_progression
         )
@@ -830,6 +831,7 @@ class Tb(Module):
         screen_idx = df.index[
             df.is_alive
             & ~df.tb_diagnosed
+            & ~df.tb_on_treatment
             & (random_draw < p["rate_testing_general_pop"])
         ]
 
@@ -837,6 +839,7 @@ class Tb(Module):
         screen_active_idx = df.index[
             df.is_alive
             & ~df.tb_diagnosed
+            & ~df.tb_on_treatment
             & (df.tb_inf == "active")
             & (random_draw < p["rate_testing_active_tb"])
         ]

@@ -56,8 +56,8 @@ log_config = {
 
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
-seed = random.randint(0, 50000)
-# seed = 4  # set seed for reproducibility
+# seed = random.randint(0, 50000)
+seed = 3  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -90,7 +90,8 @@ sim.modules["Tb"].parameters["tb_high_risk_distr"] = pd.read_excel(
 
 # todo remove
 sim.modules["Hiv"].parameters["beta"] = 0.127623113
-sim.modules["Tb"].parameters["transmission_rate"] = 1.798219139
+sim.modules["Tb"].parameters["transmission_rate"] = 1.6
+sim.modules["Tb"].parameters["prog_active"] = 0.1
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
