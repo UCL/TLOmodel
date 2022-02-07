@@ -549,7 +549,7 @@ class LogsDict(dict):
             module_specific_logs = _parse_log_file_inner_loop(file_handle.name)
             all_module_logs.update(module_specific_logs)
             # sometimes there is nothing to be parsed at a given level, so no metadata
-            if 'metadata_' in module_specific_logs:
+            if '_metadata' in module_specific_logs:
                 metadata.update(module_specific_logs['_metadata'])
 
         if len(metadata) > 0:
