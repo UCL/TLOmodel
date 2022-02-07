@@ -141,7 +141,6 @@ def test_missing_dependency_raises_error_on_register(sim, dependent_module_pair)
         sim.register(Module2())
 
 
-@pytest.mark.parametrize("seed", (2451830014,  236869655,  460834000))
 def test_topological_sort_modules(seed, dependent_module_chain):
     set_seed(seed)
     modules = [module() for module in dependent_module_chain]
