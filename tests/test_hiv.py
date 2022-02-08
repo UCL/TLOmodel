@@ -21,6 +21,7 @@ from tlo.methods import (
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
+    pregnancy_helper_functions,
     simplified_births,
     symptommanager,
 )
@@ -541,14 +542,14 @@ def test_art_is_initiated_for_infants():
     df = sim.population.props
     mother_id = df.loc[df.is_alive & (df.sex == "F")].index[0]
     df.at[mother_id, 'hv_inf'] = True
+    df.at[mother_id, 'is_pregnant'] = True
     df.at[mother_id, 'hv_date_inf'] = sim.date
     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
 
-    # Populate the minimum set of keys within the mni dict so the on_birth function will run
-    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {
-        'twin_count': 0,  'single_twin_still_birth': False, 'labour_state': 'term_labour',
-        'stillbirth_in_labour': False, 'abx_for_prom_given': False,  'corticosteroids_given': False,
-        'delivery_setting': 'health_centre', 'clean_birth_practices': False}
+    # Populate the mni
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
+    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delivery_setting'] = 'hospital'
 
     # Do birth
     child_id = sim.do_birth(mother_id)
@@ -559,18 +560,11 @@ def test_art_is_initiated_for_infants():
     assert sim.population.props.at[child_id, "hv_inf"]
     assert not sim.population.props.at[child_id, "hv_diagnosed"]
 
-    # Populate the minimum set of keys within the nci dictionary so the newborn HSI will run
-    sim.modules['NewbornOutcomes'].newborn_care_info[child_id] = {
-        'ga_at_birth': df.at[mother_id, 'ps_gestational_age_in_weeks'], 'vit_k': False, 'tetra_eye_d': False,
-        'proph_abx': False, 'abx_for_prom_given': False, 'corticosteroids_given': False,
-        'delivery_setting': 'health_centre', 'clean_birth_practices': False, 'sought_care_for_complication': False,
-        'cause_of_death_after_birth': []}
-
     # Define the newborn HSI and run the event
-    newborn_care = newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(
-        module=sim.modules['NewbornOutcomes'], person_id=child_id, facility_level_of_this_hsi='2')
+    newborn_pnc = newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck(
+        module=sim.modules['NewbornOutcomes'], person_id=child_id)
 
-    newborn_care.apply(person_id=child_id, squeeze_factor=0.0)
+    newborn_pnc.apply(person_id=child_id, squeeze_factor=0.0)
 
     # Check that the child has a TestAndRefer event scheduled via the newborn HSI
     date_event, event = [
