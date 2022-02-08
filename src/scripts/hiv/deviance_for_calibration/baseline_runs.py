@@ -25,6 +25,7 @@ tlo batch-download baseline_runs-2022-02-05T141340Z
 """
 
 from random import randint
+import numpy as np
 
 from tlo import Date, logging
 from tlo.methods import (
@@ -49,13 +50,13 @@ class TestScenario(BaseScenario):
 
     def __init__(self):
         super().__init__()
-        self.seed = randint(0, 5000)
-
+        # self.seed = randint(0, 5000)
+        self.seed = 12
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2025, 1, 1)
         self.pop_size = 500000
-        self.number_of_draws = 1
-        self.runs_per_draw = 5
+        self.number_of_draws = 10
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
@@ -96,8 +97,11 @@ class TestScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-
-        return
+        return {
+            'Tb': {
+                'transmission_rate': np.linspace(1.4, 1.8, num=self.number_of_draws)[draw_number],
+            },
+        }
 
 
 if __name__ == "__main__":

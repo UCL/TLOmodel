@@ -407,6 +407,7 @@ class Tb(Module):
         # todo this is not used for national-level model
         p["prop_active_2010"] = workbook["cases2010district"]
 
+        p["rate_testing_active_tb"] = workbook["testing_rates"]
         p["pulm_tb"] = workbook["pulm_tb"]
         p["followup_times"] = workbook["followup"]
 
@@ -825,6 +826,9 @@ class Tb(Module):
         p = self.parameters
         rng = self.rng
 
+        active_testing_rates = p["rate_testing_active_tb"]
+        current_active_testing_rate = active_testing_rates.loc[
+            (active_testing_rates.year == self.sim.date.year), "testing_rate_active_cases"].values[0]/100
         random_draw = rng.random_sample(size=len(df))
 
         # randomly select some individuals for screening and testing
@@ -836,12 +840,13 @@ class Tb(Module):
         ]
 
         # randomly select some symptomatic individuals for screening and testing
+        # this rate increases by year
         screen_active_idx = df.index[
             df.is_alive
             & ~df.tb_diagnosed
             & ~df.tb_on_treatment
             & (df.tb_inf == "active")
-            & (random_draw < p["rate_testing_active_tb"])
+            & (random_draw < current_active_testing_rate)
         ]
 
         all_screened = screen_idx.union(screen_active_idx).drop_duplicates()
@@ -1801,7 +1806,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 ):
 
                     ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                        {"Over5OPD": 1, "LabMolec": 1}
+                        {"Over5OPD": 1}
                     )
                     test_result = self.sim.modules[
                         "HealthSystem"
