@@ -387,7 +387,7 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
         by the end of the simulation."""
 
         df = sim.population.props
-        contraceptives = list(sim.modules['Contraception'].all_contraception_states)
+        contraceptives = sorted(sim.modules['Contraception'].all_contraception_states)
 
         # Set that person_id=0-10 are woman on each of the contraceptive and are due an appointment next month (these
         # women will default if on a contraceptive that requires a consumable).
