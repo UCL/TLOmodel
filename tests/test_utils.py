@@ -1,14 +1,18 @@
 """Unit tests for utility functions."""
 import os
+import pickle
 from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+import types
 
 import tlo.util
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography
+
+path_to_files = Path(os.path.dirname(__file__))
 
 
 @pytest.fixture
@@ -213,9 +217,19 @@ def test_sample_outcome(tmpdir):
 
 
 def test_logs_parsing(tmpdir):
-    """a function to test the  functionalities of LogDict class inside utils.py"""
+    """test all functionalities of LogDict class inside utils.py.
+
+        1.  ensure that logs are generated as expected
+        2.  check expected keys are present within the logs
+        3.  check that we're able to get metadata
+        4.  check that output from method `items()` of LogsDict class return a generator
+        5.  check that picked data can be properly generated
+
+        """
 
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    path_to_tmpdir = path_to_files / tmpdir
+
     start_date = Date(2010, 1, 1)
     end_date = Date(2012, 1, 1)
     popsize = 200
@@ -227,7 +241,7 @@ def test_logs_parsing(tmpdir):
     })
 
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
+        demography.Demography(resourcefilepath=resourcefilepath)
     )
 
     # Create a simulation
@@ -235,10 +249,25 @@ def test_logs_parsing(tmpdir):
     sim.simulate(end_date=end_date)
 
     file_path = sim.log_filepath
-    output = parse_log_file(file_path)
+    outputs = parse_log_file(file_path)
 
     # check parse_log_file methods worked as expected - expected keys has to be in the LogsDict class
-    assert 'tlo.methods.demography' in output
+    assert 'tlo.methods.demography' in outputs
 
     # check that metadata is within the selected key
-    assert '_metadata' in output['tlo.methods.demography'].keys()
+    assert '_metadata' in outputs['tlo.methods.demography'].keys()
+
+    # check that method `items()` of LogsDict class returns a generator
+    assert isinstance(outputs.items(), types.GeneratorType)
+
+    # test we can create a .pickled file
+    for key, output in outputs.items():
+        if key.startswith("tlo."):
+            with open(path_to_tmpdir / f"{key}.pickle", "wb") as f:
+                pickle.dump(output, f)
+
+        #   check a pickle file is created
+        assert Path.is_file(path_to_tmpdir / f"{key}.pickle")
+
+        # check the created pickle file is not empty
+        assert os.path.getsize(path_to_tmpdir / f"{key}.pickle") != 0

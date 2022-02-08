@@ -545,17 +545,17 @@ class LogsDict(dict):
         # is returned in the same key '_metadata', so it needs to be collected separately and then merged back in.
         all_module_logs = dict()
         metadata = dict()
-        for file_handle in self.logfile_names_and_paths.values():
+        for key, file_handle in self.logfile_names_and_paths.items():
             module_specific_logs = _parse_log_file_inner_loop(file_handle.name)
             all_module_logs.update(module_specific_logs)
             # sometimes there is nothing to be parsed at a given level, so no metadata
             if '_metadata' in module_specific_logs:
                 metadata.update(module_specific_logs['_metadata'])
 
-        if len(metadata) > 0:
-            all_module_logs['_metadata'] = metadata
+            if len(metadata) > 0:
+                all_module_logs['_metadata'] = metadata
 
-        return all_module_logs.items()
+            yield key, all_module_logs
 
     def update(self, *args, **kwargs):
         raise NotImplementedError
