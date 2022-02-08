@@ -90,8 +90,10 @@ sim.modules["Tb"].parameters["tb_high_risk_distr"] = pd.read_excel(
 
 # todo remove
 sim.modules["Hiv"].parameters["beta"] = 0.127623113
-sim.modules["Tb"].parameters["transmission_rate"] = 1.6
+sim.modules["Tb"].parameters["transmission_rate"] = 1.5
 sim.modules["Tb"].parameters["prog_active"] = 0.1
+sim.modules["Tb"].parameters["rr_tb_hiv"] = 25  # 20.6
+sim.modules["Tb"].parameters["rr_tb_aids"] = 50  # 26
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

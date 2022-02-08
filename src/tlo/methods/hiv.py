@@ -1601,9 +1601,9 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
         )
 
         # Schedule AidsDeath
-        date_of_aids_death = self.sim.date + self.module.get_time_from_aids_to_death()
-
         if self.cause == "AIDS_non_TB":
+            date_of_aids_death = self.sim.date + self.module.get_time_from_aids_to_death()
+
             self.sim.schedule_event(
                 event=HivAidsDeathEvent(
                     person_id=person_id, module=self.module, cause=self.cause
@@ -1661,9 +1661,8 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
                 originating_module=self.module,
             )
 
-        # off ART, active TB infection
-        if (df.at[person_id, "hv_art"] != "on_VL_suppressed") and (
-            df.at[person_id, "tb_inf"] == "active"):
+        # on or off ART, active TB infection
+        if df.at[person_id, "tb_inf"] == "active":
             # cause is HIV_TB
             self.sim.modules["Demography"].do_death(
                 individual_id=person_id,

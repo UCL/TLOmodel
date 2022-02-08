@@ -786,10 +786,10 @@ class Tb(Module):
         )
         idx_will_progress = will_progress[will_progress].index
 
-        # schedule for time now up to 2 years
+        # schedule for time now up to 1 year
         for person_id in idx_will_progress:
             date_progression = self.sim.date + pd.DateOffset(
-                days=self.rng.randint(0, 732)
+                days=self.rng.randint(0, 365)
             )
 
             # set date of active tb - properties will be updated at TbActiveEvent every month
