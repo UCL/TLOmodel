@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 from pandas.tseries.offsets import DateOffset
 
 from tlo import Date, Simulation
@@ -12,8 +13,6 @@ from tlo.methods import (
     contraception,
     demography,
     depression,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -26,8 +25,9 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
+from tlo.methods.hiv import DummyHivModule
 
-seed = 677
+seed = 674
 
 # The resource files
 try:
@@ -86,7 +86,11 @@ def register_core_modules():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+
+                 # - Dummy HIV module (as contraception requires the property hv_inf)
+                 DummyHivModule()
+                 )
 
     return sim
 
@@ -111,13 +115,16 @@ def register_all_modules():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  malaria.Malaria(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
-                 dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath))
+                 depression.Depression(resourcefilepath=resourcefilepath),
+
+                 # - Dummy HIV module (as contraception requires the property hv_inf)
+                 DummyHivModule()
+                 )
 
     return sim
 
 
+@pytest.mark.slow
 def test_run_core_modules_normal_allocation_of_pregnancy():
     """Runs the simulation using only core modules without manipulation of pregnancy rates or parameters and checks
     dtypes at the end"""
@@ -128,6 +135,7 @@ def test_run_core_modules_normal_allocation_of_pregnancy():
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_run_core_modules_high_volumes_of_pregnancy():
     """Runs the simulation with the core modules and all women of reproductive age being pregnant at the start of the
     simulation"""
@@ -272,6 +280,7 @@ def test_calculation_of_gestational_age():
         assert df.at[person, 'ps_gestational_age_in_weeks'] == (foetal_age_weeks + 2)
 
 
+@pytest.mark.slow
 def test_run_with_all_births_as_twins():
     """Runs the simulation with the core modules, all reproductive age women as pregnant and forces all pregnancies to
     be twins. Other functionality related to or dependent upon twin birth is tested in respective module test files"""
@@ -308,6 +317,7 @@ def test_run_with_all_births_as_twins():
     assert (df.loc[new_borns.loc[new_borns].index, 'nb_twin_sibling_id'] != -1).all().all()
 
 
+@pytest.mark.slow
 def test_run_all_births_end_in_miscarriage():
     """Runs the simulation with the core modules and all women of reproductive age as pregnant. Sets miscarriage risk
     to 1 and runs checks """
@@ -344,25 +354,16 @@ def test_run_all_births_end_in_miscarriage():
     assert (df.loc[pregnant_at_end_of_sim.index, 'ps_gestational_age_in_weeks'] < 5).all().all()
 
 
-def test_run_all_births_end_in_abortion():
+def test_induced_abortion_ends_pregnancies_as_expected():
     """Runs the simulation with the core modules and all women of reproductive age as pregnant. Sets abortion risk
     to 1 and runs checks """
+
     sim = register_core_modules()
     starting_population = 500
 
     sim.make_initial_population(n=starting_population)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
 
-    # Define women of interest in the population
-    df = sim.population.props
-    women = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14)]
-
-    # Set parity to 0 for an additional check for births
-    df.loc[women.index, 'la_parity'] = 0
-    # Set all births as unintended to ensure women are at risk of abortion
-    df.loc[women.index, 'co_unintended_preg'] = True
-
-    # Risk of ectopic applied before miscarriage so set to 0
     params = sim.modules['PregnancySupervisor'].parameters
     params['prob_ectopic_pregnancy'] = 0
     params['prob_spontaneous_abortion_per_month'] = 0
@@ -370,21 +371,25 @@ def test_run_all_births_end_in_abortion():
     # set risk of abortion to 1
     params['prob_induced_abortion_per_month'] = 1
 
-    sim.simulate(end_date=Date(2011, 1, 1))
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
+    # Define women of interest in the population
     df = sim.population.props
+    women = df.loc[df.is_alive & (df.sex == 'F') & df.is_pregnant]
+    df.loc[women.index, 'co_unintended_preg'] = True
+    df.loc[women.index, 'date_of_last_pregnancy'] = sim.date - pd.DateOffset(weeks=6)
+    for woman in women.index:
+        sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
 
-    # Check that there are no newborns
-    possible_newborns = df.is_alive & (df.date_of_birth > sim.start_date)
-    assert possible_newborns.loc[possible_newborns].empty
+    # Run the event
+    pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
+    pregnancy_sup.apply(sim.population)
+    # Set parity to 0 for an additional check for births
 
-    # Check that no women that were ever pregnant have gained paritt
-    women_ever_pregnant = df.loc[~df.is_pregnant & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)
-                                 & ~pd.isnull(df.date_of_last_pregnancy)]
-    assert (df.loc[women_ever_pregnant.index, 'la_parity'] == 0).all().all()
-
-    pregnant_at_end_of_sim = df.loc[df.is_alive & df.is_pregnant]
-    assert (df.loc[pregnant_at_end_of_sim.index, 'ps_gestational_age_in_weeks'] < 9).all().all()
+    assert ~df.loc[women.index, 'is_pregnant'].all().all()
+    assert (df.loc[women.index, 'la_parity'] == 0).all().all()
+    assert (df.loc[women.index, 'ps_gestational_age_in_weeks'] == 0).all().all()
+    assert pd.isnull(df.loc[women.index, 'la_due_date_current_pregnancy']).all().all()
 
 
 def test_abortion_complications():
@@ -455,6 +460,7 @@ def test_abortion_complications():
     assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delete_mni'])
 
 
+@pytest.mark.slow
 def test_run_all_births_end_antenatal_still_birth():
     """Runs the simulation with the core modules and all women of reproductive age as pregnant. Sets antenatal still
     birth risk to 1 and runs checks """
@@ -924,7 +930,7 @@ def test_pregnancy_supervisor_pre_eclampsia_and_progression():
         sim.modules['PregnancySupervisor'].generate_mother_and_newborn_dictionary_for_individual(woman)
 
     # Move the women's gestational age back by 1 week
-    df.loc[pregnant_women.index, 'ps_gestational_age_in_weeks'] =\
+    df.loc[pregnant_women.index, 'ps_gestational_age_in_weeks'] = \
         (df.loc[pregnant_women.index, 'ps_gestational_age_in_weeks'] - 1)
 
     # Set risk of death to 0 and relative risk of stillbirth in pre-eclampsia to 10 which should force still birth

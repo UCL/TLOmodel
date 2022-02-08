@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -18,6 +19,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
+from tlo.methods.hiv import DummyHivModule
 
 seed = 8974
 
@@ -72,6 +74,8 @@ def check_newborn_death_function_acts_as_expected(sim, individual_id, cause):
 
 def register_modules(ignore_cons_constraints):
     """Register all modules that are required for newborn outcomes to run"""
+    _cons_availability = 'all' if ignore_cons_constraints else 'none'
+
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
@@ -79,24 +83,28 @@ def register_modules(ignore_cons_constraints):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
-                                           ignore_cons_constraints=ignore_cons_constraints),
+                                           cons_availability=_cons_availability),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+
+                 # - Dummy HIV module (as contraception requires the property hv_inf)
+                 DummyHivModule()
+                 )
 
     return sim
 
 
+@pytest.mark.slow
 def test_run_and_check_dtypes():
     """Run the sim for five years and check dtypes at the end """
     sim = register_modules(ignore_cons_constraints=False)
     sim.make_initial_population(n=1000)
     sim.simulate(end_date=Date(2015, 1, 1))
-
     check_dtypes(sim)
 
 
@@ -435,7 +443,7 @@ def test_newborn_hsi_applies_risk_of_complications_and_delivers_treatment_to_fac
 
     # Run the newborn care event
     newborn_care = newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant(
-        person_id=child_id, module=sim.modules['NewbornOutcomes'], facility_level_of_this_hsi=2)
+        person_id=child_id, module=sim.modules['NewbornOutcomes'], facility_level_of_this_hsi='2')
     newborn_care.apply(person_id=child_id, squeeze_factor=0.0)
 
     # check that the risk of complications has correctly been applied

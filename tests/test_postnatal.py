@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
+from pandas import DateOffset
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -20,6 +22,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
+from tlo.methods.hiv import DummyHivModule
 
 seed = 6987
 
@@ -68,6 +71,7 @@ def get_mother_id_from_dataframe(sim):
 
 
 def register_core_modules(ignore_cons_constraints):
+    _cons_availability = 'all' if ignore_cons_constraints else 'none'
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -76,18 +80,23 @@ def register_core_modules(ignore_cons_constraints):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
-                                           ignore_cons_constraints=ignore_cons_constraints),
+                                           cons_availability=_cons_availability),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+
+                 # - Dummy HIV module (as contraception requires the property hv_inf)
+                 DummyHivModule()
+                 )
 
     return sim
 
 
+@pytest.mark.slow
 def test_run_and_check_dtypes():
     sim = register_core_modules(ignore_cons_constraints=False)
     sim.make_initial_population(n=1000)
@@ -112,6 +121,7 @@ def test_antenatal_disease_is_correctly_carried_over_to_postnatal_period_on_birt
     # Set properties from the antenatal period that we would expect to be carried into the postnatal period, if they
     # dont resolve before or on birth
     df = sim.population.props
+    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date - DateOffset(months=9)
     df.at[mother_id, 'ac_gest_htn_on_treatment'] = True
     sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.set(mother_id, 'iron')
     sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.set(mother_id, 'folate')
@@ -172,6 +182,7 @@ def test_application_of_complications_and_care_seeking_postnatal_week_one_event(
 
     # Get id number of mother
     mother_id = get_mother_id_from_dataframe(sim)
+    sim.population.props.at[mother_id, 'date_of_last_pregnancy'] = sim.date - DateOffset(months=9)
 
     # Run birth event to generate child
     child_id = sim.do_birth(mother_id)
@@ -254,6 +265,7 @@ def test_application_of_risk_of_death_postnatal_week_one_event():
 
     # Get id number of mother
     mother_id = get_mother_id_from_dataframe(sim)
+    sim.population.props.at[mother_id, 'date_of_last_pregnancy'] = sim.date - DateOffset(months=9)
     child_id = sim.do_birth(mother_id)
     sim.modules['NewbornOutcomes'].on_birth(mother_id, child_id)
 
@@ -502,6 +514,7 @@ def test_application_of_risk_of_late_onset_neonatal_sepsis():
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     mother_id = get_mother_id_from_dataframe(sim)
+    sim.population.props.at[mother_id, 'date_of_last_pregnancy'] = sim.date - DateOffset(months=9)
     child_id = sim.do_birth(mother_id)
     sim.modules['NewbornOutcomes'].on_birth(mother_id, child_id)
 
@@ -544,7 +557,7 @@ def test_postnatal_care():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
-                                           ignore_cons_constraints=True),
+                                           cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath),
@@ -585,6 +598,7 @@ def test_postnatal_care():
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     mother_id = int(get_mother_id_from_dataframe(sim))
+    sim.population.props.at[mother_id, 'date_of_last_pregnancy'] = sim.date - DateOffset(months=9)
     child_id = sim.do_birth(mother_id)
     sim.modules['NewbornOutcomes'].on_birth(mother_id, child_id)
 

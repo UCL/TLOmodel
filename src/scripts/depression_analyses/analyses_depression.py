@@ -12,7 +12,6 @@ from tlo.methods import (
     contraception,
     demography,
     depression,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -151,7 +150,6 @@ def run_simulation_with_intvs_maximised():
         depression.Depression(resourcefilepath=resourcefilepath),
         mockitis.Mockitis(),
         chronicsyndrome.ChronicSyndrome(),
-        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
     )
 
     sim.modules['Depression'].parameters['rr_depr_on_antidepr'] = 50

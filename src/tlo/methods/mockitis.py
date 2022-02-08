@@ -206,6 +206,9 @@ class Mockitis(Module):
             self.sim.schedule_event(MockitisDeathEvent(self, person_id),
                                     df.at[person_id, 'mi_scheduled_date_death'])
 
+        # Store an item code for a consumable
+        self.cons_code = 0
+
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 
@@ -395,7 +398,7 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_PresentsForCareWithSevereSymptoms'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1  # This enforces that the appointment must be run at that facility-level
+        self.ACCEPTED_FACILITY_LEVEL = '1a'  # This enforces that the appointment must be run at that facility-level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -437,7 +440,7 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_Treatment_Initiation'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at those facility-levels
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -451,7 +454,7 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
 
-        if treatmentworks:
+        if treatmentworks and self.get_consumables(self.module.cons_code):
             df.at[person_id, 'mi_is_infected'] = False
             df.at[person_id, 'mi_status'] = 'P'
 
@@ -464,17 +467,6 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             self.module.sim.modules['SymptomManager'].clear_symptoms(
                 person_id=person_id,
                 disease_module=self.module)
-
-            # Alternative:
-            # symptoms_caused_by_this_disease_module = \
-            #     self.module.sim.modules['SymptomManager'].has_what(person_id, self.module)
-            # for symp in symptoms_caused_by_this_disease_module:
-            #     self.module.sim.modules['SymptomManager'].chg_symptom(
-            #         person_id=person_id,
-            #         symptom_string=symp,
-            #         add_or_remove='-',
-            #         disease_module=self.module
-            #     )
 
         # Create a follow-up appointment
         target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
@@ -515,7 +507,7 @@ class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_TreatmentMonitoring'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1  # Allows this HSI to occur at any facility-level
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id, squeeze_factor):

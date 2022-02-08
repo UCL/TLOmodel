@@ -19,8 +19,8 @@ def test_individual_death():
     assert sim.modules['rd'] is rd
     sim.modules['rd'].parameters['death_probability'] = 0.1
     # We can also use attribute-style access if the name doesn't clash
-    assert rd.death_probability == 0.1
-    rd.death_probability = 0.2
+    assert rd.parameters['death_probability'] == 0.1
+    rd.parameters['death_probability'] = 0.2
 
     # Seed the random number generators (manually)
     sim.modules['rd'].rng.seed(1)
@@ -69,7 +69,7 @@ def test_single_step_death():
     sim.make_initial_population(n=10)
 
     # Create and fire the event of interest
-    event = random_death.RandomDeathEvent(rd, rd.death_probability)
+    event = random_death.RandomDeathEvent(rd, rd.parameters['death_probability'])
     sim.fire_single_event(event, Date(2010, 2, 1))
 
     # Check it has behaved as expected
@@ -110,7 +110,7 @@ def test_birth_and_death():
     rb = random_birth.RandomBirth(name='rb')
     rb.pregnancy_probability = 0.1
     rd = random_death.RandomDeath(name='rd')
-    rd.death_probability = 0.01
+    rd.parameters['death_probability'] = 0.01
     sim.register(rb, rd)
     assert sim.modules['rb'] is rb
     assert sim.modules['rd'] is rd

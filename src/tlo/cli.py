@@ -51,7 +51,6 @@ def scenario_run(scenario_file, draw_only, draw: tuple):
 
     SCENARIO_FILE is path to file containing a scenario class
     """
-    print(draw)
     scenario = load_scenario(scenario_file)
     run_json = scenario.save_draws()
     if draw_only:
@@ -590,17 +589,21 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
     """
     print("Creating job.")
 
+    # From https://docs.microsoft.com/en-us/azure/batch/batch-docker-container-workloads#linux-support
+    # We require Ubuntu image with container support (publisher microsoft-azure-batch; offer microsoft-azure-batch)
+    # Get the latest SKU by inspecting output of `az batch pool supported-images list` for publisher+offer
+    # Update node_agent_sku_id (below), if necessary
     image_reference = batch_models.ImageReference(
         publisher="microsoft-azure-batch",
         offer="ubuntu-server-container",
-        sku="16-04-lts",
+        sku="20-04-lts",
         version="latest",
     )
 
     virtual_machine_configuration = batch_models.VirtualMachineConfiguration(
         image_reference=image_reference,
         container_configuration=container_conf,
-        node_agent_sku_id="batch.node.ubuntu 16.04",
+        node_agent_sku_id="batch.node.ubuntu 20.04",
     )
 
     pool = batch_models.PoolSpecification(

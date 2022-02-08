@@ -19,8 +19,6 @@ from tlo.methods import (
     demography,
     depression,
     diarrhoea,
-    dx_algorithm_adult,
-    dx_algorithm_child,
     enhanced_lifestyle,
     epi,
     epilepsy,
@@ -67,8 +65,6 @@ sim.register(
 
     # HealthSystem
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-    dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-    dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
 
     # Modules for birth/labour/newborns --> Simplified Births
     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),

@@ -12,7 +12,6 @@ from tlo import Date, logging
 from tlo.methods import (
     contraception,
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
@@ -49,7 +48,6 @@ class MockitisBatch(BaseScenario):
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources, disable=True, service_availability=['*']),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
-            dx_algorithm_child.DxAlgorithmChild(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             contraception.Contraception(resourcefilepath=self.resources),
             labour.Labour(resourcefilepath=self.resources),

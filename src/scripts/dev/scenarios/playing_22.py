@@ -2,12 +2,16 @@ import numpy as np
 
 from tlo import Date, logging
 from tlo.methods import (
+    care_of_women_during_pregnancy,
     contraception,
     demography,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     labour,
+    newborn_outcomes,
+    postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -43,6 +47,10 @@ class Playing22(BaseScenario):
             contraception.Contraception(resourcefilepath=self.resources),
             labour.Labour(resourcefilepath=self.resources),
             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
+            postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
+            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
+            newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
+            hiv.Hiv(resourcefilepath=self.resources)
         ]
 
     def draw_parameters(self, draw_number, rng):

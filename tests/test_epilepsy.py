@@ -1,5 +1,4 @@
 import os
-import time
 from pathlib import Path
 
 import pytest
@@ -12,7 +11,7 @@ end_date = Date(2015, 1, 1)
 popsize = 10000
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture
 def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date, seed=0)
@@ -29,21 +28,11 @@ def simulation():
     return sim
 
 
-def test_run(simulation):
+@pytest.mark.slow
+def test_dtypes(simulation):
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
-
-
-def test_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
-
-
-if __name__ == '__main__':
-    t0 = time.time()
-    simulation = simulation()
-    test_run(simulation)
-    t1 = time.time()
-    print('Time taken', t1 - t0)
