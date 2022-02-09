@@ -10,20 +10,28 @@ from tlo.analysis.utils import parse_log_file
 from tlo import Date, Simulation
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
+    alri,
+    cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
     demography,
+    diarrhoea,
+    depression,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     hiv,
     labour,
+    malaria,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
     pregnancy_helper_functions,
+    stunting,
     symptommanager,
+    wasting
 )
 
 seed = 882
@@ -123,6 +131,52 @@ def test_run_core_modules_high_volumes_of_pregnancy(tmpdir):
     register_modules(sim)
     sim.make_initial_population(n=5000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
+    sim.simulate(end_date=Date(2011, 1, 1))
+    check_dtypes(sim)
+
+    # check that no errors have been logged during the simulation run
+    output = parse_log_file(sim.log_filepath)
+    assert 'error' not in output['tlo.methods.pregnancy_supervisor']
+    assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
+
+
+@pytest.mark.slow
+def test_run_with_all_referenced_modules_registered(tmpdir):
+    """
+    Runs the simulation for one year where all the referenced modules are registered to ensure
+    """
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=['*'],
+                                           cons_availability='all'),  # went set disable=true, cant check HSI queue
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+
+                 # Register all the modules that are reference in the maternal perinatal health suite (including their
+                 # dependencies)
+                 alri.Alri(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath),
+                 malaria.Malaria(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath),
+                 stunting.Stunting(resourcefilepath=resourcefilepath),
+                 wasting.Wasting(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath)
+                 )  # todo: add TB once in master
+
+    sim.make_initial_population(n=5000)
+    set_all_women_as_pregnant_and_reset_baseline_parity(sim)  # keep high volume of pregnancy to increase risk of error
     sim.simulate(end_date=Date(2011, 1, 1))
     check_dtypes(sim)
 
@@ -265,8 +319,6 @@ def test_calculation_of_gestational_age():
         assert df.at[person, 'ps_gestational_age_in_weeks'] == (foetal_age_weeks + 2)
 
 
-# todo: still true? (asif)
-@pytest.mark.slow
 def test_application_of_risk_of_twin_pregnancy():
     """Runs the simulation with the core modules, all reproductive age women as pregnant and forces all pregnancies to
     be twins. Other functionality related to or dependent upon twin birth is tested in respective module test files"""
@@ -297,8 +349,6 @@ def test_application_of_risk_of_twin_pregnancy():
     assert df.loc[women.index, 'ps_multiple_pregnancy'].all().all()
 
 
-# todo: still true? (asif)
-@pytest.mark.slow
 def test_spontaneous_abortion_ends_pregnancies_as_expected():
     """Test to check that risk of spontaneous abortion is applied as expected within the population and leads to the
     end of pregnancy"""
@@ -490,8 +540,6 @@ def test_abortion_complications():
     check_abortion_logic('induced')
 
 
-# todo: still true? (asif)
-@pytest.mark.slow
 def test_still_births_ends_pregnancies_as_expected():
     """Runs the simulation with the core modules and all women of reproductive age as pregnant. Sets antenatal still
     birth risk to 1 and runs checks """
