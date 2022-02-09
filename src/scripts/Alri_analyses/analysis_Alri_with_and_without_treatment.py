@@ -19,6 +19,7 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     symptommanager,
+    simplified_births
 )
 
 # %%
@@ -43,7 +44,7 @@ popsize = 5000
 for label, service_avail in scenarios.items():
 
     log_config = {
-        "filename": "alri_with_treatment",
+        "filename": "alri_with_treatment_and_without_treatment",
         "directory": "./outputs",
         "custom_levels": {
             "*": logging.WARNING,
@@ -51,16 +52,27 @@ for label, service_avail in scenarios.items():
             "tlo.methods.demography": logging.INFO,
         }
     }
+
+    if service_avail == []:
+        _disable = False
+        _disable_and_reject_all = True
+    else:
+        _disable = True
+        _disable_and_reject_all = False
+
+    # add file handler for the purpose of logging
     sim = Simulation(start_date=start_date, log_config=log_config, show_progress_bar=True)
 
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  disable=_disable,
+                                  disable_and_reject_all=_disable_and_reject_all),
 
         alri.Alri(resourcefilepath=resourcefilepath),
         alri.AlriPropertiesOfOtherModules()
