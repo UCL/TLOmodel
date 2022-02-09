@@ -8,7 +8,7 @@ co-infection infection) that can cause one of two types of acute lower respirato
 The disease is manifested as either pneumonia or other alri including bronchiolitis.
 
 During an episode (prior to recovery - either naturally or cured with treatment), symptom are manifest and there may be
-complications (e.g. local pulmonary complication: pleural effusuion, empyema, lung abscess, pneumothorax; and/or
+complications (e.g. local pulmonary complication: pleural effusion, empyema, lung abscess, pneumothorax; and/or
 systemic complications: sepsis; and/or complications regarding oxygen exchange: hypoxaemia.
 The complications onset at the time of disease onset
 
@@ -48,7 +48,6 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
-from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date, sample_outcome
@@ -573,6 +572,11 @@ class Alri(Module):
                       'probability of relapse by day 14 on 5-day amoxicillin for non-severe pneumonia'
                       ),
         '1st_line_antibiotic_treatment_failure_by_day2':
+            Parameter(Types.REAL,
+                      'probability of treatment failure by day 2 '
+                      'of first line antibiotic treatment for severe pneumonia'
+                      ),
+        'prob_death_failed_1st_line_treatment':
             Parameter(Types.REAL,
                       'probability of treatment failure by day 2 '
                       'of first line antibiotic treatment for severe pneumonia'
@@ -1139,8 +1143,8 @@ class Alri(Module):
                         person_id=person_id,
                         module=self),
                     priority=0,
-                    topen=self.sim.date + DateOffset(days=1),  # Todo: ask Tim H about resecheduling the same HSI by 1 day
-                    tclose=None)
+                    topen=self.sim.date + DateOffset(days=1),
+                    tclose=None)  # Todo: ask Tim H about resecheduling the same HSI by 1 day
 
         # IMCI common cold - do nothing
         elif classification in ['cough_or_cold', 'cough_or_difficult_breathing']:
@@ -1253,14 +1257,14 @@ class Alri(Module):
             if p['1st_line_antibiotic_treatment_failure_by_day2'] > self.rng.rand():
                 df.at[person_id, 'ri_treatment_failure_or_relapse'] = True
                 # Change to 2nd line antibiotics
-                if hsi_event.get_consumables(
-                    item_codes=self.consumables_used_in_hsi['2nd_line_Antibiotic_Therapy_for_Severe_Pneumonia'],
-                        return_individual_results=True):
+                hsi_event.get_consumables(
+                    item_codes=self.consumables_used_in_hsi['2nd_line_Antibiotic_Therapy_for_Severe_Pneumonia'])
+                # apply mortality in children who failed 1st line treatment
+                if (1 - p['prob_death_failed_1st_line_treatment']) > self.rng.rand():
                     # Cancel the death
                     self.cancel_death_and_schedule_cure(person_id)
                 else:
-                    return  # let them go through death or nat recovery
-
+                    return  # let them go through natural death (or nat recovery)
             else:
                 df.at[person_id, 'ri_treatment_failure_or_relapse'] = False
 
@@ -1290,7 +1294,8 @@ class Alri(Module):
             'ri_start_of_current_episode': pd.NaT,
             'ri_scheduled_recovery_date': pd.NaT,
             'ri_scheduled_death_date': pd.NaT,
-            'ri_ALRI_tx_start_date': pd.NaT
+            'ri_ALRI_tx_start_date': pd.NaT,
+            'ri_treatment_failure_or_relapse': False
         }
         df.loc[person_id, new_properties.keys()] = new_properties.values()
 
