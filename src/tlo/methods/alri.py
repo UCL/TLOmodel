@@ -460,6 +460,10 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of difficulty breathing in pneumonia'
                       ),
+        'prob_fever_in_pneumonia':
+            Parameter(Types.REAL,
+                      'probability of fever in pneumonia'
+                      ),
         'prob_chest_indrawing_in_pneumonia':
             Parameter(Types.REAL,
                       'probability of chest indrawing in pneumonia'
@@ -467,6 +471,12 @@ class Alri(Module):
         'prob_tachypnoea_in_pneumonia':
             Parameter(Types.REAL,
                       'probability of tachypnoea in pneumonia'
+                      ),
+        'prob_danger_signs_in_pneumonia':
+            Parameter(Types.REAL,
+                      'probability of any danger sign in pneumonia, including: : unable to drink, convulsions, '
+                      'cyanosis, head nodding/bobbing, irritability, abnormally sleepy, lethargy, '
+                      'nasal flaring, grunting'
                       ),
         'prob_cough_in_other_alri':
             Parameter(Types.REAL,
@@ -476,6 +486,10 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of difficulty breathing in bronchiolitis or other alri'
                       ),
+        'prob_fever_in_other_alri':
+            Parameter(Types.REAL,
+                      'probability of fever in bronchiolitis or other alri'
+                      ),
         'prob_tachypnoea_in_other_alri':
             Parameter(Types.REAL,
                       'probability of tachypnoea in bronchiolitis or other alri'
@@ -483,6 +497,10 @@ class Alri(Module):
         'prob_chest_indrawing_in_other_alri':
             Parameter(Types.REAL,
                       'probability of chest wall indrawing in bronchiolitis or other alri'
+                      ),
+        'prob_danger_signs_in_other_alri':
+            Parameter(Types.REAL,
+                      'probability of any danger signs in bronchiolitis or other alri'
                       ),
         'prob_danger_signs_in_sepsis':
             Parameter(Types.REAL,
@@ -503,14 +521,6 @@ class Alri(Module):
         'prob_chest_indrawing_in_SpO2_90-92%':
             Parameter(Types.REAL,
                       'probability of chest indrawing in children with SpO2 between 90-92%'
-                      ),
-        'prob_danger_signs_in_pulmonary_complications':
-            Parameter(Types.REAL,
-                      'probability of danger signs in children with pulmonary complications'
-                      ),
-        'prob_chest_indrawing_in_pulmonary_complications':
-            Parameter(Types.REAL,
-                      'probability of chest indrawing in children with pulmonary complications'
                       ),
 
         # Parameters governing the effects of vaccine ----------------
@@ -695,7 +705,7 @@ class Alri(Module):
     def define_symptoms(self):
         """Define the symptoms that this module will use"""
         all_symptoms = {
-            'cough', 'difficult_breathing', 'tachypnoea', 'chest_indrawing', 'danger_signs'
+            'cough', 'difficult_breathing', 'fever', 'tachypnoea', 'chest_indrawing', 'danger_signs'
         }
 
         for symptom_name in sorted(all_symptoms):
@@ -1631,7 +1641,7 @@ class Models:
         probs = {
             symptom: p[f'prob_{symptom}_in_{disease_type}']
             for symptom in [
-                'cough', 'difficult_breathing', 'tachypnoea', 'chest_indrawing']
+                'cough', 'difficult_breathing', 'fever', 'tachypnoea', 'chest_indrawing', 'danger_signs']
         }
 
         # determine which symptoms are onset:
@@ -1645,18 +1655,7 @@ class Models:
 
         probs = defaultdict(float)
 
-        if complication == 'sepsis':
-            probs = {
-                'danger_signs': p['prob_danger_signs_in_sepsis']
-            }
-
-        elif complication in ['pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess']:
-            probs = {
-                'danger_signs': p['prob_danger_signs_in_pulmonary_complications'],
-                'chest_indrawing': p['prob_chest_indrawing_in_pulmonary_complications']
-            }
-
-        elif complication == 'hypoxaemia':
+        if complication == 'hypoxaemia':
             if oxygen_saturation == '<90%':
                 probs = {
                     'danger_signs': p['prob_danger_signs_in_SpO2<90%'],
@@ -1667,6 +1666,11 @@ class Models:
                     'danger_signs': p['prob_danger_signs_in_SpO2_90-92%'],
                     'chest_indrawing': p['prob_chest_indrawing_in_SpO2_90-92%']
                 }
+
+        elif complication == 'sepsis':
+            probs = {
+                'danger_signs': p['prob_danger_signs_in_sepsis']
+            }
 
         # determine which symptoms are onset:
         symptoms = {s for s, p in probs.items() if p > self.rng.rand()}

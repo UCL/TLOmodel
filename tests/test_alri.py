@@ -9,7 +9,6 @@ import pytest
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.lm import LinearModel
 from tlo.methods import (
     alri,
     demography,
@@ -794,9 +793,17 @@ def test_use_of_HSI_GenericFirstApptAtFacilityLevel0(tmpdir):
     hsi = HSI_GenericFirstApptAtFacilityLevel0(person_id=person_id, module=sim.modules['HealthSeekingBehaviour'])
     hsi.run(squeeze_factor=0.0)
 
-    # Check that person is now on treatment:
-    assert df.at[person_id, 'ri_on_treatment']
-    assert sim.date == df.at[person_id, 'ri_ALRI_tx_start_date']
+    # get the classification for the disease
+    for availability in [True, False]:
+        classification = sim.modules['Alri'].imci_pneumonia_classification(
+            person_id, hsi_event=hsi, oximeter_available=availability)
+        assert classification is not None
+
+    if classification != 'cough_or_cold':
+
+        # Check that person is now on treatment:
+        assert df.at[person_id, 'ri_on_treatment']
+        assert sim.date == df.at[person_id, 'ri_ALRI_tx_start_date']
 
 
 def test_use_HSI_level_1_and_2(tmpdir):
@@ -837,6 +844,7 @@ def test_use_HSI_level_1_and_2(tmpdir):
 
     for hsi in [hsi_generic_level1b, hsi_imci_level1, hsi_imci_level2]:
         hsi.run(squeeze_factor=0.0)
+
         # Check that person is now on treatment:
         assert df.at[person_id, 'ri_on_treatment']
         assert sim.date == df.at[person_id, 'ri_ALRI_tx_start_date']
