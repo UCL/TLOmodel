@@ -130,7 +130,7 @@ class Alri(Module):
     # Declare the disease types:
     disease_types = sorted({
         'pneumonia',
-        'bronchiolitis/other_alri'
+        'other_alri'
     })
 
     # Declare the Alri complications:
@@ -387,7 +387,7 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of hypoxaemia in pneumonia cases'
                       ),
-        'prob_hypoxaemia_in_bronchiolitis/other_alri':
+        'prob_hypoxaemia_in_other_alri':
             Parameter(Types.REAL,
                       'probability of hypoxaemia in bronchiolitis and other alri cases'
                       ),
@@ -468,19 +468,19 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of tachypnoea in pneumonia'
                       ),
-        'prob_cough_in_bronchiolitis/other_alri':
+        'prob_cough_in_other_alri':
             Parameter(Types.REAL,
                       'probability of cough in bronchiolitis or other alri'
                       ),
-        'prob_difficult_breathing_in_bronchiolitis/other_alri':
+        'prob_difficult_breathing_in_other_alri':
             Parameter(Types.REAL,
                       'probability of difficulty breathing in bronchiolitis or other alri'
                       ),
-        'prob_tachypnoea_in_bronchiolitis/other_alri':
+        'prob_tachypnoea_in_other_alri':
             Parameter(Types.REAL,
                       'probability of tachypnoea in bronchiolitis or other alri'
                       ),
-        'prob_chest_indrawing_in_bronchiolitis/other_alri':
+        'prob_chest_indrawing_in_other_alri':
             Parameter(Types.REAL,
                       'probability of chest wall indrawing in bronchiolitis or other alri'
                       ),
@@ -1525,7 +1525,7 @@ class Models:
          """
         p = self.p
 
-        # Determine the disease type - pneumonia or bronchiolitis/other_alri
+        # Determine the disease type - pneumonia or other_alri
         if (
             (age < 1) and (p[f'proportion_pneumonia_in_{pathogen}_ALRI'][0] > self.rng.rand())
         ) or (
@@ -1533,7 +1533,7 @@ class Models:
         ):
             disease_type = 'pneumonia'
         else:
-            disease_type = 'bronchiolitis/other_alri'
+            disease_type = 'other_alri'
 
         # Determine bacterial-coinfection
         if pathogen in self.module.pathogens['viral']:
@@ -1603,8 +1603,8 @@ class Models:
 
             probs['hypoxaemia'] += p['prob_hypoxaemia_in_pneumonia']
 
-        elif disease_type == 'bronchiolitis/other_alri':
-            probs['hypoxaemia'] += p['prob_hypoxaemia_in_bronchiolitis/other_alri']
+        elif disease_type == 'other_alri':
+            probs['hypoxaemia'] += p['prob_hypoxaemia_in_other_alri']
 
         # determine which complications are onset:
         complications = {c for c, p in probs.items() if p > self.rng.rand()}
