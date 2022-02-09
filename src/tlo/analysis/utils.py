@@ -541,21 +541,10 @@ class LogsDict(dict):
         return True if k in self.logfile_names_and_paths else KeyError
 
     def items(self):
-        # parse each module-specific log file and collect the results into a single dictionary. metadata about each log
-        # is returned in the same key '_metadata', so it needs to be collected separately and then merged back in.
-        all_module_logs = dict()
-        metadata = dict()
+        # parse module-specific log file and return results as a generator
         for key, file_handle in self.logfile_names_and_paths.items():
             module_specific_logs = _parse_log_file_inner_loop(file_handle.name)
-            all_module_logs.update(module_specific_logs)
-            # sometimes there is nothing to be parsed at a given level, so no metadata
-            if '_metadata' in module_specific_logs:
-                metadata.update(module_specific_logs['_metadata'])
-
-            if len(metadata) > 0:
-                all_module_logs['_metadata'] = metadata
-
-            yield key, all_module_logs
+            yield key, module_specific_logs
 
     def update(self, *args, **kwargs):
         raise NotImplementedError
