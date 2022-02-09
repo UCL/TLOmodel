@@ -949,13 +949,11 @@ class Alri(Module):
             """Based on symptoms presented, classify WHO-pneumonia severity at each facility level."""
 
             # ----- For children over 2 months and under 5 years of age -----
-            if (df.at[person_id, 'age_exact_years'] >= 1/6) & (df.at[person_id, 'age_exact_years'] < 5):
-
-                # common cold / no pneumonia - the same across all facility levels
-                if (('cough' in symptoms) or ('difficult_breathing' in symptoms)) and (
-                    ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
-                        ('danger_signs' not in symptoms)):
-                    return 'cough_or_cold'
+            if (df.at[person_id, 'age_exact_years'] >= 1/6) & (df.at[person_id, 'age_exact_years'] <= 5):
+                # NOTE: I put age <=5 years of age because as the pooling event occurs every 2 months,
+                # so when the child gets ALRI they may be 5 years of age.
+                # Otherwise this will have the assert error 'no treatment_plan recognised for None',
+                # as they wont be given a classification
 
                 # iCCM classifications - HSAs in level 0 ---------------------------------------------------
                 if facility_level == '0':
@@ -1003,9 +1001,12 @@ class Alri(Module):
                 elif facility_level in ['1a', '1b', '2']:
                     if ('tachypnoea' in symptoms) or ('chest_indrawing' in symptoms) or ('danger_signs' in symptoms):
                         return 'very_severe_disease'
-                    else:
+                    elif (('cough' in symptoms) or ('difficult_breathing' in symptoms)) and (
+                        ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
+                            ('danger_signs' not in symptoms)):
                         return 'cough_or_difficult_breathing'
-                        # raise ValueError('classification for young infant is not recognised')
+                    else:
+                        raise ValueError(f'classification not recognised for symptoms: {symptoms}')
                 else:
                     raise ValueError(f'facility_level {facility_level} is not recognised')
 
@@ -1150,7 +1151,9 @@ class Alri(Module):
         elif classification in ['cough_or_cold', 'cough_or_difficult_breathing']:
             return
         else:
-            raise ValueError(f'no treatment_plan recognised for {classification}')
+            age = df.at[person_id, 'age_exact_years']
+            raise ValueError(f'no treatment_plan recognised for classification: {classification} '
+                             f'with symptoms: {symptoms}, with age {age}')
 
     def assess_and_classify_cough_or_difficult_breathing_level2(self, person_id, hsi_event):
         """This routine is called when cough or difficulty breathing is a symptom for a child attending
