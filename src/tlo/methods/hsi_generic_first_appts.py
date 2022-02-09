@@ -59,13 +59,8 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
             if 'RTI' in self.sim.modules:
                 # change the appointment footprint for general injuries if diagnostic equipment is needed
                 df = self.sim.population.props
-                injuries_requiring_imaging = ['112', '113', '211', '212', '412', '414', '612', '712a', '712b', '712c',
-                                              '811', '812', '813a', '813b', '813c', '822a', '822b', '813bo', '813co',
-                                              '813do', '813eo', '673', '674', '675', '676', '322', '323', '722', '342',
-                                              '343', '441', '443', '453', '133', '134', '135', '552', '553', '554',
-                                              '342', '343', '441', '443', '453', '361', '363', '461', '463']
                 persons_injuries = df.loc[person_id, self.sim.modules['RTI'].INJURY_COLUMNS]
-                if len(set(injuries_requiring_imaging).intersection(persons_injuries)) > 0:
+                if len(set(self.sim.modules['RTI'].INJURIES_REQ_IMAGING).intersection(persons_injuries)) > 0:
                     self.sim.modules['RTI'].rti_ask_for_imaging(person_id)
                 if df.loc[person_id, 'rt_in_shock']:
                     self.sim.modules['RTI'].rti_ask_for_shock_treatment(person_id)
@@ -470,16 +465,13 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             if pd.isnull(df.at[person_id, 'cause_of_death']) and not df.at[person_id, 'rt_diagnosed']:
                 if df.at[person_id, 'rt_in_shock']:
                     road_traffic_injuries.rti_ask_for_shock_treatment(person_id)
-                get_item_code = sim.modules['HealthSystem'].get_item_code_from_item_name
 
-                columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                           'rt_injury_7', 'rt_injury_8']
-                persons_injuries = df.loc[[person_id], columns]
+                persons_injuries = df.loc[[person_id], sim.modules['RTI'].INJURY_COLUMNS]
 
                 # Request multiple x-rays here, note that the diagradio requirement for the appointment footprint
                 # is dealt with in the RTI module itself.
-                fracture_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
-                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, fracture_codes)
+                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries,
+                                                                                sim.modules['RTI'].FRACTURE_CODES)
                 if counts >= 1:
                     get_item_code = sim.modules['HealthSystem'].get_item_code_from_item_name
                     xray_code = get_item_code("Monochromatic blue senstive X-ray Film, screen SizeSize: 30cm x 40cm")
