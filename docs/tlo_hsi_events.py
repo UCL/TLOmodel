@@ -1,8 +1,10 @@
 """Generate formatted description of health system interaction event details."""
 
 import argparse
+import csv
 import importlib
 import inspect
+import io
 import json
 import os.path
 import pkgutil
@@ -232,6 +234,38 @@ def _format_treatment_id(treatment_id, module_name, inline_code_formatter):
     return inline_code_formatter(treatment_id)
 
 
+def format_hsi_event_details_as_csv(
+    hsi_event_details: Iterable[HSIEventDetails]
+) -> str:
+    """Format HSI event details list as comma-separated value string."""
+    with io.StringIO(newline="") as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow([
+            'Module',
+            'Event',
+            'Treatment',
+            'Facility level',
+            'Appointment footprint',
+            'Bed days footprint'
+        ])
+        for event_details in hsi_event_details:
+            writer.writerow(
+                [
+                    event_details.module_name,
+                    event_details.event_name,
+                    event_details.treatment_id,
+                    event_details.facility_level,
+                    _format_appt_footprint(
+                        event_details.appt_footprint, lambda s: s
+                    ),
+                    _format_beddays_footprint(
+                        event_details.beddays_footprint, lambda s: s
+                    )
+                ]
+            )
+        return csv_file.getvalue()
+
+
 def format_hsi_event_details_as_table(
     hsi_event_details: Iterable[HSIEventDetails],
     text_format: str = 'rst'
@@ -382,7 +416,7 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--output-format',
-        choices=('rst-list', 'rst-table', 'md-list', 'md-table', 'json'),
+        choices=('rst-list', 'rst-table', 'md-list', 'md-table', 'csv', 'json'),
         help="Format to use for output.",
         default='rst-list'
     )
@@ -442,6 +476,7 @@ if __name__ == '__main__':
         'rst-table': lambda details: format_hsi_event_details_as_table(details, 'rst'),
         'md-list': lambda details: format_hsi_event_details_as_list(details, 'md'),
         'md-table': lambda details: format_hsi_event_details_as_table(details, 'md'),
+        'csv': lambda details: format_hsi_event_details_as_csv(details),
         'json': lambda details: json.dumps(details, indent=4)
     }
     formatted_details = formatters[args.output_format](sorted_hsi_event_details)
