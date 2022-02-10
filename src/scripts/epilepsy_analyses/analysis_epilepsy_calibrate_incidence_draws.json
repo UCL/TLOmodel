@@ -1,0 +1,54 @@
+{
+  "scenario_script_path": "src/scripts/epilepsy_analyses/analysis_epilepsy_calibrate_incidence.py",
+  "scenario_seed": 12,
+  "runs_per_draw": 3,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 662124363,
+      "parameters": {
+        "Epilepsy": {
+          "base_3m_prob_epilepsy": 0.35
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 1916507803,
+      "parameters": {
+        "Epilepsy": {
+          "base_3m_prob_epilepsy": 0.425
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 1031005574,
+      "parameters": {
+        "Epilepsy": {
+          "base_3m_prob_epilepsy": 0.5
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 1603685629,
+      "parameters": {
+        "Epilepsy": {
+          "base_3m_prob_epilepsy": 0.575
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 1130929393,
+      "parameters": {
+        "Epilepsy": {
+          "base_3m_prob_epilepsy": 0.65
+        }
+      }
+    }
+  ],
+  "commit": "a6910fb7b1c2ec44f223777f6ca5df34a196906c",
+  "github": "https://github.com/UCL/TLOmodel/blob/a6910fb7b1c2ec44f223777f6ca5df34a196906c/src/scripts/epilepsy_analyses/analysis_epilepsy_calibrate_incidence.py"
+}
