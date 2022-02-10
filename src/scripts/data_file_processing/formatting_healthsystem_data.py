@@ -36,6 +36,7 @@ The tables generated is listed below:
   Scenario 'funded' -> appt_have_or_miss_capability
   Scenario 'funded_plus' -> appt_have_or_miss_capability
 """
+# Task: incorporate the new version of human-resources input data
 
 from pathlib import Path
 
