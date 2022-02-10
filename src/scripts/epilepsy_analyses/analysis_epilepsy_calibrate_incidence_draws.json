@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "src/scripts/epilepsy_analyses/analysis_epilepsy_calibrate_incidence.py",
+  "scenario_script_path": "C:\\/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/epilepsy_analyses/analysis_epilepsy_calibrate_incidence.py",
   "scenario_seed": 12,
   "runs_per_draw": 3,
   "draws": [
@@ -8,7 +8,27 @@
       "draw_seed": 662124363,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.35
+          "base_3m_prob_epilepsy": 0.0015,
+          "init_epil_seiz_status": [
+            0.9875,
+            0.004,
+            0.008,
+            0.0005
+          ],
+          "init_prop_antiepileptic_seiz_stat_1": 0.25,
+          "init_prop_antiepileptic_seiz_stat_2": 0.3,
+          "init_prop_antiepileptic_seiz_stat_3": 0.3,
+          "rr_epilepsy_age_ge20": 0.3,
+          "prop_inc_epilepsy_seiz_freq": 0.1,
+          "rr_effectiveness_antiepileptics": 5.0,
+          "base_prob_3m_seiz_stat_freq_infreq": 0.005,
+          "base_prob_3m_seiz_stat_infreq_freq": 0.05,
+          "base_prob_3m_seiz_stat_none_freq": 0.05,
+          "base_prob_3m_seiz_stat_none_infreq": 0.05,
+          "base_prob_3m_seiz_stat_infreq_none": 0.005,
+          "base_prob_3m_stop_antiepileptic": 0.1,
+          "rr_stop_antiepileptic_seiz_infreq_or_freq": 0.5,
+          "base_prob_3m_epi_death": 0.001
         }
       }
     },
@@ -17,7 +37,27 @@
       "draw_seed": 1916507803,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.425
+          "base_3m_prob_epilepsy": 0.12649999999999997,
+          "init_epil_seiz_status": [
+            0.9875,
+            0.004,
+            0.008,
+            0.0005
+          ],
+          "init_prop_antiepileptic_seiz_stat_1": 0.25,
+          "init_prop_antiepileptic_seiz_stat_2": 0.3,
+          "init_prop_antiepileptic_seiz_stat_3": 0.3,
+          "rr_epilepsy_age_ge20": 0.3,
+          "prop_inc_epilepsy_seiz_freq": 0.1,
+          "rr_effectiveness_antiepileptics": 5.0,
+          "base_prob_3m_seiz_stat_freq_infreq": 0.005,
+          "base_prob_3m_seiz_stat_infreq_freq": 0.05,
+          "base_prob_3m_seiz_stat_none_freq": 0.05,
+          "base_prob_3m_seiz_stat_none_infreq": 0.05,
+          "base_prob_3m_seiz_stat_infreq_none": 0.005,
+          "base_prob_3m_stop_antiepileptic": 0.1,
+          "rr_stop_antiepileptic_seiz_infreq_or_freq": 0.5,
+          "base_prob_3m_epi_death": 0.001
         }
       }
     },
@@ -26,7 +66,27 @@
       "draw_seed": 1031005574,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.5
+          "base_3m_prob_epilepsy": 0.25149999999999995,
+          "init_epil_seiz_status": [
+            0.9875,
+            0.004,
+            0.008,
+            0.0005
+          ],
+          "init_prop_antiepileptic_seiz_stat_1": 0.25,
+          "init_prop_antiepileptic_seiz_stat_2": 0.3,
+          "init_prop_antiepileptic_seiz_stat_3": 0.3,
+          "rr_epilepsy_age_ge20": 0.3,
+          "prop_inc_epilepsy_seiz_freq": 0.1,
+          "rr_effectiveness_antiepileptics": 5.0,
+          "base_prob_3m_seiz_stat_freq_infreq": 0.005,
+          "base_prob_3m_seiz_stat_infreq_freq": 0.05,
+          "base_prob_3m_seiz_stat_none_freq": 0.05,
+          "base_prob_3m_seiz_stat_none_infreq": 0.05,
+          "base_prob_3m_seiz_stat_infreq_none": 0.005,
+          "base_prob_3m_stop_antiepileptic": 0.1,
+          "rr_stop_antiepileptic_seiz_infreq_or_freq": 0.5,
+          "base_prob_3m_epi_death": 0.001
         }
       }
     },
@@ -35,7 +95,27 @@
       "draw_seed": 1603685629,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.575
+          "base_3m_prob_epilepsy": 0.37649999999999995,
+          "init_epil_seiz_status": [
+            0.9875,
+            0.004,
+            0.008,
+            0.0005
+          ],
+          "init_prop_antiepileptic_seiz_stat_1": 0.25,
+          "init_prop_antiepileptic_seiz_stat_2": 0.3,
+          "init_prop_antiepileptic_seiz_stat_3": 0.3,
+          "rr_epilepsy_age_ge20": 0.3,
+          "prop_inc_epilepsy_seiz_freq": 0.1,
+          "rr_effectiveness_antiepileptics": 5.0,
+          "base_prob_3m_seiz_stat_freq_infreq": 0.005,
+          "base_prob_3m_seiz_stat_infreq_freq": 0.05,
+          "base_prob_3m_seiz_stat_none_freq": 0.05,
+          "base_prob_3m_seiz_stat_none_infreq": 0.05,
+          "base_prob_3m_seiz_stat_infreq_none": 0.005,
+          "base_prob_3m_stop_antiepileptic": 0.1,
+          "rr_stop_antiepileptic_seiz_infreq_or_freq": 0.5,
+          "base_prob_3m_epi_death": 0.001
         }
       }
     },
@@ -44,11 +124,29 @@
       "draw_seed": 1130929393,
       "parameters": {
         "Epilepsy": {
-          "base_3m_prob_epilepsy": 0.65
+          "base_3m_prob_epilepsy": 0.5015,
+          "init_epil_seiz_status": [
+            0.9875,
+            0.004,
+            0.008,
+            0.0005
+          ],
+          "init_prop_antiepileptic_seiz_stat_1": 0.25,
+          "init_prop_antiepileptic_seiz_stat_2": 0.3,
+          "init_prop_antiepileptic_seiz_stat_3": 0.3,
+          "rr_epilepsy_age_ge20": 0.3,
+          "prop_inc_epilepsy_seiz_freq": 0.1,
+          "rr_effectiveness_antiepileptics": 5.0,
+          "base_prob_3m_seiz_stat_freq_infreq": 0.005,
+          "base_prob_3m_seiz_stat_infreq_freq": 0.05,
+          "base_prob_3m_seiz_stat_none_freq": 0.05,
+          "base_prob_3m_seiz_stat_none_infreq": 0.05,
+          "base_prob_3m_seiz_stat_infreq_none": 0.005,
+          "base_prob_3m_stop_antiepileptic": 0.1,
+          "rr_stop_antiepileptic_seiz_infreq_or_freq": 0.5,
+          "base_prob_3m_epi_death": 0.001
         }
       }
     }
-  ],
-  "commit": "a6910fb7b1c2ec44f223777f6ca5df34a196906c",
-  "github": "https://github.com/UCL/TLOmodel/blob/a6910fb7b1c2ec44f223777f6ca5df34a196906c/src/scripts/epilepsy_analyses/analysis_epilepsy_calibrate_incidence.py"
+  ]
 }

@@ -58,14 +58,12 @@ class TestScenario(BaseScenario):
         init_prop_antiepileptic_seiz_stat_3 = 0.3
         rr_epilepsy_age_ge20 = 0.3
         prop_inc_epilepsy_seiz_freq = 0.1
-        rr_effectiveness_antiepileptics = 5
+        rr_effectiveness_antiepileptics = 5.0
         base_prob_3m_seiz_stat_freq_infreq = 0.005
         base_prob_3m_seiz_stat_infreq_freq = 0.05
         base_prob_3m_seiz_stat_none_freq = 0.05
         base_prob_3m_seiz_stat_none_infreq = 0.05
         base_prob_3m_seiz_stat_infreq_none = 0.005
-        base_prob_3m_antiepileptic = 0.02
-        rr_antiepileptic_seiz_infreq = 0.8
         base_prob_3m_stop_antiepileptic = 0.1
         rr_stop_antiepileptic_seiz_infreq_or_freq = 0.5
         base_prob_3m_epi_death = 0.001
@@ -85,8 +83,6 @@ class TestScenario(BaseScenario):
                 'base_prob_3m_seiz_stat_none_freq': base_prob_3m_seiz_stat_none_freq,
                 'base_prob_3m_seiz_stat_none_infreq': base_prob_3m_seiz_stat_none_infreq,
                 'base_prob_3m_seiz_stat_infreq_none': base_prob_3m_seiz_stat_infreq_none,
-                'base_prob_3m_antiepileptic': base_prob_3m_antiepileptic,
-                'rr_antiepileptic_seiz_infreq': rr_antiepileptic_seiz_infreq,
                 'base_prob_3m_stop_antiepileptic': base_prob_3m_stop_antiepileptic,
                 'rr_stop_antiepileptic_seiz_infreq_or_freq': rr_stop_antiepileptic_seiz_infreq_or_freq,
                 'base_prob_3m_epi_death': base_prob_3m_epi_death
