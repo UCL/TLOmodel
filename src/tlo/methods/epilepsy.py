@@ -463,7 +463,7 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'n_antiep': n_antiep
                     })
 
-        individual = df.loc[[2]]
+        individual = df.loc[[5]]
 
         logger.info(key='individual_check', data=individual, description='following an individual through simulation')
 
