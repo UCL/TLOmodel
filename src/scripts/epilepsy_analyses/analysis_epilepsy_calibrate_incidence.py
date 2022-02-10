@@ -47,12 +47,15 @@ class TestScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        base_rate_min = 0.5 - 0.15
-        base_rate_max = 0.5 + 0.15
+        # Create parameters to vary
+        base_rate_min = 0.003 - 0.0015
+        base_rate_max = 0.5 + 0.0015
         base_rate_linspace = np.linspace(base_rate_min, base_rate_max, self.number_of_draws)
+        # Reset rest of modules parameters to default stated in the document in the return function
         return {
             'Epilepsy': {
-                'base_3m_prob_epilepsy': base_rate_linspace[draw_number]
+                'base_3m_prob_epilepsy': base_rate_linspace[draw_number],
+                'init_epil_seiz_status': []
             },
         }
 
