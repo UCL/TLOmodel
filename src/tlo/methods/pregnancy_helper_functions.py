@@ -109,97 +109,96 @@ def store_dalys_in_mni(individual_id, mni, mni_variable, date):
     mni[individual_id][mni_variable] = date
 
 
-def check_for_risk_of_death_from_cause(self, target, individual_id):
+def calculate_risk_of_death_from_causes(self, risks, causes):
+    """
+    This function calculates risk of death in the context of one or more 'death causing' complications in a mother of a
+    newborn. In addition it determines if the complication(s) will cause death or not. If death occurs the function
+    returns the primary cause of death (or False)
+    return: cause of death or False
+    """
+
+    result = 1.0
+    for cause in risks:
+        result *= (1.0 - risks[cause])
+
+    # result = 1.0 - math.prod(1.0 - [_cause for _cause in causes])
+
+    # If random draw is less that the total risk of death, she will die and the primary cause is then
+    # determined
+    if self.rng.random_sample() < (1.0 - result):
+        denominator = sum(risks.values())
+        probs = list()
+
+        # Cycle over each cause in the dictionary and divide CFR by the sum of the probabilities
+        for cause in risks:
+            risks[cause] = risks[cause] / denominator
+            probs.append(risks[cause])
+
+        # Now use the list of probabilities to conduct a weighted random draw to determine primary cause of death
+        cause_of_death = self.rng.choice(causes, p=probs)
+
+        # Return the primary cause of death so that it can be passed to the demography function
+        return cause_of_death
+    else:
+        # Return false if death will not occur
+        return False
+
+
+def check_for_risk_of_death_from_cause_maternal(self, individual_id):
     """
     This function calculates the risk of death associated with one or more causes being experience by an individual and
     determines if they will die and which of a number of competing cause is the primary cause of death
-    :param target: 'mother' or 'neonate
-    :param individual_id: individual_id of woman at risk of deaht
+    :param individual_id: individual_id of woman at risk of death
     return: cause of death or False
     """
     params = self.current_parameters
     df = self.sim.population.props
     mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-    nci = self.sim.modules['NewbornOutcomes'].newborn_care_info
 
     causes = list()
 
-    if target == 'mother':
-        mother = df.loc[individual_id]
+    mother = df.loc[individual_id]
 
-        if (mother.ps_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe']) or \
-           (mother.pn_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe']):
-            causes.append('severe_pre_eclampsia')
+    # Cycle through mothers properties to ascertain what she is at risk of death from and store in a list
 
-        if mother.ps_htn_disorders == 'eclampsia' or mother.pn_htn_disorders == 'eclampsia':
-            causes.append('eclampsia')
+    if (mother.ps_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe']) or \
+       (mother.pn_htn_disorders == 'severe_pre_eclamp' and mni[individual_id]['new_onset_spe']):
+        causes.append('severe_pre_eclampsia')
 
-        if mother.ps_antepartum_haemorrhage != 'none' or mother.la_antepartum_haem != 'none':
-            causes.append('antepartum_haemorrhage')
+    if mother.ps_htn_disorders == 'eclampsia' or mother.pn_htn_disorders == 'eclampsia':
+        causes.append('eclampsia')
 
-        if mother.ps_chorioamnionitis and (self == self.sim.modules['PregnancySupervisor']):
-            causes.append('antenatal_sepsis')
+    if (((mother.ps_antepartum_haemorrhage != 'none') or
+         (mother.la_antepartum_haem != 'none')) and (self != self.sim.modules['PostnatalSupervisor'])):
+        causes.append('antepartum_haemorrhage')
 
-        if mother.la_uterine_rupture:
-            causes.append('uterine_rupture')
+    if mother.ps_chorioamnionitis and (self == self.sim.modules['PregnancySupervisor']):
+        causes.append('antenatal_sepsis')
 
-        if mother.la_sepsis or ((self == self.sim.modules['Labour']) and mother.ps_chorioamnionitis and
-                                mother.ac_admitted_for_immediate_delivery != 'none'):
-            causes.append('intrapartum_sepsis')
+    if mother.la_uterine_rupture:
+        causes.append('uterine_rupture')
 
-        if mother.la_sepsis_pp or mother.pn_sepsis_late_postpartum:
-            causes.append('postpartum_sepsis')
+    if mother.la_sepsis or ((self == self.sim.modules['Labour']) and
+                            mother.ps_chorioamnionitis and mother.ac_admitted_for_immediate_delivery != 'none'):
+        causes.append('intrapartum_sepsis')
 
-        if mother.la_postpartum_haem:
-            causes.append('postpartum_haemorrhage')
+    if mother.la_sepsis_pp or mother.pn_sepsis_late_postpartum:
+        causes.append('postpartum_sepsis')
 
-        if mother.pn_postpartum_haem_secondary:
-            causes.append('secondary_postpartum_haemorrhage')
+    if mother.la_postpartum_haem:
+        causes.append('postpartum_haemorrhage')
 
-    elif target == 'neonate':
-        child = df.loc[individual_id]
+    if mother.pn_postpartum_haem_secondary:
+        causes.append('secondary_postpartum_haemorrhage')
 
-        if child.nb_early_onset_neonatal_sepsis or child.pn_sepsis_early_neonatal:
-            causes.append('early_onset_sepsis')
-
-        if child.pn_sepsis_late_neonatal:
-            causes.append('late_onset_sepsis')
-
-        if not nci[individual_id]['passed_through_week_one']:
-
-            if (child.nb_encephalopathy == 'mild_enceph' or
-                child.nb_encephalopathy == 'moderate_enceph' or
-               child.nb_encephalopathy == 'severe_enceph'):
-                causes.append('encephalopathy')
-
-            if (child.nb_not_breathing_at_birth and
-                (child.nb_encephalopathy == 'none') and
-               (not child.nb_preterm_respiratory_distress)):
-                causes.append('neonatal_respiratory_depression')
-
-            if child.nb_early_preterm or child.nb_late_preterm:
-                causes.append('preterm_other')
-
-            if child.nb_preterm_respiratory_distress:
-                causes.append('respiratory_distress_syndrome')
-
-            if self.congeintal_anomalies.has_all(individual_id, 'heart'):
-                causes.append('congenital_heart_anomaly')
-            if self.congeintal_anomalies.has_all(individual_id, 'limb_musc_skeletal'):
-                causes.append('limb_or_musculoskeletal_anomaly')
-            if self.congeintal_anomalies.has_all(individual_id, 'urogenital'):
-                causes.append('urogenital_anomaly')
-            if self.congeintal_anomalies.has_all(individual_id, 'digestive'):
-                causes.append('digestive_anomaly')
-            if self.congeintal_anomalies.has_all(individual_id, 'other'):
-                causes.append('other_anomaly')
-
+    # If this list is not empty, use either CFR parameters or linear models to calculate risk of death from each
+    # complication she is experiencing and store in a dictionary, using each cause as the key
     if causes:
         risks = dict()
+
         for cause in causes:
             if self == self.sim.modules['PregnancySupervisor']:
                 risk = {cause: params[f'prob_{cause}_death']}
-
                 risks.update(risk)
 
             elif self == self.sim.modules['Labour']:
@@ -213,7 +212,6 @@ def check_for_risk_of_death_from_cause(self, target, individual_id):
                         received_blood_transfusion=mni[individual_id]['received_blood_transfusion'],
                         mode_of_delivery=mni[individual_id]['mode_of_delivery'],
                         chorio_in_preg=mni[individual_id]['chorio_in_preg'])[individual_id]}
-
                 risks.update(risk)
 
             elif self == self.sim.modules['PostnatalSupervisor']:
@@ -222,43 +220,85 @@ def check_for_risk_of_death_from_cause(self, target, individual_id):
                    (df.at[individual_id, 'pn_anaemia_following_pregnancy'] != 'none'):
 
                     risk[cause] = risk[cause] * params['rr_death_from_pph_with_anaemia']
-
                 risks.update(risk)
 
-            elif self == self.sim.modules['NewbornOutcomes']:
+        # Call return the result from calculate_risk_of_death_from_causes function
+        return calculate_risk_of_death_from_causes(self, risks, causes)
 
-                if f'{cause}_death' in self.nb_linear_models.keys():
-                    risk = {cause: self.nb_linear_models[f'{cause}_death'].predict(
-                        df.loc[[individual_id]])[individual_id]}
-                else:
-                    risk = {cause: params[f'cfr_{cause}']}
+    else:
+        # if she is not at risk of death as she has no complications we return false to the module
+        return False
 
-                risks.update(risk)
 
-        # Calculate the total risk of death for all causes that are present
-        # result = 1.0 - math.prod(1.0 - [_cause for _cause in causes])
-        result = 1.0
-        for cause in risks:
-            result *= (1.0 - risks[cause])
+def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
+    """
+    This function calculates the risk of death associated with one or more causes being experience by an individual and
+    determines if they will die and which of a number of competing cause is the primary cause of death
+    :param individual_id: individual_id of woman at risk of death
+    return: cause of death or False
+    """
+    params = self.current_parameters
+    df = self.sim.population.props
+    nci = self.sim.modules['NewbornOutcomes'].newborn_care_info
 
-        # If random draw is less that the total risk of death, she will die and the primary cause is then
-        # determined
-        if self.rng.random_sample() < (1.0 - result):
-            denominator = sum(risks.values())
-            probs = list()
+    causes = list()
 
-            # Cycle over each cause in the dictionary and divide CFR by the sum of the probabilities
-            for cause in risks:
-                risks[cause] = risks[cause] / denominator
-                probs.append(risks[cause])
+    child = df.loc[individual_id]
 
-            # Now use the list of probabilities to conduct a weighted random draw to determine primary cause of death
-            cause_of_death = self.rng.choice(causes, p=probs)
+    # Cycle through Newborns properties to ascertain what she is at risk of death from and store in a list
+    if child.nb_early_onset_neonatal_sepsis or child.pn_sepsis_early_neonatal:
+        causes.append('early_onset_sepsis')
 
-            return cause_of_death
+    if child.pn_sepsis_late_neonatal:
+        causes.append('late_onset_sepsis')
 
-        else:
-            return False
+    # Risk of death for some complications is applied once, only in those who have yet to move to the postnatal module
+    if not nci[individual_id]['passed_through_week_one']:
+
+        if child.nb_encephalopathy != 'none':
+            causes.append('encephalopathy')
+
+        if ((child.nb_not_breathing_at_birth and
+             (child.nb_encephalopathy == 'none') and
+             not child.nb_preterm_respiratory_distress)):
+            causes.append('neonatal_respiratory_depression')
+
+        if child.nb_early_preterm or child.nb_late_preterm:
+            causes.append('preterm_other')
+
+        if child.nb_preterm_respiratory_distress:
+            causes.append('respiratory_distress_syndrome')
+
+        if self.congeintal_anomalies.has_all(individual_id, 'heart'):
+            causes.append('congenital_heart_anomaly')
+        if self.congeintal_anomalies.has_all(individual_id, 'limb_musc_skeletal'):
+            causes.append('limb_or_musculoskeletal_anomaly')
+        if self.congeintal_anomalies.has_all(individual_id, 'urogenital'):
+            causes.append('urogenital_anomaly')
+        if self.congeintal_anomalies.has_all(individual_id, 'digestive'):
+            causes.append('digestive_anomaly')
+        if self.congeintal_anomalies.has_all(individual_id, 'other'):
+            causes.append('other_anomaly')
+
+    # If this list is not empty, use either CFR parameters or linear models to calculate risk of death from each
+    # complication they experiencing and store in a dictionary, using each cause as the key
+    if causes:
+        risks = dict()
+        for cause in causes:
+            if f'{cause}_death' in self.nb_linear_models.keys():
+                risk = {cause: self.nb_linear_models[f'{cause}_death'].predict(
+                    df.loc[[individual_id]])[individual_id]}
+            else:
+                risk = {cause: params[f'cfr_{cause}']}
+
+            risks.update(risk)
+
+        # Return the result from calculate_risk_of_death_from_causes function (returns primary cause of death or False)
+        return calculate_risk_of_death_from_causes(self, risks, causes)
+
+    else:
+        # if they is not at risk of death as they has no complications we return False to the module
+        return False
 
 
 def update_mni_dictionary(self, individual_id):

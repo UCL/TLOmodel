@@ -630,123 +630,123 @@ class Labour(Module):
         get_list_of_items = pregnancy_helper_functions.get_list_of_items
 
         # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
-        self.item_codes_lab_consumables['iv_drug_equipment'] = get_list_of_items(self,
-            ['Cannula iv  (winged with injection pot) 20_each_CMST',
-             'IV giving/infusion set, with needle',
-             'Gloves, exam, latex, disposable, pair'])
+        self.item_codes_lab_consumables['iv_drug_equipment'] = \
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'IV giving/infusion set, with needle',
+                                     'Gloves, exam, latex, disposable, pair'])
 
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
-        self.item_codes_lab_consumables['blood_test_equipment'] = get_list_of_items(self,
-            ['Blood collecting tube, 5 ml',
-             'Syringe, needle + swab',
-             'Gloves, exam, latex, disposable, pair'])
+        self.item_codes_lab_consumables['blood_test_equipment'] =\
+            get_list_of_items(self, ['Blood collecting tube, 5 ml',
+                                     'Syringe, needle + swab',
+                                     'Gloves, exam, latex, disposable, pair'])
 
         # -------------------------------------------- DELIVERY ------------------------------------------------------
         # assuming CDK has blade, soap, cord tie
-        self.item_codes_lab_consumables['delivery_core'] = get_list_of_items(self,
-            ['Clean delivery kit',
-             'Chlorhexidine 1.5% solution_5_CMST'])
+        self.item_codes_lab_consumables['delivery_core'] =\
+            get_list_of_items(self, ['Clean delivery kit',
+                                     'Chlorhexidine 1.5% solution_5_CMST'])
 
-        self.item_codes_lab_consumables['delivery_optional'] = get_list_of_items(self,
-            ['Cannula iv  (winged with injection pot) 20_each_CMST',
-             'Apron, disposable, polythene_100_CMST',
-             'Gloves, exam, latex, disposable, pair',
-             'Gauze, swabs 8-ply 10cm x 10cm_100_CMST',
-             'Gauze pad, 10 x 10 cm, sterile',
-             'Cotton swab',
-             'Paracetamol 500mg_1000_CMST'])
+        self.item_codes_lab_consumables['delivery_optional'] = \
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'Apron, disposable, polythene_100_CMST',
+                                     'Gloves, exam, latex, disposable, pair',
+                                     'Gauze, swabs 8-ply 10cm x 10cm_100_CMST',
+                                     'Gauze pad, 10 x 10 cm, sterile',
+                                     'Cotton swab',
+                                     'Paracetamol 500mg_1000_CMST'])
 
         # -------------------------------------------- CAESAREAN DELIVERY ------------------------------------------
         # TODO: this package is incomplete?
         # todo: replace- halothane with thiopental
-        self.item_codes_lab_consumables['caesarean_delivery_core'] = get_list_of_items(self,
-            ['Halothane (fluothane)_250ml_CMST',
-             'Ceftriaxone 1g, PFR_each_CMST',
-             'Metronidazole 200mg_1000_CMST'])
+        self.item_codes_lab_consumables['caesarean_delivery_core'] =\
+            get_list_of_items(self, ['Halothane (fluothane)_250ml_CMST',
+                                     'Ceftriaxone 1g, PFR_each_CMST',
+                                     'Metronidazole 200mg_1000_CMST'])
 
-        self.item_codes_lab_consumables['caesarean_delivery_optional'] = get_list_of_items(self,
-            ['Cannula iv  (winged with injection pot) 20_each_CMST',
-             'Paracetamol 500mg _1000_CMST',
-             'Declofenac injection_each_CMST',
-             'Pethidine, 50 mg/ml, 2 ml ampoule',
-             'Foley catheter',
-             'Bag, urine, collecting, 2000 ml',
-             "Sodium lactate injection (Ringer's), 500 ml, with giving set",
-             'Sodium chloride, injectable solution, 0,9 %, 500 ml',
-             "Giving set iv administration + needle 15 drops/ml_each_CMST",
-             "Chlorhexidine 1.5% solution_5_CMST"])
+        self.item_codes_lab_consumables['caesarean_delivery_optional'] =\
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'Paracetamol 500mg _1000_CMST',
+                                     'Declofenac injection_each_CMST',
+                                     'Pethidine, 50 mg/ml, 2 ml ampoule',
+                                     'Foley catheter',
+                                     'Bag, urine, collecting, 2000 ml',
+                                     "Sodium lactate injection (Ringer's), 500 ml, with giving set",
+                                     'Sodium chloride, injectable solution, 0,9 %, 500 ml',
+                                     "Giving set iv administration + needle 15 drops/ml_each_CMST",
+                                     "Chlorhexidine 1.5% solution_5_CMST"])
 
         # -------------------------------------------- OBSTETRIC SURGERY ----------------------------------------------
         # TODO: this package may not be accurate yet
-        self.item_codes_lab_consumables['obstetric_surgery_core'] = get_list_of_items(self,
-            ['Halothane (fluothane)_250ml_CMST',
-             'Ceftriaxone 1g, PFR_each_CMST',
-             'Metronidazole 200mg_1000_CMST'])
+        self.item_codes_lab_consumables['obstetric_surgery_core'] = \
+            get_list_of_items(self, ['Halothane (fluothane)_250ml_CMST',
+                                     'Ceftriaxone 1g, PFR_each_CMST',
+                                     'Metronidazole 200mg_1000_CMST'])
 
-        self.item_codes_lab_consumables['obstetric_surgery_optional'] = get_list_of_items(self,
-            ['Cannula iv  (winged with injection pot) 20_each_CMST',
-             'Paracetamol 500mg _1000_CMST',
-             'Declofenac injection_each_CMST',
-             'Pethidine, 50 mg/ml, 2 ml ampoule',
-             'Foley catheter',
-             'Bag, urine, collecting, 2000 ml',
-             "Sodium lactate injection (Ringer's), 500 ml, with giving set",
-             'Sodium chloride, injectable solution, 0,9 %, 500 ml',
-             "Giving set iv administration + needle 15 drops/ml_each_CMST"])
+        self.item_codes_lab_consumables['obstetric_surgery_optional'] = \
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'Paracetamol 500mg _1000_CMST',
+                                     'Declofenac injection_each_CMST',
+                                     'Pethidine, 50 mg/ml, 2 ml ampoule',
+                                     'Foley catheter',
+                                     'Bag, urine, collecting, 2000 ml',
+                                     "Sodium lactate injection (Ringer's), 500 ml, with giving set",
+                                     'Sodium chloride, injectable solution, 0,9 %, 500 ml',
+                                     "Giving set iv administration + needle 15 drops/ml_each_CMST"])
 
         # -------------------------------------------- ABX FOR PROM -------------------------------------------------
-        self.item_codes_lab_consumables['abx_for_prom'] = get_list_of_items(self,
-            ['Benzathine benzylpenicillin, powder for injection, 2.4 million IU'])
+        self.item_codes_lab_consumables['abx_for_prom'] = \
+            get_list_of_items(self, ['Benzathine benzylpenicillin, powder for injection, 2.4 million IU'])
 
         # -------------------------------------------- ANTENATAL STEROIDS ---------------------------------------------
-        self.item_codes_lab_consumables['antenatal_steroids'] = get_list_of_items(self,
-            ['Dexamethasone 5mg/ml, 5ml_each_CMST',
-             'Betamethasone, 12 mg injection'])
+        self.item_codes_lab_consumables['antenatal_steroids'] = \
+            get_list_of_items(self, ['Dexamethasone 5mg/ml, 5ml_each_CMST',
+                                     'Betamethasone, 12 mg injection'])
 
         # -------------------------------------  INTRAVENOUS ANTIHYPERTENSIVES ---------------------------------------
-        self.item_codes_lab_consumables['iv_antihypertensives'] = get_list_of_items(self,
-            ['Hydralazine, powder for injection, 20 mg ampoule'])
+        self.item_codes_lab_consumables['iv_antihypertensives'] = \
+            get_list_of_items(self, ['Hydralazine, powder for injection, 20 mg ampoule'])
 
         # --------------------------------------- ORAL ANTIHYPERTENSIVES ---------------------------------------------
-        self.item_codes_lab_consumables['oral_antihypertensives'] = get_list_of_items(self,
-            ['Methyldopa 250mg_1000_CMST'])
+        self.item_codes_lab_consumables['oral_antihypertensives'] = \
+            get_list_of_items(self, ['Methyldopa 250mg_1000_CMST'])
 
         # ----------------------------------  SEVERE PRE-ECLAMPSIA/ECLAMPSIA  -----------------------------------------
-        self.item_codes_lab_consumables['magnesium_sulfate'] = get_list_of_items(self,
-            ['Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule'])
+        self.item_codes_lab_consumables['magnesium_sulfate'] = \
+            get_list_of_items(self, ['Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule'])
 
-        self.item_codes_lab_consumables['eclampsia_management_optional'] = get_list_of_items(self,
-            ['Misoprostol, tablet, 200 mcg',
-             'Oxytocin, injection, 10 IU in 1 ml ampoule',
-             'Sodium chloride, injectable solution, 0,9 %, 500 ml',
-             'Cannula iv  (winged with injection pot) 20_each_CMST',
-             'IV giving/infusion set, with needle',
-             'Gloves, exam, latex, disposable, pair',
-             'Oxygen, 1000 liters, primarily with oxygen cylinders',
-             'Complete blood count',
-             'Blood collecting tube, 5 ml',
-             'Syringe, needle + swab',
-             'Foley catheter',
-             'Bag, urine, collecting, 2000 ml'])
+        self.item_codes_lab_consumables['eclampsia_management_optional'] = \
+            get_list_of_items(self, ['Misoprostol, tablet, 200 mcg',
+                                     'Oxytocin, injection, 10 IU in 1 ml ampoule',
+                                     'Sodium chloride, injectable solution, 0,9 %, 500 ml',
+                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'IV giving/infusion set, with needle',
+                                     'Gloves, exam, latex, disposable, pair',
+                                     'Oxygen, 1000 liters, primarily with oxygen cylinders',
+                                     'Complete blood count',
+                                     'Blood collecting tube, 5 ml',
+                                     'Syringe, needle + swab',
+                                     'Foley catheter',
+                                     'Bag, urine, collecting, 2000 ml'])
 
         # -------------------------------------  OBSTRUCTED LABOUR  ---------------------------------------------------
-        self.item_codes_lab_consumables['obstructed_labour'] = get_list_of_items(self,
-            ['Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml',
-             'Ampicillin, powder for injection, 500 mg, vial',
-             'Gentamycin, injection, 40 mg/ml in 2 ml vial',
-             'Sodium chloride, injectable solution, 0,9 %, 500 ml',
-             'Cannula iv  (winged with injection pot) 20_each_CMST',
-             'IV giving/infusion set, with needle',
-             'Gloves, exam, latex, disposable, pair',
-             'Complete blood count',
-             'Blood collecting tube, 5 ml',
-             'Syringe, needle + swab',
-             'Foley catheter',
-             'Bag, urine, collecting, 2000 ml',
-             'Paracetamol 500mg _1000_CMST',
-             'Pethidine, 50 mg/ml, 2 ml ampoule',
-             'Gauze, swabs 8-ply 10cm x 10cm_100_CMST',
-             'Suture pack'])
+        self.item_codes_lab_consumables['obstructed_labour'] = \
+            get_list_of_items(self, ['Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml',
+                                     'Ampicillin, powder for injection, 500 mg, vial',
+                                     'Gentamycin, injection, 40 mg/ml in 2 ml vial',
+                                     'Sodium chloride, injectable solution, 0,9 %, 500 ml',
+                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'IV giving/infusion set, with needle',
+                                     'Gloves, exam, latex, disposable, pair',
+                                     'Complete blood count',
+                                     'Blood collecting tube, 5 ml',
+                                     'Syringe, needle + swab',
+                                     'Foley catheter',
+                                     'Bag, urine, collecting, 2000 ml',
+                                     'Paracetamol 500mg _1000_CMST',
+                                     'Pethidine, 50 mg/ml, 2 ml ampoule',
+                                     'Gauze, swabs 8-ply 10cm x 10cm_100_CMST',
+                                     'Suture pack'])
 
         # -------------------------------------  OBSTETRIC FORCEPS  ---------------------------------------------------
         self.item_codes_lab_consumables['forceps'] = get_list_of_items(self, ['Forceps, obstetric'])
@@ -756,23 +756,23 @@ class Labour(Module):
 
         # -------------------------------------  MATERNAL SEPSIS  -----------------------------------------------------
         # todo: helen allott recommended clindamycin but not available as IV
-        self.item_codes_lab_consumables['maternal_sepsis_core'] = get_list_of_items(self,
-            ['Ampicillin, powder for injection, 500 mg, vial',
-             'Gentamycin, injection, 40 mg/ml in 2 ml vial',
-             'Metronidazole, injection, 500 mg in 100 ml vial'])
+        self.item_codes_lab_consumables['maternal_sepsis_core'] =\
+            get_list_of_items(self, ['Ampicillin, powder for injection, 500 mg, vial',
+                                     'Gentamycin, injection, 40 mg/ml in 2 ml vial',
+                                     'Metronidazole, injection, 500 mg in 100 ml vial'])
 
-        self.item_codes_lab_consumables['maternal_sepsis_optional'] = get_list_of_items(self,
-            ['Cannula iv  (winged with injection pot) 20_each_CMST',
-             'Oxygen, 1000 liters, primarily with oxygen cylinders',
-             'Paracetamol, tablet, 500 mg',
-             'Giving set iv administration + needle 15 drops/ml_each_CMST',
-             'Foley catheter',
-             'Bag, urine, collecting, 2000 ml',
-             'Syringe, needle + swab',
-             'Gloves, exam, latex, disposable, pair',
-             'Complete blood count',
-             'Blood collecting tube, 5 ml',
-             'Syringe, needle + swab'])
+        self.item_codes_lab_consumables['maternal_sepsis_optional'] = \
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'Oxygen, 1000 liters, primarily with oxygen cylinders',
+                                     'Paracetamol, tablet, 500 mg',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Foley catheter',
+                                     'Bag, urine, collecting, 2000 ml',
+                                     'Syringe, needle + swab',
+                                     'Gloves, exam, latex, disposable, pair',
+                                     'Complete blood count',
+                                     'Blood collecting tube, 5 ml',
+                                     'Syringe, needle + swab'])
 
         # -------------------------------------  ACTIVE MANAGEMENT THIRD STAGE  ---------------------------------------
         self.item_codes_lab_consumables['amtsl'] = \
@@ -780,30 +780,28 @@ class Labour(Module):
 
         # -------------------------------------  POSTPARTUM HAEMORRHAGE  ---------------------------------------
         # TODO: helen allott recommended tranexamic acid - not availble
-        self.item_codes_lab_consumables['pph_core'] = get_list_of_items(self,
-            ['Oxytocin, injection, 10 IU in 1 ml ampoule',
-             'Misoprostol, tablet, 200 mcg'])
+        self.item_codes_lab_consumables['pph_core'] = \
+            get_list_of_items(self, ['Oxytocin, injection, 10 IU in 1 ml ampoule',
+                                     'Misoprostol, tablet, 200 mcg'])
 
-        self.item_codes_lab_consumables['pph_optional'] = get_list_of_items(self,
-            ['Pethidine, 50 mg/ml, 2 ml ampoule',
-             'Oxygen, 1000 liters, primarily with oxygen cylinders',
-             'Cannula iv  (winged with injection pot) 20_each_CMST',
-             'Bag, urine, collecting, 2000 ml',
-             'Foley catheter',
-             'Giving set iv administration + needle 15 drops/ml_each_CMST',
-             'Syringe, needle + swab',
-             'Gloves, exam, latex, disposable, pair',
-             'Complete blood count',
-             'Blood collecting tube, 5 ml',
-             'Syringe, needle + swab'])
+        self.item_codes_lab_consumables['pph_optional'] = \
+            get_list_of_items(self, ['Pethidine, 50 mg/ml, 2 ml ampoule',
+                                     'Oxygen, 1000 liters, primarily with oxygen cylinders',
+                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'Bag, urine, collecting, 2000 ml',
+                                     'Foley catheter',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Syringe, needle + swab',
+                                     'Gloves, exam, latex, disposable, pair',
+                                     'Complete blood count',
+                                     'Blood collecting tube, 5 ml',
+                                     'Syringe, needle + swab'])
 
         # -------------------------------------  BLOOD TRANSFUSION  ---------------------------------------
-        self.item_codes_lab_consumables['blood_transfusion'] = get_list_of_items(self,
-            ['Blood, one unit'])
+        self.item_codes_lab_consumables['blood_transfusion'] = get_list_of_items(self, ['Blood, one unit'])
 
         # ------------------------------------------ FULL BLOOD COUNT -------------------------------------------------
-        self.item_codes_lab_consumables['full_blood_count'] = get_list_of_items(self,
-            ['Complete blood count'])
+        self.item_codes_lab_consumables['full_blood_count'] = get_list_of_items(self, ['Complete blood count'])
 
         # ---------------------------------- IRON AND FOLIC ACID ------------------------------------------------------
         self.item_codes_lab_consumables['iron_folic_acid'] = \
@@ -1454,8 +1452,8 @@ class Labour(Module):
 
         # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
         # (either from one or multiple causes) and if death occurs returns the cause
-        potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause(
-            self, target='mother', individual_id=individual_id)
+        potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
+            self, individual_id=individual_id)
 
         # If a cause is returned death is scheduled
         if potential_cause_of_death:
@@ -2525,8 +2523,8 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
 
         # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
         # (either from one or multiple causes) and if death occurs returns the cause
-        potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause(
-            self.module, target='mother', individual_id=individual_id)
+        potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_maternal(
+            self.module, individual_id=individual_id)
 
         # If a cause is returned death is scheduled
         if potential_cause_of_death:

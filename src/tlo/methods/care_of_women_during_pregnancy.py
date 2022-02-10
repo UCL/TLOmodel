@@ -200,69 +200,65 @@ class CareOfWomenDuringPregnancy(Module):
         get_list_of_items = pregnancy_helper_functions.get_list_of_items
 
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
-        self.item_codes_preg_consumables['blood_test_equipment'] = get_list_of_items(
-            self,
-            ['Blood collecting tube, 5 ml',
-             'Syringe, needle + swab',
-             'Gloves, exam, latex, disposable, pair'])
+        self.item_codes_preg_consumables['blood_test_equipment'] = \
+            get_list_of_items(self, ['Blood collecting tube, 5 ml',
+                                     'Syringe, needle + swab',
+                                     'Gloves, exam, latex, disposable, pair'])
 
         # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
-        self.item_codes_preg_consumables['iv_drug_equipment'] = get_list_of_items(
-            self,
-            ['Cannula iv  (winged with injection pot) 20_each_CMST',
-             'IV giving/infusion set, with needle',
-             'Gloves, exam, latex, disposable, pair'])
+        self.item_codes_preg_consumables['iv_drug_equipment'] = \
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'IV giving/infusion set, with needle',
+                                     'Gloves, exam, latex, disposable, pair'])
 
         # -------------------------------------------- ECTOPIC PREGNANCY ---------------------------------------------
-        self.item_codes_preg_consumables['ectopic_pregnancy_core'] = get_list_of_items(
-            self,
-            ['Halothane (fluothane)_250ml_CMST',
-             'Scalpel blade size 22 (individually wrapped)_100_CMST',
-             'Chlorhexidine 1.5% solution_5_CMST'])
+        self.item_codes_preg_consumables['ectopic_pregnancy_core'] = \
+            get_list_of_items(self, ['Halothane (fluothane)_250ml_CMST',
+                                     'Scalpel blade size 22 (individually wrapped)_100_CMST',
+                                     'Chlorhexidine 1.5% solution_5_CMST'])
 
-        self.item_codes_preg_consumables['ectopic_pregnancy_optional'] = get_list_of_items(
-            self,
-            ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
-             'Paracetamol, tablet, 500 mg',
-             'Pethidine, 50 mg/ml, 2 ml ampoule',
-             'Syringe, needle + swab',
-             'Suture pack',
-             'Gauze pad, 10 x 10 cm, sterile',
-             'Cannula iv  (winged with injection pot) 20_each_CMST'])
+        self.item_codes_preg_consumables['ectopic_pregnancy_optional'] = \
+            get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
+                                     'Paracetamol, tablet, 500 mg',
+                                     'Pethidine, 50 mg/ml, 2 ml ampoule',
+                                     'Syringe, needle + swab',
+                                     'Suture pack',
+                                     'Gauze pad, 10 x 10 cm, sterile',
+                                     'Cannula iv  (winged with injection pot) 20_each_CMST'])
 
         # ------------------------------------------- POST ABORTION CARE - GENERAL  -----------------------------------
-        self.item_codes_preg_consumables['post_abortion_care_core'] = get_list_of_items(
-            self, ['Misoprostol, tablet, 200 mcg',
-                   'Metronidazole 200mg_1000_CMST'])
+        self.item_codes_preg_consumables['post_abortion_care_core'] = \
+            get_list_of_items(self, ['Misoprostol, tablet, 200 mcg',
+                                     'Metronidazole 200mg_1000_CMST'])
 
-        self.item_codes_preg_consumables['post_abortion_care_optional'] = get_list_of_items(
-            self, ['Complete blood count',
-                   'Blood collecting tube, 5 ml',
-                   'Syringe, needle + swab',
-                   'Gloves, exam, latex, disposable, pair',
-                   'Paracetamol, tablet, 500 mg',
-                   'Pethidine, 50 mg/ml, 2 ml ampoule'])
+        self.item_codes_preg_consumables['post_abortion_care_optional'] = \
+            get_list_of_items(self, ['Complete blood count',
+                                     'Blood collecting tube, 5 ml',
+                                     'Syringe, needle + swab',
+                                     'Gloves, exam, latex, disposable, pair',
+                                     'Paracetamol, tablet, 500 mg',
+                                     'Pethidine, 50 mg/ml, 2 ml ampoule'])
 
         # ------------------------------------------- POST ABORTION CARE - SEPSIS -------------------------------------
-        self.item_codes_preg_consumables['post_abortion_care_sepsis_core'] = get_list_of_items(self,
-            ['Ampicillin, powder for injection, 500 mg, vial',
-             'Gentamycin, injection, 40 mg/ml in 2 ml vial',
-             'Metronidazole, injection, 500 mg in 100 ml vial'])
+        self.item_codes_preg_consumables['post_abortion_care_sepsis_core'] = \
+            get_list_of_items(self, ['Ampicillin, powder for injection, 500 mg, vial',
+                                     'Gentamycin, injection, 40 mg/ml in 2 ml vial',
+                                     'Metronidazole, injection, 500 mg in 100 ml vial'])
 
-        self.item_codes_preg_consumables['post_abortion_care_sepsis_optional'] = get_list_of_items(self,
-            ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
-             'Cannula iv  (winged with injection pot) 20_each_CMST',
-             'Gloves, exam, latex, disposable, pair',
-             'IV giving/infusion set, with needle',
-             'Oxygen, 1000 liters, primarily with oxygen cylinders'])
+        self.item_codes_preg_consumables['post_abortion_care_sepsis_optional'] = \
+            get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
+                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'Gloves, exam, latex, disposable, pair',
+                                     'IV giving/infusion set, with needle',
+                                     'Oxygen, 1000 liters, primarily with oxygen cylinders'])
 
         # ------------------------------------------- POST ABORTION CARE - SHOCK -------------------------------------
-        self.item_codes_preg_consumables['post_abortion_care_shock'] = get_list_of_items(self,
-            ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
-             'Cannula iv  (winged with injection pot) 20_each_CMST',
-             'Gloves, exam, latex, disposable, pair',
-             'IV giving/infusion set, with needle',
-             'Oxygen, 1000 liters, primarily with oxygen cylinders'])
+        self.item_codes_preg_consumables['post_abortion_care_shock'] = \
+            get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
+                                     'Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'Gloves, exam, latex, disposable, pair',
+                                     'IV giving/infusion set, with needle',
+                                     'Oxygen, 1000 liters, primarily with oxygen cylinders'])
 
         # ---------------------------------- URINE DIPSTICK ----------------------------------------------------------
         self.item_codes_preg_consumables['urine_dipstick'] = get_list_of_items(self, ['Test strips, urine analysis'])
@@ -325,19 +321,19 @@ class CareOfWomenDuringPregnancy(Module):
             self, ['Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule'])
 
         # ---------------------------------------- MANAGEMENT OF ECLAMPSIA --------------------------------------------
-        self.item_codes_preg_consumables['eclampsia_management_optional'] = get_list_of_items(self,
-            ['Misoprostol, tablet, 200 mcg',
-             'Oxytocin, injection, 10 IU in 1 ml ampoule',
-             'Sodium chloride, injectable solution, 0,9 %, 500 ml',
-             'Cannula iv  (winged with injection pot) 20_each_CMST',
-             'IV giving/infusion set, with needle',
-             'Gloves, exam, latex, disposable, pair',
-             'Oxygen, 1000 liters, primarily with oxygen cylinders',
-             'Complete blood count',
-             'Blood collecting tube, 5 ml',
-             'Syringe, needle + swab',
-             'Foley catheter',
-             'Bag, urine, collecting, 2000 ml'])
+        self.item_codes_preg_consumables['eclampsia_management_optional'] = get_list_of_items(
+            self, ['Misoprostol, tablet, 200 mcg',
+                   'Oxytocin, injection, 10 IU in 1 ml ampoule',
+                   'Sodium chloride, injectable solution, 0,9 %, 500 ml',
+                   'Cannula iv  (winged with injection pot) 20_each_CMST',
+                   'IV giving/infusion set, with needle',
+                   'Gloves, exam, latex, disposable, pair',
+                   'Oxygen, 1000 liters, primarily with oxygen cylinders',
+                   'Complete blood count',
+                   'Blood collecting tube, 5 ml',
+                   'Syringe, needle + swab',
+                   'Foley catheter',
+                   'Bag, urine, collecting, 2000 ml'])
 
         # -------------------------------------- ANTIBIOTICS FOR PROM ------------------------------------------------
         self.item_codes_preg_consumables['abx_for_prom'] = get_list_of_items(

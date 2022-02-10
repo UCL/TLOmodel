@@ -419,43 +419,40 @@ class NewbornOutcomes(Module):
         get_list_of_items = pregnancy_helper_functions.get_list_of_items
 
         # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
-        self.item_codes_nb_consumables['iv_drug_equipment'] = get_list_of_items(self,
-            ['Cannula iv  (winged with injection pot) 20_each_CMST',
-             'IV giving/infusion set, with needle',
-             'Gloves, exam, latex, disposable, pair'])
+        self.item_codes_nb_consumables['iv_drug_equipment'] = \
+            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 20_each_CMST',
+                                     'IV giving/infusion set, with needle',
+                                     'Gloves, exam, latex, disposable, pair'])
 
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
-        self.item_codes_nb_consumables['blood_test_equipment'] = get_list_of_items(self,
-            ['Blood collecting tube, 5 ml',
-             'Syringe, needle + swab',
-             'Gloves, exam, latex, disposable, pair'])
+        self.item_codes_nb_consumables['blood_test_equipment'] = \
+            get_list_of_items(self, ['Blood collecting tube, 5 ml',
+                                     'Syringe, needle + swab',
+                                     'Gloves, exam, latex, disposable, pair'])
 
         # -------------------------------------------- VITAMIN K ------------------------------------------
-        self.item_codes_nb_consumables['vitamin_k'] = get_list_of_items(self,
-            ['vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA'])
+        self.item_codes_nb_consumables['vitamin_k'] = \
+            get_list_of_items(self, ['vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA'])
 
         # -------------------------------------------- EYE CARE  ------------------------------------------
-        self.item_codes_nb_consumables['eye_care'] = get_list_of_items(self,
-            ['Tetracycline eye ointment 1%_3.5_CMST'])
+        self.item_codes_nb_consumables['eye_care'] = get_list_of_items(self, ['Tetracycline eye ointment 1%_3.5_CMST'])
 
         # -------------------------------------------- RESUSCITATION ------------------------------------------
         self.item_codes_nb_consumables['resuscitation'] = \
             get_item_code_from_pkg('Neonatal resuscitation (institutional)')
 
         # ------------------------------------- SEPSIS - FULL SUPPORTIVE CARE ---------------------------------------
-        self.item_codes_nb_consumables['sepsis_supportive_care'] = get_list_of_items(self,
-            ['Benzylpenicillin 1g (1MU), PFR_Each_CMST',
-             'Gentamicin 40mg/ml, 2ml_each_CMST',
-             'Oxygen, 1000 liters, primarily with oxygen cylinders',
-             'Dextrose (glucose) 5%, 1000ml_each_CMST',
-             'Tube, feeding CH 8_each_CMST'
-             ])
+        self.item_codes_nb_consumables['sepsis_supportive_care'] = \
+            get_list_of_items(self, ['Benzylpenicillin 1g (1MU), PFR_Each_CMST',
+                                     'Gentamicin 40mg/ml, 2ml_each_CMST',
+                                     'Oxygen, 1000 liters, primarily with oxygen cylinders',
+                                     'Dextrose (glucose) 5%, 1000ml_each_CMST',
+                                     'Tube, feeding CH 8_each_CMST'])
 
         # ---------------------------------------- SEPSIS - ANTIBIOTICS ---------------------------------------------
-        self.item_codes_nb_consumables['sepsis_abx'] = get_list_of_items(self,
-            ['Benzylpenicillin 1g (1MU), PFR_Each_CMST',
-             'Gentamicin 40mg/ml, 2ml_each_CMST'
-             ])
+        self.item_codes_nb_consumables['sepsis_abx'] =\
+            get_list_of_items(self, ['Benzylpenicillin 1g (1MU), PFR_Each_CMST',
+                                     'Gentamicin 40mg/ml, 2ml_each_CMST'])
 
     def initialise_simulation(self, sim):
         # We call the following function to store the required consumables for the simulation run within the appropriate
@@ -724,8 +721,8 @@ class NewbornOutcomes(Module):
 
         # Function checks df for any potential cause of death, uses CFR parameters to determine risk of death
         # (either from one or multiple causes) and if death occurs returns the cause
-        potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause(
-            self, target='neonate', individual_id=individual_id)
+        potential_cause_of_death = pregnancy_helper_functions.check_for_risk_of_death_from_cause_neonatal(
+            self, individual_id=individual_id)
 
         # If a cause is returned death is scheduled
         if potential_cause_of_death:
