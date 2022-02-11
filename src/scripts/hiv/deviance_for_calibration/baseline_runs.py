@@ -24,11 +24,13 @@ tlo batch-download baseline_runs-2022-02-08T164813Z
 """
 
 from random import randint
+
 import numpy as np
 
 from tlo import Date, logging
 from tlo.methods import (
     demography,
+    deviance_measure,
     enhanced_lifestyle,
     epi,
     healthburden,
@@ -38,9 +40,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
     tb,
-    deviance_measure,
 )
-
 from tlo.scenario import BaseScenario
 
 

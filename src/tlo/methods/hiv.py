@@ -423,14 +423,16 @@ class Hiv(Module):
             Predictor("li_urban").when(False, p["rr_rural"]),
             Predictor("li_wealth",
                       conditions_are_mutually_exclusive=True
-                      ).when(2, p["rr_windex_poorer"])
-                .when(3, p["rr_windex_middle"])
-                .when(4, p["rr_windex_richer"])
-                .when(5, p["rr_windex_richest"]),
+                      ).when(
+                2, p["rr_windex_poorer"]).when(
+                3, p["rr_windex_middle"]).when(
+                4, p["rr_windex_richer"]).when(
+                5, p["rr_windex_richest"]),
             Predictor("li_ed_lev",
                       conditions_are_mutually_exclusive=True
-                      ).when(2, p["rr_edlevel_primary"])
-                .when(3, p["rr_edlevel_secondary"]),
+                      ).when(
+                2, p["rr_edlevel_primary"]).when(
+                3, p["rr_edlevel_secondary"]),
             Predictor("hv_behaviour_change").when(True, p["rr_behaviour_change"]),
         )
 
@@ -439,30 +441,30 @@ class Hiv(Module):
             Predictor(
                 "age_years",
                 conditions_are_mutually_exclusive=True,
-                conditions_are_exhaustive=True,
-            ).when("<20", p["infection_to_death_weibull_scale_1519"])
-                .when(".between(20, 24)", p["infection_to_death_weibull_scale_2024"])
-                .when(".between(25, 29)", p["infection_to_death_weibull_scale_2529"])
-                .when(".between(30, 34)", p["infection_to_death_weibull_scale_3034"])
-                .when(".between(35, 39)", p["infection_to_death_weibull_scale_3539"])
-                .when(".between(40, 44)", p["infection_to_death_weibull_scale_4044"])
-                .when(".between(45, 49)", p["infection_to_death_weibull_scale_4549"])
-                .when(">= 50", p["infection_to_death_weibull_scale_4549"])
+                conditions_are_exhaustive=True).when(
+                "<20", p["infection_to_death_weibull_scale_1519"]).when(
+                ".between(20, 24)", p["infection_to_death_weibull_scale_2024"]).when(
+                ".between(25, 29)", p["infection_to_death_weibull_scale_2529"]).when(
+                ".between(30, 34)", p["infection_to_death_weibull_scale_3034"]).when(
+                ".between(35, 39)", p["infection_to_death_weibull_scale_3539"]).when(
+                ".between(40, 44)", p["infection_to_death_weibull_scale_4044"]).when(
+                ".between(45, 49)", p["infection_to_death_weibull_scale_4549"]).when(
+                ">= 50", p["infection_to_death_weibull_scale_4549"])
         )
 
         self.lm["shape_parameter_for_infection_to_death"] = LinearModel.multiplicative(
             Predictor(
                 "age_years",
                 conditions_are_mutually_exclusive=True,
-                conditions_are_exhaustive=True,
-            ).when("<20", p["infection_to_death_weibull_shape_1519"])
-                .when(".between(20, 24)", p["infection_to_death_weibull_shape_2024"])
-                .when(".between(25, 29)", p["infection_to_death_weibull_shape_2529"])
-                .when(".between(30, 34)", p["infection_to_death_weibull_shape_3034"])
-                .when(".between(35, 39)", p["infection_to_death_weibull_shape_3539"])
-                .when(".between(40, 44)", p["infection_to_death_weibull_shape_4044"])
-                .when(".between(45, 49)", p["infection_to_death_weibull_shape_4549"])
-                .when(">= 50", p["infection_to_death_weibull_shape_4549"])
+                conditions_are_exhaustive=True).when(
+                "<20", p["infection_to_death_weibull_shape_1519"]).when(
+                ".between(20, 24)", p["infection_to_death_weibull_shape_2024"]).when(
+                ".between(25, 29)", p["infection_to_death_weibull_shape_2529"]).when(
+                ".between(30, 34)", p["infection_to_death_weibull_shape_3034"]).when(
+                ".between(35, 39)", p["infection_to_death_weibull_shape_3539"]).when(
+                ".between(40, 44)", p["infection_to_death_weibull_shape_4044"]).when(
+                ".between(45, 49)", p["infection_to_death_weibull_shape_4549"]).when(
+                ">= 50", p["infection_to_death_weibull_shape_4549"])
         )
 
         # -- Linear Models for the Uptake of Services
@@ -546,14 +548,16 @@ class Hiv(Module):
             Predictor("li_is_sexworker").when(True, params["rr_fsw"]),
             Predictor("li_is_circ").when(True, params["rr_circumcision"]),
             Predictor("li_urban").when(False, params["rr_rural"]),
-            Predictor("li_wealth", conditions_are_mutually_exclusive=True)
-                .when(2, params["rr_windex_poorer"])
-                .when(3, params["rr_windex_middle"])
-                .when(4, params["rr_windex_richer"])
-                .when(5, params["rr_windex_richest"]),
-            Predictor("li_ed_lev", conditions_are_mutually_exclusive=True)
-                .when(2, params["rr_edlevel_primary"])
-                .when(3, params["rr_edlevel_secondary"])
+            Predictor(
+                "li_wealth", conditions_are_mutually_exclusive=True).when(
+                2, params["rr_windex_poorer"]).when(
+                3, params["rr_windex_middle"]).when(
+                4, params["rr_windex_richer"]).when(
+                5, params["rr_windex_richest"]),
+            Predictor(
+                "li_ed_lev", conditions_are_mutually_exclusive=True).when(
+                2, params["rr_edlevel_primary"]).when(
+                3, params["rr_edlevel_secondary"])
         ).predict(df.loc[df.is_alive])
 
         # Rescale relative probability of infection so that its average is 1.0 within each age/sex group
@@ -1648,12 +1652,12 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         # Do nothing if person is now on ART and VL suppressed (non VL suppressed has no effect)
         # only if no current TB infection
         if (df.at[person_id, "hv_art"] == "on_VL_suppressed") and (
-            df.at[person_id, "tb_inf"] != "active"):
+                df.at[person_id, "tb_inf"] != "active"):
             return
 
         # off ART, no TB infection
         if (df.at[person_id, "hv_art"] != "on_VL_suppressed") and (
-            df.at[person_id, "tb_inf"] != "active"):
+                df.at[person_id, "tb_inf"] != "active"):
             # cause is HIV (no TB)
             self.sim.modules["Demography"].do_death(
                 individual_id=person_id,

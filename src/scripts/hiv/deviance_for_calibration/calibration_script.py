@@ -27,13 +27,15 @@ tlo batch-download calibration_script-2022-01-21T144550Z
 
 """
 
-import pandas as pd
-import random
 import os
+import random
+
+import pandas as pd
 
 from tlo import Date, logging
 from tlo.methods import (
     demography,
+    deviance_measure,
     enhanced_lifestyle,
     epi,
     healthburden,
@@ -43,9 +45,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
     tb,
-    deviance_measure,
 )
-
 from tlo.scenario import BaseScenario
 
 number_of_draws = 20

@@ -1,9 +1,9 @@
 
 # need scipy version 1.7 so have to update package (in requirements v1.6 used)
-from scipy.stats import qmc
 from pathlib import Path
 
 import pandas as pd
+from scipy.stats import qmc
 
 number_of_draws = 20
 
