@@ -173,8 +173,15 @@ class Epilepsy(Module):
         # allocate initial ep_seiz_stat
         alive_idx = df.index[df.is_alive]
         df.loc[alive_idx, 'ep_seiz_stat'] = self.rng.choice(['0', '1', '2', '3'], size=len(alive_idx),
-                                                                   p=self.parameters['init_epil_seiz_status'])
-
+                                                            p=self.parameters['init_epil_seiz_status'])
+        # Assign those with epilepsy seizure status 2 and 3 the seizure symptom at the start of the simulation
+        dfg = df.index[df.is_alive & ((df.ep_seiz_stat == '2') | (df.ep_seiz_stat == '3'))]
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=dfg.to_list(),
+            symptom_string='seizures',
+            add_or_remove='+',
+            disease_module=self
+        )
         def allocate_antiepileptic(status, probability):
             mask = (df.is_alive & (df.ep_seiz_stat == status))
             random_draw = rng.random_sample(size=mask.sum())
