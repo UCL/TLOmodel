@@ -357,7 +357,7 @@ for var in ['stkout_prop', 'available_prop', 'closing_bal', 'amc', 'dispensed', 
 stkout_df = stkout_df.reset_index()
 stkout_df = stkout_df[
     ['module_name', 'district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo',
-     'stkout_prop', 'available_prop', 'closing_bal', 'amc', 'dispensed', 'received',
+     'available_prop', 'closing_bal', 'amc', 'dispensed', 'received',
      'data_source', 'consumable_reporting_freq', 'consumables_reported_in_mth']]
 
 # 6. ADD STOCKOUT DATA FROM OTHER SOURCES TO COMPLETE STOCKOUT DATAFRAME ##
@@ -412,7 +412,6 @@ unmatched_consumables_df = unmatched_consumables_df[
 unmatched_consumables_df = pd.wide_to_long(unmatched_consumables_df, stubnames=['available_prop_hhfa', 'fac_count'],
                                            i=['item_code', 'consumable_name_tlo_x'], j='fac_type_tlo',
                                            sep='_', suffix=r'\w+')
-unmatched_consumables_df['stkout_prop'] = 1 - unmatched_consumables_df['available_prop_hhfa']
 
 unmatched_consumables_df = unmatched_consumables_df.reset_index()
 n = len(unmatched_consumables_df)
@@ -437,7 +436,6 @@ NameChangeList = [('fac_count_Facility_level_0', 'fac_count'),
                   ('available_prop_hhfa_Facility_level_0', 'available_prop')]
 change_colnames(hhfa_fac0, NameChangeList)
 hhfa_fac0['fac_type_tlo'] = 'Facility_level_0'
-hhfa_fac0['stkout_prop'] = 1 - hhfa_fac0['available_prop']
 hhfa_fac0['data_source'] = 'hhfa_2018-19'
 
 hhfa_fac0 = pd.merge(hhfa_fac0, consumables_df[['item_code', 'module_name']], on='item_code', how='inner')
