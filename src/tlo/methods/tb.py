@@ -2310,9 +2310,21 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))]
         )
 
+        # number of new active cases (0 -16 years)
+        new_tb_cases_child = len(
+            df[(df.tb_date_active >= (now - DateOffset(months=self.repeat))) &
+               (df.age_years < 16)]
+        )
+
         # number of latent cases
         new_latent_cases = len(
             df[(df.tb_date_latent >= (now - DateOffset(months=self.repeat)))]
+        )
+
+        # number of latent cases (0 -16 years)
+        new_latent_cases_child = len(
+            df[(df.tb_date_latent >= (now - DateOffset(months=self.repeat))) &
+               (df.age_years < 16)]
         )
 
         # number of new active cases in HIV+
@@ -2331,7 +2343,9 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             description="Number new active and latent TB cases, total and in PLHIV",
             data={
                 "num_new_active_tb": new_tb_cases,
+                "num_new_active_tb_child": new_tb_cases_child,
                 "num_new_latent_tb": new_latent_cases,
+                "num_new_latent_tb_child": new_latent_cases_child,
                 "num_new_active_tb_in_hiv": inc_active_hiv,
                 "prop_active_tb_in_plhiv": prop_hiv,
             },
@@ -2352,19 +2366,19 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # prevalence of active TB in adults
         num_active_adult = len(
-            df[(df.tb_inf == "active") & (df.age_years >= 15) & df.is_alive]
+            df[(df.tb_inf == "active") & (df.age_years >= 16) & df.is_alive]
         )
         prev_active_adult = num_active_adult / len(
-            df[(df.age_years >= 15) & df.is_alive]
+            df[(df.age_years >= 16) & df.is_alive]
         )
         assert prev_active_adult <= 1
 
         # prevalence of active TB in children
         num_active_child = len(
-            df[(df.tb_inf == "active") & (df.age_years < 15) & df.is_alive]
+            df[(df.tb_inf == "active") & (df.age_years < 16) & df.is_alive]
         )
         prev_active_child = num_active_child / len(
-            df[(df.age_years < 15) & df.is_alive]
+            df[(df.age_years < 16) & df.is_alive]
         )
         assert prev_active_child <= 1
 
@@ -2376,19 +2390,19 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # proportion of population with latent TB - adults
         num_latent_adult = len(
-            df[(df.tb_inf == "latent") & (df.age_years >= 15) & df.is_alive]
+            df[(df.tb_inf == "latent") & (df.age_years >= 16) & df.is_alive]
         )
         prev_latent_adult = num_latent_adult / len(
-            df[(df.age_years >= 15) & df.is_alive]
+            df[(df.age_years >= 16) & df.is_alive]
         )
         assert prev_latent_adult <= 1
 
         # proportion of population with latent TB - children
         num_latent_child = len(
-            df[(df.tb_inf == "latent") & (df.age_years < 15) & df.is_alive]
+            df[(df.tb_inf == "latent") & (df.age_years < 16) & df.is_alive]
         )
         prev_latent_child = num_latent_child / len(
-            df[(df.age_years < 15) & df.is_alive]
+            df[(df.age_years < 16) & df.is_alive]
         )
         assert prev_latent_child <= 1
 
