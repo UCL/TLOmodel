@@ -1,14 +1,54 @@
 {
   "scenario_script_path": "src/scripts/hiv/deviance_for_calibration/baseline_runs.py",
-  "scenario_seed": 990,
-  "runs_per_draw": 5,
+  "scenario_seed": 3,
+  "runs_per_draw": 1,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 2064199512,
-      "parameters": null
+      "draw_seed": 218175338,
+      "parameters": {
+        "Tb": {
+          "transmission_rate": 1.6
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 303761048,
+      "parameters": {
+        "Tb": {
+          "transmission_rate": 1.6500000000000001
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "draw_seed": 893988089,
+      "parameters": {
+        "Tb": {
+          "transmission_rate": 1.7000000000000002
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "draw_seed": 1460070019,
+      "parameters": {
+        "Tb": {
+          "transmission_rate": 1.75
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "draw_seed": 1249426360,
+      "parameters": {
+        "Tb": {
+          "transmission_rate": 1.8
+        }
+      }
     }
   ],
-  "commit": "af89834f8dfa2c402db7c5e21304ed4fc01b3ffe",
-  "github": "https://github.com/UCL/TLOmodel/blob/af89834f8dfa2c402db7c5e21304ed4fc01b3ffe/src/scripts/hiv/deviance_for_calibration/baseline_runs.py"
+  "commit": "71f9ee9ee2450064bffdf2e66c76e2f7f0ff7abe",
+  "github": "https://github.com/UCL/TLOmodel/blob/71f9ee9ee2450064bffdf2e66c76e2f7f0ff7abe/src/scripts/hiv/deviance_for_calibration/baseline_runs.py"
 }

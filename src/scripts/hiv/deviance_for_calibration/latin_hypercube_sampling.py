@@ -11,7 +11,7 @@ number_of_draws = 20
 sampler = qmc.LatinHypercube(d=2)
 sample = sampler.random(n=number_of_draws)
 
-l_bounds = [0.08, 1.35]
+l_bounds = [0.08, 1.5]
 u_bounds = [0.18, 2.00]
 sampled_params = pd.DataFrame(qmc.scale(sample, l_bounds, u_bounds))
 

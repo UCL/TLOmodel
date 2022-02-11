@@ -248,18 +248,17 @@ model_tb_inc = summarize(
     collapse_columns=True,
 )
 model_tb_inc.index = model_tb_inc.index.year
-activeTB_inc_rate = pd.Series(
-    (model_tb_inc["mean"].values / py_summary["mean"].values) * 100000
-)
-activeTB_inc_rate.index = model_tb_inc.index
-activeTB_inc_rate_low = pd.Series(
-    (model_tb_inc["lower"].values / py_summary["mean"].values) * 100000
-)
-activeTB_inc_rate_low.index = model_tb_inc.index
-activeTB_inc_rate_high = pd.Series(
-    (model_tb_inc["upper"].values / py_summary["mean"].values) * 100000
-)
-activeTB_inc_rate_high.index = model_tb_inc.index
+activeTB_inc_rate = model_tb_inc / py_summary["mean"].values * 100000
+
+# activeTB_inc_rate.index = model_tb_inc.index
+# activeTB_inc_rate_low = pd.Series(
+#     (model_tb_inc["lower"].values / py_summary["mean"].values) * 100000
+# )
+# activeTB_inc_rate_low.index = model_tb_inc.index
+# activeTB_inc_rate_high = pd.Series(
+#     (model_tb_inc["upper"].values / py_summary["mean"].values) * 100000
+# )
+# activeTB_inc_rate_high.index = model_tb_inc.index
 
 model_tb_latent = summarize(
     extract_results(
@@ -318,178 +317,195 @@ results_deaths = extract_results(
 
 results_deaths = results_deaths.reset_index()
 
+# todo summarise across runs
+aids_non_tb_deaths_table = results_deaths.loc[results_deaths.cause == "AIDS_non_TB"]
+aids_tb_deaths_table = results_deaths.loc[results_deaths.cause == "AIDS_TB"]
+tb_deaths_table = results_deaths.loc[results_deaths.cause == "TB"]
+
 # results_deaths.columns.get_level_values(1)
 # Index(['', '', 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2], dtype='object', name='run')
 #
 # results_deaths.columns.get_level_values(0)  # this is higher level
 # Index(['year', 'cause', 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3], dtype='object', name='draw')
 
+# ------------ summarise deaths producing df for each draw
+
 # AIDS deaths
-# select cause of death
-tmp = results_deaths.loc[
-    (results_deaths.cause == "AIDS_TB") | (results_deaths.cause == "AIDS_non_TB")
+aids_deaths = {}  # dict of df
+
+for draw in info["number_of_draws"]:
+    draw = draw
+
+    #rename dataframe
+    name = "model_deaths_AIDS_draw" + str(draw)
+    # select cause of death
+    tmp = results_deaths.loc[
+        (results_deaths.cause == "AIDS_TB") | (results_deaths.cause == "AIDS_non_TB")
+        ]
+
+    # select draw - drop columns where draw != 0, but keep year and cause
+    tmp2 = tmp.loc[
+           :, ("draw" == draw)
+           ].copy()  # selects only columns for draw=0 (removes year/cause)
+    # join year and cause back to df - needed for groupby
+    frames = [tmp["year"], tmp["cause"], tmp2]
+    tmp3 = pd.concat(frames, axis=1)
+
+    # create new column names, dependent on number of runs in draw
+    base_columns = ["year", "cause"]
+    run_columns = ["run" + str(x) for x in range(0, info["runs_per_draw"])]
+    base_columns.extend(run_columns)
+    tmp3.columns = base_columns
+    tmp3 = tmp3.set_index("year")
+
+    # sum rows for each year (2 entries = 2 causes of death)
+    # for each run need to combine deaths in each year, may have different numbers of runs
+    aids_deaths[name] = pd.DataFrame(tmp3.groupby(["year"]).sum())
+
+    # double check all columns are float64 or quantile argument will fail
+    cols = [
+        col
+        for col in aids_deaths[name].columns
+        if aids_deaths[name][col].dtype == "float64"
     ]
-# select draw - drop columns where draw != 0, but keep year and cause
-tmp2 = tmp.loc[
-       :, ("draw" == draw)
-       ].copy()  # selects only columns for draw=0 (removes year/cause)
-# join year and cause back to df - needed for groupby
-frames = [tmp["year"], tmp["cause"], tmp2]
-tmp3 = pd.concat(frames, axis=1)
+    aids_deaths[name]["median"] = (
+        aids_deaths[name][cols].astype(float).quantile(0.5, axis=1)
+    )
+    aids_deaths[name]["lower"] = (
+        aids_deaths[name][cols].astype(float).quantile(0.025, axis=1)
+    )
+    aids_deaths[name]["upper"] = (
+        aids_deaths[name][cols].astype(float).quantile(0.975, axis=1)
+    )
 
-# create new column names, dependent on number of runs in draw
-base_columns = ["year", "cause"]
-run_columns = ["run" + str(x) for x in range(0, info["runs_per_draw"])]
-base_columns.extend(run_columns)
-tmp3.columns = base_columns
-tmp3 = tmp3.set_index("year")
+    # AIDS mortality rates per 100k person-years
+    aids_deaths[name]["aids_deaths_rate_100kpy"] = (
+            aids_deaths[name]["median"].values / py_summary["mean"].values) * 100000
 
-# sum rows for each year (2 entries)
-# for each run need to combine deaths in each year, may have different numbers of runs
-model_deaths_AIDS = pd.DataFrame(tmp3.groupby(["year"]).sum())
+    aids_deaths[name]["aids_deaths_rate_100kpy_lower"] = (
+        aids_deaths[name]["lower"].values / py_summary["mean"].values) * 100000
 
-# double check all columns are float64 or quantile argument will fail
-cols = [
-    col
-    for col in model_deaths_AIDS.columns
-    if model_deaths_AIDS[col].dtype == "float64"
-]
-model_deaths_AIDS["median"] = (
-    model_deaths_AIDS[cols].astype(float).quantile(0.5, axis=1)
-)
-model_deaths_AIDS["lower"] = (
-    model_deaths_AIDS[cols].astype(float).quantile(0.025, axis=1)
-)
-model_deaths_AIDS["upper"] = (
-    model_deaths_AIDS[cols].astype(float).quantile(0.975, axis=1)
-)
+    aids_deaths[name]["aids_deaths_rate_100kpy_upper"] = (
+        aids_deaths[name]["upper"].values / py_summary["mean"].values) * 100000
 
-# AIDS mortality rates per 100k person-years
-total_aids_deaths_rate_100kpy = pd.Series(
-    (model_deaths_AIDS["median"].values / py_summary["mean"].values) * 100000
-)
-total_aids_deaths_rate_100kpy_lower = pd.Series(
-    (model_deaths_AIDS["lower"].values / py_summary["mean"].values) * 100000
-)
-total_aids_deaths_rate_100kpy_upper = pd.Series(
-    (model_deaths_AIDS["upper"].values / py_summary["mean"].values) * 100000
-)
-total_aids_deaths_rate_100kpy.index = model_deaths_AIDS.index
-total_aids_deaths_rate_100kpy_lower.index = model_deaths_AIDS.index
-total_aids_deaths_rate_100kpy_upper.index = model_deaths_AIDS.index
 
 # HIV/TB deaths
-# select cause of death
-tmp = results_deaths.loc[
-    (results_deaths.cause == "AIDS_TB")
-]
-# select draw - drop columns where draw != 0, but keep year and cause
-tmp2 = tmp.loc[
-       :, ("draw" == draw)
-       ].copy()  # selects only columns for draw=0 (removes year/cause)
-# join year and cause back to df - needed for groupby
-frames = [tmp["year"], tmp["cause"], tmp2]
-tmp3 = pd.concat(frames, axis=1)
+aids_tb_deaths = {}  # dict of df
 
-# create new column names, dependent on number of runs in draw
-base_columns = ["year", "cause"]
-run_columns = ["run" + str(x) for x in range(0, info["runs_per_draw"])]
-base_columns.extend(run_columns)
-tmp3.columns = base_columns
-tmp3 = tmp3.set_index("year")
+for draw in info["number_of_draws"]:
+    draw = draw
 
-# sum rows for each year (2 entries)
-# for each run need to combine deaths in each year, may have different numbers of runs
-model_deaths_AIDS_TB = pd.DataFrame(tmp3.groupby(["year"]).sum())
+    # rename dataframe
+    name = "model_deaths_AIDS_TB_draw" + str(draw)
+    # select cause of death
+    tmp = results_deaths.loc[
+        (results_deaths.cause == "AIDS_TB")
+    ]
+    # select draw - drop columns where draw != 0, but keep year and cause
+    tmp2 = tmp.loc[
+           :, ("draw" == draw)
+           ].copy()  # selects only columns for draw=0 (removes year/cause)
+    # join year and cause back to df - needed for groupby
+    frames = [tmp["year"], tmp["cause"], tmp2]
+    tmp3 = pd.concat(frames, axis=1)
 
-# double check all columns are float64 or quantile argument will fail
-cols = [
-    col
-    for col in model_deaths_AIDS_TB.columns
-    if model_deaths_AIDS_TB[col].dtype == "float64"
-]
-model_deaths_AIDS_TB["median"] = (
-    model_deaths_AIDS_TB[cols].astype(float).quantile(0.5, axis=1)
-)
-model_deaths_AIDS_TB["lower"] = (
-    model_deaths_AIDS_TB[cols].astype(float).quantile(0.025, axis=1)
-)
-model_deaths_AIDS_TB["upper"] = (
-    model_deaths_AIDS_TB[cols].astype(float).quantile(0.975, axis=1)
-)
+    # create new column names, dependent on number of runs in draw
+    base_columns = ["year", "cause"]
+    run_columns = ["run" + str(x) for x in range(0, info["runs_per_draw"])]
+    base_columns.extend(run_columns)
+    tmp3.columns = base_columns
+    tmp3 = tmp3.set_index("year")
 
-# AIDS_TB mortality rates per 100k person-years
-total_aids_TB_deaths_rate_100kpy = pd.Series(
-    (model_deaths_AIDS_TB["median"].values / py_summary["mean"].values) * 100000
-)
-total_aids_TB_deaths_rate_100kpy_lower = pd.Series(
-    (model_deaths_AIDS_TB["lower"].values / py_summary["mean"].values) * 100000
-)
-total_aids_TB_deaths_rate_100kpy_upper = pd.Series(
-    (model_deaths_AIDS_TB["upper"].values / py_summary["mean"].values) * 100000
-)
-total_aids_TB_deaths_rate_100kpy.index = model_deaths_AIDS_TB.index
-total_aids_TB_deaths_rate_100kpy_lower.index = model_deaths_AIDS_TB.index
-total_aids_TB_deaths_rate_100kpy_upper.index = model_deaths_AIDS_TB.index
+    # sum rows for each year (2 entries)
+    # for each run need to combine deaths in each year, may have different numbers of runs
+    aids_tb_deaths[name] = pd.DataFrame(tmp3.groupby(["year"]).sum())
 
-# TB deaths
-# select cause of death
-tmp = results_deaths.loc[(results_deaths.cause == "TB")]
-# rename columns
-run_columns = [
-    "draw" + str(y) + "run" + str(x)
-    for y in range(0, info["number_of_draws"])
-    for x in range(0, info["runs_per_draw"])
-]
-base_columns = ["year", "cause"]
-base_columns.extend(run_columns)
-tmp.columns = base_columns
+    # double check all columns are float64 or quantile argument will fail
+    cols = [
+        col
+        for col in aids_tb_deaths[name].columns
+        if aids_tb_deaths[name][col].dtype == "float64"
+    ]
+    aids_tb_deaths[name]["median"] = (
+        aids_tb_deaths[name][cols].astype(float).quantile(0.5, axis=1)
+    )
+    aids_tb_deaths[name]["lower"] = (
+        aids_tb_deaths[name][cols].astype(float).quantile(0.025, axis=1)
+    )
+    aids_tb_deaths[name]["upper"] = (
+        aids_tb_deaths[name][cols].astype(float).quantile(0.975, axis=1)
+    )
 
-# add in any missing years
-year_series = pd.DataFrame(
-    model_hiv_adult_prev.index
-)  # some years missing from TB deaths outputs
+    # AIDS_TB mortality rates per 100k person-years
+    aids_tb_deaths[name]["aids_TB_deaths_rate_100kpy"] = (
+            aids_tb_deaths[name]["median"].values / py_summary["mean"].values) * 100000
 
-# fill with zeros
-tmp2 = pd.merge(
-    left=year_series, right=tmp, left_on="date", right_on="year", how="left"
-)
-tmp2 = tmp2.fillna(0)
+    aids_tb_deaths[name]["aids_TB_deaths_rate_100kpy_lower"] = (
+        aids_tb_deaths[name]["lower"].values / py_summary["mean"].values) * 100000
 
-# select draw
-draw_name = str("draw" + str(draw))
-model_deaths_TB = tmp2.loc[:, tmp2.columns.str.contains(draw_name)]
+    aids_tb_deaths[name]["aids_TB_deaths_rate_100kpy_upper"] = (
+        aids_tb_deaths[name]["upper"].values / py_summary["mean"].values) * 100000
 
-# join year and cause back to df - needed for groupby
-frames = [tmp2["date"], model_deaths_TB]
-model_deaths_TB = pd.concat(frames, axis=1)
 
-model_deaths_TB = model_deaths_TB.set_index("date")
+# TB deaths excluding HIV
+tb_deaths = {}  # dict of df
 
-# double check all columns are float64 or quantile argument will fail
-cols = [
-    col for col in model_deaths_TB.columns if model_deaths_TB[col].dtype == "float64"
-]
-model_deaths_TB["median"] = model_deaths_TB[cols].astype(float).quantile(0.5, axis=1)
-model_deaths_TB["lower"] = model_deaths_TB[cols].astype(float).quantile(0.025, axis=1)
-model_deaths_TB["upper"] = model_deaths_TB[cols].astype(float).quantile(0.975, axis=1)
+for draw in info["number_of_draws"]:
+    draw = draw
 
-# TB mortality rates per 100k person-years
-tot_tb_non_hiv_deaths_rate_100kpy = pd.Series(
-    (model_deaths_TB["median"].values / py_summary["mean"].values) * 100000
-)
-tot_tb_non_hiv_deaths_rate_100kpy_lower = pd.Series(
-    (model_deaths_TB["lower"].values / py_summary["mean"].values) * 100000
-)
-tot_tb_non_hiv_deaths_rate_100kpy_upper = pd.Series(
-    (model_deaths_TB["upper"].values / py_summary["mean"].values) * 100000
-)
-tot_tb_non_hiv_deaths_rate_100kpy.index = model_deaths_AIDS.index
-tot_tb_non_hiv_deaths_rate_100kpy_lower.index = model_deaths_AIDS.index
-tot_tb_non_hiv_deaths_rate_100kpy_upper.index = model_deaths_AIDS.index
+    # rename dataframe
+    name = "model_deaths_TB_draw" + str(draw)
+    # select cause of death
+    tmp = results_deaths.loc[
+        (results_deaths.cause == "TB")
+    ]
+    # select draw - drop columns where draw != 0, but keep year and cause
+    tmp2 = tmp.loc[
+           :, ("draw" == draw)
+           ].copy()  # selects only columns for draw=0 (removes year/cause)
+    # join year and cause back to df - needed for groupby
+    frames = [tmp["year"], tmp["cause"], tmp2]
+    tmp3 = pd.concat(frames, axis=1)
+
+    # create new column names, dependent on number of runs in draw
+    base_columns = ["year", "cause"]
+    run_columns = ["run" + str(x) for x in range(0, info["runs_per_draw"])]
+    base_columns.extend(run_columns)
+    tmp3.columns = base_columns
+    tmp3 = tmp3.set_index("year")
+
+    # sum rows for each year (2 entries)
+    # for each run need to combine deaths in each year, may have different numbers of runs
+    tb_deaths[name] = pd.DataFrame(tmp3.groupby(["year"]).sum())
+
+    # double check all columns are float64 or quantile argument will fail
+    cols = [
+        col
+        for col in tb_deaths[name].columns
+        if tb_deaths[name][col].dtype == "float64"
+    ]
+    tb_deaths[name]["median"] = (
+        tb_deaths[name][cols].astype(float).quantile(0.5, axis=1)
+    )
+    tb_deaths[name]["lower"] = (
+        tb_deaths[name][cols].astype(float).quantile(0.025, axis=1)
+    )
+    tb_deaths[name]["upper"] = (
+        tb_deaths[name][cols].astype(float).quantile(0.975, axis=1)
+    )
+
+    # AIDS_TB mortality rates per 100k person-years
+    tb_deaths[name]["TB_death_rate_100kpy"] = (
+            tb_deaths[name]["median"].values / py_summary["mean"].values) * 100000
+
+    tb_deaths[name]["TB_death_rate_100kpy_lower"] = (
+        tb_deaths[name]["lower"].values / py_summary["mean"].values) * 100000
+
+    tb_deaths[name]["TB_death_rate_100kpy_upper"] = (
+        tb_deaths[name]["upper"].values / py_summary["mean"].values) * 100000
+
 
 # ---------------------------------- PROGRAM COVERAGE ---------------------------------- #
-
 
 # TB treatment coverage
 model_tb_tx = summarize(
@@ -567,14 +583,17 @@ def make_plot(
 
 make_plot(
     title_str="HIV Prevalence in Adults Aged 15-49 (%)",
-    model=model_hiv_adult_prev["mean"] * 100,
-    model_low=model_hiv_adult_prev["lower"] * 100,
-    model_high=model_hiv_adult_prev["upper"] * 100,
+    model=model_hiv_adult_prev[0]["mean"] * 100,
     data_name="UNAIDS",
     data_mid=data_hiv_unaids["prevalence_age15_49"] * 100,
     data_low=data_hiv_unaids["prevalence_age15_49_lower"] * 100,
     data_high=data_hiv_unaids["prevalence_age15_49_upper"] * 100,
 )
+# add other draws
+plt.plot(model_hiv_adult_prev[1]["mean"] * 100)
+plt.plot(model_hiv_adult_prev[2]["mean"] * 100)
+plt.plot(model_hiv_adult_prev[3]["mean"] * 100)
+plt.plot(model_hiv_adult_prev[4]["mean"] * 100)
 
 # data: MPHIA
 plt.plot(
@@ -740,14 +759,19 @@ plt.show()
 
 make_plot(
     title_str="Active TB Incidence (per 100k person-years)",
-    model=activeTB_inc_rate,
-    model_low=activeTB_inc_rate_low,
-    model_high=activeTB_inc_rate_high,
+    model=activeTB_inc_rate[0]["mean"],
+    model_low=activeTB_inc_rate[0]["lower"],
+    model_high=activeTB_inc_rate[0]["upper"],
     data_name="WHO_TB",
     data_mid=data_tb_who["incidence_per_100k"],
     data_low=data_tb_who["incidence_per_100k_low"],
     data_high=data_tb_who["incidence_per_100k_high"],
 )
+
+plt.plot(activeTB_inc_rate[1]["mean"])
+plt.plot(activeTB_inc_rate[2]["mean"])
+plt.plot(activeTB_inc_rate[3]["mean"])
+plt.plot(activeTB_inc_rate[4]["mean"])
 plt.savefig(make_graph_file_name("TB_Incidence"))
 
 plt.show()

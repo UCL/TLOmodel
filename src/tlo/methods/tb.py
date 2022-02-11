@@ -509,23 +509,23 @@ class Tb(Module):
                 '(sy_aids_symptoms == False)',
                 p["rr_tb_hiv"],
             ),
-            # hiv+, not on ART, AIDS symptoms
+            # hiv+, AIDS, not on ART, not on IPT
             Predictor("sy_aids_symptoms").when(True, p["rr_tb_aids"]),
-            # hiv+, on ART, no IPT
+            # hiv+, no AIDS, on ART, no IPT
             Predictor().when(
                 '(hv_inf == True) & '
                 '(hv_art == "on_VL_suppressed") & '
                 '(tb_on_ipt == False)',
                 (p["rr_tb_hiv"] * p["rr_tb_art_adult"])
             ),
-            # hiv+, on ART, on IPT
+            # hiv+, no AIDS, on ART, on IPT
             Predictor().when(
                 '(tb_on_ipt == True) & '
                 '(hv_inf == True) & '
                 '(hv_art == "on_VL_suppressed")',
                 (p["rr_tb_hiv"] * p["rr_tb_art_adult"] * p["rr_ipt_art_adult"]),
             ),
-            # ipt, hiv+ not on ART (or on ART and not suppressed)
+            # hiv+, not on ART, on IPT
             Predictor().when(
                 '(tb_on_ipt == True) & '
                 '(hv_inf == True) & '
@@ -772,8 +772,14 @@ class Tb(Module):
         # excludes those just fast-tracked above (all_fast)
 
         # adults
+        # todo undo??
+        # todo select new active infections from all currently latent
+        # todo will include new latent and reactivation
+        # eligible_adults = df.loc[
+        #     (df.tb_date_latent == now) & df.is_alive & (df.age_years >= 15)
+        # ].index
         eligible_adults = df.loc[
-            (df.tb_date_latent == now) & df.is_alive & (df.age_years >= 15)
+            (df.tb_inf == "latent") & df.is_alive & (df.age_years >= 15)
         ].index
         eligible_adults = eligible_adults[~eligible_adults.isin(fast)]
 
@@ -797,8 +803,12 @@ class Tb(Module):
             df.at[person_id, "tb_scheduled_date_active"] = date_progression
 
         # children
+        # todo undo??
+        # eligible_children = df.loc[
+        #     (df.tb_date_latent == now) & df.is_alive & (df.age_years < 15)
+        # ].index
         eligible_children = df.loc[
-            (df.tb_date_latent == now) & df.is_alive & (df.age_years < 15)
+            (df.tb_inf == "latent") & df.is_alive & (df.age_years < 15)
         ].index
         eligible_children = eligible_children[~np.isin(eligible_children, fast)]
         assert not any(elem in fast for elem in eligible_children)
