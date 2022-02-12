@@ -385,6 +385,14 @@ class Tb(Module):
         "scenario_start_date": Parameter(
             Types.DATE,
             "date from which different scenarios are run"
+        ),
+        "first_line_test": Parameter(
+            Types.STRING,
+            "name of first test to be used for TB diagnosis"
+        ),
+        "second_line_test": Parameter(
+            Types.STRING,
+            "name of second test to be used for TB diagnosis"
         )
     }
 
@@ -869,6 +877,38 @@ class Tb(Module):
                 priority=0,
             )
 
+    def select_tb_test(self, person_id):
+
+        df = self.sim.population.props
+        p = self.parameters
+        rng = self.rng
+        person = df.at[person_id]
+
+        # xpert tests limited to 60% coverage
+        # if selected test is xpert, check for availability
+        # give sputum smear as back-up
+        # assume sputum smear always available
+        test = None
+
+        # primary cases, no HIV diagnosed and >= 5 years
+        if not person["tb_ever_treated"] and not person["hv_diagnosed"]:
+            test = p["first_line_test"]
+
+        # previously diagnosed/treated or hiv+ -> xpert
+        # assume ~60% have access to Xpert, some data in 2019 NTP report but not exact proportions
+        elif person["tb_ever_treated"] or person["hv_diagnosed"]:
+            test = p["second_line_test"]
+
+        # if xpert not available (prob greater than availability)
+        # give sputum smear
+        # this reflect 60% availability of xpert
+        if (test == "xpert") & (
+            rng.random_sample() > p["prop_presumptive_mdr_has_xpert"]
+        ):
+            test = "sputum"
+
+        return test
+
     def initialise_population(self, population):
 
         df = population.props
@@ -1144,9 +1184,9 @@ class Tb(Module):
 # #   TB infection event
 # # ---------------------------------------------------------------------------
 class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
-    """ This event exists just to change parameters or functions
+    """ This event exists to change parameters or functions
     depending on the scenario for projections which has been set
-    scenario 0 is the default which uses baseline parameters
+    * scenario 0 is the default which uses baseline parameters
 
     It only occurs once at param: scenario_start_date,
     called by initialise_simulation
@@ -1168,9 +1208,30 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 0:
             return
 
+        if scenario == 1:
+            # todo scale up HIV program to meet 95-95-95
+            return
+
         if scenario == 2:
-            # change IPT eligibility to all years
+            # change IPT eligibility for TB contacts to all years
             p["age_eligibility_for_ipt"] = 100
+
+        if scenario == 3:
+            # change first-line testing for TB to xpert
+            p["first_line_test"] = "xpert"
+            p["second_line_test"] = "sputum"
+
+        if scenario == 4:
+            # combined improvements in both HIV and TB programmes
+
+            # todo add in HIV stuff
+
+            # change IPT eligibility for TB contacts to all years
+            p["age_eligibility_for_ipt"] = 100
+
+            # change first-line testing for TB to xpert
+            p["first_line_test"] = "xpert"
+            p["second_line_test"] = "sputum"
 
 
 class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1796,25 +1857,19 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     priority=0,
                 )
 
-            # never diagnosed/treated before and not diagnosed with hiv -> sputum smear
-            elif not person["tb_ever_treated"] and not person["hv_diagnosed"]:
-                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                    {"Over5OPD": 1, "LabTBMicro": 1}
-                )
-                test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-                    dx_tests_to_run="tb_sputum_test", hsi_event=self
-                )
+            # for all presumptive cases over 5 years of age
+            else:
+                test = self.module.select_tb_test
 
-            # previously diagnosed/treated or hiv+ -> xpert
-            # assume ~60% have access to Xpert, some data in 2019 NTP report but not exact proportions
-            # todo need expert input on this
-            elif person["tb_ever_treated"] or person["hv_diagnosed"]:
+                if test == "sputum":
+                    ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+                        {"Over5OPD": 1, "LabTBMicro": 1}
+                    )
+                    test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                        dx_tests_to_run="tb_sputum_test", hsi_event=self
+                    )
 
-                if (
-                    self.module.rng.random_sample()
-                    < p["prop_presumptive_mdr_has_xpert"]
-                ):
-
+                elif test == "xpert":
                     ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                         {"Over5OPD": 1}
                     )
@@ -1823,32 +1878,18 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     ].dx_manager.run_dx_test(
                         dx_tests_to_run="tb_xpert_test", hsi_event=self
                     )
-                else:
-                    test_result = None
 
-                if test_result and (person["tb_strain"] == "mdr"):
-                    df.at[person_id, "tb_diagnosed"] = True
-                    df.at[person_id, "tb_diagnosed_mdr"] = True
-                    df.at[person_id, "tb_date_diagnosed"] = now
+            # if none of the tests are not available (particularly xpert)
+            if test_result is None:
+                pass
 
-                # if xpert not available perform sputum test
-                if test_result is None:
-                    ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                        {"Over5OPD": 1, "LabTBMicro": 1}
-                    )
-                    test_result = self.sim.modules[
-                        "HealthSystem"
-                    ].dx_manager.run_dx_test(
-                        dx_tests_to_run="tb_sputum_test", hsi_event=self
-                    )
+            # diagnosed with mdr-tb
+            if test_result and (person["tb_strain"] == "mdr"):
+                df.at[person_id, "tb_diagnosed_mdr"] = True
 
-        # if none of the tests are not available (particularly xpert)
-        if test_result is None:
-            pass
-
-        # if a test has been performed, update person's properties
-        if test_result is not None:
-            df.at[person_id, "tb_ever_tested"] = True
+            # if a test has been performed, update person's properties
+            if test_result is not None:
+                df.at[person_id, "tb_ever_tested"] = True
 
             # if any test returns positive result, refer for appropriate treatment
             if test_result:

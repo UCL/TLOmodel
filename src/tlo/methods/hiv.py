@@ -561,6 +561,7 @@ class Hiv(Module):
         ).predict(df.loc[df.is_alive])
 
         # Rescale relative probability of infection so that its average is 1.0 within each age/sex group
+        # todo
         p = pd.DataFrame(
             {
                 "age_years": df["age_years"],
@@ -586,6 +587,15 @@ class Hiv(Module):
 
         # Assign the designated person as infected in the population.props dataframe:
         df.loc[infec, "hv_inf"] = True
+
+        # adult_prev_1549F = len(
+        #     df[(df.sex == "F") & df.hv_inf & df.is_alive & df.age_years.between(15, 49)]
+        # ) / len(df[(df.sex == "F") & df.is_alive & df.age_years.between(15, 49)])
+        #
+        # adult_prev_1549M = len(
+        #     df[(df.sex == "M") & df.hv_inf & df.is_alive & df.age_years.between(15, 49)]
+        # ) / len(df[(df.sex == "M") & df.is_alive & df.age_years.between(15, 49)])
+        # df.hv_inf=False
 
         # Assign date that persons were infected by drawing from assumed distribution (for adults)
         # Clipped to prevent dates of infection before before the person was born.
