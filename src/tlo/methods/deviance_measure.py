@@ -252,9 +252,9 @@ class Deviance(Module):
                            ) / 8
 
         # tb latent prevalence
-        tb_latent_prev = deviance_function(
-            data_dict["who_tb_latent_prev"], model_dict["TB_latent_prev"]
-        )
+        # tb_latent_prev = deviance_function(
+        #     data_dict["who_tb_latent_prev"], model_dict["TB_latent_prev"]
+        # )
 
         # ------------------ DEATHS ------------------ #
 
@@ -344,7 +344,7 @@ class Deviance(Module):
             + hiv_prev_child
             + hiv_inc_adult
             + (tb_incidence_who * model_weight)
-            + (tb_latent_prev * model_weight)
+            # + (tb_latent_prev * model_weight)
             + (hiv_deaths_unaids * model_weight)
             + (tb_mortality_who * model_weight)
         )

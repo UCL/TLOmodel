@@ -663,7 +663,7 @@ class Tb(Module):
 
         # whole population susceptible to latent infection, risk determined by age
         prob_latent = self.lm["latent_tb_2010"].predict(
-            df.loc[df.is_alive]
+            df.loc[df.is_alive & ~(df.tb_inf == "active")]
         )  # this will return pd.Series of probabilities of latent infection for each person alive
 
         new_latent = self.rng.random_sample(len(prob_latent)) < prob_latent
@@ -780,15 +780,10 @@ class Tb(Module):
         # excludes those just fast-tracked above (all_fast)
 
         # adults
-        # todo undo??
-        # todo select new active infections from all currently latent
-        # todo will include new latent and reactivation
-        # eligible_adults = df.loc[
-        #     (df.tb_date_latent == now) & df.is_alive & (df.age_years >= 15)
-        # ].index
         eligible_adults = df.loc[
-            (df.tb_inf == "latent") & df.is_alive & (df.age_years >= 15)
+            (df.tb_date_latent == now) & df.is_alive & (df.age_years >= 15)
         ].index
+
         eligible_adults = eligible_adults[~eligible_adults.isin(fast)]
 
         # check no fast progressors included in the slow progressors risk
@@ -810,13 +805,10 @@ class Tb(Module):
             # set date of active tb - properties will be updated at TbActiveEvent every month
             df.at[person_id, "tb_scheduled_date_active"] = date_progression
 
-        # children
-        # todo undo??
-        # eligible_children = df.loc[
-        #     (df.tb_date_latent == now) & df.is_alive & (df.age_years < 15)
-        # ].index
+        # children - new latent cases only
+        # will progress within 1 year
         eligible_children = df.loc[
-            (df.tb_inf == "latent") & df.is_alive & (df.age_years < 15)
+            (df.tb_date_latent == now) & df.is_alive & (df.age_years < 15)
         ].index
         eligible_children = eligible_children[~np.isin(eligible_children, fast)]
         assert not any(elem in fast for elem in eligible_children)
@@ -847,6 +839,8 @@ class Tb(Module):
         active_testing_rates = p["rate_testing_active_tb"]
         current_active_testing_rate = active_testing_rates.loc[
             (active_testing_rates.year == self.sim.date.year), "testing_rate_active_cases"].values[0]/100
+        # todo adjusted for monthly poll
+        current_active_testing_rate = current_active_testing_rate / 3
         random_draw = rng.random_sample(size=len(df))
 
         # randomly select some individuals for screening and testing
@@ -882,7 +876,7 @@ class Tb(Module):
         df = self.sim.population.props
         p = self.parameters
         rng = self.rng
-        person = df.at[person_id]
+        person = df.loc[person_id]
 
         # xpert tests limited to 60% coverage
         # if selected test is xpert, check for availability
@@ -896,18 +890,22 @@ class Tb(Module):
 
         # previously diagnosed/treated or hiv+ -> xpert
         # assume ~60% have access to Xpert, some data in 2019 NTP report but not exact proportions
-        elif person["tb_ever_treated"] or person["hv_diagnosed"]:
+        if person["tb_ever_treated"] or person["hv_diagnosed"]:
             test = p["second_line_test"]
 
         # if xpert not available (prob greater than availability)
         # give sputum smear
-        # this reflect 60% availability of xpert
+        # this reflects 60% availability of xpert
         if (test == "xpert") & (
             rng.random_sample() > p["prop_presumptive_mdr_has_xpert"]
         ):
             test = "sputum"
 
-        return test
+        return (
+            "xpert"
+            if (test == "xpert")
+            else "sputum"
+        )
 
     def initialise_population(self, population):
 
@@ -1242,7 +1240,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(years=1))
 
     def apply(self, population):
 
@@ -1256,8 +1254,8 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # check who should progress from latent to active disease
         self.module.progression_to_active(population)
 
-        # schedule some background rates of tb testing (non-symptom driven)
-        self.module.send_for_screening(population)
+        # # schedule some background rates of tb testing (non-symptom driven)
+        # self.module.send_for_screening(population)
 
     def latent_transmission(self, strain):
         """
@@ -1369,6 +1367,7 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         tb_idx = df.index[
             df.is_alive & (df.tb_inf != "active") & (random_draw < risk_tb)
         ]
+        # todo need ~ 300 per year to give 30 new active
 
         logger.debug(
             key="message",
@@ -1447,6 +1446,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
     *2 assign symptoms
     *3 if HIV+, assign smear status and schedule AIDS onset
     *4 if HIV-, assign smear status and schedule death
+    *5 schedule screening for general population and symptomatic active cases
     """
 
     def __init__(self, module):
@@ -1528,6 +1528,11 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
                 event=TbDeathEvent(person_id=person_id, module=self.module, cause="TB"),
                 date=date_of_tb_death,
             )
+
+        # -------- 5) schedule screening for asymptomatic and symptomatic people --------
+
+        # schedule some background rates of tb testing (non-symptom + symptom-driven)
+        self.module.send_for_screening(population)
 
 
 class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1859,7 +1864,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             # for all presumptive cases over 5 years of age
             else:
-                test = self.module.select_tb_test
+                test = self.module.select_tb_test(person_id)
+                assert test is not None
 
                 if test == "sputum":
                     ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
@@ -1879,77 +1885,77 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         dx_tests_to_run="tb_xpert_test", hsi_event=self
                     )
 
-            # if none of the tests are not available (particularly xpert)
-            if test_result is None:
-                pass
+                # if none of the tests are not available (particularly xpert)
+                if test_result is None:
+                    pass
 
-            # diagnosed with mdr-tb
-            if test_result and (person["tb_strain"] == "mdr"):
-                df.at[person_id, "tb_diagnosed_mdr"] = True
+                # diagnosed with mdr-tb
+                if test_result and (person["tb_strain"] == "mdr"):
+                    df.at[person_id, "tb_diagnosed_mdr"] = True
 
-            # if a test has been performed, update person's properties
-            if test_result is not None:
-                df.at[person_id, "tb_ever_tested"] = True
+                # if a test has been performed, update person's properties
+                if test_result is not None:
+                    df.at[person_id, "tb_ever_tested"] = True
 
-            # if any test returns positive result, refer for appropriate treatment
-            if test_result:
-                df.at[person_id, "tb_diagnosed"] = True
-                df.at[person_id, "tb_date_diagnosed"] = now
+                # if any test returns positive result, refer for appropriate treatment
+                if test_result:
+                    df.at[person_id, "tb_diagnosed"] = True
+                    df.at[person_id, "tb_date_diagnosed"] = now
 
-                logger.debug(
-                    key="message",
-                    data=f"schedule HSI_Tb_StartTreatment for person {person_id}",
-                )
+                    logger.debug(
+                        key="message",
+                        data=f"schedule HSI_Tb_StartTreatment for person {person_id}",
+                    )
 
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
-                    topen=now,
-                    tclose=None,
-                    priority=0,
-                )
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+                        topen=now,
+                        tclose=None,
+                        priority=0,
+                    )
 
-            # ------------------------- give IPT to contacts ------------------------- #
-            # if diagnosed, trigger ipt outreach event for up to 5 paediatric contacts of case
-            # only high-risk districts are eligible
+                # ------------------------- give IPT to contacts ------------------------- #
+                # if diagnosed, trigger ipt outreach event for up to 5 paediatric contacts of case
+                # only high-risk districts are eligible
 
-            district = person["district_of_residence"]
-            ipt = self.module.parameters["ipt_coverage"]
-            ipt_year = ipt.loc[ipt.year == self.sim.date.year]
-            ipt_coverage_paed = ipt_year.coverage_paediatric.values[0]
+                district = person["district_of_residence"]
+                ipt = self.module.parameters["ipt_coverage"]
+                ipt_year = ipt.loc[ipt.year == self.sim.date.year]
+                ipt_coverage_paed = ipt_year.coverage_paediatric.values[0]
 
-            if (district in p["tb_high_risk_distr"].district_name.values) & (
-                self.module.rng.rand() < ipt_coverage_paed
-            ):
-                # randomly sample from eligible population within district
-                ipt_eligible = df.loc[
-                    (df.age_years <= p["age_eligibility_for_ipt"])
-                    & ~df.tb_diagnosed
-                    & df.is_alive
-                    & (df.district_of_residence == district)
-                ].index
+                if (district in p["tb_high_risk_distr"].district_name.values) & (
+                    self.module.rng.rand() < ipt_coverage_paed
+                ):
+                    # randomly sample from eligible population within district
+                    ipt_eligible = df.loc[
+                        (df.age_years <= p["age_eligibility_for_ipt"])
+                        & ~df.tb_diagnosed
+                        & df.is_alive
+                        & (df.district_of_residence == district)
+                    ].index
 
-                if ipt_eligible.any():
-                    # sample with replacement in case eligible population n<5
-                    ipt_sample = rng.choice(ipt_eligible, size=5, replace=True)
-                    # retain unique indices only
-                    # fine to have variability in number sampled (between 0-5)
-                    ipt_sample = list(set(ipt_sample))
+                    if ipt_eligible.any():
+                        # sample with replacement in case eligible population n<5
+                        ipt_sample = rng.choice(ipt_eligible, size=5, replace=True)
+                        # retain unique indices only
+                        # fine to have variability in number sampled (between 0-5)
+                        ipt_sample = list(set(ipt_sample))
 
-                    for person_id in ipt_sample:
-                        logger.debug(
-                            key="message",
-                            data=f"HSI_Tb_ScreeningAndRefer: scheduling IPT for person {person_id}",
-                        )
+                        for person_id in ipt_sample:
+                            logger.debug(
+                                key="message",
+                                data=f"HSI_Tb_ScreeningAndRefer: scheduling IPT for person {person_id}",
+                            )
 
-                        ipt_event = HSI_Tb_Start_or_Continue_Ipt(
-                            self.module, person_id=person_id
-                        )
-                        self.sim.modules["HealthSystem"].schedule_hsi_event(
-                            ipt_event,
-                            priority=1,
-                            topen=now,
-                            tclose=None,
-                        )
+                            ipt_event = HSI_Tb_Start_or_Continue_Ipt(
+                                self.module, person_id=person_id
+                            )
+                            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                                ipt_event,
+                                priority=1,
+                                topen=now,
+                                tclose=None,
+                            )
 
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
@@ -1983,12 +1989,23 @@ class HSI_Tb_Xray(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
 
+        ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+
         if not df.at[person_id, "is_alive"]:
             return
 
         test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
             dx_tests_to_run="tb_xray", hsi_event=self
         )
+
+        # if x-ray not available, try for sputum smear
+        if test_result is None:
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+                {"Over5OPD": 1, "LabTBMicro": 1}
+            )
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="tb_sputum_test", hsi_event=self
+            )
 
         # if test returns positive result, refer for appropriate treatment
         if test_result:
@@ -2001,6 +2018,12 @@ class HSI_Tb_Xray(HSI_Event, IndividualScopeEventMixin):
             tclose=None,
             priority=0,
         )
+
+        # Return the footprint. If it should be suppressed, return a blank footprint.
+        if self.suppress_footprint:
+            return self.make_appt_footprint({})
+        else:
+            return ACTUAL_APPT_FOOTPRINT
 
 
 # # ---------------------------------------------------------------------------
