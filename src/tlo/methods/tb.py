@@ -1779,7 +1779,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
     A positive outcome from symptom-based screening will prompt referral to tb tests (sputum/xpert/xray)
     no consumables are required for screening (4 clinical questions)
 
-    This event is scheduled by:
+    This event is schedulegd by:
         * the main event poll,
         * when someone presents for care through a Generic HSI with tb-like symptoms
         * active screening / contact tracing programmes
@@ -1914,48 +1914,48 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         priority=0,
                     )
 
-                # ------------------------- give IPT to contacts ------------------------- #
-                # if diagnosed, trigger ipt outreach event for up to 5 paediatric contacts of case
-                # only high-risk districts are eligible
+                    # ------------------------- give IPT to contacts ------------------------- #
+                    # if diagnosed, trigger ipt outreach event for up to 5 paediatric contacts of case
+                    # only high-risk districts are eligible
 
-                district = person["district_of_residence"]
-                ipt = self.module.parameters["ipt_coverage"]
-                ipt_year = ipt.loc[ipt.year == self.sim.date.year]
-                ipt_coverage_paed = ipt_year.coverage_paediatric.values[0]
+                    district = person["district_of_residence"]
+                    ipt = self.module.parameters["ipt_coverage"]
+                    ipt_year = ipt.loc[ipt.year == self.sim.date.year]
+                    ipt_coverage_paed = ipt_year.coverage_paediatric.values[0]
 
-                if (district in p["tb_high_risk_distr"].district_name.values) & (
-                    self.module.rng.rand() < ipt_coverage_paed
-                ):
-                    # randomly sample from eligible population within district
-                    ipt_eligible = df.loc[
-                        (df.age_years <= p["age_eligibility_for_ipt"])
-                        & ~df.tb_diagnosed
-                        & df.is_alive
-                        & (df.district_of_residence == district)
-                    ].index
+                    if (district in p["tb_high_risk_distr"].district_name.values) & (
+                        self.module.rng.rand() < ipt_coverage_paed
+                    ):
+                        # randomly sample from eligible population within district
+                        ipt_eligible = df.loc[
+                            (df.age_years <= p["age_eligibility_for_ipt"])
+                            & ~df.tb_diagnosed
+                            & df.is_alive
+                            & (df.district_of_residence == district)
+                        ].index
 
-                    if ipt_eligible.any():
-                        # sample with replacement in case eligible population n<5
-                        ipt_sample = rng.choice(ipt_eligible, size=5, replace=True)
-                        # retain unique indices only
-                        # fine to have variability in number sampled (between 0-5)
-                        ipt_sample = list(set(ipt_sample))
+                        if ipt_eligible.any():
+                            # sample with replacement in case eligible population n<5
+                            ipt_sample = rng.choice(ipt_eligible, size=5, replace=True)
+                            # retain unique indices only
+                            # fine to have variability in number sampled (between 0-5)
+                            ipt_sample = list(set(ipt_sample))
 
-                        for person_id in ipt_sample:
-                            logger.debug(
-                                key="message",
-                                data=f"HSI_Tb_ScreeningAndRefer: scheduling IPT for person {person_id}",
-                            )
+                            for person_id in ipt_sample:
+                                logger.debug(
+                                    key="message",
+                                    data=f"HSI_Tb_ScreeningAndRefer: scheduling IPT for person {person_id}",
+                                )
 
-                            ipt_event = HSI_Tb_Start_or_Continue_Ipt(
-                                self.module, person_id=person_id
-                            )
-                            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                                ipt_event,
-                                priority=1,
-                                topen=now,
-                                tclose=None,
-                            )
+                                ipt_event = HSI_Tb_Start_or_Continue_Ipt(
+                                    self.module, person_id=person_id
+                                )
+                                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                                    ipt_event,
+                                    priority=1,
+                                    topen=now,
+                                    tclose=None,
+                                )
 
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:

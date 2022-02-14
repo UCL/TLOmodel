@@ -315,8 +315,8 @@ def test_check_tb_test_under_each_scenario():
     # Make the population
     sim.make_initial_population(n=popsize)
 
-    sim.modules['Tb'].parameters["prop_presumptive_mdr_has_xpert"] = 1  # xpert always available
-    sim.modules['Tb'].parameters["sens_xpert"] = 1  # increase sensitivity of xpert testing
+    sim.modules['Tb'].parameters["prop_presumptive_mdr_has_xpert"] = 1.0  # xpert always available
+    sim.modules['Tb'].parameters["sens_xpert"] = 1.0  # increase sensitivity of xpert testing
 
     # ------------------------- scenario 0 ------------------------- #
     sim.modules['Tb'].parameters['scenario'] = 0
@@ -325,7 +325,6 @@ def test_check_tb_test_under_each_scenario():
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     df = sim.population.props
-    person_id = 0
 
     # assign person_id active tb
     hiv_neg_person = 0
@@ -338,9 +337,12 @@ def test_check_tb_test_under_each_scenario():
     df.at[both_people, 'tb_smear'] = True
     df.at[both_people, 'age_exact_years'] = 20
     df.at[both_people, 'age_years'] = 20
+
     # set HIV status
     df.at[hiv_neg_person, 'hv_inf'] = False
     df.at[hiv_pos_person, 'hv_inf'] = True
+    df.at[hiv_neg_person, 'hv_diagnosed'] = False  # this is used for tb test selection
+    df.at[hiv_pos_person, 'hv_diagnosed'] = True
 
     # assign symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
@@ -363,7 +365,7 @@ def test_check_tb_test_under_each_scenario():
     # screen and test hiv_neg_person
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=hiv_neg_person,
                                                  module=sim.modules['Tb'])
-    screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
+    screening_appt.apply(person_id=hiv_neg_person, squeeze_factor=0.0)
 
     assert df.at[hiv_neg_person, 'tb_ever_tested']
     assert df.at[hiv_neg_person, 'tb_diagnosed']
@@ -372,7 +374,7 @@ def test_check_tb_test_under_each_scenario():
     # screen and test hiv_pos_person
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=hiv_pos_person,
                                                  module=sim.modules['Tb'])
-    screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
+    screening_appt.apply(person_id=hiv_pos_person, squeeze_factor=0.0)
 
     assert df.at[hiv_pos_person, 'tb_ever_tested']
     assert df.at[hiv_pos_person, 'tb_diagnosed']
@@ -396,15 +398,14 @@ def test_check_tb_test_under_each_scenario():
     # Make the population
     sim.make_initial_population(n=popsize)
 
-    sim.modules['Tb'].parameters["prop_presumptive_mdr_has_xpert"] = 1  # xpert always available
-    sim.modules['Tb'].parameters["sens_xpert"] = 1  # increase sensitivity of xpert testing
+    sim.modules['Tb'].parameters["prop_presumptive_mdr_has_xpert"] = 1.0  # xpert always available
+    sim.modules['Tb'].parameters["sens_xpert"] = 1.0  # increase sensitivity of xpert testing
     sim.modules['Tb'].parameters['scenario'] = 3
 
     # simulate for 0 days, just get everything set up (dxtests etc)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     df = sim.population.props
-    person_id = 0
 
     # assign person_id active tb
     hiv_neg_person = 0
