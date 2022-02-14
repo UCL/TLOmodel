@@ -1,0 +1,2619 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>tlo.methods.rti module &mdash; TLOmodel 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="tlo.methods.simplified_births module" href="tlo.methods.simplified_births.html" />
+    <link rel="prev" title="tlo.methods.prostate_cancer module" href="tlo.methods.prostate_cancer.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> TLOmodel
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../authors.html">Authors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TLOmodel</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Reference</a> &raquo;</li>
+        
+          <li><a href="tlo.html">tlo package</a> &raquo;</li>
+        
+          <li><a href="tlo.methods.html">tlo.methods package</a> &raquo;</li>
+        
+      <li>tlo.methods.rti module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/reference/tlo.methods.rti.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-tlo.methods.rti">
+<span id="tlo-methods-rti-module"></span><h1>tlo.methods.rti module<a class="headerlink" href="#module-tlo.methods.rti" title="Permalink to this headline">¶</a></h1>
+<p>Road traffic injury module.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI" title="Permalink to this definition">¶</a></dt>
+<dd><p>The road traffic injuries module for the TLO model, handling all injuries related to road traffic accidents.</p>
+<p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
+<p><strong>PARAMETERS:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>base_rate_injrti</p></td>
+<td><p>REAL</p></td>
+<td><p>Base rate of RTI per year</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_injrti_age04</p></td>
+<td><p>REAL</p></td>
+<td><p>risk ratio of RTI in age 0-4 compared to base rate of RTI</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_injrti_age59</p></td>
+<td><p>REAL</p></td>
+<td><p>risk ratio of RTI in age 5-9 compared to base rate of RTI</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_injrti_age1017</p></td>
+<td><p>REAL</p></td>
+<td><p>risk ratio of RTI in age 10-17 compared to base rate of RTI</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_injrti_age1829</p></td>
+<td><p>REAL</p></td>
+<td><p>risk ratio of RTI in age 18-29 compared to base rate of RTI</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_injrti_age3039</p></td>
+<td><p>REAL</p></td>
+<td><p>risk ratio of RTI in age 30-39 compared to base rate of RTI</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_injrti_age4049</p></td>
+<td><p>REAL</p></td>
+<td><p>risk ratio of RTI in age 40-49 compared to base rate of RTI</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_injrti_age5059</p></td>
+<td><p>REAL</p></td>
+<td><p>risk ratio of RTI in age 50-59 compared to base rate of RTI</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_injrti_age6069</p></td>
+<td><p>REAL</p></td>
+<td><p>risk ratio of RTI in age 60-69 compared to base rate of RTI</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_injrti_age7079</p></td>
+<td><p>REAL</p></td>
+<td><p>risk ratio of RTI in age 70-79 compared to base rate of RTI</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_injrti_male</p></td>
+<td><p>REAL</p></td>
+<td><p>risk ratio of RTI when male compared to females</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_injrti_excessalcohol</p></td>
+<td><p>REAL</p></td>
+<td><p>risk ratio of RTI in those that consume excess alcohol compared to those who do not</p></td>
+</tr>
+<tr class="row-even"><td><p>imm_death_proportion_rti</p></td>
+<td><p>REAL</p></td>
+<td><p>Proportion of those involved in an RTI that die at site of accident or die before seeking medical intervention</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_bleeding_leads_to_shock</p></td>
+<td><p>REAL</p></td>
+<td><p>The proportion of those with heavily bleeding injuries who go into shock</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_death_iss_less_than_9</p></td>
+<td><p>REAL</p></td>
+<td><p>Proportion of people who pass away in the following month after medical treatment for injuries with an ISSscore less than or equal to 9</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_death_iss_10_15</p></td>
+<td><p>REAL</p></td>
+<td><p>Proportion of people who pass away in the following month after medical treatment for injuries with an ISSscore from 10 to 15</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_death_iss_16_24</p></td>
+<td><p>REAL</p></td>
+<td><p>Proportion of people who pass away in the following month after medical treatment for injuries with an ISSscore from 16 to 24</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_death_iss_25_35</p></td>
+<td><p>REAL</p></td>
+<td><p>Proportion of people who pass away in the following month after medical treatment for injuries with an ISSscore from 25 to 34</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_death_iss_35_plus</p></td>
+<td><p>REAL</p></td>
+<td><p>Proportion of people who pass away in the following month after medical treatment for injuries with an ISSscore 35 and above</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_perm_disability_with_treatment_severe_TBI</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that someone with a treated severe TBI is permanently disabled</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_death_TBI_SCI_no_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that someone with a spinal cord injury will die without treatment</p></td>
+</tr>
+<tr class="row-odd"><td><p>prop_death_burns_no_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that someone with a burn injury will die without treatment</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_death_fractures_no_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that someone with a fracture injury will die without treatment</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_TBI_require_craniotomy</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that someone with a traumatic brain injury will require a craniotomy surgery</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_exploratory_laparotomy</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that someone with an internal organ injury will require a exploratory_laparotomy</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_depressed_skull_fracture</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a skull fracture will be depressed and therefore require surgery</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_mild_burns</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a burn within a region will result in &lt; 10% total body surface area</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_dislocation_requires_surgery</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a dislocation will require surgery to relocate the joint.</p></td>
+</tr>
+<tr class="row-even"><td><p>number_of_injured_body_regions_distribution</p></td>
+<td><p>LIST</p></td>
+<td><p>The distribution of number of injured AIS body regions, used to decide how many injuries a person has</p></td>
+</tr>
+<tr class="row-odd"><td><p>injury_location_distribution</p></td>
+<td><p>LIST</p></td>
+<td><p>The distribution of where injuries are located in the body, based on the AIS body region definition</p></td>
+</tr>
+<tr class="row-even"><td><p>mean_los_ISS_less_than_4</p></td>
+<td><p>REAL</p></td>
+<td><p>Mean length of stay for someone with an ISS score &lt; 4</p></td>
+</tr>
+<tr class="row-odd"><td><p>sd_los_ISS_less_than_4</p></td>
+<td><p>REAL</p></td>
+<td><p>Standard deviation in length of stay for someone with an ISS score &lt; 4</p></td>
+</tr>
+<tr class="row-even"><td><p>mean_los_ISS_4_to_8</p></td>
+<td><p>REAL</p></td>
+<td><p>Mean length of stay for someone with an ISS score between 4 and 8</p></td>
+</tr>
+<tr class="row-odd"><td><p>sd_los_ISS_4_to_8</p></td>
+<td><p>REAL</p></td>
+<td><p>Standard deviation in length of stay for someone with an ISS score between 4 and 8</p></td>
+</tr>
+<tr class="row-even"><td><p>mean_los_ISS_9_to_15</p></td>
+<td><p>REAL</p></td>
+<td><p>Mean length of stay for someone with an ISS score between 9 and 15</p></td>
+</tr>
+<tr class="row-odd"><td><p>sd_los_ISS_9_to_15</p></td>
+<td><p>REAL</p></td>
+<td><p>Standard deviation in length of stay for someone with an ISS score between 9 and 15</p></td>
+</tr>
+<tr class="row-even"><td><p>mean_los_ISS_16_to_24</p></td>
+<td><p>REAL</p></td>
+<td><p>Mean length of stay for someone with an ISS score between 16 and 24</p></td>
+</tr>
+<tr class="row-odd"><td><p>sd_los_ISS_16_to_24</p></td>
+<td><p>REAL</p></td>
+<td><p>Standard deviation in length of stay for someone with an ISS score between 16 and 24</p></td>
+</tr>
+<tr class="row-even"><td><p>mean_los_ISS_more_than_25</p></td>
+<td><p>REAL</p></td>
+<td><p>Mean length of stay for someone with an ISS score between 16 and 24</p></td>
+</tr>
+<tr class="row-odd"><td><p>sd_los_ISS_more_that_25</p></td>
+<td><p>REAL</p></td>
+<td><p>Standard deviation in length of stay for someone with an ISS score between 16 and 24</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_unspecified_skull_fracture</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_unspecified_skull_fracture - code 1674</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_basilar_skull_fracture</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_basilar_skull_fracture - code 1675</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_epidural_hematoma</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_epidural_hematoma - code 1676</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_subdural_hematoma</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_subdural_hematoma - code 1677</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_subarachnoid_hematoma</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_subarachnoid_hematoma - code 1678</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_brain_contusion</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_brain_contusion - code 1679</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_intraventricular_haemorrhage</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_intraventricular_haemorrhage - code 1680</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_diffuse_axonal_injury</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_diffuse_axonal_injury - code 1681</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_subgaleal_hematoma</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_subgaleal_hematoma - code 1682</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_midline_shift</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_midline_shift - code 1683</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_facial_fracture</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_facial_fracture - code 1684</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_facial_soft_tissue_injury</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_facial_soft_tissue_injury - code 1685</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_eye_injury</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_eye_injury - code 1686</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_neck_soft_tissue_injury</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_neck_soft_tissue_injury - code 1687</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_neck_internal_bleeding</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_neck_internal_bleeding - code 1688</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_neck_dislocation</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_neck_dislocation - code 1689</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_chest_wall_bruises_hematoma</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_chest_wall_bruises_hematoma - code 1690</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_hemothorax</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_hemothorax - code 1691</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_lung_contusion</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_lung_contusion - code 1692</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_diaphragm_rupture</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_diaphragm_rupture - code 1693</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_rib_fracture</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_rib_fracture - code 1694</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_flail_chest</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_flail_chest - code 1695</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_chest_wall_laceration</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_chest_wall_laceration - code 1696</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_closed_pneumothorax</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_closed_pneumothorax - code 1697</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_open_pneumothorax</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_open_pneumothorax - code 1698</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_surgical_emphysema</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_surgical_emphysema aka subcuteal emphysema - code 1699</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_abd_internal_organ_injury</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_abd_internal_organ_injury - code 1700</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_spinal_cord_lesion_neck_with_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_spinal_cord_lesion_neck_with_treatment - code 1701</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_spinal_cord_lesion_neck_without_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_spinal_cord_lesion_neck_without_treatment - code 1702</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_spinal_cord_lesion_below_neck_with_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_spinal_cord_lesion_below_neck_with_treatment - code 1703</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_spinal_cord_lesion_below_neck_without_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_spinal_cord_lesion_below_neck_without_treatment - code 1704</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_vertebrae_fracture</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_vertebrae_fracture - code 1705</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_clavicle_scapula_humerus_fracture</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_clavicle_scapula_humerus_fracture - code 1706</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_hand_wrist_fracture_with_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_hand_wrist_fracture_with_treatment - code 1707</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_hand_wrist_fracture_without_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_hand_wrist_fracture_without_treatment - code 1708</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_radius_ulna_fracture_short_term_with_without_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_radius_ulna_fracture_short_term_with_without_treatment - code 1709</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_radius_ulna_fracture_long_term_without_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_radius_ulna_fracture_long_term_without_treatment - code 1710</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_dislocated_shoulder</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_dislocated_shoulder - code 1711</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_amputated_finger</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_amputated_finger - code 1712</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_amputated_thumb</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_amputated_thumb - code 1713</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_unilateral_arm_amputation_with_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_unilateral_arm_amputation_with_treatment - code 1714</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_unilateral_arm_amputation_without_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_unilateral_arm_amputation_without_treatment - code 1715</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_bilateral_arm_amputation_with_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_bilateral_arm_amputation_with_treatment - code 1716</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_bilateral_arm_amputation_without_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_bilateral_arm_amputation_without_treatment - code 1717</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_foot_fracture_short_term_with_without_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_foot_fracture_short_term_with_without_treatment - code 1718</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_foot_fracture_long_term_without_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_foot_fracture_long_term_without_treatment - code 1719</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_patella_tibia_fibula_fracture_with_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_patella_tibia_fibula_fracture_with_treatment - code 1720</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_patella_tibia_fibula_fracture_without_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_patella_tibia_fibula_fracture_without_treatment - code 1721</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_hip_fracture_short_term_with_without_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_hip_fracture_short_term_with_without_treatment - code 1722</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_hip_fracture_long_term_with_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_hip_fracture_long_term_with_treatment - code 1723</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_hip_fracture_long_term_without_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_hip_fracture_long_term_without_treatment - code 1724</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_pelvis_fracture_short_term</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_pelvis_fracture_short_term - code 1725</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_pelvis_fracture_long_term</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_pelvis_fracture_long_term - code 1726</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_femur_fracture_short_term</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_femur_fracture_short_term - code 1727</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_femur_fracture_long_term_without_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_femur_fracture_long_term_without_treatment - code 1728</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_dislocated_hip</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_dislocated_hip - code 1729</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_dislocated_knee</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_dislocated_knee - code 1730</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_amputated_toes</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_amputated_toes - code 1731</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_unilateral_lower_limb_amputation_with_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_unilateral_lower_limb_amputation_with_treatment - code 1732</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_unilateral_lower_limb_amputation_without_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_unilateral_lower_limb_amputation_without_treatment - code 1733</p></td>
+</tr>
+<tr class="row-even"><td><p>daly_wt_bilateral_lower_limb_amputation_with_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_bilateral_lower_limb_amputation_with_treatment - code 1734</p></td>
+</tr>
+<tr class="row-odd"><td><p>daly_wt_bilateral_lower_limb_amputation_without_treatment</p></td>
+<td><p>REAL</p></td>
+<td><p>daly_wt_bilateral_lower_limb_amputation_without_treatment - code 1735</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_emergency_care_ISS_score_cut_off</p></td>
+<td><p>INT</p></td>
+<td><p>A parameter to determine which level of injury severity corresponds to the emergency health care seeking symptom and which to the non-emergency generic injury symptom</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_death_MAIS3</p></td>
+<td><p>REAL</p></td>
+<td><p>A parameter to determine the probability of death without medical intervention with a military AISscore of 3</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_death_MAIS4</p></td>
+<td><p>REAL</p></td>
+<td><p>A parameter to determine the probability of death without medical intervention with a military AISscore of 4</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_death_MAIS5</p></td>
+<td><p>REAL</p></td>
+<td><p>A parameter to determine the probability of death without medical intervention with a military AISscore of 5</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_death_MAIS6</p></td>
+<td><p>REAL</p></td>
+<td><p>A parameter to determine the probability of death without medical intervention with a military AISscore of 6</p></td>
+</tr>
+<tr class="row-odd"><td><p>femur_fracture_skeletal_traction_mean_los</p></td>
+<td><p>INT</p></td>
+<td><p>The mean length of stay for a person with a femur fracture being treated with skeletal traction</p></td>
+</tr>
+<tr class="row-even"><td><p>other_skeletal_traction_los</p></td>
+<td><p>INT</p></td>
+<td><p>The mean length of stay for a person with a non-femur fracture being treated with skeletal traction</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_foot_frac_require_cast</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a foot fracture will be treated with a plaster cast</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_foot_frac_require_maj_surg</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a foot fracture will be treated with a major surgery</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_foot_frac_require_min_surg</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a foot fracture will be treated with a major surgery</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_foot_frac_require_amp</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a foot fracture will be treated with amputation via a major surgery</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_tib_fib_frac_require_cast</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a tibia/fibula fracture will be treated with a plaster cast</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_tib_fib_frac_require_maj_surg</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a tibia/fibula fracture will be treated with a major surgery</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_tib_fib_frac_require_min_surg</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a tibia/fibula fracture will be treated with a minor surgery</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_tib_fib_frac_require_amp</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a tibia/fibula fracture will be treated with an amputation via major surgery</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_tib_fib_frac_require_traction</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a tibia/fibula fracture will be treated with skeletal traction</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_femural_fracture_require_major_surgery</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a femur fracture will be treated with major surgery</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_femural_fracture_require_minor_surgery</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a femur fracture will be treated with minor surgery</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_femural_fracture_require_cast</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a femur fracture will be treated with a plaster cast</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_femural_fracture_require_amputation</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a femur fracture will be treated with amputation via major surgery</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_femural_fracture_require_traction</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a femur fracture will be treated with skeletal traction</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_pelvis_fracture_traction</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a pelvis fracture will be treated with skeletal traction</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_pelvis_frac_major_surgery</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a pelvis fracture will be treated with major surgery</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_pelvis_frac_minor_surgery</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a pelvis fracture will be treated with minor surgery</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_pelvis_frac_cast</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a pelvis fracture will be treated with a cast</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_dis_hip_require_maj_surg</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a dislocated hip will be treated with a major surgery</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_dis_hip_require_cast</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a dislocated hip will be treated with a plaster cast</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_hip_dis_require_traction</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that a person with a dislocated hip will be treated with skeletal traction</p></td>
+</tr>
+<tr class="row-even"><td><p>hdu_cut_off_iss_score</p></td>
+<td><p>INT</p></td>
+<td><p>The ISS score used as a criteria to admit patients to the HDU/ICU units</p></td>
+</tr>
+<tr class="row-odd"><td><p>mean_icu_days</p></td>
+<td><p>REAL</p></td>
+<td><p>The mean length of stay in the ICUfor those without TBI</p></td>
+</tr>
+<tr class="row-even"><td><p>sd_icu_days</p></td>
+<td><p>REAL</p></td>
+<td><p>The standard deviation in length of stay in the ICU for those without TBI</p></td>
+</tr>
+<tr class="row-odd"><td><p>mean_tbi_icu_days</p></td>
+<td><p>REAL</p></td>
+<td><p>The mean length of stay in the ICU for those with TBI</p></td>
+</tr>
+<tr class="row-even"><td><p>sd_tbi_icu_days</p></td>
+<td><p>REAL</p></td>
+<td><p>The standard deviation in length of stay in the ICU for those with TBI</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_open_fracture_contaminated</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that an open fracture will be contaminated</p></td>
+</tr>
+<tr class="row-even"><td><p>allowed_interventions</p></td>
+<td><p>LIST</p></td>
+<td><p>List of additional interventions that can be included when performing model analysis</p></td>
+</tr>
+<tr class="row-odd"><td><p>head_prob_112</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s head injury is a skull fracture</p></td>
+</tr>
+<tr class="row-even"><td><p>head_prob_113</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s head injury is a basilar skull fracture</p></td>
+</tr>
+<tr class="row-odd"><td><p>head_prob_133a</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s head injury is a Subarachnoid hematoma</p></td>
+</tr>
+<tr class="row-even"><td><p>head_prob_133b</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s head injury is a Brain contusion</p></td>
+</tr>
+<tr class="row-odd"><td><p>head_prob_133c</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s head injury is an Intraventricular haemorrhage</p></td>
+</tr>
+<tr class="row-even"><td><p>head_prob_133d</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s head injury is a Subgaleal hematoma</p></td>
+</tr>
+<tr class="row-odd"><td><p>head_prob_134a</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s head injury is an Epidural hematoma</p></td>
+</tr>
+<tr class="row-even"><td><p>head_prob_134b</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s head injury is a Subdural hematoma</p></td>
+</tr>
+<tr class="row-odd"><td><p>head_prob_135</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s head injury is a Diffuse axonal injury/midline shift</p></td>
+</tr>
+<tr class="row-even"><td><p>head_prob_1101</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s head injury is a laceration</p></td>
+</tr>
+<tr class="row-odd"><td><p>head_prob_1114</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s head injury is a burn</p></td>
+</tr>
+<tr class="row-even"><td><p>face_prob_211</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s face injury is a Facial fracture (nasal/unspecified)</p></td>
+</tr>
+<tr class="row-odd"><td><p>face_prob_212</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s face injury is a Facial fracture (mandible/zygomatic)</p></td>
+</tr>
+<tr class="row-even"><td><p>face_prob_241</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s face injury is a soft tissue injury</p></td>
+</tr>
+<tr class="row-odd"><td><p>face_prob_2101</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s face injury is a laceration</p></td>
+</tr>
+<tr class="row-even"><td><p>face_prob_2114</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s face injury is a burn</p></td>
+</tr>
+<tr class="row-odd"><td><p>face_prob_291</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s face injury is an eye injury</p></td>
+</tr>
+<tr class="row-even"><td><p>neck_prob_3101</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s neck injury is a laceration</p></td>
+</tr>
+<tr class="row-odd"><td><p>neck_prob_3113</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s neck injury is a burn</p></td>
+</tr>
+<tr class="row-even"><td><p>neck_prob_342</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s neck injury is a Soft tissue injury in neck (vertebral artery laceration)</p></td>
+</tr>
+<tr class="row-odd"><td><p>neck_prob_343</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s neck injury is a Soft tissue injury in neck (pharynx contusion)</p></td>
+</tr>
+<tr class="row-even"><td><p>neck_prob_361</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s neck injury is a Sternomastoid m. hemorrhage/ Hemorrhage, supraclavicular triangle/Hemorrhage, posterior triangle/Anterior vertebral vessel hemorrhage/ Neck muscle hemorrhage</p></td>
+</tr>
+<tr class="row-odd"><td><p>neck_prob_363</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s neck injury is a Hematoma in carotid sheath/Carotid sheath hemorrhage</p></td>
+</tr>
+<tr class="row-even"><td><p>neck_prob_322</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s neck injury is an Atlanto-occipital subluxation</p></td>
+</tr>
+<tr class="row-odd"><td><p>neck_prob_323</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s neck injury is an Atlanto-axial subluxation</p></td>
+</tr>
+<tr class="row-even"><td><p>thorax_prob_4101</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s thorax injury is a laceration</p></td>
+</tr>
+<tr class="row-odd"><td><p>thorax_prob_4113</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s thorax injury is a burn</p></td>
+</tr>
+<tr class="row-even"><td><p>thorax_prob_461</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s thorax injury is Chest wall bruises/haematoma</p></td>
+</tr>
+<tr class="row-odd"><td><p>thorax_prob_463</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s thorax injury is Haemothorax</p></td>
+</tr>
+<tr class="row-even"><td><p>thorax_prob_453a</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s thorax injury is a Lung contusion</p></td>
+</tr>
+<tr class="row-odd"><td><p>thorax_prob_453b</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s thorax injury is a Diaphragm rupture</p></td>
+</tr>
+<tr class="row-even"><td><p>thorax_prob_412</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s thorax injury is a rib fracture</p></td>
+</tr>
+<tr class="row-odd"><td><p>thorax_prob_414</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s thorax injury is flail chest</p></td>
+</tr>
+<tr class="row-even"><td><p>thorax_prob_441</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s thorax injury is a Chest wall lacerations/avulsions</p></td>
+</tr>
+<tr class="row-odd"><td><p>thorax_prob_442</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s thorax injury is a Surgical emphysema</p></td>
+</tr>
+<tr class="row-even"><td><p>thorax_prob_443</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s thorax injury is a Closed pneumothorax/ open pneumothorax</p></td>
+</tr>
+<tr class="row-odd"><td><p>abdomen_prob_5101</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s abdomen injury is a laceration</p></td>
+</tr>
+<tr class="row-even"><td><p>abdomen_prob_5113</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s thorax injury is a burn</p></td>
+</tr>
+<tr class="row-odd"><td><p>abdomen_prob_552</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s thorax injury is a skull fracture</p></td>
+</tr>
+<tr class="row-even"><td><p>abdomen_prob_553</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s thorax injury is an Injury to stomach/intestines/colon</p></td>
+</tr>
+<tr class="row-odd"><td><p>abdomen_prob_554</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s thorax injury is an Injury to spleen/Urinary bladder/Liver/Urethra/Diaphragm</p></td>
+</tr>
+<tr class="row-even"><td><p>spine_prob_612</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s spine injury is a vertabrae fracture</p></td>
+</tr>
+<tr class="row-odd"><td><p>spine_prob_673a</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s spine injury is a Spinal cord injury at neck level</p></td>
+</tr>
+<tr class="row-even"><td><p>spine_prob_673b</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s spine injury is a Spinal cord injury below neck level</p></td>
+</tr>
+<tr class="row-odd"><td><p>spine_prob_674a</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s spine injury is a Spinal cord injury at neck level</p></td>
+</tr>
+<tr class="row-even"><td><p>spine_prob_674b</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s spine injury is a Spinal cord injury below neck level</p></td>
+</tr>
+<tr class="row-odd"><td><p>spine_prob_675a</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s spine injury is a Spinal cord injury at neck level</p></td>
+</tr>
+<tr class="row-even"><td><p>spine_prob_675b</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s spine injury is a Spinal cord injury below neck level</p></td>
+</tr>
+<tr class="row-odd"><td><p>spine_prob_676</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s spine injury is a Spinal cord injury at neck level</p></td>
+</tr>
+<tr class="row-even"><td><p>upper_ex_prob_7101</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s upper extremity injury is a laceration</p></td>
+</tr>
+<tr class="row-odd"><td><p>upper_ex_prob_7113</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s upper extremity injury is a burn</p></td>
+</tr>
+<tr class="row-even"><td><p>upper_ex_prob_712a</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s upper extremity injury is a Fracture to Clavicle, scapula, humerus</p></td>
+</tr>
+<tr class="row-odd"><td><p>upper_ex_prob_712b</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s upper extremity injury is a Fracture to Hand/wrist</p></td>
+</tr>
+<tr class="row-even"><td><p>upper_ex_prob_712c</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s upper extremity injury is a Fracture to Radius/ulna</p></td>
+</tr>
+<tr class="row-odd"><td><p>upper_ex_prob_722</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s upper extremity injury is a dislocated shoulder</p></td>
+</tr>
+<tr class="row-even"><td><p>upper_ex_prob_782a</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s upper extremity injury is an Amputated finger</p></td>
+</tr>
+<tr class="row-odd"><td><p>upper_ex_prob_782b</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s upper extremity injury is a Unilateral arm amputation</p></td>
+</tr>
+<tr class="row-even"><td><p>upper_ex_prob_782c</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s upper extremity injury is a Thumb amputation</p></td>
+</tr>
+<tr class="row-odd"><td><p>upper_ex_prob_783</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s upper extremity injury is a bilateral arm amputation</p></td>
+</tr>
+<tr class="row-even"><td><p>lower_ex_prob_8101</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s lower extremity injury is a laceration</p></td>
+</tr>
+<tr class="row-odd"><td><p>lower_ex_prob_8113</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s lower extremity injury is a burn</p></td>
+</tr>
+<tr class="row-even"><td><p>lower_ex_prob_811</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s lower extremity injury is a foot fracture</p></td>
+</tr>
+<tr class="row-odd"><td><p>lower_ex_prob_813do</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s lower extremity injury is an open foot fracture</p></td>
+</tr>
+<tr class="row-even"><td><p>lower_ex_prob_812</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s lower extremity injury is a Fracture to patella, tibia, fibula, ankle</p></td>
+</tr>
+<tr class="row-odd"><td><p>lower_ex_prob_813eo</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s lower extremity injury is an open Fracture to patella, tibia, fibula, ankle</p></td>
+</tr>
+<tr class="row-even"><td><p>lower_ex_prob_813a</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s lower extremity injury is a Hip fracture</p></td>
+</tr>
+<tr class="row-odd"><td><p>lower_ex_prob_813b</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s lower extremity injury is a Pelvis fracture</p></td>
+</tr>
+<tr class="row-even"><td><p>lower_ex_prob_813bo</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s lower extremity injury is an open Pelvis fracture</p></td>
+</tr>
+<tr class="row-odd"><td><p>lower_ex_prob_813c</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s lower extremity injury is a Femur fracture</p></td>
+</tr>
+<tr class="row-even"><td><p>lower_ex_prob_813co</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s lower extremity injury is an open Femur fracture</p></td>
+</tr>
+<tr class="row-odd"><td><p>lower_ex_prob_822a</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s lower extremity injury is a Dislocated hip</p></td>
+</tr>
+<tr class="row-even"><td><p>lower_ex_prob_822b</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s lower extremity injury is a Dislocated knee</p></td>
+</tr>
+<tr class="row-odd"><td><p>lower_ex_prob_882</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s lower extremity injury is an Amputation of toes</p></td>
+</tr>
+<tr class="row-even"><td><p>lower_ex_prob_883</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s lower extremity injury is a Unilateral leg amputation</p></td>
+</tr>
+<tr class="row-odd"><td><p>lower_ex_prob_884</p></td>
+<td><p>REAL</p></td>
+<td><p>The probability that this person’s lower extremity injury is a Bilateral leg amputation</p></td>
+</tr>
+<tr class="row-even"><td><p>blocked_interventions</p></td>
+<td><p>LIST</p></td>
+<td><p>A list of interventions that are blocked in a simulation</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>PROPERTIES:</strong></p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>rt_road_traffic_inc</p></td>
+<td><p>BOOL</p></td>
+<td><p>involved in a road traffic injury</p></td>
+</tr>
+<tr class="row-odd"><td><p>rt_inj_severity</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Injury status relating to road traffic injury: none, mild, severe.  Possible values are: [none, mild, severe, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_injury_1</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Codes for injury 1 from RTI.  Possible values are: [none, 112, 113, 133a, 133b, 133c, 133d, 134a, 134b, 135, 1101, 1114, 211, 212, 241, 2101, 2114, 291, 342, 343, 361, 363, 322, 323, 3101, 3113, 412, 414, 461, 463, 453a, 453b, 441, 442, 443, 4101, 4113, 552, 553, 554, 5101, 5113, 612, 673a, 673b, 674a, 674b, 675a, 675b, 676, 712a, 712b, 712c, 722, 782a, 782b, 782c, 783, 7101, 7113, 811, 813do, 812, 813eo, 813a, 813b, 813bo, 813c, 813co, 822a, 822b, 882, 883, 884, 8101, 8113, P133a, P133b, P133c, P133d, P134a, P134b, P135, P673a, P673b, P674a, P674b, P675a, P675b, P676, P782a, P782b, P782c, P783, P882, P883, P884, ]</p></td>
+</tr>
+<tr class="row-odd"><td><p>rt_injury_2</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Codes for injury 2 from RTI.  Possible values are: [none, 112, 113, 133a, 133b, 133c, 133d, 134a, 134b, 135, 1101, 1114, 211, 212, 241, 2101, 2114, 291, 342, 343, 361, 363, 322, 323, 3101, 3113, 412, 414, 461, 463, 453a, 453b, 441, 442, 443, 4101, 4113, 552, 553, 554, 5101, 5113, 612, 673a, 673b, 674a, 674b, 675a, 675b, 676, 712a, 712b, 712c, 722, 782a, 782b, 782c, 783, 7101, 7113, 811, 813do, 812, 813eo, 813a, 813b, 813bo, 813c, 813co, 822a, 822b, 882, 883, 884, 8101, 8113, P133a, P133b, P133c, P133d, P134a, P134b, P135, P673a, P673b, P674a, P674b, P675a, P675b, P676, P782a, P782b, P782c, P783, P882, P883, P884, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_injury_3</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Codes for injury 3 from RTI.  Possible values are: [none, 112, 113, 133a, 133b, 133c, 133d, 134a, 134b, 135, 1101, 1114, 211, 212, 241, 2101, 2114, 291, 342, 343, 361, 363, 322, 323, 3101, 3113, 412, 414, 461, 463, 453a, 453b, 441, 442, 443, 4101, 4113, 552, 553, 554, 5101, 5113, 612, 673a, 673b, 674a, 674b, 675a, 675b, 676, 712a, 712b, 712c, 722, 782a, 782b, 782c, 783, 7101, 7113, 811, 813do, 812, 813eo, 813a, 813b, 813bo, 813c, 813co, 822a, 822b, 882, 883, 884, 8101, 8113, P133a, P133b, P133c, P133d, P134a, P134b, P135, P673a, P673b, P674a, P674b, P675a, P675b, P676, P782a, P782b, P782c, P783, P882, P883, P884, ]</p></td>
+</tr>
+<tr class="row-odd"><td><p>rt_injury_4</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Codes for injury 4 from RTI.  Possible values are: [none, 112, 113, 133a, 133b, 133c, 133d, 134a, 134b, 135, 1101, 1114, 211, 212, 241, 2101, 2114, 291, 342, 343, 361, 363, 322, 323, 3101, 3113, 412, 414, 461, 463, 453a, 453b, 441, 442, 443, 4101, 4113, 552, 553, 554, 5101, 5113, 612, 673a, 673b, 674a, 674b, 675a, 675b, 676, 712a, 712b, 712c, 722, 782a, 782b, 782c, 783, 7101, 7113, 811, 813do, 812, 813eo, 813a, 813b, 813bo, 813c, 813co, 822a, 822b, 882, 883, 884, 8101, 8113, P133a, P133b, P133c, P133d, P134a, P134b, P135, P673a, P673b, P674a, P674b, P675a, P675b, P676, P782a, P782b, P782c, P783, P882, P883, P884, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_injury_5</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Codes for injury 5 from RTI.  Possible values are: [none, 112, 113, 133a, 133b, 133c, 133d, 134a, 134b, 135, 1101, 1114, 211, 212, 241, 2101, 2114, 291, 342, 343, 361, 363, 322, 323, 3101, 3113, 412, 414, 461, 463, 453a, 453b, 441, 442, 443, 4101, 4113, 552, 553, 554, 5101, 5113, 612, 673a, 673b, 674a, 674b, 675a, 675b, 676, 712a, 712b, 712c, 722, 782a, 782b, 782c, 783, 7101, 7113, 811, 813do, 812, 813eo, 813a, 813b, 813bo, 813c, 813co, 822a, 822b, 882, 883, 884, 8101, 8113, P133a, P133b, P133c, P133d, P134a, P134b, P135, P673a, P673b, P674a, P674b, P675a, P675b, P676, P782a, P782b, P782c, P783, P882, P883, P884, ]</p></td>
+</tr>
+<tr class="row-odd"><td><p>rt_injury_6</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Codes for injury 6 from RTI.  Possible values are: [none, 112, 113, 133a, 133b, 133c, 133d, 134a, 134b, 135, 1101, 1114, 211, 212, 241, 2101, 2114, 291, 342, 343, 361, 363, 322, 323, 3101, 3113, 412, 414, 461, 463, 453a, 453b, 441, 442, 443, 4101, 4113, 552, 553, 554, 5101, 5113, 612, 673a, 673b, 674a, 674b, 675a, 675b, 676, 712a, 712b, 712c, 722, 782a, 782b, 782c, 783, 7101, 7113, 811, 813do, 812, 813eo, 813a, 813b, 813bo, 813c, 813co, 822a, 822b, 882, 883, 884, 8101, 8113, P133a, P133b, P133c, P133d, P134a, P134b, P135, P673a, P673b, P674a, P674b, P675a, P675b, P676, P782a, P782b, P782c, P783, P882, P883, P884, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_injury_7</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Codes for injury 7 from RTI.  Possible values are: [none, 112, 113, 133a, 133b, 133c, 133d, 134a, 134b, 135, 1101, 1114, 211, 212, 241, 2101, 2114, 291, 342, 343, 361, 363, 322, 323, 3101, 3113, 412, 414, 461, 463, 453a, 453b, 441, 442, 443, 4101, 4113, 552, 553, 554, 5101, 5113, 612, 673a, 673b, 674a, 674b, 675a, 675b, 676, 712a, 712b, 712c, 722, 782a, 782b, 782c, 783, 7101, 7113, 811, 813do, 812, 813eo, 813a, 813b, 813bo, 813c, 813co, 822a, 822b, 882, 883, 884, 8101, 8113, P133a, P133b, P133c, P133d, P134a, P134b, P135, P673a, P673b, P674a, P674b, P675a, P675b, P676, P782a, P782b, P782c, P783, P882, P883, P884, ]</p></td>
+</tr>
+<tr class="row-odd"><td><p>rt_injury_8</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Codes for injury 8 from RTI.  Possible values are: [none, 112, 113, 133a, 133b, 133c, 133d, 134a, 134b, 135, 1101, 1114, 211, 212, 241, 2101, 2114, 291, 342, 343, 361, 363, 322, 323, 3101, 3113, 412, 414, 461, 463, 453a, 453b, 441, 442, 443, 4101, 4113, 552, 553, 554, 5101, 5113, 612, 673a, 673b, 674a, 674b, 675a, 675b, 676, 712a, 712b, 712c, 722, 782a, 782b, 782c, 783, 7101, 7113, 811, 813do, 812, 813eo, 813a, 813b, 813bo, 813c, 813co, 822a, 822b, 882, 883, 884, 8101, 8113, P133a, P133b, P133c, P133d, P134a, P134b, P135, P673a, P673b, P674a, P674b, P675a, P675b, P676, P782a, P782b, P782c, P783, P882, P883, P884, ]</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_in_shock</p></td>
+<td><p>BOOL</p></td>
+<td><p>A property determining if this person is in shock</p></td>
+</tr>
+<tr class="row-odd"><td><p>rt_death_from_shock</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether this person died from shock</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_injuries_to_cast</p></td>
+<td><p>LIST</p></td>
+<td><p>A list of injuries that are to be treated with casts</p></td>
+</tr>
+<tr class="row-odd"><td><p>rt_injuries_for_minor_surgery</p></td>
+<td><p>LIST</p></td>
+<td><p>A list of injuries that are to be treated with a minorsurgery</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_injuries_for_major_surgery</p></td>
+<td><p>LIST</p></td>
+<td><p>A list of injuries that are to be treated with a minorsurgery</p></td>
+</tr>
+<tr class="row-odd"><td><p>rt_injuries_to_heal_with_time</p></td>
+<td><p>LIST</p></td>
+<td><p>A list of injuries that heal without further treatment</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_injuries_for_open_fracture_treatment</p></td>
+<td><p>LIST</p></td>
+<td><p>A list of injuries that with open fracture treatment</p></td>
+</tr>
+<tr class="row-odd"><td><p>rt_ISS_score</p></td>
+<td><p>INT</p></td>
+<td><p>The ISS score associated with the injuries resulting from a road trafficaccident</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_perm_disability</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether the injuries from an RTI result in permanent disability</p></td>
+</tr>
+<tr class="row-odd"><td><p>rt_polytrauma</p></td>
+<td><p>BOOL</p></td>
+<td><p>polytrauma from RTI</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_imm_death</p></td>
+<td><p>BOOL</p></td>
+<td><p>death at scene True/False</p></td>
+</tr>
+<tr class="row-odd"><td><p>rt_diagnosed</p></td>
+<td><p>BOOL</p></td>
+<td><p>Person has had their injuries diagnosed</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_date_to_remove_daly</p></td>
+<td><p>LIST</p></td>
+<td><p>List of dates to remove the daly weight associated with each injury</p></td>
+</tr>
+<tr class="row-odd"><td><p>rt_post_med_death</p></td>
+<td><p>BOOL</p></td>
+<td><p>death in following month despite medical intervention True/False</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_no_med_death</p></td>
+<td><p>BOOL</p></td>
+<td><p>death in following month without medical intervention True/False</p></td>
+</tr>
+<tr class="row-odd"><td><p>rt_unavailable_med_death</p></td>
+<td><p>BOOL</p></td>
+<td><p>death in the following month without medical intervention being able to be provided</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_recovery_no_med</p></td>
+<td><p>BOOL</p></td>
+<td><p>recovery without medical intervention True/False</p></td>
+</tr>
+<tr class="row-odd"><td><p>rt_disability</p></td>
+<td><p>REAL</p></td>
+<td><p>disability weight for current month</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_date_inj</p></td>
+<td><p>DATE</p></td>
+<td><p>date of latest injury</p></td>
+</tr>
+<tr class="row-odd"><td><p>rt_med_int</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether this person is currently undergoing medical treatment</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_in_icu_or_hdu</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether this person is currently in ICU for RTI</p></td>
+</tr>
+<tr class="row-odd"><td><p>rt_MAIS_military_score</p></td>
+<td><p>INT</p></td>
+<td><p>the maximum AIS-military score, used as a proxy to calculate theprobability of mortality without medical intervention</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_date_death_no_med</p></td>
+<td><p>DATE</p></td>
+<td><p>the date which the person has is scheduled to die without medicalintervention</p></td>
+</tr>
+<tr class="row-odd"><td><p>rt_debugging_DALY_wt</p></td>
+<td><p>REAL</p></td>
+<td><p>The true value of the DALY weight burden</p></td>
+</tr>
+<tr class="row-even"><td><p>rt_injuries_left_untreated</p></td>
+<td><p>LIST</p></td>
+<td><p>A list of injuries that have been left untreated due to a blocked intervention</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Class attributes:</strong></p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Demography’, ‘HealthSystem’, ‘Lifestyle’}</p>
+<p>CAUSES_OF_DEATH : {‘RTI_death_without_med’: &lt;tlo.methods.causes.Cause object at 0x7f98801beca0&gt;, ‘RTI_death_with_med’: &lt;tlo.methods.causes.Cause object at 0x7f98801bed00&gt;, ‘RTI_unavailable_med’: &lt;tlo.methods.causes.Cause object at 0x7f98801bed60&gt;, ‘RTI_imm_death’: &lt;tlo.methods.causes.Cause object at 0x7f98801bedc0&gt;, ‘RTI_death_shock’: &lt;tlo.methods.causes.Cause object at 0x7f98801bee20&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘RTI’: &lt;tlo.methods.causes.Cause object at 0x7f98801bee80&gt;}</p>
+<p>FRACTURE_CODES : [‘112’, ‘113’, ‘211’, ‘212’, ‘412’, ‘414’, ‘612’, ‘712’, ‘811’, ‘812’, ‘813’]</p>
+<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘HealthBurden’}</p>
+<p>INJURIES_REQ_IMAGING : [‘112’, ‘113’, ‘211’, ‘212’, ‘412’, ‘414’, ‘612’, ‘712a’, ‘712b’, ‘712c’, ‘811’, ‘812’, ‘813a’, ‘813b’, ‘813c’, ‘822a’, ‘822b’, ‘813bo’, ‘813co’, ‘813do’, ‘813eo’, ‘673’, ‘674’, ‘675’, ‘676’, ‘322’, ‘323’, ‘722’, ‘342’, ‘343’, ‘441’, ‘443’, ‘453’, ‘133’, ‘134’, ‘135’, ‘552’, ‘553’, ‘554’, ‘342’, ‘343’, ‘441’, ‘443’, ‘453’, ‘361’, ‘363’, ‘461’, ‘463’]</p>
+<p>INJURY_CODES : [‘none’, ‘112’, ‘113’, ‘133a’, ‘133b’, ‘133c’, ‘133d’, ‘134a’, ‘134b’, ‘135’, ‘1101’, ‘1114’, ‘211’, ‘212’, ‘241’, ‘2101’, ‘2114’, ‘291’, ‘342’, ‘343’, ‘361’, ‘363’, ‘322’, ‘323’, ‘3101’, ‘3113’, ‘412’, ‘414’, ‘461’, ‘463’, ‘453a’, ‘453b’, ‘441’, ‘442’, ‘443’, ‘4101’, ‘4113’, ‘552’, ‘553’, ‘554’, ‘5101’, ‘5113’, ‘612’, ‘673a’, ‘673b’, ‘674a’, ‘674b’, ‘675a’, ‘675b’, ‘676’, ‘712a’, ‘712b’, ‘712c’, ‘722’, ‘782a’, ‘782b’, ‘782c’, ‘783’, ‘7101’, ‘7113’, ‘811’, ‘813do’, ‘812’, ‘813eo’, ‘813a’, ‘813b’, ‘813bo’, ‘813c’, ‘813co’, ‘822a’, ‘822b’, ‘882’, ‘883’, ‘884’, ‘8101’, ‘8113’, ‘P133a’, ‘P133b’, ‘P133c’, ‘P133d’, ‘P134a’, ‘P134b’, ‘P135’, ‘P673a’, ‘P673b’, ‘P674a’, ‘P674b’, ‘P675a’, ‘P675b’, ‘P676’, ‘P782a’, ‘P782b’, ‘P782c’, ‘P783’, ‘P882’, ‘P883’, ‘P884’]</p>
+<p>INJURY_COLUMNS : [‘rt_injury_1’, ‘rt_injury_2’, ‘rt_injury_3’, ‘rt_injury_4’, ‘rt_injury_5’, ‘rt_injury_6’, ‘rt_injury_7’, ‘rt_injury_8’]</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
+<p>NO_TREATMENT_RECOVERY_TIMES_IN_DAYS : {‘112’: 49, ‘113’: 49, ‘1101’: 7, ‘211’: 49, ‘212’: 49, ‘241’: 7, ‘2101’: 7, ‘291’: 7, ‘342’: 42, ‘343’: 42, ‘361’: 7, ‘363’: 14, ‘322’: 42, ‘323’: 42, ‘3101’: 7, ‘3113’: 56, ‘412’: 35, ‘414’: 365, ‘461’: 7, ‘463’: 14, ‘453a’: 84, ‘453b’: 84, ‘441’: 14, ‘442’: 14, ‘4101’: 7, ‘552’: 90, ‘553’: 90, ‘554’: 90, ‘5101’: 7, ‘5113’: 56, ‘612’: 63, ‘712a’: 70, ‘712b’: 70, ‘722’: 84, ‘7101’: 7, ‘7113’: 56, ‘813do’: 240, ‘812’: 70, ‘813eo’: 240, ‘813bo’: 240, ‘813co’: 240, ‘822a’: 60, ‘822b’: 180, ‘8101’: 7, ‘8113’: 56}</p>
+<p>SWAPPING_CODES : [‘712b’, ‘812’, ‘3113’, ‘4113’, ‘5113’, ‘7113’, ‘8113’, ‘813a’, ‘813b’, ‘P673a’, ‘P673b’, ‘P674a’, ‘P674b’, ‘P675a’, ‘P675b’, ‘P676’, ‘P782b’, ‘P783’, ‘P883’, ‘P884’, ‘813bo’, ‘813co’, ‘813do’, ‘813eo’]</p>
+<p><strong>Functions (defined or overridden in class RTI):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new disease module ready to be included in a simulation.</p>
+<p>Initialises an empty parameters dictionary and module-specific random number
+generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – the name to use for this module. Defaults to the concrete subclass’ name.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.read_parameters">
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.read_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the parameters used in the RTI module</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_injury_diagnosis">
+<span class="sig-name descname"><span class="pre">rti_injury_diagnosis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">the_appt_footprint</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_injury_diagnosis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_injury_diagnosis" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function used to alter the appointment footprint of the generic first appointments, based on the needs of
+the patient to be properly diagnosed. Specifically, this function will assign x-rays/ct-scans for injuries
+that require those diagnosis tools.
+:param person_id: the person in a generic appointment with an injury
+:param the_appt_footprint: the current appointment footprint to be altered
+:return: the altered appointment footprint</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.initialise_population">
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.initialise_population" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets up the default properties used in the RTI module and applies them to the dataframe. The default state
+for the RTI module is that people haven’t been involved in a road traffic accident and are therefor alive and
+healthy.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.initialise_simulation">
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.initialise_simulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>At the start of the simulation we schedule a logging event, which records the relevant information
+regarding road traffic injuries in the last month.</p>
+<p>Afterwards, we schedule three RTI events, the first is the main RTI event which takes parts
+of the population and assigns them to be involved in road traffic injuries and providing they survived will
+begin the interaction with the healthcare system. This event runs monthly.</p>
+<p>The second is the begin scheduling the RTI recovery event, which looks at those in the population who have been
+injured in a road traffic accident, checking every day whether enough time has passed for their injuries to have
+healed. When the injury has healed the associated daly weight is removed.</p>
+<p>The final event is one which checks if this person has not sought sought care or been given care, if they
+haven’t then it asks whether they should die away from their injuries</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_do_when_diagnosed">
+<span class="sig-name descname"><span class="pre">rti_do_when_diagnosed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_do_when_diagnosed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_do_when_diagnosed" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called by the generic first appointments when an injured person has been diagnosed
+in A&amp;E and needs to progress further in the health system. The injured person will then be scheduled a generic
+‘medical intervention’ appointment which serves three purposes. The first is to determine what treatments they
+require for their injuries and shedule those, the second is to contain them in the health care system with
+inpatient days and finally, the appointment treats injuries that heal over time without further need for
+resources in the health system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person requesting medical care</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>n/a</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_do_for_major_surgeries">
+<span class="sig-name descname"><span class="pre">rti_do_for_major_surgeries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_do_for_major_surgeries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_do_for_major_surgeries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function called in HSI_RTI_MedicalIntervention to schedule a major surgery if required. In
+HSI_RTI_MedicalIntervention, we determine that they need a surgery. In this function, further to scheduling the
+surgery, we double check that they do meet the conditions for needing a surgery. The conditions for needing a
+surgery is that they are alive, currently seeking medical intervention and have an injury that is treated by
+surgery.
+:param person_id: The person requesting major surgeries
+:param count: The amount of major surgeries required, used when scheduling surgeries to ensure that two major</p>
+<blockquote>
+<div><p>surgeries aren’t scheduled on the same day</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>n/a</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_do_for_minor_surgeries">
+<span class="sig-name descname"><span class="pre">rti_do_for_minor_surgeries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_do_for_minor_surgeries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_do_for_minor_surgeries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function called in HSI_RTI_MedicalIntervention to schedule a minor surgery if required. In
+HSI_RTI_MedicalIntervention, we determine that they need a surgery. In this function, further to scheduling the
+surgery, we double check that they do meet the conditions for needing a surgery. The conditions for needing a
+surgery is that they are alive, currently seeking medical intervention and have an injury that is treated by
+surgery.
+:param person_id: The person requesting major surgeries
+:param count: The amount of major surgeries required, used when scheduling surgeries to ensure that two minor</p>
+<blockquote>
+<div><p>surgeries aren’t scheduled on the same day</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_acute_pain_management">
+<span class="sig-name descname"><span class="pre">rti_acute_pain_management</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_acute_pain_management"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_acute_pain_management" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function called in HSI_RTI_MedicalIntervention to request pain management. This should be called for every alive
+injured person, regardless of what their injuries are. In this function we test whether they meet the
+requirements to recieve for pain relief, that is they are alive and currently receiving medical treatment.
+:param person_id: The person requesting pain management
+:return: n/a</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_ask_for_suture_kit">
+<span class="sig-name descname"><span class="pre">rti_ask_for_suture_kit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_ask_for_suture_kit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_ask_for_suture_kit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function called by HSI_RTI_MedicalIntervention to centralise all suture kit requests. This function checks
+that the person asking for a suture kit meets the requirements to get one. That is they are alive, currently
+being treated for their injuries and that they have a laceration which needs stitching.
+:param person_id: The person asking for a suture kit
+:return: n/a</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_ask_for_shock_treatment">
+<span class="sig-name descname"><span class="pre">rti_ask_for_shock_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_ask_for_shock_treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_ask_for_shock_treatment" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function called by the generic emergency appointment to treat the onset of hypovolemic shock
+:param person_id:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_ask_for_imaging">
+<span class="sig-name descname"><span class="pre">rti_ask_for_imaging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_ask_for_imaging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_ask_for_imaging" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function called by the generic emergency appointment to order imaging for diagnosis
+:param person_id:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_ask_for_burn_treatment">
+<span class="sig-name descname"><span class="pre">rti_ask_for_burn_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_ask_for_burn_treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_ask_for_burn_treatment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function called by HSI_RTI_MedicalIntervention to centralise all burn treatment requests. This function
+schedules burn treatments for the person if they meet the requirements, that is they are alive, currently being
+treated, and they have a burn which needs to be treated.
+:param person_id: The person requesting burn treatment
+:return: n/a</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_ask_for_fracture_casts">
+<span class="sig-name descname"><span class="pre">rti_ask_for_fracture_casts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_ask_for_fracture_casts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_ask_for_fracture_casts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function called by HSI_RTI_MedicalIntervention to centralise all fracture casting. This function schedules the
+fracture cast treatment if they meet the requirements to ask for it. That is they are alive, currently being
+treated and they have a fracture that needs casting (Note that this also handles slings for upper arm/shoulder
+fractures).
+:param person_id: The person asking for fracture cast/sling
+:return: n/a</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_ask_for_open_fracture_treatment">
+<span class="sig-name descname"><span class="pre">rti_ask_for_open_fracture_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">counts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_ask_for_open_fracture_treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_ask_for_open_fracture_treatment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function called by HSI_RTI_MedicalIntervention to centralise open fracture treatment requests. This function
+schedules an open fracture event, conditional on whether they are alive, being treated and have an appropriate
+injury.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>person_id</strong> – the person requesting a tetanus jab</p></li>
+<li><p><strong>counts</strong> – the number of open fractures that requires a treatment</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>n/a</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_ask_for_tetanus">
+<span class="sig-name descname"><span class="pre">rti_ask_for_tetanus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_ask_for_tetanus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_ask_for_tetanus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function called by HSI_RTI_MedicalIntervention to centralise all tetanus requests. This function schedules a
+tetanus event, conditional on whether they are alive, being treated and have an injury that requires a tetanus
+vaccine, i.e. a burn or a laceration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person requesting a tetanus jab</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>n/a</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_find_injury_column">
+<span class="sig-name descname"><span class="pre">rti_find_injury_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">codes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_find_injury_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_find_injury_column" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is a tool to find the injury column an injury code occurs in, when calling this funtion
+you will need to guarentee that the person has at least one of the code you are searching for, else this
+function will raise an assertion error.
+To call this function you need to provide the person who you want to perform the search on and the injury
+codes which you want to find the corresponding injury column for. The function/search will return the injury
+code which the person has from the list of codes you supplied, and which injury column from rt_injury_1 through
+to rt_injury_8, the code appears in.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>person_id</strong> – The person the search is being performed for</p></li>
+<li><p><strong>codes</strong> – The injury codes being searched for</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>which column out of rt_injury_1 to rt_injury_8 the injury code occurs in, and the injury code itself</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_find_all_columns_of_treated_injuries">
+<span class="sig-name descname"><span class="pre">rti_find_all_columns_of_treated_injuries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">codes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_find_all_columns_of_treated_injuries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_find_all_columns_of_treated_injuries" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function searches for treated injuries (supplied by the parameter codes) for a specific person, finding and
+returning all the columns with treated injuries and all the injury codes for the treated injuries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>person_id</strong> – The person the search is being performed on</p></li>
+<li><p><strong>codes</strong> – The treated injury codes</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>All columns and codes of the successfully treated injuries</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_assign_daly_weights">
+<span class="sig-name descname"><span class="pre">rti_assign_daly_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">injured_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_assign_daly_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_assign_daly_weights" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function assigns DALY weights associated with each injury when they happen.</p>
+<p>By default this function gives the DALY weight for each condition without treatment, this will then be swapped
+for the DALY weight associated with the injury with treatment when treatment occurs.</p>
+<p>The properties that this function alters are rt_disability, which is the property used to report the
+disability burden that this person has and rt_debugging_DALY_wt, which stores the true value of the
+the disability.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>injured_index</strong> – The people who have been involved in a road traffic accident for the current month and did
+not die on the scene of the crash</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>n/a</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_alter_daly_post_treatment">
+<span class="sig-name descname"><span class="pre">rti_alter_daly_post_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">codes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_alter_daly_post_treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_alter_daly_post_treatment" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function removes the DALY weight associated with each injury code after treatment is complete. This
+function is called by RTI_Recovery_event which removes asks to remove the DALY weight when the injury has
+healed</p>
+<p>The properties that this function alters are rt_disability, which is the property used to report the
+disability burden that this person has and rt_debugging_DALY_wt, which stores the true value of the
+the disability.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>person_id</strong> – The person who needs a daly weight removed as their injury has healed</p></li>
+<li><p><strong>codes</strong> – The injury codes for the healed injury/injuries</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>n/a</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_swap_injury_daly_upon_treatment">
+<span class="sig-name descname"><span class="pre">rti_swap_injury_daly_upon_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">codes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_swap_injury_daly_upon_treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_swap_injury_daly_upon_treatment" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function swaps certain DALY weight codes upon when a person receives treatment(s). Some injuries have a
+different daly weight associated with them for the treated and untreated injuries. If an injury is ‘swap-able’
+then this function removes the old daly weight for the untreated injury and gives the daly weight for the
+treated injury.</p>
+<p>The properties that this function alters are rt_disability, which is the property used to report the
+disability burden that this person has and rt_debugging_DALY_wt, which stores the true value of the
+the disability.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>person_id</strong> – The person who has received treatment</p></li>
+<li><p><strong>codes</strong> – the ‘swap-able’ injury code</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>n/a</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_determine_LOS">
+<span class="sig-name descname"><span class="pre">rti_determine_LOS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_determine_LOS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_determine_LOS" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function determines the length of stay a person sent to the health care system will require, based on how
+severe their injuries are (determined by the person’s ISS score). Currently I use data from China, but once a
+more appropriate source of data is found I can swap this over.
+:param person_id: The person who needs their LOS determined
+:return: the inpatient days required to treat this person (Their LOS)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_find_and_count_injuries">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rti_find_and_count_injuries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">persons_injury_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">injury_codes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_find_and_count_injuries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_find_and_count_injuries" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function that searches a user given dataframe for a list of injuries (injury_codes). If the injury code is
+found in the dataframe, this function returns the index for who has the injury/injuries and the number of
+injuries found. This function works much faster if the dataframe is smaller, hence why the searched dataframe
+is a parameter in the function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>persons_injury_properties</strong> – The dataframe to search for the tlo injury codes in</p></li>
+<li><p><strong>injury_codes</strong> – The injury codes to search for in the data frame</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the df index of who has the injuries and how many injuries in the search were found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_treated_injuries">
+<span class="sig-name descname"><span class="pre">rti_treated_injuries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tlo_injury_codes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_treated_injuries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_treated_injuries" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function that takes a person with treated injuries and removes the injury code from the properties rt_injury_1
+to rt_injury_8</p>
+<p>The properties that this function alters are rt_injury_1 through rt_injury_8 and the symptoms properties</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>person_id</strong> – The person who needs an injury code removed</p></li>
+<li><p><strong>tlo_injury_codes</strong> – the injury code(s) to be removed</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>n/a</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.on_birth">
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.on_birth" title="Permalink to this definition">¶</a></dt>
+<dd><p>When a person is born this function sets up the default properties for the road traffic injuries module
+:param mother_id: The mother
+:param child_id: The newborn
+:return: n/a</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.on_hsi_alert">
+<span class="sig-name descname"><span class="pre">on_hsi_alert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.on_hsi_alert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.on_hsi_alert" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is called whenever there is an HSI event commissioned by one of the other disease modules.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.report_daly_values">
+<span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.report_daly_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.report_daly_values" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_assign_injuries">
+<span class="sig-name descname"><span class="pre">rti_assign_injuries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">number</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI.rti_assign_injuries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI.rti_assign_injuries" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>A function that can be called specifying the number of people affected by RTI injuries</dt><dd><p>and provides outputs for the number of injuries each person experiences from a RTI event, the location of the
+injury, the TLO injury categories and the severity of the injuries. The severity of the injuries will then be
+used to calculate the injury severity score (ISS), which will then inform mortality and disability from road
+traffic injuries with treatment and the military abreviated injury score (MAIS) which will be used to predict
+mortality without medical intervention.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>number</strong> – The number of people who need injuries assigned to them</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>injurydescription - a dataframe for the injury/injuries summarised in the TLO injury code form along
+with data on their ISS score, used for calculating mortality and whether they have
+polytrauma or not.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Todo: see if we can include the following factors for injury severity (taken from a preprint sent to me after</dt><dd><p>MOH meeting):
+- The setting of the patient (rural/urban) as rural location was a predictor for severe injury AOR 2.41
+(1.49-3.90)
+- Seatbelt use (none compared to using AOR 4.49 (1.47-13.76))
+- Role of person in crash (Different risk for different type, see paper)
+- Alcohol use (AOR 1.74 (1.11-2.74) compared to none)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTIPollingEvent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTIPollingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTIPollingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTIPollingEvent" title="Permalink to this definition">¶</a></dt>
+<dd><dl>
+<dt>The regular RTI event which handles all the initial RTI related changes to the dataframe. It can be thought of</dt><dd><p>as the actual road traffic accident occurring. Specifically the event decides who is involved in a road traffic
+accident every month (via the linear model helper class), whether those involved in a road traffic accident die on
+scene or are given injuries (via the assign_injuries function) which they will attempt to interact with the health
+system with for treatment.</p>
+<p>Those who don’t die on scene and are injured then attempt to go to an emergency generic first appointment</p>
+</dd>
+</dl>
+<p>This event will change the <a href="#id1"><span class="problematic" id="id2">rt_</span></a> properties:
+1) rt_road_traffic_inc - False when not involved in a collision, True when RTI_Event decides they are in a collision</p>
+<ol class="arabic simple" start="2">
+<li><p>rt_date_inj - Change to current date if the person has been involved in a road traffic accident</p></li>
+<li><p>rt_imm_death - True if they die on the scene of the crash, false otherwise</p></li>
+<li><dl class="simple">
+<dt>rt_injury_1 through to rt_injury_8 - a series of 8 properties which stores the injuries that need treating as a</dt><dd><p>code</p>
+</dd>
+</dl>
+</li>
+<li><p>rt_ISS_score - The metric used to calculate the probability of mortality from the person’s injuries</p></li>
+<li><p>rt_MAIS_military_score - The metric used to calculate the probability of mortality without medical intervention</p></li>
+<li><dl class="simple">
+<dt>rt_disability - after injuries are assigned to a person, RTI_event calls rti_assign_daly_weights to match the</dt><dd><p>person’s injury codes in rt_injury_1 through 8 to their corresponding DALY weights</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>rt_polytrauma - If the person’s injuries fit the definition for polytrauma we keep track of this here and use it</dt><dd><p>to calculate the probability for mortality later on.</p>
+</dd>
+</dl>
+</li>
+<li><p>rt_date_death_no_med - the projected date to determine mortality for those who haven’t sought medical care</p></li>
+<li><p>rt_inj_severity - The qualitative description of the severity of this person’s injuries</p></li>
+<li><p>the symptoms this person has</p></li>
+</ol>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class RTIPollingEvent):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTIPollingEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTIPollingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTIPollingEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Schedule to take place every month</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTIPollingEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTIPollingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTIPollingEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI_Check_Death_No_Med">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI_Check_Death_No_Med</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI_Check_Death_No_Med"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI_Check_Death_No_Med" title="Permalink to this definition">¶</a></dt>
+<dd><p>A regular event which organises whether a person who has not received medical treatment should die as a result of
+their injuries. This even makes use of the maximum AIS-military score, a trauma scoring system developed for
+injuries in a military environment, assumed here to be an indicator of the probability of mortality without
+access to a medical system.</p>
+<p>The properties this function changes are:
+1) rt_no_med_death - the boolean property tracking who dies from road traffic injuries without medical intervention</p>
+<ol class="arabic simple" start="2">
+<li><dl class="simple">
+<dt>rt_date_death_no_med - resetting the date to check the person’s mortality without medical intervention if</dt><dd><p>they survive</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>rt_disability - if the person survives a non-fatal injury then this injury may heal and therefore the disability</dt><dd><p>burden is changed</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>rt_debugging_DALY_wt - if the person survives a non-fatal injury then this injury may heal and therefore the</dt><dd><p>disability burden is changed, this property keeping track of the true disability burden</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>rt_date_to_remove_daly - In the event of recovering from a non-fatal injury without medical intervention</dt><dd><p>a recovery date will scheduled</p>
+</dd>
+</dl>
+</li>
+</ol>
+<p>If the person is sent here and they don’t die, we need to correctly model the level of disability they experience
+from their untreated injuries, some injuries that are left untreated will have an associated daly weight for long
+term disability without treatment, others don’t.</p>
+<p># todo: consult with a doctor about the likelihood of survival without medical treatment</p>
+<p>Currently I am assuming that anyone with an injury severity score of 9 or higher will seek care and have an
+emergency symptom, that means that I have to decide what to do with the following injuries:</p>
+<p>Lacerations - [1101, 2101, 3101, 4101, 5101, 7101, 8101]
+What would a laceration do without stitching? Take longer to heal most likely
+Fractures - [‘112’, ‘211’, ‘212, ‘412’, ‘612’, ‘712’, ‘712a’, ‘712b’, ‘712c’, ‘811’, ‘812’]</p>
+<p>Some fractures have an associated level of disability to them, others do not. So things like fractured radius/ulna
+have a code to swap, but others don’t. Some are of the no treatment type, such as fractured skulls, fractured ribs
+or fractured vertebrae, so we can just add the same recovery time for these injuries. So ‘112’, ‘412’ and ‘612’ will
+need to have recovery events checked and recovered.
+Dislocations will presumably be popped back into place, the injury will feasably be able to heal but most likely
+with more pain and probably with more time
+Amputations - [‘782’,’782a’, ‘782b’, ‘782c’, ‘882’]
+Amputations will presumably trigger emergency health seeking behaviour so they shouldn’t turn up here really
+soft tissue injuries - [‘241’, ‘342’, ‘441’, ‘442’]
+Presumably soft tissue injuries that turn up here will heal over time but with more pain
+Internal organ injury - [‘552’]
+Injury to the gastrointestinal organs can result in complications later on, but
+Internal bleedings - [‘361’, ‘461’]
+Surviving internal bleeding is concievably possible, these are comparitively minor bleeds</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class RTI_Check_Death_No_Med):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI_Check_Death_No_Med.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI_Check_Death_No_Med.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI_Check_Death_No_Med.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI_Check_Death_No_Med.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI_Check_Death_No_Med.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI_Check_Death_No_Med.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI_Recovery_Event">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI_Recovery_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI_Recovery_Event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI_Recovery_Event" title="Permalink to this definition">¶</a></dt>
+<dd><p>A regular event which checks the recovery date determined by each injury in columns rt_injury_1 through
+rt_injury_8, which is being stored in rt_date_to_remove_daly, a list property with 8 entries. This event
+checks the dates stored in rt_date_to_remove_daly property, when the date matches one of the entries,
+the daly weight is removed and the injury is fully healed.</p>
+<p>The properties changed in this functions is:</p>
+<ol class="arabic simple">
+<li><dl class="simple">
+<dt>rt_date_to_remove_daly - resetting the date to remove the daly weight for each injury once the date is</dt><dd><p>reached in the sim</p>
+</dd>
+</dl>
+</li>
+<li><p>rt_inj_severity - resetting the person’s injury severity once and injury is healed</p></li>
+<li><p>rt_injuries_to_heal_with_time - resetting the list of injuries that are due to heal over time once healed</p></li>
+<li><dl class="simple">
+<dt>rt_injuries_for_minor_surgery - resetting the list of injuries that are treated with minor surgery once</dt><dd><p>healed</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>rt_injuries_for_major_surgery - resetting the list of injuries that are treated with major surgery once</dt><dd><p>healed</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>rt_injuries_for_open_fracture_treatment - resetting the list of injuries that are treated with open fracture</dt><dd><p>treatment once healed</p>
+</dd>
+</dl>
+</li>
+<li><p>rt_injuries_to_cast - resetting the list of injuries that are treated with fracture cast treatment once healed</p></li>
+</ol>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class RTI_Recovery_Event):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI_Recovery_Event.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI_Recovery_Event.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI_Recovery_Event.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI_Recovery_Event.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI_Recovery_Event.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI_Recovery_Event.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Imaging_Event">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Imaging_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Imaging_Event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Imaging_Event" title="Permalink to this definition">¶</a></dt>
+<dd><p>This HSI event is triggered by the generic first appointments. After first arriving into the health system at
+either level 0 or level 1, should the injured person require a imaging to diagnose their injuries this HSI
+event is caused and x-ray or ct scans are provided as needed</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_RTI_Imaging_Event):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Imaging_Event.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Imaging_Event.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Imaging_Event.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Imaging_Event.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Imaging_Event.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Imaging_Event.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Imaging_Event.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Imaging_Event.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Imaging_Event.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Medical_Intervention">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Medical_Intervention</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Medical_Intervention"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Medical_Intervention" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a Health System Interaction Event.
+An appointment of a person who has experienced a road traffic injury, had their injuries diagnosed through A&amp;E
+and now needs treatment.</p>
+<p>This appointment is designed to organise the treatments needed. In the __init__ section the appointment footprint
+is altered to fit the requirements of the person’s treatment need. In this section we count the number of
+minor/major surgeries required and determine how long they will be in the health system for. For some injuries,
+the treatment plan is not entirely set into stone and may vary, for example, some skull fractures will need surgery
+whilst some will not. The treatment plan in its entirety is designed here.</p>
+<p>In the apply section, we send those who need surgeries to either HSI_RTI_Major_Surgery or HSI_RTI_Minor_Surgery,
+those who need stitches to HSI_RTI_Suture, those who need burn treatment to HSI_RTI_Burn_Management and those who
+need fracture casts to HSI_RTI_Casting.</p>
+<p>Pain medication is also requested here with HSI_RTI_Acute_Pain_Management.</p>
+<p>The properties changed in this event are:</p>
+<dl class="simple">
+<dt>rt_injuries_for_major_surgery - the injuries that are determined to be treated by major surgery are stored in</dt><dd><p>this list property</p>
+</dd>
+<dt>rt_injuries_for_minor_surgery - the injuries that are determined to be treated by minor surgery are stored in</dt><dd><p>this list property</p>
+</dd>
+<dt>rt_injuries_to_cast - the injuries that are determined to be treated with fracture casts are stored in this list</dt><dd><p>property</p>
+</dd>
+<dt>rt_injuries_for_open_fracture_treatment - the injuries that are determined to be treated with open fractre treatment</dt><dd><p>are stored in this list property</p>
+</dd>
+</dl>
+<p>rt_injuries_to_heal_with_time - the injuries that are determined to heal with time are stored in this list property</p>
+<p>rt_date_to_remove_daly - recovery dates for the heal with time injuries are set here</p>
+<dl class="simple">
+<dt>rt_date_death_no_med - the date to check mortality without medical intervention is removed as this person has</dt><dd><p>sought medical care</p>
+</dd>
+</dl>
+<p>rt_med_int - the bool property that shows whether a person has sought medical care or not</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_RTI_Medical_Intervention):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Medical_Intervention.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Medical_Intervention.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Medical_Intervention.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Medical_Intervention.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Medical_Intervention.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Medical_Intervention.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Medical_Intervention.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Medical_Intervention.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Medical_Intervention.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Shock_Treatment">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Shock_Treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Shock_Treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Shock_Treatment" title="Permalink to this definition">¶</a></dt>
+<dd><p>This HSI event handles the process of treating hypovolemic shock, as recommended by the pediatric
+handbook for Malawi and (TODO: FIND ADULT REFERENCE)
+Currently this HSI_Event is described only and not used, as I still need to work out how to model the occurrence
+of shock</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_RTI_Shock_Treatment):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Shock_Treatment.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Shock_Treatment.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Shock_Treatment.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Shock_Treatment.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Shock_Treatment.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Shock_Treatment.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Shock_Treatment.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Shock_Treatment.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Shock_Treatment.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Fracture_Cast">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Fracture_Cast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Fracture_Cast"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Fracture_Cast" title="Permalink to this definition">¶</a></dt>
+<dd><p>This HSI event handles fracture casts/giving slings for those who need it. The HSI event tests whether the injured
+person has an appropriate injury code, determines how many fractures the person and then requests fracture
+treatment as required.</p>
+<p>The injury codes dealt with in this HSI event are:
+‘712a’ - broken clavicle, scapula, humerus
+‘712b’ - broken hand/wrist
+‘712c’ - broken radius/ulna
+‘811’ - Fractured foot
+‘812’ - broken tibia/fibula
+‘813a’ - Broken hip
+‘813b’ - broken pelvis
+‘813c’ - broken femur</p>
+<p>‘822a’ - dislocated hip
+‘822b’ - dislocated knee</p>
+<p>The properties altered by this function are
+rt_date_to_remove_daly - setting recovery dates for injuries treated with fracture casts
+rt_injuries_to_cast - once treated the codes used to denote injuries to be treated by fracture casts are removed</p>
+<blockquote>
+<div><p>from the list of injuries due to be treated with fracture casts</p>
+</div></blockquote>
+<p>rt_med_int - the property used to denote whether a person getting treatment for road traffic injuries</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_RTI_Fracture_Cast):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Fracture_Cast.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Fracture_Cast.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Fracture_Cast.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Fracture_Cast.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Fracture_Cast.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Fracture_Cast.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Fracture_Cast.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Fracture_Cast.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Fracture_Cast.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Open_Fracture_Treatment">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Open_Fracture_Treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Open_Fracture_Treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Open_Fracture_Treatment" title="Permalink to this definition">¶</a></dt>
+<dd><p>This HSI event handles fracture casts/giving slings for those who need it. The HSI event tests whether the injured
+person has an appropriate injury code, determines how many fractures the person and then requests fracture
+treatment as required.</p>
+<p>The injury codes dealt with in this HSI event are:
+‘813bo’ - Open fracture of the pelvis
+‘813co’ - Open fracture of the femur
+‘813do’ - Open fracture of the foot
+‘813eo’ - Open fracture of the tibia/fibula/ankle/patella</p>
+<p>The properties altered by this function are:
+rt_med_int - to denote that this person is recieving treatment
+rt_injuries_for_open_fracture_treatment - removing codes that have been treated by open fracture treatment
+rt_date_to_remove_daly - to schedule recovery dates for open fractures that have recieved treatment</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_RTI_Open_Fracture_Treatment):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Open_Fracture_Treatment.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Open_Fracture_Treatment.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Open_Fracture_Treatment.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Open_Fracture_Treatment.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Open_Fracture_Treatment.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Open_Fracture_Treatment.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Open_Fracture_Treatment.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Open_Fracture_Treatment.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Open_Fracture_Treatment.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Suture">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Suture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Suture"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Suture" title="Permalink to this definition">¶</a></dt>
+<dd><p>This HSI event handles lacerations giving suture kits for those who need it. The HSI event tests whether the injured
+person has an appropriate injury code, determines how many lacerations the person and then requests suture kits</p>
+<blockquote>
+<div><p>as required.</p>
+</div></blockquote>
+<p>The codes dealt with are:
+‘1101’ - Laceration to the head
+‘2101’ - Laceration to the face
+‘3101’ - Laceration to the neck
+‘4101’ - Laceration to the thorax
+‘5101’ - Laceration to the abdomen
+‘7101’ - Laceration to the upper extremity
+‘8101’ - Laceration to the lower extremity</p>
+<p>The properties altered by this function are:
+rt_med_int - to denote that this person is recieving treatment
+rt_date_to_remove_daly - to schedule recovery dates for lacerations treated in this hsi</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_RTI_Suture):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Suture.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Suture.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Suture.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Suture.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Suture.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Suture.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Suture.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Suture.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Suture.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Burn_Management">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Burn_Management</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Burn_Management"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Burn_Management" title="Permalink to this definition">¶</a></dt>
+<dd><p>This HSI event handles burns giving treatment for those who need it. The HSI event tests whether the injured
+person has an appropriate injury code, determines how many burns the person and then requests appropriate treatment</p>
+<blockquote>
+<div><p>as required.</p>
+</div></blockquote>
+<p>The codes dealt with in this HSI event are:
+‘1114’ - Burns to the head
+‘2114’ - Burns to the face
+‘3113’ - Burns to the neck
+‘4113’ - Burns to the thorax
+‘5113’ - Burns to the abdomen
+‘7113’ - Burns to the upper extremities
+‘8113’ - Burns to the lower extremities</p>
+<p>The properties treated by this module are:
+rt_med_int - to denote that this person is recieving treatment for their injuries
+rt_date_to_remove_daly - to schedule recovery dates for injuries treated here</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_RTI_Burn_Management):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Burn_Management.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Burn_Management.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Burn_Management.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Burn_Management.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Burn_Management.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Burn_Management.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Burn_Management.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Burn_Management.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Burn_Management.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Tetanus_Vaccine">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Tetanus_Vaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Tetanus_Vaccine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Tetanus_Vaccine" title="Permalink to this definition">¶</a></dt>
+<dd><p>This HSI event handles tetanus vaccine requests, the idea being that by separating these from the burn and
+laceration and burn treatments, those treatments can go ahead without the availability of tetanus stopping the event</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_RTI_Tetanus_Vaccine):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Tetanus_Vaccine.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Tetanus_Vaccine.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Tetanus_Vaccine.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Tetanus_Vaccine.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Tetanus_Vaccine.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Tetanus_Vaccine.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Tetanus_Vaccine.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Tetanus_Vaccine.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Tetanus_Vaccine.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Acute_Pain_Management">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Acute_Pain_Management</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Acute_Pain_Management"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Acute_Pain_Management" title="Permalink to this definition">¶</a></dt>
+<dd><p>This HSI event handles all requests for pain management here, all injuries will pass through here and the pain
+medicine required will be set to manage the level of pain they are experiencing, with mild pain being managed with
+paracetamol/NSAIDS, moderate pain being managed with tramadol and severe pain being managed with morphine.</p>
+<blockquote>
+<div><p>“There is a mismatch between the burden of musculoskeletal pain conditions and appropriate health policy response
+and planning internationally that can be addressed with an integrated research and policy agenda.”
+SEE doi: 10.2105/AJPH.2018.304747</p>
+</div></blockquote>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_RTI_Acute_Pain_Management):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Acute_Pain_Management.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Acute_Pain_Management.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Acute_Pain_Management.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Acute_Pain_Management.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Acute_Pain_Management.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Acute_Pain_Management.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Acute_Pain_Management.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Acute_Pain_Management.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Acute_Pain_Management.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Major_Surgeries">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Major_Surgeries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Major_Surgeries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Major_Surgeries" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a Health System Interaction Event.
+An appointment of a person who has experienced a road traffic injury, had their injuries diagnosed through
+A and E and requires major surgery.</p>
+<p>Major surgeries are defined here as surgeries that include extensive work such as entering a body cavity,
+removing an organ or altering the body’s anatomy</p>
+<p>The injuries treated in this module are as follows:</p>
+<p>FRACTURES:
+While district hospitals can provide some
+emergency trauma care and surgeries, only central hospitals
+are equipped to provide advanced orthopaedic surgery. - Lavy et al. 2007</p>
+<p>‘112’ - Depressed skull fracture - reported use of surgery in Eaton et al. 2017
+‘811’ - fractured foot - reported use of surgery in Chagomerana et al. 2017
+‘812’ - fracture tibia/fibula - reported use of surgery in Chagomerana et al. 2017
+‘813a’ - Fractured hip - reported use of surgery and Lavy et al. 2007
+‘813b’ - Fractured pelvis - reported use of surgery and Lavy et al. 2007
+‘813c’ - Fractured femur - reported use of surgery and Lavy et al. 2007
+‘414’ - Flail chest - <a class="reference external" href="https://www.sciencedirect.com/science/article/abs/pii/S0020138303002900">https://www.sciencedirect.com/science/article/abs/pii/S0020138303002900</a></p>
+<p>SOFT TISSUE INJURIES:
+‘342’ - Soft tissue injury of the neck
+‘343’ - Soft tissue injury of the neck</p>
+<p>Thoroscopy treated injuries:
+<a class="reference external" href="https://www.ncbi.nlm.nih.gov/nlmcatalog/101549743">https://www.ncbi.nlm.nih.gov/nlmcatalog/101549743</a>
+Ref from pediatric handbook for Malawi
+‘441’ - Closed pneumothorax
+‘443’ - Open pneumothorax
+‘463’ - Haemothorax
+‘453a’ - Diaphragm rupture
+‘453b’ - Lung contusion</p>
+<p>INTERNAL BLEEDING:
+‘361’ - Internal bleeding in neck
+‘363’ - Internal bleeding in neck</p>
+<p>TRAUMATIC BRAIN INJURIES THAT REQUIRE A CRANIOTOMOY - reported use of surgery in Eaton et al 2017 and Lavy et
+al. 2007</p>
+<p>‘133a’ - Subarachnoid hematoma
+‘133b’ - Brain contusion
+‘133c’ - Intraventricular haemorrhage
+‘133d’ - Subgaleal hematoma
+‘134a’ - Epidural hematoma
+‘134b’ - Subdural hematoma
+‘135’ - diffuse axonal injury</p>
+<p>Laparotomy - Recorded in Lavy et al. 2007 and here: <a class="reference external" href="https://www.ajol.info/index.php/mmj/article/view/174378">https://www.ajol.info/index.php/mmj/article/view/174378</a></p>
+<p>‘552’ - Injury to Intestine, stomach and colon
+‘553’ - Injury to Spleen, Urinary bladder, Liver, Urethra, Diaphragm
+‘554’ - Injury to kidney</p>
+<p>SPINAL CORD LESIONS, REQUIRING LAMINOTOMY/FORAMINOTOMY/INTERSPINOUS PROCESS SPACER
+Quote from Eaton et al. 2019:
+“No patients received thoracolumbar braces or underwent spinal surgery.”
+<a class="reference external" href="https://journals.sagepub.com/doi/pdf/10.1177/0049475518808969">https://journals.sagepub.com/doi/pdf/10.1177/0049475518808969</a>
+So those with spinal cord injuries are not likely to be treated here in RTI_Major_Surgeries..</p>
+<p>‘673a’ - Spinal cord lesion at neck level
+‘673b’ - Spinal cord lesion below neck level
+‘674a’ - Spinal cord lesion at neck level
+‘674b’ - Spinal cord lesion below neck level
+‘675a’ - Spinal cord lesion at neck level
+‘675b’ - Spinal cord lesion below neck level
+‘676’ - Spinal cord lesion at neck level</p>
+<p>AMPUTATIONS - Reported in Crudziak et al. 2019
+‘782a’ - Amputated finger
+‘782b’ - Unilateral arm amputation
+‘782c’ - Amputated thumb
+‘783’ - Bilateral arm amputation
+‘882’ - Amputated toe
+‘883’ - Unilateral lower limb amputation
+‘884’ - Bilateral lower limb amputation</p>
+<p>Dislocations - Reported in Chagomerana et al. 2017
+‘822a’ Hip dislocation</p>
+<p>The properties altered in this function are:
+rt_injury_1 through rt_injury_8 - in the incidence that despite treatment the person treated is left</p>
+<blockquote>
+<div><p>permanently disabled we need to update the injury code to inform the
+model that the disability burden associated with the permanently
+disabling injury shouldn’t be removed</p>
+</div></blockquote>
+<p>rt_perm_disability - when a person is decided to be permanently disabled we update this property to reflect this
+rt_date_to_remove_daly - assign recovery dates for the injuries treated with the surgery
+rt_injuries_for_major_surgery - to remove codes due to be treated by major surgery when that injury recieves</p>
+<blockquote>
+<div><p>a treatment.</p>
+</div></blockquote>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_RTI_Major_Surgeries):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Major_Surgeries.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Major_Surgeries.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Major_Surgeries.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Major_Surgeries.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Major_Surgeries.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Major_Surgeries.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Major_Surgeries.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Major_Surgeries.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Major_Surgeries.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Minor_Surgeries">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Minor_Surgeries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Minor_Surgeries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Minor_Surgeries" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a Health System Interaction Event.
+An appointment of a person who has experienced a road traffic injury, had their injuries diagnosed through
+A and E, treatment plan organised by RTI_MedInt and requires minor surgery.</p>
+<p>Minor surgeries are defined here as surgeries are generally superficial and do not require penetration of a
+body cavity. They do not involve assisted breathing or anesthesia and are usually performed by a single doctor.</p>
+<p>The injuries treated in this module are as follows:</p>
+<p>Evidence for all from Mkandawire et al. 2008:
+<a class="reference external" href="https://link.springer.com/article/10.1007%2Fs11999-008-0366-5">https://link.springer.com/article/10.1007%2Fs11999-008-0366-5</a>
+‘211’ - Facial fractures
+‘212’ - Facial fractures
+‘291’ - Injury to the eye
+‘241’ - Soft tissue injury of the face</p>
+<p>‘322’ - Dislocation in the neck
+‘323’ - Dislocation in the neck</p>
+<p>‘722’ - Dislocated shoulder</p>
+<p>External fixation of fractures
+‘811’ - fractured foot
+‘812’ - fractures tibia/fibula
+‘813a’ - Fractured hip
+‘813b’ - Fractured pelvis
+‘813C’ - Fractured femur
+The properties altered in this function are:
+rt_med_int - update to show this person is being treated for their injuries.
+rt_date_to_remove_daly - assign recovery dates for the injuries treated with the surgery
+rt_injuries_for_minor_surgery - to remove codes due to be treated by minor surgery when that injury recieves</p>
+<blockquote>
+<div><p>a treatment.</p>
+</div></blockquote>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class HSI_RTI_Minor_Surgeries):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Minor_Surgeries.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Minor_Surgeries.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Minor_Surgeries.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Minor_Surgeries.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Minor_Surgeries.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Minor_Surgeries.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Minor_Surgeries.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#HSI_RTI_Minor_Surgeries.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Minor_Surgeries.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI_Medical_Intervention_Death_Event">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI_Medical_Intervention_Death_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI_Medical_Intervention_Death_Event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI_Medical_Intervention_Death_Event" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the MedicalInterventionDeathEvent. It is scheduled by the MedicalInterventionEvent to occur at the end of
+the person’s determined length of stay. The risk of mortality for the person wil medical intervention is determined
+by the persons ISS score and whether they have polytrauma.</p>
+<p>The properties altered by this event are:
+rt_post_med_death - updated to reflect when a person dies from their injuries</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class RTI_Medical_Intervention_Death_Event):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI_Medical_Intervention_Death_Event.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI_Medical_Intervention_Death_Event.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI_Medical_Intervention_Death_Event.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI_Medical_Intervention_Death_Event.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI_Medical_Intervention_Death_Event.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI_Medical_Intervention_Death_Event.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI_No_Lifesaving_Medical_Intervention_Death_Event">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI_No_Lifesaving_Medical_Intervention_Death_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI_No_Lifesaving_Medical_Intervention_Death_Event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI_No_Lifesaving_Medical_Intervention_Death_Event" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the NoMedicalInterventionDeathEvent. It is scheduled by the MedicalInterventionEvent which determines the
+resources required to treat that person and if they aren’t present, the person is sent here. This function is also
+called by the did not run function for rti_major_surgeries for certain injuries, implying that if life saving
+surgery is not available for the person, then we have to ask the probability of them dying without having this life
+saving surgery.</p>
+<p>some information on time to craniotomy here:
+<a class="reference external" href="https://thejns.org/focus/view/journals/neurosurg-focus/45/6/article-pE2.xml?body=pdf-10653">https://thejns.org/focus/view/journals/neurosurg-focus/45/6/article-pE2.xml?body=pdf-10653</a></p>
+<p>The properties altered by this event are:
+rt_unavailable_med_death - to denote that this person has died due to medical interventions not being available</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class RTI_No_Lifesaving_Medical_Intervention_Death_Event):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI_No_Lifesaving_Medical_Intervention_Death_Event.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI_No_Lifesaving_Medical_Intervention_Death_Event.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI_No_Lifesaving_Medical_Intervention_Death_Event.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI_No_Lifesaving_Medical_Intervention_Death_Event.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI_No_Lifesaving_Medical_Intervention_Death_Event.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI_No_Lifesaving_Medical_Intervention_Death_Event.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given person.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI_Logging_Event">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI_Logging_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI_Logging_Event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI_Logging_Event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class RTI_Logging_Event):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI_Logging_Event.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI_Logging_Event.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI_Logging_Event.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce a summary of the numbers of people with respect to the action of this module.
+This is a regular event that can output current states of people or cumulative events since last logging event.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.rti.RTI_Logging_Event.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/rti.html#RTI_Logging_Event.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.rti.RTI_Logging_Event.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the population.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="tlo.methods.simplified_births.html" class="btn btn-neutral float-right" title="tlo.methods.simplified_births module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tlo.methods.prostate_cancer.html" class="btn btn-neutral float-left" title="tlo.methods.prostate_cancer module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+      <span class="lastupdated">
+        Last updated on Feb 14, 2022.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

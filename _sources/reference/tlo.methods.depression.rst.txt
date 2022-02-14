@@ -172,11 +172,11 @@ tlo.methods.depression module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Suicide': <tlo.methods.causes.Cause object at 0x7fdd04f3c070>}
+     CAUSES_OF_DEATH : {'Suicide': <tlo.methods.causes.Cause object at 0x7f9880040130>}
 
-     CAUSES_OF_DISABILITY : {'SevereDepression': <tlo.methods.causes.Cause object at 0x7fdd04f3c100>}
+     CAUSES_OF_DISABILITY : {'SevereDepression': <tlo.methods.causes.Cause object at 0x7f98800401c0>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Contraception', 'Lifestyle', 'SymptomManager', 'Demography'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'Contraception', 'SymptomManager', 'Lifestyle'}
 
      METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
 

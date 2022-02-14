@@ -35,19 +35,19 @@ CareOfWomenDuringPregnancy
 
 * ``AntenatalOutpatientFollowUp`` at facility level 1a with appointment footprint: ``ANCSubsequent``.
 * ``AntenatalOutpatientManagementOfAnaemia`` at facility level 1a with appointment footprint: ``ANCSubsequent``.
-* ``AntenatalWardInpatientCare`` at facility level ? with appointment footprint: ``InpatientDays``.
+* ``AntenatalWardInpatientCare`` at facility level ? with appointment footprint: ``InpatientDays`` and bed days footprint: ``general_bed`` (1 days).
 * ``EighthAntenatalCareContact`` at facility level ? with appointment footprint: ``ANCSubsequent``.
 * ``FifthAntenatalCareContact`` at facility level ? with appointment footprint: ``ANCSubsequent``.
 * ``FirstAntenatalCareContact`` at facility level ? with appointment footprint: ``AntenatalFirst``.
 * ``FourthAntenatalCareContact`` at facility level ? with appointment footprint: ``ANCSubsequent``.
 * ``MaternalEmergencyAssessment`` at facility level 1a with appointment footprint: ``Over5OPD``.
-* ``PostAbortionCaseManagement`` at facility level 1a with appointment footprint: ``InpatientDays``.
+* ``PostAbortionCaseManagement`` at facility level 1a with appointment footprint: ``InpatientDays`` and bed days footprint: ``general_bed`` (3 days).
 * ``PresentsForInductionOfLabour`` at facility level 1a with appointment footprint: ``Over5OPD``.
 * ``SecondAntenatalCareContact`` at facility level ? with appointment footprint: ``ANCSubsequent``.
 * ``SeventhAntenatalCareContact`` at facility level ? with appointment footprint: ``ANCSubsequent``.
 * ``SixthAntenatalCareContact`` at facility level ? with appointment footprint: ``ANCSubsequent``.
 * ``ThirdAntenatalCareContact`` at facility level ? with appointment footprint: ``ANCSubsequent``.
-* ``TreatmentForEctopicPregnancy`` at facility level 1b with appointment footprint: ``MajorSurg``.
+* ``TreatmentForEctopicPregnancy`` at facility level 1b with appointment footprint: ``MajorSurg`` and bed days footprint: ``general_bed`` (5 days).
 
 Contraception
 *************
@@ -64,7 +64,7 @@ Depression
 Diarrhoea
 *********
 
-* ``Treatment_Inpatient`` at facility level 1a with appointment footprint: ``InpatientDays``, ``IPAdmission``.
+* ``Treatment_Inpatient`` at facility level 1a with appointment footprint: ``InpatientDays``, ``IPAdmission`` and bed days footprint: ``general_bed`` (2 days).
 * ``Treatment_Outpatient`` at facility level 1a with appointment footprint: ``Under5OPD``.
 
 Epi
@@ -101,10 +101,10 @@ Hiv
 Labour
 ******
 
-* ``ReceivesCareFollowingCaesareanSection`` at facility level ? with appointment footprint: ``InpatientDays``.
-* ``ReceivesComprehensiveEmergencyObstetricCare`` at facility level 1b with appointment footprint: ``MajorSurg``.
-* ``ReceivesSkilledBirthAttendanceDuringLabour`` at facility level ? with appointment footprint: ``NormalDelivery``.
-* ``ReceivesSkilledBirthAttendanceFollowingLabour`` at facility level ? with appointment footprint: ``InpatientDays``.
+* ``ReceivesCareFollowingCaesareanSection`` at facility level ? with appointment footprint: ``InpatientDays`` and bed days footprint: ``general_bed`` (2 days).
+* ``ReceivesComprehensiveEmergencyObstetricCare`` at facility level 1b with appointment footprint: ``MajorSurg`` and bed days footprint: ``general_bed`` (2 days).
+* ``ReceivesSkilledBirthAttendanceDuringLabour`` at facility level ? with appointment footprint: ``NormalDelivery`` and bed days footprint: ``general_bed`` (1 days).
+* ``ReceivesSkilledBirthAttendanceFollowingLabour`` at facility level ? with appointment footprint: ``InpatientDays`` and bed days footprint: ``general_bed`` (2 days).
 
 Malaria
 *******
@@ -125,7 +125,7 @@ Measles
 NewbornOutcomes
 ***************
 
-* ``CareOfTheNewbornBySkilledAttendant`` at facility level ? with appointment footprint: ``InpatientDays``.
+* ``CareOfTheNewbornBySkilledAttendant`` at facility level ? with appointment footprint: ``InpatientDays`` and bed days footprint: ``general_bed`` (2 days).
 
 OesophagealCancer
 *****************
@@ -146,11 +146,11 @@ OtherAdultCancer
 PostnatalSupervisor
 *******************
 
-* ``NeonatalWardInpatientCare`` at facility level 1a with appointment footprint: ``IPAdmission``.
+* ``NeonatalWardInpatientCare`` at facility level 1a with appointment footprint: ``IPAdmission`` and bed days footprint: ``general_bed`` (5 days).
 * ``PostnatalCareContactOne`` at facility level 1a with appointment footprint: ``ANCSubsequent``.
 * ``PostnatalCareContactTwoMaternal`` at facility level 1a with appointment footprint: ``ANCSubsequent``.
-* ``PostnatalWardInpatientCare`` at facility level 1a with appointment footprint: ``IPAdmission``.
-* ``TreatmentForObstetricFistula`` at facility level 1a with appointment footprint: ``InpatientDays``.
+* ``PostnatalWardInpatientCare`` at facility level 1a with appointment footprint: ``IPAdmission`` and bed days footprint: ``general_bed`` (5 days).
+* ``TreatmentForObstetricFistula`` at facility level 1a with appointment footprint: ``InpatientDays`` and bed days footprint: ``general_bed`` (5 days).
 
 ProstateCancer
 **************
@@ -161,6 +161,21 @@ ProstateCancer
 * ``MonitorTreatment`` at facility level 3 with appointment footprint: ``Over5OPD``.
 * ``PalliativeCare`` at facility level 3 with appointment footprint: ``Over5OPD``.
 * ``StartTreatment`` at facility level 3 with appointment footprint: ``MajorSurg``.
+
+RTI
+***
+
+* ``Acute_Pain_Management`` at facility level 1b with appointment footprint: ``Over5OPD``.
+* ``Burn_Management`` at facility level 1b with appointment footprint: ``MinorSurg``.
+* ``Fracture_Cast`` at facility level 1b with appointment footprint: ``AccidentsandEmerg``.
+* ``Imaging_Event`` at facility level 1b with appointment footprint: .
+* ``Major_Surgeries`` at facility level 1b with appointment footprint: ``MajorSurg``.
+* ``MedicalIntervention`` at facility level 1b with appointment footprint: ``AccidentsandEmerg``, ``InpatientDays`` and bed days footprint: ``general_bed`` (8 days).
+* ``Minor_Surgeries`` at facility level 1b with appointment footprint: ``MinorSurg``.
+* ``Open_Fracture_Treatment`` at facility level 1b with appointment footprint: ``MinorSurg``.
+* ``Shock_Treatment`` at facility level 1b with appointment footprint: ``AccidentsandEmerg``.
+* ``Suture`` at facility level 1b with appointment footprint: ``Over5OPD``.
+* ``Tetanus_Vaccine`` at facility level 1b with appointment footprint: ``Over5OPD``.
 
 Stunting
 ********

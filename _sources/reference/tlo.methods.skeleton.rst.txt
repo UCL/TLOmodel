@@ -42,9 +42,9 @@ tlo.methods.skeleton module
 
      ADDITIONAL_DEPENDENCIES : {'HealthSystem'}
 
-     CAUSES_OF_DEATH : {'tlo_name_of_a_cause_of_death_in_this_module': <tlo.methods.causes.Cause object at 0x7fdd04c7c670>}
+     CAUSES_OF_DEATH : {'tlo_name_of_a_cause_of_death_in_this_module': <tlo.methods.causes.Cause object at 0x7f987fd82730>}
 
-     CAUSES_OF_DISABILITY : {'tlo_name_of_a_cause_of_disability_in_this_module': <tlo.methods.causes.Cause object at 0x7fdd04c7c6d0>}
+     CAUSES_OF_DISABILITY : {'tlo_name_of_a_cause_of_disability_in_this_module': <tlo.methods.causes.Cause object at 0x7f987fd82790>}
 
      INIT_DEPENDENCIES : {'Demography'}
 

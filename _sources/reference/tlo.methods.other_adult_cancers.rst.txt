@@ -121,11 +121,11 @@ tlo.methods.other_adult_cancers module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x7fdd00c34ee0>}
+     CAUSES_OF_DEATH : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x7f987edf9fa0>}
 
-     CAUSES_OF_DISABILITY : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x7fdd00c34f70>}
+     CAUSES_OF_DISABILITY : {'OtherAdultCancer': <tlo.methods.causes.Cause object at 0x7f987ee07070>}
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Demography', 'HealthSystem'}
 
      METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
 

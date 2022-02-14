@@ -215,8 +215,9 @@
     <span class="n">event_name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">module_name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">treatment_id</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">facility_level</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
-    <span class="n">appt_footprint</span><span class="p">:</span> <span class="n">Tuple</span>
+    <span class="n">facility_level</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">appt_footprint</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">beddays_footprint</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span>
 
 
 <span class="k">class</span> <span class="nc">HSIEventQueueItem</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
@@ -1255,7 +1256,8 @@
                         <span class="nb">tuple</span><span class="p">(</span><span class="n">actual_appt_footprint</span><span class="p">)</span>
                         <span class="k">if</span> <span class="n">actual_appt_footprint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
                         <span class="k">else</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">hsi_event</span><span class="p">,</span> <span class="s1">&#39;EXPECTED_APPT_FOOTPRINT&#39;</span><span class="p">,</span> <span class="p">{}))</span>
-                    <span class="p">)</span>
+                    <span class="p">),</span>
+                    <span class="n">beddays_footprint</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
                 <span class="p">)</span>
             <span class="p">)</span></div>
 
@@ -1782,7 +1784,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Feb 07, 2022.
+        Last updated on Feb 14, 2022.
       </span>
 
     </p>
