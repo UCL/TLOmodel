@@ -1053,15 +1053,14 @@ Facility_Levels = [0, '1a', '1b', 2, 3, 4, 5]
 #                   'District Hospital', 'DHO', 'Referral Hospital', 'Zomba Mental Hospital']
 # Facility_Types_Levels = dict(zip(Facility_Types, Facility_Levels))
 
-
 # Create empty dataframe that will be the Master Facilities List (mfl)
 mfl = pd.DataFrame(columns=['Facility_Level', 'District', 'Region'])
 
 pop_districts = pop['District'].values  # array; the 'pop_districts' used in previous lines is a DataFrame
 pop_regions = pd.unique(pop['Region'])
 
-# Each district is assigned with a set of community level facs, a set of primary level facs,
-# and a set of second level facs.
+# Each district is assigned with a set of community level facs (0), a set of primary level facs (1a, 1b),
+# and a set of second level facs (2).
 # Therefore, the total sets of facs is 4 * no. of districts + 3 (RefHos per Region) + 1 (HQ) + 1 (ZMH) \
 # = 4 * 32 + 5 = 133
 for d in pop_districts:
@@ -1132,8 +1131,8 @@ assert len(facilities_by_district) == len(pop_districts) * len(Facility_Levels)
 #                               index=False)
 
 # ---------------------------------------------------------------------------------------------------------------------
-# *** Now look at the types of appointments
-sheet = pd.read_excel(workingfile, sheet_name='Time_Base', header=None)
+# *** Now look at the types of appointments from the sheet 'Time_Curr'
+sheet = pd.read_excel(workingfile, sheet_name='Time_Curr', header=None)
 
 # get rid of the junk rows
 trimmed = sheet.loc[[7, 8, 9, 11, 12, 14, 15, 17, 18, 20, 21, 23, 24, 26, 27]]
@@ -1142,10 +1141,14 @@ data_import = pd.DataFrame(data=trimmed.iloc[1:, 2:].values, columns=trimmed.ilo
 data_import = data_import.dropna(axis='columns', how='all')  # get rid of the 'spacer' columns
 data_import = data_import.fillna(0)
 
-# get rid of records for which there is no call on time of any type of officer
+# get rid of records for which there is no call on time of any type of officer at any fac type
 data_import = data_import.drop(columns=data_import.columns[data_import.sum() == 0])
 
-# We note that the DCSA (CHW) never has a time requirement and that no appointments can be serviced at the HealthPost.
+# Note that in the updated 'Time_Curr', Disp has no time requirements at all for medical assistant M03,
+# which is different from the previous version
+assert data_import.loc['Disp', :].sum() == 0
+
+# Note that the DCSA (CHW) never has a time requirement and that no appointments can be serviced at the HealthPost.
 # We remedy this by inserting a new type of appointment, which only the DCSA can service, \
 # and the time taken is 10 minutes.
 new_appt_for_CHW = pd.Series(index=data_import.index,
@@ -1169,21 +1172,16 @@ new_appt_for_CHW = pd.Series(index=data_import.index,
                              ])
 
 data_import = pd.concat([data_import, new_appt_for_CHW], axis=1)
+assert data_import.loc['HP', :].sum() == 10.0
 
-# Add service times for DHOs, which has quite a few data in 'Incidence_Curr', by copying the data of DisHos
-new_rows_for_DHO = pd.DataFrame(index=['DHO', 'DHO_Per'], columns=data_import.columns.copy(),
-                                data=data_import.loc[['DisHos', 'DisHos_Per'], :].copy().values)
+# We now do not add service time for DHO as we think DHO does not deliver services directly
+# Also, DHO itself in both DHIS2 and CHAI updated data does not have service record
 
-# Add service times (Mental OPD and Mental Clinic Visit) for Zomba Mental Hospital, by copying data of CenHos
+# Add service times for Zomba Mental Hospital, by copying data of CenHos
 new_rows_for_ZMH = pd.DataFrame(index=['ZMH', 'ZMH_Per'], columns=data_import.columns.copy(),
-                                data=0)
-new_rows_for_ZMH.loc[:, ['C01_MentOPD', 'C01_MentClinic']] = data_import.loc[
-    ['CenHos', 'CenHos_Per'], ['C01_MentOPD', 'C01_MentClinic']].copy().values
-# If consider all potential cadres from compiled staff return and all associated services
-# new_rows_for_ZMH = pd.DataFrame(index=['ZMH','ZMH_Per'],columns=data_import.columns.copy(),
-#                               data=data_import.loc[['CenHos','CenHos_Per'],:].copy().values)
+                                data=data_import.loc[['CenHos', 'CenHos_Per'], :].copy().values)
 
-data_import = pd.concat([data_import, new_rows_for_DHO, new_rows_for_ZMH])
+data_import = pd.concat([data_import, new_rows_for_ZMH])
 
 # data_import ready!
 
@@ -1272,7 +1270,6 @@ HQ_ExpecTime.loc[:] = np.nan
 
 # level 2
 District_Hospital_ExpecTime = data_import.loc['DisHos'] * data_import.loc['DisHos_Per']
-DHO_ExpecTime = data_import.loc['DHO'] * data_import.loc['DHO_Per']
 
 # level 1b
 Community_Hospital_ExpecTime = data_import.loc['ComHos'] * data_import.loc['ComHos_Per']
@@ -1280,23 +1277,21 @@ Community_Hospital_ExpecTime = data_import.loc['ComHos'] * data_import.loc['ComH
 # level 1a
 Urban_HealthCentre_ExpecTime = data_import.loc['UrbHC'] * data_import.loc['UrbHC_Per']
 Rural_HealthCentre_ExpecTime = data_import.loc['RurHC'] * data_import.loc['RurHC_Per']
-Disp_ExpecTime = data_import.loc['Disp'] * data_import.loc['Disp_Per']
 
 # level 0
 HealthPost_ExpecTime = data_import.loc['HP'] * data_import.loc['HP_Per']
 
-# Average time for levels 2 and 1a, which have data for more than 1 facility types
-Avg_Level2_ExpectTime = (District_Hospital_ExpecTime + DHO_ExpecTime) / 2  # Identical to DisHos Expected Time
-Avg_Level1a_ExpectTime = (Disp_ExpecTime + Urban_HealthCentre_ExpecTime + Rural_HealthCentre_ExpecTime) / 3
+# Average time for levels 1a, which have data for more than 1 facility types
+Avg_Level1a_ExpectTime = (Urban_HealthCentre_ExpecTime + Rural_HealthCentre_ExpecTime) / 2
 
 # Assemble
 X = pd.DataFrame({
     5: HQ_ExpecTime,  # (Headquarter)
     4: ZMH_ExpectTime,  # (Zomba Mental Hospital)
     3: Central_Hospital_ExpecTime,  # (our "Referral Hospital" at region level)
-    2: Avg_Level2_ExpectTime,  # (DHO and DisHos at second level )
+    2: District_Hospital_ExpecTime,  # (DisHos at second level )
     '1b': Community_Hospital_ExpecTime,  # (ComHos at primary level)
-    '1a': Avg_Level1a_ExpectTime,  # (UrbHC,RurHC and Disp at primary level)
+    '1a': Avg_Level1a_ExpectTime,  # (UrbHC,RurHC at primary level)
     0: HealthPost_ExpecTime  # (HP at community level)
 })
 
@@ -1330,8 +1325,12 @@ appt_time_table_coarse = pd.DataFrame(
 ).reset_index()
 
 # Save
-appt_time_table_coarse.to_csv(outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv',
-                              index=False)
+ApptTimeTable.to_csv(
+    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv',
+    index=False)
+appt_time_table_coarse.to_csv(
+    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table_Coarse.csv',
+    index=False)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** Create a table that determines what kind of appointment can be serviced in each Facility Level
