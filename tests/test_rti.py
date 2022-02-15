@@ -52,6 +52,7 @@ def create_basic_rti_sim(population_size, seed):
     return sim
 
 
+@pytest.mark.slow
 def test_run(seed):
     """
     This test runs a simulation with a functioning health system with full service availability and no set
@@ -65,6 +66,7 @@ def test_run(seed):
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_all_injuries_run(seed):
     """
     This test runs a simulation with a functioning health system with full service availability and no set
@@ -122,6 +124,7 @@ def test_all_injuries_run(seed):
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_all_injuries_run_no_healthsystem(seed):
     """
     This test runs a simulation with a functioning health system with full service availability and no set
@@ -191,6 +194,7 @@ def test_all_injuries_run_no_healthsystem(seed):
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_blocked_interventions(seed):
     sim = create_basic_rti_sim(popsize, seed)
     params = sim.modules['RTI'].parameters
@@ -209,6 +213,7 @@ def test_blocked_interventions(seed):
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_module_properties(seed):
     """ A test to see whether the logical flows through the module are followed"""
     sim = create_basic_rti_sim(popsize, seed)
@@ -250,6 +255,7 @@ def test_module_properties(seed):
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_with_more_modules(seed):
     # Run the simulation with multiple modules, see if any errors or unexpected changes to the datatypes occurs
     sim = Simulation(start_date=start_date, seed=seed)
@@ -277,6 +283,7 @@ def test_with_more_modules(seed):
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_run_health_system_high_squeeze(seed):
     """This test runs a simulation in which the contents of scheduled HSIs will not be performed because the squeeze
     factor is too high. Therefore it tests the logic in the did_not_run functions of the RTI HSIs"""
@@ -304,6 +311,7 @@ def test_run_health_system_high_squeeze(seed):
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_run_health_system_events_wont_run(seed):
     """
     Test the model with no service availability
@@ -328,6 +336,7 @@ def test_run_health_system_events_wont_run(seed):
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_sim_high_incidence(seed):
     """
     Run the model with a high incidence, where many people are involved in road traffic injuries
@@ -347,6 +356,7 @@ def test_sim_high_incidence(seed):
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_tiny_population(seed):
     """
     Run the model with a small population size
@@ -360,6 +370,7 @@ def test_tiny_population(seed):
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_no_capabilities(seed):
     """
     Run the model with a capabilities coefficient of 0.0
@@ -386,6 +397,7 @@ def test_no_capabilities(seed):
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_health_system_disabled(seed):
     """
     Test the model with the health system disabled
