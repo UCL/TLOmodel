@@ -44,8 +44,9 @@ class HSIEventDetails(NamedTuple):
     event_name: str
     module_name: str
     treatment_id: str
-    facility_level: Optional[int]
-    appt_footprint: Tuple
+    facility_level: Optional[str]
+    appt_footprint: Tuple[str]
+    beddays_footprint: Tuple[Tuple[str, int]]
 
 
 class HSIEventQueueItem(NamedTuple):
@@ -1084,7 +1085,8 @@ class HealthSystem(Module):
                         tuple(actual_appt_footprint)
                         if actual_appt_footprint is not None
                         else tuple(getattr(hsi_event, 'EXPECTED_APPT_FOOTPRINT', {}))
-                    )
+                    ),
+                    beddays_footprint=tuple(sorted(hsi_event.BEDDAYS_FOOTPRINT.items()))
                 )
             )
 
