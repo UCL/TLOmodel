@@ -65,7 +65,7 @@ outputlocation = Path('/Users/jdbb1/OneDrive/Desktop/healthsystem data update/ou
 # ---------------------------------------------------------------------------------------------------------------------
 # *** create and save population_by_district data
 population = pd.read_csv(
-    resourcefilepath/'demography'/'ResourceFile_PopulationSize_2018Census.csv'
+    resourcefilepath / 'demography' / 'ResourceFile_PopulationSize_2018Census.csv'
 )
 
 pop_by_district = pd.DataFrame(population.groupby('District')['Count'].sum())
@@ -78,14 +78,14 @@ for d in pop_by_district.index:
 # pop_by_district.to_csv(outputlocation / 'organisation' / 'ResourceFile_District_Population_Data.csv', index=True)
 
 # ---------------------------------------------------------------------------------------------------------------------
-# *** Below we generate staffing tables: fund_staffing_table for funded/established staff, and\
+# *** Below we generate staffing tables: fund_staffing_table for established staff, and\
 # curr_staffing_table for current staff
 # Before generating the tables, we need to prepare wb_import, officer_types_table, and\
 # make assumptions of curr_staff_return distribution and fund_staff_return distribution using Auxiliary CHAI Data
 
 # --- wb_import for staff information
 
-# Import all of the 'CurrentStaff' sheet, including both data of current and funded staff
+# Import all of the 'Staff' sheet, including both data of current and funded staff
 wb_import = pd.read_excel(workingfile, sheet_name='Staff', header=None)
 
 # --- officer_types_table
@@ -669,9 +669,9 @@ for i in range(63):
 # compare_staff_distribution.to_csv(outputlocation / 'ResourceFile_Staff_Distribution_Compare.csv', index=False)
 
 # ***
-# --- fund_staffing_table for funded/established staff
+# --- fund_staffing_table for established staff
 # Extract just the section about "Funded TOTAl Staff'
-wb_extract = wb_import.loc[3:37, 64:84]
+wb_extract = wb_import.loc[3:39, 64:84]
 wb_extract = wb_extract.drop([4, 5])
 wb_extract.columns = wb_extract.iloc[0]
 wb_extract = wb_extract.drop([3])
@@ -680,10 +680,10 @@ wb_extract.fillna(0, inplace=True)  # replace all null values with zero values
 
 # Add in the column to the dataframe for the labels that distinguishes whether
 # these officers are allocated to the district-or-lower levels or one of the key hospitals.
-labels = wb_import.loc[6:37, 0].reset_index(drop=True)
+labels = wb_import.loc[6:39, 0].reset_index(drop=True)
 is_distlevel = labels.copy()
-is_distlevel[0:27] = True  # for district-or-lower levels
-is_distlevel[27:] = False  # for CenHos-or-above levels
+is_distlevel[0:28] = True  # for district-or-lower levels
+is_distlevel[28:] = False  # for CenHos-or-above levels
 
 wb_extract.loc[:, 'District_Or_Hospital'] = labels
 wb_extract.loc[:, 'Is_DistrictLevel'] = is_distlevel
@@ -691,40 +691,21 @@ wb_extract.loc[:, 'Is_DistrictLevel'] = is_distlevel
 # Finished import from the CHAI excel:
 fund_staffing_table = wb_extract.copy()
 
-# There are a large number of officer_types EO1 (DCSA/Comm Health Workers) at HQ level, which is non-sensible
-# Therefore, re-distribute these evenly to the districts.
-extra_CHW = fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing',
-                                    fund_staffing_table.columns[fund_staffing_table.columns == 'E01']].values[0][0]
-fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing',
-                        fund_staffing_table.columns[fund_staffing_table.columns == 'E01']] = 0
-extra_CHW_per_district = int(np.floor(extra_CHW / fund_staffing_table['Is_DistrictLevel'].sum()))
-fund_staffing_table.loc[fund_staffing_table['Is_DistrictLevel'], 'E01'] = \
-    fund_staffing_table.loc[fund_staffing_table['Is_DistrictLevel'], 'E01'] + \
-    extra_CHW_per_district
-
-# The imported staffing table suggest that there is 1 Dental officer (D01) in each district,
-# but the TimeBase data (below) suggest that no appointment occurring at a district-level Facility can incur
-# the time such an officer. Therefore reallocate the D01 officers to the Referral Hospitals
-extra_D01 = fund_staffing_table.loc[
-    ~fund_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']),
-    fund_staffing_table.columns[fund_staffing_table.columns == 'D01']].sum().values[0]
-fund_staffing_table.loc[~fund_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']),
-                        fund_staffing_table.columns[fund_staffing_table.columns == 'D01']] = 0
-extra_D01_per_referralhosp = extra_D01 / 4  # divided by 4 CenHos
-fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']), 'D01'] = \
-    fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']), 'D01'] + \
-    extra_D01_per_referralhosp
+# The imported staffing table suggest that there is some Dental officer (D01) in most districts,
+# but the TimeBase data (below) suggest that D01 is only needed at central hospitals.
+# This potential inconsistency can be solved by re-allocating D01 from districts to central hospitals, but
+# currently we keep the source data as it is the establishment and CHAI team does not recommend such re-allocation.
 
 # *** Only for funded_plus ********************************************************************************************
 # Since districts Balaka,Machinga,Mwanza,Neno,Ntchisi,Salima and central hospitals have 0 C01, while C01 is \
 # required by Mental appts at level 1b, level 2 and level 3, we move some C01 from 'HQ or missing' to them. \
 # To achieve this, we evenly distribute 30 C01 at HQ to all districts and central hospitals (27 DisHos, 4 CenHos)
-C01_at_HQ = fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'C01'].values
-extra_C01_per_district_CenHos = C01_at_HQ / 31
-fund_staffing_table.loc[~fund_staffing_table['District_Or_Hospital'].isin(['HQ or missing']), 'C01'] = (
-    fund_staffing_table.loc[~fund_staffing_table['District_Or_Hospital'].isin(['HQ or missing']), 'C01'] +
-    extra_C01_per_district_CenHos)
-fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'C01'] = 0
+# C01_at_HQ = fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'C01'].values
+# extra_C01_per_district_CenHos = C01_at_HQ / 31
+# fund_staffing_table.loc[~fund_staffing_table['District_Or_Hospital'].isin(['HQ or missing']), 'C01'] = (
+#     fund_staffing_table.loc[~fund_staffing_table['District_Or_Hospital'].isin(['HQ or missing']), 'C01'] +
+#     extra_C01_per_district_CenHos)
+# fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'C01'] = 0
 # *********************************************************************************************************************
 
 # Sort out which are district allocations and which are central hospitals and above
@@ -732,7 +713,7 @@ fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or mi
 # We assign HQ to HQ; KCH as RefHos in Central region; MCH as RefHos in Northern region;
 # QECH and ZCH as RefHos in Southern region (QECH is in Southwest and ZCH is in Southeast).
 fund_staffing_table.loc[
-    fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'District_Or_Hospital'] = 'Headquarter'
+    fund_staffing_table['District_Or_Hospital'] == 'HQ', 'District_Or_Hospital'] = 'Headquarter'
 fund_staffing_table.loc[
     fund_staffing_table['District_Or_Hospital'] == 'KCH', 'District_Or_Hospital'] = 'Referral Hospital_Central'
 fund_staffing_table.loc[
@@ -745,6 +726,8 @@ fund_staffing_table.loc[
     fund_staffing_table['District_Or_Hospital'] == 'ZCH', 'District_Or_Hospital'] = 'Referral Hospital_Southern'
 # fund_staffing_table.loc[
 # fund_staffing_table['District_Or_Hospital'] == 'ZCH', 'District_Or_Hospital'] = 'Referral Hospital_Southeast'
+fund_staffing_table.loc[
+    fund_staffing_table['District_Or_Hospital'] == 'ZMH', 'District_Or_Hospital'] = 'Zomba Mental Hospital'
 
 # Group the referral hospitals QECH and ZCH as Referral Hospital_Southern
 Is_DistrictLevel = fund_staffing_table['Is_DistrictLevel'].values  # Save the column 'Is_DistrictLevel' first
@@ -752,42 +735,14 @@ fund_staffing_table = pd.DataFrame(
     fund_staffing_table.groupby(by=['District_Or_Hospital'], sort=False).sum()).reset_index()
 fund_staffing_table.insert(1, 'Is_DistrictLevel', Is_DistrictLevel[:-1])  # Add the column 'Is_DistrictLevel'
 
-# Add a row for Zomba Mental Hospital with 3 C01 mental health staff
-# (according to data in 2018-03-09 Facility-level establishment MOH & CHAM)
-# (This is much less than the current 12 C01.)
-fund_ZMH = pd.DataFrame(columns=fund_staffing_table.columns.copy())
-fund_ZMH.loc[0, 'District_Or_Hospital'] = 'Zomba Mental Hospital'
-fund_ZMH.loc[0, 'Is_DistrictLevel'] = False
-fund_ZMH.loc[0, 'C01'] = 3
-# Alternatively, if consider all potential cadres from compiled staff return
-# fund_cadres_ZMH = pd.DataFrame(index = [0], columns = ['M01','M02','M03','N01','N02','C01','P02','L02'],
-#                          data = np.array([[2,13,14,8,30,3,1,1]]))
-# for col in fund_cadres_ZMH.columns:
-#    fund_ZMH.loc[0,col] = fund_cadres_ZMH.loc[0,col].copy()
-
-# Concat
-fund_staffing_table = pd.concat([fund_staffing_table, fund_ZMH])
-fund_staffing_table.reset_index(drop=True, inplace=True)
-fund_staffing_table.fillna(0, inplace=True)
-
-# File 2018-03-09 Facility-level establishment MOH & CHAM indicates that ZMH is assigned to Zomba District,
-# We therefore subtract the 3 C01 staff from Zomba District.
-fund_idx_ZombaDist = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Zomba'].index
-fund_staffing_table.loc[fund_idx_ZombaDist, 'C01'] = \
-    fund_staffing_table.loc[fund_idx_ZombaDist, 'C01'] - fund_ZMH.loc[0, 'C01']
-# Alternatively, if consider all potential cadres from compiled staff return
-# fund_staffing_table.loc[fund_idx_ZombaDist, :] =\
-# fund_staffing_table.loc[fund_idx_ZombaDist, :] - fund_ZMH.loc[0,:]
-
-# Check that fund_staffing_table.loc[fund_idx_ZombaDist, :] >=0
-assert (fund_staffing_table.loc[fund_idx_ZombaDist, 'M01':'R04'].values >= 0).all()
+# Check that in fund_staffing_table every staff count entry >= 0
+assert (fund_staffing_table.loc[:, 'M01':'R04'].values >= 0).all()
 
 # The following districts are not in the CHAI data because they are included within other districts.
 # For now, we will say that the division of staff between these cities and the wide district (where they are included)
-# is consistent with the population recorded for them.
+# is consistent with the population recorded for them (Malawi 2018 census),
 # i.e., to use population-based weights to reallocate staff
 
-# Add in Likoma (part Nkhata Bay)
 # Add in Lilongwe City (part of Lilongwe)
 # Add in Mzuzu City (part of Mziba) ASSUMED
 # Add in Zomba City (part of Zomba)
@@ -795,7 +750,6 @@ assert (fund_staffing_table.loc[fund_idx_ZombaDist, 'M01':'R04'].values >= 0).al
 
 # create mapping: the new districts : super_district
 split_districts = (
-    ('Likoma', 'Nkhata Bay'),
     ('Lilongwe City', 'Lilongwe'),
     ('Mzuzu City', 'Mzimba'),
     ('Zomba City', 'Zomba'),
@@ -819,7 +773,7 @@ for i in np.arange(0, len(split_districts)):
     total_staff = fund_staffing_table.loc[
         fund_staffing_table['District_Or_Hospital'] == super_district, cols].values.squeeze()
 
-    # get the weight; The original weights w0 for the 5 new districts in order are 0.05,0.60,0.24,0.14,1.77(> 1)
+    # get the weight; The original weights w0 for the 4 new districts in order are 0.60,0.24,0.14,1.77(> 1)
     w0 = pop_by_district.loc[new_district, 'Count'] / pop_by_district.loc[super_district, 'Count']
     if w0 < 1:
         w = w0
@@ -874,15 +828,15 @@ fund_staffing_table = district_faclevel.merge(fund_staffing_table, how='outer')
 # Before split, update the funded C01 distributions at levels 1a, 1b and 2 using CHAI Optimal Workforce estimates. \
 # This is because funded C01 are all at level 1b (100%), meanwhile appt time base requires C01 at level 2. \
 # CHAI Optimal Workforce locates C01 47.92% at level 1b and 52.08% at level 2, which seems more sensible.
-idx_c01_level_1b = fund_staff_distribution[
-    (fund_staff_distribution['Cadre_Code'] == 'C01') &
-    (fund_staff_distribution['Facility_Level'] == 'Facility_Level_1b')].index
-fund_staff_distribution.loc[idx_c01_level_1b, 'Proportion_Fund'] = 0.4792
-
-idx_c01_level_2 = fund_staff_distribution[
-    (fund_staff_distribution['Cadre_Code'] == 'C01') &
-    (fund_staff_distribution['Facility_Level'] == 'Facility_Level_2')].index
-fund_staff_distribution.loc[idx_c01_level_2, 'Proportion_Fund'] = 0.5208
+# idx_c01_level_1b = fund_staff_distribution[
+#     (fund_staff_distribution['Cadre_Code'] == 'C01') &
+#     (fund_staff_distribution['Facility_Level'] == 'Facility_Level_1b')].index
+# fund_staff_distribution.loc[idx_c01_level_1b, 'Proportion_Fund'] = 0.4792
+#
+# idx_c01_level_2 = fund_staff_distribution[
+#     (fund_staff_distribution['Cadre_Code'] == 'C01') &
+#     (fund_staff_distribution['Facility_Level'] == 'Facility_Level_2')].index
+# fund_staff_distribution.loc[idx_c01_level_2, 'Proportion_Fund'] = 0.5208
 # *********************************************************************************************************************
 
 # Split
@@ -911,12 +865,14 @@ fund_staffing_table.loc[128:132, 'Facility_Level'] = ['Facility_Level_5', 'Facil
                                                       'Facility_Level_3', 'Facility_Level_3',
                                                       'Facility_Level_4']
 
+# Check that in fund_staffing_table every staff count entry >= 0
+assert (fund_staffing_table.loc[:, 'M01':'R04'].values >= 0).all()
 # fund_staffing_table ready!
 
 # Save the table without column 'Is_DistrictLevel'; staff counts in floats
 fund_staffing_table_to_save = fund_staffing_table.drop(columns='Is_DistrictLevel', inplace=False)
-# fund_staffing_table_to_save.to_csv(
-#     outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Staff_Table.csv', index=False)
+fund_staffing_table_to_save.to_csv(
+    outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Staff_Table.csv', index=False)
 # fund_staffing_table_to_save.to_csv(
 #     outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Staff_Table.csv', index=False)
 
