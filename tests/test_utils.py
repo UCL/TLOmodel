@@ -1,11 +1,12 @@
 """Unit tests for utility functions."""
 import os
 import pickle
+import types
 from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
-import types
 
 import tlo.util
 from tlo import Date, Simulation
