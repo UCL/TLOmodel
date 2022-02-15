@@ -879,7 +879,7 @@ fund_staffing_table_to_save.to_csv(
 # ***
 # --- Creating curr_staffing_table and curr_staff_list for current staff
 # Extract the section about "Current TOTAl Staff'
-hcw_curr_extract = wb_import.loc[3:37, 1:21]
+hcw_curr_extract = wb_import.loc[3:39, 1:21]
 hcw_curr_extract = hcw_curr_extract.drop([4, 5])
 hcw_curr_extract.columns = hcw_curr_extract.iloc[0]
 hcw_curr_extract = hcw_curr_extract.drop([3])
@@ -897,25 +897,16 @@ curr_staffing_table = hcw_curr_extract.copy()
 # Check the cadre columns of curr_staffing_table is identical to fund_staffing_table
 assert set(curr_staffing_table.columns[0:21]) == set(fund_staffing_table.columns[-21:])
 
-# For curr_staffing_table, reallocating D01 from districts to referral hospitals
-# Treat KCH, MCH, QECH, ZCH as referral hospitals
+# For curr_staffing_table, do not re-allocate Dental officer with the same reason above for established staff;
+# Also, the central/referral hospitals have Dental officer allocated to meet dental service demand,
+# thus no risk of not able to meet such demand at level 3.
+
 # The operation of reallocating E01 in HQ to districts is not needed for curr_staffing_table,
 # as no. of E01 in curr_staffing_table at HQ is zero.
 
-curr_extra_D01 = curr_staffing_table.loc[
-    ~curr_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']), curr_staffing_table.columns[
-        curr_staffing_table.columns == 'D01']].sum().values[0]
-curr_staffing_table.loc[
-    ~curr_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']), curr_staffing_table.columns[
-        curr_staffing_table.columns == 'D01']] = 0
-curr_extra_D01_per_referralhosp = curr_extra_D01 / 4
-curr_staffing_table.loc[curr_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']), 'D01'] = \
-    curr_staffing_table.loc[curr_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']), 'D01'] + \
-    curr_extra_D01_per_referralhosp
-
 # For curr_staffing_table, sort out the districts and central hospitals
 curr_staffing_table.loc[
-    curr_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'District_Or_Hospital'] = 'Headquarter'
+    curr_staffing_table['District_Or_Hospital'] == 'HQ', 'District_Or_Hospital'] = 'Headquarter'
 curr_staffing_table.loc[
     curr_staffing_table['District_Or_Hospital'] == 'KCH', 'District_Or_Hospital'] = 'Referral Hospital_Central'
 curr_staffing_table.loc[
@@ -924,6 +915,8 @@ curr_staffing_table.loc[
     curr_staffing_table['District_Or_Hospital'] == 'QECH', 'District_Or_Hospital'] = 'Referral Hospital_Southern'
 curr_staffing_table.loc[
     curr_staffing_table['District_Or_Hospital'] == 'ZCH', 'District_Or_Hospital'] = 'Referral Hospital_Southern'
+curr_staffing_table.loc[
+    curr_staffing_table['District_Or_Hospital'] == 'ZMH', 'District_Or_Hospital'] = 'Zomba Mental Hospital'
 
 # Group the referral hospitals QECH and ZCH as Referral Hospital_Southern
 Is_DistrictLevel = curr_staffing_table['Is_DistrictLevel'].values  # Save the column 'Is_DistrictLevel' first
@@ -931,41 +924,24 @@ curr_staffing_table = pd.DataFrame(
     curr_staffing_table.groupby(by=['District_Or_Hospital'], sort=False).sum()).reset_index()
 curr_staffing_table.insert(1, 'Is_DistrictLevel', Is_DistrictLevel[:-1])  # Add the column 'Is_DistrictLevel'
 
-# Add a row for Zomba Mental Hospital, which has 12 mental health staff according to compiled staff return
-curr_ZMH = pd.DataFrame(columns=curr_staffing_table.columns.copy())
-curr_ZMH.loc[0, 'District_Or_Hospital'] = 'Zomba Mental Hospital'
-curr_ZMH.loc[0, 'Is_DistrictLevel'] = False
-curr_ZMH.loc[0, 'C01'] = 12
-# Alternatively, if consider all potential cadres from compiled staff return
-# curr_cadres_ZMH = pd.DataFrame(index = [0], columns = ['M01','M02','N01','N02','C01','P02','P03'],
-#                          data = np.array([[2,5,19,27,12,1,1]]))
-# for col in curr_cadres_ZMH.columns:
-#    curr_ZMH.loc[0,col] = curr_cadres_ZMH.loc[0,col].copy()
+# No need to add a row for Zomba Mental Hospital, as the updated CHAI data has this row for ZMH.
+# Check that in curr_staffing_table each staff count entry >=0
+assert (curr_staffing_table.loc[:, 'M01':'R04'].values >= 0).all()
 
-curr_staffing_table = pd.concat([curr_staffing_table, curr_ZMH])
-curr_staffing_table.reset_index(drop=True, inplace=True)
-curr_staffing_table.fillna(0, inplace=True)
+# Split staff to 5 special districts;
+# for current staff, we include Likoma here because CHAI has no current staff allocated in Likoma
+# (CHAI team they will allocate some staff to Likoma but not yet done)
+split_districts = (
+   ('Likoma', 'Nkhata Bay'),
+   ('Lilongwe City', 'Lilongwe'),
+   ('Mzuzu City', 'Mzimba'),
+   ('Zomba City', 'Zomba'),
+   ('Blantyre City', 'Blantyre')
+)
 
-# For Zomba district, there are 12 mental health staff C01;
-# However, compiled staff return does not record any C01 in Zomba district;
-# We therefore assume that its 12 C01 are from Zomba Mental Hospital.
-curr_idx_ZombaDist = curr_staffing_table[curr_staffing_table['District_Or_Hospital'] == 'Zomba'].index
-curr_staffing_table.loc[curr_idx_ZombaDist, 'C01'] = \
-    curr_staffing_table.loc[curr_idx_ZombaDist, 'C01'] - curr_ZMH.loc[0, 'C01']
-# Alternatively, if consider all potential cadres from compiled staff return
-# curr_staffing_table.loc[curr_idx_ZombaDist, :] = curr_staffing_table.loc[curr_idx_ZombaDist, :] - curr_ZMH.loc[0,:]
-
-# Check that curr_staffing_table.loc[curr_idx_ZombaDist, :] >=0
-assert (curr_staffing_table.loc[curr_idx_ZombaDist, 'M01':'R04'].values >= 0).all()
-
-# Similarly split staff to 5 special districts as done for funded staff
-# split_districts = (
-#    ('Likoma', 'Nkhata Bay'),
-#    ('Lilongwe City', 'Lilongwe'),
-#    ('Mzuzu City', 'Mzimba'),
-#    ('Zomba City', 'Zomba'),
-#    ('Blantyre City', 'Blantyre')
-# )
+# drop the original placeholder row for Likoma
+curr_staffing_table.drop([9], inplace=True)
+curr_staffing_table.reset_index(inplace=True, drop=True)
 
 for i in np.arange(0, len(split_districts)):
     new_district = split_districts[i][0]
@@ -1052,8 +1028,8 @@ curr_staffing_table.loc[128:133, 'Facility_Level'] = ['Facility_Level_5', 'Facil
 
 # Save the table without column 'Is_DistrictLevel'; staff counts in floats
 curr_staffing_table_to_save = curr_staffing_table.drop(columns='Is_DistrictLevel', inplace=False)
-# curr_staffing_table_to_save.to_csv(
-#     outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Staff_Table.csv', index=False)
+curr_staffing_table_to_save.to_csv(
+    outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Staff_Table.csv', index=False)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** Create the Master Facilities List
