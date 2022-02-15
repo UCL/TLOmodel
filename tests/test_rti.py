@@ -52,7 +52,6 @@ def create_basic_rti_sim(population_size, seed):
     return sim
 
 
-@pytest.fixture(scope='module')
 def test_run(seed):
     """
     This test runs a simulation with a functioning health system with full service availability and no set
