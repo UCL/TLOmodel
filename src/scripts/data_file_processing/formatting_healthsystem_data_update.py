@@ -932,11 +932,11 @@ assert (curr_staffing_table.loc[:, 'M01':'R04'].values >= 0).all()
 # for current staff, we include Likoma here because CHAI has no current staff allocated in Likoma
 # (CHAI team they will allocate some staff to Likoma but not yet done)
 split_districts = (
-   ('Likoma', 'Nkhata Bay'),
-   ('Lilongwe City', 'Lilongwe'),
-   ('Mzuzu City', 'Mzimba'),
-   ('Zomba City', 'Zomba'),
-   ('Blantyre City', 'Blantyre')
+    ('Likoma', 'Nkhata Bay'),
+    ('Lilongwe City', 'Lilongwe'),
+    ('Mzuzu City', 'Mzimba'),
+    ('Zomba City', 'Zomba'),
+    ('Blantyre City', 'Blantyre')
 )
 
 # drop the original placeholder row for Likoma
@@ -1682,12 +1682,11 @@ curr_daily_capability_coarse.to_csv(
 funded_daily_capability_coarse.to_csv(
     outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Daily_Capabilities.csv', index=False)
 
+
 # *** Only for funded_plus ********************************************************************************************
 # funded_daily_capability_coarse.to_csv(
 #     outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv', index=False)
 # *********************************************************************************************************************
-
-
 
 # ---------------------------------------------------------------------------------------------------------------------
 # final check that for an appointment required at a particular level (in Appt_Time_Table), \
