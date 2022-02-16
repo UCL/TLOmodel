@@ -1541,7 +1541,7 @@ class HSI_Event:
 
         # Return result in expected format:
         if not return_individual_results:
-            # Determine if all results for all the `item_codes` are True (discarding results from optional_item_codes).  # todo - logic here
+            # Determine if all results for all the `item_codes` are True (discarding results from optional_item_codes).
             return all([v for k, v in rtn.items() if k in _item_codes])
         else:
             return rtn
