@@ -6,16 +6,16 @@ Inputs:
 Dropbox location - ~05 - Resources/Module-healthsystem/consumables raw files/gis_data/LMISFacilityLocations_raw.xlsx
 
 """
-import calendar
 import datetime
 # Import Statements and initial declarations
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
-import googlemaps as gmaps
+import pandas as pd
+# import googlemaps as gmaps
 import requests
-import json
+
+# import json
 
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
     'C:/Users/sm2511/Dropbox/Thanzi la Onse')
@@ -35,7 +35,7 @@ path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
 
 # Load raw GIS dataset and clean column names
 fac_gis = pd.read_excel(open(path_to_files_in_the_tlo_dropbox / 'gis_data/LMISFacilityLocations_raw.xlsx',
-    'rb'), sheet_name='final_gis_data')
+                             'rb'), sheet_name='final_gis_data')
 fac_gis = fac_gis.rename(
     columns={'LMIS Facility List': 'fac_name', 'OWNERSHIP': 'fac_owner', 'TYPE': 'fac_type', 'STATUS': 'fac_status',
              'ZONE': 'zone', 'DISTRICT': 'district', 'DATE OPENED': 'open_date', 'LATITUDE': 'lat',
@@ -50,15 +50,15 @@ cond2 = fac_gis['lat'] < -17.5
 cond3 = fac_gis['long'] > 36.5
 cond4 = fac_gis['long'] < 32.5
 conda = cond1 | cond2 | cond3 | cond4  # outside Malawi's boundaries
-fac_gis_noloc = fac_gis[fac_gis.lat.isna()|conda]
+fac_gis_noloc = fac_gis[fac_gis.lat.isna() | conda]
 fac_gis_noloc = fac_gis_noloc.reset_index()
 fac_gis_noloc = fac_gis_noloc.drop(columns='index')
 
-fac_gis_clean = fac_gis[~conda & fac_gis.lat.notna()] # save clean portion of raw data to be appended later
+fac_gis_clean = fac_gis[~conda & fac_gis.lat.notna()]  # save clean portion of raw data to be appended later
 
 # Use googlemaps package to obtain GIS coordinates using facility names
 GCODE_URL = 'https://maps.googleapis.com/maps/api/geocode/json?'
-# GCODE_KEY # PLaceholder to enter googlemaps API
+GCODE_KEY = ''  # Placeholder to enter googlemaps API
 
 
 def reverse_gcode(location):
@@ -76,7 +76,7 @@ def reverse_gcode(location):
             sizeoftype = len(data['results'][0]['address_components'][i]['types'])
             if sizeoftype == 3:
                 geo_location[data['results'][0]['address_components'][i]['types'][2]] = \
-                data['results'][0]['address_components'][i]['long_name']
+                    data['results'][0]['address_components'][i]['long_name']
 
             else:
                 if data['results'][0]['address_components'][i]['types'][0] == 'administrative_area_level_1':
@@ -88,7 +88,7 @@ def reverse_gcode(location):
 
                 else:
                     geo_location[data['results'][0]['address_components'][i]['types'][0]] = \
-                    data['results'][0]['address_components'][i]['long_name']
+                        data['results'][0]['address_components'][i]['long_name']
 
         formatted_address = data['results'][0]['formatted_address']
         geo_location['lat'] = data['results'][0]['geometry']['location']['lat']
@@ -97,6 +97,7 @@ def reverse_gcode(location):
 
         return geo_location
 
+
 for i in range(len(fac_gis_noloc)):
     try:
         print("Processing facility", fac_gis_noloc['fac_name'][i])
@@ -104,11 +105,11 @@ for i in range(len(fac_gis_noloc)):
         fac_gis_noloc['lat'][i] = geo_info['lat']
         fac_gis_noloc['long'][i] = geo_info['lang']
         fac_gis_noloc['district'][i] = geo_info['city']
-    except:
+    except ValueError:
         pass
 
 # Drop incorrect GIS coordinates from the above generated dataset
-conda = fac_gis_noloc.district.isin(districts) # districts not from Malawi
+conda = fac_gis_noloc.district.isin(districts)  # districts not from Malawi
 cond1 = fac_gis_noloc['lat'] > -8.5
 cond2 = fac_gis_noloc['lat'] < -17.5
 cond3 = fac_gis_noloc['long'] > 36.5

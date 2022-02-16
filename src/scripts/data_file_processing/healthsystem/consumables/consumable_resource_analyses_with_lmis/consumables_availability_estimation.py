@@ -27,10 +27,13 @@ import numpy as np
 import pandas as pd
 
 # Set local Dropbox source
-from tests.test_consumables import test_check_format_of_consumables_file, check_format_of_consumables_file
+from tests.test_consumables import check_format_of_consumables_file
 
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    'C:/Users/sm2511/Dropbox/Thanzi la Onse') # '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE'
+    # 'C:/Users/sm2511/Dropbox/Thanzi la Onse'
+    '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE'
+)
+
 path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/consumables raw files/"
 
 # define a timestamp for script outputs
@@ -336,16 +339,18 @@ stkout_df = stkout_df.groupby(
                          'consumable_reporting_freq': 'first',
                          'consumables_reported_in_mth': 'first'})
 
-
-# Update impossible stockout values (This happens due to some stockout days figures being higher than the number of days in the month)
-stkout_df.loc[stkout_df['stkout_prop'] < 0,'stkout_prop'] = 0
-stkout_df.loc[stkout_df['stkout_prop'] > 1,'stkout_prop'] = 1
+# Update impossible stockout values (This happens due to some stockout days figures being higher than the number of
+#  days in the month)
+stkout_df.loc[stkout_df['stkout_prop'] < 0, 'stkout_prop'] = 0
+stkout_df.loc[stkout_df['stkout_prop'] > 1, 'stkout_prop'] = 1
 # Eliminate duplicates
 collapse_dict = {
-    'stkout_prop': 'mean' , 'closing_bal': 'mean' , 'amc': 'mean' ,'dispensed': 'mean' ,'received': 'mean' ,'consumable_reporting_freq': 'mean' , 'consumables_reported_in_mth': 'mean' ,
-    'module_name': 'first','consumable_name_tlo': 'first', 'data_source': 'first'
+    'stkout_prop': 'mean', 'closing_bal': 'mean', 'amc': 'mean', 'dispensed': 'mean', 'received': 'mean',
+    'consumable_reporting_freq': 'mean', 'consumables_reported_in_mth': 'mean',
+    'module_name': 'first', 'consumable_name_tlo': 'first', 'data_source': 'first'
 }
-stkout_df = stkout_df.groupby(['fac_type_tlo', 'fac_name', 'district', 'month', 'item_code'], as_index=False).agg(collapse_dict).reset_index()
+stkout_df = stkout_df.groupby(['fac_type_tlo', 'fac_name', 'district', 'month', 'item_code'], as_index=False).agg(
+    collapse_dict).reset_index()
 
 stkout_df['available_prop'] = 1 - stkout_df['stkout_prop']
 
@@ -487,7 +492,8 @@ assert not stkout_df.duplicated(['fac_type_tlo', 'fac_name', 'district', 'month'
 
 # --- 6.7 Generate file for use in model run --- #
 # 1) Smaller file size
-# 2) Indexed by the 'Facility_ID' used in the model (which is an amalgmation of district and facility_level, defined in the Master Facilities List.
+# 2) Indexed by the 'Facility_ID' used in the model (which is an amalgmation of district and facility_level, defined in
+#  the Master Facilities List.
 
 # unify the set within each facility_id
 
@@ -528,13 +534,13 @@ for source, destination in copy_source_to_destination.items():
     sf = sf.append(new_rows)
 
 # 2) Fill in Likoma (for which no data) with the means
-means = sf.loc[sf.fac_type_tlo.isin(['1a', '1b', '2'])].groupby(by=['fac_type_tlo', 'month', 'item_code'])['available_prop'].mean().reset_index()
+means = sf.loc[sf.fac_type_tlo.isin(['1a', '1b', '2'])].groupby(by=['fac_type_tlo', 'month', 'item_code'])[
+    'available_prop'].mean().reset_index()
 new_rows = means.copy()
 new_rows['district_std'] = 'Likoma'
 sf = sf.append(new_rows)
 
 assert sorted(set(districts)) == sorted(set(pd.unique(sf.district_std)))
-
 
 # 3) copy the results for 'Mwanza/1b' to be equal to 'Mwanza/1a'.
 mwanza_1a = sf.loc[(sf.district_std == 'Mwanza') & (sf.fac_type_tlo == '1a')]
@@ -549,9 +555,8 @@ sf = sf.append(all_0)
 
 # Now, merge-in facility_id
 sf_merge = sf.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
-              left_on=['district_std', 'fac_type_tlo'],
-              right_on=['District', 'Facility_Level'], how='left', indicator=True)
-
+                    left_on=['district_std', 'fac_type_tlo'],
+                    right_on=['District', 'Facility_Level'], how='left', indicator=True)
 
 # 5) Assign the Facility_IDs for those facilities that are regional/national level;
 # For facilities of level 3, find which region they correspond to:
@@ -568,24 +573,40 @@ sf_merge.loc[sf_merge.fac_type_tlo == '4', 'Facility_ID'] = fac_id_of_fac_level4
 
 # Now, take averages because more than one set of records is forming the estimates for the level 3 facilities
 sf_final = sf_merge.groupby(by=['Facility_ID', 'month', 'item_code'])['available_prop'].mean().reset_index()
+sf_final.Facility_ID = sf_final.Facility_ID.astype(int)
 
-# todo: Conform a common set of item_codes for all facilities, imputing 0.0 if it's never recognised.
-# todo: If a month is missing for a particular facility, imput it with the average for that facility
+# Construct dataset that conforms to some principles expected by the simulation: that there is an entry for every
+# facility_id and for every month for every item_code that the same set of item_codes are recognised at all the
+# facility_ids in the same level.
 
-# Check that we have a complete set of estimates, for every region & facility_type, as defined in the model.
-check_format_of_consumables_file(df=sf_final)
+# Generate the dataframe that has the desired size and shape
+fac_ids = set(mfl.loc[mfl.Facility_Level != '5'].Facility_ID)
+item_codes = set(sf.item_code.unique())
+months = range(1, 13)
+
+full_set = pd.Series(
+    index=pd.MultiIndex.from_product([fac_ids, months, item_codes], names=['Facility_ID', 'month', 'item_code']),
+    data=np.nan,
+    name='available_prop')
+
+# Insert the data, where it is available.
+full_set = full_set.combine_first(sf_final.set_index(['Facility_ID', 'month', 'item_code'])['available_prop'])
+
+# Fill in NaN with rules
+# todo
+#  (i) Finding the set of item_codes for which availability is estimated at each level (in one or more facilities).
+#  (ii) Estimating the availability of items in facility in a month that is not known by: finding the average
+#        availability for that item in other months and facilities, for which data are available.
+#
+
+full_set = full_set.fillna(0.0)
+
+# --- Check that the exported file has the properties required of it by the model code. --- #
+check_format_of_consumables_file(df=full_set.reset_index())
 
 # Save
-sf_final.to_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv", index=False)
-
-
-
-
-
-# --- 6.8 Checks that the exported file has the properties required of it by the model code. --- #
-
-
-
+full_set.reset_index().to_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv",
+                              index=False)
 
 # 8. CALIBRATION TO HHFA DATA, 2018/19 ##
 #########################################################################################
