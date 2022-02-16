@@ -37,8 +37,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 1, 1)
-popsize = 5000
+end_date = Date(2019, 1, 1)
+popsize = 50000
 # todo check parameters set below
 
 # set up the log config
@@ -57,7 +57,7 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 3  # set seed for reproducibility
+seed = 339  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -88,6 +88,7 @@ sim.modules["Hiv"].parameters["beta"] = 0.127623113
 
 # transmission rate active cases -> new latent cases
 sim.modules["Tb"].parameters["transmission_rate"] = 19.5
+sim.modules["Tb"].parameters["rate_treatment_baseline_active"] = 0.45
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
@@ -109,10 +110,58 @@ with open(outputpath / "default_run.pickle", "wb") as f:
 with open(outputpath / "default_run.pickle", "rb") as f:
     output = pickle.load(f)
 
-cov_over_time = output["tlo.methods.hiv"]["hiv_program_coverage"]
-cov_over_time = cov_over_time.set_index("date")
+# person-years all ages (irrespective of HIV status)
+py_ = output["tlo.methods.demography"]["person_years"]
+years = pd.to_datetime(py_["date"]).dt.year
+py = pd.Series(dtype="int64", index=years)
+for year in years:
+    tot_py = (
+        (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series)
+        + (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(pd.Series)
+    ).transpose()
+    py[year] = tot_py.sum().values[0]
 
-dx = cov_over_time["dx_adult"] * 100
-art_among_dx = (cov_over_time["art_coverage_adult"] / cov_over_time["dx_adult"]) * 100
-vs_among_art = (cov_over_time["art_coverage_adult_VL_suppression"]) * 100
-print(dx)  # want 95% diagnosed from 2022 onwards
+py.index = pd.to_datetime(years, format="%Y")
+
+# deaths
+deaths = output["tlo.methods.demography"]["death"].copy()  # outputs individual deaths
+deaths = deaths.set_index("date")
+
+# TB deaths will exclude TB/HIV
+# keep if cause = TB
+keep = (deaths.cause == "TB")
+deaths_TB = deaths.loc[keep].copy()
+deaths_TB["year"] = deaths_TB.index.year  # count by year
+tot_tb_non_hiv_deaths = deaths_TB.groupby(by=["year"]).size()
+tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format="%Y")
+
+# TB/HIV deaths
+keep = (deaths.cause == "AIDS_TB")
+deaths_TB_HIV = deaths.loc[keep].copy()
+deaths_TB_HIV["year"] = deaths_TB_HIV.index.year  # count by year
+tot_tb_hiv_deaths = deaths_TB_HIV.groupby(by=["year"]).size()
+tot_tb_hiv_deaths.index = pd.to_datetime(tot_tb_hiv_deaths.index, format="%Y")
+
+# total TB deaths (including HIV+)
+total_tb_deaths = tot_tb_non_hiv_deaths.add(tot_tb_hiv_deaths, fill_value=0)
+total_tb_deaths.index = pd.to_datetime(total_tb_deaths.index, format="%Y")
+
+# tb mortality rates per 100k person-years
+total_tb_deaths_rate_100kpy = (total_tb_deaths / py) * 100000
+tot_tb_hiv_deaths_rate_100kpy = (tot_tb_hiv_deaths / py) * 100000
+tot_tb_non_hiv_deaths_rate_100kpy = (tot_tb_non_hiv_deaths / py) * 100000
+
+# AIDS DEATHS
+# limit to deaths among aged 15+, include HIV/TB deaths
+keep = (deaths.age >= 15) & (
+    (deaths.cause == "AIDS_TB") | (deaths.cause == "AIDS_non_TB")
+)
+deaths_AIDS = deaths.loc[keep].copy()
+deaths_AIDS["year"] = deaths_AIDS.index.year
+tot_aids_deaths = deaths_AIDS.groupby(by=["year"]).size()
+tot_aids_deaths.index = pd.to_datetime(tot_aids_deaths.index, format="%Y")
+
+# aids mortality rates per 100k person-years
+total_aids_deaths_rate_100kpy = (tot_aids_deaths / py) * 100000
+#
+# # -------------------

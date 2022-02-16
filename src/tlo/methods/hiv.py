@@ -858,13 +858,13 @@ class Hiv(Module):
         # Schedule the AIDS death events for those who have got AIDS already
         for person_id in has_aids_idx:
             # schedule a HSI_Test_and_Refer otherwise initial AIDS rates and deaths are far too high
-            # date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 60))
-            # self.sim.modules["HealthSystem"].schedule_hsi_event(
-            #     hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
-            #     priority=1,
-            #     topen=date_test,
-            #     tclose=self.sim.date + pd.DateOffset(days=365),
-            # )
+            date_test = self.sim.date + pd.DateOffset(days=self.rng.randint(0, 60))
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self),
+                priority=1,
+                topen=date_test,
+                tclose=self.sim.date + pd.DateOffset(days=365),
+            )
 
             date_aids_death = (
                 self.sim.date + self.get_time_from_aids_to_death()
@@ -1236,7 +1236,8 @@ class Hiv(Module):
         # adjust new initiations to reflect current estimates
         # may return prob > 1
         # return_prob = return_prob * 1.95
-        return_prob = 0.99
+        # todo uncomment
+        # return_prob = 0.99
 
         return return_prob
 
@@ -1642,7 +1643,7 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
             # cause is active TB
             # death scheduled between 6-12 months from now
             date_of_aids_tb_death = self.sim.date + \
-                                    pd.DateOffset(months=self.module.rng.randint(6, 12))
+                                    pd.DateOffset(months=self.module.rng.randint(6, 18))
 
             self.sim.schedule_event(
                 event=HivAidsTbDeathEvent(

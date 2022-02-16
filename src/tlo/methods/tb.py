@@ -347,7 +347,7 @@ class Tb(Module):
             Types.REAL,
             "rate of screening / testing per month in population with active tb",
         ),
-        "rate_testing_baseline_active": Parameter(
+        "rate_treatment_baseline_active": Parameter(
             Types.REAL,
             "probability of screening for baseline population with active tb",
         ),
@@ -729,12 +729,13 @@ class Tb(Module):
             df.at[person_id, "tb_scheduled_date_active"] = date_active
 
             # schedule screening / testing for proportion of baseline active cases
-            if self.rng.random_sample() < p["rate_testing_baseline_active"]:
+            if self.rng.random_sample() < p["rate_treatment_baseline_active"]:
                 # set HSI for 30 days after active onset, as active poll occurs monthly
                 # need to ensure properties are updated before screening
+                # todo change back to testing???
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_ScreeningAndRefer(person_id=person_id, module=self),
-                    topen=date_active + pd.DateOffset(days=30),
+                    HSI_Tb_StartTreatment(person_id=person_id, module=self),
+                    topen=date_active + pd.DateOffset(days=7),
                     tclose=None,
                     priority=0,
                 )
@@ -1216,8 +1217,8 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             # ANC testing - value for mothers and infants testing
             self.sim.modules["Hiv"].parameters["prob_anc_test_at_delivery"] = 0.95
 
-            # prob ART start if dx, default 0.9
-            self.sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = 0.95
+            # prob ART start if dx, this is already 95% at 2020
+            # self.sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = 0.95
 
             # viral suppression rates
             # adults already at 95% by 2020

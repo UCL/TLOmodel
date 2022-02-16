@@ -37,7 +37,7 @@ resourcefilepath = Path("./resources")
 # %% Set parameters for all sims
 start_date = Date(2010, 1, 1)
 end_date = Date(2025, 1, 1)
-popsize = 20000
+popsize = 1000
 
 scenario_dict = [0, 1, 2, 3, 4]
 
