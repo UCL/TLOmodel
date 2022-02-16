@@ -1560,7 +1560,8 @@ funded_daily_capability = funded_daily_minutes.merge(funded_staff_floats, how='l
 # Reset facility level column to exclude 'Facility_Level_'
 funded_daily_capability['Facility_Level'] = \
     funded_daily_capability['Facility_Level'].str.split(pat='_', expand=True).iloc[:, 2]
-# Drop row with zero minutes (due to either zero staff counts or zero daily minutes)
+# Drop row with zero or nan minutes (due to either zero staff counts or nan daily minutes)
+funded_daily_capability.fillna(0, inplace=True)
 funded_daily_capability.drop(
     index=funded_daily_capability[funded_daily_capability['Total_Mins_Per_Day'] == 0].index, inplace=True)
 # Reset index
@@ -1596,9 +1597,6 @@ funded_daily_capability_coarse = pd.DataFrame(
         ['Facility_ID', 'Facility_Name', 'Facility_Level', 'District', 'Region', 'Officer_Category'],
         dropna=False).sum()
 ).reset_index()
-# Drop columns of officer types
-funded_daily_capability_coarse.drop(columns=['Officer_Type_Code', 'Officer_Type'], inplace=True)
-funded_daily_capability_coarse.reset_index(drop=True, inplace=True)
 
 # --- Daily capability for current staff; staff counts in floats
 # For float staff counts, calculate total minutes per day
@@ -1636,6 +1634,7 @@ curr_daily_capability = curr_daily_minutes.merge(curr_staff_floats, how='left')
 curr_daily_capability['Facility_Level'] = \
     curr_daily_capability['Facility_Level'].str.split(pat='_', expand=True).iloc[:, 2]
 # Drop row with zero minutes (also zero staff counts)
+curr_daily_capability.fillna(0, inplace=True)
 curr_daily_capability.drop(
     index=curr_daily_capability[curr_daily_capability['Total_Mins_Per_Day'] == 0].index, inplace=True)
 # Reset index
@@ -1671,9 +1670,6 @@ curr_daily_capability_coarse = pd.DataFrame(
         ['Facility_ID', 'Facility_Name', 'Facility_Level', 'District', 'Region', 'Officer_Category'],
         dropna=False).sum()
 ).reset_index()
-# Drop columns of officer types
-curr_daily_capability_coarse.drop(columns=['Officer_Type_Code', 'Officer_Type'], inplace=True)
-curr_daily_capability_coarse.reset_index(drop=True, inplace=True)
 
 # Save
 HosHC_patient_facing_time.to_csv(
@@ -1761,13 +1757,13 @@ def all_appts_can_run(capability):
 
 
 # Save results for funded
-# appt_have_or_miss_capability_funded = all_appts_can_run(funded_daily_capability_coarse)
-# appt_have_or_miss_capability_funded.to_csv(
-#     outputlocation / 'human_resources' / 'funded' / 'appt_have_or_miss_capability.csv', index=False)
+appt_have_or_miss_capability_funded = all_appts_can_run(funded_daily_capability_coarse)
+appt_have_or_miss_capability_funded.to_csv(
+    outputlocation / 'human_resources' / 'funded' / 'appt_have_or_miss_capability.csv', index=False)
 # appt_have_or_miss_capability_funded.to_csv(
 #     outputlocation / 'human_resources' / 'funded_plus' / 'appt_have_or_miss_capability.csv', index=False)
 
 # Save results for actual
-# appt_have_or_miss_capability_actual = all_appts_can_run(curr_daily_capability_coarse)
-# appt_have_or_miss_capability_actual.to_csv(
-#     outputlocation / 'human_resources' / 'actual' / 'appt_have_or_miss_capability.csv', index=False)
+appt_have_or_miss_capability_actual = all_appts_can_run(curr_daily_capability_coarse)
+appt_have_or_miss_capability_actual.to_csv(
+    outputlocation / 'human_resources' / 'actual' / 'appt_have_or_miss_capability.csv', index=False)
