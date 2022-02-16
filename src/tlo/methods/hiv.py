@@ -278,6 +278,10 @@ class Hiv(Module):
             Types.REAL,
             "relative likelihood of having HIV test for people with HIV",
         ),
+        "prob_anc_test_at_delivery": Parameter(
+            Types.REAL,
+            "probability of a women having hiv test at anc following delivery",
+        ),
         "prob_art_start": Parameter(
             Types.DATA_FRAME, "annual rates of starting ART following positive HIV test"
         ),
@@ -316,9 +320,6 @@ class Hiv(Module):
             Types.REAL,
             "Probability that a person who 'should' be on art will seek another appointment if the health-"
             "system has not been able to provide them with an appointment",
-        ),
-        "vls_child": Parameter(
-            Types.REAL, "Rates of viral load suppression in children 0-14 years"
         ),
         "prob_viral_suppression": Parameter(
             Types.DATA_FRAME, "probability of viral suppression each year"
@@ -377,7 +378,7 @@ class Hiv(Module):
         p["prob_start_art_after_hiv_test"] = workbook["prob_art_start_if_dx"]
 
         # Load probability art start after hiv test
-        p["prob_viral_suppression"] = workbook["vs"]
+        p["prob_viral_suppression"] = workbook["spectrum_treatment_cascade"]
 
         # Load spectrum estimates of treatment cascade
         p["treatment_cascade"] = workbook["spectrum_treatment_cascade"]
@@ -681,12 +682,13 @@ class Hiv(Module):
             suppr.extend(all_idx[vl_suppr])
             notsuppr.extend(all_idx[~vl_suppr])
 
-        # todo m/f could be merged
-        prob_vs = self.prob_viral_suppression(self.sim.date.year)
+        # get expected viral suppression rates by age and year
+        prob_vs_adult = self.prob_viral_suppression(self.sim.date.year, age_of_person=20)
+        prob_vs_child = self.prob_viral_suppression(self.sim.date.year, age_of_person=5)
 
-        split_into_vl_and_notvl(adult_f_art_idx, prob_vs)
-        split_into_vl_and_notvl(adult_m_art_idx, prob_vs)
-        split_into_vl_and_notvl(child_art_idx, self.parameters["vls_child"])
+        split_into_vl_and_notvl(adult_f_art_idx, prob_vs_adult)
+        split_into_vl_and_notvl(adult_m_art_idx, prob_vs_adult)
+        split_into_vl_and_notvl(child_art_idx, prob_vs_child)
 
         # Set ART status:
         df.loc[suppr, "hv_art"] = "on_VL_suppressed"
@@ -1003,7 +1005,10 @@ class Hiv(Module):
         if "care_of_women_during_pregnancy" not in self.sim.modules:
             # if mother's HIV status not known, schedule test at delivery
             # usually performed by care_of_women_during_pregnancy module
-            if not mother.hv_diagnosed and mother.is_alive:
+            if not mother.hv_diagnosed and \
+                mother.is_alive and (
+                    self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
+
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(person_id=mother_id, module=self, referred_from='ANC_routine'),
                     priority=1,
@@ -1011,8 +1016,11 @@ class Hiv(Module):
                     tclose=None,
                 )
 
-            # if mother known HIV+, schedule test for infant now and in 6 weeks (EI
-            if mother.hv_diagnosed and df.at[child_id, "is_alive"]:
+            # if mother known HIV+, schedule test for infant in 6 weeks (EI
+            if mother.hv_diagnosed and \
+                df.at[child_id, "is_alive"] and (
+                    self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
+
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(person_id=child_id, module=self, referred_from='Infant_testing'),
                     priority=1,
@@ -1232,18 +1240,23 @@ class Hiv(Module):
 
         return return_prob
 
-    def prob_viral_suppression(self, year):
-        """ returns the probability of starting ART after a positive HIV test
+    def prob_viral_suppression(self, year, age_of_person):
+        """ returns the probability of viral suppression once on ART
+        data from 2012 - 2020 from spectrum
+        assume constant values 2010-2012 and 2020 on
+        time-series ends at 2025
         """
         prob_vs = self.parameters["prob_viral_suppression"]
-        current_year = year
+        current_year = year if year <= 2025 else 2025
+        age_of_person = age_of_person
+        age_group = "adults" if age_of_person >= 15 else "children"
 
-        return_prob = prob_vs.loc[(prob_vs.year == current_year), "value"].iloc[0]
+        return_prob = prob_vs.loc[
+                          (prob_vs.year == current_year) &
+                          (prob_vs.age == age_group),
+                          "virally_suppressed_on_art"].values[0] / 100
 
-        # todo adjustments to compensate for historical viral suppression rates
-        # adjust new initiations to reflect current estimates
-        # may return prob > 1
-        return_prob = return_prob * 1.75
+        assert return_prob is not None
 
         return return_prob
 
@@ -2197,12 +2210,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         """Helper function to determine the VL status that the person will have.
         Return what will be the status of "hv_art"
         """
-        p = self.module.parameters
-
-        if age_of_person < 15:
-            prob_vs = p["vls_child"]
-        else:
-            prob_vs = self.module.prob_viral_suppression(self.sim.date.year)
+        prob_vs = self.module.prob_viral_suppression(self.sim.date.year, age_of_person)
 
         return (
             "on_VL_suppressed"

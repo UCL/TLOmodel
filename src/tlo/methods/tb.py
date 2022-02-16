@@ -1185,6 +1185,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to change parameters or functions
     depending on the scenario for projections which has been set
     * scenario 0 is the default which uses baseline parameters
+    * scenario 4 incorporates all program changes
 
     It only occurs once at param: scenario_start_date,
     called by initialise_simulation
@@ -1206,27 +1207,30 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 0:
             return
 
-        if scenario == 1:
-            # todo scale up HIV program to meet 95-95-95
+        if (scenario == 1) or (scenario == 4):
+
+            # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
+            self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = 0.1
+            self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] = 0.3
+
+            # ANC testing - value for mothers and infants testing
+            self.sim.modules["Hiv"].parameters["prob_anc_test_at_delivery"] = 0.95
+
+            # prob ART start if dx, default 0.9
+            self.sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = 0.95
+
+            # viral suppression rates
+            # adults already at 95% by 2020
+            # change all column values
+            self.sim.modules["Hiv"].parameters["prob_viral_suppression"]["virally_suppressed_on_art"] = 95
+
             return
 
-        if scenario == 2:
+        if (scenario == 2) or (scenario == 4):
             # change IPT eligibility for TB contacts to all years
             p["age_eligibility_for_ipt"] = 100
 
-        if scenario == 3:
-            # change first-line testing for TB to xpert
-            p["first_line_test"] = "xpert"
-            p["second_line_test"] = "sputum"
-
-        if scenario == 4:
-            # combined improvements in both HIV and TB programmes
-
-            # todo add in HIV stuff
-
-            # change IPT eligibility for TB contacts to all years
-            p["age_eligibility_for_ipt"] = 100
-
+        if (scenario == 3) or (scenario == 4):
             # change first-line testing for TB to xpert
             p["first_line_test"] = "xpert"
             p["second_line_test"] = "sputum"
@@ -2561,11 +2565,25 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             tx_coverage = 0
 
+        # ipt coverage
+        new_tb_ipt = len(
+            df[
+                (df.tb_date_ipt >= (now - DateOffset(months=self.repeat)))
+            ]
+        )
+
+        # this will give ipt among whole population - not just eligible pop
+        if new_tb_ipt:
+            ipt_coverage = new_tb_ipt / len(df[df.is_alive])
+        else:
+            ipt_coverage = 0
+
         logger.info(
             key="tb_treatment",
             description="TB treatment coverage",
             data={
                 "tbNewDiagnosis": new_tb_diagnosis,
                 "tbTreatmentCoverage": tx_coverage,
+                "tbIptCoverage": ipt_coverage,
             },
         )
