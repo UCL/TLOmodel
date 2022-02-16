@@ -235,7 +235,7 @@ class HealthSystem(Module):
         if record_hsi_event_details:
             self.hsi_event_details = set()
 
-        # Determine what the the `cons_availability` parameter in the Consumables class should be: it should be `all`
+        # Determine what the the `availability` parameter in the Consumables class should be: it should be `all`
         # if the HealthSystem is disabled.
         self._cons_availability = 'all' if self.disable else cons_availability
 
@@ -298,7 +298,7 @@ class HealthSystem(Module):
         self.bed_days.pre_initialise_population()
         self.consumables = Consumables(data=self.parameters['availability_estimates'],
                                        rng=self.rng,
-                                       cons_availabilty=self._cons_availability)
+                                       availability=self._cons_availability)
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -679,6 +679,10 @@ class HealthSystem(Module):
 
         # If all is correct and the hsi event is allowed then add this request to the queue of HSI_EVENT_QUEUE
         if allowed:
+
+            if not isinstance(hsi_event.target, tlo.population.Population):
+                # Write the facility_id at which this HSI will occur:
+                hsi_event._facility_id = self.get_facility_info(hsi_event).id
 
             # Create a tuple to go into the heapq
             # (NB. the sorting is done ascending and by the order of the items in the tuple)
@@ -1344,7 +1348,7 @@ class HSI_Event:
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
         self._received_info_about_bed_days = None
         self._cached_time_requests = {}
-        self._facility_id = None  # todo - write this when it gets added to scheduler????????????????????????????????????????
+        self._facility_id = None
 
     @property
     def bed_days_allocated_to_this_event(self):
@@ -1421,7 +1425,6 @@ class HSI_Event:
         else:
             raise ValueError("The item_codes are given in an unrecognised format")
 
-
     def get_consumables(self,
                         item_codes: Optional[Union[np.integer, int, list, set, dict]] = None,
                         optional_item_codes: Optional[Union[np.integer, int, list, set, dict]] = None,
@@ -1466,8 +1469,6 @@ class HSI_Event:
             return all([v for k, v in rtn.items() if k in _item_codes])
         else:
             return rtn
-
-        # todo what to do if all optional?
 
     def make_beddays_footprint(self, dict_of_beddays):
         """Helper function to make a correctly-formed 'bed-days footprint'"""

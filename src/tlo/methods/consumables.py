@@ -10,15 +10,12 @@ from tlo import logging
 
 logger = logging.getLogger('tlo.methods.healthsystem')
 
-# todo -- handling of unrecognised codes
-# todo - issue warning if a consumable is requested from an HSI at level 0
-# todo - what do we do about level 0
 
 class Consumables:
     """This is the Consumables Class. It maintains a current record of the availability and usage of consumables in the
      HealthSystem. It is expected that this is instantiated by the `HealthSystem` module.
 
-    :param: `cons_availability: Determines the availability of consumbales. If 'default' then use the availability
+    :param: `availability`: Determines the availability of consumables. If 'default' then use the availability
      specified in the ResourceFile; if 'none', then let no consumable be ever be available; if 'all', then all
      consumables are always available. When using 'all' or 'none', requests for consumables are not logged.
 
@@ -26,10 +23,10 @@ class Consumables:
     availability of other consumables in that facility at that time, and a `UserWarning` is issued.
     """
 
-    def __init__(self, data: pd.DataFrame = None, rng: np.random = None, cons_availabilty: str = 'default') -> None:
+    def __init__(self, data: pd.DataFrame = None, rng: np.random = None, availability: str = 'default') -> None:
 
-        assert cons_availabilty in ['none', 'default', 'all'], "Argument `cons_availability` is not recognised."  # todo spelling error
-        self.cons_availability = cons_availabilty  # Governs availability  - none/default/all
+        assert availability in ['none', 'default', 'all'], "Argument `availability` is not recognised."
+        self.cons_availability = availability  # Governs availability  - none/default/all
         self.rng = rng
 
         self.item_codes = set()  # All item_codes that are recognised.
@@ -53,7 +50,7 @@ class Consumables:
         * Saves the set of all recognised item_codes to `self.item_codes`
         """
         self.item_codes = set(df.item_code)  # Record all consumables identified
-        self.prob_item_codes_available = df.set_index(['month', 'facility_id', 'item_code'])['available_prop']
+        self.prob_item_codes_available = df.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
 
     def _refresh_availability_of_consumables(self, date: datetime.datetime):
         """Update the availability of all items based on the data for the probability of availability, givem the current
@@ -76,7 +73,7 @@ class Consumables:
                                            self.rng.random_sample(len(average_availability_of_items_by_facility_id))
                                            ).to_dict()
 
-    @ staticmethod
+    @staticmethod
     def _determine_default_return_value(cons_availability, default_return_value):
         if cons_availability == 'all':
             return True
@@ -97,6 +94,7 @@ class Consumables:
         :param to_log: whether the request is logged.
         :return:
         """
+        print(f"{facility_id=}")
         # Issue warning if any item_code is not recognised.
         if not self.item_codes.issuperset(item_codes.keys()):
             for _i in item_codes.keys():
@@ -154,7 +152,6 @@ class Consumables:
         return int(pd.unique(lookup_df.loc[lookup_df["Items"] == item, "Item_Code"])[0])
 
 
-
 def create_dummy_data_for_cons_availability(intrinsic_availability: Dict[int, bool] = {0: False, 1: True},
                                             months: List[int] = [1],
                                             facility_ids: List[int] = [0]
@@ -164,12 +161,12 @@ def create_dummy_data_for_cons_availability(intrinsic_availability: Dict[int, bo
     never available."""
     list_of_items = []
     for _item, _avail in intrinsic_availability.items():
-            for _month in months:
-                for _fac_id in facility_ids:
-                    list_of_items.append({
-                        'item_code': _item,
-                        'month': _month,
-                        'facility_id': _fac_id,
-                        'available_prop': _avail
-                    })
+        for _month in months:
+            for _fac_id in facility_ids:
+                list_of_items.append({
+                    'item_code': _item,
+                    'month': _month,
+                    'Facility_ID': _fac_id,
+                    'available_prop': _avail
+                })
     return pd.DataFrame(data=list_of_items)
