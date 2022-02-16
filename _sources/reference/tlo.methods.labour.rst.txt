@@ -571,15 +571,15 @@ tlo.methods.labour module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'PostnatalSupervisor', 'Contraception', 'CareOfWomenDuringPregnancy', 'NewbornOutcomes'}
+     ADDITIONAL_DEPENDENCIES : {'PostnatalSupervisor', 'CareOfWomenDuringPregnancy', 'Contraception', 'NewbornOutcomes'}
 
-     CAUSES_OF_DEATH : {'maternal': <tlo.methods.causes.Cause object at 0x7f987ed754f0>, 'intrapartum stillbirth': <tlo.methods.causes.Cause object at 0x7f987ed89490>}
+     CAUSES_OF_DEATH : {'maternal': <tlo.methods.causes.Cause object at 0x7ff4e45704c0>, 'intrapartum stillbirth': <tlo.methods.causes.Cause object at 0x7ff4e4585460>}
 
-     CAUSES_OF_DISABILITY : {'Labour': <tlo.methods.causes.Cause object at 0x7f987ed89670>}
+     CAUSES_OF_DISABILITY : {'Labour': <tlo.methods.causes.Cause object at 0x7ff4e4585640>}
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'PregnancySupervisor', 'Lifestyle'}
+     INIT_DEPENDENCIES : {'PregnancySupervisor', 'Demography', 'HealthSystem', 'Lifestyle'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      **Functions (defined or overridden in class Labour):**
 

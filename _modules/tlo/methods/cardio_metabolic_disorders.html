@@ -1151,6 +1151,8 @@
 
             <span class="c1"># Removal:</span>
             <span class="n">eligible_population</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;nc_</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lms_symptoms</span><span class="p">[</span><span class="n">condition</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">eligible_population</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="n">symptom_onset</span>
             <span class="n">loses_condition</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lms_removal</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">eligible_population</span><span class="p">],</span> <span class="n">rng</span><span class="p">,</span> <span class="n">squeeze_single_row_output</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="n">idx_loses_condition</span> <span class="o">=</span> <span class="n">loses_condition</span><span class="p">[</span><span class="n">loses_condition</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
@@ -1971,7 +1973,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Feb 14, 2022.
+        Last updated on Feb 16, 2022.
       </span>
 
     </p>

@@ -340,15 +340,15 @@ tlo.methods.pregnancy_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'HealthSystem', 'Contraception', 'CareOfWomenDuringPregnancy', 'Lifestyle'}
+     ADDITIONAL_DEPENDENCIES : {'CareOfWomenDuringPregnancy', 'HealthSystem', 'Contraception', 'Lifestyle'}
 
-     CAUSES_OF_DEATH : {'maternal': <tlo.methods.causes.Cause object at 0x7f987fe1d220>}
+     CAUSES_OF_DEATH : {'maternal': <tlo.methods.causes.Cause object at 0x7ff4e550b1f0>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7f987fe1d2b0>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7ff4e550b280>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
