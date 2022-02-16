@@ -58,7 +58,7 @@ fac_gis_clean = fac_gis[~conda & fac_gis.lat.notna()] # save clean portion of ra
 
 # Use googlemaps package to obtain GIS coordinates using facility names
 GCODE_URL = 'https://maps.googleapis.com/maps/api/geocode/json?'
-GCODE_KEY = 'AIzaSyCIrbRwIB7C19QF3XWyAaTbIsNRCxcsgoQ'
+# GCODE_KEY # PLaceholder to enter googlemaps API
 
 
 def reverse_gcode(location):
