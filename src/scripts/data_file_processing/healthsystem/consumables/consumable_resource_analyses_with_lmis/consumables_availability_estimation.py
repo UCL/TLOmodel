@@ -30,7 +30,7 @@ import pandas as pd
 from tests.test_consumables import test_check_format_of_consumables_file, check_format_of_consumables_file
 
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE')
+    'C:/Users/sm2511/Dropbox/Thanzi la Onse') # '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE'
 path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/consumables raw files/"
 
 # define a timestamp for script outputs
@@ -335,6 +335,18 @@ stkout_df = stkout_df.groupby(
                          'data_source': 'first',
                          'consumable_reporting_freq': 'first',
                          'consumables_reported_in_mth': 'first'})
+
+
+# Update impossible stockout values (This happens due to some stockout days figures being higher than the number of days in the month)
+stkout_df.loc[stkout_df['stkout_prop'] < 0,'stkout_prop'] = 0
+stkout_df.loc[stkout_df['stkout_prop'] > 1,'stkout_prop'] = 1
+# Eliminate duplicates
+collapse_dict = {
+    'stkout_prop': 'mean' , 'closing_bal': 'mean' , 'amc': 'mean' ,'dispensed': 'mean' ,'received': 'mean' ,'consumable_reporting_freq': 'mean' , 'consumables_reported_in_mth': 'mean' ,
+    'module_name': 'first','consumable_name_tlo': 'first', 'data_source': 'first'
+}
+stkout_df = stkout_df.groupby(['fac_type_tlo', 'fac_name', 'district', 'month', 'item_code'], as_index=False).agg(collapse_dict).reset_index()
+
 stkout_df['available_prop'] = 1 - stkout_df['stkout_prop']
 
 # Some missing values change to 100% stockouts during the aggregation above. Fix this manually
@@ -345,7 +357,7 @@ for var in ['stkout_prop', 'available_prop', 'closing_bal', 'amc', 'dispensed', 
 stkout_df = stkout_df.reset_index()
 stkout_df = stkout_df[
     ['module_name', 'district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo',
-     'stkout_prop', 'available_prop', 'closing_bal', 'amc', 'dispensed', 'received',
+     'available_prop', 'closing_bal', 'amc', 'dispensed', 'received',
      'data_source', 'consumable_reporting_freq', 'consumables_reported_in_mth']]
 
 # 6. ADD STOCKOUT DATA FROM OTHER SOURCES TO COMPLETE STOCKOUT DATAFRAME ##
@@ -400,7 +412,6 @@ unmatched_consumables_df = unmatched_consumables_df[
 unmatched_consumables_df = pd.wide_to_long(unmatched_consumables_df, stubnames=['available_prop_hhfa', 'fac_count'],
                                            i=['item_code', 'consumable_name_tlo_x'], j='fac_type_tlo',
                                            sep='_', suffix=r'\w+')
-unmatched_consumables_df['stkout_prop'] = 1 - unmatched_consumables_df['available_prop_hhfa']
 
 unmatched_consumables_df = unmatched_consumables_df.reset_index()
 n = len(unmatched_consumables_df)
@@ -425,7 +436,6 @@ NameChangeList = [('fac_count_Facility_level_0', 'fac_count'),
                   ('available_prop_hhfa_Facility_level_0', 'available_prop')]
 change_colnames(hhfa_fac0, NameChangeList)
 hhfa_fac0['fac_type_tlo'] = 'Facility_level_0'
-hhfa_fac0['stkout_prop'] = 1 - hhfa_fac0['available_prop']
 hhfa_fac0['data_source'] = 'hhfa_2018-19'
 
 hhfa_fac0 = pd.merge(hhfa_fac0, consumables_df[['item_code', 'module_name']], on='item_code', how='inner')
@@ -468,14 +478,12 @@ for var in ['district', 'fac_name', 'month']:
 # --- 6.6 Export final stockout dataframe --- #
 stkout_df.to_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
 
+# Final checks
 stkout_df = stkout_df.drop(index=stkout_df.index[pd.isnull(stkout_df.available_prop)])
-assert (stkout_df.available_prop >= 0.0).all(), "Negative values!?"
-assert (stkout_df.available_prop <= 1.0).all(), "Values greater than 1.0 !?"
+assert (stkout_df.available_prop >= 0.0).all(), "No Negative values"
+assert (stkout_df.available_prop <= 1.0).all(), "No Values greater than 1.0 "
 print(stkout_df.loc[(~(stkout_df.available_prop >= 0.0)) | (~(stkout_df.available_prop <= 1.0))].available_prop)
-
-assert stkout_df.duplicated(['fac_type_tlo',  'district', 'month', 'item_code']).any(), "Duplicates?!"
-
-stkout_df.loc[stkout_df.duplicated(['fac_type_tlo',  'district', 'month', 'item_code'])]
+assert not stkout_df.duplicated(['fac_type_tlo', 'fac_name', 'district', 'month', 'item_code']).any(), "No duplicates"
 
 # --- 6.7 Generate file for use in model run --- #
 # 1) Smaller file size
