@@ -91,8 +91,8 @@ def test_register_duplicate_symptoms():
     assert 2 == len(sm.symptom_names)
 
 
-def test_no_symptoms_if_no_diseases():
-    sim = Simulation(start_date=start_date, seed=0)
+def test_no_symptoms_if_no_diseases(seed):
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -112,8 +112,8 @@ def test_no_symptoms_if_no_diseases():
         assert list() == sim.modules['SymptomManager'].who_has(symp)
 
 
-def test_adding_quering_and_removing_symptoms():
-    sim = Simulation(start_date=start_date, seed=0)
+def test_adding_quering_and_removing_symptoms(seed):
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -169,8 +169,8 @@ def test_adding_quering_and_removing_symptoms():
     assert list() == sim.modules['SymptomManager'].who_has(symp)
 
 
-def test_baby_born_has_no_symptoms():
-    sim = Simulation(start_date=start_date, seed=0)
+def test_baby_born_has_no_symptoms(seed):
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -196,11 +196,11 @@ def test_baby_born_has_no_symptoms():
     assert [] == sim.modules['SymptomManager'].has_what(person_id)
 
 
-def test_auto_onset_symptom():
+def test_auto_onset_symptom(seed):
     """Test to check that symptoms that are delayed in onset work as expected.
     """
     # Generate a simulation:
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  mockitis.Mockitis()
@@ -214,6 +214,8 @@ def test_auto_onset_symptom():
     # Select a person and make them alive and no symptoms
     person_id = 0
     sim.population.props.loc[person_id, 'is_alive'] = True
+    for symptom in sm.symptom_names:
+        sim.population.props.loc[person_id, sm.get_column_name_for_symptom(symptom)] = 0
     assert 0 == len(sm.has_what(person_id))
 
     def get_events_in_sim():
@@ -261,9 +263,9 @@ def test_auto_onset_symptom():
     assert 0 == len(sm.has_what(person_id))
 
 
-def test_spurious_symptoms_during_simulation():
+def test_spurious_symptoms_during_simulation(seed):
     """Test on the functionality of the spurious symptoms"""
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -325,8 +327,8 @@ def disease_module_symptoms():
 
 
 @pytest.fixture
-def simulation():
-    return Simulation(start_date=start_date, seed=0)
+def simulation(seed):
+    return Simulation(start_date=start_date, seed=seed)
 
 
 def register_modules_and_initialise(simulation, *modules):

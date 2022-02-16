@@ -1504,10 +1504,10 @@ class HSI_Event:
         if isinstance(item_codes, (int, np.integer)):
             _item_codes = {int(item_codes): 1}
 
-        elif isinstance(item_codes, list):
+        elif isinstance(item_codes, (list, set)):
             if not all([isinstance(i, (int, np.integer)) for i in item_codes]):
                 raise ValueError("item_codes must be integers")
-            _item_codes = {int(i): 1 for i in item_codes}
+            _item_codes = {int(i): 1 for i in sorted(item_codes)}
 
         elif isinstance(item_codes, dict):
             if not all(
