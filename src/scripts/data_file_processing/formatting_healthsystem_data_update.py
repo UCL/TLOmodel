@@ -1456,51 +1456,56 @@ FacLevel_By_Officer = FacLevel_By_Officer.add_prefix('Facility_Level_')
 # First, read-in the number of working hours and days for each type of officer
 
 pft_sheet = pd.read_excel(workingfile, sheet_name='PFT', header=None)
-officer_types_import = pft_sheet.iloc[2, np.arange(2, 23)]
+officer_types_import = pft_sheet.iloc[3, np.arange(2, 23)]
 
 assert set(officer_types_import) == set(officer_types_table['Officer_Type_Code'])
 assert len(officer_types_import) == len(officer_types_table['Officer_Type_Code'])
 
-# patient facing hours daily at hospitals
-hours_hospital = pft_sheet.iloc[38, np.arange(2, 23)]
+# fill nan with 0
 
-# patient facing hours daily at health centres
-work_mins_hc = pft_sheet.iloc[26, np.arange(2, 23)]
-admin_mins_hc = pft_sheet.iloc[34, np.arange(2, 23)]
-hours_hc = (work_mins_hc - admin_mins_hc) / 60
 
 # Total working days per year
-days_per_year_men = pft_sheet.iloc[15, np.arange(2, 23)]
-days_per_year_women = pft_sheet.iloc[16, np.arange(2, 23)]
-days_per_year_pregwomen = pft_sheet.iloc[17, np.arange(2, 23)]
+days_per_year_men = pft_sheet.iloc[16, np.arange(2, 23)]
+days_per_year_women = pft_sheet.iloc[17, np.arange(2, 23)]
+days_per_year_pregwomen = pft_sheet.iloc[18, np.arange(2, 23)]
 
 # Percents of men, nonpregnant women, and pregnant women
-fr_men = pft_sheet.iloc[53, np.arange(2, 23)]
-fr_pregwomen = pft_sheet.iloc[55, np.arange(2, 23)] * pft_sheet.iloc[57, np.arange(2, 23)]
-fr_nonpregwomen = pft_sheet.iloc[55, np.arange(2, 23)] * (1 - pft_sheet.iloc[57, np.arange(2, 23)])
+fr_men = pft_sheet.iloc[66, np.arange(2, 23)]
+fr_pregwomen = pft_sheet.iloc[71, np.arange(2, 23)]
+fr_nonpregwomen = pft_sheet.iloc[68, np.arange(2, 23)] - pft_sheet.iloc[71, np.arange(2, 23)]
 
 # Total average working days
 workingdays = (fr_men * days_per_year_men) + (fr_nonpregwomen * days_per_year_women) + (
     fr_pregwomen * days_per_year_pregwomen)
 
-# --- patient facing time
-# Average mins per year, Average hours per day, Average number of mins per day in Malawi
+# patient facing (i.e. non-admin working) minutes and hours daily at
+# district hospitals, community hospitals, health centres
+mins_daily_dishos = pft_sheet.iloc[37, np.arange(2, 23)]
+hrs_daily_dishos = mins_daily_dishos / 60
 
-mins_per_day_hospital = hours_hospital * 60
-mins_per_day_hc = hours_hc * 60
+mins_daily_comhos = pft_sheet.iloc[42, np.arange(2, 23)]
+hrs_daily_comhos = mins_daily_comhos / 60
 
-mins_per_year_hospital = mins_per_day_hospital * workingdays
-mins_per_year_hc = mins_per_day_hc * workingdays
+mins_daily_hc = pft_sheet.iloc[46, np.arange(2, 23)]
+hrs_daily_hc = mins_daily_hc / 60
 
-av_mins_per_day_hospital = mins_per_year_hospital / 365.25
-av_mins_per_day_hc = mins_per_year_hc / 365.25
+# Total mins per year, Average number of mins per day at
+# district hospitals, community hospitals, health centres
+mins_yearly_dishos = mins_daily_dishos * workingdays
+mins_yearly_comhos = mins_daily_comhos * workingdays
+mins_yearly_hc = mins_daily_hc * workingdays
 
-# PFT - hospital and health centre individually
+av_mins_daily_dishos = mins_yearly_dishos / 365.25
+av_mins_daily_comhos = mins_yearly_comhos / 365.25
+av_mins_daily_hc = mins_yearly_hc / 365.25
+
+# PFT - dishos, comhos, hc individual columns
+# note that the average is calculated on 365.25 days (not the working days) per year
 HosHC_patient_facing_time = pd.DataFrame(
-    {'Officer_Type_Code': officer_types_import, 'Working_Days_Per_Year': workingdays,
-     'Hospital_Hours_Per_Day': hours_hospital, 'HC_Hours_Per_Day': hours_hc,
-     'Hospital_Av_Mins_Per_Day': av_mins_per_day_hospital,
-     'HC_Av_Mins_Per_Day': av_mins_per_day_hc}
+    {'Officer_Type_Code': officer_types_import,
+     'DisHos_Av_Mins_Per_Day': av_mins_daily_dishos,
+     'ComHos_Av_Mins_Per_Day': av_mins_daily_comhos,
+     'HC_Av_Mins_Per_Day': av_mins_daily_hc}
 ).reset_index(drop=True)
 
 # PFT table ready!
