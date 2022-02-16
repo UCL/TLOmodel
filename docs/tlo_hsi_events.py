@@ -1,8 +1,10 @@
 """Generate formatted description of health system interaction event details."""
 
 import argparse
+import csv
 import importlib
 import inspect
+import io
 import json
 import os.path
 import pkgutil
@@ -136,7 +138,10 @@ def get_details_of_defined_hsi_events(
                         module_name=tlo_module_class.__name__,
                         treatment_id=hsi_event.TREATMENT_ID,
                         facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL,
-                        appt_footprint=tuple(hsi_event.EXPECTED_APPT_FOOTPRINT)
+                        appt_footprint=tuple(hsi_event.EXPECTED_APPT_FOOTPRINT),
+                        beddays_footprint=tuple(
+                            sorted(hsi_event.BEDDAYS_FOOTPRINT.items())
+                        ),
                     )
                 )
     return details_of_defined_hsi_events
@@ -153,6 +158,7 @@ def sort_hsi_event_details(
             event_details.treatment_id,
             event_details.facility_level,
             event_details.appt_footprint,
+            event_details.beddays_footprint,
         )
     )
 
@@ -208,6 +214,13 @@ def _format_appt_footprint(appt_footprint, inline_code_formatter):
     return ', '.join(f'{inline_code_formatter(a)}' for a in appt_footprint)
 
 
+def _format_beddays_footprint(beddays_footprint, inline_code_formatter):
+    return ', '.join(
+        f'{inline_code_formatter(bedtype)} ({days} days)'
+        for bedtype, days in beddays_footprint if days > 0
+    )
+
+
 def _format_treatment_id(treatment_id, module_name, inline_code_formatter):
     prefixes = [
         f"{module_name}_",
@@ -221,6 +234,38 @@ def _format_treatment_id(treatment_id, module_name, inline_code_formatter):
     return inline_code_formatter(treatment_id)
 
 
+def format_hsi_event_details_as_csv(
+    hsi_event_details: Iterable[HSIEventDetails]
+) -> str:
+    """Format HSI event details list as comma-separated value string."""
+    with io.StringIO(newline="") as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow([
+            'Module',
+            'Event',
+            'Treatment',
+            'Facility level',
+            'Appointment footprint',
+            'Bed days footprint'
+        ])
+        for event_details in hsi_event_details:
+            writer.writerow(
+                [
+                    event_details.module_name,
+                    event_details.event_name,
+                    event_details.treatment_id,
+                    event_details.facility_level,
+                    _format_appt_footprint(
+                        event_details.appt_footprint, lambda s: s
+                    ),
+                    _format_beddays_footprint(
+                        event_details.beddays_footprint, lambda s: s
+                    )
+                ]
+            )
+        return csv_file.getvalue()
+
+
 def format_hsi_event_details_as_table(
     hsi_event_details: Iterable[HSIEventDetails],
     text_format: str = 'rst'
@@ -228,7 +273,14 @@ def format_hsi_event_details_as_table(
     """Format HSI event details into a table."""
     formatters = _formatters[text_format]
     table_string = formatters['table_header'](
-        ['Module', 'Event', 'Treatment', 'Facility level', 'Appointment footprint'],
+        [
+            'Module',
+            'Event',
+            'Treatment',
+            'Facility level',
+            'Appointment footprint',
+            'Bed days footprint'
+        ],
         'Health system interaction events'
     )
     for event_details in hsi_event_details:
@@ -244,6 +296,9 @@ def format_hsi_event_details_as_table(
                 _format_facility_level(event_details.facility_level),
                 _format_appt_footprint(
                     event_details.appt_footprint, formatters['inline_code']
+                ),
+                _format_beddays_footprint(
+                    event_details.beddays_footprint, formatters['inline_code']
                 )
             ]
         )
@@ -273,11 +328,18 @@ def format_hsi_event_details_as_list(
                 event_details.module_name,
                 formatters['inline_code']
             )
-            list_string += formatters['list_item'](
+            beddays_footprint_string = _format_beddays_footprint(
+                event_details.beddays_footprint, formatters['inline_code']
+            )
+            list_item_string = (
                 f'{treatment_id_string} at '
                 f'facility level {_format_facility_level(event_details.facility_level)}'
-                f' with appointment footprint: {appt_footprint_string}.'
+                f' with appointment footprint: {appt_footprint_string}'
             )
+            if beddays_footprint_string != '':
+                list_item_string += f' and bed days footprint: {beddays_footprint_string}'
+            list_item_string += '.'
+            list_string += formatters['list_item'](list_item_string)
         list_string += '\n'
     return list_string
 
@@ -295,7 +357,8 @@ def merge_hsi_event_details(
             event_details.event_name,
             event_details.module_name,
             event_details.treatment_id,
-            event_details.appt_footprint
+            event_details.appt_footprint,
+            event_details.beddays_footprint,
         )
     run_hsi_event_details_without_facility_level = {
         without_facility_level(event_details) for event_details in run_hsi_event_details
@@ -353,7 +416,7 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--output-format',
-        choices=('rst-list', 'rst-table', 'md-list', 'md-table', 'json'),
+        choices=('rst-list', 'rst-table', 'md-list', 'md-table', 'csv', 'json'),
         help="Format to use for output.",
         default='rst-list'
     )
@@ -413,6 +476,7 @@ if __name__ == '__main__':
         'rst-table': lambda details: format_hsi_event_details_as_table(details, 'rst'),
         'md-list': lambda details: format_hsi_event_details_as_list(details, 'md'),
         'md-table': lambda details: format_hsi_event_details_as_table(details, 'md'),
+        'csv': lambda details: format_hsi_event_details_as_csv(details),
         'json': lambda details: json.dumps(details, indent=4)
     }
     formatted_details = formatters[args.output_format](sorted_hsi_event_details)

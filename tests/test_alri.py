@@ -39,16 +39,20 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 start_date = Date(2010, 1, 1)
 
 
-def get_sim(tmpdir):
+@pytest.fixture
+def sim(tmpdir, seed):
     """Return simulation objection with Alri and other necessary modules registered."""
-    sim = Simulation(start_date=start_date, seed=0, show_progress_bar=False, log_config={
-        'filename': 'tmp',
-        'directory': tmpdir,
-        'custom_levels': {
-            "*": logging.WARNING,
-            "tlo.methods.alri": logging.INFO}
-    })
-
+    sim = Simulation(
+        start_date=start_date,
+        seed=seed,
+        log_config={
+            'filename': 'tmp',
+            'directory': tmpdir,
+            'custom_levels': {
+                "*": logging.WARNING,
+                "tlo.methods.alri": logging.INFO}
+        }
+    )
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
@@ -70,9 +74,8 @@ def check_dtypes(sim):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def test_integrity_of_linear_models(tmpdir):
+def test_integrity_of_linear_models(sim):
     """Run the models to make sure that is specified correctly and can run."""
-    sim = get_sim(tmpdir)
     sim.make_initial_population(n=5000)
     alri = sim.modules['Alri']
     df = sim.population.props
@@ -193,22 +196,20 @@ def test_integrity_of_linear_models(tmpdir):
         assert isinstance(res, (bool, np.bool_))
 
 
-def test_basic_run(tmpdir):
+def test_basic_run(sim):
     """Short run of the module using default parameters with check on dtypes"""
     dur = pd.DateOffset(months=1)
     popsize = 100
-    sim = get_sim(tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
     check_dtypes(sim)
 
 
 @pytest.mark.slow
-def test_basic_run_lasting_two_years(tmpdir):
+def test_basic_run_lasting_two_years(sim):
     """Check logging results in a run of the model for two years, with daily property config checking"""
     dur = pd.DateOffset(years=2)
     popsize = 2000
-    sim = get_sim(tmpdir)
     sim.make_initial_population(n=popsize)
 
     # increase death risk
@@ -232,18 +233,17 @@ def test_basic_run_lasting_two_years(tmpdir):
     assert set(log_one_person.columns) == set(sim.modules['Alri'].PROPERTIES.keys())
 
 
-def test_alri_polling(tmpdir):
+def test_alri_polling(sim):
     """Check polling events leads to incident cases"""
     # get simulation object:
     dur = pd.DateOffset(days=0)
     popsize = 100
-    sim = get_sim(tmpdir)
 
     # Make incidence of alri very high :
     params = sim.modules['Alri'].parameters
     for p in params:
         if p.startswith('base_inc_rate_ALRI_by_'):
-            params[p] = [3 * v for v in params[p]]
+            params[p] = [10 * v for v in params[p]]
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
@@ -255,11 +255,10 @@ def test_alri_polling(tmpdir):
     assert len([q for q in sim.event_queue.queue if isinstance(q[2], AlriIncidentCase)]) > 0
 
 
-def test_nat_hist_recovery(tmpdir):
+def test_nat_hist_recovery(sim):
     """Check: Infection onset --> recovery"""
     dur = pd.DateOffset(days=0)
     popsize = 100
-    sim = get_sim(tmpdir)
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
@@ -334,11 +333,10 @@ def test_nat_hist_recovery(tmpdir):
     assert 0 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
 
 
-def test_nat_hist_death(tmpdir):
+def test_nat_hist_death(sim):
     """Check: Infection onset --> death"""
     dur = pd.DateOffset(days=0)
     popsize = 100
-    sim = get_sim(tmpdir)
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
@@ -391,13 +389,12 @@ def test_nat_hist_death(tmpdir):
     assert 0 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
 
 
-def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
+def test_nat_hist_cure_if_recovery_scheduled(sim):
     """Show that if a cure event is run before when a person was going to recover naturally, it cause the episode to
     end earlier."""
 
     dur = pd.DateOffset(days=0)
     popsize = 100
-    sim = get_sim(tmpdir)
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
@@ -466,13 +463,12 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
     assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
 
 
-def test_nat_hist_cure_if_death_scheduled(tmpdir):
+def test_nat_hist_cure_if_death_scheduled(sim):
     """Show that if a cure event is run before when a person was going to die, it cause the episode to end without
     the person dying."""
 
     dur = pd.DateOffset(days=0)
     popsize = 100
-    sim = get_sim(tmpdir)
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
@@ -536,13 +532,12 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
 
 
-def test_immediate_onset_complications(tmpdir):
+def test_immediate_onset_complications(sim):
     """Check that if probability of immediately onsetting complications is 100%, then a person has all those
     complications immediately onset"""
 
     dur = pd.DateOffset(days=0)
     popsize = 100
-    sim = get_sim(tmpdir)
 
     # make risk of immediate onset complications be 100% (so that person has all the complications)
     params = sim.modules['Alri'].parameters
@@ -581,13 +576,12 @@ def test_immediate_onset_complications(tmpdir):
         assert df.at[person_id, 'ri_SpO2_level'] != '>=93%'
 
 
-def test_no_immediate_onset_complications(tmpdir):
+def test_no_immediate_onset_complications(sim):
     """Check that if probability of immediately onsetting complications is 0%, then a person has none of those
     complications immediately onset
     """
     dur = pd.DateOffset(days=0)
     popsize = 100
-    sim = get_sim(tmpdir)
 
     # make risk of immediate-onset complications be 0%
     params = sim.modules['Alri'].parameters
@@ -617,12 +611,11 @@ def test_no_immediate_onset_complications(tmpdir):
     assert not df.loc[person_id, complications_cols].any()
 
 
-def test_treatment(tmpdir):
+def test_treatment(sim):
     """Test that providing a treatment prevent death and causes there to be a CureEvent Scheduled"""
 
     dur = pd.DateOffset(days=0)
     popsize = 100
-    sim = get_sim(tmpdir)
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
@@ -693,11 +686,10 @@ def test_treatment(tmpdir):
     assert 1 == sim.modules['Alri'].logging_event.trackers['cured_cases'].report_current_total()
 
 
-def test_use_of_HSI(tmpdir):
+def test_use_of_HSI(sim):
     """Check that the HSI template works"""
     dur = pd.DateOffset(days=0)
     popsize = 100
-    sim = get_sim(tmpdir)
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)

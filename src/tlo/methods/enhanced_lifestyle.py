@@ -677,85 +677,88 @@ class Lifestyle(Module):
 
         # -------------------- BMI CATEGORIES ----------------------------------------------------------
 
-        agege15_w_idx = df.index[df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
-        agege15_rural_idx = df.index[df.is_alive & ~df.li_urban & (df.age_years >= 15)]
-        agege15_high_sugar_idx = df.index[df.is_alive & df.li_high_sugar & (df.age_years >= 15)]
-        agege3049_idx = df.index[df.is_alive & (df.age_years >= 30) & (df.age_years < 50)]
-        agege50_idx = df.index[df.is_alive & (df.age_years >= 50)]
-        agege15_tob_idx = df.index[df.is_alive & df.li_tob & (df.age_years >= 15)]
-        agege15_wealth2_idx = df.index[df.is_alive & (df.li_wealth == 2) & (df.age_years >= 15)]
-        agege15_wealth3_idx = df.index[df.is_alive & (df.li_wealth == 3) & (df.age_years >= 15)]
-        agege15_wealth4_idx = df.index[df.is_alive & (df.li_wealth == 4) & (df.age_years >= 15)]
-        agege15_wealth5_idx = df.index[df.is_alive & (df.li_wealth == 5) & (df.age_years >= 15)]
+        # only relevant if at least one individual with age >= 15 years present
+        if len(age_ge15_idx) > 0:
 
-        # this below is the approach to apply the effect of contributing determinants on bmi levels at baseline
-        # transform to odds, apply the odds ratio for the effect, transform back to probabilities and normalise
-        # to sum to 1
-        init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1 = [
-            i / (1 - i) for i in m.parameters['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1']
-        ]
+            agege15_w_idx = df.index[df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
+            agege15_rural_idx = df.index[df.is_alive & ~df.li_urban & (df.age_years >= 15)]
+            agege15_high_sugar_idx = df.index[df.is_alive & df.li_high_sugar & (df.age_years >= 15)]
+            agege3049_idx = df.index[df.is_alive & (df.age_years >= 30) & (df.age_years < 50)]
+            agege50_idx = df.index[df.is_alive & (df.age_years >= 50)]
+            agege15_tob_idx = df.index[df.is_alive & df.li_tob & (df.age_years >= 15)]
+            agege15_wealth2_idx = df.index[df.is_alive & (df.li_wealth == 2) & (df.age_years >= 15)]
+            agege15_wealth3_idx = df.index[df.is_alive & (df.li_wealth == 3) & (df.age_years >= 15)]
+            agege15_wealth4_idx = df.index[df.is_alive & (df.li_wealth == 4) & (df.age_years >= 15)]
+            agege15_wealth5_idx = df.index[df.is_alive & (df.li_wealth == 5) & (df.age_years >= 15)]
 
-        df_odds_probs_bmi_levels = pd.DataFrame(
-            data=[init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1],
-            columns=['1', '2', '3', '4', '5'],
-            index=age_ge15_idx,
-        )
+            # this below is the approach to apply the effect of contributing determinants on bmi levels at baseline
+            # transform to odds, apply the odds ratio for the effect, transform back to probabilities and normalise
+            # to sum to 1
+            init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1 = [
+                i / (1 - i) for i in m.parameters['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1']
+            ]
 
-        def update_df_odds_bmi(bmi: str, power: int):
-            """Update specified bmi column using pattern and the power given"""
-            df_odds_probs_bmi_levels.loc[agege15_w_idx, bmi] *= (
-                m.parameters['init_or_higher_bmi_f'] ** power
-            )
-            df_odds_probs_bmi_levels.loc[agege15_rural_idx, bmi] *= (
-                m.parameters['init_or_higher_bmi_rural'] ** power
-            )
-            df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, bmi] *= (
-                m.parameters['init_or_higher_bmi_high_sugar'] ** power
-            )
-            df_odds_probs_bmi_levels.loc[agege3049_idx, bmi] *= (
-                m.parameters['init_or_higher_bmi_age3049'] ** power
-            )
-            df_odds_probs_bmi_levels.loc[agege50_idx, bmi] *= (
-                m.parameters['init_or_higher_bmi_agege50'] ** power
-            )
-            df_odds_probs_bmi_levels.loc[agege15_tob_idx, bmi] *= (
-                m.parameters['init_or_higher_bmi_tob'] ** power
-            )
-            df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, bmi] *= (
-                m.parameters['init_or_higher_bmi_per_higher_wealth_level'] ** 2) ** power
-            df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, bmi] *= (
-                m.parameters['init_or_higher_bmi_per_higher_wealth_level'] ** 3) ** power
-            df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, bmi] *= (
-                m.parameters['init_or_higher_bmi_per_higher_wealth_level'] ** 4) ** power
-            df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, bmi] *= (
-                m.parameters['init_or_higher_bmi_per_higher_wealth_level'] ** 5) ** power
-
-        update_df_odds_bmi('1', -2)
-        update_df_odds_bmi('2', -1)
-        update_df_odds_bmi('3', 0)
-        update_df_odds_bmi('4', 1)
-        update_df_odds_bmi('5', 2)
-
-        for bmi in range(1, 6):
-            bmi = str(bmi)
-            df_odds_probs_bmi_levels[f'prob {bmi}'] = df_odds_probs_bmi_levels.apply(
-                lambda row: row[bmi] / (1 + row[bmi]), axis=1
-            )
-        # normalise probabilities
-        df_odds_probs_bmi_levels['sum_probs'] = df_odds_probs_bmi_levels.apply(
-            lambda row: row['prob 1'] + row['prob 2'] + row['prob 3'] + row['prob 4'] + row['prob 5'], axis=1
-        )
-        for bmi in range(1, 6):
-            df_odds_probs_bmi_levels[bmi] = df_odds_probs_bmi_levels.apply(
-                lambda row: row[f'prob {bmi}'] / row['sum_probs'], axis=1
+            df_odds_probs_bmi_levels = pd.DataFrame(
+                data=[init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1],
+                columns=['1', '2', '3', '4', '5'],
+                index=age_ge15_idx,
             )
 
-        dfxx = df_odds_probs_bmi_levels[[1, 2, 3, 4, 5]]
+            def update_df_odds_bmi(bmi: str, power: int):
+                """Update specified bmi column using pattern and the power given"""
+                df_odds_probs_bmi_levels.loc[agege15_w_idx, bmi] *= (
+                    m.parameters['init_or_higher_bmi_f'] ** power
+                )
+                df_odds_probs_bmi_levels.loc[agege15_rural_idx, bmi] *= (
+                    m.parameters['init_or_higher_bmi_rural'] ** power
+                )
+                df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, bmi] *= (
+                    m.parameters['init_or_higher_bmi_high_sugar'] ** power
+                )
+                df_odds_probs_bmi_levels.loc[agege3049_idx, bmi] *= (
+                    m.parameters['init_or_higher_bmi_age3049'] ** power
+                )
+                df_odds_probs_bmi_levels.loc[agege50_idx, bmi] *= (
+                    m.parameters['init_or_higher_bmi_agege50'] ** power
+                )
+                df_odds_probs_bmi_levels.loc[agege15_tob_idx, bmi] *= (
+                    m.parameters['init_or_higher_bmi_tob'] ** power
+                )
+                df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, bmi] *= (
+                    m.parameters['init_or_higher_bmi_per_higher_wealth_level'] ** 2) ** power
+                df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, bmi] *= (
+                    m.parameters['init_or_higher_bmi_per_higher_wealth_level'] ** 3) ** power
+                df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, bmi] *= (
+                    m.parameters['init_or_higher_bmi_per_higher_wealth_level'] ** 4) ** power
+                df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, bmi] *= (
+                    m.parameters['init_or_higher_bmi_per_higher_wealth_level'] ** 5) ** power
 
-        # for each row, make a choice
-        bmi_cat = dfxx.apply(lambda p_bmi: rng.choice(dfxx.columns, p=p_bmi), axis=1)
+            update_df_odds_bmi('1', -2)
+            update_df_odds_bmi('2', -1)
+            update_df_odds_bmi('3', 0)
+            update_df_odds_bmi('4', 1)
+            update_df_odds_bmi('5', 2)
 
-        df.loc[age_ge15_idx, 'li_bmi'] = bmi_cat
+            for bmi in range(1, 6):
+                bmi = str(bmi)
+                df_odds_probs_bmi_levels[f'prob {bmi}'] = df_odds_probs_bmi_levels.apply(
+                    lambda row: row[bmi] / (1 + row[bmi]), axis=1
+                )
+            # normalise probabilities
+            df_odds_probs_bmi_levels['sum_probs'] = df_odds_probs_bmi_levels.apply(
+                lambda row: row['prob 1'] + row['prob 2'] + row['prob 3'] + row['prob 4'] + row['prob 5'], axis=1
+            )
+            for bmi in range(1, 6):
+                df_odds_probs_bmi_levels[bmi] = df_odds_probs_bmi_levels.apply(
+                    lambda row: row[f'prob {bmi}'] / row['sum_probs'], axis=1
+                )
+
+            dfxx = df_odds_probs_bmi_levels[[1, 2, 3, 4, 5]]
+
+            # for each row, make a choice
+            bmi_cat = dfxx.apply(lambda p_bmi: rng.choice(dfxx.columns, p=p_bmi), axis=1)
+
+            df.loc[age_ge15_idx, 'li_bmi'] = bmi_cat
 
         # -------------------- SEX WORKER ----------------------------------------------------------
         # determine which women will be sex worker

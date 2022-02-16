@@ -12,6 +12,7 @@ from tlo.methods.hiv import DummyHivModule
 
 
 def run_sim(tmpdir,
+            seed,
             use_healthsystem=False,
             disable=False,
             healthsystem_disable_and_reject_all=False,
@@ -55,7 +56,7 @@ def run_sim(tmpdir,
         }
     }
 
-    sim = Simulation(start_date=start_date, log_config=log_config, seed=0)
+    sim = Simulation(start_date=start_date, log_config=log_config, seed=seed)
 
     sim.register(
         # - core modules:
@@ -174,7 +175,7 @@ def __check_no_illegal_switches(sim):
 
 
 @pytest.mark.slow
-def test_starting_and_stopping_contraceptive_use():
+def test_starting_and_stopping_contraceptive_use(seed):
     """Check that initiation and discontinuation rates work as expected."""
     popsize = 10_000
 
@@ -182,7 +183,7 @@ def test_starting_and_stopping_contraceptive_use():
         """Create dummy simulation"""
         resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
         start_date = Date(2010, 1, 1)
-        _sim = Simulation(start_date=start_date, seed=0)
+        _sim = Simulation(start_date=start_date, seed=seed)
         _sim.register(
             # - core modules:
             demography.Demography(resourcefilepath=resourcefilepath),
@@ -247,10 +248,10 @@ def test_starting_and_stopping_contraceptive_use():
 
 
 @pytest.mark.slow
-def test_pregnancies_and_births_occurring(tmpdir):
+def test_pregnancies_and_births_occurring(tmpdir, seed):
     """Test that pregnancies occur for those who are on contraception and those who are not."""
     # Run simulation without use of HealthSystem stuff and with high risk of failure of contraceptive
-    sim = run_sim(tmpdir=tmpdir, use_healthsystem=False, disable=True, incr_prob_of_failure=True)
+    sim = run_sim(tmpdir=tmpdir, seed=seed, use_healthsystem=False, disable=True, incr_prob_of_failure=True)
 
     # Check pregnancies
     logs = parse_log_file(sim.log_filepath)
@@ -278,9 +279,9 @@ def test_pregnancies_and_births_occurring(tmpdir):
     assert (set(births.loc[after9months, 'mother']) - {-1}).issubset(set(pregs['woman_id']))
 
 
-def test_woman_starting_contraceptive_after_birth(tmpdir):
+def test_woman_starting_contraceptive_after_birth(tmpdir, seed):
     """Check that woman re-start the same contraceptive after birth."""
-    sim = run_sim(tmpdir=tmpdir, run=False)
+    sim = run_sim(tmpdir=tmpdir, seed=seed, run=False)
 
     # Select a woman to be a mother
     person_id = 0
@@ -310,11 +311,12 @@ def test_woman_starting_contraceptive_after_birth(tmpdir):
     assert any([x != "not_using" for x in co_after_birth])
 
 
-def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir):
+def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir, seed):
     """Check HSI for the maintenance of a person on a contraceptive are scheduled as expected.."""
 
     # Create a simulation that has run for zero days and clear the event queue
     sim = run_sim(tmpdir,
+                  seed=seed,
                   use_healthsystem=True,
                   disable=False,
                   consumables_available=True,
@@ -376,10 +378,10 @@ def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir):
 
 
 @pytest.mark.slow
-def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_level(tmpdir):
+def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_level(tmpdir, seed):
     """Check that if someone is on a method that requires an HSI for maintenance, and if consumable is not available
-     and/or the health system cannot do the appointment, then that the person defaults to not using after they become
-     due for a maintenance appointment."""
+    and/or the health system cannot do the appointment, then that the person defaults to not using after they become
+    due for a maintenance appointment."""
 
     def check_that_persons_on_contraceptive_default(sim):
         """Before simulaton starts, put women on a contraceptive, and make some due an appointment. Then run the
@@ -439,6 +441,7 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
 
     # Check when no HSI occur
     sim = run_sim(tmpdir,
+                  seed=seed,
                   use_healthsystem=True,
                   healthsystem_disable_and_reject_all=True,
                   consumables_available=True,
@@ -450,6 +453,7 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
 
     # Check when HSI occur but consumables are not available
     sim = run_sim(tmpdir,
+                  seed=seed,
                   use_healthsystem=True,
                   disable=False,
                   consumables_available=False,
@@ -461,13 +465,13 @@ def test_defaulting_off_method_if_no_healthsystem_or_consumable_at_individual_le
 
 
 @pytest.mark.slow
-def test_defaulting_off_method_if_no_healthsystem_at_population_level(tmpdir):
+def test_defaulting_off_method_if_no_healthsystem_at_population_level(tmpdir, seed):
     """Check that if switching and initiation use the HealthSystem but no HSI can occur, then all those already
      on a contraceptive requiring an HSI to maintain use will default to not_using, and there is no initiation or
      switching to any contraceptive that requires an HSI."""
 
     # Run simulation whereby contraception requires HSI but the HealthSystem prevent HSI occurring
-    sim = run_sim(tmpdir=tmpdir, use_healthsystem=True, healthsystem_disable_and_reject_all=True)
+    sim = run_sim(tmpdir=tmpdir, seed=seed, use_healthsystem=True, healthsystem_disable_and_reject_all=True)
     __check_no_illegal_switches(sim)
 
     log = parse_log_file(sim.log_filepath)['tlo.methods.contraception']
@@ -492,14 +496,14 @@ def test_defaulting_off_method_if_no_healthsystem_at_population_level(tmpdir):
 
 
 @pytest.mark.slow
-def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir):
+def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir, seed):
     """Check that if switching and initiation use the HealthSystem but there are no consumables, then all those already
      on a contraceptive requiring a consumable to maintain use will default to not_using, and there is no initiation or
       switching to any contraceptive that requires a consumable."""
 
     # Run simulation whereby contraception requires HSI, HSI run, but there are no consumables
     # Let there be no discontinuation (so that every would otherwise stay on contraception)
-    sim = run_sim(tmpdir=tmpdir, use_healthsystem=True, disable=False, consumables_available=False,
+    sim = run_sim(tmpdir=tmpdir, seed=seed, use_healthsystem=True, disable=False, consumables_available=False,
                   no_discontinuation=True)
     __check_no_illegal_switches(sim)
 
@@ -531,16 +535,16 @@ def test_defaulting_off_method_if_no_consumables_at_population_level(tmpdir):
 
 
 @pytest.mark.slow
-def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir):
+def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir, seed):
     """Test that the contraception module functions and that exactly the same patterns of usage, switching, etc occur
     when action do not use the HealthsSystem as when they do (and the HealthSystem allow every change to occur)."""
 
     # Run basic check, for the case when the model is using the healthsystem and when not and check the logs
-    sim_does_not_use_healthsystem = run_sim(run=True, tmpdir=tmpdir, use_healthsystem=False, disable=True)
+    sim_does_not_use_healthsystem = run_sim(run=True, tmpdir=tmpdir, seed=seed, use_healthsystem=False, disable=True)
     __check_no_illegal_switches(sim_does_not_use_healthsystem)
     __check_some_starting_switching_and_stopping(sim_does_not_use_healthsystem)
 
-    sim_uses_healthsystem = run_sim(run=True, tmpdir=tmpdir, use_healthsystem=True, disable=True)
+    sim_uses_healthsystem = run_sim(run=True, tmpdir=tmpdir, seed=seed, use_healthsystem=True, disable=True)
     __check_no_illegal_switches(sim_uses_healthsystem)
     __check_some_starting_switching_and_stopping(sim_uses_healthsystem)
 
@@ -559,12 +563,13 @@ def test_outcomes_same_if_using_or_not_using_healthsystem(tmpdir):
         )
 
 
-def test_correct_number_of_live_births_created(tmpdir):
+def test_correct_number_of_live_births_created(tmpdir, seed):
     """Check that the actual number of births simulated (in one month) matches expectations"""
 
     # Run a simulation in which every woman has the same chance of becoming pregnant.
     _risk_of_pregnancy = 0.05
     sim = run_sim(tmpdir,
+                  seed=seed,
                   end_date=Date(2010, 11, 1),
                   popsize=100_000,
                   disable=True,
@@ -601,10 +606,11 @@ def test_correct_number_of_live_births_created(tmpdir):
     assert np.isclose(totfr_per_month_Oct2010, _risk_of_pregnancy * _prob_live_birth, rtol=0.10)
 
 
-def test_initial_distribution_of_contraception(tmpdir):
+def test_initial_distribution_of_contraception(tmpdir, seed):
     """Check that the initial population distribution has the expected distribution of use of contraceptive methods."""
 
-    sim = run_sim(tmpdir, end_date=Date(2010, 1, 1), popsize=100_000)  # large simulation, run just to initialise pop
+    # large simulation, run just to initialise pop
+    sim = run_sim(tmpdir, seed=seed, end_date=Date(2010, 1, 1), popsize=100_000)
 
     df = sim.population.props
     pp = sim.modules['Contraception'].processed_params
