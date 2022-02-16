@@ -17,8 +17,6 @@ from tlo.analysis.utils import (
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # download all files run for calibration
-# calibration_script-2021-12-20T144906Z
-
 # run in terminal: tlo batch-download calibration_script-2021-12-20T144906Z
 
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
