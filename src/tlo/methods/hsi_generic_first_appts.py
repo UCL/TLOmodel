@@ -6,6 +6,7 @@ import pandas as pd
 """This file contains the HSI events that represent the first contact with the Health System, which are triggered by
 the onset of symptoms. Non-emergency symptoms lead to `HSI_GenericFirstApptAtFacilityLevel0` and emergency symptoms
  lead to `HSI_GenericEmergencyFirstApptAtFacilityLevel1`. """
+import pandas as pd
 
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
@@ -57,6 +58,16 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
         super().__init__(module, person_id=person_id)
 
         assert module is self.sim.modules['HealthSeekingBehaviour']
+        symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
+        if 'injury' in symptoms:
+            if 'RTI' in self.sim.modules:
+                # change the appointment footprint for general injuries if diagnostic equipment is needed
+                df = self.sim.population.props
+                persons_injuries = df.loc[person_id, self.sim.modules['RTI'].INJURY_COLUMNS]
+                if len(set(self.sim.modules['RTI'].INJURIES_REQ_IMAGING).intersection(persons_injuries)) > 0:
+                    self.sim.modules['RTI'].rti_ask_for_imaging(person_id)
+                if df.loc[person_id, 'rt_in_shock']:
+                    self.sim.modules['RTI'].rti_ask_for_shock_treatment(person_id)
 
         self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel0'
         self.ACCEPTED_FACILITY_LEVEL = '0'
@@ -80,13 +91,22 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        assert module.name in ['HealthSeekingBehaviour', 'Labour', 'PregnancySupervisor']
+        assert module.name in ['HealthSeekingBehaviour', 'Labour', 'PregnancySupervisor', 'RTI']
+        symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
+        the_appt_footprint = self.make_appt_footprint({
+            'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
+        if 'severe_trauma' in symptoms:
+            if 'RTI' in self.sim.modules:
+                # change the appointment footprint for general injuries if diagnostic equipment is needed
+                self.sim.modules['RTI'].rti_injury_diagnosis(person_id, the_appt_footprint)
+                df = self.sim.population.props
+                if df.loc[person_id, 'rt_in_shock']:
+                    self.sim.modules['RTI'].rti_ask_for_shock_treatment(person_id)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
-            'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
     def apply(self, person_id, squeeze_factor):
 
@@ -306,6 +326,17 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
             # are either over 50 or younger than 50 but are selected to get tested.
             sim.modules['CardioMetabolicDisorders'].determine_if_will_be_investigated(person_id=person_id)
 
+        if 'injury' in symptoms:
+            if 'RTI' in sim.modules:
+                df = sim.population.props
+                road_traffic_injuries = sim.modules['RTI']
+                # Check they haven't died from another source
+                if pd.isnull(df.at[person_id, 'cause_of_death']) and not df.at[person_id, 'rt_diagnosed']:
+                    df.at[person_id, 'rt_diagnosed'] = True
+                    road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)
+                    if df.at[person_id, 'rt_in_shock']:
+                        road_traffic_injuries.rti_ask_for_shock_treatment(person_id)
+
 
 def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     """The actions are taken during the non-emergency generic HSI, HSI_GenericEmergencyFirstApptAtFacilityLevel1."""
@@ -417,3 +448,33 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             person_id=person_id
         )
         schedule_hsi(event, priority=1, topen=sim.date)
+
+    if 'RTI' in sim.modules:
+        if 'severe_trauma' in symptoms:
+            road_traffic_injuries = sim.modules['RTI']
+            df = sim.population.props
+            # Check they haven't died from another source
+            if pd.isnull(df.at[person_id, 'cause_of_death']) and not df.at[person_id, 'rt_diagnosed']:
+                if df.at[person_id, 'rt_in_shock']:
+                    road_traffic_injuries.rti_ask_for_shock_treatment(person_id)
+
+                persons_injuries = df.loc[[person_id], sim.modules['RTI'].INJURY_COLUMNS]
+
+                # Request multiple x-rays here, note that the diagradio requirement for the appointment footprint
+                # is dealt with in the RTI module itself.
+                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries,
+                                                                                sim.modules['RTI'].FRACTURE_CODES)
+                if counts >= 1:
+                    get_item_code = sim.modules['HealthSystem'].get_item_code_from_item_name
+                    xray_code = get_item_code("Monochromatic blue senstive X-ray Film, screen SizeSize: 30cm x 40cm")
+                    is_cons_available = hsi_event.get_consumables({xray_code: counts})
+                    if is_cons_available:
+                        logger.debug(
+                            'This facility has x-ray capability which has been used to diagnose person %d.',
+                            person_id)
+                        logger.debug(f'Person %d had x-rays for their {counts} fractures')
+                    else:
+                        logger.debug('Total amount of x-rays required for person %d unavailable', person_id)
+                df.at[person_id, 'rt_diagnosed'] = True
+
+                road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)

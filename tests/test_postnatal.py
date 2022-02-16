@@ -23,7 +23,6 @@ from tlo.methods import (
     symptommanager,
 )
 
-seed = 123
 start_date = Date(2010, 1, 1)
 
 # The resource files
@@ -95,7 +94,7 @@ def register_core_modules(sim):
 
 
 @pytest.mark.slow
-def test_run_and_check_dtypes(tmpdir):
+def test_run_and_check_dtypes(tmpdir, seed):
     sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
     register_core_modules(sim)
     sim.make_initial_population(n=1000)
@@ -107,7 +106,7 @@ def test_run_and_check_dtypes(tmpdir):
     assert 'error' not in output['tlo.methods.postnatal_supervisor']
 
 
-def test_antenatal_disease_is_correctly_carried_over_to_postnatal_period_on_birth():
+def test_antenatal_disease_is_correctly_carried_over_to_postnatal_period_on_birth(seed):
     """Test that complications which may continue from the antenatal period to the postnatal period transition as
     expected"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -136,7 +135,7 @@ def test_antenatal_disease_is_correctly_carried_over_to_postnatal_period_on_birt
     assert sim.population.props.at[mother_id, 'pn_htn_disorders'] == 'mild_pre_eclamp'
 
 
-def test_application_of_maternal_complications_and_care_seeking_postnatal_week_one_event():
+def test_application_of_maternal_complications_and_care_seeking_postnatal_week_one_event(seed):
     """Test that risk of complications is correctly applied in the first week postnatal and that women seek care as
     expected"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -194,7 +193,7 @@ def test_application_of_maternal_complications_and_care_seeking_postnatal_week_o
 # todo: htn progression/resolution
 
 
-def test_application_of_neonatal_complications_and_care_seeking_postnatal_week_one_event():
+def test_application_of_neonatal_complications_and_care_seeking_postnatal_week_one_event(seed):
     """Test that risk of complications is correctly applied in the first week postnatal and that women seek care as
     expected"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -241,7 +240,7 @@ def test_all_appropriate_pregnancy_variables_are_reset_at_then_end_of_postnatal(
     pass
 
 
-def test_application_of_risk_of_death_to_mothers_postnatal_week_one_event():
+def test_application_of_risk_of_death_to_mothers_postnatal_week_one_event(seed):
     """Test that risk of death is applied to women in the first week postnatal in the context of complications, as
     expected"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -277,7 +276,7 @@ def test_application_of_risk_of_death_to_mothers_postnatal_week_one_event():
     assert not sim.population.props.at[mother_id, 'is_alive']
 
 
-def test_application_of_risk_of_death_to_neonates_postnatal_week_one_event():
+def test_application_of_risk_of_death_to_neonates_postnatal_week_one_event(seed):
     """Test that risk of death is applied to neonates in the first week postnatal in the context of complications, as
     expected"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -310,7 +309,7 @@ def test_application_of_risk_of_death_to_neonates_postnatal_week_one_event():
     assert not sim.population.props.at[child_id_one, 'is_alive']
 
 
-def test_application_of_risk_of_infection_and_sepsis_postnatal_supervisor_event():
+def test_application_of_risk_of_infection_and_sepsis_postnatal_supervisor_event(seed):
     """Test that risk of maternal infection is applied within the population level postnatal event as expected,
      including care seeking and application of risk of death"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -369,7 +368,7 @@ def test_application_of_risk_of_infection_and_sepsis_postnatal_supervisor_event(
     assert not sim.population.props.at[mother_id, 'is_alive']
 
 
-def test_application_of_risk_of_spph_postnatal_supervisor_event():
+def test_application_of_risk_of_spph_postnatal_supervisor_event(seed):
     """Test that risk of maternal haemorrhage is applied within the population level postnatal event as expected,
     including care seeking and application of risk of death"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -420,7 +419,7 @@ def test_application_of_risk_of_spph_postnatal_supervisor_event():
     assert not sim.population.props.at[mother_id, 'is_alive']
 
 
-def test_application_of_risk_of_anaemia_postnatal_supervisor_event():
+def test_application_of_risk_of_anaemia_postnatal_supervisor_event(seed):
     """Test that risk of maternal anaemia is applied within the population level postnatal event as expected"""
     sim = Simulation(start_date=start_date, seed=seed)
     register_core_modules(sim)
@@ -445,7 +444,7 @@ def test_application_of_risk_of_anaemia_postnatal_supervisor_event():
     assert (mni[mother_id]['mild_anaemia_pp_onset'] == sim.date)
 
 
-def test_application_of_risk_of_hypertensive_disorders_postnatal_supervisor_event():
+def test_application_of_risk_of_hypertensive_disorders_postnatal_supervisor_event(seed):
     """Test that risk of maternal hypertensive disorders is applied within the population level postnatal event as
      expected, including care seeking and application of risk of death"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -516,7 +515,7 @@ def test_application_of_risk_of_hypertensive_disorders_postnatal_supervisor_even
 # todo: death from severe hypertension
 
 
-def test_application_of_risk_of_late_onset_neonatal_sepsis():
+def test_application_of_risk_of_late_onset_neonatal_sepsis(seed):
     """Test that risk of neonatal sepsis is applied within the population level postnatal event as
     expected, including care seeking and application of risk of death"""
     sim = Simulation(start_date=start_date, seed=seed)

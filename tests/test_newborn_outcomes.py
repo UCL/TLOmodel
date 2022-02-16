@@ -23,7 +23,6 @@ from tlo.methods import (
     symptommanager,
 )
 
-seed = 8974
 start_date = Date(2010, 1, 1)
 
 # The resource files
@@ -73,7 +72,7 @@ def register_modules(sim):
 
 
 @pytest.mark.slow
-def test_run_and_check_dtypes(tmpdir):
+def test_run_and_check_dtypes(tmpdir, seed):
     """Run the sim for five years and check dtypes at the end """
     sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
     register_modules(sim)
@@ -86,7 +85,7 @@ def test_run_and_check_dtypes(tmpdir):
     assert 'error' not in output['tlo.methods.newborn_outcomes']
 
 
-def test_to_check_babies_delivered_in_facility_receive_post_birth_care():
+def test_to_check_babies_delivered_in_facility_receive_post_birth_care(seed):
     """Test that babies that are born within a health facility are correctly scheduled to receive post delivery care
     following birth """
     sim = Simulation(start_date=start_date, seed=seed)
@@ -118,7 +117,7 @@ def test_to_check_babies_delivered_in_facility_receive_post_birth_care():
     assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth in hsi_events
 
 
-def test_to_check_babies_delivered_at_home_dont_receive_post_birth_care():
+def test_to_check_babies_delivered_at_home_dont_receive_post_birth_care(seed):
     """Test that babies that born at home are not incorrectly scheduled to receive post delivery care
     following birth """
     sim = Simulation(start_date=start_date, seed=seed)
@@ -153,7 +152,7 @@ def test_to_check_babies_delivered_at_home_dont_receive_post_birth_care():
     assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth not in hsi_events
 
 
-def test_care_seeking_for_babies_delivered_at_home_who_develop_complications():
+def test_care_seeking_for_babies_delivered_at_home_who_develop_complications(seed):
     """Test that babies that are born at home and develop complications will have care sought for them as expected
     """
     sim = Simulation(start_date=start_date, seed=seed)
@@ -194,7 +193,7 @@ def test_care_seeking_for_babies_delivered_at_home_who_develop_complications():
     # todo: normal twin birth logic
 
 
-def test_twin_and_single_twin_still_birth_logic_for_twins():
+def test_twin_and_single_twin_still_birth_logic_for_twins(seed):
     """Test that for women who experience a single twin stillbirth only produce one newborn child as expected"""
     sim = Simulation(start_date=start_date, seed=seed)
     register_modules(sim)
@@ -236,7 +235,7 @@ def test_twin_and_single_twin_still_birth_logic_for_twins():
     assert (mni[mother_id]['twin_count'] == 1)
 
 
-def test_care_seeking_for_twins_delivered_at_home_who_develop_complications():
+def test_care_seeking_for_twins_delivered_at_home_who_develop_complications(seed):
     """Test that for twin births, if both develop a complication and care is sought for one twin, care will be received
     by both"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -291,7 +290,7 @@ def test_care_seeking_for_twins_delivered_at_home_who_develop_complications():
     assert newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck in hsi_events_child_two
 
 
-def test_on_birth_applies_risk_of_complications_and_death_in_term_newborns_delivered_at_home_correctly():
+def test_on_birth_applies_risk_of_complications_and_death_in_term_newborns_delivered_at_home_correctly(seed):
     """Test that for neonates born at home that develop complications, care seeking and risk of death is applied as
     expected"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -359,7 +358,7 @@ def test_on_birth_applies_risk_of_complications_and_death_in_term_newborns_deliv
     assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth not in hsi_events_child_one
 
 
-def test_on_birth_applies_risk_of_complications_and_death_in_preterm_newborns_delivered_at_home_correctly():
+def test_on_birth_applies_risk_of_complications_and_death_in_preterm_newborns_delivered_at_home_correctly(seed):
     """Test that for preterm neonates (who are at risk of a different complication set) that born at home and develop
      complications, care seeking and risk of death is applied as expected"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -402,7 +401,7 @@ def test_on_birth_applies_risk_of_complications_and_death_in_preterm_newborns_de
     assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth not in hsi_events_child_one
 
 
-def test_newborn_sba_hsi_deliveries_resuscitation_treatment_as_expected():
+def test_newborn_sba_hsi_deliveries_resuscitation_treatment_as_expected(seed):
     """ Test that resuscitation treatment is delivered as expected to newborns in respiratory distress who deliver in
     facilities """
     sim = Simulation(start_date=start_date, seed=seed)
@@ -450,7 +449,7 @@ def test_newborn_sba_hsi_deliveries_resuscitation_treatment_as_expected():
     assert sim.population.props.at[child_id, 'is_alive']
 
 
-def test_newborn_postnatal_check_hsi_delivers_treatment_as_expected():
+def test_newborn_postnatal_check_hsi_delivers_treatment_as_expected(seed):
     """ Test that interventions delivered as part of PNC are delivered as expected to newborns with complications"""
     sim = Simulation(start_date=start_date, seed=seed)
     register_modules(sim)

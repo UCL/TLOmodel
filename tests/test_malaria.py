@@ -38,7 +38,9 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def register_sim():
+@pytest.fixture
+def sim(seed):
+
     sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
@@ -59,8 +61,7 @@ def register_sim():
 
 
 @pytest.mark.slow
-def test_sims(tmpdir):
-    sim = register_sim()
+def test_sims(sim):
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
@@ -110,7 +111,8 @@ def test_sims(tmpdir):
 # remove scheduled rdt testing and disable health system, should be no rdts and no treatment
 # increase cfr for severe cases (all severe cases will die)
 @pytest.mark.slow
-def test_remove_malaria_test(tmpdir):
+def test_remove_malaria_test(seed):
+
     service_availability = list([" "])  # no treatments available
 
     end_date = Date(2018, 12, 31)
@@ -174,8 +176,7 @@ def test_remove_malaria_test(tmpdir):
 
 # test everyone regularly and check no treatment without positive rdt
 @pytest.mark.slow
-def test_schedule_rdt_for_all(tmpdir):
-    sim = register_sim()
+def test_schedule_rdt_for_all(sim):
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
@@ -193,13 +194,11 @@ def test_schedule_rdt_for_all(tmpdir):
     assert sum(df["ma_clinical_counter"]) > 0
 
 
-def test_dx_algorithm_for_malaria_outcomes():
+def test_dx_algorithm_for_malaria_outcomes(sim):
     """Create a person and check if the functions in dx_algorithm_child return the correct diagnosis"""
 
     def make_blank_simulation():
         popsize = 200  # smallest population size that works
-
-        sim = register_sim()
 
         sim.make_initial_population(n=popsize)
         sim.modules['Malaria'].parameters['sensitivity_rdt'] = 1.0
@@ -293,7 +292,7 @@ def test_dx_algorithm_for_malaria_outcomes():
 
 
 # check non-malarial fever returns correct diagnosis string (and no malaria treatment)
-def test_dx_algorithm_for_non_malaria_outcomes():
+def test_dx_algorithm_for_non_malaria_outcomes(seed):
     """Create a person and check if the functions in dx_algorithm_child return the correct diagnosis"""
 
     def make_blank_simulation():
@@ -374,8 +373,7 @@ def test_dx_algorithm_for_non_malaria_outcomes():
     ) == "negative_malaria_test"
 
 
-def test_severe_malaria_deaths(tmpdir):
-    sim = register_sim()
+def test_severe_malaria_deaths_perfect_treatment(sim):
 
     # -------------- Perfect treatment for severe malaria -------------- #
     # set perfect treatment for severe malaria cases - no deaths should occur
@@ -409,8 +407,9 @@ def test_severe_malaria_deaths(tmpdir):
     assert df.at[person_id, 'is_alive']
     assert df.at[person_id, "ma_inf_type"] == "none"
 
+
+def test_severe_malaria_deaths_treatment_failure(sim):
     # -------------- treatment failure for severe malaria -------------- #
-    sim = register_sim()
 
     # set treatment with zero efficacy for severe malaria cases - death should occur
     sim.modules['Malaria'].parameters['treatment_adjustment'] = 1

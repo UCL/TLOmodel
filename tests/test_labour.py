@@ -23,7 +23,6 @@ from tlo.methods import (
     symptommanager,
 )
 
-seed = 1896
 start_date = Date(2010, 1, 1)
 
 # The resource files
@@ -94,7 +93,7 @@ def register_modules(sim):
 
 
 @pytest.mark.slow
-def test_run_no_constraints(tmpdir):
+def test_run_no_constraints(tmpdir, seed):
     """This test runs a simulation with a functioning health system with full service availability and no set
     constraints"""
     sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
@@ -109,7 +108,7 @@ def test_run_no_constraints(tmpdir):
     assert 'error' not in output['tlo.methods.labour']
 
 
-def test_event_scheduling_for_labour_onset_and_home_birth_no_care_seeking():
+def test_event_scheduling_for_labour_onset_and_home_birth_no_care_seeking(seed):
     """This test checks that women who choose to give birth at home will correctly deliver at home and the scheduling
     events if she chooses not to seek care following a complication"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -171,7 +170,7 @@ def test_event_scheduling_for_labour_onset_and_home_birth_no_care_seeking():
     assert labour.HSI_Labour_ReceivesPostnatalCheck not in hsi_events
 
 
-def test_event_scheduling_for_care_seeking_during_home_birth():
+def test_event_scheduling_for_care_seeking_during_home_birth(seed):
     """This test checks that women who choose to give birth at home will correctly deliver at home and the scheduling
     events if shes chooses to seek care following a complication"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -240,7 +239,7 @@ def test_event_scheduling_for_care_seeking_during_home_birth():
     assert labour.HSI_Labour_ReceivesPostnatalCheck in hsi_events
 
 
-def test_event_scheduling_for_labour_onset_and_facility_delivery():
+def test_event_scheduling_for_labour_onset_and_facility_delivery(seed):
     """This test checks that women who choose to give birth at a facility will correctly seek care and the scheduling
     of the events is correct"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -277,7 +276,7 @@ def test_event_scheduling_for_labour_onset_and_facility_delivery():
     assert date_event == sim.date
 
 
-def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesarean_section():
+def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesarean_section(seed):
     """This test checks that women who have been admitted from antenatal care to delivery via caesarean have the correct
      care and event scheduled"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -335,7 +334,7 @@ def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesa
     birth_event.apply(mother_id)
 
 
-def test_application_of_risk_of_complications_in_intrapartum_and_postpartum_phases():
+def test_application_of_risk_of_complications_in_intrapartum_and_postpartum_phases(seed):
     """This test checks that risk of complication in the intrapartum and postpartum phase are applied to women as
     expected """
     sim = Simulation(start_date=start_date, seed=seed)
@@ -393,7 +392,7 @@ def test_application_of_risk_of_complications_in_intrapartum_and_postpartum_phas
 # todo: test hypertension logic in labour
 
 
-def test_logic_within_death_and_still_birth_events():
+def test_logic_within_death_and_still_birth_events(seed):
     """This test checks that risk of death and stillbirth during labour are applied as expected"""
     sim = Simulation(start_date=start_date, seed=seed)
     register_modules(sim)
@@ -482,7 +481,7 @@ def test_logic_within_death_and_still_birth_events():
     # todo: seperate test for the BirthPostnatal event?
 
 
-def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_constraints_via_functions():
+def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_constraints_via_functions(seed):
     """This test checks that interventions delivered during the primary delivery HSI are correctly administered and
     effect death/outcome in the way that is expected """
     sim = Simulation(start_date=start_date, seed=seed)
@@ -626,7 +625,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     assert mni[mother_id]['referred_for_surgery']
 
 
-def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quality_constraints():
+def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quality_constraints(seed):
     """This test checks that interventions delivered during the CEmONC HSI are correctly administered and
     effect death/outcome in the way that is expected """
     sim = Simulation(start_date=start_date, seed=seed)
