@@ -428,7 +428,8 @@ def test_if_no_health_system_and_high_risk_of_death(seed):
 
         p = sim.modules['CardioMetabolicDisorders'].parameters
 
-        # increase annual probability of onset and death (values > 1 to ensure probability is still greater than 1.0 after accounting for protective characteristics).
+        # increase annual probability of onset and death (values > 1 to ensure probability is still greater than 1.0
+        #  after accounting for protective characteristics).
         p[f'{event}_onset']["baseline_annual_probability"] = float('inf')
         p[f'{event}_death']["baseline_annual_probability"] = float('inf')
 
@@ -486,7 +487,8 @@ def test_if_medication_prevents_all_death(seed):
 
         p = sim.modules['CardioMetabolicDisorders'].parameters
 
-        # increase annual probability of onset & probability of death ((values > 1 to ensure probability is still greater than 1.0 after accounting for protective characteristics).
+        # increase annual probability of onset & probability of death ((values > 1 to ensure probability is still
+        #  greater than 1.0 after accounting for protective characteristics).
         p[f'{event}_onset']["baseline_annual_probability"] = float('inf')
         p[f'{event}_death']["baseline_annual_probability"] = float('inf')
 
