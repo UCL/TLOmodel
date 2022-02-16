@@ -1508,6 +1508,18 @@ HosHC_patient_facing_time = pd.DataFrame(
      'HC_Av_Mins_Per_Day': av_mins_daily_hc}
 ).reset_index(drop=True)
 
+# The new PFT has no minutes for M01 at health centres,
+# but in Time_Curr, IPAdmissions/RMNCH/... appointments at Urban HCs all need time from M01.
+# We therefore assume the minutes for M01 at HCs are the average of those at DisHos and CenHos,
+# to solve inconsistency between PFT and Time_Curr
+# HosHC_patient_facing_time.loc[0, 'HC_Av_Mins_Per_Day'] = (
+#     HosHC_patient_facing_time.loc[0, 'DisHos_Av_Mins_Per_Day'] +
+#     HosHC_patient_facing_time.loc[0, 'ComHos_Av_Mins_Per_Day']
+#                                                          ) / 2
+
+# How to do with cadres that do not have minutes at all in PFT,
+# whereas they have time requirements in Time_Curr?
+
 # PFT table ready!
 
 # Create final tables of daily time available at each facility by officer type: Facility_ID, Facility_Type,
@@ -1525,12 +1537,17 @@ for i in funded_daily_minutes.index:
             t = (funded_staff_floats.loc[i, officer] *
                  HosHC_patient_facing_time.loc[HosHC_patient_facing_time['Officer_Type_Code'] == officer,
                                                'HC_Av_Mins_Per_Day'])
-            funded_daily_minutes.loc[i, officer] = t.values
-        else:  # Levels 1b, 2, and above; Hospital minutes
+            funded_daily_minutes.loc[i, officer] = t.values[0]
+        elif the_level == 'Facility_Level_1b':  # Level 1b; ComHos minutes
             t = (funded_staff_floats.loc[i, officer] *
                  HosHC_patient_facing_time.loc[HosHC_patient_facing_time['Officer_Type_Code'] == officer,
-                                               'Hospital_Av_Mins_Per_Day'])
-            funded_daily_minutes.loc[i, officer] = t.values
+                                               'ComHos_Av_Mins_Per_Day'])
+            funded_daily_minutes.loc[i, officer] = t.values[0]
+        else:  # Levels 2 and above; DisHos and CenHos minutes
+            t = (funded_staff_floats.loc[i, officer] *
+                 HosHC_patient_facing_time.loc[HosHC_patient_facing_time['Officer_Type_Code'] == officer,
+                                               'DisHos_Av_Mins_Per_Day'])
+            funded_daily_minutes.loc[i, officer] = t.values[0]
 
 # Long format
 funded_staff_floats = pd.melt(funded_staff_floats, id_vars=['District_Or_Hospital', 'Facility_Level'],
@@ -1543,7 +1560,7 @@ funded_daily_capability = funded_daily_minutes.merge(funded_staff_floats, how='l
 # Reset facility level column to exclude 'Facility_Level_'
 funded_daily_capability['Facility_Level'] = \
     funded_daily_capability['Facility_Level'].str.split(pat='_', expand=True).iloc[:, 2]
-# Drop row with zero minutes (also zero staff counts)
+# Drop row with zero minutes (due to either zero staff counts or zero daily minutes)
 funded_daily_capability.drop(
     index=funded_daily_capability[funded_daily_capability['Total_Mins_Per_Day'] == 0].index, inplace=True)
 # Reset index
@@ -1595,12 +1612,17 @@ for i in curr_daily_minutes.index:
             t = (curr_staff_floats.loc[i, officer] *
                  HosHC_patient_facing_time.loc[HosHC_patient_facing_time['Officer_Type_Code'] == officer,
                                                'HC_Av_Mins_Per_Day'])
-            curr_daily_minutes.loc[i, officer] = t.values
-        else:  # Levels 1b, 2, and above; Hospital minutes
+            curr_daily_minutes.loc[i, officer] = t.values[0]
+        elif the_level == 'Facility_Level_1b':  # Level 1b; ComHos minutes
             t = (curr_staff_floats.loc[i, officer] *
                  HosHC_patient_facing_time.loc[HosHC_patient_facing_time['Officer_Type_Code'] == officer,
-                                               'Hospital_Av_Mins_Per_Day'])
-            curr_daily_minutes.loc[i, officer] = t.values
+                                               'ComHos_Av_Mins_Per_Day'])
+            curr_daily_minutes.loc[i, officer] = t.values[0]
+        else:  # Levels 2 and above; DisHos and CenHos minutes
+            t = (curr_staff_floats.loc[i, officer] *
+                 HosHC_patient_facing_time.loc[HosHC_patient_facing_time['Officer_Type_Code'] == officer,
+                                               'DisHos_Av_Mins_Per_Day'])
+            curr_daily_minutes.loc[i, officer] = t.values[0]
 
 # Long format
 curr_staff_floats = pd.melt(curr_staff_floats, id_vars=['District_Or_Hospital', 'Facility_Level'],
@@ -1654,20 +1676,21 @@ curr_daily_capability_coarse.drop(columns=['Officer_Type_Code', 'Officer_Type'],
 curr_daily_capability_coarse.reset_index(drop=True, inplace=True)
 
 # Save
-# HosHC_patient_facing_time.to_csv(
-#     outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Patient_Facing_Time.csv', index=False)
-
-# Need to # two lines below when generate funded_plus capability
-# funded_daily_capability_coarse.to_csv(
-#     outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Daily_Capabilities.csv', index=False)
-
-# *** Only for funded_plus ********************************************************************************************
-funded_daily_capability_coarse.to_csv(
-    outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv', index=False)
-# *********************************************************************************************************************
+HosHC_patient_facing_time.to_csv(
+    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Patient_Facing_Time.csv', index=False)
 
 curr_daily_capability_coarse.to_csv(
     outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Daily_Capabilities.csv', index=False)
+
+# Need to # following lines below when generate funded_plus capability
+funded_daily_capability_coarse.to_csv(
+    outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Daily_Capabilities.csv', index=False)
+
+# *** Only for funded_plus ********************************************************************************************
+# funded_daily_capability_coarse.to_csv(
+#     outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv', index=False)
+# *********************************************************************************************************************
+
 
 
 # ---------------------------------------------------------------------------------------------------------------------
