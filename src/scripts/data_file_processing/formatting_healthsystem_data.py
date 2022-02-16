@@ -1,5 +1,5 @@
 ﻿"""
-This file set ups the health system resources for each district, each region, and also national level.
+This file sets up the health system resources for each district, each region, and also national level.
 
 It defines 7 levels for facility types, i.e., Facility_Levels = [0,1a,1b,2,3,4,5].
 

@@ -1461,9 +1461,6 @@ officer_types_import = pft_sheet.iloc[3, np.arange(2, 23)]
 assert set(officer_types_import) == set(officer_types_table['Officer_Type_Code'])
 assert len(officer_types_import) == len(officer_types_table['Officer_Type_Code'])
 
-# fill nan with 0
-
-
 # Total working days per year
 days_per_year_men = pft_sheet.iloc[16, np.arange(2, 23)]
 days_per_year_women = pft_sheet.iloc[17, np.arange(2, 23)]
@@ -1517,8 +1514,12 @@ HosHC_patient_facing_time = pd.DataFrame(
 #     HosHC_patient_facing_time.loc[0, 'ComHos_Av_Mins_Per_Day']
 #                                                          ) / 2
 
-# How to do with cadres that do not have minutes at all in PFT,
+# How to deal with cadres (DCSA, Dental, Mental, Radiography) that do not have minutes at all in PFT,
 # whereas they have time requirements in Time_Curr?
+# (Compared to old PFT sheet,
+# the new PFT has updated all info on available working days/non-admin daily minutes/portion of male/female/pregfemale)
+# A quick fix is to use the average daily minutes of those cadres from old PFT table;
+# The info required to calculate these minutes will be from the old PFT table.
 
 # PFT table ready!
 
