@@ -1628,9 +1628,10 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
             disease_module=self.module,
         )
 
+        date_of_aids_death = self.sim.date + self.module.get_time_from_aids_to_death()
+
         # Schedule AidsDeath
         if self.cause == "AIDS_non_TB":
-            date_of_aids_death = self.sim.date + self.module.get_time_from_aids_to_death()
 
             self.sim.schedule_event(
                 event=HivAidsDeathEvent(
@@ -1641,15 +1642,11 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
 
         else:
             # cause is active TB
-            # death scheduled between 6-12 months from now
-            date_of_aids_tb_death = self.sim.date + \
-                                    pd.DateOffset(months=self.module.rng.randint(6, 18))
-
             self.sim.schedule_event(
                 event=HivAidsTbDeathEvent(
                     person_id=person_id, module=self.module, cause=self.cause
                 ),
-                date=date_of_aids_tb_death,
+                date=date_of_aids_death,
             )
 
 
