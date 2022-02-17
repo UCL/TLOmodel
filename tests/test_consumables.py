@@ -276,10 +276,9 @@ def test_use_get_consumables_by_hsi_method_get_consumables():
     )
 
     #  Using `optional_item_codes` argument in the `get_consumables` method on the HSI Base Class should result in those
-    #  consumables being checked for availability (and the requet logged), but the availability/non-availability of
+    #  consumables being checked for availability (and the request logged), but the availability/non-availability of
     #  these items does not affect the summary result (a `bool` returned indicating availability/non-availability of the
-    #  items reuested). This is useful when a large set of items may be used, but the viability of a subsequent
-    #  operation depends only on a subset.
+    #  items requested).
 
     # Request both consumables in usual fashion: as one in not available, overall result is False
     assert False is hsi_event.get_consumables(item_codes=[item_code_is_available[0], item_code_not_available[0]])

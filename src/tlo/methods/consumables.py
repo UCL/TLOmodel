@@ -34,8 +34,7 @@ class Consumables:
         self.cons_available_today = None  # Index for the item_codes available
         self._is_unknown_item_available = None  # Whether an unknown item is available, by facility_id
 
-        if data is not None:
-            self._process_consumables_df(data)
+        self._process_consumables_df(data)
 
     def processing_at_start_of_new_day(self, date: datetime.datetime) -> None:
         """Do the jobs at the start of each new day.
