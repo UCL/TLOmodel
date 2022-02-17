@@ -697,15 +697,9 @@ fund_staffing_table = wb_extract.copy()
 # currently we keep the source data as it is the establishment and CHAI team does not recommend such re-allocation.
 
 # *** Only for funded_plus ********************************************************************************************
-# Since districts Balaka,Machinga,Mwanza,Neno,Ntchisi,Salima and central hospitals have 0 C01, while C01 is \
-# required by Mental appts at level 1b, level 2 and level 3, we move some C01 from 'HQ or missing' to them. \
-# To achieve this, we evenly distribute 30 C01 at HQ to all districts and central hospitals (27 DisHos, 4 CenHos)
-# C01_at_HQ = fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'C01'].values
-# extra_C01_per_district_CenHos = C01_at_HQ / 31
-# fund_staffing_table.loc[~fund_staffing_table['District_Or_Hospital'].isin(['HQ or missing']), 'C01'] = (
-#     fund_staffing_table.loc[~fund_staffing_table['District_Or_Hospital'].isin(['HQ or missing']), 'C01'] +
-#     extra_C01_per_district_CenHos)
-# fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'C01'] = 0
+# Districts Balaka, Machinga, Mwanza, Neno, Nkhata Bay, Ntchisi, Salima have 0 mental health staff C01 in establishment,
+# while C01 is required by mental health appts at level 1b, level 2 and level 3.
+# To fix this inconsistency, we have to assign at least 1 C01 to each of these districts, but from where?
 # *********************************************************************************************************************
 
 # *** Only for funded_plus ********************************************************************************************
@@ -841,15 +835,15 @@ fund_staffing_table = district_faclevel.merge(fund_staffing_table, how='outer')
 # Before split, update the funded C01 distributions at levels 1a, 1b and 2 using CHAI Optimal Workforce estimates. \
 # This is because funded C01 are all at level 1b (100%), meanwhile appt time base requires C01 at level 2. \
 # CHAI Optimal Workforce locates C01 47.92% at level 1b and 52.08% at level 2, which seems more sensible.
-# idx_c01_level_1b = fund_staff_distribution[
-#     (fund_staff_distribution['Cadre_Code'] == 'C01') &
-#     (fund_staff_distribution['Facility_Level'] == 'Facility_Level_1b')].index
-# fund_staff_distribution.loc[idx_c01_level_1b, 'Proportion_Fund'] = 0.4792
-#
-# idx_c01_level_2 = fund_staff_distribution[
-#     (fund_staff_distribution['Cadre_Code'] == 'C01') &
-#     (fund_staff_distribution['Facility_Level'] == 'Facility_Level_2')].index
-# fund_staff_distribution.loc[idx_c01_level_2, 'Proportion_Fund'] = 0.5208
+idx_c01_level_1b = fund_staff_distribution[
+    (fund_staff_distribution['Cadre_Code'] == 'C01') &
+    (fund_staff_distribution['Facility_Level'] == 'Facility_Level_1b')].index
+fund_staff_distribution.loc[idx_c01_level_1b, 'Proportion_Fund'] = 0.4792
+
+idx_c01_level_2 = fund_staff_distribution[
+    (fund_staff_distribution['Cadre_Code'] == 'C01') &
+    (fund_staff_distribution['Facility_Level'] == 'Facility_Level_2')].index
+fund_staff_distribution.loc[idx_c01_level_2, 'Proportion_Fund'] = 0.5208
 # *********************************************************************************************************************
 
 # Split
