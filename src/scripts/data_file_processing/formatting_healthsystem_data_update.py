@@ -1190,9 +1190,12 @@ assert data_import.loc['HP', :].sum() == 10.0
 # We now do not add service time for DHO as we think DHO does not deliver services directly
 # Also, DHO itself in both DHIS2 and CHAI updated data does not have service record
 
-# Add service times for Zomba Mental Hospital, by copying data of CenHos
+# Add service times for Zomba Mental Hospital, by copying mental health appointment data of CenHos
+# (Assuming ZMH only provide mental health services)
 new_rows_for_ZMH = pd.DataFrame(index=['ZMH', 'ZMH_Per'], columns=data_import.columns.copy(),
-                                data=data_import.loc[['CenHos', 'CenHos_Per'], :].copy().values)
+                                data=0)
+new_rows_for_ZMH.loc[:, ['C01_MentOPD', 'C01_MentClinic']] = data_import.loc[
+    ['CenHos', 'CenHos_Per'], ['C01_MentOPD', 'C01_MentClinic']].copy().values
 
 data_import = pd.concat([data_import, new_rows_for_ZMH])
 
