@@ -49,7 +49,7 @@ def test_using_recognised_item_codes():
 
     # Make requests for consumables (which would normally come from an instance of `HSI_Event`).
     with pytest.warns(None) as recorded_warnings:
-        rtn = cons._request_consumables(
+        rtn = cons.__request_consumables(
             item_codes={0: 1, 1: 1},
             facility_id=0
         )
@@ -77,7 +77,7 @@ def test_unrecognised_item_code_leads_to_warning():
 
     # Make requests for consumables (which would normally come from an instance of `HSI_Event`).
     with pytest.warns(None) as recorded_warnings:
-        rtn = cons._request_consumables(
+        rtn = cons.__request_consumables(
             item_codes={99: 1},
             facility_id=0
         )
@@ -111,7 +111,7 @@ def test_consumables_availability_options():
         cons = Consumables(data=data, rng=rng, availability=_cons_availability_option)
         cons.processing_at_start_of_new_day(date=date)
 
-        assert _expected_result == cons._request_consumables(
+        assert _expected_result == cons.__request_consumables(
             item_codes={_item_code: 1 for _item_code in all_items_request}, to_log=False, facility_id=0
         )
 
@@ -140,7 +140,7 @@ def test_consumables_available_at_right_frequency():
 
     for _ in range(n_trials):
         cons.processing_at_start_of_new_day(date=date)
-        rtn = cons._request_consumables(
+        rtn = cons.__request_consumables(
             item_codes=requested_items,
             facility_id=0,
         )
@@ -387,7 +387,7 @@ def test_every_declared_consumable_for_every_possible_hsi_using_actual_data():
     with pytest.warns(None) as recorded_warnings:
         for month in range(1, 13):
             sim.date = Date(2010, month, 1)
-            hs.consumables._refresh_availability_of_consumables(date=sim.date)
+            hs.consumables.__refresh_availability_of_consumables(date=sim.date)
 
             for _district in sim.modules['Demography'].PROPERTIES['district_of_residence'].categories:
                 # Change the district of person 0 (for whom the HSI is created.)
@@ -416,7 +416,7 @@ def test_get_item_code_from_item_name():
     ]
 
     for _item_name in example_item_names:
-        _item_code = Consumables()._get_item_code_from_item_name(lookup_df=lookup_df, item=_item_name)
+        _item_code = Consumables().__get_item_code_from_item_name(lookup_df=lookup_df, item=_item_name)
         assert isinstance(_item_code, int)
         assert lookup_df.loc[lookup_df.Item_Code == _item_code].Items.values[0] == _item_name
 
@@ -434,7 +434,7 @@ def test_get_item_codes_from_package_name():
     ]
 
     for _pkg_name in example_package_names:
-        _item_codes = Consumables()._get_item_codes_from_package_name(lookup_df=lookup_df, package=_pkg_name)
+        _item_codes = Consumables().__get_item_codes_from_package_name(lookup_df=lookup_df, package=_pkg_name)
         assert isinstance(_item_codes, dict)
 
         res_from_lookup = \
