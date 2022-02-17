@@ -447,9 +447,9 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
 
-    # Make DxTest for danger signs perfect:
-    sim.modules['Diarrhoea'].parameters['sensitivity_danger_signs_visual_inspection'] = 0.0
-    sim.modules['Diarrhoea'].parameters['specificity_danger_signs_visual_inspection'] = 0.0
+    # Make DxTest for danger signs not functional:
+    sim.modules['Diarrhoea'].parameters['sensitivity_severe_dehydration_visual_inspection'] = 0.0
+    sim.modules['Diarrhoea'].parameters['specificity_severe_dehydration_visual_inspection'] = 0.0
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date)
@@ -486,7 +486,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
 
 
 def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
-    """Check that when someone presents with diarrhoea and non-severe dehydration, the correct HSI is created"""
+    """Check that when someone presents with diarrhoea and non-severe dehydration, the out-patient HSI is created"""
 
     start_date = Date(2010, 1, 1)
     popsize = 200  # smallest population size that works
@@ -512,8 +512,8 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
                  )
 
     # Make DxTest for danger signs perfect:
-    sim.modules['Diarrhoea'].parameters['sensitivity_danger_signs_visual_inspection'] = 1.0
-    sim.modules['Diarrhoea'].parameters['specificity_danger_signs_visual_inspection'] = 1.0
+    sim.modules['Diarrhoea'].parameters['sensitivity_severe_dehydration_visual_inspection'] = 1.0
+    sim.modules['Diarrhoea'].parameters['specificity_severe_dehydration_visual_inspection'] = 1.0
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date)
