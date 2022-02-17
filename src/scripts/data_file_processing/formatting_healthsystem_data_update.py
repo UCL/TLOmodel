@@ -708,6 +708,19 @@ fund_staffing_table = wb_extract.copy()
 # fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'C01'] = 0
 # *********************************************************************************************************************
 
+# *** Only for funded_plus ********************************************************************************************
+# In the funded staff table, it does not make sense that Likoma has no DCSA staff,
+# whereas all other district has at least 250 DCSA staff
+# As CHAI indicates Likoma's data is mostly bounded into Nhkata Bay,
+# we draw some DCSA from Nhkata Bay to Likoma using population as the weight
+idx_likoma = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Likoma'].index
+idx_nkhatabay = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Nkhata Bay'].index
+fund_staffing_table.loc[idx_likoma, 'E01'] = fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] * (
+    pop_by_district.loc['Likoma', 'Count'] / pop_by_district.loc['Nkhata Bay', 'Count'])
+fund_staffing_table.loc[idx_nkhatabay, 'E01'] = (
+    fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] - fund_staffing_table.loc[idx_likoma, 'E01'].values[0])
+# *********************************************************************************************************************
+
 # Sort out which are district allocations and which are central hospitals and above
 
 # We assign HQ to HQ; KCH as RefHos in Central region; MCH as RefHos in Northern region;
