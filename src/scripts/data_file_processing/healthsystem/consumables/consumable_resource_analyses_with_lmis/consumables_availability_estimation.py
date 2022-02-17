@@ -20,6 +20,7 @@ for each month by facility.
 import calendar
 import datetime
 # Import Statements and initial declarations
+from collections import defaultdict
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -575,9 +576,9 @@ sf_merge.loc[sf_merge.fac_type_tlo == '4', 'Facility_ID'] = fac_id_of_fac_level4
 sf_final = sf_merge.groupby(by=['Facility_ID', 'month', 'item_code'])['available_prop'].mean().reset_index()
 sf_final.Facility_ID = sf_final.Facility_ID.astype(int)
 
-# Construct dataset that conforms to some principles expected by the simulation: that there is an entry for every
-# facility_id and for every month for every item_code that the same set of item_codes are recognised at all the
-# facility_ids in the same level.
+# %%
+# Construct dataset that conforms to the principles expected by the simulation: i.e. that there is an entry for every
+# facility_id and for every month for every item_code.
 
 # Generate the dataframe that has the desired size and shape
 fac_ids = set(mfl.loc[mfl.Facility_Level != '5'].Facility_ID)
@@ -592,21 +593,77 @@ full_set = pd.Series(
 # Insert the data, where it is available.
 full_set = full_set.combine_first(sf_final.set_index(['Facility_ID', 'month', 'item_code'])['available_prop'])
 
-# Fill in NaN with rules
-# todo
-#  (i) Finding the set of item_codes for which availability is estimated at each level (in one or more facilities).
-#  (ii) Estimating the availability of items in facility in a month that is not known by: finding the average
-#        availability for that item in other months and facilities, for which data are available.
-#
+# Fill in the blanks with rules for interpolation.
 
-full_set = full_set.fillna(0.0)
+facilities_by_level = defaultdict(set)
+for ix, row in mfl.iterrows():
+    facilities_by_level[row['Facility_Level']].add(row['Facility_ID'])
+
+
+def get_other_facilities_of_same_level(_fac_id):
+    """Return a set of facility_id for other facilities that are of the same level as that provided."""
+    for v in facilities_by_level.values():
+        if _fac_id in v:
+            return v - {_fac_id}
+
+
+def interpolate_missing_with_mean(_ser):
+    """Return a series in which any values that are null are replaced with the mean of the non-missing."""
+    if pd.isnull(_ser).all():
+        raise ValueError
+    return _ser.fillna(_ser.mean())
+
+
+# Create new dataset that include the interpolations (The operation is not done "in place", because the logic is based
+# on what results are missing before the interpolations in other facilities).
+full_set_interpolated = full_set * np.nan
+
+for fac in fac_ids:
+    for item in item_codes:
+
+        # Get records of the availability of this item in this facility.
+        _monthly_records = full_set.loc[(fac, slice(None), item)].copy()
+
+        if pd.notnull(_monthly_records).any():
+            # If there is at least one record of this item at this facility, then interpolate the missing months from
+            # the months for there are data on this item in this facility. (If none are missing, this has no effect).
+            _monthly_records = interpolate_missing_with_mean(_monthly_records)
+
+        else:
+            # If there is no record of this item at this facility, check to see if it's available at other facilities
+            # of the same level
+            recorded_at_other_facilities_of_same_level = pd.notnull(
+                full_set.loc[(get_other_facilities_of_same_level(fac), slice(None), item)]
+            ).any()
+
+            if recorded_at_other_facilities_of_same_level:
+                # If it recorded at other facilities of same level, find the average availability of the item at other
+                # facilities of the same level.
+                _monthly_records = interpolate_missing_with_mean(
+                    full_set.loc[(get_other_facilities_of_same_level(fac), slice(None), item)].groupby(level=1).mean()
+                )
+
+            else:
+                # If it is not recorded at other facilities of same level, then assume it is never available at the
+                # facility.
+                _monthly_records = _monthly_records.fillna(0.0)
+
+        # Insert values (including corrections) into the resulting dataset.
+        full_set_interpolated.loc[(fac, slice(None), item)] = _monthly_records.values
+
+# Check that there are not missing values
+assert not pd.isnull(full_set_interpolated).any().any()
 
 # --- Check that the exported file has the properties required of it by the model code. --- #
-check_format_of_consumables_file(df=full_set.reset_index())
+check_format_of_consumables_file(df=full_set_interpolated .reset_index())
 
+# %%
 # Save
-full_set.reset_index().to_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv",
-                              index=False)
+full_set_interpolated.reset_index().to_csv(
+    path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv",
+    index=False
+)
+
 
 # 8. CALIBRATION TO HHFA DATA, 2018/19 ##
 #########################################################################################
