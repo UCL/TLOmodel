@@ -1509,17 +1509,69 @@ HosHC_patient_facing_time = pd.DataFrame(
 # but in Time_Curr, IPAdmissions/RMNCH/... appointments at Urban HCs all need time from M01.
 # We therefore assume the minutes for M01 at HCs are the average of those at DisHos and CenHos,
 # to solve inconsistency between PFT and Time_Curr
-# HosHC_patient_facing_time.loc[0, 'HC_Av_Mins_Per_Day'] = (
-#     HosHC_patient_facing_time.loc[0, 'DisHos_Av_Mins_Per_Day'] +
-#     HosHC_patient_facing_time.loc[0, 'ComHos_Av_Mins_Per_Day']
-#                                                          ) / 2
-
+HosHC_patient_facing_time.loc[0, 'HC_Av_Mins_Per_Day'] = (
+    HosHC_patient_facing_time.loc[0, 'DisHos_Av_Mins_Per_Day'] +
+    HosHC_patient_facing_time.loc[0, 'ComHos_Av_Mins_Per_Day']
+                                                         ) / 2
 # How to deal with cadres (DCSA, Dental, Mental, Radiography) that do not have minutes at all in PFT,
 # whereas they have time requirements in Time_Curr?
 # (Compared to old PFT sheet,
 # the new PFT has updated all info on available working days/non-admin daily minutes/portion of male/female/pregfemale)
 # A quick fix is to use the average daily minutes of those cadres from old PFT table;
 # The info required to calculate these minutes will be from the old PFT table.
+working_file_old = (path_to_dropbox /
+                    '05 - Resources' / 'Module-healthsystem' / 'chai ehp resource use data' / 'ORIGINAL' /
+                    'Optimization model import_Malawi_20180315 v10.xlsx')
+
+pft_old = pd.read_excel(working_file_old, sheet_name='PFT', header=None)
+
+officer_types_old = pft_old.iloc[2, np.arange(2, 23)]
+assert set(officer_types_old) == set(officer_types_table['Officer_Type_Code'])
+assert len(officer_types_old) == len(officer_types_table['Officer_Type_Code'])
+
+# Total working days per year
+days_men_old = pft_old.iloc[15, np.arange(2, 23)]
+days_women_old = pft_old.iloc[16, np.arange(2, 23)]
+days_pregwomen_old = pft_old.iloc[17, np.arange(2, 23)]
+
+# Percents of men, nonpregnant women, and pregnant women
+fr_men_old = pft_old.iloc[53, np.arange(2, 23)]
+fr_pregwomen_old = pft_old.iloc[55, np.arange(2, 23)] * pft_old.iloc[57, np.arange(2, 23)]
+fr_nonpregwomen_old = pft_old.iloc[55, np.arange(2, 23)] * (1 - pft_old.iloc[57, np.arange(2, 23)])
+
+# Total average working days
+working_days_old = (fr_men_old * days_men_old) + (fr_nonpregwomen_old * days_women_old) + (
+    fr_pregwomen_old * days_pregwomen_old)
+
+# patient facing (i.e. non-admin working) minutes and hours daily at
+# hospitals and health centres
+mins_daily_hos_old = pft_old.iloc[36, np.arange(2, 23)]
+hrs_daily_hos_old = mins_daily_hos_old / 60
+
+mins_daily_hc_old = pft_old.iloc[26, np.arange(2, 23)] - pft_old.iloc[34, np.arange(2, 23)]
+hrs_daily_hc_old = mins_daily_hc_old / 60
+
+# Total mins per year, Average number of mins per day at
+# hospitals and health centres
+mins_yearly_hos_old = mins_daily_hos_old * working_days_old
+av_mins_daily_hos_old = mins_yearly_hos_old / 365.25
+
+mins_yearly_hc_old = mins_daily_hc_old * working_days_old
+av_mins_daily_hc_old = mins_yearly_hc_old / 365.25
+
+# PFT - DisHos, ComHos, HC individually
+# DisHos and ComHos both use hos data
+HosHC_patient_facing_time_old = pd.DataFrame(
+    {'Officer_Type_Code': officer_types_old,
+     'DisHos_Av_Mins_Per_Day': av_mins_daily_hos_old,
+     'ComHos_Av_Mins_Per_Day': av_mins_daily_hos_old,
+     'HC_Av_Mins_Per_Day': av_mins_daily_hc_old}
+).reset_index(drop=True)
+
+# now add the old data of those missing cadres to the updated PFT table
+assert (HosHC_patient_facing_time_old['Officer_Type_Code'] == HosHC_patient_facing_time['Officer_Type_Code']).all()
+assert (HosHC_patient_facing_time_old.columns == HosHC_patient_facing_time.columns).all()
+HosHC_patient_facing_time.iloc[11:, :] = HosHC_patient_facing_time_old.iloc[11:, :].copy()
 
 # PFT table ready!
 
