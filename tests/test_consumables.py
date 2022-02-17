@@ -20,6 +20,11 @@ mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "Resource
 fac_ids = set(mfl.loc[mfl.Facility_Level != '5'].Facility_ID)
 
 
+def find_level_of_facility_id(facility_id: int) -> str:
+    """Returns the level of a Facility_ID"""
+    return mfl.set_index('Facility_ID').loc[facility_id].Facility_Level
+
+
 def any_warnings_about_item_code(recorded_warnings):
     """Helper function to determine if any of the recorded warnings is the one created when an Item_Code is not
     recognised."""
@@ -201,15 +206,17 @@ def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
 
 
 def get_dummy_hsi_event_instance(module, facility_id=None):
-    """Make an HSI Event that runs for person_id=0 in facility_id=None and requests consumables,
+    """Make an HSI Event that runs for person_id=0 in a particular facility_id and requests consumables,
     and for which its parent is the identified module."""
 
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
-            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.ACCEPTED_FACILITY_LEVEL = None
+            self.ACCEPTED_FACILITY_LEVEL = find_level_of_facility_id(facility_id)
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1}) \
+                if self.ACCEPTED_FACILITY_LEVEL == '0' else self.make_appt_footprint({'Over5OPD': 1})
+
             self.ALERT_OTHER_DISEASES = []
             self._facility_id = facility_id
 
@@ -312,10 +319,14 @@ def test_outputs_to_log(tmpdir):
         run=False
     )
 
-    # Edit the `initialise_simulation` method of DummyModule so that, during the simulation, an HSI is which requests
+    # Edit the `initialise_simulation` method of DummyModule so that, during the simulation, an HSI is run that requests
     # consumables.
     def schedule_hsi_that_will_request_consumables(sim):
         """Drop-in replacement for `initialise_simulation` in the DummyModule module."""
+        # Make the district for person_id=0 such that the HSI will be served by facility_id=0
+        sim.population.props.at[0, 'district_of_residence'] = mfl.set_index('Facility_ID').loc[0].District
+
+        # Schedule the HSI event for person_id=0
         sim.modules['HealthSystem'].schedule_hsi_event(
             hsi_event=get_dummy_hsi_event_instance(module=sim.modules['DummyModule'], facility_id=0),
             topen=sim.start_date,
@@ -331,8 +342,8 @@ def test_outputs_to_log(tmpdir):
     # Check that log is created and the content is as expected.
     cons_log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['Consumables']
     assert len(cons_log)
-    assert cons_log.loc[cons_log.index[0], 'Item_Available'] == "{0: 1}"  # Item 0 (1 requested) is available
-    assert cons_log.loc[cons_log.index[0], 'Item_NotAvailable'] == "{1: 1}"  # Item 1 (1 requested) is not available
+    assert "{0: 1}" == cons_log.loc[cons_log.index[0], 'Item_Available']  # Item 0 (1 requested) is available
+    assert "{1: 1}" == cons_log.loc[cons_log.index[0], 'Item_NotAvailable']  # Item 1 (1 requested) is not available
 
 
 # ----------------------------------------------------------------------------

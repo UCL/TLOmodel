@@ -94,7 +94,6 @@ class Consumables:
         :param to_log: whether the request is logged.
         :return:
         """
-        print(f"{facility_id=}")
         # Issue warning if any item_code is not recognised.
         if not self.item_codes.issuperset(item_codes.keys()):
             for _i in item_codes.keys():

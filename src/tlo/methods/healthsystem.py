@@ -627,7 +627,7 @@ class HealthSystem(Module):
                 ]
                 assert facility_appt_types.issuperset(appt_type_to_check_list), (
                     f"An appointment type has been requested at a facility level for "
-                    f"which it is not possible: {hsi_event.TREATMENT_ID}"
+                    f"which it is not possible: TREATMENT_ID={hsi_event.TREATMENT_ID}"
                 )
 
         # Check that event (if individual level) is able to run with this configuration
