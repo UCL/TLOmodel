@@ -44,8 +44,9 @@ class HSIEventDetails(NamedTuple):
     event_name: str
     module_name: str
     treatment_id: str
-    facility_level: Optional[int]
-    appt_footprint: Tuple
+    facility_level: Optional[str]
+    appt_footprint: Tuple[str]
+    beddays_footprint: Tuple[Tuple[str, int]]
 
 
 class HSIEventQueueItem(NamedTuple):
@@ -1084,7 +1085,8 @@ class HealthSystem(Module):
                         tuple(actual_appt_footprint)
                         if actual_appt_footprint is not None
                         else tuple(getattr(hsi_event, 'EXPECTED_APPT_FOOTPRINT', {}))
-                    )
+                    ),
+                    beddays_footprint=tuple(sorted(hsi_event.BEDDAYS_FOOTPRINT.items()))
                 )
             )
 
@@ -1502,10 +1504,10 @@ class HSI_Event:
         if isinstance(item_codes, (int, np.integer)):
             _item_codes = {int(item_codes): 1}
 
-        elif isinstance(item_codes, list):
+        elif isinstance(item_codes, (list, set)):
             if not all([isinstance(i, (int, np.integer)) for i in item_codes]):
                 raise ValueError("item_codes must be integers")
-            _item_codes = {int(i): 1 for i in item_codes}
+            _item_codes = {int(i): 1 for i in sorted(item_codes)}
 
         elif isinstance(item_codes, dict):
             if not all(

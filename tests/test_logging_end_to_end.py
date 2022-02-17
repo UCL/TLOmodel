@@ -40,7 +40,12 @@ def log_input():
 
 
 @fixture(scope="class")
-def log_path(tmpdir_factory, log_input):
+def class_scoped_seed(request):
+    return request.config.getoption("--seed")
+
+
+@fixture(scope="class")
+def log_path(tmpdir_factory, log_input, class_scoped_seed):
     """
     Runs simulation of mock disease, returns the logfile path
     :param log_input: dataframe to log from
@@ -50,7 +55,7 @@ def log_path(tmpdir_factory, log_input):
 
     # imagine we have a simulation
     sim = Simulation(start_date=Date(2010, 1, 1),
-                     seed=0,
+                     seed=class_scoped_seed,
                      log_config={'filename': 'logfile', 'directory': tmpdir_factory.mktemp("logs")})
 
     # a logger connected to that simulation

@@ -15,13 +15,13 @@ from tlo.methods.stunting import HSI_Stunting_ComplementaryFeeding
 from tlo.util import random_date
 
 
-def get_sim():
+def get_sim(seed):
     """Return simulation objection with Stunting and other necessary modules registered."""
 
     start_date = Date(2010, 1, 1)
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
@@ -50,10 +50,10 @@ def check_params_read(sim):
                                                    f'resourcefile.'
 
 
-def test_models():
+def test_models(seed):
     """Check that all the models defined work"""
     popsize = 1000
-    sim = get_sim()
+    sim = get_sim(seed)
     sim.make_initial_population(n=popsize)
 
     models = stunting.Models(sim.modules['Stunting'])
@@ -65,11 +65,11 @@ def test_models():
 
 
 @pytest.mark.slow
-def test_basic_run():
+def test_basic_run(seed):
     """Short run of the module using default parameters with check on dtypes"""
     dur = pd.DateOffset(years=5)
     popsize = 1000
-    sim = get_sim()
+    sim = get_sim(seed)
     sim.make_initial_population(n=popsize)
 
     check_dtypes(sim)
@@ -80,9 +80,9 @@ def test_basic_run():
 
 
 @pytest.mark.slow
-def test_initial_prevalence_of_stunting():
+def test_initial_prevalence_of_stunting(seed):
     """Check that initial prevalence of stunting is as expected"""
-    sim = get_sim()
+    sim = get_sim(seed)
     sim.make_initial_population(n=50_000)
 
     # Make all the population under five years old and re-run `initialise_population` for `Stunting`
@@ -124,15 +124,15 @@ def test_initial_prevalence_of_stunting():
         mean, stdev = sim.modules['Stunting'].parameters[f'prev_HAZ_distribution_age_{agegp}']
         haz_distribution = norm(loc=mean, scale=stdev)
 
-        assert haz_distribution.cdf(-2.0) == approx(prevalence_of_stunting_by_age[agegp], abs=0.011)
+        assert haz_distribution.cdf(-2.0) == approx(prevalence_of_stunting_by_age[agegp], abs=0.02)
         assert (haz_distribution.cdf(-3.0) / haz_distribution.cdf(-2.0)) == approx(
             prevalence_of_severe_stunting_given_any_stunting_by_age[agegp], abs=0.02)
 
 
-def test_polling_event_onset():
+def test_polling_event_onset(seed):
     """Test that polling event causes onset of stunting correctly"""
     popsize = 1000
-    sim = get_sim()
+    sim = get_sim(seed)
     sim.make_initial_population(n=popsize)
 
     # Make the risk of becoming stunted very high
@@ -158,10 +158,10 @@ def test_polling_event_onset():
     assert (df.loc[df.is_alive & (df.age_years >= 5), 'un_HAZ_category'] == 'HAZ>=-2').all()
 
 
-def test_polling_event_recovery():
+def test_polling_event_recovery(seed):
     """Test that the polling event causes recovery correctly"""
     popsize = 1000
-    sim = get_sim()
+    sim = get_sim(seed)
     sim.make_initial_population(n=popsize)
 
     # Make the risk of recovering very high
@@ -189,16 +189,16 @@ def test_polling_event_recovery():
     assert (df.loc[df.is_alive & (df.age_years >= 5), 'un_HAZ_category'] == 'HAZ>=-2').all()
 
 
-def test_polling_event_progression():
+def test_polling_event_progression(seed):
     """Test that the polling event causes progression correctly"""
     popsize = 1000
-    sim = get_sim()
+    sim = get_sim(seed)
     sim.make_initial_population(n=popsize)
 
     # Make the risk of progression be very high and no recovery
     params = sim.modules['Stunting'].parameters
     params['r_progression_severe_stunting_by_agegp'] = [1.0] * len(params['r_progression_severe_stunting_by_agegp'])
-    params['mean_years_to_1stdev_natural_improvement_in_stunting'] = 1e3
+    params['mean_years_to_1stdev_natural_improvement_in_stunting'] = float('inf')
 
     # Initialise Simulation
     sim.simulate(end_date=sim.start_date)
@@ -221,11 +221,11 @@ def test_polling_event_progression():
     assert (df.loc[df.is_alive & (df.age_years >= 5), 'un_HAZ_category'] == 'HAZ>=-2').all()
 
 
-def test_routine_assessment_for_chronic_undernutrition_if_stunted():
+def test_routine_assessment_for_chronic_undernutrition_if_stunted(seed):
     """Check that a call to `do_routine_assessment_for_chronic_undernutrition` can lead to immediate recovery for a
     stunted child (via an HSI)."""
     popsize = 100
-    sim = get_sim()
+    sim = get_sim(seed)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=sim.start_date)
     sim.modules['HealthSystem'].reset_queue()
@@ -281,11 +281,11 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted():
     ]
 
 
-def test_routine_assessment_for_chronic_undernutrition_if_not_stunted():
+def test_routine_assessment_for_chronic_undernutrition_if_not_stunted(seed):
     """Check that a call to `do_routine_assessment_for_chronic_undernutrition` does not lead to an HSI if there is no
     stunting."""
     popsize = 100
-    sim = get_sim()
+    sim = get_sim(seed)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=sim.start_date)
     sim.modules['HealthSystem'].reset_queue()
@@ -306,10 +306,10 @@ def test_routine_assessment_for_chronic_undernutrition_if_not_stunted():
     assert 0 == len(hsi_event_scheduled)
 
 
-def test_math_of_incidence_calcs():
+def test_math_of_incidence_calcs(seed):
     """Check that incidence of new stunting happens at the rate that is intended"""
     popsize = 50_000
-    sim = get_sim()
+    sim = get_sim(seed)
     sim.make_initial_population(n=popsize)
 
     # Define the annual probability of becoming stunted

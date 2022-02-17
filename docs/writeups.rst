@@ -87,7 +87,7 @@ Non-Communicable Conditions
     * **Diabetes Type 2, Hypertension, Stroke, Ischemic Heart Disease, Myocardial Infarction** :download:`.docx <./write-ups/CardioMetabolicDisorders.docx>`
 
 * Injuries:
-    * **Road Traffic Injuries**: Injuries arising from road traffic incidents and their treatment. (Forthcoming)
+    * **Road Traffic Injuries**: Injuries arising from road traffic incidents and their treatment. :download:`.docx <./write-ups/RoadTrafficInjuries.docx>`
 
 * Other Non-Communicable Conditions
     * **Chronic Lower Back Pain**: Summary representation of chronic lower back pain as part of a set of common non-communicable conditions. :download:`.docx <./write-ups/CardioMetabolicDisorders.docx>`
