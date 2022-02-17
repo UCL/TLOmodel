@@ -151,7 +151,7 @@ def test_consumables_available_at_right_frequency():
     assert n_trials == counter[3]
 
     for _i, _p in p_known_items.items():
-        assert np.isclose(_p, counter[_i] / n_trials, rtol=0.02)
+        assert np.isclose(_p, counter[_i] / n_trials, rtol=0.05)
 
     # Check that the availability of the unknown item is the average of the known items
     assert np.isclose(average_availability_of_known_items, counter[4] / n_trials, rtol=0.02)

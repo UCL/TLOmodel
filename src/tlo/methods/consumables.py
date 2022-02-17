@@ -12,15 +12,20 @@ logger = logging.getLogger('tlo.methods.healthsystem')
 
 
 class Consumables:
-    """This is the Consumables Class. It maintains a current record of the availability and usage of consumables in the
+    """This is the Consumables Class. It maintains a current record of the availability of consumables in the
      HealthSystem. It is expected that this is instantiated by the `HealthSystem` module.
+
+    :param: `data`: Specifies the probability with which each consumable (identified by an `item_code`) is available
+     in a particular month at a particular Facility_ID.
+
+    :param: `rng`: The Random Number Generator object to use for random numbers.
 
     :param: `availability`: Determines the availability of consumables. If 'default' then use the availability
      specified in the ResourceFile; if 'none', then let no consumable be ever be available; if 'all', then all
      consumables are always available. When using 'all' or 'none', requests for consumables are not logged.
 
-    If an item_code is requested that is not recognised, a response is returned that is based on the average
-    availability of other consumables in that facility at that time, and a `UserWarning` is issued.
+    If an item_code is requested that is not recognised (not included in `data`), a `UserWarning` is issued, and the
+     result returned is on the basis of the average availability of other consumables in that facility in that month.
     """
 
     def __init__(self, data: pd.DataFrame = None, rng: np.random = None, availability: str = 'default') -> None:
@@ -32,6 +37,7 @@ class Consumables:
         self.item_codes = set()  # All item_codes that are recognised.
         self.prob_item_codes_available = None  # Data on the probability of each item_code being available
         self.cons_available_today = None  # Index for the item_codes available
+        self.is_available = None  # Dict of sets giving the set of item_codes available, by facility_id
         self._is_unknown_item_available = None  # Whether an unknown item is available, by facility_id
 
         self._process_consumables_df(data)
@@ -83,16 +89,17 @@ class Consumables:
 
     def _request_consumables(self, facility_id: int, item_codes: dict, to_log: bool = True,
                              treatment_id: Optional[str] = None) -> dict:
-        """
-        This is a private function called by the 'get_consumables` in the `HSI_Event` base class. It queries whether
-        item_codes are currently available for a particular `hsi_event` and logs the request.
+        """This is a private function called by 'get_consumables` in the `HSI_Event` base class. It queries whether
+        item_codes are currently available at a particular Facility_ID and logs the request.
 
         :param facility_id: The facility_id from which the request for consumables originates
         :param item_codes: dict of the form {<item_code>: <quantity>} for the items requested
-        :param optional_item_codes: di
         :param to_log: whether the request is logged.
-        :return:
+        :param treatment_id: the TREATMENT_ID of the HSI (which is entered to the log, if provided).
+        :return: dict of the form {<item_code>: <bool>} indicating the availability of each item requested.
         """
+
+
         # Issue warning if any item_code is not recognised.
         if not self.item_codes.issuperset(item_codes.keys()):
             for _i in item_codes.keys():
@@ -150,13 +157,23 @@ class Consumables:
         return int(pd.unique(lookup_df.loc[lookup_df["Items"] == item, "Item_Code"])[0])
 
 
-def create_dummy_data_for_cons_availability(intrinsic_availability: Dict[int, bool] = {0: False, 1: True},
-                                            months: List[int] = [1],
-                                            facility_ids: List[int] = [0]
+def create_dummy_data_for_cons_availability(intrinsic_availability: Optional[Dict[int, bool]] = None,
+                                            months: Optional[List[int]] = None,
+                                            facility_ids: Optional[List[int]] = None,
                                             ) -> pd.DataFrame:
     """Returns a pd.DataFrame that is a dummy for the imported `ResourceFile_Consumables.csv`.
     By default, it describes the availability of two items, one of which is always available, and one of which is
     never available."""
+
+    if intrinsic_availability is None:
+        intrinsic_availability = {0: False, 1: True}
+
+    if months is None:
+        months = [1]
+
+    if facility_ids is None:
+        facility_ids = [0]
+
     list_of_items = []
     for _item, _avail in intrinsic_availability.items():
         for _month in months:
