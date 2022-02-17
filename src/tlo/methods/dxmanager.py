@@ -117,7 +117,7 @@ class DxManager:
 
                 if test_result is not None:
                     # The DxTest was successful. Log the use of that DxTest
-                    # Logging using the the name of the DxTest and the number of the test that was tried within it
+                    # Logging using the name of the DxTest and the number of the test that was tried within it
                     the_dxtests_tried[f"{dx_test}_{i}"] = True
                     break
                 else:

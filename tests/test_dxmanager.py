@@ -77,7 +77,7 @@ def bundle(seed):
     hsi_event = HSI_Dummy(module=sim.modules['Mockitis'], person_id=0)
     hsi_event._facility_id = 0
 
-    # Create consumable codes that are always and never available
+    # Update Consumables module with  consumable codes that are always and never available
     item_code_for_consumable_that_is_not_available = 0
     item_code_for_consumable_that_is_available = 1
 
