@@ -18,7 +18,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
-from tlo.methods.consumables import create_dummy_data_for_cons_availability, Consumables
+from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_availability
 from tlo.methods.dxmanager import DxManager, DxTest
 from tlo.methods.healthsystem import HSI_Event
 
