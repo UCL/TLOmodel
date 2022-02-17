@@ -32,12 +32,12 @@ class Consumables:
 
         assert availability in ['none', 'default', 'all'], "Argument `availability` is not recognised."
         self.cons_availability = availability  # Governs availability  - none/default/all
-        self.rng = rng
-
         self.item_codes = set()  # All item_codes that are recognised.
-        self.prob_item_codes_available = None  # Data on the probability of each item_code being available
-        self.cons_available_today = None  # Index for the item_codes available
-        self.is_available = None  # Dict of sets giving the set of item_codes available, by facility_id
+
+        self._rng = rng
+        self._prob_item_codes_available = None  # Data on the probability of each item_code being available
+        self._cons_available_today = None  # Index for the item_codes available
+        self._is_available = None  # Dict of sets giving the set of item_codes available, by facility_id
         self._is_unknown_item_available = None  # Whether an unknown item is available, by facility_id
 
         self._process_consumables_df(data)
@@ -51,31 +51,31 @@ class Consumables:
     def _process_consumables_df(self, df: pd.DataFrame) -> None:
         """Helper function for processing the consumables data, passed in here as pd.DataFrame that has been read-in by
         the HealthSystem.
-        * Saves the data as `self.prob_item_codes_available`
+        * Saves the data as `self._prob_item_codes_available`
         * Saves the set of all recognised item_codes to `self.item_codes`
         """
         self.item_codes = set(df.item_code)  # Record all consumables identified
-        self.prob_item_codes_available = df.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
+        self._prob_item_codes_available = df.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
 
     def _refresh_availability_of_consumables(self, date: datetime.datetime):
         """Update the availability of all items based on the data for the probability of availability, givem the current
         date."""
         # Work out which items are available in which facilities for this date.
         month = date.month
-        availability_this_month = self.prob_item_codes_available.loc[(month, slice(None), slice(None))]
+        availability_this_month = self._prob_item_codes_available.loc[(month, slice(None), slice(None))]
         items_available_this_month = availability_this_month.index[
-            availability_this_month.values > self.rng.rand(len(availability_this_month))
+            availability_this_month.values > self._rng.rand(len(availability_this_month))
             ]
 
         # Convert to dict-of-sets to enable checking of item_code availability.
-        self.is_available = defaultdict(set)
+        self._is_available = defaultdict(set)
         for _fac_id, _item in items_available_this_month.to_list():
-            self.is_available[_fac_id].add(_item)
+            self._is_available[_fac_id].add(_item)
 
         # Update the default return value (based on the average probability of availability of items at the facility)
         average_availability_of_items_by_facility_id = availability_this_month.groupby(level=0).mean()
         self._is_unknown_item_available = (average_availability_of_items_by_facility_id >
-                                           self.rng.random_sample(len(average_availability_of_items_by_facility_id))
+                                           self._rng.random_sample(len(average_availability_of_items_by_facility_id))
                                            ).to_dict()
 
     @staticmethod
@@ -98,7 +98,6 @@ class Consumables:
         :param treatment_id: the TREATMENT_ID of the HSI (which is entered to the log, if provided).
         :return: dict of the form {<item_code>: <bool>} indicating the availability of each item requested.
         """
-
 
         # Issue warning if any item_code is not recognised.
         if not self.item_codes.issuperset(item_codes.keys()):
@@ -133,11 +132,11 @@ class Consumables:
 
     def _lookup_availability_of_consumables(self, facility_id: int, item_codes: dict) -> dict:
         """Lookup whether a particular item_code is in the set of available items for that facility_id (in
-        `self.is_available`). If any code is not recognised, use the `_is_unknown_item_available`."""
+        `self._is_available`). If any code is not recognised, use the `_is_unknown_item_available`."""
         avail = dict()
         for _i in item_codes.keys():
             if _i in self.item_codes:
-                avail.update({_i: _i in self.is_available[facility_id]})
+                avail.update({_i: _i in self._is_available[facility_id]})
             else:
                 avail.update({_i: self._is_unknown_item_available[facility_id]})
         return avail

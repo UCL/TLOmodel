@@ -91,7 +91,7 @@ def bundle(seed):
         rng=sim.modules['HealthSystem'].rng,
         availability='default'
     )
-    sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(sim.date)
+    sim.modules['HealthSystem'].consumables.processing_at_start_of_new_day(sim.date)
 
     assert hsi_event.get_consumables(item_codes=item_code_for_consumable_that_is_available)
     assert not hsi_event.get_consumables(item_codes=item_code_for_consumable_that_is_not_available)
