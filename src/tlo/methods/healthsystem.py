@@ -1079,12 +1079,12 @@ class HealthSystem(Module):
     def get_item_codes_from_package_name(self, package: str) -> dict:
         """Helper function to provide the item codes and quantities in a dict of the form {<item_code>:<quantity>} for
          a given package name."""
-        return self.consumables.__get_item_codes_from_package_name(
+        return self.consumables._get_item_codes_from_package_name(
             self.parameters['item_and_package_code_lookups'], package)
 
     def get_item_code_from_item_name(self, item: str) -> int:
         """Helper function to provide the item_code (an int) when provided with the name of the item"""
-        return self.consumables.__get_item_code_from_item_name(
+        return self.consumables._get_item_code_from_item_name(
             self.parameters['item_and_package_code_lookups'], item)
 
 
@@ -1459,10 +1459,10 @@ class HSI_Event:
         _to_log = to_log if not hs_module.disable else False
 
         # Checking the availability and logging:
-        rtn = hs_module.consumables.__request_consumables(item_codes={**_item_codes, **_optional_item_codes},
-                                                          to_log=_to_log,
-                                                          facility_id=self._facility_id,
-                                                          treatment_id=self.TREATMENT_ID)
+        rtn = hs_module.consumables._request_consumables(item_codes={**_item_codes, **_optional_item_codes},
+                                                         to_log=_to_log,
+                                                         facility_id=self._facility_id,
+                                                         treatment_id=self.TREATMENT_ID)
 
         # Return result in expected format:
         if not return_individual_results:
