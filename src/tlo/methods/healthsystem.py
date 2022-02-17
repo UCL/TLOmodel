@@ -21,7 +21,11 @@ from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.bed_days import BedDays
-from tlo.methods.consumables import Consumables
+from tlo.methods.consumables import (
+    Consumables,
+    get_item_code_from_item_name,
+    get_item_codes_from_package_name,
+)
 from tlo.methods.dxmanager import DxManager
 
 logger = logging.getLogger(__name__)
@@ -1079,13 +1083,11 @@ class HealthSystem(Module):
     def get_item_codes_from_package_name(self, package: str) -> dict:
         """Helper function to provide the item codes and quantities in a dict of the form {<item_code>:<quantity>} for
          a given package name."""
-        return self.consumables._get_item_codes_from_package_name(
-            self.parameters['item_and_package_code_lookups'], package)
+        return get_item_codes_from_package_name(self.parameters['item_and_package_code_lookups'], package)
 
     def get_item_code_from_item_name(self, item: str) -> int:
         """Helper function to provide the item_code (an int) when provided with the name of the item"""
-        return self.consumables._get_item_code_from_item_name(
-            self.parameters['item_and_package_code_lookups'], item)
+        return get_item_code_from_item_name(self.parameters['item_and_package_code_lookups'], item)
 
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):

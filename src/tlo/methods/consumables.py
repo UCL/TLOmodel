@@ -141,19 +141,19 @@ class Consumables:
                 avail.update({_i: self._is_unknown_item_available[facility_id]})
         return avail
 
-    @staticmethod
-    def _get_item_codes_from_package_name(lookup_df: pd.DataFrame, package: str) -> dict:
-        """Helper function to provide the item codes and quantities in a dict of the form {<item_code>:<quantity>} for
-         a given package name."""
-        ser = lookup_df.loc[
-            lookup_df['Intervention_Pkg'] == package, ['Item_Code', 'Expected_Units_Per_Case']].set_index(
-            'Item_Code')['Expected_Units_Per_Case'].apply(np.ceil).astype(int)
-        return ser.groupby(ser.index).sum().to_dict()  # de-duplicate index before converting to dict
 
-    @staticmethod
-    def _get_item_code_from_item_name(lookup_df: pd.DataFrame, item: str) -> int:
-        """Helper function to provide the item_code (an int) when provided with the name of the item"""
-        return int(pd.unique(lookup_df.loc[lookup_df["Items"] == item, "Item_Code"])[0])
+def get_item_codes_from_package_name(lookup_df: pd.DataFrame, package: str) -> dict:
+    """Helper function to provide the item codes and quantities in a dict of the form {<item_code>:<quantity>} for
+     a given package name."""
+    ser = lookup_df.loc[
+        lookup_df['Intervention_Pkg'] == package, ['Item_Code', 'Expected_Units_Per_Case']].set_index(
+        'Item_Code')['Expected_Units_Per_Case'].apply(np.ceil).astype(int)
+    return ser.groupby(ser.index).sum().to_dict()  # de-duplicate index before converting to dict
+
+
+def get_item_code_from_item_name(lookup_df: pd.DataFrame, item: str) -> int:
+    """Helper function to provide the item_code (an int) when provided with the name of the item"""
+    return int(pd.unique(lookup_df.loc[lookup_df["Items"] == item, "Item_Code"])[0])
 
 
 def create_dummy_data_for_cons_availability(intrinsic_availability: Optional[Dict[int, bool]] = None,

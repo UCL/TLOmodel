@@ -11,7 +11,12 @@ from tlo import Date, Module, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import Metadata, demography, healthsystem
-from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_availability
+from tlo.methods.consumables import (
+    Consumables,
+    create_dummy_data_for_cons_availability,
+    get_item_code_from_item_name,
+    get_item_codes_from_package_name,
+)
 from tlo.methods.healthsystem import HSI_Event
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -416,7 +421,7 @@ def test_get_item_code_from_item_name():
     ]
 
     for _item_name in example_item_names:
-        _item_code = Consumables()._get_item_code_from_item_name(lookup_df=lookup_df, item=_item_name)
+        _item_code = get_item_code_from_item_name(lookup_df=lookup_df, item=_item_name)
         assert isinstance(_item_code, int)
         assert lookup_df.loc[lookup_df.Item_Code == _item_code].Items.values[0] == _item_name
 
@@ -434,7 +439,7 @@ def test_get_item_codes_from_package_name():
     ]
 
     for _pkg_name in example_package_names:
-        _item_codes = Consumables()._get_item_codes_from_package_name(lookup_df=lookup_df, package=_pkg_name)
+        _item_codes = get_item_codes_from_package_name(lookup_df=lookup_df, package=_pkg_name)
         assert isinstance(_item_codes, dict)
 
         res_from_lookup = \
