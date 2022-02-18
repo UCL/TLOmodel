@@ -631,7 +631,7 @@ def test_the_use_of_beds_from_multiple_facilities(seed):
         hs.bed_days.impose_beddays_footprint(person_id=2, footprint=footprint)
 
 
-def test_bed_days_allocation_to_HSI():
+def test_bed_days_allocation_to_HSI(seed):
     """Checks the functionality of `issue_bed_days_according_to_availability` in providing the best possible footprint
      to the HSI, given the requested footprint and the current state of the trackers"""
 
@@ -639,7 +639,7 @@ def test_bed_days_allocation_to_HSI():
 
     def prepare_sim():
         """Create and run simulation"""
-        sim = Simulation(start_date=start_date, seed=0)
+        sim = Simulation(start_date=start_date, seed=seed)
         sim.register(
             demography.Demography(resourcefilepath=resourcefilepath),
             healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
@@ -774,7 +774,7 @@ def test_bed_days_allocation_to_HSI():
     )
 
 
-def test_bed_days_allocation_information_is_provided_to_HSI():
+def test_bed_days_allocation_information_is_provided_to_HSI(seed):
     """Checks the HSI is "informed" of the bed days footprint provided to it"""
 
     district_of_residence = 'Zomba'   # Where person_id=0 is resident: Zomba district is in in the Southern region
@@ -815,7 +815,7 @@ def test_bed_days_allocation_information_is_provided_to_HSI():
         def apply(self, person_id, squeeze_factor):
             pass
 
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
