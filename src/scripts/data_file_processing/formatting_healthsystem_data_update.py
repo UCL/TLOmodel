@@ -694,12 +694,30 @@ fund_staffing_table = wb_extract.copy()
 # The imported staffing table suggest that there is some Dental officer (D01) in most districts,
 # but the TimeBase data (below) suggest that D01 is only needed at central hospitals.
 # This potential inconsistency can be solved by re-allocating D01 from districts to central hospitals, but
-# currently we keep the source data as it is the establishment and CHAI team does not recommend such re-allocation.
+# currently we keep the source data as it is the establishment and CHAI team does not recommend such re-allocation;
+# Also, the central/referral hospitals have Dental officer allocated to meet dental service demand,
+# thus no risk of not able to meet such demand at level 3.
 
 # *** Only for funded_plus ********************************************************************************************
-# Districts Balaka, Machinga, Mwanza, Neno, Nkhata Bay, Ntchisi, Salima have 0 mental health staff C01 in establishment,
-# while C01 is required by mental health appts at level 1b, level 2 and level 3.
-# To fix this inconsistency, we have to assign at least 1 C01 to each of these districts, but from where?
+# Districts Balaka/Machinga/Mwanza/Neno (4 in South), Nkhata Bay (1 in North), Ntchisi/ Salima (2 in Central)
+# have 0 mental health staff C01 in establishment,
+# whereas C01 is required by mental health appts at level 1b, level 2 and level 3.
+# To fix this inconsistency, we have to move at least 1 C01 to each of these districts from the referral hospitals.
+# (QECH and ZCH in South, MCH in North, KCH in Central; ZCH has no C01)
+non_c01_district_idx = fund_staffing_table[(fund_staffing_table['C01'] == 0) &
+                                           (fund_staffing_table['Is_DistrictLevel'])].index
+non_c01_districts = pd.DataFrame(fund_staffing_table.loc[non_c01_district_idx, 'District_Or_Hospital'])
+non_c01_districts['Region'] = pop_by_district.loc[non_c01_districts['District_Or_Hospital'], 'Region'].values
+fund_staffing_table.loc[non_c01_district_idx, 'C01'] = 1
+fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'QECH', 'C01'] = (
+    fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'QECH', 'C01'] - 4
+)
+fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'MCH', 'C01'] = (
+    fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'MCH', 'C01'] - 1
+)
+fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'KCH', 'C01'] = (
+    fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'KCH', 'C01'] - 2
+)
 # *********************************************************************************************************************
 
 # *** Only for funded_plus ********************************************************************************************
@@ -904,9 +922,7 @@ curr_staffing_table = hcw_curr_extract.copy()
 # Check the cadre columns of curr_staffing_table is identical to fund_staffing_table
 assert set(curr_staffing_table.columns[0:21]) == set(fund_staffing_table.columns[-21:])
 
-# For curr_staffing_table, do not re-allocate Dental officer with the same reason above for established staff;
-# Also, the central/referral hospitals have Dental officer allocated to meet dental service demand,
-# thus no risk of not able to meet such demand at level 3.
+# For curr_staffing_table, do not re-allocate Dental officer with the same reason above for established staff
 
 # The operation of reallocating E01 in HQ to districts is not needed for curr_staffing_table,
 # as no. of E01 in curr_staffing_table at HQ is zero.
