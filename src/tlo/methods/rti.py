@@ -2433,17 +2433,17 @@ class RTI(Module):
         if df.loc[person_id, 'rt_in_shock']:
             self.sim.modules['RTI'].rti_ask_for_shock_treatment(person_id)
 
-        df = sim.population.props
-        road_traffic_injuries = sim.modules['RTI']
-        # Check they haven't died from another source
-        if pd.isnull(df.at[person_id, 'cause_of_death']) and not df.at[person_id, 'rt_diagnosed']:
-            df.at[person_id, 'rt_diagnosed'] = True
-            road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)
-            if df.at[person_id, 'rt_in_shock']:
-                road_traffic_injuries.rti_ask_for_shock_treatment(person_id)
+        # df = self.sim.population.props
+        # road_traffic_injuries = self.sim.modules['RTI']
+        # # Check they haven't died from another source
+        # if pd.isnull(df.at[person_id, 'cause_of_death']) and not df.at[person_id, 'rt_diagnosed']:
+        #     df.at[person_id, 'rt_diagnosed'] = True
+        #     road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)
+        #     if df.at[person_id, 'rt_in_shock']:
+        #         road_traffic_injuries.rti_ask_for_shock_treatment(person_id)
 
     def do_in_emergency_generic_appt_if_injury(self, person_id, hsi_event):
-        """"""
+        """Things to do upon a person presenting at am Emergency Generic HSI if they have an injury."""
         road_traffic_injuries = self.sim.modules['RTI']
         df = self.sim.population.props
         # Check they haven't died from another source
