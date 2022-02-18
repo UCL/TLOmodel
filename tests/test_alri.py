@@ -226,7 +226,7 @@ def test_basic_run_lasting_two_years(tmpdir):
     assert 0 < log_counts['incident_cases'].sum()
     assert 0 < log_counts['recovered_cases'].sum()
     assert 0 < log_counts['deaths'].sum()
-    assert 0 < log_counts['cured_cases'].sum()  # before:  assert 0 == log_counts['cured_cases'].sum()
+    assert 0 < log_counts['cured_cases'].sum()
 
     # Read the log for the one individual being tracked:
     log_one_person = parse_log_file(sim.log_filepath)['tlo.methods.alri']['log_individual']
