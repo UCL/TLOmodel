@@ -1528,7 +1528,12 @@ HosHC_patient_facing_time = pd.DataFrame(
     {'Officer_Type_Code': officer_types_import,
      'DisHos_Av_Mins_Per_Day': av_mins_daily_dishos,
      'ComHos_Av_Mins_Per_Day': av_mins_daily_comhos,
-     'HC_Av_Mins_Per_Day': av_mins_daily_hc}
+     'HC_Av_Mins_Per_Day': av_mins_daily_hc,
+     'Total_Av_Working_Days': workingdays,
+     'DisHos_Hrs_Per_Day': hrs_daily_dishos,
+     'ComHos_Hrs_Per_Day': hrs_daily_comhos,
+     'HC_Hrs_Per_Day': hrs_daily_hc
+     }
 ).reset_index(drop=True)
 
 # The new PFT has no minutes for M01 at health centres,
@@ -1539,6 +1544,7 @@ HosHC_patient_facing_time.loc[0, 'HC_Av_Mins_Per_Day'] = (
     HosHC_patient_facing_time.loc[0, 'DisHos_Av_Mins_Per_Day'] +
     HosHC_patient_facing_time.loc[0, 'ComHos_Av_Mins_Per_Day']
                                                          ) / 2
+
 # How to deal with cadres (DCSA, Dental, Mental, Radiography) that do not have minutes at all in PFT,
 # whereas they have time requirements in Time_Curr?
 # (Compared to old PFT sheet,
@@ -1591,12 +1597,32 @@ HosHC_patient_facing_time_old = pd.DataFrame(
     {'Officer_Type_Code': officer_types_old,
      'DisHos_Av_Mins_Per_Day': av_mins_daily_hos_old,
      'ComHos_Av_Mins_Per_Day': av_mins_daily_hos_old,
-     'HC_Av_Mins_Per_Day': av_mins_daily_hc_old}
+     'HC_Av_Mins_Per_Day': av_mins_daily_hc_old,
+     'Total_Av_Working_Days': working_days_old,
+     'DisHos_Hrs_Per_Day': hrs_daily_hos_old,
+     'ComHos_Hrs_Per_Day': hrs_daily_hos_old,
+     'HC_Hrs_Per_Day': hrs_daily_hc_old
+     }
 ).reset_index(drop=True)
 
-# now add the old data of those missing cadres to the updated PFT table
+# check the new and old tables have same columns and officers (in the same order)
 assert (HosHC_patient_facing_time_old['Officer_Type_Code'] == HosHC_patient_facing_time['Officer_Type_Code']).all()
 assert (HosHC_patient_facing_time_old.columns == HosHC_patient_facing_time.columns).all()
+
+# check new and old pft difference
+HosHC_pft_diff = pd.DataFrame(columns=HosHC_patient_facing_time.columns)
+HosHC_pft_diff['Officer_Type_Code'] = HosHC_patient_facing_time['Officer_Type_Code'].values
+HosHC_pft_diff.iloc[:, 1:] = (
+    (HosHC_patient_facing_time.iloc[:, 1:].values -
+     HosHC_patient_facing_time_old.iloc[:, 1:].values) /
+    HosHC_patient_facing_time_old.iloc[:, 1:].values
+)
+HosHC_pft_diff = HosHC_pft_diff.append(HosHC_pft_diff.iloc[:, 1:].mean(axis=0), ignore_index=True)
+# HosHC_pft_diff.to_csv(
+#     outputlocation / 'human_resources' / 'definitions' / 'New_Old_PFT_Difference.csv',
+#     index=False)
+
+# now add the old data of those blanks cadres to the updated PFT table
 HosHC_patient_facing_time.iloc[11:, :] = HosHC_patient_facing_time_old.iloc[11:, :].copy()
 
 # PFT table ready!
