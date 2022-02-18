@@ -21,7 +21,11 @@ from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.bed_days import BedDays
-from tlo.methods.consumables import Consumables
+from tlo.methods.consumables import (
+    Consumables,
+    get_item_code_from_item_name,
+    get_item_codes_from_package_name,
+)
 from tlo.methods.dxmanager import DxManager
 
 logger = logging.getLogger(__name__)
@@ -45,8 +49,9 @@ class HSIEventDetails(NamedTuple):
     event_name: str
     module_name: str
     treatment_id: str
-    facility_level: Optional[int]
-    appt_footprint: Tuple
+    facility_level: Optional[str]
+    appt_footprint: Tuple[str]
+    beddays_footprint: Tuple[Tuple[str, int]]
 
 
 class HSIEventQueueItem(NamedTuple):
@@ -234,7 +239,7 @@ class HealthSystem(Module):
         if record_hsi_event_details:
             self.hsi_event_details = set()
 
-        # Determine what the the `cons_availability` parameter in the Consumables class should be: it should be `all`
+        # Determine what the the `availability` parameter in the Consumables class should be: it should be `all`
         # if the HealthSystem is disabled.
         self._cons_availability = 'all' if self.disable else cons_availability
 
@@ -297,7 +302,7 @@ class HealthSystem(Module):
         self.bed_days.pre_initialise_population()
         self.consumables = Consumables(data=self.parameters['availability_estimates'],
                                        rng=self.rng,
-                                       cons_availabilty=self._cons_availability)
+                                       availability=self._cons_availability)
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -626,7 +631,7 @@ class HealthSystem(Module):
                 ]
                 assert facility_appt_types.issuperset(appt_type_to_check_list), (
                     f"An appointment type has been requested at a facility level for "
-                    f"which it is not possible: {hsi_event.TREATMENT_ID}"
+                    f"which it is not possible: TREATMENT_ID={hsi_event.TREATMENT_ID}"
                 )
 
         # Check that event (if individual level) is able to run with this configuration
@@ -678,6 +683,10 @@ class HealthSystem(Module):
 
         # If all is correct and the hsi event is allowed then add this request to the queue of HSI_EVENT_QUEUE
         if allowed:
+
+            if not isinstance(hsi_event.target, tlo.population.Population):
+                # Write the facility_id at which this HSI will occur:
+                hsi_event._facility_id = self.get_facility_info(hsi_event).id
 
             # Create a tuple to go into the heapq
             # (NB. the sorting is done ascending and by the order of the items in the tuple)
@@ -1002,7 +1011,8 @@ class HealthSystem(Module):
                         tuple(actual_appt_footprint)
                         if actual_appt_footprint is not None
                         else tuple(getattr(hsi_event, 'EXPECTED_APPT_FOOTPRINT', {}))
-                    )
+                    ),
+                    beddays_footprint=tuple(sorted(hsi_event.BEDDAYS_FOOTPRINT.items()))
                 )
             )
 
@@ -1073,13 +1083,11 @@ class HealthSystem(Module):
     def get_item_codes_from_package_name(self, package: str) -> dict:
         """Helper function to provide the item codes and quantities in a dict of the form {<item_code>:<quantity>} for
          a given package name."""
-        return self.consumables._get_item_codes_from_package_name(
-            self.parameters['item_and_package_code_lookups'], package)
+        return get_item_codes_from_package_name(self.parameters['item_and_package_code_lookups'], package)
 
     def get_item_code_from_item_name(self, item: str) -> int:
         """Helper function to provide the item_code (an int) when provided with the name of the item"""
-        return self.consumables._get_item_code_from_item_name(
-            self.parameters['item_and_package_code_lookups'], item)
+        return get_item_code_from_item_name(self.parameters['item_and_package_code_lookups'], item)
 
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
@@ -1342,7 +1350,7 @@ class HSI_Event:
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
         self._received_info_about_bed_days = None
         self._cached_time_requests = {}
-        self._facility_id = 1  # todo - write this when it gets added to scheduler
+        self._facility_id = None
 
     @property
     def bed_days_allocated_to_this_event(self):
@@ -1393,36 +1401,9 @@ class HSI_Event:
         self.post_apply_hook()
         return updated_appt_footprint
 
-    def _return_item_codes_in_dict(self, item_codes: Union[None, np.integer, int, list, set, dict]) -> dict:
-        """Convert an argument for 'item_codes` (provided as int, list, set or dict) into the format
-        dict(<item_code>:quantity)."""
-
-        if item_codes is None:
-            return {}
-
-        if isinstance(item_codes, (int, np.integer)):
-            return {int(item_codes): 1}
-
-        elif isinstance(item_codes, list):
-            if not all([isinstance(i, (int, np.integer)) for i in item_codes]):
-                raise ValueError("item_codes must be integers")
-            return {int(i): 1 for i in item_codes}
-
-        elif isinstance(item_codes, dict):
-            if not all(
-                [(isinstance(i, (int, np.integer)) and isinstance(item_codes[i], (int, np.integer)))
-                 for i in item_codes]
-            ):
-                raise ValueError("item_codes must be integers and quantities must be integers.")
-            return {int(i): int(q) for i, q in item_codes.items()}
-
-        else:
-            raise ValueError("The item_codes are given in an unrecognised format")
-
-
     def get_consumables(self,
-                        item_codes: Optional[Union[np.integer, int, list, set, dict]] = None,
-                        optional_item_codes: Optional[Union[np.integer, int, list, set, dict]] = None,
+                        item_codes: Union[None, np.integer, int, list, set, dict] = None,
+                        optional_item_codes: Union[None, np.integer, int, list, set, dict] = None,
                         to_log: Optional[bool] = True,
                         return_individual_results: Optional[bool] = False
                         ) -> Union[bool, dict]:
@@ -1431,7 +1412,7 @@ class HSI_Event:
         :param item_codes: The item code(s) (and quantities) of the consumables that are requested and which determine
         the summary result for availability/non-availability. This can be an `int` (the item_code needed [assume
         quantity=1]), a `list` or `set` (the collection  of item_codes [for each assuming quantity=1]), or a `dict`
-        (of the form <item_code>:<quantity>).
+        (with key:value pairs `<item_code>:<quantity>`).
         :param optional_item_codes: The item code(s) (and quantities) of the consumables that are requested and which do
          not determine the summary result for availability/non-availability. (Same format as `item_codes`). This is
          useful when a large set of items may be used, but the viability of a subsequent operation depends only on a
@@ -1444,10 +1425,37 @@ class HSI_Event:
         Note that disease module can use the `get_item_codes_from_package_name` and `get_item_code_from_item_name`
          methods in the `HealthSystem` module to find item_codes.
         """
+
+        def _return_item_codes_in_dict(item_codes: Union[None, np.integer, int, list, set, dict]) -> dict:
+            """Convert an argument for 'item_codes` (provided as int, list, set or dict) into the format
+            dict(<item_code>:quantity)."""
+
+            if item_codes is None:
+                return {}
+
+            if isinstance(item_codes, (int, np.integer)):
+                return {int(item_codes): 1}
+
+            elif isinstance(item_codes, list):
+                if not all([isinstance(i, (int, np.integer)) for i in item_codes]):
+                    raise ValueError("item_codes must be integers")
+                return {int(i): 1 for i in item_codes}
+
+            elif isinstance(item_codes, dict):
+                if not all(
+                    [(isinstance(code, (int, np.integer)) and isinstance(quantity, (int, np.integer)))
+                     for code, quantity in item_codes.items()]
+                ):
+                    raise ValueError("item_codes must be integers and quantities must be integers.")
+                return {int(i): int(q) for i, q in item_codes.items()}
+
+            else:
+                raise ValueError("The item_codes are given in an unrecognised format")
+
         hs_module = self.sim.modules['HealthSystem']
 
-        _item_codes = self._return_item_codes_in_dict(item_codes)
-        _optional_item_codes = self._return_item_codes_in_dict(optional_item_codes)
+        _item_codes = _return_item_codes_in_dict(item_codes)
+        _optional_item_codes = _return_item_codes_in_dict(optional_item_codes)
 
         # Determine if the request should be logged (over-ride argument provided if HealthSystem is disabled).
         _to_log = to_log if not hs_module.disable else False
@@ -1464,8 +1472,6 @@ class HSI_Event:
             return all([v for k, v in rtn.items() if k in _item_codes])
         else:
             return rtn
-
-        # todo what to do if all optional?
 
     def make_beddays_footprint(self, dict_of_beddays):
         """Helper function to make a correctly-formed 'bed-days footprint'"""

@@ -1,8 +1,17 @@
 """Collection of shared fixtures"""
 import pytest
 
+DEFAULT_SEED = 83563095832589325021
+
 
 def pytest_addoption(parser):
+    parser.addoption(
+        "--seed",
+        type=int,
+        nargs="*",
+        default=[DEFAULT_SEED],
+        help="Seed(s) for simulation-level random number generator in tests"
+    )
     parser.addoption(
         "--skip-slow",
         action="store_true",
@@ -21,3 +30,8 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if "slow" in item.keywords:
                 item.add_marker(skip_slow)
+
+
+def pytest_generate_tests(metafunc):
+    if "seed" in metafunc.fixturenames:
+        metafunc.parametrize("seed", metafunc.config.getoption("seed"))

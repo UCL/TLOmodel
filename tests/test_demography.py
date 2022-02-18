@@ -40,9 +40,9 @@ popsize = 500
 
 
 @pytest.fixture
-def simulation():
+def simulation(seed):
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     core_module = demography.Demography(resourcefilepath=resourcefilepath)
     sim.register(core_module)
     return sim
@@ -67,7 +67,7 @@ def test_run_dtypes_and_mothers_female(simulation):
     assert is_female.all()
 
 
-def test_storage_of_cause_of_death():
+def test_storage_of_cause_of_death(seed):
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
     class DummyModule(Module):
@@ -83,7 +83,7 @@ def test_storage_of_cause_of_death():
         def initialise_simulation(self, sim):
             pass
 
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=rfp),
         DummyModule()
@@ -110,13 +110,13 @@ def test_storage_of_cause_of_death():
 
 
 @pytest.mark.slow
-def test_cause_of_death_being_registered(tmpdir):
+def test_cause_of_death_being_registered(tmpdir, seed):
     """Test that the modules can declare causes of death, that the mappers between tlo causes of death and gbd
     causes of death can be created correctly and that the analysis helper scripts can be used to produce comparisons
     between model outputs and GBD data."""
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=0, log_config={
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config={
         'filename': 'temp',
         'directory': tmpdir,
         'custom_levels': {
@@ -194,11 +194,11 @@ def test_cause_of_death_being_registered(tmpdir):
 
 
 @pytest.mark.slow
-def test_calc_of_scaling_factor(tmpdir):
+def test_calc_of_scaling_factor(tmpdir, seed):
     """Test that the scaling factor is computed and put out to the log"""
     rfp = Path(os.path.dirname(__file__)) / '../resources'
     popsize = 10_000
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=0, log_config={
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config={
         'filename': 'temp',
         'directory': tmpdir,
         'custom_levels': {

@@ -18,7 +18,7 @@ logger.setLevel(logging.INFO)
 
 class DxManager:
     """
-    The is the Diagnostic Tests Manager (DxManager).
+    This is the Diagnostic Tests Manager (DxManager).
     It simplifies the process of conducting diagnostic tests on a person.
     It can store and then apply Diagnostic Tests (DxTest) and return the result.
 
@@ -58,14 +58,14 @@ class DxManager:
                     assert all(elem in property_categories
                                for elem in d.target_categories), 'not all target_categories are valid categories'
 
-            # Ensure that name is unqiue and will not over-write a test already registered
+            # Ensure that name is unique and will not over-write a test already registered
             if name not in self.dx_tests:
                 # Add the list of DxTests to the dict of registered DxTests (name is not already used)
                 self.dx_tests[name] = dx_test
             else:
                 # Determine whether to throw an error due to the same name being used as a test already registered
                 try:
-                    # If the name is alrady used, then the DxTest must be identical to the one already registered
+                    # If the name is already used, then the DxTest must be identical to the one already registered
                     assert self.dx_tests[name] == dx_test
                 except (AssertionError):
                     raise ValueError(
@@ -117,7 +117,7 @@ class DxManager:
 
                 if test_result is not None:
                     # The DxTest was successful. Log the use of that DxTest
-                    # Logging using the the name of the DxTest and the number of the test that was tried within it
+                    # Logging using the name of the DxTest and the number of the test that was tried within it
                     the_dxtests_tried[f"{dx_test}_{i}"] = True
                     break
                 else:
@@ -183,7 +183,7 @@ class DxTest:
 
         # Store consumable code (None means that no consumables are required)
         if item_codes is not None:
-            assert isinstance(item_codes, (np.integer, int, list, dict)), 'item_codes in incorrect format.'
+            assert isinstance(item_codes, (np.integer, int, list, set, dict)), 'item_codes in incorrect format.'
         self.item_codes = item_codes
 
         # Store performance characteristics (if sensitivity and specificity are not supplied than assume perfect)
@@ -199,9 +199,17 @@ class DxTest:
         self.target_categories = target_categories
 
     def __hash_key(self):
+        if isinstance(self.item_codes, (dict, list)):
+            item_codes_key = json.dumps(self.item_codes, sort_keys=True)
+        elif isinstance(self.item_codes, set):
+            item_codes_key = frozenset(self.item_codes)
+        elif isinstance(self.item_codes, np.integer):
+            item_codes_key = int(self.item_codes)
+        else:
+            item_codes_key = self.item_codes
         return (
             self.__class__,
-            json.dumps(self.item_codes, sort_keys=True),
+            item_codes_key,
             self.property,
             self.sensitivity,
             self.specificity,
