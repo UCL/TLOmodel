@@ -34,12 +34,14 @@ resourcefilepath = Path("./resources")
 path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
 
 # Load raw GIS dataset and clean column names
-fac_gis = pd.read_excel(open(path_to_files_in_the_tlo_dropbox / 'gis_data/LMISFacilityLocations_raw.xlsx',
+fac_gis = pd.read_excel(open(path_to_files_in_the_tlo_dropbox / 'gis_data/LMISFacilityLocations_raw_temp.xlsx',
     'rb'), sheet_name='final_gis_data')
 fac_gis = fac_gis.rename(
     columns={'LMIS Facility List': 'fac_name', 'OWNERSHIP': 'fac_owner', 'TYPE': 'fac_type', 'STATUS': 'fac_status',
              'ZONE': 'zone', 'DISTRICT': 'district', 'DATE OPENED': 'open_date', 'LATITUDE': 'lat',
              'LONGITUDE': 'long'})
+# Create a new column providing source of GIS data
+fac_gis['gis_source'] = ""
 
 # Store unique district names
 districts = fac_gis['district'].unique()
@@ -54,12 +56,17 @@ fac_gis_noloc = fac_gis[fac_gis.lat.isna()|conda]
 fac_gis_noloc = fac_gis_noloc.reset_index()
 fac_gis_noloc = fac_gis_noloc.drop(columns='index')
 
+# Edit data source
+cond_originalmhfr = fac_gis.lat.notna() & ~conda
+fac_gis.loc[cond_originalmhfr, 'gis_source'] = 'Master Health Facility Registry'
+cond_manual = fac_gis['manual_entry'].notna()
+fac_gis.loc[cond_manual, 'gis_source'] = 'Manual google search'
+
 fac_gis_clean = fac_gis[~conda & fac_gis.lat.notna()] # save clean portion of raw data to be appended later
 
 # Use googlemaps package to obtain GIS coordinates using facility names
 GCODE_URL = 'https://maps.googleapis.com/maps/api/geocode/json?'
-# GCODE_KEY # PLaceholder to enter googlemaps API
-
+# GCODE_KEY =  # PLaceholder to enter googlemaps API
 
 def reverse_gcode(location):
     location = str(location).replace(' ', '+')
@@ -104,6 +111,7 @@ for i in range(len(fac_gis_noloc)):
         fac_gis_noloc['lat'][i] = geo_info['lat']
         fac_gis_noloc['long'][i] = geo_info['lang']
         fac_gis_noloc['district'][i] = geo_info['city']
+        fac_gis_noloc['gis_source'][i] = 'Google maps geolocation'
     except:
         pass
 
@@ -121,6 +129,19 @@ fac_gis_noloc.loc[~conda | condb, 'district'] = np.nan
 
 # Append newly generated GIS information to the raw data
 fac_gis = fac_gis_noloc.append(fac_gis_clean)
+
+# Drop incorrect GIS coordinates based on later comparison with district data from LMIS
+list_of_incorrect_locations = ['Bilal Clinic', 'Biliwiri Health Centre', 'Chilonga Health care Health Centre',
+                               'Diamphwi Health Centre', 'Matope Health Centre (CHAM)', 'Nambazo Health Centre',
+                               'Nkhwayi Health Centre', 'Nsambe Health Centre (CHAM)', 'Padley Pio Health Centre',
+                               'Phanga Health Centre', 'Somba Clinic', "St. Martin's Molere Health Centre CHAM",
+                               'Ngapani Clinic', 'Mulungu Alinafe Clinic', 'Mdeza Health Centre', 'Matandani Health Centre (CHAM)',
+                               'Sunrise Clinic', 'Sucoma Clinic']
+cond = fac_gis.fac_name.isin(list_of_incorrect_locations)
+fac_gis.loc[cond, 'lat'] = np.nan
+fac_gis.loc[cond, 'long'] = np.nan
+fac_gis.loc[cond, 'gis_source'] = np.nan
+fac_gis.loc[cond, 'district'] = np.nan
 
 # Extract into .csv
 fac_gis.to_csv(path_for_new_resourcefiles / "ResourceFile_Facility_locations.csv")
