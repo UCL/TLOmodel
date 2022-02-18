@@ -2424,6 +2424,43 @@ class RTI(Module):
         # Finally return the injury description information
         return inj_df
 
+    def do_in_non_emergency_generic_appt_if_injury(self, person_id):
+        """Things to do upon a person presenting at a Non-Emergency Generic HSI if they have an injury."""
+        df = self.sim.population.props
+        persons_injuries = df.loc[person_id, self.sim.modules['RTI'].INJURY_COLUMNS]
+        if len(set(self.sim.modules['RTI'].INJURIES_REQ_IMAGING).intersection(persons_injuries)) > 0:
+            self.sim.modules['RTI'].rti_ask_for_imaging(person_id)
+        if df.loc[person_id, 'rt_in_shock']:
+            self.sim.modules['RTI'].rti_ask_for_shock_treatment(person_id)
+
+    def do_in_emergency_generic_appt_if_injury(self, person_id, hsi_event):
+        """"""
+        road_traffic_injuries = self.sim.modules['RTI']
+        df = self.sim.population.props
+        # Check they haven't died from another source
+        if pd.isnull(df.at[person_id, 'cause_of_death']) and not df.at[person_id, 'rt_diagnosed']:
+            if df.at[person_id, 'rt_in_shock']:
+                road_traffic_injuries.rti_ask_for_shock_treatment(person_id)
+
+            persons_injuries = df.loc[[person_id], self.sim.modules['RTI'].INJURY_COLUMNS]
+
+            # Request multiple x-rays here, note that the diagradio requirement for the appointment footprint
+            # is dealt with in the RTI module itself.
+            idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries,
+                                                                            self.sim.modules['RTI'].FRACTURE_CODES)
+            if counts >= 1:
+                xray_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name(
+                    "Monochromatic blue senstive X-ray Film, screen SizeSize: 30cm x 40cm")
+                if hsi_event.get_consumables({xray_code: counts}):
+                    logger.debug(
+                        'This facility has x-ray capability which has been used to diagnose person %d.',
+                        person_id)
+                    logger.debug(f'Person %d had x-rays for their {counts} fractures')
+                else:
+                    logger.debug('Total amount of x-rays required for person %d unavailable', person_id)
+            df.at[person_id, 'rt_diagnosed'] = True
+
+            self.rti_do_when_diagnosed(person_id=person_id)
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
