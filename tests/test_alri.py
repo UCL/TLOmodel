@@ -26,13 +26,13 @@ from tlo.methods.alri import (
     AlriNaturalRecoveryEvent,
     AlriPollingEvent,
     AlriPropertiesOfOtherModules,
-    Models,
     HSI_Hospital_Inpatient_Pneumonia_Treatment,
     HSI_IMCI_Pneumonia_Treatment,
+    Models,
 )
 from tlo.methods.healthseekingbehaviour import (
+    HSI_GenericEmergencyFirstApptAtFacilityLevel1,
     HSI_GenericFirstApptAtFacilityLevel0,
-    HSI_GenericEmergencyFirstApptAtFacilityLevel1
 )
 
 # Path to the resource files used by the disease and intervention methods
@@ -209,7 +209,7 @@ def test_basic_run(tmpdir):
 
 @pytest.mark.slow
 def test_basic_run_lasting_two_years(tmpdir):
-    """Check logging results in a run of the model for two years, with daily property config checking"""
+    """Check logging results in a run of the model for two years, including HSI, with daily property config checking"""
     dur = pd.DateOffset(years=2)
     popsize = 5000
     sim = get_sim(tmpdir)
@@ -631,13 +631,13 @@ def test_imci_classifications(tmpdir):
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
     sim.event_queue.queue = []  # clear the queue
+    sim.modules['HealthSystem'].reset_queue()
 
-    # make probability of death 100%
+    # make probability of death 100% (not using a lambda function because code uses the keyword argument for clarity)
     def death(person_id):
         return True
-    sim.modules['Alri'].models.will_die_of_alri = death
 
-    # Get person to use:
+    # Get person to use (The first person in the df who is under the age of 5.)
     df = sim.population.props
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     person_id = under5s.index[0]
