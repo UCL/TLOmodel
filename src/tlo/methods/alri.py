@@ -715,6 +715,8 @@ class Alri(Module):
                     # (associates the symptom with the 'average' healthcare seeking)
                 )
 
+                # todo - danger_sign to be an emergency symptoms
+
     def pre_initialise_population(self):
         """Define columns for complications at run-time"""
         for complication in self.complications:
@@ -945,71 +947,71 @@ class Alri(Module):
 
     @staticmethod
     def symptom_based_classification(age_exact_years, symptoms, facility_level):
-            """Based on symptoms presented, classify WHO-pneumonia severity at each facility level."""
-            # TODO: get other danger signs in iCCM when issue 429 is resolved
-            # todo iccm_danger_signs = symptoms.append() other symptoms child may have that is considered severe in iCCM
+        """Based on symptoms presented, classify WHO-pneumonia severity at each facility level."""
+        # TODO: get other danger signs in iCCM when issue 429 is resolved
+        # todo iccm_danger_signs = symptoms.append() other symptoms child may have that is considered severe in iCCM
 
-            # ----- For children over 2 months and under 5 years of age -----
-            if (1.0 / 6.0) <= age_exact_years <= 5:
-                # NOTE: I put age <=5 years of age because as the pooling event occurs every 2 months,
-                # so when the child gets ALRI they may be 5 years of age.
-                # Otherwise this will have the assert error 'no treatment_plan recognised for None',
-                # as they wont be given a classification
+        # ----- For children over 2 months and under 5 years of age -----
+        if (1.0 / 6.0) <= age_exact_years <= 5:
+            # NOTE: I put age <=5 years of age because as the pooling event occurs every 2 months,
+            # so when the child gets ALRI they may be 5 years of age.
+            # Otherwise this will have the assert error 'no treatment_plan recognised for None',
+            # as they wont be given a classification
 
-                # iCCM classifications - HSAs in level 0 ---------------------------------------------------
-                if facility_level == '0':
-                    # uncomplicated pneumonia (fast-breathing only)
-                    if ('tachypnoea' in symptoms) and (
-                            ('chest_indrawing' not in symptoms) and ('danger_signs' not in symptoms)):
-                        return 'fast_breathing_pneumonia'
-                    # severe pneumonia (chest-indrawing or danger signs)
-                    elif ('chest_indrawing' in symptoms) and ('danger_signs' not in symptoms):
-                        return 'chest_indrawing_pneumonia'
-                    elif 'danger_signs' in symptoms:
-                        return 'danger_signs_pneumonia'
-                    # common cold / no pneumonia
-                    elif (('cough' in symptoms) or ('difficult_breathing' in symptoms)) and (
-                        ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
-                            ('danger_signs' not in symptoms)):
-                        return 'cough_or_cold'
-                    else:
-                        raise ValueError(f'classification not recognised for symptoms: {symptoms}')
-
-                # IMCI classifications - HCW in health facilities --------------------------------------------
-                elif facility_level in ['1a', '1b', '2']:
-                    if (('tachypnoea' in symptoms) or ('chest_indrawing' in symptoms)) and \
-                            ('danger_signs' not in symptoms):
-                        return 'non_severe_pneumonia'
-                    elif 'danger_signs' in symptoms:
-                        return 'severe_pneumonia'
-                    # common cold / no pneumonia
-                    elif (('cough' in symptoms) or ('difficult_breathing' in symptoms)) and (
-                        ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
-                            ('danger_signs' not in symptoms)):
-                        return 'cough_or_cold'
-                    else:
-                        raise ValueError(f'classification not recognised for symptoms: {symptoms}')
-
+            # iCCM classifications - HSAs in level 0 ---------------------------------------------------
+            if facility_level == '0':
+                # uncomplicated pneumonia (fast-breathing only)
+                if ('tachypnoea' in symptoms) and (
+                        ('chest_indrawing' not in symptoms) and ('danger_signs' not in symptoms)):
+                    return 'fast_breathing_pneumonia'
+                # severe pneumonia (chest-indrawing or danger signs)
+                elif ('chest_indrawing' in symptoms) and ('danger_signs' not in symptoms):
+                    return 'chest_indrawing_pneumonia'
+                elif 'danger_signs' in symptoms:
+                    return 'danger_signs_pneumonia'
+                # common cold / no pneumonia
+                elif (('cough' in symptoms) or ('difficult_breathing' in symptoms)) and (
+                    ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
+                        ('danger_signs' not in symptoms)):
+                    return 'cough_or_cold'
                 else:
-                    raise ValueError(f'facility_level {facility_level} is not recognised')
+                    raise ValueError(f'classification not recognised for symptoms: {symptoms}')
 
-            # -----------------------------------------------------------------------------------------------------
-            # ----- For infants under 2 months of age -----
-            elif age_exact_years < 1/6:
-                if facility_level == '0':
-                    return 'not_handled_at_facility_0'
-
-                elif facility_level in ['1a', '1b', '2']:
-                    if ('tachypnoea' in symptoms) or ('chest_indrawing' in symptoms) or ('danger_signs' in symptoms):
-                        return 'very_severe_disease'
-                    elif (('cough' in symptoms) or ('difficult_breathing' in symptoms)) and (
-                        ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
-                            ('danger_signs' not in symptoms)):
-                        return 'cough_or_difficult_breathing'
-                    else:
-                        raise ValueError(f'classification not recognised for symptoms: {symptoms}')
+            # IMCI classifications - HCW in health facilities --------------------------------------------
+            elif facility_level in ['1a', '1b', '2']:
+                if (('tachypnoea' in symptoms) or ('chest_indrawing' in symptoms)) and \
+                        ('danger_signs' not in symptoms):
+                    return 'non_severe_pneumonia'
+                elif 'danger_signs' in symptoms:
+                    return 'severe_pneumonia'
+                # common cold / no pneumonia
+                elif (('cough' in symptoms) or ('difficult_breathing' in symptoms)) and (
+                    ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
+                        ('danger_signs' not in symptoms)):
+                    return 'cough_or_cold'
                 else:
-                    raise ValueError(f'facility_level {facility_level} is not recognised')
+                    raise ValueError(f'classification not recognised for symptoms: {symptoms}')
+
+            else:
+                raise ValueError(f'facility_level {facility_level} is not recognised')
+
+        # -----------------------------------------------------------------------------------------------------
+        # ----- For infants under 2 months of age -----
+        elif age_exact_years < 1/6:
+            if facility_level == '0':
+                return 'not_handled_at_facility_0'
+
+            elif facility_level in ['1a', '1b', '2']:
+                if ('tachypnoea' in symptoms) or ('chest_indrawing' in symptoms) or ('danger_signs' in symptoms):
+                    return 'very_severe_disease'
+                elif (('cough' in symptoms) or ('difficult_breathing' in symptoms)) and (
+                    ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
+                        ('danger_signs' not in symptoms)):
+                    return 'cough_or_difficult_breathing'
+                else:
+                    raise ValueError(f'classification not recognised for symptoms: {symptoms}')
+            else:
+                raise ValueError(f'facility_level {facility_level} is not recognised')
 
     def imci_pneumonia_classification(self, person_id, facility_level, oximeter_available):
         """

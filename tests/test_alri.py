@@ -786,10 +786,9 @@ def test_use_of_HSI_GenericFirstApptAtFacilityLevel0(sim):
         assert sim.date == df.at[person_id, 'ri_ALRI_tx_start_date']
 
 
-def test_use_HSI_level_1_and_2(tmpdir):
+def test_use_HSI_level_1_and_2(sim):
     """Check that the HSI at facility level 1a, 1b and 2 work"""
     popsize = 100
-    sim = get_sim(tmpdir)
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date)
