@@ -3052,11 +3052,11 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        the_appt_footprint = module.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        road_traffic_injuries = module.sim.modules['RTI']
-        road_traffic_injuries.rti_injury_diagnosis(person_id, the_appt_footprint)
+        # the_appt_footprint = module.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        # road_traffic_injuries = module.sim.modules['RTI']
+        # road_traffic_injuries.rti_injury_diagnosis(person_id, the_appt_footprint)
         self.TREATMENT_ID = 'RTI_Imaging_Event'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
