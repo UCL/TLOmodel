@@ -692,10 +692,10 @@ wb_extract.loc[:, 'Is_DistrictLevel'] = is_distlevel
 fund_staffing_table = wb_extract.copy()
 
 # The imported staffing table suggest that there is some Dental officer (D01) in most districts,
-# but the TimeBase data (below) suggest that D01 is only needed at central hospitals.
+# but the Time_Curr data (below) suggest that D01 is only needed at central hospitals (not yet validated by CHAI).
 # This potential inconsistency can be solved by re-allocating D01 from districts to central hospitals, but
-# currently we keep the source data as it is the establishment and CHAI team does not recommend such re-allocation;
-# Also, the central/referral hospitals have Dental officer allocated to meet dental service demand,
+# currently we do not do such reallocation to reduce the assumptions we have to make;
+# Also because the central/referral hospitals have Dental officer allocated to meet dental service demand,
 # thus no risk of not able to meet such demand at level 3.
 
 # *** Only for funded_plus ********************************************************************************************
@@ -896,8 +896,8 @@ assert (fund_staffing_table.loc[:, 'M01':'R04'].values >= 0).all()
 
 # Save the table without column 'Is_DistrictLevel'; staff counts in floats
 fund_staffing_table_to_save = fund_staffing_table.drop(columns='Is_DistrictLevel', inplace=False)
-fund_staffing_table_to_save.to_csv(
-    outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Staff_Table.csv', index=False)
+# fund_staffing_table_to_save.to_csv(
+#     outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Staff_Table.csv', index=False)
 # fund_staffing_table_to_save.to_csv(
 #     outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Staff_Table.csv', index=False)
 
@@ -1051,8 +1051,8 @@ curr_staffing_table.loc[128:133, 'Facility_Level'] = ['Facility_Level_5', 'Facil
 
 # Save the table without column 'Is_DistrictLevel'; staff counts in floats
 curr_staffing_table_to_save = curr_staffing_table.drop(columns='Is_DistrictLevel', inplace=False)
-curr_staffing_table_to_save.to_csv(
-    outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Staff_Table.csv', index=False)
+# curr_staffing_table_to_save.to_csv(
+#     outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Staff_Table.csv', index=False)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** Create the Master Facilities List
@@ -1351,11 +1351,11 @@ appt_time_table_coarse = pd.DataFrame(
 ).reset_index()
 
 # Save
-ApptTimeTable.to_csv(
-    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv',
-    index=False)
+# ApptTimeTable.to_csv(
+#     outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv',
+#     index=False)
 appt_time_table_coarse.to_csv(
-    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table_Coarse.csv',
+    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv',
     index=False)
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -1541,8 +1541,9 @@ HosHC_patient_facing_time = pd.DataFrame(
 # We therefore assume the minutes for M01 at HCs are the average of those at DisHos and CenHos,
 # to solve inconsistency between PFT and Time_Curr
 HosHC_patient_facing_time.loc[0, 'HC_Av_Mins_Per_Day'] = (
-    HosHC_patient_facing_time.loc[0, 'DisHos_Av_Mins_Per_Day'] +
-    HosHC_patient_facing_time.loc[0, 'ComHos_Av_Mins_Per_Day']
+                                                             HosHC_patient_facing_time.loc[
+                                                                 0, 'DisHos_Av_Mins_Per_Day'] +
+                                                             HosHC_patient_facing_time.loc[0, 'ComHos_Av_Mins_Per_Day']
                                                          ) / 2
 
 # How to deal with cadres (DCSA, Dental, Mental, Radiography) that do not have minutes at all in PFT,
@@ -1618,6 +1619,8 @@ HosHC_pft_diff.iloc[:, 1:] = (
     HosHC_patient_facing_time_old.iloc[:, 1:].values
 )
 HosHC_pft_diff = HosHC_pft_diff.append(HosHC_pft_diff.iloc[:, 1:].mean(axis=0), ignore_index=True)
+
+# save
 # HosHC_pft_diff.to_csv(
 #     outputlocation / 'human_resources' / 'definitions' / 'New_Old_PFT_Difference.csv',
 #     index=False)
@@ -1777,20 +1780,18 @@ curr_daily_capability_coarse = pd.DataFrame(
 ).reset_index()
 
 # Save
-HosHC_patient_facing_time.to_csv(
-    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Patient_Facing_Time.csv', index=False)
-
 curr_daily_capability_coarse.to_csv(
     outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Daily_Capabilities.csv', index=False)
 
 # Need to # following lines below when generate funded_plus capability
-funded_daily_capability_coarse.to_csv(
-    outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Daily_Capabilities.csv', index=False)
-
+# funded_daily_capability_coarse.to_csv(
+#     outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Daily_Capabilities.csv', index=False)
 
 # *** Only for funded_plus ********************************************************************************************
-# funded_daily_capability_coarse.to_csv(
-#     outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv', index=False)
+funded_daily_capability_coarse.to_csv(
+    outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv', index=False)
+
+
 # *********************************************************************************************************************
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -1859,15 +1860,19 @@ def all_appts_can_run(capability):
 
     return appt_have_or_miss_capability
 
-
 # Save results for funded
-appt_have_or_miss_capability_funded = all_appts_can_run(funded_daily_capability_coarse)
-appt_have_or_miss_capability_funded.to_csv(
-    outputlocation / 'human_resources' / 'funded' / 'appt_have_or_miss_capability.csv', index=False)
+# Need to # following lines below when generate funded_plus capability
+# appt_have_or_miss_capability_funded = all_appts_can_run(funded_daily_capability_coarse)
+# appt_have_or_miss_capability_funded.to_csv(
+#     outputlocation / 'human_resources' / 'funded' / 'appt_have_or_miss_capability.csv', index=False)
+
+# *** Only for funded_plus ********************************************************************************************
+# appt_have_or_miss_capability_funded = all_appts_can_run(funded_daily_capability_coarse)
 # appt_have_or_miss_capability_funded.to_csv(
 #     outputlocation / 'human_resources' / 'funded_plus' / 'appt_have_or_miss_capability.csv', index=False)
+# *********************************************************************************************************************
 
 # Save results for actual
-appt_have_or_miss_capability_actual = all_appts_can_run(curr_daily_capability_coarse)
-appt_have_or_miss_capability_actual.to_csv(
-    outputlocation / 'human_resources' / 'actual' / 'appt_have_or_miss_capability.csv', index=False)
+# appt_have_or_miss_capability_actual = all_appts_can_run(curr_daily_capability_coarse)
+# appt_have_or_miss_capability_actual.to_csv(
+#     outputlocation / 'human_resources' / 'actual' / 'appt_have_or_miss_capability.csv', index=False)
