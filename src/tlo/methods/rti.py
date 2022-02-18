@@ -2470,6 +2470,7 @@ class RTI(Module):
 #   that represent disease events for particular persons.
 # ---------------------------------------------------------------------------------------------------------
 
+
 class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular RTI event which handles all the initial RTI related changes to the dataframe. It can be thought of
      as the actual road traffic accident occurring. Specifically the event decides who is involved in a road traffic
