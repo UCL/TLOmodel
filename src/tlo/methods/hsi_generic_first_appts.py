@@ -306,17 +306,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
             # are either over 50 or younger than 50 but are selected to get tested.
             sim.modules['CardioMetabolicDisorders'].determine_if_will_be_investigated(person_id=person_id)
 
-        if 'injury' in symptoms:
-            if 'RTI' in sim.modules:
-                df = sim.population.props
-                road_traffic_injuries = sim.modules['RTI']
-                # Check they haven't died from another source
-                if pd.isnull(df.at[person_id, 'cause_of_death']) and not df.at[person_id, 'rt_diagnosed']:
-                    df.at[person_id, 'rt_diagnosed'] = True
-                    road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)
-                    if df.at[person_id, 'rt_in_shock']:
-                        road_traffic_injuries.rti_ask_for_shock_treatment(person_id)
-
 
 def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     """The actions are taken during the non-emergency generic HSI, HSI_GenericEmergencyFirstApptAtFacilityLevel1."""
