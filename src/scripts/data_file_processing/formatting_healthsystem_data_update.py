@@ -52,7 +52,12 @@ path_to_dropbox = Path(
 
 workingfile = Path(
     '/Users/jdbb1/OneDrive/Desktop/healthsystem data update/Malawi optimization model import_2022-02-11.xlsx'
-)  # <-- point to the new data locally
+)  # <-- point to the new data locally; need update
+
+
+working_file_old = (path_to_dropbox /
+                    '05 - Resources' / 'Module-healthsystem' / 'chai ehp resource use data' / 'ORIGINAL' /
+                    'Optimization model import_Malawi_20180315 v10.xlsx')  # <-- point to the old data locally
 
 path_to_auxiliaryfiles = (path_to_dropbox /
                           '05 - Resources' /
@@ -61,6 +66,8 @@ path_to_auxiliaryfiles = (path_to_dropbox /
                           'Auxiliary CHAI Data from CHAI HR Team 12 Sep 2021')
 
 outputlocation = Path('/Users/jdbb1/OneDrive/Desktop/healthsystem data update/output')  # <-- output locally
+# Need update to
+# outputlocation = resourcefilepath / 'healthsystem'
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** create and save population_by_district data
@@ -1552,10 +1559,6 @@ HosHC_patient_facing_time.loc[0, 'HC_Av_Mins_Per_Day'] = (
 # the new PFT has updated all info on available working days/non-admin daily minutes/portion of male/female/pregfemale)
 # A quick fix is to use the average daily minutes of those cadres from old PFT table;
 # The info required to calculate these minutes will be from the old PFT table.
-working_file_old = (path_to_dropbox /
-                    '05 - Resources' / 'Module-healthsystem' / 'chai ehp resource use data' / 'ORIGINAL' /
-                    'Optimization model import_Malawi_20180315 v10.xlsx')
-
 pft_old = pd.read_excel(working_file_old, sheet_name='PFT', header=None)
 
 officer_types_old = pft_old.iloc[2, np.arange(2, 23)]
