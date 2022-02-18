@@ -658,7 +658,7 @@ def test_imci_classifications(tmpdir):
 
     for availability in [True, False]:
         classification = sim.modules['Alri'].imci_pneumonia_classification(
-            person_id, hsi_event=hsi_event, oximeter_available=availability)
+            person_id=person_id, facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL, oximeter_available=availability)
         assert classification is not None
 
     # Run the HSI event from ALRI module
@@ -667,7 +667,7 @@ def test_imci_classifications(tmpdir):
 
     for availability in [True, False]:
         classification = sim.modules['Alri'].imci_pneumonia_classification(
-            person_id, hsi_event=hsi_event, oximeter_available=availability)
+            person_id=person_id, facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL, oximeter_available=availability)
         assert classification is not None
 
 
@@ -761,24 +761,27 @@ def test_treatment(tmpdir):
 
 def test_use_of_HSI_GenericFirstApptAtFacilityLevel0(tmpdir):
     """Check that the (Generic) HSI at facility level 0 works"""
-    dur = pd.DateOffset(days=0)
     popsize = 100
     sim = get_sim(tmpdir)
 
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date + dur)
+    sim.simulate(end_date=start_date)
     sim.event_queue.queue = []  # clear the queue
+    sim.modules['HealthSystem'].reset_queue()
 
     # make probability of death 100%
     def death(person_id):
         return True
     sim.modules['Alri'].models.will_die_of_alri = death
 
-    # Get person to use (only over 2 months old):
+    # Get person to use (under 5 but over 2 months old and not infected):
     df = sim.population.props
-    under5s = df.loc[df.is_alive & ((df['age_exact_years'] >= 1/6) & (df['age_years'] < 5))]
+    under5s = df.loc[df.is_alive
+                     & ~df['ri_current_infection_status']
+                     & (df['age_exact_years'] >= 1/6)
+                     & (df['age_years'] < 5)]
     person_id = under5s.index[0]
-    assert not df.loc[person_id, 'ri_current_infection_status']
+    assert not df.at[person_id, 'ri_current_infection_status']
 
     # Run incident case:
     pathogen = list(sim.modules['Alri'].all_pathogens)[0]
@@ -796,7 +799,7 @@ def test_use_of_HSI_GenericFirstApptAtFacilityLevel0(tmpdir):
     # get the classification for the disease
     for availability in [True, False]:
         classification = sim.modules['Alri'].imci_pneumonia_classification(
-            person_id, hsi_event=hsi, oximeter_available=availability)
+            person_id=person_id, facility_level=hsi.ACCEPTED_FACILITY_LEVEL, oximeter_available=availability)
         assert classification is not None
 
     if classification != 'cough_or_cold':
@@ -808,24 +811,24 @@ def test_use_of_HSI_GenericFirstApptAtFacilityLevel0(tmpdir):
 
 def test_use_HSI_level_1_and_2(tmpdir):
     """Check that the HSI at facility level 1a, 1b and 2 work"""
-    dur = pd.DateOffset(days=0)
     popsize = 100
     sim = get_sim(tmpdir)
 
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date + dur)
+    sim.simulate(end_date=start_date)
     sim.event_queue.queue = []  # clear the queue
+    sim.modules['HealthSystem'].reset_queue()
 
     # make probability of death 100%
     def death(person_id):
         return True
     sim.modules['Alri'].models.will_die_of_alri = death
 
-    # Get person to use:
+    # Get person to use (under 5 and not infected):
     df = sim.population.props
-    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+    under5s = df.loc[df.is_alive & ~df['ri_current_infection_status'] & (df['age_years'] < 5)]
     person_id = under5s.index[0]
-    assert not df.loc[person_id, 'ri_current_infection_status']
+    assert not df.at[person_id, 'ri_current_infection_status']
 
     # Run incident case:
     pathogen = list(sim.modules['Alri'].all_pathogens)[0]
