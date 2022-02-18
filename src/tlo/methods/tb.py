@@ -1875,6 +1875,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         if person["tb_on_treatment"] and not person["tb_treatment_failure"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
+        test = "sputum"
         test_result = None
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
 

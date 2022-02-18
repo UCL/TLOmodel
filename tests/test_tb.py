@@ -167,7 +167,7 @@ def test_natural_history():
     # select an adult who is alive with latent tb
     person_id = df.loc[df.is_alive & (df.tb_inf == 'latent') &
                        df.age_years.between(15, 80)].index[0]
-    assert person_id  # check person_id has been identified
+    assert person_id is not None # check person_id has been identified
 
     # set tb strain to ds
     df.at[person_id, 'tb_strain'] = 'ds'
@@ -392,7 +392,7 @@ def test_treatment_failure():
 
     # should schedule xpert - if available
     # check that the event returned a footprint for an xpert test
-    assert test == screening_appt.make_appt_footprint({'Over5OPD': 1, 'LabMolec': 1})
+    assert test == screening_appt.make_appt_footprint({'Over5OPD': 1})
 
     # start treatment
     tx_start = tb.HSI_Tb_StartTreatment(person_id=person_id,
@@ -424,6 +424,7 @@ def test_children_referrals():
     # make clinical diagnosis perfect
     sim.modules['Tb'].parameters["sens_clinical"] = 1.0
     sim.modules['Tb'].parameters["spec_clinical"] = 1.0
+    sim.modules['Tb'].parameters["probability_access_to_xray"] = 1.0
 
     # simulate for 0 days, just get everything set up (dxtests etc)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -804,7 +805,7 @@ def test_cause_of_death():
     df.at[person_id1, 'tb_inf'] = 'latent'
     df.at[person_id1, 'tb_strain'] = 'ds'
     df.at[person_id1, 'tb_scheduled_date_active'] = sim.date
-    df.at[person_id1, 'tb_smear'] = True
+    # df.at[person_id1, 'tb_smear'] = True
     df.at[person_id1, 'hv_inf'] = True
 
     # check AIDS onset scheduled through TbActiveEvent
@@ -814,7 +815,6 @@ def test_cause_of_death():
     # check properties set
     assert df.at[person_id1, 'tb_inf'] == 'active'
     assert df.at[person_id1, 'tb_date_active'] == sim.date
-    assert df.at[person_id1, 'tb_smear']
 
     # find the AIDS onset event for this person
     date_aids_event, aids_event = \
@@ -827,7 +827,7 @@ def test_cause_of_death():
 
     # schedule AIDS death - cause AIDS_TB
     date_aids_death_event, aids_death_event = \
-        [ev for ev in sim.find_events_for_person(person_id1) if isinstance(ev[1], hiv.HivAidsDeathEvent)][0]
+        [ev for ev in sim.find_events_for_person(person_id1) if isinstance(ev[1], hiv.HivAidsTbDeathEvent)][0]
     assert date_aids_death_event > sim.date
 
     # run the AIDS death event for this person:
