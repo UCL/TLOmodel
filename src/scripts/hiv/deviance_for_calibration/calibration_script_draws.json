@@ -1,249 +1,249 @@
 {
   "scenario_script_path": "src/scripts/hiv/deviance_for_calibration/calibration_script.py",
-  "scenario_seed": 28860,
+  "scenario_seed": 42787,
   "runs_per_draw": 5,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 819079536,
+      "draw_seed": 9044641,
       "parameters": {
         "Hiv": {
-          "beta": 0.1562877913158901
+          "beta": 0.1092199663383177
         },
         "Tb": {
-          "transmission_rate": 17.22376134255911
+          "transmission_rate": 15.82411241683663
         }
       }
     },
     {
       "draw_number": 1,
-      "draw_seed": 863081220,
+      "draw_seed": 1703844344,
       "parameters": {
         "Hiv": {
-          "beta": 0.1021055739272757
+          "beta": 0.1251759310573124
         },
         "Tb": {
-          "transmission_rate": 20.72689864260169
+          "transmission_rate": 16.71012296289471
         }
       }
     },
     {
       "draw_number": 2,
-      "draw_seed": 947429398,
+      "draw_seed": 756062129,
       "parameters": {
         "Hiv": {
-          "beta": 0.1456924260181419
+          "beta": 0.1354630213936761
         },
         "Tb": {
-          "transmission_rate": 17.75932625106941
+          "transmission_rate": 20.58731624919659
         }
       }
     },
     {
       "draw_number": 3,
-      "draw_seed": 431467593,
+      "draw_seed": 940130475,
       "parameters": {
         "Hiv": {
-          "beta": 0.1642105184701991
+          "beta": 0.1048337868088496
         },
         "Tb": {
-          "transmission_rate": 21.83496561687767
+          "transmission_rate": 20.27254226600854
         }
       }
     },
     {
       "draw_number": 4,
-      "draw_seed": 128398609,
+      "draw_seed": 1281398931,
       "parameters": {
         "Hiv": {
-          "beta": 0.1123203929406162
+          "beta": 0.09618417158882275
         },
         "Tb": {
-          "transmission_rate": 17.69942931534052
+          "transmission_rate": 19.01511237791463
         }
       }
     },
     {
       "draw_number": 5,
-      "draw_seed": 1939726571,
+      "draw_seed": 790731799,
       "parameters": {
         "Hiv": {
-          "beta": 0.1536036258656759
+          "beta": 0.1633537478967886
         },
         "Tb": {
-          "transmission_rate": 20.42419338455886
+          "transmission_rate": 20.98423635676263
         }
       }
     },
     {
       "draw_number": 6,
-      "draw_seed": 634650526,
+      "draw_seed": 1549877076,
       "parameters": {
         "Hiv": {
-          "beta": 0.1257969317762555
+          "beta": 0.1485934528805072
         },
         "Tb": {
-          "transmission_rate": 20.00356884853117
+          "transmission_rate": 18.36442244232228
         }
       }
     },
     {
       "draw_number": 7,
-      "draw_seed": 1013595757,
+      "draw_seed": 611815787,
       "parameters": {
         "Hiv": {
-          "beta": 0.1081877020201303
+          "beta": 0.142714659997171
         },
         "Tb": {
-          "transmission_rate": 18.59332333527923
+          "transmission_rate": 16.14678774241169
         }
       }
     },
     {
       "draw_number": 8,
-      "draw_seed": 905268657,
+      "draw_seed": 1376177133,
       "parameters": {
         "Hiv": {
-          "beta": 0.08930246384116358
+          "beta": 0.1797383517205509
         },
         "Tb": {
-          "transmission_rate": 19.67508717930192
+          "transmission_rate": 17.79227891022336
         }
       }
     },
     {
       "draw_number": 9,
-      "draw_seed": 1570025538,
+      "draw_seed": 738758005,
       "parameters": {
         "Hiv": {
-          "beta": 0.1417782479741723
+          "beta": 0.1156975483894789
         },
         "Tb": {
-          "transmission_rate": 18.48069250318769
+          "transmission_rate": 19.21836149842763
         }
       }
     },
     {
       "draw_number": 10,
-      "draw_seed": 812656203,
+      "draw_seed": 224972629,
       "parameters": {
         "Hiv": {
-          "beta": 0.0972148192410793
+          "beta": 0.1582445877140324
         },
         "Tb": {
-          "transmission_rate": 19.2377940318734
+          "transmission_rate": 15.10988436713767
         }
       }
     },
     {
       "draw_number": 11,
-      "draw_seed": 37022869,
+      "draw_seed": 165235066,
       "parameters": {
         "Hiv": {
-          "beta": 0.1734136438203507
+          "beta": 0.1723923019555519
         },
         "Tb": {
-          "transmission_rate": 18.2224431543476
+          "transmission_rate": 17.35388388909593
         }
       }
     },
     {
       "draw_number": 12,
-      "draw_seed": 2129400253,
+      "draw_seed": 1526296708,
       "parameters": {
         "Hiv": {
-          "beta": 0.122126865277145
+          "beta": 0.1219879084345556
         },
         "Tb": {
-          "transmission_rate": 21.28749257787088
+          "transmission_rate": 18.02214460433061
         }
       }
     },
     {
       "draw_number": 13,
-      "draw_seed": 501272764,
+      "draw_seed": 387741163,
       "parameters": {
         "Hiv": {
-          "beta": 0.117868198772388
+          "beta": 0.1526213097814324
         },
         "Tb": {
-          "transmission_rate": 20.77842185717188
+          "transmission_rate": 17.03657234081943
         }
       }
     },
     {
       "draw_number": 14,
-      "draw_seed": 598972457,
+      "draw_seed": 1435113498,
       "parameters": {
         "Hiv": {
-          "beta": 0.1650934339234901
+          "beta": 0.08962167806637754
         },
         "Tb": {
-          "transmission_rate": 19.76493573466833
+          "transmission_rate": 19.57887362578045
         }
       }
     },
     {
       "draw_number": 15,
-      "draw_seed": 1363618121,
+      "draw_seed": 49573321,
       "parameters": {
         "Hiv": {
-          "beta": 0.1377610918035156
+          "beta": 0.09076835045300408
         },
         "Tb": {
-          "transmission_rate": 17.32369775092092
+          "transmission_rate": 17.59376864083721
         }
       }
     },
     {
       "draw_number": 16,
-      "draw_seed": 1361694075,
+      "draw_seed": 602921902,
       "parameters": {
         "Hiv": {
-          "beta": 0.0924297200939441
+          "beta": 0.1327200267141945
         },
         "Tb": {
-          "transmission_rate": 21.60266852327808
+          "transmission_rate": 15.40366891690813
         }
       }
     },
     {
       "draw_number": 17,
-      "draw_seed": 1829496529,
+      "draw_seed": 486538782,
       "parameters": {
         "Hiv": {
-          "beta": 0.1336190617237992
+          "beta": 0.1114031589331815
         },
         "Tb": {
-          "transmission_rate": 19.38553742169557
+          "transmission_rate": 19.80720286496229
         }
       }
     },
     {
       "draw_number": 18,
-      "draw_seed": 461851474,
+      "draw_seed": 155848691,
       "parameters": {
         "Hiv": {
-          "beta": 0.1773457335109062
+          "beta": 0.08198091757227693
         },
         "Tb": {
-          "transmission_rate": 21.13832594236314
+          "transmission_rate": 16.23305932315613
         }
       }
     },
     {
       "draw_number": 19,
-      "draw_seed": 1168918119,
+      "draw_seed": 1346603573,
       "parameters": {
         "Hiv": {
-          "beta": 0.08004964490979682
+          "beta": 0.1670571099749963
         },
         "Tb": {
-          "transmission_rate": 18.80715609270511
+          "transmission_rate": 18.61271962125575
         }
       }
     }
   ],
-  "commit": "5524d51171c93c4ed76f1f8b8dbc11e181eb8b85",
-  "github": "https://github.com/UCL/TLOmodel/blob/5524d51171c93c4ed76f1f8b8dbc11e181eb8b85/src/scripts/hiv/deviance_for_calibration/calibration_script.py"
+  "commit": "daaf2c25624f99486db523dd80a9d915e2a0a101",
+  "github": "https://github.com/UCL/TLOmodel/blob/daaf2c25624f99486db523dd80a9d915e2a0a101/src/scripts/hiv/deviance_for_calibration/calibration_script.py"
 }

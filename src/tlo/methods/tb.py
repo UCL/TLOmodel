@@ -161,10 +161,6 @@ class Tb(Module):
         "rel_inf_smear_ng": Parameter(
             Types.REAL, "relative infectiousness of tb in hiv+ compared with hiv-"
         ),
-        # "rel_inf_poor_tx": Parameter(
-        #     Types.REAL,
-        #     "relative infectiousness of tb in treated people with poor adherence",
-        # ),
         "rr_bcg_inf": Parameter(
             Types.REAL, "relative risk of tb infection with bcg vaccination"
         ),
@@ -262,9 +258,6 @@ class Tb(Module):
             Types.REAL,
             "relative risk of progression to active disease for adults with HIV on ART",
         ),
-        # "rr_tb_overweight": Parameter(
-        #     Types.REAL, "relative risk of progression to active disease if overweight"
-        # ),
         "rr_tb_obese": Parameter(
             Types.REAL, "relative risk of progression to active disease if obese"
         ),
@@ -279,14 +272,6 @@ class Tb(Module):
         "rr_tb_smoking": Parameter(
             Types.REAL, "relative risk of progression to active disease with smoking"
         ),
-        # "dur_prot_ipt": Parameter(
-        #     Types.REAL,
-        #     "duration in days of protection conferred by IPT against active TB",
-        # ),
-        # "dur_prot_ipt_infant": Parameter(
-        #     Types.REAL,
-        #     "duration days of protection conferred by IPT against active TB in infants",
-        # ),
         "rr_ipt_adult": Parameter(
             Types.REAL, "relative risk of active TB with IPT in adults"
         ),
@@ -305,22 +290,42 @@ class Tb(Module):
         "rr_ipt_art_child": Parameter(
             Types.REAL, "relative risk of active TB with IPT and ART in children"
         ),
-        # ------------------ health system parameters ------------------ #
-        "sens_xpert": Parameter(Types.REAL, "sensitivity of Xpert test"),
-        "sens_sputum_pos": Parameter(
+        # ------------------ diagnostic tests ------------------ #
+        "sens_xpert_smear_negative": Parameter(
+            Types.REAL, "sensitivity of Xpert test in smear negative TB cases"),
+        "sens_xpert_smear_positive": Parameter(
+            Types.REAL, "sensitivity of Xpert test in smear positive TB cases"),
+        "spec_xpert_smear_negative": Parameter(
+            Types.REAL, "specificity of Xpert test in smear negative TB cases"),
+        "spec_xpert_smear_positive": Parameter(
+            Types.REAL, "specificity of Xpert test in smear positive TB cases"),
+        "sens_sputum_smear_positive": Parameter(
             Types.REAL,
             "sensitivity of sputum smear microscopy in sputum positive cases",
         ),
-        # "sens_sputum_neg": Parameter(
-        #     Types.REAL,
-        #     "sensitivity of sputum smear microscopy in sputum negative cases",
-        # ),
+        "spec_sputum_smear_positive": Parameter(
+            Types.REAL,
+            "specificity of sputum smear microscopy in sputum positive cases",
+        ),
         "sens_clinical": Parameter(
             Types.REAL, "sensitivity of clinical diagnosis in detecting active TB"
         ),
         "spec_clinical": Parameter(
             Types.REAL, "specificity of clinical diagnosis in detecting TB"
         ),
+        "sens_xray_smear_negative": Parameter(
+            Types.REAL, "sensitivity of x-ray diagnosis in smear negative TB cases"
+        ),
+        "sens_xray_smear_positive": Parameter(
+            Types.REAL, "sensitivity of x-ray diagnosis in smear positive TB cases"
+        ),
+        "spec_xray_smear_negative": Parameter(
+            Types.REAL, "specificity of x-ray diagnosis in smear negative TB cases"
+        ),
+        "spec_xray_smear_positive": Parameter(
+            Types.REAL, "specificity of x-ray diagnosis in smear positive TB cases"
+        ),
+        # ------------------ treatment success rates ------------------ #
         "prob_tx_success_ds": Parameter(
             Types.REAL, "Probability of treatment success for new and relapse TB cases"
         ),
@@ -333,12 +338,7 @@ class Tb(Module):
         "prob_tx_success_5_14": Parameter(
             Types.REAL, "Probability of treatment success for children aged 5-14 years"
         ),
-        # "prop_ltfu_tx": Parameter(
-        #     Types.REAL, "Proportion lost to follow-up during initial treatment"
-        # ),
-        # "prop_ltfu_retx": Parameter(
-        #     Types.REAL, "Proportion lost to follow-up during retreatment"
-        # ),
+        # ------------------ testing rates ------------------ #
         "rate_testing_general_pop": Parameter(
             Types.REAL,
             "rate of screening / testing per month in general population",
@@ -351,6 +351,7 @@ class Tb(Module):
             Types.REAL,
             "probability of screening for baseline population with active tb",
         ),
+        # ------------------ treatment regimens ------------------ #
         "ds_treatment_length": Parameter(
             Types.REAL,
             "length of treatment for drug-susceptible tb (first case) in months",
@@ -393,6 +394,10 @@ class Tb(Module):
         "second_line_test": Parameter(
             Types.STRING,
             "name of second test to be used for TB diagnosis"
+        ),
+        "probability_access_to_xray": Parameter(
+            Types.REAL,
+            "probability a person will have access to chest x-ray"
         )
     }
 
@@ -991,9 +996,10 @@ class Tb(Module):
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             tb_sputum_test=DxTest(
-                property='tb_smear',
-                sensitivity=p["sens_sputum_pos"],
-                specificity=1.0,
+                property='tb_inf',
+                target_categories=["active"],
+                sensitivity=p["sens_sputum_smear_positive"],
+                specificity=p["spec_sputum_smear_positive"],
                 item_codes=self.item_codes_for_consumables_required['sputum_test']
             )
         )
@@ -1002,12 +1008,14 @@ class Tb(Module):
         self.item_codes_for_consumables_required['xpert_test'] = \
             hs.get_item_codes_from_package_name("Xpert test")
 
+        # sensitivty/specificity set for smear-positive cases
+        # adjusted in the HSI if case is smear-negative
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
             tb_xpert_test=DxTest(
                 property="tb_inf",
                 target_categories=["active"],
-                sensitivity=p["sens_xpert"],
-                specificity=1.0,
+                sensitivity=p["sens_xpert_smear_positive"],
+                specificity=p["spec_xpert_smear_positive"],
                 item_codes=self.item_codes_for_consumables_required['xpert_test']
             )
         )
@@ -1016,13 +1024,26 @@ class Tb(Module):
         self.item_codes_for_consumables_required['chest_xray'] = {
             hs.get_item_code_from_item_name("X-ray"): 1}
 
+        # sensitivity/specificity set for smear-positive cases
+        # adjusted in the HSI if case is smear-negative
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
             tb_xray=DxTest(
                 property="tb_inf",
                 target_categories=["active"],
+                sensitivity=p["sens_xray_smear_positive"],
+                specificity=p["spec_xray_smear_positive"],
+                item_codes=self.item_codes_for_consumables_required['chest_xray']
+            )
+        )
+
+        # TB clinical diagnosis
+        self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
+            tb_clinical=DxTest(
+                property="tb_inf",
+                target_categories=["active"],
                 sensitivity=p["sens_clinical"],
                 specificity=p["spec_clinical"],
-                item_codes=self.item_codes_for_consumables_required['chest_xray']
+                item_codes=[]
             )
         )
 
@@ -1784,7 +1805,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
     A positive outcome from symptom-based screening will prompt referral to tb tests (sputum/xpert/xray)
     no consumables are required for screening (4 clinical questions)
 
-    This event is schedulegd by:
+    This event is scheduled by:
         * the main event poll,
         * when someone presents for care through a Generic HSI with tb-like symptoms
         * active screening / contact tracing programmes
@@ -1844,31 +1865,42 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             )
 
             # ------------------------- testing ------------------------- #
-
             # if screening indicates presumptive tb
 
             # refer for HIV testing: all ages
-            if "Hiv" in self.sim.modules:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=hiv.HSI_Hiv_TestAndRefer(
-                        person_id=person_id, module=self.sim.modules["Hiv"], referred_from='Tb'
-                    ),
-                    priority=1,
-                    topen=self.sim.date,
-                    tclose=None,
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=hiv.HSI_Hiv_TestAndRefer(
+                    person_id=person_id, module=self.sim.modules["Hiv"], referred_from='Tb'
+                ),
+                priority=1,
+                topen=self.sim.date,
+                tclose=None,
+            )
+
+            # child under 5 -> chest x-ray, but access is limited
+            # if xray not available, rely on clinical diagnosis
+            if person["age_years"] < 5:
+                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+                    {"Under5OPD": 1}
                 )
 
-            # child under 5 -> chest x-ray, has to be health system level 2 or above
-            if person["age_years"] < 5:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_Xray(person_id=person_id, module=self.module),
-                    topen=now,
-                    tclose=None,
-                    priority=0,
-                )
+                if self.module.rng.rand() < p["probability_access_to_xray"]:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        HSI_Tb_Xray(person_id=person_id, module=self.module),
+                        topen=now,
+                        tclose=None,
+                        priority=0,
+                    )
+
+                else:
+                    test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                        dx_tests_to_run="tb_clinical", hsi_event=self
+                    )
 
             # for all presumptive cases over 5 years of age
             else:
+                # this selects a test for the person
+                # if selection is xpert, will check for availability and return sputum if xpert not available
                 test = self.module.select_tb_test(person_id)
                 assert test is not None
 
@@ -1894,8 +1926,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 if test_result is None:
                     pass
 
-                # diagnosed with mdr-tb
-                if test_result and (person["tb_strain"] == "mdr"):
+                # diagnosed with mdr-tb - only if xpert used
+                if test_result and (test == "xpert") and (person["tb_strain"] == "mdr"):
                     df.at[person_id, "tb_diagnosed_mdr"] = True
 
                 # if a test has been performed, update person's properties

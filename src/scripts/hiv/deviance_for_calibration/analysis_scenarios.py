@@ -37,7 +37,7 @@ resourcefilepath = Path("./resources")
 # %% Set parameters for all sims
 start_date = Date(2010, 1, 1)
 end_date = Date(2025, 1, 1)
-popsize = 1000
+popsize = 10000
 
 scenario_dict = [0, 1, 2, 3, 4]
 
@@ -96,7 +96,7 @@ for scenario in scenario_dict:
     # parse the results
     output = parse_log_file(sim.log_filepath)
     # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
-    pickle_name = filename + "pickle"
+    pickle_name = filename + ".pickle"
     with open(outputpath / pickle_name, "wb") as f:
         # Pickle the 'data' dictionary using the highest protocol available.
         pickle.dump(output, f, pickle.HIGHEST_PROTOCOL)

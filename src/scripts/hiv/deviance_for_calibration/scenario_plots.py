@@ -279,10 +279,10 @@ plt.show()
 
 # ----------------------------- HIV -------------------------------------- #
 
-prev_and_inc_over_time = output["tlo.methods.hiv"][
+prev_and_inc_over_time0 = scenario0["tlo.methods.hiv"][
     "summary_inc_and_prev_for_adults_and_children_and_fsw"
 ]
-prev_and_inc_over_time = prev_and_inc_over_time.set_index("date")
+prev_and_inc_over_time0 = prev_and_inc_over_time0.set_index("date")
 
 # HIV - prevalence among in adults aged 15-49
 title_str = "HIV Prevalence in Adults Aged 15-49 (%)"

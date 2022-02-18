@@ -37,8 +37,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2019, 1, 1)
-popsize = 50000
+end_date = Date(2025, 1, 1)
+popsize = 10000
 # todo check parameters set below
 
 # set up the log config
@@ -89,6 +89,8 @@ sim.modules["Hiv"].parameters["beta"] = 0.127623113
 # transmission rate active cases -> new latent cases
 sim.modules["Tb"].parameters["transmission_rate"] = 19.5
 sim.modules["Tb"].parameters["rate_treatment_baseline_active"] = 0.45
+
+sim.modules["Tb"].parameters["scenario"] = 1
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
