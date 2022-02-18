@@ -183,7 +183,7 @@ class DxTest:
 
         # Store consumable code (None means that no consumables are required)
         if item_codes is not None:
-            assert isinstance(item_codes, (np.integer, int, list, dict)), 'item_codes in incorrect format.'
+            assert isinstance(item_codes, (np.integer, int, list, set, dict)), 'item_codes in incorrect format.'
         self.item_codes = item_codes
 
         # Store performance characteristics (if sensitivity and specificity are not supplied than assume perfect)
@@ -199,9 +199,17 @@ class DxTest:
         self.target_categories = target_categories
 
     def __hash_key(self):
+        if isinstance(self.item_codes, (dict, list)):
+            item_codes_key = json.dumps(self.item_codes, sort_keys=True)
+        elif isinstance(self.item_codes, set):
+            item_codes_key = frozenset(self.item_codes)
+        elif isinstance(self.item_codes, np.integer):
+            item_codes_key = int(self.item_codes)
+        else:
+            item_codes_key = self.item_codes
         return (
             self.__class__,
-            json.dumps(self.item_codes, sort_keys=True),
+            item_codes_key,
             self.property,
             self.sensitivity,
             self.specificity,
