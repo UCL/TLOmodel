@@ -647,11 +647,6 @@ class Alri(Module):
         'ri_ALRI_tx_start_date': Property(Types.DATE,
                                           'start date of Alri treatment for current episode (pd.NaT is not infected or'
                                           ' treatment has not begun)'),
-        'ri_treatment_failure_or_relapse':
-            Property(Types.BOOL, 'Receiving recommended treatment, '
-                                 'not improving by day 6 or relapsed by day 14 for non-complicated cases,'
-                                 'not improving by day 2 for complicated cases '
-                     )
     }
 
     def __init__(self, name=None, resourcefilepath=None, log_indivdual=None, do_checks=False):
@@ -711,11 +706,11 @@ class Alri(Module):
         for symptom_name in sorted(all_symptoms):
             if symptom_name not in self.sim.modules['SymptomManager'].generic_symptoms:
                 self.sim.modules['SymptomManager'].register_symptom(
-                    Symptom(name=symptom_name)
-                    # (associates the symptom with the 'average' healthcare seeking)
+                    Symptom(name=symptom_name, emergency_in_children=(symptom_name == 'danger_signs'))
+                    # (associates the symptom with the 'average' healthcare seeking, apart from "danger_signs",
+                    #  which is an emergency symptom in children.
                 )
-
-                # todo - danger_sign to be an emergency symptoms
+                # todo - any other suymptom to be emergency seeking? I note that the trigger in the Emergency Generic HSI is based on 'difficult_breathing'
 
     def pre_initialise_population(self):
         """Define columns for complications at run-time"""
@@ -945,359 +940,6 @@ class Alri(Module):
         self.consumables_used_in_hsi['Fluid_Maintenance'] = \
             [get_item_code(item='Tube, nasogastric CH 8_each_CMST')]
 
-    @staticmethod
-    def symptom_based_classification(age_exact_years, symptoms, facility_level):
-        """Based on symptoms presented, classify WHO-pneumonia severity at each facility level."""
-        # TODO: get other danger signs in iCCM when issue 429 is resolved
-        # todo iccm_danger_signs = symptoms.append() other symptoms child may have that is considered severe in iCCM
-
-        # ----- For children over 2 months and under 5 years of age -----
-        if (1.0 / 6.0) <= age_exact_years <= 5:
-            # NOTE: I put age <=5 years of age because as the pooling event occurs every 2 months,
-            # so when the child gets ALRI they may be 5 years of age.
-            # Otherwise this will have the assert error 'no treatment_plan recognised for None',
-            # as they wont be given a classification
-
-            # iCCM classifications - HSAs in level 0 ---------------------------------------------------
-            if facility_level == '0':
-                # uncomplicated pneumonia (fast-breathing only)
-                if ('tachypnoea' in symptoms) and (
-                        ('chest_indrawing' not in symptoms) and ('danger_signs' not in symptoms)):
-                    return 'fast_breathing_pneumonia'
-                # severe pneumonia (chest-indrawing or danger signs)
-                elif ('chest_indrawing' in symptoms) and ('danger_signs' not in symptoms):
-                    return 'chest_indrawing_pneumonia'
-                elif 'danger_signs' in symptoms:
-                    return 'danger_signs_pneumonia'
-                # common cold / no pneumonia
-                elif (('cough' in symptoms) or ('difficult_breathing' in symptoms)) and (
-                    ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
-                        ('danger_signs' not in symptoms)):
-                    return 'cough_or_cold'
-                else:
-                    raise ValueError(f'classification not recognised for symptoms: {symptoms}')
-
-            # IMCI classifications - HCW in health facilities --------------------------------------------
-            elif facility_level in ['1a', '1b', '2']:
-                if (('tachypnoea' in symptoms) or ('chest_indrawing' in symptoms)) and \
-                        ('danger_signs' not in symptoms):
-                    return 'non_severe_pneumonia'
-                elif 'danger_signs' in symptoms:
-                    return 'severe_pneumonia'
-                # common cold / no pneumonia
-                elif (('cough' in symptoms) or ('difficult_breathing' in symptoms)) and (
-                    ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
-                        ('danger_signs' not in symptoms)):
-                    return 'cough_or_cold'
-                else:
-                    raise ValueError(f'classification not recognised for symptoms: {symptoms}')
-
-            else:
-                raise ValueError(f'facility_level {facility_level} is not recognised')
-
-        # -----------------------------------------------------------------------------------------------------
-        # ----- For infants under 2 months of age -----
-        elif age_exact_years < 1/6:
-            if facility_level == '0':
-                return 'not_handled_at_facility_0'
-
-            elif facility_level in ['1a', '1b', '2']:
-                if ('tachypnoea' in symptoms) or ('chest_indrawing' in symptoms) or ('danger_signs' in symptoms):
-                    return 'very_severe_disease'
-                elif (('cough' in symptoms) or ('difficult_breathing' in symptoms)) and (
-                    ('tachypnoea' not in symptoms) and ('chest_indrawing' not in symptoms) and
-                        ('danger_signs' not in symptoms)):
-                    return 'cough_or_difficult_breathing'
-                else:
-                    raise ValueError(f'classification not recognised for symptoms: {symptoms}')
-            else:
-                raise ValueError(f'facility_level {facility_level} is not recognised')
-
-    def imci_pneumonia_classification(self, person_id, facility_level, oximeter_available):
-        """
-        Based on symptoms and pulse oximetry measure, classify WHO-pneumonia severity at each facility level
-        :return:
-        """
-        df = self.sim.population.props
-
-        # Check for availability of pulse oximeter and re-classify
-        if oximeter_available and (df.at[person_id, 'ri_SpO2_level'] == '<90%'):
-            return 'severe_pneumonia'
-        else:
-            return self.symptom_based_classification(
-                age_exact_years=df.at[person_id, 'age_exact_years'],
-                symptoms=self.sim.modules['SymptomManager'].has_what(person_id=person_id),
-                facility_level=facility_level
-            )
-
-    def assess_and_classify_cough_or_difficult_breathing_level0(self, person_id, hsi_event):
-        """This routine is called when cough or difficulty breathing is a symptom for a child attending
-        a Generic HSI Appointment at level 0."""
-
-        facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
-        health_system = self.sim.modules['HealthSystem']
-        assert facility_level == '0'
-
-        # get the disease classification (iCCM/IMCI)
-        oximeter_available = hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['Pulse_oximetry'])
-        classification = self.imci_pneumonia_classification(person_id=person_id,
-                                                            facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL,
-                                                            oximeter_available=oximeter_available)
-
-        # for iCCM severe pneumonia, needing referral - give 1st dose antibiotic and refer to health facility
-        if classification in ('chest_indrawing_pneumonia', 'danger_signs_pneumonia', 'severe_pneumonia'):
-            # get the first dose of antibiotic ...
-            hsi_event.get_consumables(
-                item_codes=self.consumables_used_in_hsi['First_dose_antibiotic_for_referral_iCCM'])
-            # ... and refer to facility level 1
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_IMCI_Pneumonia_Treatment(
-                    person_id=person_id,
-                    module=self),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None)
-
-        # iCCM uncomplicated pneumonia, can be treated in the community (in current generic HSI level 0)
-        elif classification == 'fast_breathing_pneumonia':
-            if hsi_event.get_consumables(
-                item_codes=self.consumables_used_in_hsi['iCCM_Antibiotic_Therapy_for_pneumonia']
-            ):
-                self.do_alri_treatment(person_id=person_id,
-                                       hsi_event=hsi_event,
-                                       treatment='iCCM_Antibiotic_Therapy_for_pneumonia')
-            else:
-                # if no consumables refer to health facility
-                health_system.schedule_hsi_event(
-                    HSI_IMCI_Pneumonia_Treatment(
-                        person_id=person_id,
-                        module=self),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None)
-
-        elif classification in ['cough_or_cold', 'cough_or_difficult_breathing']:
-            return  # do nothing
-
-        # young infants not handled in iCCM, refer to health facility
-        elif classification == 'not_handled_at_facility_0':
-            health_system.schedule_hsi_event(
-                HSI_IMCI_Pneumonia_Treatment(
-                    person_id=person_id,
-                    module=self),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None)
-
-        else:
-            raise ValueError(f'no treatment_plan recognised for {classification}')
-
-    def assess_and_classify_cough_or_difficult_breathing_level1(self, person_id, hsi_event):
-        """This routine is called when cough or difficulty breathing is a symptom for a child attending
-        an Emergency Generic HSI Appointment (at level 1a and 1b) or HSI_IMCI_Pneumonia_Treatment (level 1a)."""
-
-        df = self.sim.population.props
-        facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
-        health_system = self.sim.modules['HealthSystem']
-        symptoms = hsi_event.sim.modules['SymptomManager'].has_what(person_id=person_id)
-
-        assert facility_level == '1a' or '1b'
-
-        # get the disease classification (iCCM/IMCI)
-        oximeter_available = hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['Pulse_oximetry'])
-        classification = self.imci_pneumonia_classification(person_id=person_id,
-                                                            facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL,
-                                                            oximeter_available=oximeter_available)
-
-        # IMCI severe pneumonia at level 1a/1b - requires first dose IM antibiotic and referral to hospital
-        if classification in ('severe_pneumonia', 'very_severe_disease'):
-            # first check if facility level has capabilities to treat severe pneumonia
-
-            # get bronchodilator if wheeze
-            if 'wheeze' in symptoms:
-                hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['Inhaled_Brochodilator'])
-
-            # if pulse oximeter is available, read SpO2, and give oxygen
-            if oximeter_available and (df.at[person_id, 'ri_SpO2_level'] == '<90%'):
-                hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['Oxygen_Therapy'])
-
-            # only if antibiotics is available do the treatment cure rate
-            if hsi_event.get_consumables(
-                item_codes=self.consumables_used_in_hsi['1st_line_Antibiotic_Therapy_for_Severe_Pneumonia']
-            ):
-                self.do_alri_treatment(person_id=person_id, hsi_event=hsi_event,
-                                       treatment='IMCI_Treatment_severe_pneumonia')
-
-            # Or if not available, then refer
-            else:
-                # give first dose of antibiotic and refer to hospital
-                hsi_event.get_consumables(
-                    item_codes=self.consumables_used_in_hsi['First_dose_antibiotic_for_referral_IMCI']
-                )
-                # and refer to in-patient HSI in facility level 2
-                health_system.schedule_hsi_event(
-                    HSI_Hospital_Inpatient_Pneumonia_Treatment(
-                        person_id=person_id,
-                        module=self),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None)
-
-        # IMCI uncomplicated pneumonia at level 1a/1b - treat outpatient
-        elif classification == 'non_severe_pneumonia':
-            # Treat uncomplicated cases now
-            if hsi_event.get_consumables(
-                item_codes=any(
-                    self.consumables_used_in_hsi['Amoxicillin_suspension_or_tablet'])):
-                self.do_alri_treatment(person_id=person_id, hsi_event=hsi_event,
-                                       treatment='IMCI_Treatment_non_severe_pneumonia')
-
-            # if no consumables refer to health facility of the same level (on same day)
-            else:
-                health_system.schedule_hsi_event(
-                    HSI_IMCI_Pneumonia_Treatment(
-                        person_id=person_id,
-                        module=self),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None)
-
-        # IMCI common cold - do nothing
-        elif classification in ('cough_or_cold', 'cough_or_difficult_breathing'):
-            return
-        else:
-            raise ValueError(f'no treatment_plan recognised for classification: {classification} '
-                             f'with symptoms: {symptoms}, with age {df.at[person_id].age_exact_years}')
-
-    def assess_and_classify_cough_or_difficult_breathing_level2(self, person_id, hsi_event):
-        """This routine is called when cough or difficulty breathing is a symptom for a child attending
-        a HSI appointment at level 2."""
-
-        df = self.sim.population.props
-        facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
-        health_system = self.sim.modules['HealthSystem']
-        symptoms = hsi_event.sim.modules['SymptomManager'].has_what(person_id=person_id)
-
-        assert facility_level == '2'
-
-        # get the disease classification (iCCM/IMCI)
-        oximeter_available = hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['Pulse_oximetry'])
-        classification = self.imci_pneumonia_classification(person_id=person_id,
-                                                            facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL,
-                                                            oximeter_available=oximeter_available)
-
-        if classification in ('severe_pneumonia', 'very_severe_disease'):
-
-            # get bronchodilator if wheeze
-            if 'wheeze' in symptoms:
-                hsi_event.get_consumables(
-                    item_codes=self.consumables_used_in_hsi['Brochodilator_and_Steroids'])
-
-            # if pulse oximeter is available, read SpO2, and give oxygen
-            if oximeter_available and (df.at[person_id, 'ri_SpO2_level'] == '<90%'):
-                hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['Oxygen_Therapy'])
-
-            # only if antibiotics is available do the treatment cure rate
-            if hsi_event.get_consumables(
-                item_codes=self.consumables_used_in_hsi['1st_line_Antibiotic_Therapy_for_Severe_Pneumonia']
-            ):
-                self.do_alri_treatment(person_id=person_id,
-                                       hsi_event=hsi_event,
-                                       treatment='IMCI_Treatment_severe_pneumonia')
-
-            else:
-                health_system.schedule_hsi_event(
-                    HSI_Hospital_Inpatient_Pneumonia_Treatment(
-                        person_id=person_id,
-                        module=self),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None)   # todo: ask Tim H. are they allowed in the model to go another district hospital?
-
-        elif classification == 'non_severe_pneumonia':
-            # IMCI non-severe pneumonia at level 2 - treat at outpatient
-            if any(
-                hsi_event.get_consumables(
-                    item_codes=self.consumables_used_in_hsi['Amoxicillin_suspension_or_tablet'],
-                    return_individual_results=True
-                ).values()
-            ):
-                self.do_alri_treatment(person_id=person_id,
-                                       hsi_event=hsi_event,
-                                       treatment='IMCI_Treatment_non_severe_pneumonia')
-            else:
-                health_system.schedule_hsi_event(
-                    HSI_IMCI_Pneumonia_Treatment(
-                        person_id=person_id,
-                        module=self),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None)  # go down to level 1, closer than another district hospital
-
-        # IMCI common cold - do nothing
-        elif classification == 'cough_or_cold':
-            return
-
-        else:
-            raise ValueError(f'no treatment_plan recognised for {classification}')
-
-    def do_alri_treatment(self, person_id, hsi_event, treatment):
-        """Helper function that enacts the effects of a treatment to Alri caused by a pathogen.
-        It will only do something if the Alri is caused by a pathogen (this module).
-        * Log the treatment
-        * Prevent any death event that may be scheduled from occuring (prior to the cure event)
-        * Schedules the cure event, at which the episode is ended
-        * Schedules a follow-up appointment if condition not improving (by day 6 or by day 14)
-        """
-
-        df = self.sim.population.props
-        person = df.loc[person_id]
-        p = self.parameters
-
-        # Do nothing if the person is not alive
-        if not person.is_alive:
-            return
-
-        # Do nothing if the person is not infected with a pathogen that can cause ALRI
-        if not person['ri_current_infection_status']:
-            return
-
-        # Record that the person is now on treatment:
-        df.loc[person_id, ['ri_on_treatment', 'ri_ALRI_tx_start_date']] = [True, self.sim.date]
-
-        # First contact with the health system for the current illness, for **NON-SEVERE** pneumonia cases
-        if treatment in ('IMCI_Treatment_non_severe_pneumonia', 'iCCM_Antibiotic_Therapy_for_pneumonia'):
-
-            # check if they will have treatment failure by day 6 or relapse by day 14
-            if p['5day_amoxicillin_treatment_failure_by_day6'] > self.rng.rand():
-                df.at[person_id, 'ri_treatment_failure_or_relapse'] = True
-            elif p['5day_amoxicillin_relapse_by_day14'] > self.rng.rand():
-                df.at[person_id, 'ri_treatment_failure_or_relapse'] = True
-
-        # ----------------------------------------------------------------------------------------
-        # First contact with the health system for the current illness, for **SEVERE** pneumonia cases
-        if treatment == 'IMCI_Treatment_severe_pneumonia':
-            # check that they will not improve by 48h-72h, change antibiotics if Staph is suspected.
-            if p['1st_line_antibiotic_treatment_failure_by_day2'] > self.rng.rand():
-                df.at[person_id, 'ri_treatment_failure_or_relapse'] = True
-                # Change to 2nd line antibiotics
-                hsi_event.get_consumables(
-                    item_codes=self.consumables_used_in_hsi['2nd_line_Antibiotic_Therapy_for_Severe_Pneumonia'])
-                # apply mortality in children who failed 1st line treatment
-                if (1 - p['prob_death_failed_1st_line_treatment']) > self.rng.rand():
-                    # Cancel the death
-                    self.cancel_death_and_schedule_cure(person_id)
-                else:
-                    return  # let them go through natural death (or nat recovery)
-            else:
-                df.at[person_id, 'ri_treatment_failure_or_relapse'] = False
-
-        # ----------------------------------
-        # if no treatment failure or relapse, schedule recovery for all cases
-        if not df.at[person_id, 'ri_treatment_failure_or_relapse']:
-            # Cancel the death
-            self.cancel_death_and_schedule_cure(person_id)
-
     def end_episode(self, person_id):
         """End the episode infection for a person (i.e. reset all properties to show no current infection or
         complications).
@@ -1319,7 +961,6 @@ class Alri(Module):
             'ri_scheduled_recovery_date': pd.NaT,
             'ri_scheduled_death_date': pd.NaT,
             'ri_ALRI_tx_start_date': pd.NaT,
-            'ri_treatment_failure_or_relapse': False
         }
         df.loc[person_id, new_properties.keys()] = new_properties.values()
 
@@ -1429,6 +1070,223 @@ class Alri(Module):
             add_or_remove='+',
             disease_module=self,
         )
+
+    @staticmethod
+    def symptom_based_classification(age_exact_years, symptoms, facility_level):
+        """Based on symptoms presented, classify WHO-pneumonia severity at each facility level."""
+        # TODO: get other danger signs in iCCM when issue 429 is resolved (!?!?!?!?!?!)
+        # todo iccm_danger_signs = symptoms.append() other symptoms child may have that is considered severe in iCCM
+        # <-- todo why the difference in name vs "danger_sign_pneumonia"!?!!?!?!?!?!?!?!
+
+        child_is_younger_than_2_months = age_exact_years < (1.0 / 6.0)
+
+        # iCCM classifications - HSAs in level 0:
+        if facility_level == '0':
+            if child_is_younger_than_2_months:
+                return 'not_handled_at_facility_0'
+            else:
+                if 'danger_signs' in symptoms:
+                    return 'danger_signs_pneumonia'
+                elif 'chest_indrawing' in symptoms:
+                    return 'chest_indrawing_pneumonia'
+                elif 'tachypnoea' in symptoms:
+                    return 'fast_breathing_pneumonia'
+                else:
+                    return 'cough_or_cold'
+
+        # IMCI classifications - HCW in health facilities:
+        else:
+            if child_is_younger_than_2_months:
+                if ('tachypnoea' in symptoms) or ('chest_indrawing' in symptoms) or ('danger_signs' in symptoms):
+                    return 'very_severe_disease'
+                else:
+                    return 'cough_or_difficult_breathing'
+            else:
+                if 'danger_signs' in symptoms:
+                    return 'severe_pneumonia'
+                elif ('tachypnoea' in symptoms) or ('chest_indrawing' in symptoms):
+                    return 'non_severe_pneumonia'
+                else:
+                    return 'cough_or_cold'
+
+
+    def imci_pneumonia_classification(self, oxygen_saturation, symptoms, age_exact_years, facility_level,
+                                      oximeter_available):
+        """
+        Based on symptoms and pulse oximetry measure, classify WHO-pneumonia severity at each facility level
+        :return:
+        """
+        if oximeter_available and (oxygen_saturation == '<90%'):
+            return 'severe_pneumonia'
+        else:
+            return self.symptom_based_classification(
+                age_exact_years=age_exact_years,
+                symptoms=symptoms,
+                facility_level=facility_level
+            )
+
+    def do_action_given_classification(self, person_id, classification, symptoms, oxygen_saturation, hsi_event):
+        """Do the actions that are required given a particular classification"""
+        # todo @ines/tim - this is the bit to pay attention to: we need to make sure that we know what to do for ANY.
+        # todo timc/ines -- what will cause inpatient? here _JUST_ the lack of consumables at level 1a/1b (!!?!)
+
+        # Create shortcuts:
+        schedule_hsi = lambda _event: self.sim.modules['HealthSystem'].schedule_hsi_event(_event, priority=0, topen=self.sim.date, tclose=None)
+        get_cons = lambda _item_str: hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi[_item_str])
+        get_any_cons = lambda _item_strs: any(hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi[_item_strs], return_individual_results=True).values())
+        do_treatment = lambda _treatment_str: self.do_effects_of_alri_treatment(person_id=person_id, hsi_event=hsi_event, treatment=_treatment_str)
+
+        # Define actions for each classification:
+        def do_if_fast_breathing_pneumonia(facility_level):
+            if facility_level == '0':
+                if get_cons('iCCM_Antibiotic_Therapy_for_pneumonia'):
+                    do_treatment('iCCM_Antibiotic_Therapy_for_pneumonia')
+                else:
+                    schedule_hsi(HSI_Alri_IMCI_Pneumonia_Treatment(person_id=person_id, module=self))
+            # todo what if not facility_level 0?
+
+        def do_if_chest_indrawing_pneumonia(facility_level):
+            if facility_level == '0':
+                get_cons('First_dose_antibiotic_for_referral_iCCM')
+                schedule_hsi(HSI_Alri_IMCI_Pneumonia_Treatment(person_id=person_id, module=self))
+            # todo what if not facility_level 0?
+
+        def do_if_danger_signs_pneumonia(facility_level):
+            if facility_level == '0':
+                get_cons('First_dose_antibiotic_for_referral_iCCM')
+                schedule_hsi(HSI_Alri_IMCI_Pneumonia_Treatment(person_id=person_id, module=self))
+            # todo what if not facility_level 0?
+
+        def do_if_non_severe_pneumonia(facility_level):
+            # todo - what if facility_level 0?
+            if facility_level in ('1a', '1b'):
+                if get_cons('Amoxicillin_suspension_or_tablet'):
+                    do_treatment('IMCI_Treatment_non_severe_pneumonia')
+                else:
+                    schedule_hsi(HSI_Alri_IMCI_Pneumonia_Treatment(person_id=person_id, module=self))
+
+            elif facility_level == '2':
+                if get_any_cons('Amoxicillin_suspension_or_tablet'):
+                    do_treatment('IMCI_Treatment_non_severe_pneumonia')
+
+        def do_if_severe_pneumonia(facility_level):
+            # Get bronchodilator if wheeze and at facility_level 1a, 1b, 2
+            if 'wheeze' in symptoms:
+                if facility_level in ('1a', '1b'):
+                    get_cons('Inhaled_Brochodilator')
+                elif facility_level == '2':
+                    get_cons('Brochodilator_and_Steroids')
+
+            # if pulse oximeter is available, read SpO2, and give oxygen
+            if oxygen_saturation == '<90%':
+                if facility_level in ('1a', '1b', '2'):
+                    if get_cons('Pulse_oximetry'):
+                        get_cons('Oxygen_Therapy')
+
+            if facility_level == '0':
+                get_cons('First_dose_antibiotic_for_referral_iCCM')
+                schedule_hsi(HSI_Alri_IMCI_Pneumonia_Treatment(person_id=person_id, module=self))
+
+            elif facility_level in ('1a', '1b', '2'):
+                if get_cons('1st_line_Antibiotic_Therapy_for_Severe_Pneumonia'):   # todo - this gating should probably just happen inside the treatment function
+                    do_treatment('IMCI_Treatment_severe_pneumonia')
+                else:
+                    schedule_hsi(HSI_Alri_Inpatient_Pneumonia_Treatment(person_id=person_id, module=self))
+
+        def do_if_very_severe_disease(facility_level):
+            if facility_level in ('1a', '1b'):
+                do_if_severe_pneumonia(facility_level)
+            # todo what about other facility levels?
+
+        def do_if_not_handled_at_facility_0(facility_level):
+            schedule_hsi(HSI_Alri_IMCI_Pneumonia_Treatment(person_id=person_id, module=self))
+
+        def do_if_cough_or_cold(facility_level):
+            return
+
+        def do_if_cough_or_difficult_breathing(facility_level):
+            # todo why distinguish these two diffferent (cough_or_cold / cough_or_difficult_breathing) classification - neither do anything!
+            return
+
+        # todo - @TimC/Ines -- do we _really_ need all these classification?? They seem very similar to one another!
+        do_mapping = {
+            'fast_breathing_pneumonia': do_if_fast_breathing_pneumonia,
+            'chest_indrawing_pneumonia': do_if_chest_indrawing_pneumonia,
+            'danger_signs_pneumonia': do_if_danger_signs_pneumonia,
+            'cough_or_cold': do_if_cough_or_cold,
+            'non_severe_pneumonia': do_if_non_severe_pneumonia,
+            'severe_pneumonia': do_if_severe_pneumonia,
+            'very_severe_disease': do_if_very_severe_disease,
+            'cough_or_difficult_breathing': do_if_cough_or_difficult_breathing,
+            'not_handled_at_facility_0': do_if_not_handled_at_facility_0
+        }
+        do_mapping[classification](facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
+    def assess_and_classify_cough_or_difficult_breathing_level(self, person_id, hsi_event):
+        """This routine is called when cough or difficulty breathing is a symptom for a child attending
+        a Generic HSI Appointment at level 0."""
+
+        person = self.sim.population.props.loc[person_id]
+        symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+
+        # Do the classification of the patient, for this HSI_Event
+        classification = self.imci_pneumonia_classification(
+            symptoms=symptoms,
+            age_exact_years=person.age_exact_years,
+            oxygen_saturation=person.ri_SpO2_level,
+            facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL,
+            oximeter_available=hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['Pulse_oximetry'])
+        )
+
+        # Do the actions required, given this classification
+        self.do_action_given_classification(
+            person_id=person_id,
+            classification=classification,
+            symptoms=symptoms,
+            oxygen_saturation=person.ri_SpO2_level,
+            hsi_event=hsi_event)
+
+    def do_effects_of_alri_treatment(self, person_id, hsi_event, treatment):
+        """Helper function that enacts the effects of a treatment to Alri caused by a pathogen.
+        It will only do something if the Alri is caused by a pathogen (this module).
+        * Log the treatment
+        * Prevent any death event that may be scheduled from occuring (prior to the cure event)
+        * Schedules the cure event, at which the episode is ended
+        * Schedules a follow-up appointment if condition not improving (by day 6 or by day 14)
+        """
+        # todo - @ines -- remove the property about failure.
+        # todo - @ines -- the parameter p['prob_death_failed_1st_line_treatment'] seems irrelevant to me, so removed.
+        # todo - @Ines -- we don't seem to need these two differnt probabilty numbers - so combine with self.parameters['5day_amoxicillin_treatment_failure_by_day14']
+        p_fail_amoxicillin = self.parameters['5day_amoxicillin_treatment_failure_by_day6']
+
+        assert treatment in ('iCCM_Antibiotic_Therapy_for_pneumonia',
+                             'IMCI_Treatment_non_severe_pneumonia',
+                             'IMCI_Treatment_severe_pneumonia')
+
+        df = self.sim.population.props
+        person = df.loc[person_id]
+        p = self.parameters
+
+        # Do nothing if the person is not infected with a pathogen that can cause ALRI
+        if not person['ri_current_infection_status']:
+            return
+
+        # Record that the person is now on treatment:
+        df.loc[person_id, ('ri_on_treatment', 'ri_ALRI_tx_start_date')] = (True, self.sim.date)
+
+        def treatment_will_fail(treatment):
+            """Determine if the treatment will fail"""
+            if treatment == 'IMCI_Treatment_severe_pneumonia':
+                return p['1st_line_antibiotic_treatment_failure_by_day2'] > self.rng.rand()
+            else:
+                return p_fail_amoxicillin > self.rng.rand()
+
+        if not treatment_will_fail(treatment):
+            self.cancel_death_and_schedule_cure(person_id)
+        else:
+            hsi_event.get_consumables(
+                item_codes=self.consumables_used_in_hsi['2nd_line_Antibiotic_Therapy_for_Severe_Pneumonia'])
+            # NB. If failure occurs, this switch to second-line should really happen in a later, separate follow-up HSI.
 
 
 class Models:
@@ -1825,9 +1683,6 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         if not person.is_alive:
             return
 
-        # Add this case to the counter:
-        self.module.logging_event.new_case(age=person.age_years, pathogen=self.pathogen)
-
         # ----------------- Determine the Alri disease type and bacterial coinfection for this case -----------------
         disease_type, bacterial_coinfection = models.determine_disease_type_and_secondary_bacterial_coinfection(
             age=person.age_years, pathogen=self.pathogen,
@@ -1926,6 +1781,10 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
                                                oxygen_saturation=oxygen_saturation
                                                )
 
+    def post_apply_hook(self):
+        """Add this case to the counter."""
+        self.module.logging_event.new_case(age=self.sim.population.props.at[self.target, 'age_years'],
+                                           pathogen=self.pathogen)
 
 class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
     """This is the Natural Recovery event. It is scheduled by the AlriIncidentCase Event for someone who will recover
@@ -2025,7 +1884,7 @@ class AlriDeathEvent(Event, IndividualScopeEventMixin):
 # ==================================== HEALTH SYSTEM INTERACTION EVENTS ====================================
 # ---------------------------------------------------------------------------------------------------------
 
-class HSI_IMCI_Pneumonia_Treatment(HSI_Event, IndividualScopeEventMixin):
+class HSI_Alri_IMCI_Pneumonia_Treatment(HSI_Event, IndividualScopeEventMixin):
     """
     HSI event for treating cough and/ or difficult breathing at the primary level (health centres)
     """
@@ -2033,14 +1892,11 @@ class HSI_IMCI_Pneumonia_Treatment(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = 'HSI_IMCI_Pneumonia_Treatment'
+        self.TREATMENT_ID = 'Pneumonia_Treatment_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        """Do the treatment"""
-
         df = self.sim.population.props
         person = df.loc[person_id]
 
@@ -2048,26 +1904,24 @@ class HSI_IMCI_Pneumonia_Treatment(HSI_Event, IndividualScopeEventMixin):
         if not (person.is_alive and person.ri_current_infection_status):
             return
 
-        self.module.assess_and_classify_cough_or_difficult_breathing_level1(person_id, hsi_event=self)
+        self.module.assess_and_classify_cough_or_difficult_breathing_level(person_id, hsi_event=self)
 
 
-class HSI_Hospital_Inpatient_Pneumonia_Treatment(HSI_Event, IndividualScopeEventMixin):
+class HSI_Alri_Inpatient_Pneumonia_Treatment(HSI_Event, IndividualScopeEventMixin):
     """
-    This is inpatient treatment of severe pneumonia. It requires inpatient bed days
+    This is inpatient treatment of severe pneumonia. It requires inpatient bed days.
+
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = 'HSI_Hospital_Inpatient_Pneumonia_Treatment'
+        self.TREATMENT_ID = 'Pneumonia_Treatment_Inpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 2, 'IPAdmission': 1})
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 3})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 3})
 
     def apply(self, person_id, squeeze_factor):
-        """Do the treatment"""
-
         df = self.sim.population.props
         person = df.loc[person_id]
 
@@ -2075,7 +1929,7 @@ class HSI_Hospital_Inpatient_Pneumonia_Treatment(HSI_Event, IndividualScopeEvent
         if not (person.is_alive and person.ri_current_infection_status):
             return
 
-        self.module.assess_and_classify_cough_or_difficult_breathing_level2(person_id, hsi_event=self)
+        self.module.assess_and_classify_cough_or_difficult_breathing_level(person_id, hsi_event=self)
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -2270,3 +2124,44 @@ class AlriPropertiesOfOtherModules(Module):
         df.at[child, 'va_hib_all_doses'] = False
         df.at[child, 'va_measles_all_doses'] = False
         df.at[child, 'un_clinical_acute_malnutrition'] = 'well'
+
+
+class AlriIncidentCase_Lethal_Severe_Pneumonia(AlriIncidentCase):
+    """This Event for testing that is a drop-in replacement of `AlriIncidentCase`. It always produces an infection
+    that will be lethal and should be classified as a severe pneunonia"""
+
+    def __init__(self, module, person_id, pathogen):
+        super().__init__(module, person_id=person_id, pathogen=pathogen)
+
+    def apply(self, person_id):
+        df = self.sim.population.props  # shortcut to the dataframe
+        m = self.module
+        p = m.parameters
+
+        disease_type = 'pneumonia'
+        duration_in_days_of_alri = 5
+        date_of_outcome = self.module.sim.date + DateOffset(days=duration_in_days_of_alri)
+        episode_end = date_of_outcome + DateOffset(days=p['days_between_treatment_and_cure'])
+
+        chars = {
+            'ri_current_infection_status': True,
+            'ri_primary_pathogen': self.pathogen,
+            'ri_secondary_bacterial_pathogen': np.nan,
+            'ri_disease_type': disease_type,
+            'ri_on_treatment': False,
+            'ri_start_of_current_episode': self.sim.date,
+            'ri_scheduled_recovery_date': pd.NaT,
+            'ri_scheduled_death_date': date_of_outcome,
+            'ri_end_of_current_episode': episode_end,
+            'ri_ALRI_tx_start_date': pd.NaT,
+            'ri_complication_hypoxaemia': True,
+            'ri_SpO2_level': "<90%"
+        }
+        df.loc[person_id, chars.keys()] = chars.values()
+
+        self.impose_symptoms_for_uncomplicated_disease(person_id=person_id, disease_type=disease_type)
+
+        self.module.impose_symptoms_for_complication(
+            person_id=person_id, complication='hypoxaemia', oxygen_saturation="<90%")
+
+        self.sim.schedule_event(AlriDeathEvent(self.module, person_id), date_of_outcome)

@@ -161,7 +161,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
         if ('cough' in symptoms) or ('difficult_breathing' in symptoms):
             if 'Alri' in sim.modules:
-                sim.modules['Alri'].assess_and_classify_cough_or_difficult_breathing_level0(
+                sim.modules['Alri'].assess_and_classify_cough_or_difficult_breathing_level(
                     person_id=person_id, hsi_event=hsi_event)
 
         if "Malaria" in sim.modules:
@@ -463,9 +463,10 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
         )
         schedule_hsi(event, priority=1, topen=sim.date)
 
-    if (age < 5) and (('cough' in symptoms) or ('difficult_breathing' in symptoms)):
+    if (age < 5) and set(symptoms).intersection({'cough', 'difficult_breathing'}):
+        # todo - @ines - you might want to align these with what you make you emergency symptom(s) to be.
         if 'Alri' in sim.modules:
-            sim.modules['Alri'].assess_and_classify_cough_or_difficult_breathing_level1(
+            sim.modules['Alri'].assess_and_classify_cough_or_difficult_breathing_level(
                 person_id=person_id, hsi_event=hsi_event)
 
     if 'RTI' in sim.modules:
