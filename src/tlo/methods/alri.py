@@ -1683,6 +1683,9 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         if not person.is_alive:
             return
 
+        # Log the incident case:
+        self.module.logging_event.new_case(age=person.age_years, pathogen=self.pathogen)
+
         # ----------------- Determine the Alri disease type and bacterial coinfection for this case -----------------
         disease_type, bacterial_coinfection = models.determine_disease_type_and_secondary_bacterial_coinfection(
             age=person.age_years, pathogen=self.pathogen,
@@ -1781,10 +1784,6 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
                                                oxygen_saturation=oxygen_saturation
                                                )
 
-    def post_apply_hook(self):
-        """Add this case to the counter."""
-        self.module.logging_event.new_case(age=self.sim.population.props.at[self.target, 'age_years'],
-                                           pathogen=self.pathogen)
 
 class AlriNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
     """This is the Natural Recovery event. It is scheduled by the AlriIncidentCase Event for someone who will recover
@@ -2128,7 +2127,7 @@ class AlriPropertiesOfOtherModules(Module):
 
 class AlriIncidentCase_Lethal_Severe_Pneumonia(AlriIncidentCase):
     """This Event for testing that is a drop-in replacement of `AlriIncidentCase`. It always produces an infection
-    that will be lethal and should be classified as a severe pneunonia"""
+    that will be lethal and should be classified as a severe pneumonia"""
 
     def __init__(self, module, person_id, pathogen):
         super().__init__(module, person_id=person_id, pathogen=pathogen)
@@ -2137,6 +2136,8 @@ class AlriIncidentCase_Lethal_Severe_Pneumonia(AlriIncidentCase):
         df = self.sim.population.props  # shortcut to the dataframe
         m = self.module
         p = m.parameters
+
+        self.module.logging_event.new_case(age=df.at[person_id, 'age_years'], pathogen=self.pathogen)
 
         disease_type = 'pneumonia'
         duration_in_days_of_alri = 5
