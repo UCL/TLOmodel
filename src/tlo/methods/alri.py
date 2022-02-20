@@ -1991,7 +1991,7 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             tracker.reset()
 
 
-class Tracker():
+class Tracker:
     """Helper class to be a counter for number of events occuring by age-group and by pathogen."""
 
     def __init__(self, age_grps: dict, pathogens: list):
