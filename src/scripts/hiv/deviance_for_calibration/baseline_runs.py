@@ -49,11 +49,11 @@ class TestScenario(BaseScenario):
 
     def __init__(self):
         super().__init__()
-        # self.seed = randint(0, 5000)
-        self.seed = 3
+        self.seed = randint(0, 5000)
+        # self.seed = 3
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2025, 1, 1)
-        self.pop_size = 500000
+        self.pop_size = 760000
         self.number_of_draws = 5
         self.runs_per_draw = 1
 
@@ -97,8 +97,11 @@ class TestScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
+            'Hiv': {
+                'beta': 0.125176,
+            },
             'Tb': {
-                'transmission_rate': np.linspace(1.6, 1.8, num=self.number_of_draws)[draw_number],
+                'transmission_rate': 19.5,
             },
         }
 

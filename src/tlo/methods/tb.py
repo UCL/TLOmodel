@@ -46,7 +46,7 @@ class Tb(Module):
 
     INIT_DEPENDENCIES = {"Demography", "HealthSystem", "Lifestyle", "SymptomManager", "Epi"}
 
-    OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden"}
+    OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden", "Hiv"}
 
     METADATA = {
         Metadata.DISEASE_MODULE,

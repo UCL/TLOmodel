@@ -195,7 +195,14 @@ plt.errorbar(
     yerr=[[data_tb_latent_yerr[0]], [data_tb_latent_yerr[1]]],
     fmt="o",
 )
-plt.legend(["Model", "Data"])
+# cohen, mathiasen 2019
+plt.errorbar(
+    latentTB_prev.index[9],
+    33.6,
+    yerr=[[24.4, 42.9]],
+    fmt="o",
+)
+plt.legend(["Model", "Estimate: Houben", "Estimate: Cohen"])
 # plt.savefig(
 #     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
 # )
