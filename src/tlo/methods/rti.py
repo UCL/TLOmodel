@@ -3028,16 +3028,16 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        # the_appt_footprint = module.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        # road_traffic_injuries = module.sim.modules['RTI']
-        # road_traffic_injuries.rti_injury_diagnosis(person_id, the_appt_footprint)
         self.TREATMENT_ID = 'RTI_Imaging_Event'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
+            'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         self.sim.population.props.at[person_id, 'rt_diagnosed'] = True
+        road_traffic_injuries = self.sim.modules['RTI']
+        road_traffic_injuries.rti_injury_diagnosis(person_id, self.EXPECTED_APPT_FOOTPRINT)
 
     def did_not_run(self, *args, **kwargs):
         pass
