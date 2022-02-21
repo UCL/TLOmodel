@@ -3630,12 +3630,6 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         # Request accident and emergency staff time
         the_appt_footprint['AccidentsandEmerg'] = 1
-        df = self.sim.population.props
-        # determine if this is a child
-        if df.loc[person_id, 'age_years'] < 15:
-            self.is_child = True
-        else:
-            self.is_child = False
         self.TREATMENT_ID = 'RTI_Shock_Treatment'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = '1b'
@@ -3644,12 +3638,17 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-
+        df = self.sim.population.props
+        # determine if this is a child
+        if df.loc[person_id, 'age_years'] < 15:
+            is_child = True
+        else:
+            is_child = False
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         # TODO: find a more complete list of required consumables for adults
-        if self.is_child:
+        if is_child:
             self.module.item_codes_for_consumables_required['shock_treatment_child'] = {
                 get_item_code("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 1,
                 get_item_code("Dextrose (glucose) 5%, 1000ml_each_CMST"): 1,
