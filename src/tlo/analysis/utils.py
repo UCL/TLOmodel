@@ -542,8 +542,8 @@ class LogsDict(dict):
 
     def items(self):
         # parse module-specific log file and return results as a generator
-        for key, file_handle in self.logfile_names_and_paths.items():
-            module_specific_logs = _parse_log_file_inner_loop(file_handle.name)
+        for key in self.logfile_names_and_paths.keys():
+            module_specific_logs = self.__getitem__(key)
             yield key, module_specific_logs
 
     def update(self, *args, **kwargs):
