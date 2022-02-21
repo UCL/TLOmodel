@@ -1,5 +1,5 @@
 """
-This file is used to capture the HSI that are run during a typical simulation, 2010-2014. It defines a large population
+This file is used to capture the HSI that are run during a typical simulation, 2010-2021. It defines a large population
  with all disease modules registered and an unconstrained (mode_appt_constraints=0) HealthSystem.
 
 Run on the remote batch system using:
@@ -48,7 +48,7 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2019, 1, 31)
+        self.end_date = Date(2021, 12, 31)
         self.pop_size = 20_000
         self.number_of_draws = 1
         self.runs_per_draw = 1
