@@ -1981,8 +1981,8 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         self.visit_number = visit_number
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FocusedANCVisit'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({('AntenatalFirst' if self.visit_number == 1 else
-                                                                  'AntenatalSubsequent'): 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({('AntenatalFirst' if (self.visit_number == 1)
+                                                                  else 'ANCSubsequent'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
@@ -2068,9 +2068,6 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
 
         elif self.visit_number == 3 or ((mother.ps_gestational_age_in_weeks > 30) and (self.visit_number == 1)):
             self.module.point_of_care_hb_testing(hsi_event=self)
-
-        # update the visit number for the event scheduling
-        self.visit_number = self.visit_number + 1
 
         # Following this the womans next visit is scheduled (if she hasn't already attended 4 visits)
         if self.visit_number < 4:

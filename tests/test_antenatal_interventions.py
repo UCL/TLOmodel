@@ -1050,6 +1050,95 @@ def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management(se
     # Check that the woman survived thanks to treatment
     assert df.at[mother_id, 'is_alive']
 
+
+def test_focused_anc_scheduling(seed):
+    """
+    Tests scheduling of Focused ANC HSI is occurring as expected.
+    """
+    def check_hsi_schedule_and_visit_number(vn, mother_id):
+        health_system = sim.modules['HealthSystem']
+        hsi_events = health_system.find_events_for_person(person_id=mother_id)
+
+        hsi_events_class_list = [e.__class__ for d, e in hsi_events]
+        assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit in hsi_events_class_list
+
+        hsi_events_other = [e for d, e in hsi_events]
+        for e in hsi_events_other:
+            if e.__class__ == care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit:
+                assert e.visit_number == vn
+
+    sim = register_all_modules(seed)
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    # Select a woman from the dataframe of reproductive age
+    df = sim.population.props
+    women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+    mother_id = women_repro.index[0]
+    updated_mother_id = int(mother_id)
+
+    # Set key pregnancy variables
+    df.at[mother_id, 'is_pregnant'] = True
+    df.at[mother_id, 'date_of_last_pregnancy'] = start_date
+    df.at[mother_id, 'ps_anc4'] = True
+    df.at[mother_id, 'ps_date_of_anc1'] = start_date + pd.DateOffset(weeks=8)
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 10
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+
+    # ensure care seeking will continue for all ANC visits
+    params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
+    params['prob_anc_continues'] = 1.0
+
+    # Register the anc HSI and apply
+    focused_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, visit_number=1)
+    focused_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
+
+    # check the anc counter property has been updated and MNI keys have been added as expected
+    assert df.at[updated_mother_id, 'ac_total_anc_visits_current_pregnancy'] == 1
+    assert 'anc_ints' in sim.modules['PregnancySupervisor'].mother_and_newborn_info[updated_mother_id].keys()
+
+    # Ensure that HSI_CareOfWomenDuringPregnancy_FocusedANCVisit has been rescheduled and that the visit number has
+    # correctly increased to
+    check_hsi_schedule_and_visit_number(2, mother_id)
+
+    # clear event queue and increase gestational age
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+    df.at[updated_mother_id, 'ps_gestational_age_in_weeks'] = 22
+
+    # Repeat checks for remaining instances of the HSI in the ANC schedule
+    focused_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, visit_number=2)
+    focused_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
+
+    assert df.at[updated_mother_id, 'ac_total_anc_visits_current_pregnancy'] == 2
+    check_hsi_schedule_and_visit_number(3, mother_id)
+
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+    df.at[updated_mother_id, 'ps_gestational_age_in_weeks'] = 30
+
+    focused_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, visit_number=3)
+    focused_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
+
+    assert df.at[updated_mother_id, 'ac_total_anc_visits_current_pregnancy'] == 3
+    check_hsi_schedule_and_visit_number(4, mother_id)
+
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
+    df.at[updated_mother_id, 'ps_gestational_age_in_weeks'] = 36
+
+    # At the fourth visit ensure that no futher routine ANC is scheduled
+    focused_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(
+        module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id, visit_number=4)
+    focused_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
+
+    assert df.at[updated_mother_id, 'ac_total_anc_visits_current_pregnancy'] == 4
+    health_system = sim.modules['HealthSystem']
+    hsi_events = health_system.find_events_for_person(person_id=updated_mother_id)
+    hsi_events_class_list = [e.__class__ for d, e in hsi_events]
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit not in hsi_events_class_list
+
+
 # TODO: test treatment effects work as expected? (some of this is done in preg sup test)
 # todo: test when probabilities/consumables are blocked/reduced
 # todo: test when women of different gestations arrive at ANC
