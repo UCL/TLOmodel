@@ -78,7 +78,7 @@ plt.legend(ncol=3, loc='center', fontsize='xx-small')
 plt.savefig(make_graph_file_name('HSI_per_module_per_month'))
 plt.show()
 
-# Plot the breakdown of all HSI, over all the years 2010-2018
+# Plot the breakdown of all HSI, over all the years 2010-2021
 evs = pd.DataFrame(hsi.groupby(by=['Module']).size())
 # Calculate the fraction
 evs[1] = 100*evs[0]/evs[0].sum()
@@ -92,7 +92,7 @@ if sort_legend:
                                          key=lambda x: x[2],
                                          reverse=True))
 plt.legend(patches, labels, ncol=3, loc='lower center', fontsize='xx-small')
-plt.title("HSI by Module (year 2010-2018)")
+plt.title("HSI by Module (year 2010-2021)")
 plt.tight_layout()
 plt.savefig(make_graph_file_name('HSI_per_module'))
 plt.show()
