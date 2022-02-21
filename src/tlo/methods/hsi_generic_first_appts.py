@@ -133,7 +133,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
     if 'injury' in symptoms:
         if 'RTI' in sim.modules:
-            sim.modules['RTI'].do_in_non_emergency_generic_appt_if_injury(person_id)
+            sim.modules['RTI'].do_rti_diagnosis_and_treatment(person_id)
 
     if age < 5:
         # ----------------------------------- CHILD < 5 -----------------------------------
@@ -431,4 +431,4 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
 
     if 'severe_trauma' in symptoms:
         if 'RTI' in sim.modules:
-            sim.modules['RTI'].do_in_emergency_generic_appt_if_injury(person_id=person_id, hsi_event=hsi_event)
+            sim.modules['RTI'].do_rti_diagnosis_and_treatment(person_id=person_id)
