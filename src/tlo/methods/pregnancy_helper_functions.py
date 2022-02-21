@@ -91,7 +91,8 @@ def update_current_parameter_dictionary(self, list_position):
         if type(value) is list:
             self.current_parameters[key] = self.parameters[key][list_position]
         else:
-            self.current_parameters[key] = self.parameters[key]
+            if list_position == 0:
+                self.current_parameters[key] = self.parameters[key]
 
 
 def store_dalys_in_mni(individual_id, mni, mni_variable, date):
