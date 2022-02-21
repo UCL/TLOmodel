@@ -3084,11 +3084,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        road_traffic_injuries = self.sim.modules['RTI']
-
-        df = self.sim.population.props
         p = module.parameters
-        person = df.loc[person_id]
         # Load the parameters used in this event
         self.prob_depressed_skull_fracture = p['prob_depressed_skull_fracture']  # proportion of depressed skull
         # fractures in https://doi.org/10.1016/j.wneu.2017.09.084
@@ -3106,14 +3102,26 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['AccidentsandEmerg'] = 1
 
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'RTI_MedicalIntervention'  # This must begin with the module name
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        road_traffic_injuries = self.sim.modules['RTI']
+        df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
+        p = self.sim.modules['RTI'].parameters
+        person = df.loc[person_id]
         # ======================= Design treatment plan, appointment type =============================================
         """ Here, RTI_MedInt designs the treatment plan of the person's injuries, the following determines what the
         major and minor surgery requirements will be
 
         """
         # Create variables to count how many major or minor surgeries will be required to treat this person
-        self.major_surgery_counts = 0
-        self.minor_surgery_counts = 0
+        major_surgery_counts = 0
+        minor_surgery_counts = 0
         # Isolate the relevant injury information
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
 
@@ -3212,7 +3220,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
 
         }
         # store number of open fractures for use later
-        self.open_fractures = 0
+        open_fractures = 0
         # check if they have an injury for which we need to find the treatment plan for
 
         for code in treatment_plans.keys():
@@ -3223,14 +3231,14 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                     df.loc[person_id, 'rt_injuries_to_cast'].append(code)
                 if treatment_choice == 'major':
                     df.loc[person_id, 'rt_injuries_for_major_surgery'].append(code)
-                    self.major_surgery_counts += 1
+                    major_surgery_counts += 1
                 if treatment_choice == 'minor':
                     df.loc[person_id, 'rt_injuries_for_minor_surgery'].append(code)
-                    self.minor_surgery_counts += 1
+                    minor_surgery_counts += 1
                 if treatment_choice == 'HWT':
                     df.loc[person_id, 'rt_injuries_to_heal_with_time'].append(code)
                 if treatment_choice == 'open':
-                    self.open_fractures += 1
+                    open_fractures += 1
                     df.loc[person_id, 'rt_injuries_for_open_fracture_treatment'].append(code)
 
         # -------------------------------- Spinal cord injury requirements --------------------------------------------
@@ -3243,7 +3251,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
             # if this person has a spinal cord injury and we allow surgeries, determine their exact injury
             actual_injury = np.intersect1d(codes, person_injuries.values)
             # update the number of major surgeries
-            self.major_surgery_counts += 1
+            major_surgery_counts += 1
             # add the injury to the injuries to be treated by major surgery
             df.loc[person_id, 'rt_injuries_for_major_surgery'].append(actual_injury[0])
         elif counts > 0:
@@ -3273,7 +3281,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
             # work out the exact injury they have
             actual_injury = np.intersect1d(codes, person_injuries.values)
             # update the number of major surgeries required
-            self.major_surgery_counts += 1
+            major_surgery_counts += 1
             # add the injury to the injuries to be treated with major surgery so they aren't treated elsewhere
             df.loc[person_id, 'rt_injuries_for_major_surgery'].append(actual_injury[0])
 
@@ -3283,40 +3291,34 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         _, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if (counts > 0) & ('include_thoroscopy' in self.allowed_interventions):
             # update the number of major surgeries needed
-            self.major_surgery_counts += 1
+            major_surgery_counts += 1
             # add the injury to the injuries to be treated with major surgery.
             df.loc[person_id, 'rt_injuries_for_major_surgery'].append('463')
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'RTI_MedicalIntervention'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.ALERT_OTHER_DISEASES = []
-
         # ================ Determine how long the person will be in hospital based on their ISS score ==================
-        self.inpatient_days = road_traffic_injuries.rti_determine_LOS(person_id)
+        inpatient_days = road_traffic_injuries.rti_determine_LOS(person_id)
         # If the patient needs skeletal traction for their injuries they need to stay at minimum 6 weeks,
         # average length of stay for those with femur skeletal traction found from Kramer et al. 2016:
         # https://doi.org/10.1007/s00264-015-3081-3
         # todo: put in complications from femur fractures
-        self.femur_fracture_skeletal_traction_mean_los = p['femur_fracture_skeletal_traction_mean_los']
-        self.other_skeletal_traction_los = p['other_skeletal_traction_los']
+        femur_fracture_skeletal_traction_mean_los = p['femur_fracture_skeletal_traction_mean_los']
+        other_skeletal_traction_los = p['other_skeletal_traction_los']
         min_los_for_traction = {
-            '813c': self.femur_fracture_skeletal_traction_mean_los,
-            '813b': self.other_skeletal_traction_los,
-            '813a': self.other_skeletal_traction_los,
-            '812': self.other_skeletal_traction_los,
+            '813c': femur_fracture_skeletal_traction_mean_los,
+            '813b': other_skeletal_traction_los,
+            '813a': other_skeletal_traction_los,
+            '812': other_skeletal_traction_los,
         }
         traction_injuries = [injury for injury in df.loc[person_id, 'rt_injuries_to_heal_with_time'] if injury in
                              min_los_for_traction.keys()]
         if len(traction_injuries) > 0:
-            if self.inpatient_days < min_los_for_traction[traction_injuries[0]]:
-                self.inpatient_days = min_los_for_traction[traction_injuries[0]]
+            if inpatient_days < min_los_for_traction[traction_injuries[0]]:
+                inpatient_days = min_los_for_traction[traction_injuries[0]]
 
         # Specify the type of bed days needed? not sure if necessary
-        self.BEDDAYS_FOOTPRINT.update({'general_bed': self.inpatient_days})
+        self.BEDDAYS_FOOTPRINT.update({'general_bed': inpatient_days})
         # update the expected appointment foortprint
-        if self.inpatient_days > 0:
-            self.EXPECTED_APPT_FOOTPRINT.update({'InpatientDays': self.inpatient_days})
+        if inpatient_days > 0:
+            self.EXPECTED_APPT_FOOTPRINT.update({'InpatientDays': inpatient_days})
         # ================ Determine whether the person will require ICU days =========================================
         # Percentage of RTIs that required ICU stay 2.7% at KCH : https://doi.org/10.1007/s00268-020-05853-z
         # Percentage of RTIs that require HDU stay 3.3% at KCH
@@ -3373,10 +3375,6 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # 3.8% had 'other' injuries
         # https://doi.org/10.1186/1757-7241-19-61
 
-    def apply(self, person_id, squeeze_factor):
-        road_traffic_injuries = self.sim.modules['RTI']
-        df = self.sim.population.props
-        hs = self.sim.modules["HealthSystem"]
         if not df.at[person_id, 'is_alive']:
             self.EXPECTED_APPT_FOOTPRINT = hs.get_blank_appt_footprint()
             return
@@ -3514,13 +3512,13 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         if not pd.isnull(df.loc[person_id, 'cause_of_death']):
             pass
         else:
-            if self.major_surgery_counts > 0:
+            if major_surgery_counts > 0:
                 # schedule major surgeries
-                for count in range(0, self.major_surgery_counts):
+                for count in range(0, major_surgery_counts):
                     road_traffic_injuries.rti_do_for_major_surgeries(person_id=person_id, count=count)
-            if self.minor_surgery_counts > 0:
+            if minor_surgery_counts > 0:
                 # shedule minor surgeries
-                for count in range(0, self.minor_surgery_counts):
+                for count in range(0, minor_surgery_counts):
                     road_traffic_injuries.rti_do_for_minor_surgeries(person_id=person_id, count=count)
         # Schedule all other treatments here
         # Fractures are sometimes treated via major/minor surgeries. Need to establish which injuries are due to be
@@ -3579,7 +3577,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                         road_traffic_injuries.rti_acute_pain_management(person_id=person_id)
                     if treatment == 'open':
                         road_traffic_injuries.rti_ask_for_open_fracture_treatment(person_id=person_id,
-                                                                                  counts=self.open_fractures)
+                                                                                  counts=open_fractures)
 
         treatment_plan = \
             p['rt_injuries_for_minor_surgery'] + p['rt_injuries_for_major_surgery'] + \
@@ -3589,10 +3587,10 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         assert len(treatment_plan) == len(set(treatment_plan))
         # ============================== Ask if they die even with treatment ===========================================
         self.sim.schedule_event(RTI_Medical_Intervention_Death_Event(self.module, person_id), self.sim.date +
-                                DateOffset(days=self.inpatient_days))
+                                DateOffset(days=inpatient_days))
         logger.debug(key='rti_general_message',
                      data=f"This is RTIMedicalInterventionEvent scheduling a potential death on date "
-                          f"{self.sim.date + DateOffset(days=self.inpatient_days)} (end of treatment) for person "
+                          f"{self.sim.date + DateOffset(days=inpatient_days)} (end of treatment) for person "
                           f"{person_id}")
 
     def did_not_run(self):
