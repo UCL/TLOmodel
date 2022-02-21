@@ -52,8 +52,8 @@ path_to_dropbox = Path(
 
 workingfile = (path_to_dropbox /
                '05 - Resources' / 'Module-healthsystem' / 'chai ehp resource use data' / 'ORIGINAL' /
-               'Malawi optimization model import_2022-02-11.xlsx'
-)  # <-- point to the new data locally; need upload the excel file to shared dropbox
+               'Malawi optimization model import_2022-02-11.xlsx')
+# <-- point to the new data locally; need upload the excel file to shared dropbox
 
 working_file_old = (path_to_dropbox /
                     '05 - Resources' / 'Module-healthsystem' / 'chai ehp resource use data' / 'ORIGINAL' /
