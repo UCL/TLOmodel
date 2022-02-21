@@ -1482,8 +1482,8 @@ class HSI_Event:
         return updated_appt_footprint
 
     def get_consumables(self,
-                        item_codes: Optional[Union[np.integer, int, list, set, dict]] = None,
-                        optional_item_codes: Optional[Union[np.integer, int, list, set, dict]] = None,
+                        item_codes: Union[None, np.integer, int, list, set, dict] = None,
+                        optional_item_codes: Union[None, np.integer, int, list, set, dict] = None,
                         to_log: Optional[bool] = True,
                         return_individual_results: Optional[bool] = False
                         ) -> Union[bool, dict]:
@@ -1492,7 +1492,7 @@ class HSI_Event:
         :param item_codes: The item code(s) (and quantities) of the consumables that are requested and which determine
         the summary result for availability/non-availability. This can be an `int` (the item_code needed [assume
         quantity=1]), a `list` or `set` (the collection  of item_codes [for each assuming quantity=1]), or a `dict`
-        (of the form <item_code>:<quantity>).
+        (with key:value pairs `<item_code>:<quantity>`).
         :param optional_item_codes: The item code(s) (and quantities) of the consumables that are requested and which do
          not determine the summary result for availability/non-availability. (Same format as `item_codes`). This is
          useful when a large set of items may be used, but the viability of a subsequent operation depends only on a
@@ -1523,8 +1523,8 @@ class HSI_Event:
 
             elif isinstance(item_codes, dict):
                 if not all(
-                    [(isinstance(i, (int, np.integer)) and isinstance(item_codes[i], (int, np.integer)))
-                     for i in item_codes]
+                    [(isinstance(code, (int, np.integer)) and isinstance(quantity, (int, np.integer)))
+                     for code, quantity in item_codes.items()]
                 ):
                     raise ValueError("item_codes must be integers and quantities must be integers.")
                 return {int(i): int(q) for i, q in item_codes.items()}
