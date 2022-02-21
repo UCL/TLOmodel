@@ -50,10 +50,10 @@ resourcefilepath = Path('./resources')
 path_to_dropbox = Path(
     '/Users/jdbb1/Dropbox/Thanzi La Onse')  # <-- point to the TLO dropbox locally
 
-workingfile = Path(
-    '/Users/jdbb1/OneDrive/Desktop/healthsystem data update/Malawi optimization model import_2022-02-11.xlsx'
-)  # <-- point to the new data locally; need update
-
+workingfile = (path_to_dropbox /
+               '05 - Resources' / 'Module-healthsystem' / 'chai ehp resource use data' / 'ORIGINAL' /
+               'Malawi optimization model import_2022-02-11.xlsx'
+)  # <-- point to the new data locally; need upload the excel file to shared dropbox
 
 working_file_old = (path_to_dropbox /
                     '05 - Resources' / 'Module-healthsystem' / 'chai ehp resource use data' / 'ORIGINAL' /
@@ -65,9 +65,7 @@ path_to_auxiliaryfiles = (path_to_dropbox /
                           'chai ehp resource use data' /
                           'Auxiliary CHAI Data from CHAI HR Team 12 Sep 2021')
 
-outputlocation = Path('/Users/jdbb1/OneDrive/Desktop/healthsystem data update/output')  # <-- output locally
-# Need update to
-# outputlocation = resourcefilepath / 'healthsystem'
+outputlocation = resourcefilepath / 'healthsystem'
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** create and save population_by_district data
@@ -711,20 +709,20 @@ fund_staffing_table = wb_extract.copy()
 # whereas C01 is required by mental health appts at level 1b, level 2 and level 3.
 # To fix this inconsistency, we have to move at least 1 C01 to each of these districts from the referral hospitals.
 # (QECH and ZCH in South, MCH in North, KCH in Central; ZCH has no C01)
-non_c01_district_idx = fund_staffing_table[(fund_staffing_table['C01'] == 0) &
-                                           (fund_staffing_table['Is_DistrictLevel'])].index
-non_c01_districts = pd.DataFrame(fund_staffing_table.loc[non_c01_district_idx, 'District_Or_Hospital'])
-non_c01_districts['Region'] = pop_by_district.loc[non_c01_districts['District_Or_Hospital'], 'Region'].values
-fund_staffing_table.loc[non_c01_district_idx, 'C01'] = 1
-fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'QECH', 'C01'] = (
-    fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'QECH', 'C01'] - 4
-)
-fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'MCH', 'C01'] = (
-    fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'MCH', 'C01'] - 1
-)
-fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'KCH', 'C01'] = (
-    fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'KCH', 'C01'] - 2
-)
+# non_c01_district_idx = fund_staffing_table[(fund_staffing_table['C01'] == 0) &
+#                                            (fund_staffing_table['Is_DistrictLevel'])].index
+# non_c01_districts = pd.DataFrame(fund_staffing_table.loc[non_c01_district_idx, 'District_Or_Hospital'])
+# non_c01_districts['Region'] = pop_by_district.loc[non_c01_districts['District_Or_Hospital'], 'Region'].values
+# fund_staffing_table.loc[non_c01_district_idx, 'C01'] = 1
+# fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'QECH', 'C01'] = (
+#     fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'QECH', 'C01'] - 4
+# )
+# fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'MCH', 'C01'] = (
+#     fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'MCH', 'C01'] - 1
+# )
+# fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'KCH', 'C01'] = (
+#     fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'KCH', 'C01'] - 2
+# )
 # *********************************************************************************************************************
 
 # *** Only for funded_plus ********************************************************************************************
@@ -732,12 +730,12 @@ fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'KCH', 'C
 # whereas all other district has at least 250 DCSA staff
 # As CHAI indicates Likoma's data is mostly bounded into Nhkata Bay,
 # we draw some DCSA from Nhkata Bay to Likoma using population as the weight
-idx_likoma = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Likoma'].index
-idx_nkhatabay = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Nkhata Bay'].index
-fund_staffing_table.loc[idx_likoma, 'E01'] = fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] * (
-    pop_by_district.loc['Likoma', 'Count'] / pop_by_district.loc['Nkhata Bay', 'Count'])
-fund_staffing_table.loc[idx_nkhatabay, 'E01'] = (
-    fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] - fund_staffing_table.loc[idx_likoma, 'E01'].values[0])
+# idx_likoma = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Likoma'].index
+# idx_nkhatabay = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Nkhata Bay'].index
+# fund_staffing_table.loc[idx_likoma, 'E01'] = fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] * (
+#     pop_by_district.loc['Likoma', 'Count'] / pop_by_district.loc['Nkhata Bay', 'Count'])
+# fund_staffing_table.loc[idx_nkhatabay, 'E01'] = (
+#     fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] - fund_staffing_table.loc[idx_likoma, 'E01'].values[0])
 # *********************************************************************************************************************
 
 # Sort out which are district allocations and which are central hospitals and above
@@ -860,15 +858,15 @@ fund_staffing_table = district_faclevel.merge(fund_staffing_table, how='outer')
 # Before split, update the funded C01 distributions at levels 1a, 1b and 2 using CHAI Optimal Workforce estimates. \
 # This is because funded C01 are all at level 1b (100%), meanwhile appt time base requires C01 at level 2. \
 # CHAI Optimal Workforce locates C01 47.92% at level 1b and 52.08% at level 2, which seems more sensible.
-idx_c01_level_1b = fund_staff_distribution[
-    (fund_staff_distribution['Cadre_Code'] == 'C01') &
-    (fund_staff_distribution['Facility_Level'] == 'Facility_Level_1b')].index
-fund_staff_distribution.loc[idx_c01_level_1b, 'Proportion_Fund'] = 0.4792
-
-idx_c01_level_2 = fund_staff_distribution[
-    (fund_staff_distribution['Cadre_Code'] == 'C01') &
-    (fund_staff_distribution['Facility_Level'] == 'Facility_Level_2')].index
-fund_staff_distribution.loc[idx_c01_level_2, 'Proportion_Fund'] = 0.5208
+# idx_c01_level_1b = fund_staff_distribution[
+#     (fund_staff_distribution['Cadre_Code'] == 'C01') &
+#     (fund_staff_distribution['Facility_Level'] == 'Facility_Level_1b')].index
+# fund_staff_distribution.loc[idx_c01_level_1b, 'Proportion_Fund'] = 0.4792
+#
+# idx_c01_level_2 = fund_staff_distribution[
+#     (fund_staff_distribution['Cadre_Code'] == 'C01') &
+#     (fund_staff_distribution['Facility_Level'] == 'Facility_Level_2')].index
+# fund_staff_distribution.loc[idx_c01_level_2, 'Proportion_Fund'] = 0.5208
 # *********************************************************************************************************************
 
 # Split
@@ -1787,12 +1785,12 @@ curr_daily_capability_coarse.to_csv(
     outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Daily_Capabilities.csv', index=False)
 
 # Need to # following lines below when generate funded_plus capability
-# funded_daily_capability_coarse.to_csv(
-#     outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Daily_Capabilities.csv', index=False)
+funded_daily_capability_coarse.to_csv(
+    outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Daily_Capabilities.csv', index=False)
 
 # *** Only for funded_plus ********************************************************************************************
-funded_daily_capability_coarse.to_csv(
-    outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv', index=False)
+# funded_daily_capability_coarse.to_csv(
+#     outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv', index=False)
 
 
 # *********************************************************************************************************************
