@@ -26,8 +26,8 @@ except NameError:
     resourcefilepath = './resources'
 
 
-def test_can_look_at_future_events():
-    sim = Simulation(start_date=start_date, seed=0)
+def test_can_look_at_future_events(seed):
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),

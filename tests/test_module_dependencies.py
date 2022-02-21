@@ -26,7 +26,6 @@ except NameError:
 
 simulation_start_date = Date(2010, 1, 1)
 simulation_end_date = Date(2010, 4, 1)
-simulation_seed = 645407762
 simulation_initial_population = 1000
 
 
@@ -42,8 +41,8 @@ def parameterize_module_class(test_function):
 
 
 @pytest.fixture
-def sim():
-    return Simulation(start_date=simulation_start_date, seed=simulation_seed)
+def sim(seed):
+    return Simulation(start_date=simulation_start_date, seed=seed)
 
 
 @pytest.fixture
@@ -142,7 +141,6 @@ def test_missing_dependency_raises_error_on_register(sim, dependent_module_pair)
         sim.register(Module2())
 
 
-@pytest.mark.parametrize("seed", (2451830014,  236869655,  460834000))
 def test_topological_sort_modules(seed, dependent_module_chain):
     set_seed(seed)
     modules = [module() for module in dependent_module_chain]

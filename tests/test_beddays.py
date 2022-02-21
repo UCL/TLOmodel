@@ -31,9 +31,9 @@ def test_bed_days_resourcefile_defines_non_bed_space():
     assert 'non_bed_space' == bed_types[-1]
 
 
-def test_beddays_in_isolation(tmpdir):
+def test_beddays_in_isolation(tmpdir, seed):
     """Test the functionalities of BedDays class in the absence of HSI_Events"""
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
@@ -92,7 +92,7 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def test_bed_days_basics(tmpdir):
+def test_bed_days_basics(tmpdir, seed):
     """Check all the basic functionality about bed-days footprints and capacity management by the health-system"""
 
     req_for_beds = {k: i for i, k in enumerate(bed_types, start=10) if k != 'non_bed_space'}
@@ -137,7 +137,7 @@ def test_bed_days_basics(tmpdir):
             print(f'Bed-days allocated to this event: {self.bed_days_allocated_to_this_event}')
 
     # Create simulation:
-    sim = Simulation(start_date=start_date, seed=0, log_config={
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
         'filename': 'bed_days',
         'directory': tmpdir,
         'custom_levels': {
@@ -248,7 +248,7 @@ def test_bed_days_basics(tmpdir):
     check_dtypes(sim)
 
 
-def test_bed_days_property_is_inpatient(tmpdir):
+def test_bed_days_property_is_inpatient(tmpdir, seed):
     """Check that the is_inpatient property is controlled correctly and kept in sync with the bed-tracker"""
 
     _bed_type = bed_types[0]
@@ -326,7 +326,7 @@ def test_bed_days_property_is_inpatient(tmpdir):
             pass
 
     # Create simulation with the health system and DummyModule
-    sim = Simulation(start_date=start_date, seed=0, log_config={
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
         'filename': 'temp',
         'directory': tmpdir,
         'custom_levels': {
@@ -377,7 +377,7 @@ def test_bed_days_property_is_inpatient(tmpdir):
     assert beds_occupied.equals(tot_time_as_in_patient)
 
 
-def test_bed_days_released_on_death(tmpdir):
+def test_bed_days_released_on_death(tmpdir, seed):
     """Check that bed-days scheduled to be occupied are released upon the death of the person"""
     _bed_type = bed_types[0]
     days_simulation_duration = 20
@@ -446,7 +446,7 @@ def test_bed_days_released_on_death(tmpdir):
             pass
 
     # Create simulation with the health system and DummyModule
-    sim = Simulation(start_date=start_date, seed=0, log_config={
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
         'filename': 'temp',
         'directory': tmpdir,
         'custom_levels': {
@@ -487,7 +487,7 @@ def test_bed_days_released_on_death(tmpdir):
     assert beds_occupied.astype(int).equals(expected_beds_occupied.astype(int))
 
 
-def test_bed_days_basics_with_healthsystem_disabled():
+def test_bed_days_basics_with_healthsystem_disabled(seed):
     """Check basic functionality of bed-days class when the health-system has been disabled"""
     _bed_type = bed_types[0]
 
@@ -534,7 +534,7 @@ def test_bed_days_basics_with_healthsystem_disabled():
             print(f'Bed-days allocated to this event: {self.bed_days_allocated_to_this_event}')
 
     # Create simulation:
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
@@ -565,9 +565,9 @@ def test_bed_days_basics_with_healthsystem_disabled():
     assert not sim.population.props.at[0, 'is_alive']  # person 0 has died
 
 
-def test_the_use_of_beds_from_multiple_facilities():
+def test_the_use_of_beds_from_multiple_facilities(seed):
     """Test the functionalities of BedDays class when multiple facilities are defined"""
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),

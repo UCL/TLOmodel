@@ -227,7 +227,7 @@ class Mockitis(Module):
         if child_is_infected:
 
             # Scheduled death date
-            death_years_ahead = self.rng.exponential(scale=30)
+            death_years_ahead = self.rng.exponential(scale=10)
             death_td_ahead = pd.to_timedelta(death_years_ahead * DAYS_IN_YEAR, unit='D')
 
             # Level of symptoms
