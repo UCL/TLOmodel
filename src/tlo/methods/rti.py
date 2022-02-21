@@ -3038,6 +3038,8 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
         self.sim.population.props.at[person_id, 'rt_diagnosed'] = True
         road_traffic_injuries = self.sim.modules['RTI']
         road_traffic_injuries.rti_injury_diagnosis(person_id, self.EXPECTED_APPT_FOOTPRINT)
+        if 'Tomography' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
+            self.ACCEPTED_FACILITY_LEVEL = '3'
 
     def did_not_run(self, *args, **kwargs):
         pass
