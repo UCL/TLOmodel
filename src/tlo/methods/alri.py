@@ -573,20 +573,12 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'effectiveness of antibiotic therapy on death from Alri with bacterial cause'
                       ),
-        '5day_amoxicillin_treatment_failure_by_day6':
+        '5day_amoxicillin_treatment_failure_or_relapse':
             Parameter(Types.REAL,
-                      'probability of treatment failure by day 6 of 5-day course amoxicillin for non-severe pneumonia'
-                      ),
-        '5day_amoxicillin_relapse_by_day14':
-            Parameter(Types.REAL,
-                      'probability of relapse by day 14 on 5-day amoxicillin for non-severe pneumonia'
+                      'probability of treatment failure by day 6 or relapse by day 14 '
+                      'of 5-day course amoxicillin for non-severe pneumonia'
                       ),
         '1st_line_antibiotic_treatment_failure_by_day2':
-            Parameter(Types.REAL,
-                      'probability of treatment failure by day 2 '
-                      'of first line antibiotic treatment for severe pneumonia'
-                      ),
-        'prob_death_failed_1st_line_treatment':
             Parameter(Types.REAL,
                       'probability of treatment failure by day 2 '
                       'of first line antibiotic treatment for severe pneumonia'
@@ -1075,7 +1067,6 @@ class Alri(Module):
         """Based on symptoms presented, classify WHO-pneumonia severity at each facility level."""
         # TODO: get other danger signs in iCCM when issue 429 is resolved (!?!?!?!?!?!)
         # todo iccm_danger_signs = symptoms.append() other symptoms child may have that is considered severe in iCCM
-        # <-- todo why the difference in name vs "danger_sign_pneumonia"!?!!?!?!?!?!?!?!
 
         child_is_younger_than_2_months = age_exact_years < (1.0 / 6.0)
 
@@ -1242,10 +1233,8 @@ class Alri(Module):
         * Schedules the cure event, at which the episode is ended
         * Schedules a follow-up appointment if condition not improving (by day 6 or by day 14)
         """
-        # todo - @ines -- remove the property about failure.
-        # todo - @ines -- the parameter p['prob_death_failed_1st_line_treatment'] seems irrelevant to me, so removed.
-        # todo - @Ines -- we don't seem to need these two differnt probabilty numbers - so combine with self.parameters['5day_amoxicillin_treatment_failure_by_day14']
-        p_fail_amoxicillin = self.parameters['5day_amoxicillin_treatment_failure_by_day6']
+
+        p_fail_amoxicillin = self.parameters['5day_amoxicillin_treatment_failure_or_relapse']
 
         assert treatment in ('iCCM_Antibiotic_Therapy_for_pneumonia',
                              'IMCI_Treatment_non_severe_pneumonia',
@@ -1272,9 +1261,12 @@ class Alri(Module):
         if not treatment_will_fail(treatment):
             self.cancel_death_and_schedule_cure(person_id)
         else:
-            hsi_event.get_consumables(
-                item_codes=self.consumables_used_in_hsi['2nd_line_Antibiotic_Therapy_for_Severe_Pneumonia'])
-            # NB. If failure occurs, this switch to second-line should really happen in a later, separate follow-up HSI.
+            if treatment == 'IMCI_Treatment_severe_pneumonia':
+                hsi_event.get_consumables(
+                    item_codes=self.consumables_used_in_hsi['2nd_line_Antibiotic_Therapy_for_Severe_Pneumonia'])
+                # NB. If failure occurs, this switch to second-line should really happen in a later, separate follow-up HSI.
+                # TODO: @tbhallett 2nd line antibiotic for severe pneumonia happens on day 2 of treatment, not on follow-up
+                # todo: follow is for those non-severe pneumonia with amoxicillin failure
 
 
 class Models:
