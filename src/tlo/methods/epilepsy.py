@@ -245,27 +245,60 @@ class Epilepsy(Module):
         disability_series_for_alive_persons = df.loc[df.is_alive, 'ep_disability']
         return disability_series_for_alive_persons
 
-    def transition_seiz_stat_not_on_antiep(self):
+    def transition_seizure_stat(self):
+        """
+        This function handles all transitions in epilepsy seizure status, for those on and off anti epileptics. The
+        function determines the current seizure status of those with epilepsy and based on their original status,
+        and whether they are on anti epileptics determines a new seizure status
+        :return:
+        """
+        # Get the parameters used to determine transitions between seizure states
         p = self.sim.modules['Epilepsy'].parameters
-        # get the population and the current seizure status of those with epilepsy
-        df = self.sim.population.props
         prop_transition_1_2 = p['base_prob_3m_seiz_stat_infreq_none']
         prop_transition_2_1 = p['base_prob_3m_seiz_stat_none_infreq']
         prop_transition_2_3 = p['base_prob_3m_seiz_stat_freq_infreq']
         prop_transition_3_1 = p['base_prob_3m_seiz_stat_none_freq']
         prop_transition_3_2 = p['base_prob_3m_seiz_stat_infreq_freq']
-        population_with_seizure_status_1 = df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
-        # Determine if the seizure status 1 population increases
+        rr_effectiveness_antiepileptics = p['rr_effectiveness_antiepileptics']
+        # get the population and the current seizure status of those with epilepsy and those who are on anti epileptics
+        df = self.sim.population.props
+        population_with_seizure_status_1 = df.index[df.is_alive & (df.ep_seiz_stat == '1')]
+        seizure_status_1_on_anti_epileptics = df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
+        population_with_seizure_status_2 = df.index[df.is_alive & (df.ep_seiz_stat == '2')]
+        seizure_status_2_on_anti_epileptics = df.index[df.is_alive & (df.ep_seiz_stat == '2') & df.ep_antiep]
+        population_with_seizure_status_3 = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
+        seizure_status_3_on_anti_epileptics = df.index[df.is_alive & (df.ep_seiz_stat == '3') & df.ep_antiep]
+        # Determine who will transition from seizure status 1 to 2, first create a random number to determine likelihood
+        # of transition
         random_draw_1_2 = self.rng.random_sample(size=len(population_with_seizure_status_1))
-        changing_1_2 = population_with_seizure_status_1[prop_transition_1_2 > random_draw_1_2]
+        # Get the base probability of transitioning from state 1 to state 2
+        probability_of_transition_1_2 = pd.DataFrame([prop_transition_1_2] * len(random_draw_1_2), columns=['prob'],
+                                                     index=population_with_seizure_status_1)
+        # Reduce the risk of worsening seizures if on anti epileptics
+        probability_of_transition_1_2.loc[seizure_status_1_on_anti_epileptics, 'prob'] /= \
+            rr_effectiveness_antiepileptics
+        # determine who will transition between seizure state 1 to 2
+        changing_1_2 = population_with_seizure_status_1[probability_of_transition_1_2['prob'] > random_draw_1_2]
+        # update seizure status
         df.loc[changing_1_2, 'ep_seiz_stat'] = '2'
-        # Determine if those with seizure status 2 increase or decrease in severity
-        population_with_seizure_status_2 = df.index[df.is_alive & (df.ep_seiz_stat == '2') & df.ep_antiep]
+        # Determine if those with seizure status 2 increase or decrease in severity, first get random draws for each
+        # transition state
         random_draw_2_1 = self.rng.random_sample(size=len(population_with_seizure_status_2))
         random_draw_2_3 = self.rng.random_sample(size=len(population_with_seizure_status_2))
-        changing_2_1 = population_with_seizure_status_2[prop_transition_2_1 > random_draw_2_1]
-        changing_2_3 = population_with_seizure_status_2[prop_transition_2_3 > random_draw_2_3]
-        # if someone with seizure status 2 has been selected to both increase and decrease in severity, choose a
+        # create a dataframe for the transition probabilities
+        probability_of_transition_2 = pd.DataFrame({'prob_down': [prop_transition_2_1] * len(random_draw_2_1),
+                                                    'prob_up': [prop_transition_2_3] * len(random_draw_2_1)},
+                                                   index=population_with_seizure_status_2)
+        # Increase the likelihood of reducing seizure status for those on anti epileptics
+        probability_of_transition_2.loc[seizure_status_2_on_anti_epileptics, 'prob_down'] *= \
+            rr_effectiveness_antiepileptics
+        # Decrease the likelihood of reducing seizure status for those on anti epileptics
+        probability_of_transition_2.loc[seizure_status_2_on_anti_epileptics, 'prob_up'] /= \
+            rr_effectiveness_antiepileptics
+        # Establish who has a changing seizure status
+        changing_2_1 = population_with_seizure_status_2[probability_of_transition_2['prob_down'] > random_draw_2_1]
+        changing_2_3 = population_with_seizure_status_2[probability_of_transition_2['prob_up'] > random_draw_2_3]
+        # If someone with seizure status 2 has been selected to both increase and decrease in severity, choose a
         # transition direction based on the likelihood of transitioning states
         both_up_down_seiz_stat_2 = changing_2_1.intersection(changing_2_3)
         if len(both_up_down_seiz_stat_2) > 0:
@@ -276,38 +309,44 @@ class Epilepsy(Module):
                                 sum([prop_transition_2_1, prop_transition_2_3]))
                 )
                 df.loc[person, 'ep_seiz_stat'] = chosen_direction
+        # Drop those who have already had their seizure status changed from the indexs changing_2_1 and changing_2_3
         changing_2_1 = changing_2_1.drop(both_up_down_seiz_stat_2)
         changing_2_3 = changing_2_3.drop(both_up_down_seiz_stat_2)
         df.loc[changing_2_1, 'ep_seiz_stat'] = '1'
         df.loc[changing_2_3, 'ep_seiz_stat'] = '3'
-        # determine if those with seizure status 3 change status
-        population_with_seizure_status_3 = df.index[df.is_alive & (df.ep_seiz_stat == '3') & df.ep_antiep]
+        # Determine if those with seizure status 3 decrease in severity and by how much, first get random draws for each
+        # transition state
         random_draw_3_1 = self.rng.random_sample(size=len(population_with_seizure_status_3))
         random_draw_3_2 = self.rng.random_sample(size=len(population_with_seizure_status_3))
-        changing_3_1 = population_with_seizure_status_3[prop_transition_3_1 > random_draw_3_1]
-        changing_3_2 = population_with_seizure_status_3[prop_transition_3_2 > random_draw_3_2]
-        # if someone with seizure status 2 has been selected to both increase and decrease in severity, choose a
+        # create a dataframe for the transition probabilities
+        probability_of_transition_3 = pd.DataFrame({'prob_down_1': [prop_transition_3_2] * len(random_draw_3_2),
+                                                    'prob_down_2': [prop_transition_3_1] * len(random_draw_3_1)},
+                                                   index=population_with_seizure_status_3)
+        # Increase the likelihood of reducing seizure status for those on anti epileptics
+        probability_of_transition_3.loc[seizure_status_3_on_anti_epileptics, 'prob_down_1'] *= \
+            rr_effectiveness_antiepileptics
+        # Decrease the likelihood of reducing seizure status for those on anti epileptics
+        probability_of_transition_3.loc[seizure_status_3_on_anti_epileptics, 'prob_down_2'] /= \
+            rr_effectiveness_antiepileptics
+        # Establish who has a changing seizure status
+        changing_3_2 = population_with_seizure_status_3[probability_of_transition_3['prob_down_1'] > random_draw_3_2]
+        changing_3_1 = population_with_seizure_status_3[probability_of_transition_3['prob_down_2'] > random_draw_3_1]
+        # If someone with seizure status 2 has been selected to both increase and decrease in severity, choose a
         # transition direction based on the likelihood of transitioning states
-        both_1_2_down_seiz_stat_3 = changing_3_1.intersection(changing_3_2)
-        if len(both_1_2_down_seiz_stat_3) > 0:
-            for person in both_1_2_down_seiz_stat_3:
+        both_down_seiz_stat_3 = changing_3_1.intersection(changing_3_2)
+        if len(both_down_seiz_stat_3) > 0:
+            for person in both_down_seiz_stat_3:
                 chosen_direction = self.rng.choice(
                     ['1', '2'],
                     p=np.divide([prop_transition_3_1, prop_transition_3_2],
                                 sum([prop_transition_3_1, prop_transition_3_2]))
                 )
                 df.loc[person, 'ep_seiz_stat'] = chosen_direction
-        changing_3_1 = changing_3_1.drop(both_1_2_down_seiz_stat_3)
-        changing_3_2 = changing_3_2.drop(both_1_2_down_seiz_stat_3)
+        # Drop those who have already had their seizure status changed from the indexs changing_2_1 and changing_2_3
+        changing_3_1 = changing_3_1.drop(both_down_seiz_stat_3)
+        changing_3_2 = changing_3_2.drop(both_down_seiz_stat_3)
         df.loc[changing_3_1, 'ep_seiz_stat'] = '1'
         df.loc[changing_3_2, 'ep_seiz_stat'] = '2'
-
-    def transition_seiz_stat_on_antiep(self, current_state, new_state, transition_probability):
-        df = self.sim.population.props
-        in_current_state = df.index[df.is_alive & (df.ep_seiz_stat == current_state) & df.ep_antiep]
-        random_draw = self.rng.random_sample(size=len(in_current_state))
-        changing_state = in_current_state[transition_probability > random_draw]
-        df.loc[changing_state, 'ep_seiz_stat'] = new_state
 
     def stop_antiep(self, indices, probability):
         """stop individuals on antiep with given probability"""
@@ -338,12 +377,6 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         self.base_3m_prob_epilepsy = p['base_3m_prob_epilepsy']
         self.rr_epilepsy_age_ge20 = p['rr_epilepsy_age_ge20']
         self.prop_inc_epilepsy_seiz_freq = p['prop_inc_epilepsy_seiz_freq']
-        self.base_prob_3m_seiz_stat_freq_infreq = p['base_prob_3m_seiz_stat_freq_infreq']
-        self.rr_effectiveness_antiepileptics = p['rr_effectiveness_antiepileptics']
-        self.base_prob_3m_seiz_stat_infreq_freq = p['base_prob_3m_seiz_stat_infreq_freq']
-        self.base_prob_3m_seiz_stat_none_freq = p['base_prob_3m_seiz_stat_none_freq']
-        self.base_prob_3m_seiz_stat_none_infreq = p['base_prob_3m_seiz_stat_none_infreq']
-        self.base_prob_3m_seiz_stat_infreq_none = p['base_prob_3m_seiz_stat_infreq_none']
         self.base_prob_3m_stop_antiepileptic = p['base_prob_3m_stop_antiepileptic']
         self.rr_stop_antiepileptic_seiz_infreq_or_freq = p['rr_stop_antiepileptic_seiz_infreq_or_freq']
         self.base_prob_3m_epi_death = p['base_prob_3m_epi_death']
@@ -408,36 +441,8 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
                 'n_alive': n_alive
             }
         )
-        # TODO: rework the transition functions. Because these functions called one-by-one for each seizure state, there
-        #   may be a chance that someone may transition from one state to another, and then from that state to another
-        #   etc.. For example, someone could transition from state '1' to state '2' in line 367, then from '2' to '3' in
-        #   line 368 and then from '3' to '1' in line 369. A function that looked at everyone's current seizure state
-        #   and then made transition decisions based on that would most likely be better
-
         # For those who are not on anti epileptics, determine whether their seizure status changes in severity
-        ep.transition_seiz_stat_not_on_antiep()
-        # For those who are  on anti epileptics, determine whether their seizure status changes in severity
-        ep.transition_seiz_stat_on_antiep(
-            '1', '2',
-            self.base_prob_3m_seiz_stat_infreq_none / self.rr_effectiveness_antiepileptics
-        )
-        ep.transition_seiz_stat_on_antiep(
-            '2', '3',
-            self.base_prob_3m_seiz_stat_freq_infreq / self.rr_effectiveness_antiepileptics
-        )
-        ep.transition_seiz_stat_on_antiep(
-            '3', '1',
-            self.base_prob_3m_seiz_stat_none_freq * self.rr_effectiveness_antiepileptics
-        )
-        ep.transition_seiz_stat_on_antiep(
-            '2', '1',
-            self.base_prob_3m_seiz_stat_none_infreq * self.rr_effectiveness_antiepileptics
-        )
-        ep.transition_seiz_stat_on_antiep(
-            '3', '2',
-            self.base_prob_3m_seiz_stat_infreq_freq * self.rr_effectiveness_antiepileptics
-        )
-
+        ep.transition_seizure_stat()
         # save all individuals that are currently on anti-epileptics (seizure status: 2 & 3 or 1)
         alive_seiz_stat_1_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
         alive_seiz_stat_2_or_3_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3'])) & df.ep_antiep]
