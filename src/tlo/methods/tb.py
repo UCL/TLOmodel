@@ -733,11 +733,10 @@ class Tb(Module):
             date_active = now + pd.DateOffset(days=self.rng.randint(0, 365))
             df.at[person_id, "tb_scheduled_date_active"] = date_active
 
-            # schedule screening / testing for proportion of baseline active cases
+            # schedule treatment for proportion of baseline active cases
             if self.rng.random_sample() < p["rate_treatment_baseline_active"]:
                 # set HSI for 30 days after active onset, as active poll occurs monthly
                 # need to ensure properties are updated before screening
-                # todo change back to testing???
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Tb_StartTreatment(person_id=person_id, module=self),
                     topen=date_active + pd.DateOffset(days=7),
@@ -845,8 +844,7 @@ class Tb(Module):
         active_testing_rates = p["rate_testing_active_tb"]
         current_active_testing_rate = active_testing_rates.loc[
             (active_testing_rates.year == self.sim.date.year), "testing_rate_active_cases"].values[0]/100
-        # todo adjusted for monthly poll
-        current_active_testing_rate = current_active_testing_rate / 3
+        current_active_testing_rate = current_active_testing_rate / 3  # adjusted for monthly poll
         random_draw = rng.random_sample(size=len(df))
 
         # randomly select some individuals for screening and testing
@@ -1421,7 +1419,6 @@ class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         tb_idx = df.index[
             df.is_alive & (df.tb_inf != "active") & (random_draw < risk_tb)
         ]
-        # todo need ~ 300 per year to give 30 new active
 
         logger.debug(
             key="message",
@@ -2211,13 +2208,16 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 )
 
         # -------- SHINE Trial shorter paediatric regimen -------- #
-        # todo add eligibility for shorter regimen
-        if (self.module.parameters["scenario"] == 5):
+        if self.module.parameters["scenario"] == 5:
+            if (person["age_years"] <= 16) \
+                & ~(person["tb_smear"]) \
+                & ~person["tb_ever_treated"]\
+                & ~person["tb_diagnosed_mdr"]:
 
-            # shorter treatment for child with minimal tb
-            drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required["tb_tx_child_shorter"],
-            )
+                # shorter treatment for child with minimal tb
+                drugs_available = self.get_consumables(
+                    item_codes=self.module.item_codes_for_consumables_required["tb_tx_child_shorter"],
+                )
 
         return drugs_available
 

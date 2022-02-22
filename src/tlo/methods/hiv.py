@@ -562,7 +562,6 @@ class Hiv(Module):
         ).predict(df.loc[df.is_alive])
 
         # Rescale relative probability of infection so that its average is 1.0 within each age/sex group
-        # todo
         p = pd.DataFrame(
             {
                 "age_years": df["age_years"],
@@ -1199,10 +1198,7 @@ class Hiv(Module):
                 data="This event should not be running. do_when_diagnosed is for newly diagnosed persons.",
             )
 
-        # todo pass this to prob_art_start_after_test if need to reduce mortality
         # Consider if the person will be referred to start ART
-        # has_aids_symptoms = "aids_symptoms" in self.sim.modules["SymptomManager"].has_what(person_id)
-
         starts_art = self.rng.random_sample() < self.prob_art_start_after_test(self.sim.date.year)
 
         if starts_art:
@@ -1230,14 +1226,6 @@ class Hiv(Module):
 
         # use iloc to index by position as index will change by year
         return_prob = prob_art.loc[(prob_art.year == current_year), "value"].iloc[0]
-
-        # the reported art coverage reflects current situation, not jus new initiations
-        # so new initiations must be even higher to result in overall reported level
-        # adjust new initiations to reflect current estimates
-        # may return prob > 1
-        # return_prob = return_prob * 1.95
-        # todo uncomment
-        # return_prob = 0.99
 
         return return_prob
 
