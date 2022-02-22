@@ -106,7 +106,6 @@ with open(outputpath / "default_run.pickle", "wb") as f:
 # Scaling Factor
 sf = output['tlo.methods.demography']['scaling_factor']['scaling_factor'].values[0]
 
-
 # --------------- LOAD DATA --------------- #
 data_who_tb_2020 = pd.read_excel(resourcefilepath / 'ResourceFile_TB.xlsx', sheet_name='WHO_activeTB2020')
 data_who_tb_2020.index = pd.to_datetime(data_who_tb_2020['year'], format='%Y')
@@ -129,7 +128,6 @@ def make_plot(model=None, data_mid=None, data_low=None, data_high=None, title_st
     if (data_low is not None) and (data_high is not None):
         ax.fill_between(data_low.index, data_low, data_high, alpha=0.2)
     plt.title(title_str)
-    plt.legend(["TLO Model", "WHO Data"])
     plt.xlabel("Years")
     plt.gca().set_ylim(bottom=0)
     # plt.savefig(outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
@@ -143,12 +141,15 @@ def make_plot(model=None, data_mid=None, data_low=None, data_high=None, title_st
 
 # Load the consumables log and set the year as the index
 cons = output['tlo.methods.healthsystem']["Consumables"].copy()
+cons['date'] = pd.to_datetime(cons['date'])
 cons['year'] = cons['date'].dt.year
+cons['year'] = pd.to_datetime(cons['year'], format='%Y')
 cons = cons.set_index('year')
 
 # Format the consumables dataframe, so that the number of each consumable used can be calculated
 tb_cons = cons.loc[cons.TREATMENT_ID.str.startswith('Tb')]
-tb_cons = tb_cons.assign(Item_Available=tb_cons['Item_Available'].str.strip('{}').str.replace(' ', '').str.split(',')).explode('Item_Available')
+tb_cons = tb_cons.assign(Item_Available=tb_cons['Item_Available'].str.strip('{}').str.replace(' ', '').str.split(',')) \
+    .explode('Item_Available')
 tb_cons = tb_cons['Item_Available'].str.split(':', expand=True).rename(columns={0: "Item_Code", 1: "Quantity"})
 tb_cons['Quantity'] = tb_cons['Quantity'].astype(int)
 
@@ -167,7 +168,7 @@ make_plot(
 )
 
 # (2) Xpert Test (Item Code: 187)
-xpert = tb_cons.loc[tb_cons.Item_Code.str.contains('187')].groupby(['year'])['Quantity'].sum()
+xpert = tb_cons.loc[tb_cons.Item_Code.str.contains('187')].groupby(['year'])['Quantity'].sum().mul(sf)
 
 make_plot(
     title_str="Xpert Test",
@@ -175,14 +176,15 @@ make_plot(
 )
 
 # (3) Chest X-rays (Item Code: 175)
-cxr = tb_cons.loc[tb_cons.Item_Code.str.contains('175')].groupby(['year'])['Quantity'].sum()
+cxr = tb_cons.loc[tb_cons.Item_Code.str.contains('175')].groupby(['year'])['Quantity'].sum().mul(sf)
 
 make_plot(
     title_str="Chest X-rays",
     model=cxr,
 )
 
-diagnostic_tests = tb_cons.loc[tb_cons.Item_Code.str.contains('175|184|187')].groupby(['Item_Code'])['Quantity'].sum()
+diagnostic_tests = tb_cons.loc[tb_cons.Item_Code.str.contains('175|184|187')].groupby(['Item_Code'])['Quantity'] \
+    .sum().mul(sf)
 diagnostic_tests.plot.bar(width=0.4)
 plt.title('Total Diagnostic Tests')
 plt.xticks([0, 1, 2], ['X-ray', 'Sputum Smear', 'Xpert'], rotation=30, ha='right')
@@ -194,7 +196,7 @@ plt.show()
 # Here I am plotting the use of the following treatments over time:
 
 # (1) First line treatment for children (Item Code: 178)
-tx_child = tb_cons.loc[tb_cons.Item_Code.str.contains('178')].groupby(['year'])['Quantity'].sum()
+tx_child = tb_cons.loc[tb_cons.Item_Code.str.contains('178')].groupby(['year'])['Quantity'].sum().mul(sf)
 
 make_plot(
     title_str="First Line Child Treatment",
@@ -202,34 +204,29 @@ make_plot(
 )
 
 # (2) Shorter first line treatment for children (Item Code: 2675)
-tx_child_shorter = tb_cons.loc[tb_cons.Item_Code.str.contains('2675')].groupby(['year'])['Quantity'].sum()
+tx_child_shorter = tb_cons.loc[tb_cons.Item_Code.str.contains('2675')].groupby(['year'])['Quantity'].sum().mul(sf)
 
 make_plot(
     title_str="First Line Child Treatment (Shorter)",
     model=tx_child_shorter,
 )
 
-# (3) Retreatment for children (Item Code: 179)
-retx_child = tb_cons.loc[tb_cons.Item_Code.str.contains('179')].groupby(['year'])['Quantity'].sum()
-
-make_plot(
-    title_str="Child Retreatment",
-    model=retx_child,
-)
-
-treatments = tb_cons.loc[tb_cons.Item_Code.str.contains('176|177|178|179|2675')].groupby(['Item_Code'])['Quantity'].sum()
+treatments = tb_cons.loc[tb_cons.Item_Code.str.contains('176|177|178|179|2675')].groupby(['Item_Code'])['Quantity'] \
+    .sum().mul(sf)
 treatments.plot.bar(width=0.4)
 plt.title('Total Treatments')
-plt.xticks([0, 1, 2, 3, 4], ['Adult tx', 'Adult retx', 'Child tx', 'Child retx', 'Child tx shorter'], rotation=30, ha='right')
+plt.xticks([0, 1, 2, 3, 4], ['Adult tx', 'Adult retx', 'Child tx', 'Child retx', 'Child tx shorter'],
+           rotation=30, ha='right')
 plt.xlabel('Treatments')
 plt.ylabel('Total')
 plt.show()
+
 # ---------------------------------- APPOINTMENTS ------------------------------------- #
 # Here I am plotting the use of the following appointments over time:
 
 # (1) Screening
 
-screening = cons.loc[cons.TREATMENT_ID.str.startswith('Tb_ScreeningAndRefer')].groupby(by=['year']).size()
+screening = cons.loc[cons.TREATMENT_ID.str.startswith('Tb_ScreeningAndRefer')].groupby(by=['year']).count().mul(sf)
 
 make_plot(
     title_str="Screening Appointments",
@@ -238,17 +235,18 @@ make_plot(
 
 # (2) Follow-up
 
-follow_up = cons.loc[cons.TREATMENT_ID.str.startswith('Tb_FollowUp')].groupby(by=['year']).size()
+follow_up = cons.loc[cons.TREATMENT_ID.str.startswith('Tb_FollowUp')].groupby(by=['year']).count().mul(sf)
 
 make_plot(
     title_str="Follow-up Appointments",
     model=follow_up,
 )
 
-appointments = cons.loc[cons.TREATMENT_ID.str.contains('Tb_ScreeningAndRefer|Tb_FollowUp')].groupby(['TREATMENT_ID']).count()
+appointments = cons.loc[cons.TREATMENT_ID.str.contains('Tb_FollowUp|Tb_ScreeningAndRefer')].groupby(['TREATMENT_ID']) \
+    .count().mul(sf)
 treatments.plot.bar(width=0.4)
 plt.title('Total Appointments')
-plt.xticks([0, 1], ['Screening', 'Follow Up'], rotation=30, ha='right')
+plt.xticks([0, 1], ['Tb_FollowUp', 'Tb_ScreeningAndRefer'], rotation=30, ha='right')
 plt.xlabel('Appointments')
 plt.ylabel('Total')
 plt.show()
