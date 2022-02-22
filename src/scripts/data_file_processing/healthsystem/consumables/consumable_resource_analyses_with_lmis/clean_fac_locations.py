@@ -34,7 +34,7 @@ resourcefilepath = Path("./resources")
 path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
 
 # Load raw GIS dataset and clean column names
-fac_gis = pd.read_excel(open(path_to_files_in_the_tlo_dropbox / 'gis_data/LMISFacilityLocations_raw_temp.xlsx',
+fac_gis = pd.read_excel(open(path_to_files_in_the_tlo_dropbox / 'gis_data/LMISFacilityLocations_raw.xlsx',
                              'rb'), sheet_name='final_gis_data')
 fac_gis = fac_gis.rename(
     columns={'LMIS Facility List': 'fac_name', 'OWNERSHIP': 'fac_owner', 'TYPE': 'fac_type', 'STATUS': 'fac_status',
