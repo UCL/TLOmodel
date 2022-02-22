@@ -42,9 +42,10 @@ log_config = {
 }
 
 
-def make_sim():
+@pytest.fixture
+def sim(seed):
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0, log_config=None)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=None)
 
     # Register the appropriate modules
     sim.register(
@@ -66,19 +67,17 @@ def make_sim():
     return sim
 
 
-def test_single_person():
+def test_single_person(sim):
     """
     run sim for one person
     assign infection
     check symptoms scheduled
     check symptoms resolved correctly
     """
-    sim = make_sim()
-
     # set high death rate - change all symptom probabilities to 1
     sim.modules['Measles'].parameters["symptom_prob"]["probability"] = 1
 
-    sim.make_initial_population(n=2)  # why does this throw an error if n=1??
+    sim.make_initial_population(n=1)  # why does this throw an error if n=1??
     # ValueError: Wrong number of items passed 5, placement implies 1
     df = sim.population.props
     person_id = 0
@@ -97,7 +96,7 @@ def test_single_person():
 
 
 @pytest.mark.slow
-def test_measles_cases_and_hsi_occurring():
+def test_measles_cases_and_hsi_occurring(sim):
     """ Run the measles module
     check dtypes consistency
     check infections occurring
@@ -108,8 +107,6 @@ def test_measles_cases_and_hsi_occurring():
 
     end_date = Date(2011, 12, 31)
     popsize = 1000
-
-    sim = make_sim()
 
     # set high transmission probability
     sim.modules['Measles'].parameters['beta_baseline'] = 1.0
@@ -156,12 +153,10 @@ def test_measles_cases_and_hsi_occurring():
 
 
 @pytest.mark.slow
-def test_measles_zero_death_rate():
+def test_measles_zero_death_rate(sim):
 
     end_date = Date(2010, 12, 31)
     popsize = 100
-
-    sim = make_sim()
 
     # set zero death rate - change all symptom probabilities to 0
     sim.modules['Measles'].parameters["symptom_prob"]["probability"] = 0

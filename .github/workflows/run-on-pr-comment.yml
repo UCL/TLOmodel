@@ -1,0 +1,90 @@
+name: Resuable workflow for triggering tests with a pull-request comment
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: The type of machine to run job on
+        required: false
+        type: string
+        default: ubuntu-latest
+      keyword:
+        description: The keyword to appear after /run in PR comment to trigger workflow
+        required: true
+        type: string
+      description:
+        description: A description of test to use in comment generated to indicate result
+        required: true
+        type: string
+      commands:
+        description: The shell command(s) to run to execute test
+        required: true
+        type: string
+
+jobs:
+  run_test_on_keyword_and_reply_with_result:
+    runs-on: ${{ inputs.runs-on }}
+    if: github.event.issue.pull_request && github.event.comment.body == format('/run {0}', inputs.keyword)
+    steps:
+    - name: Check permissions of commenting user
+      id: has_permissions
+      uses: actions/github-script@v4
+      with:
+        script: |
+          const response = await github.repos.getCollaboratorPermissionLevel({
+            owner: context.repo.owner,
+            repo: context.repo.repo,  
+            username: context.payload.comment.user.login,
+          });
+          const permission_level = response.data.permission;
+          return (permission_level == 'admin') || (permission_level == 'write')
+    - name: Exit if insufficient permissions
+      if: ${{ steps.has_permissions.outputs.result == 'false' }}
+      run: |
+        exit 1
+    - name: React to comment
+      uses: actions/github-script@v4
+      with:
+        script: |
+          github.reactions.createForIssueComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            comment_id: context.payload.comment.id,
+            content: "rocket",
+          });
+    - name: Get pull-request SHA
+      id: sha
+      uses: actions/github-script@v4
+      with:
+        result-encoding: string
+        script: |
+          const pr = await github.pulls.get({
+            owner: context.issue.owner,
+            repo: context.issue.repo,
+            pull_number: context.issue.number,
+          });
+          return pr.data.head.sha
+    - name: Checkout pull-request SHA
+      uses: actions/checkout@v2
+      with:
+        lfs: true
+        ref: ${{ steps.sha.outputs.result }}
+    - name: Run test command(s)
+      run: ${{ inputs.commands }}
+    - name: Create comment with test result and link to workflow run information
+      if: always() && steps.has_permissions.outputs.result == 'true'
+      uses: actions/github-script@v4
+      with:
+        script: |
+          const workflow_run = await github.actions.getWorkflowRun({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            run_id: context.runId,
+          });
+          const result = "${{ job.status == 'success' && 'succeeded ✅' || 'failed ❌' }}"
+          github.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,  
+            body: `[${{ inputs.description }} ${result}](${workflow_run.html_url})`,
+          });

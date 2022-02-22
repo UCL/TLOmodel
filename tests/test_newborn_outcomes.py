@@ -21,9 +21,6 @@ from tlo.methods import (
 )
 from tlo.methods.hiv import DummyHivModule
 
-seed = 8974
-
-
 # The resource files
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -72,7 +69,7 @@ def check_newborn_death_function_acts_as_expected(sim, individual_id, cause):
     sim.population.props.at[individual_id, 'nb_death_after_birth_date'] = pd.NaT
 
 
-def register_modules(ignore_cons_constraints):
+def register_modules(ignore_cons_constraints, seed):
     """Register all modules that are required for newborn outcomes to run"""
     _cons_availability = 'all' if ignore_cons_constraints else 'none'
 
@@ -100,18 +97,18 @@ def register_modules(ignore_cons_constraints):
 
 
 @pytest.mark.slow
-def test_run_and_check_dtypes():
+def test_run_and_check_dtypes(seed):
     """Run the sim for five years and check dtypes at the end """
-    sim = register_modules(ignore_cons_constraints=False)
+    sim = register_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=1000)
     sim.simulate(end_date=Date(2015, 1, 1))
     check_dtypes(sim)
 
 
-def test_to_check_babies_delivered_in_facility_receive_post_birth_care():
+def test_to_check_babies_delivered_in_facility_receive_post_birth_care(seed):
     """Test that babies that are born within a health facility are correctly scheduled to receive post delivery care
     following birth """
-    sim = register_modules(ignore_cons_constraints=False)
+    sim = register_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=100)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
@@ -136,9 +133,9 @@ def test_to_check_babies_delivered_in_facility_receive_post_birth_care():
     assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant in hsi_events
 
 
-def test_to_check_babies_delivered_at_home_dont_receive_post_birth_care():
+def test_to_check_babies_delivered_at_home_dont_receive_post_birth_care(seed):
     """Test that babies that are born at home do not automatically receive care within a facility following birth"""
-    sim = register_modules(ignore_cons_constraints=False)
+    sim = register_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=100)
 
     # Turn of care seeking for this test
@@ -171,11 +168,11 @@ def test_to_check_babies_delivered_at_home_dont_receive_post_birth_care():
     assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant not in hsi_events
 
 
-def test_care_seeking_for_babies_delivered_at_home_who_develop_complications():
+def test_care_seeking_for_babies_delivered_at_home_who_develop_complications(seed):
     """Test that babies that are born at home and develop a complication immediately after birth are able to seek care
     and receive treatment """
 
-    sim = register_modules(ignore_cons_constraints=False)
+    sim = register_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=100)
 
     # set risk of comps to 1 and force care seeking
@@ -208,10 +205,10 @@ def test_care_seeking_for_babies_delivered_at_home_who_develop_complications():
     assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant in hsi_events
 
 
-def test_twin_and_single_twin_still_birth_logic_for_twins():
+def test_twin_and_single_twin_still_birth_logic_for_twins(seed):
     """Test twins are correctly identified and linked by functions in newborn outcomes. Also test that a mother can
     experience an intrapartum stillbirth of a single twin """
-    sim = register_modules(ignore_cons_constraints=False)
+    sim = register_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=100)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
@@ -249,10 +246,10 @@ def test_twin_and_single_twin_still_birth_logic_for_twins():
     assert not sim.population.props.at[child_id_two, 'is_alive']
 
 
-def test_care_seeking_for_twins_delivered_at_home_who_develop_complications():
+def test_care_seeking_for_twins_delivered_at_home_who_develop_complications(seed):
     """Test that if both twins experience complications following birth, the result of one care_seeking equation will
     lead to both twins receiving care """
-    sim = register_modules(ignore_cons_constraints=False)
+    sim = register_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=100)
 
     # set risk of complications to 1 so that both twins develop sepsis immediately following birth and set probability
@@ -303,10 +300,10 @@ def test_care_seeking_for_twins_delivered_at_home_who_develop_complications():
     assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant in hsi_events_child_two
 
 
-def test_on_birth_applies_risk_of_complications_in_term_newborns_delivered_at_home_correctly():
+def test_on_birth_applies_risk_of_complications_in_term_newborns_delivered_at_home_correctly(seed):
     """Test that term newborns who are delivered at home have risk of complications applied during the on
     birth function."""
-    sim = register_modules(ignore_cons_constraints=False)
+    sim = register_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=100)
 
     # set risk of comps to 1 and force care seeking
@@ -349,10 +346,10 @@ def test_on_birth_applies_risk_of_complications_in_term_newborns_delivered_at_ho
     assert (sim.population.props.at[child_id, 'nb_retinopathy_prem'] == 'none')
 
 
-def test_on_birth_applies_risk_of_complications_in_preterm_newborns_delivered_at_home_correctly():
+def test_on_birth_applies_risk_of_complications_in_preterm_newborns_delivered_at_home_correctly(seed):
     """Test that preterm newborns who are delivered at home have risk of complications applied during the on
      birth function."""
-    sim = register_modules(ignore_cons_constraints=False)
+    sim = register_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=100)
 
     # set risk of comps to 1 and force care seeking
@@ -394,10 +391,10 @@ def test_on_birth_applies_risk_of_complications_in_preterm_newborns_delivered_at
     assert (sim.population.props.at[child_id, 'nb_encephalopathy'] == 'none')
 
 
-def test_newborn_hsi_applies_risk_of_complications_and_delivers_treatment_to_facility_births():
+def test_newborn_hsi_applies_risk_of_complications_and_delivers_treatment_to_facility_births(seed):
     """Test that newborns who are delivered in facility have risk of complications applied. For those newborns who
     develop complications, check that treatment is delivered as expected """
-    sim = register_modules(ignore_cons_constraints=True)
+    sim = register_modules(ignore_cons_constraints=True, seed=seed)
     sim.make_initial_population(n=100)
 
     # set risk of comps very high and force care seeking
@@ -458,10 +455,10 @@ def test_newborn_hsi_applies_risk_of_complications_and_delivers_treatment_to_fac
     assert sim.population.props.at[child_id, 'nb_inj_abx_neonatal_sepsis']
 
 
-def test_function_which_applies_risk_of_death_following_birth():
+def test_function_which_applies_risk_of_death_following_birth(seed):
     """Test that the apply_risk_of_death_from_complication function within this module behaves as expected when
     applying risk of death to newborns """
-    sim = register_modules(ignore_cons_constraints=False)
+    sim = register_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=100)
 
     params = sim.modules['NewbornOutcomes'].parameters
