@@ -463,8 +463,9 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
         )
         schedule_hsi(event, priority=1, topen=sim.date)
 
-    if (age < 5) and set(symptoms).intersection({'cough', 'difficult_breathing'}):
+    if (age < 5) and set(symptoms).intersection({'cough', 'difficult_breathing', 'danger_signs'}):
         # todo - @ines - you might want to align these with what you make you emergency symptom(s) to be.
+        # Todo: @tbhallett - I just added that danger_signs in, it should be the emergency symptoms prompting to seek emergency generic HSI
         if 'Alri' in sim.modules:
             sim.modules['Alri'].assess_and_classify_cough_or_difficult_breathing_level(
                 person_id=person_id, hsi_event=hsi_event)

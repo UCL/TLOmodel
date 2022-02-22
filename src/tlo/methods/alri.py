@@ -710,7 +710,6 @@ class Alri(Module):
                     # (associates the symptom with the 'average' healthcare seeking, apart from "danger_signs",
                     #  which is an emergency symptom in children.
                 )
-                # todo - any other suymptom to be emergency seeking? I note that the trigger in the Emergency Generic HSI is based on 'difficult_breathing'
 
     def pre_initialise_population(self):
         """Define columns for complications at run-time"""
@@ -1080,35 +1079,29 @@ class Alri(Module):
 
         child_is_younger_than_2_months = age_exact_years < (1.0 / 6.0)
 
-        # iCCM classifications - HSAs in level 0:
-        if facility_level == '0':
-            if child_is_younger_than_2_months:
+        # for children aged < 2 months
+        if child_is_younger_than_2_months:
+            if facility_level == '0':
                 return 'not_handled_at_facility_0'
             else:
-                if 'danger_signs' in symptoms:
-                    return 'danger_signs_pneumonia'
-                elif 'chest_indrawing' in symptoms:
-                    return 'chest_indrawing_pneumonia'
+                if ('chest_indrawing' in symptoms) or ('danger_signs' in symptoms):
+                    return 'serious_bacterial_infection'
                 elif 'tachypnoea' in symptoms:
                     return 'fast_breathing_pneumonia'
                 else:
                     return 'cough_or_cold'
 
-        # IMCI classifications - HCW in health facilities:
+        # iCCM and IMCI classifications
+        # for children aged >= 2 months
         else:
-            if child_is_younger_than_2_months:
-                if ('tachypnoea' in symptoms) or ('chest_indrawing' in symptoms) or ('danger_signs' in symptoms):
-                    return 'very_severe_disease'
-                else:
-                    return 'cough_or_difficult_breathing'
+            if 'danger_signs' in symptoms:
+                return 'danger_signs_pneumonia'
+            elif 'chest_indrawing' in symptoms:
+                return 'chest_indrawing_pneumonia'
+            elif 'tachypnoea' in symptoms:
+                return 'fast_breathing_pneumonia'
             else:
-                if 'danger_signs' in symptoms:
-                    return 'severe_pneumonia'
-                elif ('tachypnoea' in symptoms) or ('chest_indrawing' in symptoms):
-                    return 'non_severe_pneumonia'
-                else:
-                    return 'cough_or_cold'
-
+                return 'cough_or_cold'
 
     def imci_pneumonia_classification(self, oxygen_saturation, symptoms, age_exact_years, facility_level,
                                       oximeter_available):
@@ -1117,7 +1110,7 @@ class Alri(Module):
         :return:
         """
         if oximeter_available and (oxygen_saturation == '<90%'):
-            return 'severe_pneumonia'
+            return 'danger_signs_pneumonia'
         else:
             return self.symptom_based_classification(
                 age_exact_years=age_exact_years,
@@ -1143,23 +1136,8 @@ class Alri(Module):
                     do_treatment('iCCM_Antibiotic_Therapy_for_pneumonia')
                 else:
                     schedule_hsi(HSI_Alri_IMCI_Pneumonia_Treatment(person_id=person_id, module=self))
-            # todo what if not facility_level 0?
 
-        def do_if_chest_indrawing_pneumonia(facility_level):
-            if facility_level == '0':
-                get_cons('First_dose_antibiotic_for_referral_iCCM')
-                schedule_hsi(HSI_Alri_IMCI_Pneumonia_Treatment(person_id=person_id, module=self))
-            # todo what if not facility_level 0?
-
-        def do_if_danger_signs_pneumonia(facility_level):
-            if facility_level == '0':
-                get_cons('First_dose_antibiotic_for_referral_iCCM')
-                schedule_hsi(HSI_Alri_IMCI_Pneumonia_Treatment(person_id=person_id, module=self))
-            # todo what if not facility_level 0?
-
-        def do_if_non_severe_pneumonia(facility_level):
-            # todo - what if facility_level 0?
-            if facility_level in ('1a', '1b'):
+            elif facility_level in ('1a', '1b'):
                 if get_cons('Amoxicillin_suspension_or_tablet'):
                     do_treatment('IMCI_Treatment_non_severe_pneumonia')
                 else:
@@ -1169,7 +1147,22 @@ class Alri(Module):
                 if get_any_cons('Amoxicillin_suspension_or_tablet'):
                     do_treatment('IMCI_Treatment_non_severe_pneumonia')
 
-        def do_if_severe_pneumonia(facility_level):
+        def do_if_chest_indrawing_pneumonia(facility_level):
+            if facility_level == '0':
+                get_cons('First_dose_antibiotic_for_referral_iCCM')
+                schedule_hsi(HSI_Alri_IMCI_Pneumonia_Treatment(person_id=person_id, module=self))
+
+            elif facility_level in ('1a', '1b'):
+                if get_cons('Amoxicillin_suspension_or_tablet'):
+                    do_treatment('IMCI_Treatment_non_severe_pneumonia')
+                else:
+                    schedule_hsi(HSI_Alri_IMCI_Pneumonia_Treatment(person_id=person_id, module=self))
+
+            elif facility_level == '2':
+                if get_any_cons('Amoxicillin_suspension_or_tablet'):
+                    do_treatment('IMCI_Treatment_non_severe_pneumonia')
+
+        def do_if_danger_signs_pneumonia(facility_level):
             # Get bronchodilator if wheeze and at facility_level 1a, 1b, 2
             if 'wheeze' in symptoms:
                 if facility_level in ('1a', '1b'):
@@ -1193,32 +1186,27 @@ class Alri(Module):
                 else:
                     schedule_hsi(HSI_Alri_Inpatient_Pneumonia_Treatment(person_id=person_id, module=self))
 
-        def do_if_very_severe_disease(facility_level):
-            if facility_level in ('1a', '1b'):
-                do_if_severe_pneumonia(facility_level)
-            # todo what about other facility levels?
+        def do_if_serious_bacterial_infection(facility_level):
+            if facility_level in ('1a', '1b', '2'):
+                if get_cons('1st_line_Antibiotic_Therapy_for_Severe_Pneumonia'):
+                    do_treatment('IMCI_Treatment_severe_pneumonia')
+                else:
+                    schedule_hsi(HSI_Alri_Inpatient_Pneumonia_Treatment(person_id=person_id, module=self))
 
         def do_if_not_handled_at_facility_0(facility_level):
-            schedule_hsi(HSI_Alri_IMCI_Pneumonia_Treatment(person_id=person_id, module=self))
+            if facility_level == '0':
+                schedule_hsi(HSI_Alri_IMCI_Pneumonia_Treatment(person_id=person_id, module=self))
 
         def do_if_cough_or_cold(facility_level):
             return
 
-        def do_if_cough_or_difficult_breathing(facility_level):
-            # todo why distinguish these two diffferent (cough_or_cold / cough_or_difficult_breathing) classification - neither do anything!
-            return
-
-        # todo - @TimC/Ines -- do we _really_ need all these classification?? They seem very similar to one another!
         do_mapping = {
             'fast_breathing_pneumonia': do_if_fast_breathing_pneumonia,
             'chest_indrawing_pneumonia': do_if_chest_indrawing_pneumonia,
             'danger_signs_pneumonia': do_if_danger_signs_pneumonia,
-            'cough_or_cold': do_if_cough_or_cold,
-            'non_severe_pneumonia': do_if_non_severe_pneumonia,
-            'severe_pneumonia': do_if_severe_pneumonia,
-            'very_severe_disease': do_if_very_severe_disease,
-            'cough_or_difficult_breathing': do_if_cough_or_difficult_breathing,
-            'not_handled_at_facility_0': do_if_not_handled_at_facility_0
+            'serious_bacterial_infection': do_if_serious_bacterial_infection,
+            'not_handled_at_facility_0': do_if_not_handled_at_facility_0,
+            'cough_or_cold': do_if_cough_or_cold
         }
         do_mapping[classification](facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL)
 

@@ -636,8 +636,13 @@ def test_classification_based_on_symptoms_and_imci(sim):
 
     # Construct scenario and the expected classification if using only symptoms:
     classification_on_symptoms = (
-        ('non_severe_pneumonia', {'symptoms': ['chest_indrawing'], 'facility_level': '1a', 'age_exact_years': 0.5}),
-        ('non_severe_pneumonia', {'symptoms': ['tachypnoea'], 'facility_level': '1b', 'age_exact_years': 0.5})
+        ('chest_indrawing_pneumonia', {'symptoms': ['chest_indrawing'], 'facility_level': '1a', 'age_exact_years': 0.5}),
+        ('fast_breathing_pneumonia', {'symptoms': ['tachypnoea'], 'facility_level': '1b', 'age_exact_years': 0.5}),
+        ('danger_signs_pneumonia', {'symptoms': ['danger_signs'], 'facility_level': '1b', 'age_exact_years': 0.5}),
+        ('serious_bacterial_infection', {'symptoms': ['chest_indrawing'], 'facility_level': '1b', 'age_exact_years': 0.1}),
+        ('fast_breathing_pneumonia', {'symptoms': ['tachypnoea'], 'facility_level': '1b', 'age_exact_years': 0.1}),
+        ('not_handled_at_facility_0', {'symptoms': ['tachypnoea'], 'facility_level': '0', 'age_exact_years': 0.1})
+
         # todo - @Ines -- here add lots (or all?) of the permutations you're interesed in with answer that you'd like!
     )
 
@@ -646,10 +651,7 @@ def test_classification_based_on_symptoms_and_imci(sim):
         'chest_indrawing_pneumonia',
         'danger_signs_pneumonia',
         'cough_or_cold',
-        'non_severe_pneumonia',
-        'severe_pneumonia',
-        'very_severe_disease',
-        'cough_or_difficult_breathing',
+        'serious_bacterial_infection',
         'not_handled_at_facility_0'
     }
 
@@ -671,10 +673,10 @@ def test_classification_based_on_symptoms_and_imci(sim):
                                                                                    oximeter_available=True,
                                                                                    oxygen_saturation='>=93%')
 
-        # Check that IMCI classification if oximter available and low oxygen saturation (should be'severe_pneumonia' irrespective of symptoms)
-        assert 'severe_pneumonia' == imci_pneumonia_classification(**chars,
-                                                                   oximeter_available=True,
-                                                                   oxygen_saturation='<90%')
+        # Check that IMCI classification if oximter available and low oxygen saturation (should be'danger_signs_pneumonia' irrespective of symptoms)
+        assert 'danger_signs_pneumonia' == imci_pneumonia_classification(**chars,
+                                                                         oximeter_available=True,
+                                                                         oxygen_saturation='<90%')
 
 
 def test_do_effects_of_alri_treatment(sim):
