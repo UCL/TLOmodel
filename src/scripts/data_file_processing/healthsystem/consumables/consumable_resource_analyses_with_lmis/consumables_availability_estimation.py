@@ -31,8 +31,8 @@ import pandas as pd
 from tests.test_consumables import check_format_of_consumables_file
 
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    # 'C:/Users/sm2511/Dropbox/Thanzi la Onse'
-    '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE'
+    'C:/Users/sm2511/Dropbox/Thanzi la Onse'
+    # '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE'
 )
 
 path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/consumables raw files/"
@@ -404,15 +404,33 @@ for var in ['available_prop_hhfa_Facility_level_2', 'available_prop_hhfa_Facilit
     cond = hhfa_df[var] > 1
     hhfa_df.loc[cond, var] = 1
 
+# Add further assumptions on consumable availability from other sources
+assumptions_df = pd.read_excel(open(path_to_files_in_the_tlo_dropbox / 'ResourceFile_hhfa_consumables.xlsx', 'rb'),
+                        sheet_name='availability_assumptions')
+assumptions_df = assumptions_df[['item_code', 'available_prop_Facility_level_0',
+     'available_prop_Facility_level_1a', 'available_prop_Facility_level_1b',
+     'available_prop_Facility_level_2', 'available_prop_Facility_level_3']]
+
 # Merge HHFA data with the list of unmatched consumables from the TLO model
 unmatched_consumables_df = pd.merge(unmatched_consumables, hhfa_df, how='left', on='item_code')
+unmatched_consumables_df = pd.merge(unmatched_consumables_df, assumptions_df, how='left', on='item_code')
+# when not missing, replace with assumption
+
+for level in ['0', '1a', '1b', '2', '3']:
+    cond = unmatched_consumables_df['available_prop_hhfa_Facility_level_' + level].notna()
+    unmatched_consumables_df.loc[cond, 'data_source'] = 'hhfa_2018-19'
+
+    cond = unmatched_consumables_df['available_prop_Facility_level_' + level].notna()
+    unmatched_consumables_df.loc[cond, 'data_source'] = 'other'
+    unmatched_consumables_df.loc[cond, 'available_prop_hhfa_Facility_level_' + level] = unmatched_consumables_df['available_prop_Facility_level_' + level]
+
 unmatched_consumables_df = unmatched_consumables_df[
     ['module_name', 'item_code', 'consumable_name_tlo_x', 'available_prop_hhfa_Facility_level_0',
      'available_prop_hhfa_Facility_level_1a', 'available_prop_hhfa_Facility_level_1b',
      'available_prop_hhfa_Facility_level_2', 'available_prop_hhfa_Facility_level_3',
-     'fac_count_Facility_level_0', 'fac_count_Facility_level_1a', 'fac_count_Facility_level_1b']]
+     'fac_count_Facility_level_0', 'fac_count_Facility_level_1a', 'fac_count_Facility_level_1b',
+     'data_source']]
 
-# ** Need to edit this part of the code so the levels 2 and 3 don't take on all districts **
 # Reshape dataframe of consumable availability taken from the HHFA in the same format as the stockout dataframe based
 # on OpenLMIS
 unmatched_consumables_df = pd.wide_to_long(unmatched_consumables_df, stubnames=['available_prop_hhfa', 'fac_count'],
@@ -430,7 +448,6 @@ change_colnames(unmatched_consumables_df, NameChangeList)
 # --- 6.2 Append OpenLMIS stockout dataframe with HHFA stockout dataframe and Extract in .csv format --- #
 # Append common consumables stockout dataframe with the main dataframe
 cond = unmatched_consumables_df['available_prop'].notna()
-unmatched_consumables_df.loc[cond, 'data_source'] = 'hhfa_2018-19'
 unmatched_consumables_df.loc[~cond, 'data_source'] = 'Not available'
 stkout_df = stkout_df.append(unmatched_consumables_df)
 
@@ -452,17 +469,18 @@ stkout_df = stkout_df[~cond]
 stkout_df = stkout_df.append(hhfa_fac0)
 
 # --- 6.4 Generate new category variable for analysis --- #
-cond_RH = (stkout_df['module_name'].str.contains('care_of_women_during_pregnancy')) | \
-          (stkout_df['module_name'].str.contains('labour'))
-cond_newborn = (stkout_df['module_name'].str.contains('newborn'))
-cond_ari = stkout_df['module_name'] == 'acute lower respiratory infections'
-cond_rti = stkout_df['module_name'] == 'Road traffic injuries'
-stkout_df['category'] = stkout_df['module_name']
+stkout_df['category'] = stkout_df['module_name'].str.lower()
+cond_RH = (stkout_df['category'].str.contains('care_of_women_during_pregnancy')) | \
+          (stkout_df['category'].str.contains('labour'))
+cond_newborn = (stkout_df['category'].str.contains('newborn'))
+cond_ari = stkout_df['category'] == 'acute lower respiratory infections'
+cond_rti = stkout_df['category'] == 'road traffic injuries'
+cond_cancer = stkout_df['category'].str.contains('cancer')
 stkout_df.loc[cond_RH, 'category'] = 'reproductive_health'
+stkout_df.loc[cond_cancer, 'category'] = 'cancer'
 stkout_df.loc[cond_newborn, 'category'] = 'neonatal_health'
 stkout_df.loc[cond_ari, 'category'] = 'ari'
 stkout_df.loc[cond_rti, 'category'] = 'road_traffic_injuries'
-stkout_df['category'] = stkout_df['category'].str.lower()
 
 cond_condom = stkout_df['item_code'] == 2
 stkout_df.loc[cond_condom, 'category'] = 'contraception'
@@ -713,6 +731,7 @@ ax = calibration_df[cond].plot.line(x='labels', y=['available_prop', 'available_
 ax.set_xticks(np.arange(len(calibration_df[cond]['labels'])))
 ax.set_xticklabels(calibration_df[cond]['labels'], rotation=90, fontsize=7)
 plt.title('Level 2', fontsize=size, weight="bold")
+plt.show()
 # plt.savefig(outputfilepath / 'consumableavailability_calibration_level2.png')
 
 cond = calibration_df['fac_type_tlo'] == 'Facility_level_3'
