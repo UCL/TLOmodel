@@ -1,54 +1,69 @@
 {
   "scenario_script_path": "src/scripts/hiv/deviance_for_calibration/baseline_runs.py",
-  "scenario_seed": 3,
+  "scenario_seed": 2621,
   "runs_per_draw": 1,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 218175338,
+      "draw_seed": 848613296,
       "parameters": {
+        "Hiv": {
+          "beta": 0.125176
+        },
         "Tb": {
-          "transmission_rate": 1.6
+          "transmission_rate": 19.5
         }
       }
     },
     {
       "draw_number": 1,
-      "draw_seed": 303761048,
+      "draw_seed": 118159451,
       "parameters": {
+        "Hiv": {
+          "beta": 0.125176
+        },
         "Tb": {
-          "transmission_rate": 1.6500000000000001
+          "transmission_rate": 19.5
         }
       }
     },
     {
       "draw_number": 2,
-      "draw_seed": 893988089,
+      "draw_seed": 747766979,
       "parameters": {
+        "Hiv": {
+          "beta": 0.125176
+        },
         "Tb": {
-          "transmission_rate": 1.7000000000000002
+          "transmission_rate": 19.5
         }
       }
     },
     {
       "draw_number": 3,
-      "draw_seed": 1460070019,
+      "draw_seed": 2070824211,
       "parameters": {
+        "Hiv": {
+          "beta": 0.125176
+        },
         "Tb": {
-          "transmission_rate": 1.75
+          "transmission_rate": 19.5
         }
       }
     },
     {
       "draw_number": 4,
-      "draw_seed": 1249426360,
+      "draw_seed": 926270268,
       "parameters": {
+        "Hiv": {
+          "beta": 0.125176
+        },
         "Tb": {
-          "transmission_rate": 1.8
+          "transmission_rate": 19.5
         }
       }
     }
   ],
-  "commit": "71f9ee9ee2450064bffdf2e66c76e2f7f0ff7abe",
-  "github": "https://github.com/UCL/TLOmodel/blob/71f9ee9ee2450064bffdf2e66c76e2f7f0ff7abe/src/scripts/hiv/deviance_for_calibration/baseline_runs.py"
+  "commit": "c95fbb24c64c2f332568a43c17cea552aee436c8",
+  "github": "https://github.com/UCL/TLOmodel/blob/c95fbb24c64c2f332568a43c17cea552aee436c8/src/scripts/hiv/deviance_for_calibration/baseline_runs.py"
 }

@@ -16,7 +16,8 @@ tlo batch-submit src/scripts/hiv/deviance_for_calibration/baseline_runs.py
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
 
-Job ID: baseline_runs-2022-02-08T164813Z
+21st Feb
+Job ID: baseline_runs-2022-02-21T171625Z
 
 Download result files for a completed job:
 tlo batch-download baseline_runs-2022-02-08T164813Z

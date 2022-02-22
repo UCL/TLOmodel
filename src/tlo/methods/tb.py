@@ -1073,6 +1073,7 @@ class Tb(Module):
         )
 
         # 4) -------- Define the treatment options --------
+        # todo these packages all include an x-ray with availability 0.85 (consumables sheet)
 
         # adult treatment - primary
         self.item_codes_for_consumables_required['tb_tx_adult'] = \
@@ -1081,6 +1082,10 @@ class Tb(Module):
         # child treatment - primary
         self.item_codes_for_consumables_required['tb_tx_child'] = \
             hs.get_item_codes_from_package_name("First line treatment for new TB cases for children")
+
+        # child treatment - primary, shorter regimen
+        self.item_codes_for_consumables_required['tb_tx_child_shorter'] = \
+            hs.get_item_codes_from_package_name("First line treatment for new TB cases for children shorter regimen")
 
         # adult treatment - secondary
         self.item_codes_for_consumables_required['tb_retx_adult'] = \
@@ -1269,9 +1274,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             # viral suppression rates
             # adults already at 95% by 2020
             # change all column values
-            self.sim.modules["Hiv"].parameters["prob_viral_suppression"]["virally_suppressed_on_art"] = 95
-
-            return
+            self.sim.modules["gHiv"].parameters["prob_viral_suppression"]["virally_suppressed_on_art"] = 95
 
         if (scenario == 2) or (scenario == 4):
             # change IPT eligibility for TB contacts to all years
@@ -2206,6 +2209,15 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 drugs_available = self.get_consumables(
                     item_codes=self.module.item_codes_for_consumables_required["tb_retx_child"],
                 )
+
+        # -------- SHINE Trial shorter paediatric regimen -------- #
+        # todo add eligibility for shorter regimen
+        if (self.module.parameters["scenario"] == 5):
+
+            # shorter treatment for child with minimal tb
+            drugs_available = self.get_consumables(
+                item_codes=self.module.item_codes_for_consumables_required["tb_tx_child_shorter"],
+            )
 
         return drugs_available
 

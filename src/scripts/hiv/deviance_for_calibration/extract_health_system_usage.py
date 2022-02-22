@@ -1,3 +1,4 @@
+
 import pickle
 from datetime import datetime
 from pathlib import Path
@@ -8,17 +9,16 @@ import pandas as pd
 # Define paths and filenames
 rfp = Path("./resources")
 outputpath = Path("./outputs")
-results_filename = outputpath / 'deviance_calibrated.pickle'
+results_filename = outputpath / 'default_run.pickle'
 make_file_name = lambda stub: outputpath / f"{datetime.today().strftime('%Y_%m_%d''')}_{stub}.png"
 
 with open(results_filename, 'rb') as f:
     output = pickle.load(f)
 
 # %% Scaling Factor
-# scaling_factor = get_scaling_factor(output, rfp)
-# log key=scaling_factor  # from demography log???
-# HEALTH CARE WORKER TIME
+scaling_factor = output["tlo.methods.demography"]["scaling_factor"].scaling_factor.values[0]
 
+# HEALTH CARE WORKER TIME
 cap = output['tlo.methods.healthsystem']['Capacity'].copy()
 cap["date"] = pd.to_datetime(cap["date"])
 cap = cap.set_index('date')
