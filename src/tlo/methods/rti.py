@@ -3099,21 +3099,15 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']
         # Create an empty list for injuries that are potentially healed without further medical intervention
         self.heal_with_time_injuries = []
-        # Define the call on resources of this treatment event: Time of Officers (Appointments)
-        #   - get an 'empty' foot
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['AccidentsandEmerg'] = 1
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'RTI_MedicalIntervention'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         road_traffic_injuries = self.sim.modules['RTI']
         df = self.sim.population.props
-        hs = self.sim.modules["HealthSystem"]
         p = self.sim.modules['RTI'].parameters
         person = df.loc[person_id]
         # ======================= Design treatment plan, appointment type =============================================
@@ -3378,8 +3372,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # https://doi.org/10.1186/1757-7241-19-61
 
         if not df.at[person_id, 'is_alive']:
-            self.EXPECTED_APPT_FOOTPRINT = hs.get_blank_appt_footprint()
-            return
+            return self.make_appt_footprint({})
         # Remove the scheduled death without medical intervention
         df.loc[person_id, 'rt_date_death_no_med'] = pd.NaT
         # Isolate relevant injury information
@@ -3629,17 +3622,12 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        # Request accident and emergency staff time
-        the_appt_footprint['AccidentsandEmerg'] = 1
         self.TREATMENT_ID = 'RTI_Shock_Treatment'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        hs = self.sim.modules["HealthSystem"]
         df = self.sim.population.props
         # determine if this is a child
         if df.loc[person_id, 'age_years'] < 15:
@@ -3647,7 +3635,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         else:
             is_child = False
         if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint({})
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         # TODO: find a more complete list of required consumables for adults
         if is_child:
@@ -3678,7 +3666,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'rt_in_shock'] = False
         else:
             self.module.rti_ask_for_shock_treatment(person_id)
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint({})
 
     def did_not_run(self, person_id):
         # Assume that untreated shock leads to death for now
@@ -3724,21 +3712,18 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['AccidentsandEmerg'] = 1
         self.TREATMENT_ID = 'RTI_Fracture_Cast'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         # Get the population and health system
         df = self.sim.population.props
-        hs = self.sim.modules["HealthSystem"]
         p = df.loc[person_id]
         # if the person isn't alive return a blank footprint
         if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint({})
         # get a shorthand reference to RTI and consumables modules
         road_traffic_injuries = self.sim.modules['RTI']
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
@@ -3830,7 +3815,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             logger.debug(key='rti_general_message',
                          data=f"Person {person_id} has {fracturecastcounts + slingcounts} fractures without treatment"
                          )
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint({})
 
     def did_not_run(self, person_id):
         logger.debug(key='rti_general_message',
@@ -3858,19 +3843,15 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['MinorSurg'] = 1  # wound debridement requires minor surgery
         self.TREATMENT_ID = 'RTI_Open_Fracture_Treatment'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MinorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        hs = self.sim.modules["HealthSystem"]
-
         if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint({})
         road_traffic_injuries = self.sim.modules['RTI']
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         # isolate the relevant injury information
@@ -3968,24 +3949,17 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        df = self.sim.population.props
-        if df.loc[person_id, 'age_years'] < 5:
-            the_appt_footprint['Under5OPD'] = 1
-        else:
-            the_appt_footprint['Over5OPD'] = 1
         self.TREATMENT_ID = 'RTI_Suture'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
+            'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         df = self.sim.population.props
-        hs = self.sim.modules["HealthSystem"]
-
         if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint({})
         road_traffic_injuries = self.sim.modules['RTI']
 
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
@@ -4031,7 +4005,7 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
                     df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
                 logger.debug(key='rti_general_message',
                              data="This facility has no treatment for open wounds available.")
-                return hs.get_blank_appt_footprint()
+                return self.make_appt_footprint({})
 
     def did_not_run(self, person_id):
         logger.debug(key='rti_general_message',
@@ -4063,10 +4037,8 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['MinorSurg'] = 1
         self.TREATMENT_ID = 'RTI_Burn_Management'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MinorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
         p = self.module.parameters
@@ -4075,10 +4047,8 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         df = self.sim.population.props
-        hs = self.sim.modules["HealthSystem"]
-
         if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint({})
         road_traffic_injuries = self.sim.modules['RTI']
 
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
@@ -4165,23 +4135,16 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        df = self.sim.population.props
-        if df.loc[person_id, 'age_years'] < 5:
-            the_appt_footprint['Under5OPD'] = 1
-        else:
-            the_appt_footprint['Over5OPD'] = 1
         self.TREATMENT_ID = 'RTI_Tetanus_Vaccine'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
+            'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        hs = self.sim.modules["HealthSystem"]
-
         if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint({})
         person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
         # check the person sent here hasn't died due to rti, has been through A and E and had RTI_med_int
         assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
@@ -4207,7 +4170,7 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
                 self.module.rti_ask_for_tetanus(person_id)
                 logger.debug(key='rti_general_message',
                              data=f"Tetanus vaccine requested for person {person_id}, not given")
-                return hs.get_blank_appt_footprint()
+                return self.make_appt_footprint({})
 
     def did_not_run(self, person_id):
         logger.debug(key='rti_general_message',
@@ -4227,29 +4190,17 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
-
-        # Define the call on resources of this treatment event: Time of Officers (Appointments)
-        #   - get an 'empty' footprint:
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        #   - update to reflect the appointments that are required
-        df = self.sim.population.props
-        if df.loc[person_id, 'age_years'] < 5:
-            the_appt_footprint['Under5OPD'] = 1
-        else:
-            the_appt_footprint['Over5OPD'] = 1
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'RTI_Acute_Pain_Management'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
+            'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        hs = self.sim.modules["HealthSystem"]
-
         if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint({})
         # Check that the person sent here is alive, has been through A&E and RTI_Med_int
         assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
         assert df.loc[person_id, 'rt_med_int'], 'This person has not been through rti med int'
@@ -4360,7 +4311,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                 logger.debug(key='rti_general_message',
                              data=f"This facility has no pain management available for their mild pain, person "
                                   f"{person_id}.")
-                return hs.get_blank_appt_footprint()
+                return self.make_appt_footprint({})
 
         if pain_level == "moderate":
             dict_to_output = {'person': person_id,
@@ -4391,7 +4342,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                 logger.debug(key='rti_general_message',
                              data=f"This facility has no pain management available for moderate pain for person "
                                   f"{person_id}.")
-                return hs.get_blank_appt_footprint()
+                return self.make_appt_footprint({})
 
         if pain_level == "severe":
             dict_to_output = {'person': person_id,
@@ -4423,7 +4374,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                 logger.debug(key='rti_general_message',
                              data=f"This facility has no pain management available for severe pain for person "
                                   f"{person_id}.")
-                return hs.get_blank_appt_footprint()
+                return self.make_appt_footprint({})
 
     def did_not_run(self, person_id):
         df = self.sim.population.props
@@ -4541,13 +4492,9 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
         self.TREATMENT_ID = 'RTI_Major_Surgeries'
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['MajorSurg'] = 1  # This requires major surgery
-
         p = self.module.parameters
-
         # Define the necessary information for an HSI
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
         self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']
@@ -4556,7 +4503,6 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        hs = self.sim.modules["HealthSystem"]
         rng = self.module.rng
         road_traffic_injuries = self.sim.modules['RTI']
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
@@ -4591,7 +4537,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         )
 
         if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint({})
         # todo: think about consequences of certain consumables not being available for major surgery and model health
         #  outcomes
         # Isolate the relevant injury information
@@ -4814,7 +4760,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                                                    count=len(df.loc[person_id, 'rt_injuries_for_major_surgery']))
             if pd.isnull(df.loc[person_id, 'rt_date_death_no_med']):
                 df.loc[person_id, 'rt_date_death_no_med'] = self.sim.date + DateOffset(days=7)
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint({})
 
     def did_not_run(self, person_id):
         df = self.sim.population.props
@@ -4871,20 +4817,15 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
         self.TREATMENT_ID = 'RTI_Minor_Surgeries'
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['MinorSurg'] = 1  # This requires major surgery
-
         # Define the necessary information for an HSI
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MinorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        hs = self.sim.modules["HealthSystem"]
-
         if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint({})
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
         # Request first draft of consumables used in major surgery
         self.module.item_codes_for_consumables_required['minor_surgery'] = {
@@ -5000,7 +4941,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
             logger.debug(key='rti_general_message',
                          data=f"This is RTI_Minor_Surgeries failing to provide minor surgeries for person {person_id} "
                               f"on date {self.sim.date}!!!!!!")
-            return hs.get_blank_appt_footprint()
+            return self.make_appt_footprint({})
 
     def did_not_run(self, person_id):
         df = self.sim.population.props
