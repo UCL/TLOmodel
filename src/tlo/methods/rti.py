@@ -3336,7 +3336,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
             # update the property showing if a person is in ICU
             df.loc[person_id, 'rt_in_icu_or_hdu'] = True
             # update the bed days footprint
-            self.BEDDAYS_FOOTPRINT.update({'high_dependency_bed': self.icu_days})
+            self.BEDDAYS_FOOTPRINT.update({'general_bed': self.icu_days})
             # store the injury information of patients in ICU
             logger.info(key='ICU_patients',
                         data=person_injuries,
