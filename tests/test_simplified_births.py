@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 from pandas._libs.tslibs.offsets import DateOffset
 
 from tlo import Date, Simulation, logging
@@ -209,6 +210,7 @@ def test_no_births_if_no_one_is_pregnant():
     assert 0 == len(df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)])
 
 
+@pytest.mark.slow
 def test_standard_run_using_simplified_birth_module():
     """Run the model using the SimplifiedBirthsPoll and SimplifiedBirthEvent and check that properties are
     maintained correctly and that some number of births result."""
@@ -246,6 +248,7 @@ def test_standard_run_using_simplified_birth_module():
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_other_modules_running_with_simplified_births_module():
     """Run a "full simulation" using the simplified_births module and other disease modules"""
     sim = Simulation(

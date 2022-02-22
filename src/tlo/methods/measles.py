@@ -271,7 +271,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, "me_date_measles"] = self.sim.date
 
         # assign symptoms
-        symptom_list = self.module.symptoms
+        symptom_list = sorted(self.module.symptoms)
 
         ref_age = df.at[person_id, "age_years"]
         # age limit for symptom data is 30 years

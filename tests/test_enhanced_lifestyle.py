@@ -13,7 +13,7 @@ end_date = Date(2012, 4, 1)
 popsize = 10000
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture
 def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date, seed=0)
@@ -49,25 +49,11 @@ def __check_properties(df):
     assert df.loc[df.sex == 'M'].li_is_circ.any()
 
 
-def test_make_initial_population(simulation):
+def test_properties_and_dtypes(simulation):
     simulation.make_initial_population(n=popsize)
-
-
-def test_initial_population(simulation):
-    df = simulation.population.props
-    __check_properties(df)
-
-
-def test_simulate(simulation):
+    __check_properties(simulation.population.props)
     simulation.simulate(end_date=end_date)
-
-
-def test_final_population(simulation):
-    df = simulation.population.props
-    __check_properties(df)
-
-
-def test_dypes(simulation):
+    __check_properties(simulation.population.props)
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row

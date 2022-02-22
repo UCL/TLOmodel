@@ -41,6 +41,7 @@ def check_dtypes(simulation):
 # only hpv should stay at zero, other vaccines start as individual events (year=2010-2018)
 # coverage should gradually decline for all after 2018
 # hard constraints (mode=2) and zero capabilities
+@pytest.mark.slow
 @pytest.mark.group2
 def test_no_health_system(tmpdir):
     log_config = {
@@ -82,6 +83,7 @@ def test_no_health_system(tmpdir):
 
 
 # check epi module does schedule hsi events
+@pytest.mark.slow
 @pytest.mark.group2
 def test_epi_scheduling_hsi_events(tmpdir):
 
@@ -136,6 +138,7 @@ def test_epi_scheduling_hsi_events(tmpdir):
     assert (df.va_pneumo <= 3).all()
 
 
+@pytest.mark.slow
 def test_all_doses_properties():
     """check alignment between "number of doses" properties and "all_doses" properties"""
 

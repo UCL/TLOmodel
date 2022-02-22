@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -25,6 +26,7 @@ except NameError:
     resourcefilepath = Path('./resources')
 
 
+@pytest.mark.slow
 def test_configuration_of_properties():
     # --------------------------------------------------------------------------
     # Create and run a short but big population simulation for use in the tests
@@ -102,6 +104,7 @@ def test_configuration_of_properties():
     assert df.loc[df['date_of_birth'] < sim.start_date, 'de_ever_depr'].sum()
 
 
+@pytest.mark.slow
 def test_hsi_functions(tmpdir):
     # With health seeking and healthsystem functioning and no constraints --
     #   --- people should have both talking therapies and antidepressants
@@ -161,6 +164,7 @@ def test_hsi_functions(tmpdir):
     assert 'Depression_Antidepressant_Refill' in hsi['TREATMENT_ID'].values
 
 
+@pytest.mark.slow
 def test_hsi_functions_no_medication_available(tmpdir):
     # With health seeking and healthsystem functioning but no medication available ---
     #   --- people should have talking therapy but not antidepressants,
@@ -223,6 +227,7 @@ def test_hsi_functions_no_medication_available(tmpdir):
     assert 'Depression_Antidepressant_Refill' not in hsi['TREATMENT_ID'].values
 
 
+@pytest.mark.slow
 def test_hsi_functions_no_healthsystem_capability(tmpdir):
     # With health seeking and healthsystem functioning and no medication ---
     #   --- people should have nothing (no talking therapy or antidepressants) and no HSI events run at all

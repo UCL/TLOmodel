@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 from pandas.tseries.offsets import DateOffset
 
 from tlo import Date, Simulation
@@ -123,6 +124,7 @@ def register_all_modules():
     return sim
 
 
+@pytest.mark.slow
 def test_run_core_modules_normal_allocation_of_pregnancy():
     """Runs the simulation using only core modules without manipulation of pregnancy rates or parameters and checks
     dtypes at the end"""
@@ -133,6 +135,7 @@ def test_run_core_modules_normal_allocation_of_pregnancy():
     check_dtypes(sim)
 
 
+@pytest.mark.slow
 def test_run_core_modules_high_volumes_of_pregnancy():
     """Runs the simulation with the core modules and all women of reproductive age being pregnant at the start of the
     simulation"""
@@ -277,6 +280,7 @@ def test_calculation_of_gestational_age():
         assert df.at[person, 'ps_gestational_age_in_weeks'] == (foetal_age_weeks + 2)
 
 
+@pytest.mark.slow
 def test_run_with_all_births_as_twins():
     """Runs the simulation with the core modules, all reproductive age women as pregnant and forces all pregnancies to
     be twins. Other functionality related to or dependent upon twin birth is tested in respective module test files"""
@@ -313,6 +317,7 @@ def test_run_with_all_births_as_twins():
     assert (df.loc[new_borns.loc[new_borns].index, 'nb_twin_sibling_id'] != -1).all().all()
 
 
+@pytest.mark.slow
 def test_run_all_births_end_in_miscarriage():
     """Runs the simulation with the core modules and all women of reproductive age as pregnant. Sets miscarriage risk
     to 1 and runs checks """
@@ -455,6 +460,7 @@ def test_abortion_complications():
     assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delete_mni'])
 
 
+@pytest.mark.slow
 def test_run_all_births_end_antenatal_still_birth():
     """Runs the simulation with the core modules and all women of reproductive age as pregnant. Sets antenatal still
     birth risk to 1 and runs checks """

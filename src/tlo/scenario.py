@@ -305,8 +305,11 @@ class SampleRunner:
 
     def run_sample(self, sample, output_directory=None):
         log_config = self.scenario.log_configuration()
+
         if output_directory is not None:
             log_config["directory"] = output_directory
+            # suppress stdout when saving output to directory (either user specified, or set by batch-run process)
+            log_config["suppress_stdout"] = True
 
         sim = Simulation(
             start_date=self.scenario.start_date,
@@ -318,7 +321,7 @@ class SampleRunner:
         if sample["parameters"] is not None:
             self.override_parameters(sim, sample["parameters"])
 
-        sim.make_initial_population(n=self.scenario.pop_size)
+        sim.make_initial_population(n=self.scenario.smaller_pop_size)
         sim.simulate(end_date=self.scenario.end_date)
         outputs = parse_log_file(sim.log_filepath)
         for key, output in outputs.items():
@@ -348,7 +351,8 @@ class SampleRunner:
                 module = sim.modules[module_name]
                 for param_name, param_val in overrides.items():
                     assert param_name in module.PARAMETERS, f"{module} does not have parameter '{param_name}'"
-                    assert np.isscalar(param_val), f"Parameter value '{param_val}' is not scalar type (float, int, str)"
+                    # assert np.isscalar(param_val), \
+                    #     f"Parameter value '{param_val}' is not scalar type (float, int, str)"
 
                     old_value = module.parameters[param_name]
                     assert type(old_value) == type(param_val), f"Cannot override parameter '{param_name}' - wrong type"

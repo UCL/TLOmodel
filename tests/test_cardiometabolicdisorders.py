@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -69,6 +70,7 @@ def routine_checks(sim):
     assert (df.cause_of_death.loc[~df.is_alive & ~df.date_of_birth.isna()] == 'ever_heart_attack').any()
 
 
+@pytest.mark.slow
 def test_basic_run():
     # --------------------------------------------------------------------------
     # Create and run a short but big population simulation for use in the tests
@@ -110,6 +112,7 @@ def test_basic_run():
     hsi_checks(sim)
 
 
+@pytest.mark.slow
 def test_basic_run_with_high_incidence_hypertension():
     """This sim makes one condition very common and the others non-existent to check basic functions for prevalence and
     death"""
@@ -342,6 +345,7 @@ def make_simulation_health_system_functional(cons_availability='default'):
     return sim
 
 
+@pytest.mark.slow
 def test_if_no_health_system_and_zero_death():
     """"
     Make the health-system unavailable to run any HSI event and set death rate to zero to check that no one dies
@@ -373,6 +377,7 @@ def test_if_no_health_system_and_zero_death():
         assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{condition}').any()
 
 
+@pytest.mark.slow
 def test_if_no_health_system_and_high_risk_of_death():
     """"
     Make the health-system unavailable to run any HSI event and set death rate to 100% to check that everyone dies
@@ -437,6 +442,7 @@ def test_if_no_health_system_and_high_risk_of_death():
             df.loc[~df.date_of_birth.isna() & pd.isnull(df[f'nc_{event}']) & (df.age_years >= 20), 'is_alive']).any()
 
 
+@pytest.mark.slow
 def test_if_medication_prevents_all_death():
     """"
     Make medication 100% effective to check that no one dies
@@ -495,6 +501,7 @@ def test_if_medication_prevents_all_death():
         assert not (df.loc[~df.is_alive & ~df.date_of_birth.isna(), 'cause_of_death'] == f'{event}').any()
 
 
+@pytest.mark.slow
 def test_symptoms():
     """"
     Test that if symptoms are onset with 100% probability, all persons with condition have symptoms

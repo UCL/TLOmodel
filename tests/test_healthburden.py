@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 from pytest import approx
 
 from tlo import Date, Module, Simulation, logging
@@ -97,6 +98,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir):
            {'Other', 'Mockitis_Disability_And_Death', 'ChronicSyndrome_Disability_And_Death'}
 
 
+@pytest.mark.slow
 def test_cause_of_disability_being_registered():
     """Test that the modules can declare causes of disability, and that the mappers between tlo causes of disability
     and gbd causes of disability can be created correctly and that these make sense with respect to the corresponding
@@ -412,6 +414,7 @@ def test_airthmetic_of_lifeyearslost():
     assert yll.loc[('F', '5-9', 2010)].sum() == approx(0.5, abs=1/365)
 
 
+@pytest.mark.slow
 def test_arithmetic_of_stacked_lifeyearslost(tmpdir):
     """Check that the computation of 'stacked' LifeYearsLost and DALYS is done correctly (i.e. when all the
     future life-years lost are allocated to the year of death."""

@@ -181,6 +181,7 @@ class TestCreateAgeRangeLookup:
             assert lookup[i] == ranges[2]
 
 
+@pytest.mark.slow
 def test_sample_outcome(tmpdir):
     """Check that helper function `sample_outcome` works correctly."""
 

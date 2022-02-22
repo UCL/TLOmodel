@@ -287,20 +287,12 @@ class HealthSystem(Module):
         self.bed_days.pre_initialise_population()
 
     def initialise_population(self, population):
-        # todo - move this to initialise simulation
-        # If capabilities coefficient was not explicitly specified, use ratio of initial
-        # population size to estimated actual population in 2010
-        if self.capabilities_coefficient is None:
-            demography_module = self.sim.modules['Demography']
-            self.capabilities_coefficient = (
-                demography_module.compute_initial_population_scaling_factor(
-                    population.initial_size
-                )
-            )
-
         self.bed_days.initialise_population(population.props)
 
     def initialise_simulation(self, sim):
+        # If capabilities coefficient was not explicitly specified, use initial population scaling factor
+        if self.capabilities_coefficient is None:
+            self.capabilities_coefficient = self.sim.modules['Demography'].initial_model_to_data_popsize_ratio
 
         # Set the tracker in preparation for the simulation
         self.bed_days.initialise_beddays_tracker()
@@ -1327,11 +1319,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # Mode 2: Only if squeeze <1
 
                 if ok_to_run:
-
-                    # Compute the fraction of the bed-days in the footprint that is available and log the usage:
-                    # todo - this provides exactly the beddays that were requested,
-                    #  ... but this will be where the check on availability is gated
-                    event._received_info_about_bed_days = event.BEDDAYS_FOOTPRINT
+                    # Compute the bed days that are allocated to this HSI and provide this information to the HSO
+                    event._received_info_about_bed_days = \
+                        self.module.bed_days.issue_bed_days_according_to_availability(
+                            facility_id=self.module.bed_days.get_facility_id_for_beds(persons_id=event.target),
+                            footprint=event.BEDDAYS_FOOTPRINT
+                        )
 
                     # Run the HSI event (allowing it to return an updated appt_footprint)
                     actual_appt_footprint = event.run(
@@ -1475,11 +1468,10 @@ class HSI_Event:
     def post_apply_hook(self):
         """Impose the bed-days footprint (if target of the HSI is a person_id)"""
         if isinstance(self.target, int):
-            if 'HealthSystem' in self.module.sim.modules:
-                self.module.sim.modules['HealthSystem'].bed_days.impose_beddays_footprint(
-                    person_id=self.target,
-                    footprint=self.bed_days_allocated_to_this_event
-                )
+            self.module.sim.modules['HealthSystem'].bed_days.impose_beddays_footprint(
+                person_id=self.target,
+                footprint=self.bed_days_allocated_to_this_event
+            )
 
     def run(self, squeeze_factor):
         """Make the event happen."""
@@ -1539,21 +1531,18 @@ class HSI_Event:
         """Helper function to make a correctly-formed 'bed-days footprint'"""
 
         # get blank footprint
-        if 'HealthSystem' in self.module.sim.modules:
-            footprint = self.sim.modules['HealthSystem'].bed_days.get_blank_beddays_footprint()
+        footprint = self.sim.modules['HealthSystem'].bed_days.get_blank_beddays_footprint()
 
-            # do checks
-            assert isinstance(dict_of_beddays, dict)
-            assert all((k in footprint.keys()) for k in dict_of_beddays.keys())
-            assert all(isinstance(v, (float, int)) for v in dict_of_beddays.values())
+        # do checks on the dict_of_beddays provided.
+        assert isinstance(dict_of_beddays, dict)
+        assert all((k in footprint.keys()) for k in dict_of_beddays.keys())
+        assert all(isinstance(v, (float, int)) for v in dict_of_beddays.values())
 
-            # make footprint (defaulting to zero where a type of bed-days is not specified)
-            for k, v in dict_of_beddays.items():
-                footprint[k] = v
+        # make footprint (defaulting to zero where a type of bed-days is not specified)
+        for k, v in dict_of_beddays.items():
+            footprint[k] = v
 
-            return footprint
-
-        return {}
+        return footprint
 
     def is_all_beddays_allocated(self):
         """Check if the entire footprint requested is allocated"""

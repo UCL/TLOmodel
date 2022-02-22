@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -131,6 +132,7 @@ def register_modules(ignore_cons_constraints):
     return sim
 
 
+@pytest.mark.slow
 def test_run_no_constraints():
     """This test runs a simulation with a functioning health system with full service availability and no set
     constraints"""
