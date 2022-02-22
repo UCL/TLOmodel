@@ -1125,3 +1125,48 @@ def test_use_dummy_version():
     df = sim.population.props
     assert df.dtypes['hv_inf'].name == 'bool'
     assert df.loc[df.is_alive, 'hv_inf'].all()
+
+
+def test_baseline_hiv_prevalence():
+    """
+    check baseline prevalence set correctly
+    """
+    start_date = Date(2010, 1, 1)
+    popsize = 100000
+    sim = Simulation(start_date=start_date, seed=0)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False)
+                 )
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+    df = sim.population.props
+
+    adult_prev_15plus = len(
+        df[df.hv_inf & df.is_alive & (df.age_years >= 15)]
+    ) / len(df[df.is_alive & (df.age_years >= 15)])
+
+    adult_prev_1549 = len(
+        df[df.hv_inf & df.is_alive & df.age_years.between(15, 49)]
+    ) / len(df[df.is_alive & df.age_years.between(15, 49)])
+
+    female_prev_1549 = len(
+        df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")]
+    ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")])
+
+    male_prev_1549 = len(
+        df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")]
+    ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")])
+
+
+
+
+
+

@@ -539,6 +539,7 @@ class Hiv(Module):
         prev_2010 = prevalence_db.loc[
             prevalence_db.year == 2010, ["age_from", "sex", "prop_hiv_mw2021_v14"]
         ]
+
         prev_2010 = prev_2010.rename(columns={"age_from": "age_years"})
         prob_of_infec = df.loc[df.is_alive, ["age_years", "sex"]].merge(
             prev_2010, on=["age_years", "sex"], how="left"
@@ -577,8 +578,9 @@ class Hiv(Module):
         p["scaled_rel_prob_by_risk_factor"] = (
             p["rel_prob_by_risk_factor"] / p["mean_of_rel_prob_within_age_sex_group"]
         )
+        # add scaling factor 1.2 to counter lower risk from risk factors
         p["overall_prob_of_infec"] = (
-            p["scaled_rel_prob_by_risk_factor"] * p["prob_of_infec"]
+            p["scaled_rel_prob_by_risk_factor"] * p["prob_of_infec"] * 1.1
         )
         # this needs to be series of True/False
         infec = (
@@ -587,15 +589,6 @@ class Hiv(Module):
 
         # Assign the designated person as infected in the population.props dataframe:
         df.loc[infec, "hv_inf"] = True
-
-        # adult_prev_1549F = len(
-        #     df[(df.sex == "F") & df.hv_inf & df.is_alive & df.age_years.between(15, 49)]
-        # ) / len(df[(df.sex == "F") & df.is_alive & df.age_years.between(15, 49)])
-        #
-        # adult_prev_1549M = len(
-        #     df[(df.sex == "M") & df.hv_inf & df.is_alive & df.age_years.between(15, 49)]
-        # ) / len(df[(df.sex == "M") & df.is_alive & df.age_years.between(15, 49)])
-        # df.hv_inf=False
 
         # Assign date that persons were infected by drawing from assumed distribution (for adults)
         # Clipped to prevent dates of infection before before the person was born.
