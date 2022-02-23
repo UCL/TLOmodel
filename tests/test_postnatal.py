@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
+from pandas import DateOffset
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -21,8 +23,6 @@ from tlo.methods import (
     symptommanager,
 )
 from tlo.methods.hiv import DummyHivModule
-
-seed = 6987
 
 # The resource files
 try:
@@ -68,7 +68,7 @@ def get_mother_id_from_dataframe(sim):
     return mother_id
 
 
-def register_core_modules(ignore_cons_constraints):
+def register_core_modules(ignore_cons_constraints, seed):
     _cons_availability = 'all' if ignore_cons_constraints else 'none'
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
 
@@ -94,17 +94,18 @@ def register_core_modules(ignore_cons_constraints):
     return sim
 
 
-def test_run_and_check_dtypes():
-    sim = register_core_modules(ignore_cons_constraints=False)
+@pytest.mark.slow
+def test_run_and_check_dtypes(seed):
+    sim = register_core_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=1000)
     sim.simulate(end_date=Date(2015, 1, 1))
     check_dtypes(sim)
 
 
-def test_antenatal_disease_is_correctly_carried_over_to_postnatal_period_on_birth():
+def test_antenatal_disease_is_correctly_carried_over_to_postnatal_period_on_birth(seed):
     """Test that complications which may continue from the antenatal period to the postnatal period transition as e
     xpected"""
-    sim = register_core_modules(ignore_cons_constraints=False)
+    sim = register_core_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=100)
 
     # set key parameters
@@ -118,6 +119,7 @@ def test_antenatal_disease_is_correctly_carried_over_to_postnatal_period_on_birt
     # Set properties from the antenatal period that we would expect to be carried into the postnatal period, if they
     # dont resolve before or on birth
     df = sim.population.props
+    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date - DateOffset(months=9)
     df.at[mother_id, 'ac_gest_htn_on_treatment'] = True
     sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.set(mother_id, 'iron')
     sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.set(mother_id, 'folate')
@@ -146,10 +148,10 @@ def test_antenatal_disease_is_correctly_carried_over_to_postnatal_period_on_birt
     assert not sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy.has_all(mother_id, 'b12')
 
 
-def test_application_of_complications_and_care_seeking_postnatal_week_one_event():
+def test_application_of_complications_and_care_seeking_postnatal_week_one_event(seed):
     """Test that risk of complications is correctly applied in the first week postnatal and that women seek care as
     expected"""
-    sim = register_core_modules(ignore_cons_constraints=False)
+    sim = register_core_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=100)
 
     # set risk of maternal and newborn complications (occuring in week one) to one to insure risk applied as expected
@@ -178,6 +180,7 @@ def test_application_of_complications_and_care_seeking_postnatal_week_one_event(
 
     # Get id number of mother
     mother_id = get_mother_id_from_dataframe(sim)
+    sim.population.props.at[mother_id, 'date_of_last_pregnancy'] = sim.date - DateOffset(months=9)
 
     # Run birth event to generate child
     child_id = sim.do_birth(mother_id)
@@ -225,10 +228,10 @@ def test_application_of_complications_and_care_seeking_postnatal_week_one_event(
 # todo: htn progression/resolution
 
 
-def test_application_of_risk_of_death_postnatal_week_one_event():
+def test_application_of_risk_of_death_postnatal_week_one_event(seed):
     """Test that risk of death is applied to women and children who do not seek care for treatment of complications in
     the first week postnatal """
-    sim = register_core_modules(ignore_cons_constraints=False)
+    sim = register_core_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=100)
 
     # set risk of complications at 1 so woman and child are at risk of death
@@ -260,6 +263,7 @@ def test_application_of_risk_of_death_postnatal_week_one_event():
 
     # Get id number of mother
     mother_id = get_mother_id_from_dataframe(sim)
+    sim.population.props.at[mother_id, 'date_of_last_pregnancy'] = sim.date - DateOffset(months=9)
     child_id = sim.do_birth(mother_id)
     sim.modules['NewbornOutcomes'].on_birth(mother_id, child_id)
 
@@ -273,10 +277,10 @@ def test_application_of_risk_of_death_postnatal_week_one_event():
     assert not sim.population.props.at[child_id, 'is_alive']
 
 
-def test_application_of_risk_of_infection_and_sepsis_postnatal_supervisor_event():
+def test_application_of_risk_of_infection_and_sepsis_postnatal_supervisor_event(seed):
     """Test that risk of infection and sepsis is applied to women via the postnatal supervisor event. Check that women
      seek care and experience risk of death as expected """
-    sim = register_core_modules(ignore_cons_constraints=False)
+    sim = register_core_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=100)
 
     # set risk of infection and sepsis to 1
@@ -345,10 +349,10 @@ def test_application_of_risk_of_infection_and_sepsis_postnatal_supervisor_event(
     assert not sim.population.props.at[mother_id, 'is_alive']
 
 
-def test_application_of_risk_of_spph_postnatal_supervisor_event():
+def test_application_of_risk_of_spph_postnatal_supervisor_event(seed):
     """Test that risk of secondary postpartum haemorrhage is applied to women via the postnatal supervisor event. Check
     that women seek care and experience risk of death as expected """
-    sim = register_core_modules(ignore_cons_constraints=False)
+    sim = register_core_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=100)
     params = sim.modules['PostnatalSupervisor'].parameters
     params['prob_secondary_pph'] = 1
@@ -393,10 +397,10 @@ def test_application_of_risk_of_spph_postnatal_supervisor_event():
     assert not sim.population.props.at[mother_id, 'is_alive']
 
 
-def test_application_of_risk_of_anaemia_postnatal_supervisor_event():
+def test_application_of_risk_of_anaemia_postnatal_supervisor_event(seed):
     """Test that risk of anaemia is applied to women via the postnatal supervisor event. Check
     that women seek care and experience risk of death as expected """
-    sim = register_core_modules(ignore_cons_constraints=False)
+    sim = register_core_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=100)
     params = sim.modules['PostnatalSupervisor'].parameters
     params['prob_iron_def_per_week_pn'] = 1
@@ -424,10 +428,10 @@ def test_application_of_risk_of_anaemia_postnatal_supervisor_event():
     assert (mni[mother_id]['mild_anaemia_pp_onset'] == sim.date)
 
 
-def test_application_of_risk_of_hypertensive_disorders_postnatal_supervisor_event():
+def test_application_of_risk_of_hypertensive_disorders_postnatal_supervisor_event(seed):
     """Test that risk of hypertensive disorders is applied to women via the postnatal supervisor event. Check
     that women seek care and experience risk of death as expected """
-    sim = register_core_modules(ignore_cons_constraints=False)
+    sim = register_core_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=100)
 
     # Set parameters to force resolution and onset of disease
@@ -493,10 +497,10 @@ def test_application_of_risk_of_hypertensive_disorders_postnatal_supervisor_even
 # todo: death from severe hypertension
 
 
-def test_application_of_risk_of_late_onset_neonatal_sepsis():
+def test_application_of_risk_of_late_onset_neonatal_sepsis(seed):
     """Test that risk of late onset neonatal sepsis is applied to neonates via the postnatal supervisor event. Check
     that they seek care and experience risk of death as expected """
-    sim = register_core_modules(ignore_cons_constraints=False)
+    sim = register_core_modules(ignore_cons_constraints=False, seed=seed)
     sim.make_initial_population(n=100)
 
     # Set parameters to force onset of disease
@@ -508,6 +512,7 @@ def test_application_of_risk_of_late_onset_neonatal_sepsis():
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     mother_id = get_mother_id_from_dataframe(sim)
+    sim.population.props.at[mother_id, 'date_of_last_pregnancy'] = sim.date - DateOffset(months=9)
     child_id = sim.do_birth(mother_id)
     sim.modules['NewbornOutcomes'].on_birth(mother_id, child_id)
 
@@ -539,7 +544,7 @@ def test_application_of_risk_of_late_onset_neonatal_sepsis():
     assert not sim.population.props.at[child_id, 'is_alive']
 
 
-def test_postnatal_care():
+def test_postnatal_care(seed):
     """Test that routine postnatal care behaves as expected. Test that women and neonates are correctly screened for
     key complications and admitted for futher interventions  """
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
@@ -591,6 +596,7 @@ def test_postnatal_care():
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     mother_id = int(get_mother_id_from_dataframe(sim))
+    sim.population.props.at[mother_id, 'date_of_last_pregnancy'] = sim.date - DateOffset(months=9)
     child_id = sim.do_birth(mother_id)
     sim.modules['NewbornOutcomes'].on_birth(mother_id, child_id)
 

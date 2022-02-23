@@ -2578,7 +2578,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour'
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PresentsForInductionOfLabour'
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1

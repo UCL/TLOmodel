@@ -1,6 +1,7 @@
 """
 this file runs the malaria module and outputs graphs with data for comparison
 """
+import random
 import time
 from pathlib import Path
 
@@ -26,8 +27,8 @@ t0 = time.time()
 resources = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 12, 31)
-popsize = 500
+end_date = Date(2018, 12, 31)
+popsize = 5000
 
 # Establish the simulation object
 log_config = {
@@ -36,7 +37,8 @@ log_config = {
     'custom_levels': {"*": logging.WARNING, "tlo.methods.malaria": logging.DEBUG}
 }
 
-sim = Simulation(start_date=start_date, seed=25, log_config=log_config)
+seed = random.randint(0, 50000)
+sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
 # ----- Control over the types of intervention that can occur -----
 # Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
@@ -53,7 +55,6 @@ sim.register(
         resourcefilepath=resources,
         service_availability=service_availability,
         mode_appt_constraints=0,
-        ignore_cons_constraints=True,
         ignore_priority=True,
         capabilities_coefficient=1.0,
         disable=True,
