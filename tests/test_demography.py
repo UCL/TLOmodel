@@ -40,9 +40,9 @@ popsize = 500
 
 
 @pytest.fixture
-def simulation():
+def simulation(seed):
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     core_module = demography.Demography(resourcefilepath=resourcefilepath)
     sim.register(core_module)
     return sim
@@ -67,7 +67,7 @@ def test_run_dtypes_and_mothers_female(simulation):
     assert is_female.all()
 
 
-def test_storage_of_cause_of_death():
+def test_storage_of_cause_of_death(seed):
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
     class DummyModule(Module):
@@ -83,7 +83,7 @@ def test_storage_of_cause_of_death():
         def initialise_simulation(self, sim):
             pass
 
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=rfp),
         DummyModule()
@@ -110,13 +110,13 @@ def test_storage_of_cause_of_death():
 
 
 @pytest.mark.slow
-def test_cause_of_death_being_registered(tmpdir):
+def test_cause_of_death_being_registered(tmpdir, seed):
     """Test that the modules can declare causes of death, that the mappers between tlo causes of death and gbd
     causes of death can be created correctly and that the analysis helper scripts can be used to produce comparisons
     between model outputs and GBD data."""
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=0, log_config={
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config={
         'filename': 'temp',
         'directory': tmpdir,
         'custom_levels': {
@@ -187,16 +187,18 @@ def test_cause_of_death_being_registered(tmpdir):
 
     # Run the analysis file:
     results = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=rfp)
-    # Check the number of deaths in model represented is right
-    assert (results['model'].sum() * 5.0) == approx(len(output['tlo.methods.demography']['death']))
+    # Check the number of deaths in model represented is right (allowing for the scaling factor)
+    assert (results['model'].sum() * 5.0) == approx(len(output['tlo.methods.demography']['death'])
+                                                    / sim.modules['Demography'].initial_model_to_data_popsize_ratio
+                                                    )
 
 
 @pytest.mark.slow
-def test_calc_of_scaling_factor(tmpdir):
+def test_calc_of_scaling_factor(tmpdir, seed):
     """Test that the scaling factor is computed and put out to the log"""
     rfp = Path(os.path.dirname(__file__)) / '../resources'
     popsize = 10_000
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=0, log_config={
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config={
         'filename': 'temp',
         'directory': tmpdir,
         'custom_levels': {
@@ -207,12 +209,12 @@ def test_calc_of_scaling_factor(tmpdir):
         demography.Demography(resourcefilepath=rfp),
     )
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=Date(2019, 12, 31))
+    sim.simulate(end_date=sim.start_date)
 
     # Check that the scaling factor is calculated in the log correctly:
     output = parse_log_file(sim.log_filepath)
     sf = output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor']
-    assert sf == approx(19e6 / popsize, rel=0.10)
+    assert sf == approx(14.5e6 / popsize, rel=0.10)
 
 
 def test_py_calc(simulation):
