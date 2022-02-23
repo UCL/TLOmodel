@@ -519,6 +519,8 @@ class LogsDict(dict):
     def __init__(self, file_names_and_paths):
         # initialise class with module-specific log files paths
         self.logfile_names_and_paths: Dict[str, str] = file_names_and_paths
+
+        # create a dictionary that will contain cached data
         self.results_cache: Dict[str, Dict] = dict()
 
     def __setitem__(self, key, item):
@@ -529,14 +531,15 @@ class LogsDict(dict):
         # check if the requested key is found in a dictionary containing module name and log file paths. if key
         # is found, return parsed logs else return KeyError
         if key in self.logfile_names_and_paths:
+            # check if key is found in cache
             if key not in self.results_cache:
                 result_df = _parse_log_file_inner_loop(self.logfile_names_and_paths[key].name)
                 # get metadata for the selected log file and merge it all with the selected key
                 result_df[key]['_metadata'] = result_df['_metadata']
-                if not cache:
+                if not cache:  # check if caching is disallowed
                     return result_df[key]
-                self.results_cache[key] = result_df[key]
-            return self.results_cache[key]
+                self.results_cache[key] = result_df[key]    # add key specific parsed results to cache
+            return self.results_cache[key]  # return the added results
 
         else:
             return KeyError
@@ -570,10 +573,11 @@ class LogsDict(dict):
         raise NotImplementedError
 
     def keys(self):
+        # return dictionary keys
         return self.logfile_names_and_paths.keys()
 
     def values(self):
-        # parse module-specific log file and return results as a generator
+        # parse module-specific log file and yield the results
         for key in self.logfile_names_and_paths.keys():
             module_specific_logs = self.__getitem__(key, cache=False)
             yield module_specific_logs
