@@ -27,8 +27,6 @@ from tlo.methods import (
 )
 from tlo.methods.hiv import DummyHivModule
 
-seed = 674
-
 # The resource files
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -70,7 +68,7 @@ def turn_off_antenatal_pregnancy_loss(sim):
     params['prob_still_birth_per_month'] = 0
 
 
-def register_core_modules():
+def register_core_modules(seed):
     """Defines sim variable and registers minimum set of modules for pregnancy supervisor to run"""
     sim = Simulation(start_date=start_date, seed=seed)
 
@@ -95,7 +93,7 @@ def register_core_modules():
     return sim
 
 
-def register_all_modules():
+def register_all_modules(seed):
     """Defines sim variable and registers all modules that can be called when running the full suite of pregnancy
     modules"""
     sim = Simulation(start_date=start_date, seed=seed)
@@ -125,36 +123,36 @@ def register_all_modules():
 
 
 @pytest.mark.slow
-def test_run_core_modules_normal_allocation_of_pregnancy():
+def test_run_core_modules_normal_allocation_of_pregnancy(seed):
     """Runs the simulation using only core modules without manipulation of pregnancy rates or parameters and checks
     dtypes at the end"""
 
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     sim.make_initial_population(n=1000)
     sim.simulate(end_date=Date(2015, 1, 1))
     check_dtypes(sim)
 
 
 @pytest.mark.slow
-def test_run_core_modules_high_volumes_of_pregnancy():
+def test_run_core_modules_high_volumes_of_pregnancy(seed):
     """Runs the simulation with the core modules and all women of reproductive age being pregnant at the start of the
     simulation"""
 
     """Runs the simulation with the core modules and all women of reproductive age being pregnant at the start of the
       simulation"""
 
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     sim.make_initial_population(n=1000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=Date(2011, 1, 1))
 
 
-def test_store_dalys_in_mni_function_and_daly_calculations():
+def test_store_dalys_in_mni_function_and_daly_calculations(seed):
     """This test checks how we calculate, store and report back individuals disability weight for the previous month
     in the model."""
 
     # Set up sim and run for 0 days
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -245,10 +243,10 @@ def test_store_dalys_in_mni_function_and_daly_calculations():
     assert sev_anemia_weight == reported_weight
 
 
-def test_calculation_of_gestational_age():
+def test_calculation_of_gestational_age(seed):
     """This is a simple test to check that when called, the pregnancy supervisor event updates the age of all women's
     gestational age correctly"""
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     turn_off_antenatal_pregnancy_loss(sim)
@@ -281,10 +279,10 @@ def test_calculation_of_gestational_age():
 
 
 @pytest.mark.slow
-def test_run_with_all_births_as_twins():
+def test_run_with_all_births_as_twins(seed):
     """Runs the simulation with the core modules, all reproductive age women as pregnant and forces all pregnancies to
     be twins. Other functionality related to or dependent upon twin birth is tested in respective module test files"""
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     sim.make_initial_population(n=100)
 
     # Force all reproductive age women to be pregnant and force all pregnancies to lead to twins and prevent pregnancy
@@ -318,10 +316,10 @@ def test_run_with_all_births_as_twins():
 
 
 @pytest.mark.slow
-def test_run_all_births_end_in_miscarriage():
+def test_run_all_births_end_in_miscarriage(seed):
     """Runs the simulation with the core modules and all women of reproductive age as pregnant. Sets miscarriage risk
     to 1 and runs checks """
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     starting_population = 100
 
     sim.make_initial_population(n=starting_population)
@@ -354,11 +352,11 @@ def test_run_all_births_end_in_miscarriage():
     assert (df.loc[pregnant_at_end_of_sim.index, 'ps_gestational_age_in_weeks'] < 5).all().all()
 
 
-def test_induced_abortion_ends_pregnancies_as_expected():
+def test_induced_abortion_ends_pregnancies_as_expected(seed):
     """Runs the simulation with the core modules and all women of reproductive age as pregnant. Sets abortion risk
     to 1 and runs checks """
 
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     starting_population = 500
 
     sim.make_initial_population(n=starting_population)
@@ -392,10 +390,10 @@ def test_induced_abortion_ends_pregnancies_as_expected():
     assert pd.isnull(df.loc[women.index, 'la_due_date_current_pregnancy']).all().all()
 
 
-def test_abortion_complications():
+def test_abortion_complications(seed):
     """Test that complications associate with abortion are correctly applied via the pregnancy supervisor event. Also
      test women seek care and/or experience risk of death as expected """
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     starting_population = 100
     sim.make_initial_population(n=starting_population)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
@@ -461,10 +459,10 @@ def test_abortion_complications():
 
 
 @pytest.mark.slow
-def test_run_all_births_end_antenatal_still_birth():
+def test_run_all_births_end_antenatal_still_birth(seed):
     """Runs the simulation with the core modules and all women of reproductive age as pregnant. Sets antenatal still
     birth risk to 1 and runs checks """
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     starting_population = 100
 
     sim.make_initial_population(n=starting_population)
@@ -505,11 +503,11 @@ def test_run_all_births_end_antenatal_still_birth():
     assert (df.loc[pregnant_at_end_of_sim.index, 'ps_gestational_age_in_weeks'] < 28).all().all()
 
 
-def test_run_all_births_end_ectopic_no_care_seeking():
+def test_run_all_births_end_ectopic_no_care_seeking(seed):
     """Run the simulation with core modules forcing all pregnancies to be ectopic. We also remove care seeking and set
     risk of death to 1. Check no new births, all women who are pregnant at the start of the sim experience rupture and
     die. Any ongoing pregnancies should not exceed 9 weeks gestation"""
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     starting_population = 100
     sim.make_initial_population(n=starting_population)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
@@ -574,12 +572,12 @@ def test_run_all_births_end_ectopic_no_care_seeking():
     assert not df.at[mother_id, 'is_alive']
 
 
-def test_preterm_labour_logic():
+def test_preterm_labour_logic(seed):
     """Runs sim to fully initialise the population. Sets all women pregnant and risk of preterm labour to 1. Checks
      logic and scheduling of preterm labour through the PregnancySupervisor event. Checks labour events correctly
      scheduled"""
 
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
 
@@ -587,6 +585,10 @@ def test_preterm_labour_logic():
 
     # We force risk of preterm birth to be 1, meaning all women will go into labour at month 5
     params['baseline_prob_early_labour_onset'] = 1
+
+    # Set chorioamnionitis still birth probability to zero to avoid still births causing
+    # la_due_date_current_pregnancy to be set to NaT
+    params['prob_still_birth_chorioamnionitis'] = 0
 
     # And stop attendance to ANC (could block labour)
     params['prob_first_anc_visit_gestational_age'] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
@@ -641,11 +643,11 @@ def test_preterm_labour_logic():
     assert labour.BirthEvent in events
 
 
-def test_check_first_anc_visit_scheduling():
+def test_check_first_anc_visit_scheduling(seed):
     """Runs sim to fully initialise the population. Check that when pregnancy supervisor event is ran on pregnancy
     population of the correct gestational age that antenatal care is always scheduled when prob set to 1"""
 
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     turn_off_antenatal_pregnancy_loss(sim)
@@ -681,10 +683,10 @@ def test_check_first_anc_visit_scheduling():
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact in hsi_events
 
 
-def test_pregnancy_supervisor_anaemia():
+def test_pregnancy_supervisor_anaemia(seed):
     """Tests the application of risk of nutritional deficiencies and maternal anaemia within the pregnancy supervisor
      event"""
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     turn_off_antenatal_pregnancy_loss(sim)
@@ -768,10 +770,10 @@ def test_pregnancy_supervisor_anaemia():
         df.is_pregnant & df.is_alive, 'folate')).all().all()
 
 
-def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage():
+def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage(seed):
     """Tests the application of risk of placenta praevia, abruption and antenatal haemorrhage within the pregnancy
     supervisor event"""
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     turn_off_antenatal_pregnancy_loss(sim)
@@ -850,9 +852,9 @@ def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage():
     # todo check stillbirth
 
 
-def test_pregnancy_supervisor_pre_eclampsia_and_progression():
+def test_pregnancy_supervisor_pre_eclampsia_and_progression(seed):
     """Tests the application of risk of pre-eclampsia within the pregnancy supervisor event"""
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     turn_off_antenatal_pregnancy_loss(sim)
@@ -949,9 +951,9 @@ def test_pregnancy_supervisor_pre_eclampsia_and_progression():
         assert sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]['delete_mni']
 
 
-def test_pregnancy_supervisor_gestational_hypertension_and_progression():
+def test_pregnancy_supervisor_gestational_hypertension_and_progression(seed):
     """Tests the application of risk of gestational_hypertension within the pregnancy supervisor event"""
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     turn_off_antenatal_pregnancy_loss(sim)
@@ -981,9 +983,9 @@ def test_pregnancy_supervisor_gestational_hypertension_and_progression():
     # TODO: test that anti htn reduces risk of progression from mild to moderate
 
 
-def test_pregnancy_supervisor_gdm():
+def test_pregnancy_supervisor_gdm(seed):
     """Tests the application of risk of gestational diabetes within the pregnancy supervisor event"""
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     turn_off_antenatal_pregnancy_loss(sim)
@@ -1022,10 +1024,10 @@ def test_pregnancy_supervisor_gdm():
     assert (sim.population.props.at[mother_id, 'ps_gest_diab'] == 'none')
 
 
-def test_pregnancy_supervisor_chorio_and_prom():
+def test_pregnancy_supervisor_chorio_and_prom(seed):
     """Tests the application of risk of chorioamnionitis and PROM within the pregnancy supervisor event"""
 
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     turn_off_antenatal_pregnancy_loss(sim)
@@ -1143,10 +1145,10 @@ def test_pregnancy_supervisor_chorio_and_prom():
         assert sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]['delete_mni']
 
 
-def test_induction_of_labour_logic():
+def test_induction_of_labour_logic(seed):
     """Tests the that woman who are post-term are seeking care for induction of labour"""
 
-    sim = register_core_modules()
+    sim = register_core_modules(seed=seed)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     turn_off_antenatal_pregnancy_loss(sim)

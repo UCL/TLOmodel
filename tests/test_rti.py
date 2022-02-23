@@ -34,9 +34,9 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all(), ['where dtypes are not the same:', df.dtypes != orig.dtypes]
 
 
-def create_basic_rti_sim(population_size):
+def create_basic_rti_sim(population_size, seed):
     # create the basic outline of an rti simulation object
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
@@ -52,27 +52,28 @@ def create_basic_rti_sim(population_size):
     return sim
 
 
-@pytest.fixture(scope='module')
-def test_run():
+@pytest.mark.slow
+def test_run(seed):
     """
     This test runs a simulation with a functioning health system with full service availability and no set
     constraints
     """
     # create sim object
-    sim = create_basic_rti_sim(popsize)
+    sim = create_basic_rti_sim(popsize, seed)
     # run simulation
     sim.simulate(end_date=end_date)
     # check datatypes are same through sim
     check_dtypes(sim)
 
 
-def test_all_injuries_run():
+@pytest.mark.slow
+def test_all_injuries_run(seed):
     """
     This test runs a simulation with a functioning health system with full service availability and no set
     constraints
     """
     # create sim object
-    sim = create_basic_rti_sim(popsize)
+    sim = create_basic_rti_sim(popsize, seed)
     # create a list of injuries to assign the individuals in the population
     injuries_to_assign = sim.modules['RTI'].INJURY_CODES
     # assign injuries to the population at random
@@ -123,13 +124,14 @@ def test_all_injuries_run():
     check_dtypes(sim)
 
 
-def test_all_injuries_run_no_healthsystem():
+@pytest.mark.slow
+def test_all_injuries_run_no_healthsystem(seed):
     """
     This test runs a simulation with a functioning health system with full service availability and no set
     constraints
     """
     # create sim object
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
@@ -192,27 +194,29 @@ def test_all_injuries_run_no_healthsystem():
     check_dtypes(sim)
 
 
-def test_blocked_interventions():
-    sim = create_basic_rti_sim(popsize)
+@pytest.mark.slow
+def test_blocked_interventions(seed):
+    sim = create_basic_rti_sim(popsize, seed)
     params = sim.modules['RTI'].parameters
     params['blocked_interventions'] = ['Minor Surgery']
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
-    sim = create_basic_rti_sim(popsize)
+    sim = create_basic_rti_sim(popsize, seed)
     params = sim.modules['RTI'].parameters
     params['blocked_interventions'] = ['Fracture Casts']
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
-    sim = create_basic_rti_sim(popsize)
+    sim = create_basic_rti_sim(popsize, seed)
     params = sim.modules['RTI'].parameters
     params['blocked_interventions'] = ['Minor Surgery', 'Fracture Casts']
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
 
-def test_module_properties():
+@pytest.mark.slow
+def test_module_properties(seed):
     """ A test to see whether the logical flows through the module are followed"""
-    sim = create_basic_rti_sim(popsize)
+    sim = create_basic_rti_sim(popsize, seed)
     params = sim.modules['RTI'].parameters
     # Increase the incidence so that we get more people flowing through the RTI model
     params['base_rate_injrti'] = params['base_rate_injrti'] * 5
@@ -251,9 +255,10 @@ def test_module_properties():
     check_dtypes(sim)
 
 
-def test_with_more_modules():
+@pytest.mark.slow
+def test_with_more_modules(seed):
     # Run the simulation with multiple modules, see if any errors or unexpected changes to the datatypes occurs
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -278,10 +283,11 @@ def test_with_more_modules():
     check_dtypes(sim)
 
 
-def test_run_health_system_high_squeeze():
+@pytest.mark.slow
+def test_run_health_system_high_squeeze(seed):
     """This test runs a simulation in which the contents of scheduled HSIs will not be performed because the squeeze
     factor is too high. Therefore it tests the logic in the did_not_run functions of the RTI HSIs"""
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the modules and change healthsystem parameters
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -305,11 +311,12 @@ def test_run_health_system_high_squeeze():
     check_dtypes(sim)
 
 
-def test_run_health_system_events_wont_run():
+@pytest.mark.slow
+def test_run_health_system_events_wont_run(seed):
     """
     Test the model with no service availability
     """
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules, make service availability = []
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -329,13 +336,14 @@ def test_run_health_system_events_wont_run():
     check_dtypes(sim)
 
 
-def test_sim_high_incidence():
+@pytest.mark.slow
+def test_sim_high_incidence(seed):
     """
     Run the model with a high incidence, where many people are involved in road traffic injuries
     :return:
     """
     # create the simulation object
-    sim = create_basic_rti_sim(popsize)
+    sim = create_basic_rti_sim(popsize, seed)
     # get rti module parameters
     params = sim.modules['RTI'].parameters
     # get the original incidence
@@ -348,26 +356,28 @@ def test_sim_high_incidence():
     check_dtypes(sim)
 
 
-def test_tiny_population():
+@pytest.mark.slow
+def test_tiny_population(seed):
     """
     Run the model with a small population size
     :return:
     """
     # create simulation with a population size of 2
-    sim = create_basic_rti_sim(2)
+    sim = create_basic_rti_sim(2, seed)
     # run simulation
     sim.simulate(end_date=end_date)
     # check datatypes
     check_dtypes(sim)
 
 
-def test_no_capabilities():
+@pytest.mark.slow
+def test_no_capabilities(seed):
     """
     Run the model with a capabilities coefficient of 0.0
     :return:
     """
     # Register the core modules, make capabilities coefficient = 0.0
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
@@ -387,13 +397,14 @@ def test_no_capabilities():
     check_dtypes(sim)
 
 
-def test_health_system_disabled():
+@pytest.mark.slow
+def test_health_system_disabled(seed):
     """
     Test the model with the health system disabled
     :return:
     """
     # create simulation object
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     # get resource file path
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     # register modules, health system is disabled
