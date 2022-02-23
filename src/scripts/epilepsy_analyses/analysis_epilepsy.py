@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 from matplotlib import pyplot as plt
+import numpy as np
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -27,7 +28,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2013,  1, 1)
-popsize = 1000
+popsize = 19000000
 
 # Establish the simulation object
 log_config = {
@@ -67,26 +68,53 @@ output = parse_log_file(sim.log_filepath)
 prop_seiz_stat_1 = pd.Series(
  output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_1'].values,
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
-prop_seiz_stat_1.plot()
+plt.plot(np.arange(len(prop_seiz_stat_1.index)), prop_seiz_stat_1, color='lightsteelblue', label='model')
+plt.xticks(np.arange(len(prop_seiz_stat_1.index)), prop_seiz_stat_1.index, rotation=45)
+plt.axhline(0.013, color='lightsalmon', label='Ba Diop et al. 2014')
 plt.title('Proportion of people with epilepsy but no current seizures')
 plt.ylim(0, 0.05)
-plt.show()
+plt.legend()
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/prop_seiz_stat_1.png",
+            bbox_inches='tight')
+plt.clf()
 
 prop_seiz_stat_2 = pd.Series(
  output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_2'].values,
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
-prop_seiz_stat_2.plot()
+plt.plot(np.arange(len(prop_seiz_stat_2.index)), prop_seiz_stat_2, color='lightsteelblue', label='model')
+plt.xticks(np.arange(len(prop_seiz_stat_2.index)), prop_seiz_stat_2.index, rotation=45)
+plt.axhline(0.013, color='lightsalmon', label='Ba Diop et al. 2014')
 plt.title('Proportion of people with infrequent epilepsy seizures')
 plt.ylim(0, 0.02)
-plt.show()
+plt.legend()
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/prop_seiz_stat_2.png",
+            bbox_inches='tight')
+plt.clf()
+
 
 prop_seiz_stat_3 = pd.Series(
  output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_3'].values,
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
-prop_seiz_stat_3.plot()
+plt.plot(np.arange(len(prop_seiz_stat_3.index)), prop_seiz_stat_3, color='lightsteelblue', label='model')
+plt.xticks(np.arange(len(prop_seiz_stat_3.index)), prop_seiz_stat_3.index, rotation=45)
+plt.axhline(0.013, color='lightsalmon', label='Ba Diop et al. 2014')
 plt.title('Proportion of people with frequent epilepsy seizures')
-plt.ylim(0, 0.005)
-plt.show()
+plt.ylim(0, 0.015)
+plt.legend()
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/prop_seiz_stat_3.png",
+            bbox_inches='tight')
+plt.clf()
+
+mean_proportion_in_sim = [np.mean(prop_seiz_stat_1), np.mean(prop_seiz_stat_2), np.mean(prop_seiz_stat_3)]
+plt.bar(np.arange(len(mean_proportion_in_sim)), mean_proportion_in_sim,
+        color=['lightsalmon', 'lightsteelblue', 'lemonchiffon'])
+plt.axhline(0.013, color='black', linestyle=':', label='Ba Diop et al. 2014')
+plt.legend()
+plt.title('Average proportion of each seizure status')
+plt.xticks(np.arange(len(mean_proportion_in_sim)), ['seizure\nstatus 1', 'seizure\nstatus 2', 'seizure\nstatus 3'])
+plt.savefig("C:/Users/Robbie Manning Smith/Pictures/TLO model outputs/Epilepsy/average_seizure_status.png",
+            bbox_inches='tight')
+plt.clf()
 
 n_seiz_stat_1_3 = pd.Series(
  output['tlo.methods.epilepsy']['epilepsy_logging']['n_seiz_stat_1_3'].values,
