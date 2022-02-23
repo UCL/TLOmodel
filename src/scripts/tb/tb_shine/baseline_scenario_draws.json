@@ -1,0 +1,25 @@
+{
+  "scenario_script_path": "/Users/leilauwais/PycharmProjects/TLOmodel/src/scripts/tb/tb_shine/baseline_scenario.py",
+  "scenario_seed": 5,
+  "runs_per_draw": 5,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 953453411,
+      "parameters": {
+        "Tb": {
+          "scenario": 0
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 236996814,
+      "parameters": {
+        "Tb": {
+          "scenario": 5
+        }
+      }
+    }
+  ]
+}

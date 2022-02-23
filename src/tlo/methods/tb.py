@@ -366,6 +366,14 @@ class Tb(Module):
             Types.REAL,
             "probability that a presumptive mdr case will have access to xpert test",
         ),
+        "scenario": Parameter(
+            Types.INT,
+            "integer value labelling the scenario to be run: default is 0"
+        ),
+        "scenario_start_date": Parameter(
+            Types.DATE,
+            "date from which different scenarios are run"
+        )
     }
 
     def read_parameters(self, data_folder):
