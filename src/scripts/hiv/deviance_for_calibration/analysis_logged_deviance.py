@@ -38,8 +38,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2025, 1, 1)
-popsize = 20000
-# todo check parameters set below
+popsize = 25000
 
 # set up the log config
 log_config = {
@@ -47,7 +46,7 @@ log_config = {
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
-        "tlo.methods.deviance_measure": logging.INFO,
+        # "tlo.methods.deviance_measure": logging.INFO,
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
@@ -81,19 +80,8 @@ sim.register(
     epi.Epi(resourcefilepath=resourcefilepath),
     hiv.Hiv(resourcefilepath=resourcefilepath),
     tb.Tb(resourcefilepath=resourcefilepath),
-    deviance_measure.Deviance(resourcefilepath=resourcefilepath),
+    # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
-
-# todo remove
-# todo using calibrated transmission rates 21st Feb
-# todo update the resourcefile if happy with calibrated outputs
-sim.modules["Hiv"].parameters["beta"] = 0.125176
-
-# transmission rate active cases -> new latent cases
-sim.modules["Tb"].parameters["transmission_rate"] = 19.5 #16.71012
-sim.modules["Tb"].parameters["rate_treatment_baseline_active"] = 0.45
-
-sim.modules["Tb"].parameters["scenario"] = 0
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
