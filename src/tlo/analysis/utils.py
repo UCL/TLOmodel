@@ -525,7 +525,7 @@ class LogsDict(dict):
         # restrict resetting of dictionary items
         raise NotImplementedError
 
-    def __getitem__(self, key):
+    def __getitem__(self, key, cache=True):
         # check if the requested key is found in a dictionary containing module name and log file paths. if key
         # is found, return parsed logs else return KeyError
         if key in self.logfile_names_and_paths:
@@ -533,6 +533,8 @@ class LogsDict(dict):
                 result_df = _parse_log_file_inner_loop(self.logfile_names_and_paths[key].name)
                 # get metadata for the selected log file and merge it all with the selected key
                 result_df[key]['_metadata'] = result_df['_metadata']
+                if not cache:
+                    return result_df[key]
                 self.results_cache[key] = result_df[key]
             return self.results_cache[key]
 
@@ -546,17 +548,17 @@ class LogsDict(dict):
     def items(self):
         # parse module-specific log file and return results as a generator
         for key in self.logfile_names_and_paths.keys():
-            module_specific_logs = self.__getitem__(key)
+            module_specific_logs = self.__getitem__(key, cache=False)
             yield key, module_specific_logs
 
     def update(self, *args, **kwargs):
         raise NotImplementedError
 
     def __repr__(self):
-        raise NotImplementedError
+        return repr(self.logfile_names_and_paths)
 
     def __len__(self):
-        raise NotImplementedError
+        return len(self.logfile_names_and_paths)
 
     def __delitem__(self, key):
         raise NotImplementedError
@@ -568,10 +570,13 @@ class LogsDict(dict):
         raise NotImplementedError
 
     def keys(self):
-        raise NotImplementedError
+        return self.logfile_names_and_paths.keys()
 
     def values(self):
-        raise NotImplementedError
+        # parse module-specific log file and return results as a generator
+        for key in self.logfile_names_and_paths.keys():
+            module_specific_logs = self.__getitem__(key, cache=False)
+            yield module_specific_logs
 
     def pop(self, *args):
         raise NotImplementedError
