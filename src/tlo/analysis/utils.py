@@ -519,6 +519,7 @@ class LogsDict(dict):
     def __init__(self, file_names_and_paths):
         # initialise class with module-specific log files paths
         self.logfile_names_and_paths: Dict[str, str] = file_names_and_paths
+        self.results_cache: Dict[str, Dict] = dict()
 
     def __setitem__(self, key, item):
         # restrict resetting of dictionary items
@@ -528,10 +529,12 @@ class LogsDict(dict):
         # check if the requested key is found in a dictionary containing module name and log file paths. if key
         # is found, return parsed logs else return KeyError
         if key in self.logfile_names_and_paths:
-            result_df = _parse_log_file_inner_loop(self.logfile_names_and_paths[key].name)
-            # get metadata for the selected log file and merge it all with the selected key
-            result_df[key]['_metadata'] = result_df['_metadata']
-            return result_df[key]
+            if key not in self.results_cache:
+                result_df = _parse_log_file_inner_loop(self.logfile_names_and_paths[key].name)
+                # get metadata for the selected log file and merge it all with the selected key
+                result_df[key]['_metadata'] = result_df['_metadata']
+                self.results_cache[key] = result_df[key]
+            return self.results_cache[key]
 
         else:
             return KeyError
