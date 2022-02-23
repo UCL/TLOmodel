@@ -26,8 +26,11 @@ from tlo.methods.alri import (
     AlriNaturalRecoveryEvent,
     AlriPollingEvent,
     AlriPropertiesOfOtherModules,
-    HSI_Alri_Inpatient_Pneumonia_Treatment,
-    HSI_Alri_IMCI_Pneumonia_Treatment,
+    HSI_IMCI_Pneumonia_Treatment_Outpatient_level_1a,
+    HSI_IMCI_Pneumonia_Treatment_Outpatient_level_1b,
+    HSI_IMCI_Pneumonia_Treatment_Outpatient_level_2,
+    HSI_IMCI_Pneumonia_Treatment_Inpatient_level_2,
+    HSI_IMCI_Pneumonia_Treatment_Inpatient_level_1b,
     Models, AlriIncidentCase_Lethal_Severe_Pneumonia,
 )
 from tlo.methods.healthseekingbehaviour import (
@@ -632,16 +635,19 @@ def test_no_immediate_onset_complications(sim):
 
 def test_classification_based_on_symptoms_and_imci(sim):
     """Check that `symptom_based_classification` gives the expected classification."""
-    # Todo - @ines -- I propose this test to develop
 
     # Construct scenario and the expected classification if using only symptoms:
     classification_on_symptoms = (
         ('chest_indrawing_pneumonia', {'symptoms': ['chest_indrawing'], 'facility_level': '1a', 'age_exact_years': 0.5}),
+        ('chest_indrawing_pneumonia', {'symptoms': ['chest_indrawing', 'tachypnoea'], 'facility_level': '1a', 'age_exact_years': 0.5}),
         ('fast_breathing_pneumonia', {'symptoms': ['tachypnoea'], 'facility_level': '1b', 'age_exact_years': 0.5}),
         ('danger_signs_pneumonia', {'symptoms': ['danger_signs'], 'facility_level': '1b', 'age_exact_years': 0.5}),
+        ('danger_signs_pneumonia', {'symptoms': ['danger_signs', 'chest_indrawing'], 'facility_level': '1b', 'age_exact_years': 0.5}),
         ('serious_bacterial_infection', {'symptoms': ['chest_indrawing'], 'facility_level': '1b', 'age_exact_years': 0.1}),
+        ('serious_bacterial_infection', {'symptoms': ['danger_signs'], 'facility_level': '2', 'age_exact_years': 0.1}),
         ('fast_breathing_pneumonia', {'symptoms': ['tachypnoea'], 'facility_level': '1b', 'age_exact_years': 0.1}),
-        ('not_handled_at_facility_0', {'symptoms': ['tachypnoea'], 'facility_level': '0', 'age_exact_years': 0.1})
+        ('not_handled_at_facility_0', {'symptoms': ['tachypnoea'], 'facility_level': '0', 'age_exact_years': 0.1}),
+        ('cough_or_cold', {'symptoms': ['cough'], 'facility_level': '1a', 'age_exact_years': 0.5}),
 
         # todo - @Ines -- here add lots (or all?) of the permutations you're interesed in with answer that you'd like!
     )
@@ -721,9 +727,9 @@ def test_do_effects_of_alri_treatment(sim):
     death_event = death_event_tuple[1]
     assert date_of_scheduled_death > sim.date
 
-    # Run the 'do_alri_treatment' function (as if from the HSI_Alri_IMCI_Pneumonia_Treatment)
+    # Run the 'do_alri_treatment' function (as if from the HSI_IMCI_Pneumonia_Treatment_Inpatient_level_2)
     sim.modules['Alri'].do_effects_of_alri_treatment(person_id=person_id,
-                                                     hsi_event=HSI_Alri_IMCI_Pneumonia_Treatment(person_id=person_id, module=sim.modules['Alri']),
+                                                     hsi_event=HSI_IMCI_Pneumonia_Treatment_Inpatient_level_2(person_id=person_id, module=sim.modules['Alri']),
                                                      treatment='IMCI_Treatment_severe_pneumonia')
 
     # Run the death event that was originally scheduled) - this should have no effect and the person should not die
@@ -786,9 +792,9 @@ def test_referral_from_HSI_GenericFirstApptAtFacilityLevel0(sim):
     hsi = HSI_GenericFirstApptAtFacilityLevel0(person_id=person_id, module=sim.modules['HealthSeekingBehaviour'])
     hsi.run(squeeze_factor=0.0)
 
-    # Check that there is an `HSI_Alri_IMCI_Pneumonia_Treatment` scheduled
+    # Check that there is an `HSI_IMCI_Pneumonia_Treatment_Inpatient_level_1b` scheduled
     treatment_event = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
-                if isinstance(event_tuple[1], HSI_Alri_IMCI_Pneumonia_Treatment)][0]
+                if isinstance(event_tuple[1], HSI_IMCI_Pneumonia_Treatment_Inpatient_level_1b)][0]
 
     # run the HSI ...
     treatment_event.run(squeeze_factor=0.0)
@@ -836,7 +842,9 @@ def test_referral_from_level1_to_level2(sim_hs_no_consumables):
     """Check that someone can be referred to a level 2 in-patient appointment.
     An emergency appointment for someone with `severe_pneumonia` when there are no consumables, should lead to an
     in-patient appointment."""
-    # todo Is this the only circumstance when a level 2 appointment is appropriate?
+    # todo Is this the only circumstance when a level 2 appointment is appropriate?  ---
+    #  technically if not possible a referral, then they are treated on the level 1a/1b,
+    #  but for the model I treat them on current facility level, only if not available of conusmables send them to facility level 2
 
     sim = sim_hs_no_consumables
 
@@ -866,8 +874,7 @@ def test_referral_from_level1_to_level2(sim_hs_no_consumables):
     hsi = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=person_id, module=sim.modules['HealthSeekingBehaviour'])
     hsi.run(squeeze_factor=0.0)
 
-    # Check that there is an `HSI_Alri_Inpatient_Pneumonia_Treatment` scheduled
+    # Check that there is an `HSI_IMCI_Pneumonia_Treatment_Inpatient_level_2` scheduled
     assert len([event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
-                if isinstance(event_tuple[1], HSI_Alri_Inpatient_Pneumonia_Treatment)])
-
+                if isinstance(event_tuple[1], HSI_IMCI_Pneumonia_Treatment_Inpatient_level_2)])
 

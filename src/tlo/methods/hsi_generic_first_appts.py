@@ -91,6 +91,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
         the_appt_footprint = self.make_appt_footprint({
             'Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD': 1})
+        the_beddays_footprint = self.make_beddays_footprint({})
         if 'severe_trauma' in symptoms:
             if 'RTI' in self.sim.modules:
                 # change the appointment footprint for general injuries if diagnostic equipment is needed
@@ -98,11 +99,17 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                 df = self.sim.population.props
                 if df.loc[person_id, 'rt_in_shock']:
                     self.sim.modules['RTI'].rti_ask_for_shock_treatment(person_id)
+        if 'danger_signs' in symptoms:
+            if 'Alri' in self.sim.modules:
+                # change the appointment footprint if severe pneumonia
+                the_appt_footprint = self.make_appt_footprint({'InpatientDays': 3, 'IPAdmission': 1})
+                the_beddays_footprint = self.make_beddays_footprint({'general_bed': 3})
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.BEDDAYS_FOOTPRINT = the_beddays_footprint
 
     def apply(self, person_id, squeeze_factor):
 
@@ -464,8 +471,6 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
         schedule_hsi(event, priority=1, topen=sim.date)
 
     if (age < 5) and set(symptoms).intersection({'cough', 'difficult_breathing', 'danger_signs'}):
-        # todo - @ines - you might want to align these with what you make you emergency symptom(s) to be.
-        # Todo: @tbhallett - I just added that danger_signs in, it should be the emergency symptoms prompting to seek emergency generic HSI
         if 'Alri' in sim.modules:
             sim.modules['Alri'].assess_and_classify_cough_or_difficult_breathing_level(
                 person_id=person_id, hsi_event=hsi_event)
