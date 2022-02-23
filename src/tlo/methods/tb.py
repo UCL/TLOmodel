@@ -2256,9 +2256,21 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[(df.tb_date_active >= (now - DateOffset(months=self.repeat)))]
         )
 
+        # number of new active cases in children
+        new_tb_cases_child = len(
+            df[(df.tb_date_active >= (now - DateOffset(months=self.repeat))) &
+               (df.age_years < 15)]
+        )
+
         # number of latent cases
         new_latent_cases = len(
             df[(df.tb_date_latent >= (now - DateOffset(months=self.repeat)))]
+        )
+
+        # number of latent cases
+        new_latent_cases_child = len(
+            df[(df.tb_date_latent >= (now - DateOffset(months=self.repeat))) &
+               (df.age_years < 15)]
         )
 
         # number of new active cases in HIV+
@@ -2277,7 +2289,9 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             description="Number new active and latent TB cases, total and in PLHIV",
             data={
                 "num_new_active_tb": new_tb_cases,
+                "num_new_active_tb_child": new_tb_cases_child,
                 "num_new_latent_tb": new_latent_cases,
+                "num_new_latent_tb_child": new_latent_cases_child,
                 "num_new_active_tb_in_hiv": inc_active_hiv,
                 "prop_active_tb_in_plhiv": prop_hiv,
             },

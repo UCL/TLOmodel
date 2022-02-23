@@ -37,12 +37,12 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2019, 1, 1)
+end_date = Date(2012, 1, 1)
 popsize = 1000
 
 # set up the log config
 log_config = {
-    "filename": "deviance_calibrated",
+    "filename": "Logfile",
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
@@ -185,7 +185,7 @@ make_plot(
 
 diagnostic_tests = tb_cons.loc[tb_cons.Item_Code.str.contains('175|184|187')].groupby(['Item_Code'])['Quantity'] \
     .sum().mul(sf)
-diagnostic_tests.plot.bar(width=0.4)
+diagnostic_tests.plot.bar()
 plt.title('Total Diagnostic Tests')
 plt.xticks([0, 1, 2], ['X-ray', 'Sputum Smear', 'Xpert'], rotation=30, ha='right')
 plt.xlabel('Diagnostic Test')
@@ -213,7 +213,7 @@ make_plot(
 
 treatments = tb_cons.loc[tb_cons.Item_Code.str.contains('176|177|178|179|2675')].groupby(['Item_Code'])['Quantity'] \
     .sum().mul(sf)
-treatments.plot.bar(width=0.4)
+treatments.plot.bar()
 plt.title('Total Treatments')
 plt.xticks([0, 1, 2, 3, 4], ['Adult tx', 'Adult retx', 'Child tx', 'Child retx', 'Child tx shorter'],
            rotation=30, ha='right')
@@ -242,9 +242,10 @@ make_plot(
     model=follow_up,
 )
 
+appointments = cons.loc[cons.TREATMENT_ID.str.startswith('Tb')]
 appointments = cons.loc[cons.TREATMENT_ID.str.contains('Tb_FollowUp|Tb_ScreeningAndRefer')].groupby(['TREATMENT_ID']) \
     .count().mul(sf)
-treatments.plot.bar(width=0.4)
+appointments.plot.bar()
 plt.title('Total Appointments')
 plt.xticks([0, 1], ['Tb_FollowUp', 'Tb_ScreeningAndRefer'], rotation=30, ha='right')
 plt.xlabel('Appointments')
