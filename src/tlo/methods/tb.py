@@ -2140,20 +2140,29 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 df.at[person_id, "tb_treated_mdr"] = True
                 df.at[person_id, "tb_date_treated_mdr"] = now
 
-        # schedule first follow-up appointment
-        follow_up_date = self.sim.date + DateOffset(months=1)
-        logger.debug(
-            key="message",
-            data=f"HSI_Tb_StartTreatment: scheduling first follow-up "
-            f"for person {person_id} on {follow_up_date}",
-        )
+            # schedule first follow-up appointment
+            follow_up_date = self.sim.date + DateOffset(months=1)
+            logger.debug(
+                key="message",
+                data=f"HSI_Tb_StartTreatment: scheduling first follow-up "
+                f"for person {person_id} on {follow_up_date}",
+            )
 
-        self.sim.modules["HealthSystem"].schedule_hsi_event(
-            HSI_Tb_FollowUp(person_id=person_id, module=self.module),
-            topen=follow_up_date,
-            tclose=None,
-            priority=0,
-        )
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                HSI_Tb_FollowUp(person_id=person_id, module=self.module),
+                topen=follow_up_date,
+                tclose=None,
+                priority=0,
+            )
+
+        # if treatment not available, return for treatment start in 1 week
+        else:
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+                topen=self.sim.date + DateOffset(weeks=1),
+                tclose=None,
+                priority=0,
+            )
 
     def select_treatment(self, person_id):
         """
@@ -2208,16 +2217,16 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 )
 
         # -------- SHINE Trial shorter paediatric regimen -------- #
-        if self.module.parameters["scenario"] == 5:
-            if (person["age_years"] <= 16) \
+        if (self.module.parameters["scenario"] == 5) \
+            & (person["age_years"] <= 16) \
                 & ~(person["tb_smear"]) \
                 & ~person["tb_ever_treated"]\
                 & ~person["tb_diagnosed_mdr"]:
 
-                # shorter treatment for child with minimal tb
-                drugs_available = self.get_consumables(
-                    item_codes=self.module.item_codes_for_consumables_required["tb_tx_child_shorter"],
-                )
+            # shorter treatment for child with minimal tb
+            drugs_available = self.get_consumables(
+                item_codes=self.module.item_codes_for_consumables_required["tb_tx_child_shorter"],
+            )
 
         return drugs_available
 
