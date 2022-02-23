@@ -578,7 +578,7 @@ class Hiv(Module):
         p["scaled_rel_prob_by_risk_factor"] = (
             p["rel_prob_by_risk_factor"] / p["mean_of_rel_prob_within_age_sex_group"]
         )
-        # add scaling factor 1.2 to counter lower risk from risk factors
+        # add scaling factor 1.1 to match overall unaids prevalence
         p["overall_prob_of_infec"] = (
             p["scaled_rel_prob_by_risk_factor"] * p["prob_of_infec"] * 1.1
         )
@@ -1478,7 +1478,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             current_year = 2020
 
-        # reduce testing rates by 0.8 to account for additional testing through ANC/symptoms
+        # reduce testing rates to account for additional testing through ANC/symptoms
         testing_rate_children = test_rates.loc[
                                     test_rates.year == current_year, "annual_testing_rate_children"
                                 ].values[0] * 0.6

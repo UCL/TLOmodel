@@ -375,10 +375,6 @@ class Tb(Module):
             Types.INT,
             "year from which IPT is available for paediatric contacts of diagnosed active TB cases",
         ),
-        "prop_presumptive_mdr_has_xpert": Parameter(
-            Types.REAL,
-            "probability that a presumptive mdr case will have access to xpert test",
-        ),
         "scenario": Parameter(
             Types.INT,
             "integer value labelling the scenario to be run: default is 0"
@@ -896,14 +892,6 @@ class Tb(Module):
         # assume ~60% have access to Xpert, some data in 2019 NTP report but not exact proportions
         if person["tb_ever_treated"] or person["hv_diagnosed"]:
             test = p["second_line_test"]
-
-        # if xpert not available (prob greater than availability)
-        # give sputum smear
-        # this reflects 60% availability of xpert
-        if (test == "xpert") & (
-            rng.random_sample() > p["prop_presumptive_mdr_has_xpert"]
-        ):
-            test = "sputum"
 
         return (
             "xpert"
@@ -1871,162 +1859,185 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         if not person["is_alive"]:
             return
 
+        logger.debug(
+            key="message", data=f"HSI_Tb_ScreeningAndRefer: person {person_id}"
+        )
+
+        smear_status = person["tb_smear"]
+
         # If the person is already on treatment and not failing, do nothing do not occupy any resources
         if person["tb_on_treatment"] and not person["tb_treatment_failure"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-        test = "sputum"
-        test_result = None
-        ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
-
         # ------------------------- screening ------------------------- #
 
         # check if patient has: cough, fever, night sweat, weight loss
-        # if any of the above conditions are present request appropriate test
+        # if none of the above conditions are present, no further action
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
-        if any(x in self.module.symptom_list for x in persons_symptoms):
+        if not any(x in self.module.symptom_list for x in persons_symptoms):
+            return
+
+        # ------------------------- testing ------------------------- #
+        # if screening indicates presumptive tb
+        test = None
+        test_result = None
+        ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+
+        # refer for HIV testing: all ages
+        self.sim.modules["HealthSystem"].schedule_hsi_event(
+            hsi_event=hiv.HSI_Hiv_TestAndRefer(
+                person_id=person_id, module=self.sim.modules["Hiv"], referred_from='Tb'
+            ),
+            priority=1,
+            topen=self.sim.date,
+            tclose=None,
+        )
+
+        # child under 5 -> chest x-ray, but access is limited
+        # if xray not available, HSI_Tb_Xray_level1b will refer
+        if person["age_years"] < 5:
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+                {"Under5OPD": 1}
+            )
+
+            # this HSI will choose relevant sensitivity/specificity depending on person's smear status
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
+                topen=now,
+                tclose=None,
+                priority=0,
+            )
+            test_result = False  # to avoid calling a clinical diagnosis
+
+        # for all presumptive cases over 5 years of age
+        else:
+            # this selects a test for the person
+            # if selection is xpert, will check for availability and return sputum if xpert not available
+            test = self.module.select_tb_test(person_id)
+            assert test is not None
+
+            if test == "sputum":
+                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+                    {"Over5OPD": 1, "LabTBMicro": 1}
+                )
+                # relevant test depends on smear status (changes parameters on sensitivity/specificity
+                if smear_status:
+                    test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                        dx_tests_to_run="tb_sputum_test_smear_positive", hsi_event=self
+                    )
+                else:
+                    test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                        dx_tests_to_run="tb_sputum_test_smear_negative", hsi_event=self
+                    )
+
+            elif test == "xpert":
+                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+                    {"Over5OPD": 1}
+                )
+                # relevant test depends on smear status (changes parameters on sensitivity/specificity
+                if smear_status:
+                    test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                        dx_tests_to_run="tb_xpert_test_smear_positive", hsi_event=self
+                    )
+                # for smear-negative people
+                else:
+                    test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                        dx_tests_to_run="tb_xpert_test_smear_negative", hsi_event=self
+                    )
+
+        # ------------------------- testing referrals ------------------------- #
+
+        # if none of the tests are available, try again for sputum
+        # requires another appointment - added in ACTUAL_APPT_FOOTPRINT
+        if test_result is None:
+            if smear_status:
+                test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                    dx_tests_to_run="tb_sputum_test_smear_positive", hsi_event=self
+                )
+            else:
+                test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                    dx_tests_to_run="tb_sputum_test_smear_negative", hsi_event=self
+                )
+
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+                {"Over5OPD": 2, "LabTBMicro": 1}
+            )
+
+        # if still no result available, rely on clinical diagnosis
+        if test_result is None:
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="tb_clinical", hsi_event=self
+            )
+
+        # ------------------------- testing outcomes ------------------------- #
+
+        # diagnosed with mdr-tb - only if xpert used
+        if test_result and (test == "xpert") and (person["tb_strain"] == "mdr"):
+            df.at[person_id, "tb_diagnosed_mdr"] = True
+
+        # if a test has been performed, update person's properties
+        if test_result is not None:
+            df.at[person_id, "tb_ever_tested"] = True
+
+        # if any test returns positive result, refer for appropriate treatment
+        if test_result:
+            df.at[person_id, "tb_diagnosed"] = True
+            df.at[person_id, "tb_date_diagnosed"] = now
 
             logger.debug(
-                key="message", data=f"HSI_Tb_ScreeningAndRefer: person {person_id}"
+                key="message",
+                data=f"schedule HSI_Tb_StartTreatment for person {person_id}",
             )
 
-            # ------------------------- testing ------------------------- #
-            # if screening indicates presumptive tb
-
-            # refer for HIV testing: all ages
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=hiv.HSI_Hiv_TestAndRefer(
-                    person_id=person_id, module=self.sim.modules["Hiv"], referred_from='Tb'
-                ),
-                priority=1,
-                topen=self.sim.date,
+                HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+                topen=now,
                 tclose=None,
+                priority=0,
             )
 
-            # child under 5 -> chest x-ray, but access is limited
-            # if xray not available, rely on clinical diagnosis
-            if person["age_years"] < 5:
-                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                    {"Under5OPD": 1}
-                )
+            # ------------------------- give IPT to contacts ------------------------- #
+            # if diagnosed, trigger ipt outreach event for up to 5 paediatric contacts of case
+            # only high-risk districts are eligible
 
-                # this HSI will choose relevant sensitivity/specificity depending on person's smear status
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
-                    topen=now,
-                    tclose=None,
-                    priority=0,
-                )
+            district = person["district_of_residence"]
+            ipt = self.module.parameters["ipt_coverage"]
+            ipt_year = ipt.loc[ipt.year == self.sim.date.year]
+            ipt_coverage_paed = ipt_year.coverage_paediatric.values[0]
 
-            # for all presumptive cases over 5 years of age
-            else:
-                # this selects a test for the person
-                # if selection is xpert, will check for availability and return sputum if xpert not available
-                test = self.module.select_tb_test(person_id)
-                assert test is not None
+            if (district in p["tb_high_risk_distr"].district_name.values) & (
+                self.module.rng.rand() < ipt_coverage_paed
+            ):
+                # randomly sample from eligible population within district
+                ipt_eligible = df.loc[
+                    (df.age_years <= p["age_eligibility_for_ipt"])
+                    & ~df.tb_diagnosed
+                    & df.is_alive
+                    & (df.district_of_residence == district)
+                ].index
 
-                if test == "sputum":
-                    ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                        {"Over5OPD": 1, "LabTBMicro": 1}
-                    )
-                    # relevant test depends on smear status (changes parameters on sensitivity/specificity
-                    if person["tb_smear"]:
-                        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-                            dx_tests_to_run="tb_sputum_test_smear_positive", hsi_event=self
-                        )
-                    else:
-                        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-                            dx_tests_to_run="tb_sputum_test_smear_negative", hsi_event=self
+                if ipt_eligible.any():
+                    # sample with replacement in case eligible population n<5
+                    ipt_sample = rng.choice(ipt_eligible, size=5, replace=True)
+                    # retain unique indices only
+                    # fine to have variability in number sampled (between 0-5)
+                    ipt_sample = list(set(ipt_sample))
+
+                    for person_id in ipt_sample:
+                        logger.debug(
+                            key="message",
+                            data=f"HSI_Tb_ScreeningAndRefer: scheduling IPT for person {person_id}",
                         )
 
-                elif test == "xpert":
-                    ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                        {"Over5OPD": 1}
-                    )
-                    # relevant test depends on smear status (changes parameters on sensitivity/specificity
-                    if person["tb_smear"]:
-                        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-                            dx_tests_to_run="tb_xpert_test_smear_positive", hsi_event=self
+                        ipt_event = HSI_Tb_Start_or_Continue_Ipt(
+                            self.module, person_id=person_id
                         )
-                    else:
-                        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-                            dx_tests_to_run="tb_xpert_test_smear_negative", hsi_event=self
+                        self.sim.modules["HealthSystem"].schedule_hsi_event(
+                            ipt_event,
+                            priority=1,
+                            topen=now,
+                            tclose=None,
                         )
-
-            # if none of the tests are not available (particularly xpert)
-            # rely on clinical diagnosis
-            if test_result is None:
-                test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-                    dx_tests_to_run="tb_clinical", hsi_event=self
-                )
-
-            # diagnosed with mdr-tb - only if xpert used
-            if test_result and (test == "xpert") and (person["tb_strain"] == "mdr"):
-                df.at[person_id, "tb_diagnosed_mdr"] = True
-
-            # if a test has been performed, update person's properties
-            if test_result is not None:
-                df.at[person_id, "tb_ever_tested"] = True
-
-            # if any test returns positive result, refer for appropriate treatment
-            if test_result:
-                df.at[person_id, "tb_diagnosed"] = True
-                df.at[person_id, "tb_date_diagnosed"] = now
-
-                logger.debug(
-                    key="message",
-                    data=f"schedule HSI_Tb_StartTreatment for person {person_id}",
-                )
-
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
-                    topen=now,
-                    tclose=None,
-                    priority=0,
-                )
-
-                # ------------------------- give IPT to contacts ------------------------- #
-                # if diagnosed, trigger ipt outreach event for up to 5 paediatric contacts of case
-                # only high-risk districts are eligible
-
-                district = person["district_of_residence"]
-                ipt = self.module.parameters["ipt_coverage"]
-                ipt_year = ipt.loc[ipt.year == self.sim.date.year]
-                ipt_coverage_paed = ipt_year.coverage_paediatric.values[0]
-
-                if (district in p["tb_high_risk_distr"].district_name.values) & (
-                    self.module.rng.rand() < ipt_coverage_paed
-                ):
-                    # randomly sample from eligible population within district
-                    ipt_eligible = df.loc[
-                        (df.age_years <= p["age_eligibility_for_ipt"])
-                        & ~df.tb_diagnosed
-                        & df.is_alive
-                        & (df.district_of_residence == district)
-                    ].index
-
-                    if ipt_eligible.any():
-                        # sample with replacement in case eligible population n<5
-                        ipt_sample = rng.choice(ipt_eligible, size=5, replace=True)
-                        # retain unique indices only
-                        # fine to have variability in number sampled (between 0-5)
-                        ipt_sample = list(set(ipt_sample))
-
-                        for person_id in ipt_sample:
-                            logger.debug(
-                                key="message",
-                                data=f"HSI_Tb_ScreeningAndRefer: scheduling IPT for person {person_id}",
-                            )
-
-                            ipt_event = HSI_Tb_Start_or_Continue_Ipt(
-                                self.module, person_id=person_id
-                            )
-                            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                                ipt_event,
-                                priority=1,
-                                topen=now,
-                                tclose=None,
-                            )
 
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
