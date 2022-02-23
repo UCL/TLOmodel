@@ -116,10 +116,13 @@ appts_by_treatment_id = pd.DataFrame({
 appts_by_treatment_id_short = \
     hsi.set_index('TREATMENT_ID')['Number_By_Appt_Type_Code'].drop_duplicates().apply(pd.Series).fillna(0.0)
 
-# A possible issue:
+# Possible issues:
 # set(appts_by_treatment_id_short.columns)-set(appts_by_treatment_id.columns)
-# the output is: {'NormalDelivery', 'VCTPositive'}
-# not clear yet why the two appts are not in the table appts_by_treatment_id
+# the output is: {'ComDelivery', 'VCTPositive'}, not clear why the two appts are not in the table appts_by_treatment_id
+# There are inconsistencies in appts_by_treatment_id_short:
+# e.g. breastCancer_StartTreatment and oesophagealCancer_StartTreatment call for different appts,
+# Labour_ReceivesComprehensiveEmergencyObstetricCare calls for non appt.
+
 
 # Plot...
 # See the Sankey plot in analysis_sankey_appt_and_hsi.ipynb (in the same folder)
