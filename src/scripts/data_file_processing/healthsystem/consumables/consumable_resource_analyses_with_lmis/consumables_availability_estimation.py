@@ -28,8 +28,6 @@ import numpy as np
 import pandas as pd
 
 # Set local Dropbox source
-from tests.test_consumables import check_format_of_consumables_file
-
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
     'C:/Users/sm2511/Dropbox/Thanzi la Onse'
     # '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE'
@@ -49,7 +47,6 @@ outputfilepath = Path("./outputs")
 resourcefilepath = Path("./resources")
 path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
 
-
 # Define necessary functions
 def change_colnames(df, NameChangeList):  # Change column names
     ColNames = df.columns
@@ -59,7 +56,6 @@ def change_colnames(df, NameChangeList):  # Change column names
         ColNames2 = [col.replace(a, b) for col in ColNames2]
     df.columns = ColNames2
     return df
-
 
 # 1. DATA IMPORT AND CLEANING ##
 #########################################################################################
@@ -473,14 +469,19 @@ stkout_df['category'] = stkout_df['module_name'].str.lower()
 cond_RH = (stkout_df['category'].str.contains('care_of_women_during_pregnancy')) | \
           (stkout_df['category'].str.contains('labour'))
 cond_newborn = (stkout_df['category'].str.contains('newborn'))
-cond_ari = stkout_df['category'] == 'acute lower respiratory infections'
+cond_childhood = (stkout_df['category'] == 'acute lower respiratory infections') | \
+                (stkout_df['category'] == 'measles') | \
+                (stkout_df['category'] == 'diarrhoea')
 cond_rti = stkout_df['category'] == 'road traffic injuries'
 cond_cancer = stkout_df['category'].str.contains('cancer')
+cond_ncds = (stkout_df['category'] == 'epilepsy') | \
+            (stkout_df['category'] == 'depression')
 stkout_df.loc[cond_RH, 'category'] = 'reproductive_health'
 stkout_df.loc[cond_cancer, 'category'] = 'cancer'
 stkout_df.loc[cond_newborn, 'category'] = 'neonatal_health'
-stkout_df.loc[cond_ari, 'category'] = 'ari'
+stkout_df.loc[cond_childhood, 'category'] = 'other_childhood_illnesses'
 stkout_df.loc[cond_rti, 'category'] = 'road_traffic_injuries'
+stkout_df.loc[cond_ncds, 'category'] = 'ncds'
 
 cond_condom = stkout_df['item_code'] == 2
 stkout_df.loc[cond_condom, 'category'] = 'contraception'
@@ -497,7 +498,7 @@ stkout_df.loc[cond_general, 'category'] = 'general'
 # --- 6.5 Replace district/fac_name/month entries where missing --- #
 for var in ['district', 'fac_name', 'month']:
     cond = stkout_df[var].isna()
-    stkout_df.loc[cond, var] = 'NA'
+    stkout_df.loc[cond, var] = 'Aggregate'
 
 # --- 6.6 Export final stockout dataframe --- #
 stkout_df.to_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
@@ -521,6 +522,8 @@ districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Popu
 fac_levels = {'0', '1a', '1b', '2', '3', '4'}
 
 sf = stkout_df[['item_code', 'month', 'district', 'fac_type_tlo', 'available_prop']].dropna()
+sf.loc[sf.month == 'Aggregate', 'month'] = 'January' # Assign arbitrary month to data only available at aggregate level
+sf.loc[sf.district == 'Aggregate', 'district'] = 'Balaka' # Assign arbitrary district to data only available at aggregate level
 sf = sf.drop(index=sf.index[(sf.month == 'NA') | (sf.district == 'NA')])
 sf.month = sf.month.map(dict(zip(calendar.month_name[1:13], range(1, 13))))
 sf.item_code = sf.item_code.astype(int)
