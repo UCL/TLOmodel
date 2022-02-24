@@ -1222,7 +1222,10 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to change parameters or functions
     depending on the scenario for projections which has been set
     * scenario 0 is the default which uses baseline parameters
-    * scenario 4 incorporates all program changes
+    * scenario 1 optimistic, achieving all program targets
+    * scenario 2 realistic, program constraints, tx/dx test stockouts, high dropout
+    * scenario 3 additional measure to reduce incidence
+    * scenario 4 SHINE trial
 
     It only occurs once at param: scenario_start_date,
     called by initialise_simulation
@@ -1244,7 +1247,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 0:
             return
 
-        if (scenario == 1) or (scenario == 4):
+        if scenario == 1:
 
             # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
             self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = 0.1
@@ -1261,14 +1264,13 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             # change all column values
             self.sim.modules["Hiv"].parameters["prob_viral_suppression"]["virally_suppressed_on_art"] = 95
 
-        if (scenario == 2) or (scenario == 4):
-            # change IPT eligibility for TB contacts to all years
-            p["age_eligibility_for_ipt"] = 100
-
-        if (scenario == 3) or (scenario == 4):
             # change first-line testing for TB to xpert
             p["first_line_test"] = "xpert"
             p["second_line_test"] = "sputum"
+
+        if scenario == 2:
+            # change IPT eligibility for TB contacts to all years
+            p["age_eligibility_for_ipt"] = 100
 
 
 class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1996,7 +1998,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             )
 
             # ------------------------- give IPT to contacts ------------------------- #
-            # if diagnosed, trigger ipt outreach event for up to 5 paediatric contacts of case
+            # if diagnosed, trigger ipt outreach event for up to 5 contacts of case
             # only high-risk districts are eligible
 
             district = person["district_of_residence"]
@@ -2490,25 +2492,37 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
         # Do not run if the person is not alive or already on IPT or diagnosed active infection
         if (
             (not person["is_alive"])
-            and person["tb_on_ipt"]
-            and (not person["tb_diagnosed"])
+            or person["tb_on_ipt"]
+            or person["tb_diagnosed"]
         ):
             return
 
-        # Check/log use of consumables, and give IPT if available
-        # NB. If materials not available, it is assumed that no IPT is given and no further referral is offered
-        if self.get_consumables(
-                    item_codes=self.module.item_codes_for_consumables_required["tb_ipt"]
-        ):
-            # Update properties
-            df.at[person_id, "tb_on_ipt"] = True
-            df.at[person_id, "tb_date_ipt"] = self.sim.date
+        # if currently have symptoms of TB, refer for screening/testing
+        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        if any(x in self.module.symptom_list for x in persons_symptoms):
 
-            # schedule decision to continue or end IPT after 6 months
-            self.sim.schedule_event(
-                Tb_DecisionToContinueIPT(self.module, person_id),
-                self.sim.date + DateOffset(months=6),
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                HSI_Tb_Start_or_Continue_Ipt(person_id=person_id, module=self.module),
+                topen=self.sim.date,
+                tclose=self.sim.date + pd.DateOffset(days=14),
+                priority=0,
             )
+
+        else:
+            # Check/log use of consumables, and give IPT if available
+            # NB. If materials not available, it is assumed that no IPT is given and no further referral is offered
+            if self.get_consumables(
+                        item_codes=self.module.item_codes_for_consumables_required["tb_ipt"]
+            ):
+                # Update properties
+                df.at[person_id, "tb_on_ipt"] = True
+                df.at[person_id, "tb_date_ipt"] = self.sim.date
+
+                # schedule decision to continue or end IPT after 6 months
+                self.sim.schedule_event(
+                    Tb_DecisionToContinueIPT(self.module, person_id),
+                    self.sim.date + DateOffset(months=6),
+                )
 
 
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):

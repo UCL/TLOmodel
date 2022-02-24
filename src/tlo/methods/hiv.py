@@ -1437,7 +1437,6 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     & df.li_is_sexworker
                     & ~df.hv_is_on_prep
                     & df.age_years.between(15, 80)
-                    & (df.sex == to_sex)
                     ].index
 
                 #  - probability of infection - relative risk applies only to fsw
