@@ -875,7 +875,6 @@ class Tb(Module):
 
         df = self.sim.population.props
         p = self.parameters
-        rng = self.rng
         person = df.loc[person_id]
 
         # xpert tests limited to 60% coverage
@@ -1260,7 +1259,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             # viral suppression rates
             # adults already at 95% by 2020
             # change all column values
-            self.sim.modules["gHiv"].parameters["prob_viral_suppression"]["virally_suppressed_on_art"] = 95
+            self.sim.modules["Hiv"].parameters["prob_viral_suppression"]["virally_suppressed_on_art"] = 95
 
         if (scenario == 2) or (scenario == 4):
             # change IPT eligibility for TB contacts to all years

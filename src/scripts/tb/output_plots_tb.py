@@ -852,7 +852,9 @@ plt.show()
 # plt.xlabel('Survival time, years')
 # plt.ylabel('Frequency')
 # plt.grid(axis='y', alpha=0.75)
-# plt.savefig(outputpath / ("Distribution of survival times for HIV+ children (untreated)" + datestamp + ".png"), format='png')
+# plt.savefig(outputpath / (
+#   "Distribution of survival times for HIV+ children (untreated)" + datestamp + ".png"),
+#   format='png')
 # plt.show()
 #
 #

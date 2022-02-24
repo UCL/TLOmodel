@@ -336,7 +336,7 @@ aids_deaths = {}  # dict of df
 for draw in info["number_of_draws"]:
     draw = draw
 
-    #rename dataframe
+    # rename dataframe
     name = "model_deaths_AIDS_draw" + str(draw)
     # select cause of death
     tmp = results_deaths.loc[
@@ -831,55 +831,55 @@ plt.savefig(make_graph_file_name("Proportion_TB_Cases_MDR"))
 plt.show()
 
 # ---------------------------------------------------------------------- #
-
-# AIDS deaths (including HIV/TB deaths)
-make_plot(
-    title_str="Mortality to HIV-AIDS per 100,000 capita",
-    model=total_aids_deaths_rate_100kpy,
-    model_low=total_aids_deaths_rate_100kpy_lower,
-    model_high=total_aids_deaths_rate_100kpy_upper,
-    data_name="UNAIDS",
-    data_mid=data_hiv_unaids_deaths["AIDS_mortality_per_100k"],
-    data_low=data_hiv_unaids_deaths["AIDS_mortality_per_100k_lower"],
-    data_high=data_hiv_unaids_deaths["AIDS_mortality_per_100k_upper"],
-)
-plt.savefig(make_graph_file_name("AIDS_mortality"))
-
-plt.show()
-
-# ---------------------------------------------------------------------- #
-
-# AIDS/TB deaths
-make_plot(
-    title_str="Mortality to HIV-AIDS-TB per 100,000 capita",
-    model=total_aids_TB_deaths_rate_100kpy,
-    model_low=total_aids_TB_deaths_rate_100kpy_lower,
-    model_high=total_aids_TB_deaths_rate_100kpy_upper,
-    data_name="WHO",
-    data_mid=data_tb_who["mortality_tb_hiv_per_100k"],
-    data_low=data_tb_who["mortality_tb_hiv_per_100k_low"],
-    data_high=data_tb_who["mortality_tb_hiv_per_100k_high"],
-)
-plt.savefig(make_graph_file_name("AIDS_TB_mortality"))
-
-plt.show()
-
-# ---------------------------------------------------------------------- #
-
-# TB deaths (excluding HIV/TB deaths)
-make_plot(
-    title_str="TB mortality rate per 100,000 population",
-    model=tot_tb_non_hiv_deaths_rate_100kpy,
-    model_low=tot_tb_non_hiv_deaths_rate_100kpy_lower,
-    model_high=tot_tb_non_hiv_deaths_rate_100kpy_upper,
-    data_name="WHO",
-    data_mid=data_tb_who["mortality_tb_excl_hiv_per_100k"],
-    data_low=data_tb_who["mortality_tb_excl_hiv_per_100k_low"],
-    data_high=data_tb_who["mortality_tb_excl_hiv_per_100k_high"],
-)
-plt.savefig(make_graph_file_name("TB_mortality"))
-
-plt.show()
+#
+# # AIDS deaths (including HIV/TB deaths)
+# make_plot(
+#     title_str="Mortality to HIV-AIDS per 100,000 capita",
+#     model=total_aids_deaths_rate_100kpy,
+#     model_low=total_aids_deaths_rate_100kpy_lower,
+#     model_high=total_aids_deaths_rate_100kpy_upper,
+#     data_name="UNAIDS",
+#     data_mid=data_hiv_unaids_deaths["AIDS_mortality_per_100k"],
+#     data_low=data_hiv_unaids_deaths["AIDS_mortality_per_100k_lower"],
+#     data_high=data_hiv_unaids_deaths["AIDS_mortality_per_100k_upper"],
+# )
+# plt.savefig(make_graph_file_name("AIDS_mortality"))
+#
+# plt.show()
+#
+# # ---------------------------------------------------------------------- #
+#
+# # AIDS/TB deaths
+# make_plot(
+#     title_str="Mortality to HIV-AIDS-TB per 100,000 capita",
+#     model=total_aids_TB_deaths_rate_100kpy,
+#     model_low=total_aids_TB_deaths_rate_100kpy_lower,
+#     model_high=total_aids_TB_deaths_rate_100kpy_upper,
+#     data_name="WHO",
+#     data_mid=data_tb_who["mortality_tb_hiv_per_100k"],
+#     data_low=data_tb_who["mortality_tb_hiv_per_100k_low"],
+#     data_high=data_tb_who["mortality_tb_hiv_per_100k_high"],
+# )
+# plt.savefig(make_graph_file_name("AIDS_TB_mortality"))
+#
+# plt.show()
+#
+# # ---------------------------------------------------------------------- #
+#
+# # TB deaths (excluding HIV/TB deaths)
+# make_plot(
+#     title_str="TB mortality rate per 100,000 population",
+#     model=tot_tb_non_hiv_deaths_rate_100kpy,
+#     model_low=tot_tb_non_hiv_deaths_rate_100kpy_lower,
+#     model_high=tot_tb_non_hiv_deaths_rate_100kpy_upper,
+#     data_name="WHO",
+#     data_mid=data_tb_who["mortality_tb_excl_hiv_per_100k"],
+#     data_low=data_tb_who["mortality_tb_excl_hiv_per_100k_low"],
+#     data_high=data_tb_who["mortality_tb_excl_hiv_per_100k_high"],
+# )
+# plt.savefig(make_graph_file_name("TB_mortality"))
+#
+# plt.show()
 
 # ---------------------------------------------------------------------- #
 

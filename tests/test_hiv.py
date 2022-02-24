@@ -15,7 +15,9 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
+    epi,
     hiv,
+    tb,
     hsi_generic_first_appts,
     labour,
     newborn_outcomes,
@@ -60,8 +62,10 @@ def get_sim(seed, use_simplified_birth=True):
                      healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
-                     )
+                     epi.Epi(resourcefilepath=resourcefilepath),
+                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
+                     tb.Tb(resourcefilepath=resourcefilepath),
+        )
     else:
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                      pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
@@ -73,7 +77,9 @@ def get_sim(seed, use_simplified_birth=True):
                      healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                     epi.Epi(resourcefilepath=resourcefilepath),
                      hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
+                     tb.Tb(resourcefilepath=resourcefilepath),
                      # Disable check to avoid error due to lack of Contraception module
                      check_all_dependencies=False,
                      )
@@ -520,7 +526,7 @@ def test_aids_symptoms_lead_to_treatment_being_initiated(seed):
 
     # Confirm that they have aids symptoms and an AIDS death schedule
     assert 'aids_symptoms' in sim.modules['SymptomManager'].has_what(person_id)
-    assert 1 == len([ev[0] for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsDeathEvent)])
+    assert 1 == len([ev[0] for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsTbDeathEvent)])
 
     # Run the health-seeking poll and run the GenericFirstApptLevel0 that is Created
     hsp = HealthSeekingBehaviourPoll(module=sim.modules['HealthSeekingBehaviour'])
@@ -551,6 +557,9 @@ def test_art_is_initiated_for_infants(seed):
     sim.modules['Hiv'].parameters["prob_mtct_treated"] = 1.0
     sim.modules['Hiv'].parameters["prob_mtct_untreated"] = 1.0
     sim.modules['Hiv'].parameters["prob_mtct_incident_preg"] = 1.0
+
+    # change prob ART start after diagnosis
+    sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"]["value"] = 1.0
 
     # Manipulate CFR for deaths due to not breathing at birth
     sim.modules['NewbornOutcomes'].parameters['cfr_failed_to_transition'] = 0.0
@@ -763,6 +772,9 @@ def test_hsi_testandrefer_and_art(seed):
 
     # Make the chance of being referred to ART following testing is 100%
     sim.modules['Hiv'].lm['lm_art'] = LinearModel.multiplicative()
+
+    # change prob ART start after diagnosis
+    sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"]["value"] = 1.0
 
     # Make sure that the person will continue to seek care
     sim.modules['Hiv'].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1.0
@@ -1154,21 +1166,20 @@ def test_baseline_hiv_prevalence():
     sim.make_initial_population(n=popsize)
     df = sim.population.props
 
-    adult_prev_15plus = len(
-        df[df.hv_inf & df.is_alive & (df.age_years >= 15)]
-    ) / len(df[df.is_alive & (df.age_years >= 15)])
-
     adult_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49)]
     ) / len(df[df.is_alive & df.age_years.between(15, 49)])
+    assert adult_prev_1549 > 0.1
 
     female_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")]
     ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")])
+    assert female_prev_1549 > 0.11
 
     male_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")]
     ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")])
+    assert male_prev_1549 > 0.08
 
 
 

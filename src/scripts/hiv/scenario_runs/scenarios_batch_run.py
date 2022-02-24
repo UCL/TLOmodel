@@ -34,7 +34,6 @@ import pandas as pd
 from tlo import Date, logging
 from tlo.methods import (
     demography,
-    deviance_measure,
     enhanced_lifestyle,
     epi,
     healthburden,
@@ -58,9 +57,6 @@ runs_per_draw = 5
 # scenario 4: HIV service, IPT and Xpert
 
 scenarios = [0, 1, 2, 3, 4]
-
-
-
 
 
 class TestScenario(BaseScenario):
@@ -88,7 +84,7 @@ class TestScenario(BaseScenario):
                 '*': logging.WARNING,
                 "tlo.methods.hiv": logging.INFO,
                 "tlo.methods.tb": logging.INFO,
-                "tlo.methods.demography": logging.INFO,            }
+                "tlo.methods.demography": logging.INFO}
         }
 
     def modules(self):

@@ -468,19 +468,19 @@ def test_children_referrals():
     # Check person_id has a HSI_Tb_Xray event scheduled
     date_event, event = [
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-        isinstance(ev[1], tb.HSI_Tb_Xray)
+        isinstance(ev[1], tb.HSI_Tb_Xray_level1b)
     ][0]
     assert date_event == sim.date
 
     # run HSI_Tb_Xray and check outcomes
     sim.modules['HealthSystem'].schedule_hsi_event(
-        tb.HSI_Tb_Xray(person_id=person_id, module=sim.modules['Tb']),
+        tb.HSI_Tb_Xray_level1b(person_id=person_id, module=sim.modules['Tb']),
         topen=sim.date,
         tclose=None,
         priority=0
     )
 
-    hsi_event = tb.HSI_Tb_Xray(person_id=person_id, module=sim.modules['Tb'])
+    hsi_event = tb.HSI_Tb_Xray_level1b(person_id=person_id, module=sim.modules['Tb'])
     hsi_event.run(squeeze_factor=0)
 
     # should be diagnosed by x-ray

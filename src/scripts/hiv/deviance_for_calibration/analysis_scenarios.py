@@ -13,7 +13,6 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
-    deviance_measure,
     enhanced_lifestyle,
     epi,
     healthburden,
@@ -100,5 +99,4 @@ for scenario in scenario_dict:
     with open(outputpath / pickle_name, "wb") as f:
         # Pickle the 'data' dictionary using the highest protocol available.
         pickle.dump(output, f, pickle.HIGHEST_PROTOCOL)
-
 
