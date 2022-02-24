@@ -113,6 +113,18 @@ class Tb(Module):
         "tb_date_treated": Property(
             Types.DATE, "date most recent tb treatment started"
         ),
+        "tb_treatment_regimen": Property(
+            Types.CATEGORICAL,
+            categories=[
+                "tb_tx_adult",
+                "tb_tx_child",
+                "tb_tx_child_shorter",
+                "tb_retx_adult",
+                "tb_retx_child",
+                "tb_mdrtx"
+            ],
+            description="current tb treatment regimen",
+        ),
         "tb_ever_treated": Property(Types.BOOL, "if ever treated for active tb"),
         "tb_treatment_failure": Property(Types.BOOL, "failed first line tb treatment"),
         "tb_treated_mdr": Property(Types.BOOL, "on tb treatment MDR regimen"),
@@ -930,6 +942,7 @@ class Tb(Module):
         # ------------------ treatment status ------------------ #
         df["tb_on_treatment"] = False
         df["tb_date_treated"] = pd.NaT
+        df["tb_treatment_regimen"] = None
         df["tb_ever_treated"] = False
         df["tb_treatment_failure"] = False
 
@@ -1114,6 +1127,7 @@ class Tb(Module):
         # ------------------ treatment status ------------------ #
         df.at[child_id, "tb_on_treatment"] = False
         df.at[child_id, "tb_date_treated"] = pd.NaT
+        df.at[child_id, "tb_treatment_regimen"] = None
         df.at[child_id, "tb_treatment_failure"] = False
         df.at[child_id, "tb_ever_treated"] = False
 
@@ -1743,6 +1757,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[end_tx_idx, "tb_diagnosed"] = False
         df.loc[end_tx_idx, "tb_on_treatment"] = False
         df.loc[end_tx_idx, "tb_treated_mdr"] = False
+        df.loc[end_tx_idx, "tb_treatment_regimen"] = None
         # this will indicate that this person has had one complete course of tb treatment
         # subsequent infections will be classified as retreatment
         df.loc[end_tx_idx, "tb_ever_treated"] = True
@@ -2227,12 +2242,16 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if not person["is_alive"]:
             return
 
-        treatment_available = self.select_treatment(person_id)
+        treatment_regimen = self.select_treatment(person_id)
+        treatment_available = self.get_consumables(
+            item_codes=self.module.item_codes_for_consumables_required[treatment_regimen]
+        )
 
         if treatment_available:
             # start person on tb treatment - update properties
             df.at[person_id, "tb_on_treatment"] = True
             df.at[person_id, "tb_date_treated"] = now
+            df.at[person_id, "tb_treatment_regimen"] = treatment_regimen
 
             if person["tb_diagnosed_mdr"]:
                 df.at[person_id, "tb_treated_mdr"] = True
@@ -2272,15 +2291,13 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
-        drugs_available = False  # default return value
+        treatment_regimen = None  # default return value
 
         # -------- MDR-TB -------- #
 
         if person["tb_diagnosed_mdr"]:
 
-            drugs_available = self.get_consumables(
-               item_codes=self.module.item_codes_for_consumables_required["tb_mdrtx"]
-            )
+            treatment_regimen = "tb_mdrtx"
 
         # -------- First TB infection -------- #
         # could be undiagnosed mdr or ds-tb: treat as ds-tb
@@ -2289,14 +2306,11 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
             if person["age_years"] >= 15:
                 # treatment for ds-tb: adult
-                drugs_available = self.get_consumables(
-                    item_codes=self.module.item_codes_for_consumables_required["tb_tx_adult"]
-                )
+                treatment_regimen = "tb_tx_adult"
             else:
                 # treatment for ds-tb: child
-                drugs_available = self.get_consumables(
-                    item_codes=self.module.item_codes_for_consumables_required["tb_tx_child"]
-                )
+                treatment_regimen = "tb_tx_child"
+
 
         # -------- Secondary TB infection -------- #
         # person has been treated before
@@ -2305,28 +2319,24 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
             if person["age_years"] >= 15:
                 # treatment for reinfection ds-tb: adult
-                drugs_available = self.get_consumables(
-                    item_codes=self.module.item_codes_for_consumables_required["tb_retx_adult"],
-                )
+                treatment_regimen = "tb_retx_adult"
+
             else:
                 # treatment for reinfection ds-tb: child
-                drugs_available = self.get_consumables(
-                    item_codes=self.module.item_codes_for_consumables_required["tb_retx_child"],
-                )
+                treatment_regimen = "tb_retx_child"
 
         # -------- SHINE Trial shorter paediatric regimen -------- #
-        if (self.module.parameters["scenario"] == 5) \
+        if (self.module.parameters["scenario"] == 4) \
+            & (self.sim.date >= self.module.parameters["scenario_start_date"]) \
             & (person["age_years"] <= 16) \
                 & ~(person["tb_smear"]) \
                 & ~person["tb_ever_treated"]\
                 & ~person["tb_diagnosed_mdr"]:
 
             # shorter treatment for child with minimal tb
-            drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required["tb_tx_child_shorter"],
-            )
+            treatment_regimen = "tb_tx_child_shorter"
 
-        return drugs_available
+        return treatment_regimen
 
 
 # # ---------------------------------------------------------------------------
@@ -2383,18 +2393,23 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         treatment_length = p["ds_treatment_length"]
 
         # if previously treated:
-        if person["tb_ever_treated"]:
+        if ((person["tb_treatment_regimen"] == "tb_retx_adult") or
+            (person["tb_treatment_regimen"] == "tb_retx_child")):
 
             # if strain is ds and person previously treated:
             sputum_fup = follow_up_times["ds_retreatment_sputum"].dropna()
             treatment_length = p["ds_retreatment_length"]
 
         # if person diagnosed with mdr - this treatment schedule takes precedence
-        elif person["tb_diagnosed_mdr"]:
+        elif person["tb_treatment_regimen"] == "tb_mdrtx":
 
-            # if strain is mdr:
             sputum_fup = follow_up_times["mdr_sputum"].dropna()
             treatment_length = p["mdr_treatment_length"]
+
+        # if person on shorter paediatric regimen
+        elif person["tb_treatment_regimen"] == "tb_tx_child_shorter":
+            sputum_fup = follow_up_times["shine_sputum"].dropna()
+            treatment_length = p["shine_treatment_length"]
 
         # check schedule for sputum test and perform if necessary
         if months_since_tx in sputum_fup:
@@ -2441,7 +2456,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
             )
 
         # for all ds cases and known mdr cases:
-        # schedule next follow-up appt if still within treatment length
+        # schedule next clinical follow-up appt if still within treatment length
         elif months_since_tx < treatment_length:
             follow_up_date = self.sim.date + DateOffset(months=1)
             logger.debug(
