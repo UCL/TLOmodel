@@ -2311,7 +2311,6 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 # treatment for ds-tb: child
                 treatment_regimen = "tb_tx_child"
 
-
         # -------- Secondary TB infection -------- #
         # person has been treated before
         # possible treatment failure or subsequent reinfection
@@ -2394,7 +2393,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
         # if previously treated:
         if ((person["tb_treatment_regimen"] == "tb_retx_adult") or
-            (person["tb_treatment_regimen"] == "tb_retx_child")):
+                (person["tb_treatment_regimen"] == "tb_retx_child")):
 
             # if strain is ds and person previously treated:
             sputum_fup = follow_up_times["ds_retreatment_sputum"].dropna()

@@ -390,7 +390,6 @@ class Demography(Module):
         self.demog_outputs["sex"] += [person['sex']]
         self.demog_outputs["cause"] += [cause]
 
-
         # - log all the properties for the deceased person
         logger.info(key='properties_of_deceased_persons',
                     data=person.to_dict(),

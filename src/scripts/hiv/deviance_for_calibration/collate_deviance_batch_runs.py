@@ -2,12 +2,10 @@
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import pandas as pd
 
 from tlo.analysis.utils import (
     extract_params,
     extract_results,
-    get_grid,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
@@ -65,5 +63,3 @@ plt.xlabel("Hiv: transmission rate")
 plt.ylabel("Tb: transmission rate")
 fig.colorbar(sc, ax=ax)
 plt.show()
-
-

@@ -112,7 +112,7 @@ def test_scenario_ipt_expansion():
         )
 
     # run diagnosis (HSI_Tb_ScreeningAndRefer) for person 0
-    assert "tb_sputum_test" in sim.modules["HealthSystem"].dx_manager.dx_tests
+    assert "tb_sputum_test_smear_positive" in sim.modules["HealthSystem"].dx_manager.dx_tests
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
@@ -392,7 +392,7 @@ def test_check_tb_test_under_each_scenario():
     test_for_hiv_positive = sim.modules["Tb"].select_tb_test(hiv_pos_person)
     assert test_for_hiv_positive == "xpert"
 
-    # ------------------------- scenario 3 ------------------------- #
+    # ------------------------- scenario 1 ------------------------- #
     sim = get_sim()
 
     # Make the population
@@ -400,7 +400,7 @@ def test_check_tb_test_under_each_scenario():
 
     sim.modules['Tb'].parameters["prop_presumptive_mdr_has_xpert"] = 1.0  # xpert always available
     sim.modules['Tb'].parameters["sens_xpert"] = 1.0  # increase sensitivity of xpert testing
-    sim.modules['Tb'].parameters['scenario'] = 3
+    sim.modules['Tb'].parameters['scenario'] = 1
 
     # simulate for 0 days, just get everything set up (dxtests etc)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))

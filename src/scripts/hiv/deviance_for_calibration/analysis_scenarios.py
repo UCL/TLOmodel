@@ -5,9 +5,8 @@ save outputs for plotting (file: output_plots_tb.py)
  """
 
 import datetime
-from pathlib import Path
 import pickle
-
+from pathlib import Path
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -99,4 +98,3 @@ for scenario in scenario_dict:
     with open(outputpath / pickle_name, "wb") as f:
         # Pickle the 'data' dictionary using the highest protocol available.
         pickle.dump(output, f, pickle.HIGHEST_PROTOCOL)
-

@@ -729,7 +729,7 @@ class Hiv(Module):
                                  & df.hv_inf
                                  & (df.age_years >= 15)])
 
-        prop_currently_diagnosed = adults_diagnosed / adults_infected
+        prop_currently_diagnosed = adults_diagnosed / adults_infected if adults_infected > 0 else 0
         hiv_test_deficit = adult_know_status - prop_currently_diagnosed
         number_deficit = int(hiv_test_deficit * adults_infected)
 
