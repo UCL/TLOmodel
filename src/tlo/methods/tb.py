@@ -116,6 +116,7 @@ class Tb(Module):
         "tb_treatment_regimen": Property(
             Types.CATEGORICAL,
             categories=[
+                "none",
                 "tb_tx_adult",
                 "tb_tx_child",
                 "tb_tx_child_shorter",
@@ -942,7 +943,7 @@ class Tb(Module):
         # ------------------ treatment status ------------------ #
         df["tb_on_treatment"] = False
         df["tb_date_treated"] = pd.NaT
-        df["tb_treatment_regimen"] = None
+        df["tb_treatment_regimen"].values[:] = "none"
         df["tb_ever_treated"] = False
         df["tb_treatment_failure"] = False
 
@@ -1127,7 +1128,7 @@ class Tb(Module):
         # ------------------ treatment status ------------------ #
         df.at[child_id, "tb_on_treatment"] = False
         df.at[child_id, "tb_date_treated"] = pd.NaT
-        df.at[child_id, "tb_treatment_regimen"] = None
+        df.at[child_id, "tb_treatment_regimen"] = "none"
         df.at[child_id, "tb_treatment_failure"] = False
         df.at[child_id, "tb_ever_treated"] = False
 
@@ -1761,7 +1762,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[end_tx_idx, "tb_diagnosed"] = False
         df.loc[end_tx_idx, "tb_on_treatment"] = False
         df.loc[end_tx_idx, "tb_treated_mdr"] = False
-        df.loc[end_tx_idx, "tb_treatment_regimen"] = None
+        df.loc[end_tx_idx, "tb_treatment_regimen"] = "none"
         # this will indicate that this person has had one complete course of tb treatment
         # subsequent infections will be classified as retreatment
         df.loc[end_tx_idx, "tb_ever_treated"] = True
