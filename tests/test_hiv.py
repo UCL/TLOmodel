@@ -13,11 +13,10 @@ from tlo.methods import (
     care_of_women_during_pregnancy,
     demography,
     enhanced_lifestyle,
+    epi,
     healthseekingbehaviour,
     healthsystem,
-    epi,
     hiv,
-    tb,
     hsi_generic_first_appts,
     labour,
     newborn_outcomes,
@@ -25,6 +24,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     simplified_births,
     symptommanager,
+    tb,
 )
 from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
 from tlo.methods.healthsystem import HealthSystemScheduler
