@@ -1140,6 +1140,10 @@ class Tb(Module):
             df.at[child_id, "hv_art"] = "not"
 
         # if mother is diagnosed with TB, give IPT to infant
+        mother_id = mother_id if mother_id != -1 else self.rng.choice(
+            df.index[df.is_alive & (df.sex == "F") & (df.age_years > 16)])
+        assert mother_id != -1
+
         if df.at[mother_id, "tb_diagnosed"]:
             event = HSI_Tb_Start_or_Continue_Ipt(self, person_id=child_id)
             self.sim.modules["HealthSystem"].schedule_hsi_event(

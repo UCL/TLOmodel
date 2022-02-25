@@ -32,7 +32,7 @@ import pandas as pd
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata, demography
+from tlo.methods import Metadata, demography, tb
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
@@ -951,6 +951,11 @@ class Hiv(Module):
 
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
+        # if mother_id set to -1 by contraception DirectBirth, randomly sample from female pop
+        mother_id = mother_id if mother_id != -1 else self.rng.choice(
+            df.index[df.is_alive & (df.sex == "F") & (df.age_years > 16)])
+        assert mother_id != -1
+
         mother = df.loc[mother_id]
 
         mother_infected_prior_to_pregnancy = mother.hv_inf & (
@@ -998,8 +1003,7 @@ class Hiv(Module):
             # usually performed by care_of_women_during_pregnancy module
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
-                    self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
-
+                self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(person_id=mother_id, module=self, referred_from='ANC_routine'),
                     priority=1,
@@ -1010,8 +1014,7 @@ class Hiv(Module):
             # if mother known HIV+, schedule test for infant in 6 weeks (EI
             if mother.hv_diagnosed and \
                 df.at[child_id, "is_alive"] and (
-                    self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
-
+                self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(person_id=child_id, module=self, referred_from='Infant_testing'),
                     priority=1,
@@ -1652,12 +1655,12 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         # Do nothing if person is now on ART and VL suppressed (non VL suppressed has no effect)
         # only if no current TB infection
         if (df.at[person_id, "hv_art"] == "on_VL_suppressed") and (
-                df.at[person_id, "tb_inf"] != "active"):
+            df.at[person_id, "tb_inf"] != "active"):
             return
 
         # off ART, no TB infection
         if (df.at[person_id, "hv_art"] != "on_VL_suppressed") and (
-                df.at[person_id, "tb_inf"] != "active"):
+            df.at[person_id, "tb_inf"] != "active"):
             # cause is HIV (no TB)
             self.sim.modules["Demography"].do_death(
                 individual_id=person_id,
@@ -1897,7 +1900,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # also screen for tb
                     if "Tb" in self.sim.modules:
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
-                            self.sim.modules["Tb"].HSI_Tb_ScreeningAndRefer(
+                            tb.HSI_Tb_ScreeningAndRefer(
                                 person_id=person_id, module=self.sim.modules["Tb"]
                             ),
                             topen=self.sim.date,
@@ -2131,7 +2134,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # also screen for tb
         if "Tb" in self.sim.modules:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                self.sim.modules["Tb"].HSI_Tb_ScreeningAndRefer(
+                tb.HSI_Tb_ScreeningAndRefer(
                     person_id=person_id, module=self.sim.modules["Tb"]
                 ),
                 topen=self.sim.date,
