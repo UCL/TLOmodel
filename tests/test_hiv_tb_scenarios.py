@@ -452,14 +452,3 @@ def test_check_tb_test_under_each_scenario():
     assert test_for_hiv_positive == "xpert"
 
 
-
-
-
-
-
-
-
-
-
-
-

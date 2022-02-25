@@ -167,7 +167,7 @@ def test_natural_history():
     # select an adult who is alive with latent tb
     person_id = df.loc[df.is_alive & (df.tb_inf == 'latent') &
                        df.age_years.between(15, 80)].index[0]
-    assert person_id is not None # check person_id has been identified
+    assert person_id is not None  # check person_id has been identified
 
     # set tb strain to ds
     df.at[person_id, 'tb_strain'] = 'ds'

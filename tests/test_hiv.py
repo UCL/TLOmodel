@@ -65,7 +65,7 @@ def get_sim(seed, use_simplified_birth=True):
                      epi.Epi(resourcefilepath=resourcefilepath),
                      hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
                      tb.Tb(resourcefilepath=resourcefilepath),
-        )
+                     )
     else:
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                      pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
@@ -526,7 +526,8 @@ def test_aids_symptoms_lead_to_treatment_being_initiated(seed):
 
     # Confirm that they have aids symptoms and an AIDS death schedule
     assert 'aids_symptoms' in sim.modules['SymptomManager'].has_what(person_id)
-    assert 1 == len([ev[0] for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsTbDeathEvent)])
+    assert 1 == len(
+        [ev[0] for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsTbDeathEvent)])
 
     # Run the health-seeking poll and run the GenericFirstApptLevel0 that is Created
     hsp = HealthSeekingBehaviourPoll(module=sim.modules['HealthSeekingBehaviour'])
@@ -573,8 +574,8 @@ def test_art_is_initiated_for_infants(seed):
 
     # Populate the minimum set of keys within the mni dict so the on_birth function will run
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {
-        'twin_count': 0,  'single_twin_still_birth': False, 'labour_state': 'term_labour',
-        'stillbirth_in_labour': False, 'abx_for_prom_given': False,  'corticosteroids_given': False,
+        'twin_count': 0, 'single_twin_still_birth': False, 'labour_state': 'term_labour',
+        'stillbirth_in_labour': False, 'abx_for_prom_given': False, 'corticosteroids_given': False,
         'delivery_setting': 'health_centre', 'clean_birth_practices': False}
 
     # Do birth
@@ -1180,9 +1181,3 @@ def test_baseline_hiv_prevalence():
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")]
     ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")])
     assert male_prev_1549 > 0.08
-
-
-
-
-
-

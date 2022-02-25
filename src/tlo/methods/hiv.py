@@ -37,7 +37,6 @@ from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.methods.tb import HSI_Tb_ScreeningAndRefer
 from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
@@ -1898,7 +1897,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # also screen for tb
                     if "Tb" in self.sim.modules:
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
-                            HSI_Tb_ScreeningAndRefer(
+                            self.sim.modules["Tb"].HSI_Tb_ScreeningAndRefer(
                                 person_id=person_id, module=self.sim.modules["Tb"]
                             ),
                             topen=self.sim.date,
@@ -2132,7 +2131,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # also screen for tb
         if "Tb" in self.sim.modules:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_ScreeningAndRefer(
+                self.sim.modules["Tb"].HSI_Tb_ScreeningAndRefer(
                     person_id=person_id, module=self.sim.modules["Tb"]
                 ),
                 topen=self.sim.date,
