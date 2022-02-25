@@ -13,6 +13,7 @@ from tlo.methods import (
     demography,
     diarrhoea,
     enhanced_lifestyle,
+    epi,
     epilepsy,
     healthburden,
     healthseekingbehaviour,
@@ -22,7 +23,6 @@ from tlo.methods import (
     oesophagealcancer,
     simplified_births,
     symptommanager,
-    epi,
     tb,
 )
 
