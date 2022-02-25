@@ -1,7 +1,7 @@
 """ Tests for the TB Module """
 
-from pathlib import Path
 import os
+from pathlib import Path
 
 import pandas as pd
 
@@ -10,18 +10,18 @@ from tlo.methods import (
     care_of_women_during_pregnancy,
     demography,
     enhanced_lifestyle,
+    epi,
+    healthburden,
     healthseekingbehaviour,
     healthsystem,
-    healthburden,
+    hiv,
     labour,
     newborn_outcomes,
     postnatal_supervisor,
     pregnancy_supervisor,
     simplified_births,
     symptommanager,
-    epi,
-    hiv,
-    tb
+    tb,
 )
 
 try:
