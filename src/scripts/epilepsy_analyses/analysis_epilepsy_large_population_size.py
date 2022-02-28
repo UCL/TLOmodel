@@ -1,5 +1,3 @@
-import numpy as np
-
 from tlo import Date, logging
 from tlo.methods import (
     demography,
