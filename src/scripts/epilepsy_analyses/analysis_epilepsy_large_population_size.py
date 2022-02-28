@@ -27,7 +27,7 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'analysis_epilepsy_calibrate_incidence.py',
+            'filename': 'analysis_epilepsy_large_population_size.py',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.INFO,
