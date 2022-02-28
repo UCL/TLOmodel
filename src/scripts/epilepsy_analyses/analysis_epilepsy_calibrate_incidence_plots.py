@@ -1,22 +1,16 @@
 """This file uses the results of the batch file to make some summary statistics.
 The results of the bachrun were put into the 'outputs' results_folder
 """
-import json
-import os
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 from tlo.analysis.utils import (
     extract_params,
-    extract_results,
-    get_grid,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    summarize,
 )
 # NOTE THAT THIS FILE PATH IS UNIQUE EACH INDIVIDUAL AND WILL BE DIFFERENT FOR EACH USER
 outputspath = Path('./outputs/rmjlra2@ucl.ac.uk/')
@@ -30,6 +24,8 @@ results_folder = get_scenario_outputs('analysis_epilepsy_calibrate_incidence.py'
 log = load_pickled_dataframes(results_folder)
 
 # for each logfile we will calculate by hand the incidence per 100,000 person years
+
+
 def extract_inc_epilepsy_per_100000_person_years(results_folder):
     info = get_scenario_info(results_folder)
     ave_inc_per_draw = []
@@ -46,6 +42,7 @@ def extract_inc_epilepsy_per_100000_person_years(results_folder):
             inc_per_run.append(ep_df['inc_per_100000_p_y'].tolist())
         # calculate average incidence per draw
         ave_inc_per_draw.append([float(sum(col)) / len(col) for col in zip(*inc_per_run)])
+
 
 extract_inc_epilepsy_per_100000_person_years(results_folder)
 ep_inc = log['tlo.methods.epilepsy']['inc_epilepsy']

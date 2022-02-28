@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -184,6 +183,7 @@ class Epilepsy(Module):
             add_or_remove='+',
             disease_module=self
         )
+
         def allocate_antiepileptic(status, probability):
             mask = (df.is_alive & (df.ep_seiz_stat == status))
             random_draw = rng.random_sample(size=mask.sum())

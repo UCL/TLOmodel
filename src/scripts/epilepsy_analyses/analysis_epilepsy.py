@@ -66,8 +66,9 @@ output = parse_log_file(sim.log_filepath)
 # output = parse_log_file(sim.LogFile__2022-02-06T080307.log)
 
 prop_seiz_stat_1 = pd.Series(
- output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_1'].values,
-    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
+    output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_1'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
+)
 plt.plot(np.arange(len(prop_seiz_stat_1.index)), prop_seiz_stat_1, color='lightsteelblue', label='model')
 plt.xticks(np.arange(len(prop_seiz_stat_1.index)), prop_seiz_stat_1.index, rotation=45)
 plt.axhline(0.013, color='lightsalmon', label='Ba Diop et al. 2014')
@@ -80,8 +81,9 @@ plt.show()
 plt.clf()
 
 prop_seiz_stat_2 = pd.Series(
- output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_2'].values,
-    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
+    output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_2'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
+)
 plt.plot(np.arange(len(prop_seiz_stat_2.index)), prop_seiz_stat_2, color='lightsteelblue', label='model')
 plt.xticks(np.arange(len(prop_seiz_stat_2.index)), prop_seiz_stat_2.index, rotation=45)
 plt.axhline(0.013, color='lightsalmon', label='Ba Diop et al. 2014')
@@ -95,8 +97,9 @@ plt.clf()
 
 
 prop_seiz_stat_3 = pd.Series(
- output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_3'].values,
-    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
+    output['tlo.methods.epilepsy']['epilepsy_logging']['prop_seiz_stat_3'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
+)
 plt.plot(np.arange(len(prop_seiz_stat_3.index)), prop_seiz_stat_3, color='lightsteelblue', label='model')
 plt.xticks(np.arange(len(prop_seiz_stat_3.index)), prop_seiz_stat_3.index, rotation=45)
 plt.axhline(0.013, color='lightsalmon', label='Ba Diop et al. 2014')
@@ -121,24 +124,27 @@ plt.show()
 plt.clf()
 
 n_seiz_stat_1_3 = pd.Series(
- output['tlo.methods.epilepsy']['epilepsy_logging']['n_seiz_stat_1_3'].values,
-    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
+    output['tlo.methods.epilepsy']['epilepsy_logging']['n_seiz_stat_1_3'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
+)
 n_seiz_stat_1_3.plot()
 plt.title('Number with epilepsy (past or current)')
 plt.ylim(0, 800000)
 plt.show()
 
 n_seiz_stat_2_3 = pd.Series(
- output['tlo.methods.epilepsy']['epilepsy_logging']['n_seiz_stat_2_3'].values,
-    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
+    output['tlo.methods.epilepsy']['epilepsy_logging']['n_seiz_stat_2_3'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
+)
 n_seiz_stat_2_3.plot()
 plt.title('Number with epilepsy (infrequent or frequent seizures)')
 plt.ylim(0, 300000)
 plt.show()
 plt.clf()
 prop_antiepilep_seiz_stat_1 = pd.Series(
- output['tlo.methods.epilepsy']['epilepsy_logging']['prop_antiepilep_seiz_stat_1'].values,
-    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
+    output['tlo.methods.epilepsy']['epilepsy_logging']['prop_antiepilep_seiz_stat_1'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
+)
 prop_antiepilep_seiz_stat_1.plot()
 plt.title('Proportion on antiepileptics amongst people with epilepsy but no current seizures')
 plt.ylim(0, 1)
@@ -148,8 +154,9 @@ plt.show()
 plt.clf()
 
 prop_antiepilep_seiz_stat_2 = pd.Series(
- output['tlo.methods.epilepsy']['epilepsy_logging']['prop_antiepilep_seiz_stat_2'].values,
-    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
+    output['tlo.methods.epilepsy']['epilepsy_logging']['prop_antiepilep_seiz_stat_2'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
+)
 prop_antiepilep_seiz_stat_2.plot()
 plt.title('Proportion on antiepileptics amongst people with infrequent epilepsy seizures')
 plt.ylim(0, 1)
@@ -159,8 +166,9 @@ plt.show()
 plt.clf()
 
 prop_antiepilep_seiz_stat_3 = pd.Series(
- output['tlo.methods.epilepsy']['epilepsy_logging']['prop_antiepilep_seiz_stat_3'].values,
-    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
+    output['tlo.methods.epilepsy']['epilepsy_logging']['prop_antiepilep_seiz_stat_3'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
+)
 prop_antiepilep_seiz_stat_3.plot()
 plt.title('Proportion on antiepileptics amongst people with frequent epilepsy seizures')
 plt.ylim(0, 1)
@@ -170,16 +178,18 @@ plt.show()
 plt.clf()
 
 n_epi_death = pd.Series(
- output['tlo.methods.epilepsy']['epilepsy_logging']['n_epi_death'].values,
-    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
+    output['tlo.methods.epilepsy']['epilepsy_logging']['n_epi_death'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
+)
 n_epi_death.plot()
 plt.title('Number of deaths from epilepsy')
 plt.ylim(0, 50)
 plt.show()
 plt.clf()
 n_antiep = pd.Series(
- output['tlo.methods.epilepsy']['epilepsy_logging']['n_antiep'].values,
-    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
+    output['tlo.methods.epilepsy']['epilepsy_logging']['n_antiep'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
+)
 n_antiep.plot()
 plt.title('Number of people on antiepileptics')
 plt.ylim(0, 50000)
@@ -188,8 +198,9 @@ plt.ylim(0, 50000)
 plt.show()
 plt.clf()
 epi_death_rate = pd.Series(
- output['tlo.methods.epilepsy']['epilepsy_logging']['epi_death_rate'].values,
-    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date'])
+    output['tlo.methods.epilepsy']['epilepsy_logging']['epi_death_rate'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
+)
 plt.plot(np.arange(len(epi_death_rate)), epi_death_rate, color='lightsteelblue', label='Incidence of\ndeath')
 plt.hlines(np.mean(epi_death_rate), np.arange(len(epi_death_rate))[0], np.arange(len(epi_death_rate))[-1],
            label=f"Mean incidence of\ndeath = {np.round(np.mean(epi_death_rate), 3)}")
@@ -204,8 +215,9 @@ plt.clf()
 
 
 incidence_epilepsy = pd.Series(
- output['tlo.methods.epilepsy']['inc_epilepsy']['incidence_epilepsy'].values,
-    index=output['tlo.methods.epilepsy']['inc_epilepsy']['date'])
+    output['tlo.methods.epilepsy']['inc_epilepsy']['incidence_epilepsy'].values,
+    index=output['tlo.methods.epilepsy']['inc_epilepsy']['date']
+)
 plt.plot(np.arange(len(incidence_epilepsy)), incidence_epilepsy, color='lightsteelblue', label='Incidence of\nepilepsy')
 plt.hlines(np.mean(incidence_epilepsy), np.arange(len(incidence_epilepsy))[0], np.arange(len(incidence_epilepsy))[-1],
            color='steelblue', label=f"Mean incidence of\nepilepsy = {np.round(np.mean(incidence_epilepsy), 2)}")
