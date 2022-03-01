@@ -1892,6 +1892,3 @@ diff_capability['Diff_Staff_Count'] = diff_capability['Funded_Staff_Count'] - di
 diff_capability['Diff_Total_Mins_Per_Day'] = (diff_capability['Funded_Total_Mins_Per_Day'] -
                                               diff_capability['Curr_Total_Mins_Per_Day'])
 diff_capability.reset_index(drop=False, inplace=True)
-
-
-
