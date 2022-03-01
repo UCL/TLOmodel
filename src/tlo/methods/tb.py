@@ -375,6 +375,9 @@ class Tb(Module):
         "mdr_treatment_length": Parameter(
             Types.REAL, "length of treatment for mdr-tb in months"
         ),
+        "shine_treatment_length": Parameter(
+            Types.REAL, "length of treatment for shorter treatment option of children with minimal tb in months"
+        ),
         "prob_retained_ipt_6_months": Parameter(
             Types.REAL,
             "probability of being retained on IPT every 6 months if still eligible",
