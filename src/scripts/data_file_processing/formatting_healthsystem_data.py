@@ -1873,3 +1873,25 @@ def all_appts_can_run(capability):
 # appt_have_or_miss_capability_actual = all_appts_can_run(curr_daily_capability_coarse)
 # appt_have_or_miss_capability_actual.to_csv(
 #     outputlocation / 'human_resources' / 'actual' / 'appt_have_or_miss_capability.csv', index=False)
+
+
+# compare actual and funded capabilities
+funded_daily_capability_compare = funded_daily_capability_coarse.drop(columns=['Facility_ID', 'Facility_Name'],
+                                                                      inplace=False).copy()
+funded_daily_capability_compare.set_index(['Facility_Level', 'District', 'Region', 'Officer_Category'], inplace=True)
+funded_daily_capability_compare.rename(columns={'Total_Mins_Per_Day': 'Funded_Total_Mins_Per_Day',
+                                                'Staff_Count': 'Funded_Staff_Count'}, inplace=True)
+curr_daily_capability_compare = curr_daily_capability_coarse.drop(columns=['Facility_ID', 'Facility_Name'],
+                                                                  inplace=False).copy()
+curr_daily_capability_compare.set_index(['Facility_Level', 'District', 'Region', 'Officer_Category'], inplace=True)
+curr_daily_capability_compare.rename(columns={'Total_Mins_Per_Day': 'Curr_Total_Mins_Per_Day',
+                                              'Staff_Count': 'Curr_Staff_Count'}, inplace=True)
+diff_capability = funded_daily_capability_compare.join(curr_daily_capability_compare, how='outer')
+diff_capability.fillna(0, inplace=True)
+diff_capability['Diff_Staff_Count'] = diff_capability['Funded_Staff_Count'] - diff_capability['Curr_Staff_Count']
+diff_capability['Diff_Total_Mins_Per_Day'] = (diff_capability['Funded_Total_Mins_Per_Day'] -
+                                              diff_capability['Curr_Total_Mins_Per_Day'])
+diff_capability.reset_index(drop=False, inplace=True)
+
+
+
