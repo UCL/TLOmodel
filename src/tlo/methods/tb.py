@@ -1654,9 +1654,23 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
             )
         ].index
 
+        # ---------------------- treatment end: shorter child treatment (4 months) ---------------------- #
+        # end treatment for children on shorter treatment option (shine trial)
+        end_tx_child_shorter_idx = df.loc[
+            df.is_alive
+            & df.tb_on_treatment
+            & (df.tb_treatment_regimen == 'tb_tx_child_shorter')
+            & (
+                now
+                > (df.tb_date_treated + pd.DateOffset(months=p["shine_treatment_length"]))
+            )
+            & ~df.tb_ever_treated
+            ].index
+
         # join indices
         end_tx_idx = end_ds_tx_idx.union(end_ds_retx_idx)
         end_tx_idx = end_tx_idx.union(end_mdr_tx_idx)
+        end_tx_idx = end_tx_idx.union(end_tx_child_shorter_idx)
 
         # ---------------------- treatment failure ---------------------- #
         # sample some to have treatment failure
