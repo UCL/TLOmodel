@@ -163,8 +163,8 @@ py.index = pd.to_datetime(years, format="%Y")
 
 # Active TB incidence per 100,000 person-years - annual outputs
 TB_inc = output["tlo.methods.tb"]["tb_incidence"]
-TB_inc = TB_inc.set_index("date")
-TB_inc.index = pd.to_datetime(TB_inc.index)
+years = pd.to_datetime(TB_inc["date"]).dt.year
+TB_inc.index = pd.to_datetime(years, format="%Y")
 activeTB_inc_rate = (TB_inc["num_new_active_tb"] / py) * 100000
 
 make_plot(
@@ -187,7 +187,7 @@ make_plot(
     title_str=title_str,
     model=latentTB_prev["tbPrevLatent"],
 )
-plt.ylim((0, 0.4))
+plt.ylim((0, 1.0))
 # add latent TB estimate from Houben & Dodd 2016 (value for year=2014)
 plt.errorbar(
     latentTB_prev.index[4],
@@ -195,7 +195,15 @@ plt.errorbar(
     yerr=[[data_tb_latent_yerr[0]], [data_tb_latent_yerr[1]]],
     fmt="o",
 )
-plt.legend(["Model", "Data"])
+# cohen, mathiasen 2019, 33.6% (22.4 - 42.9%)
+plt.errorbar(
+    latentTB_prev.index[9],
+    0.336,
+    yerr=[[0.092], [0.092]],
+    fmt="o",
+)
+plt.ylabel("Prevalence")
+plt.legend(["Model", "Estimate: Houben", "Estimate: Cohen"])
 # plt.savefig(
 #     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
 # )
@@ -492,9 +500,13 @@ plt.show()
 
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
-list_of_paths = outputpath.glob('*.log')
+list_of_paths = outputpath.glob('*.log')  # gets latest log file
 latest_path = max(list_of_paths, key=lambda p: p.stat().st_ctime)
 
+# latest_path = sim.log_filepath
+# tlo.methods.deviance_measure.log written after log file below:
+# outputs\deviance__2022-01-20T105927.log
+# latest_path = "outputs\deviance_calibrated__2022-02-22T104323.log"
 death_compare = compare_number_of_deaths(latest_path, resourcefilepath)
 
 # include all ages and both sexes
@@ -840,7 +852,9 @@ plt.show()
 # plt.xlabel('Survival time, years')
 # plt.ylabel('Frequency')
 # plt.grid(axis='y', alpha=0.75)
-# plt.savefig(outputpath / ("Distribution of survival times for HIV+ children (untreated)" + datestamp + ".png"), format='png')
+# plt.savefig(outputpath / (
+#   "Distribution of survival times for HIV+ children (untreated)" + datestamp + ".png"),
+#   format='png')
 # plt.show()
 #
 #

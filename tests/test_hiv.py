@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.lm import LinearModel
@@ -14,7 +15,9 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
+    epi,
     hiv,
+    tb,
     hsi_generic_first_appts,
     labour,
     newborn_outcomes,
@@ -45,11 +48,11 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def get_sim(use_simplified_birth=True):
+def get_sim(seed, use_simplified_birth=True):
     """get sim with the checks for configuration of properties running in the HIV module"""
     start_date = Date(2010, 1, 1)
     popsize = 1000
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     if use_simplified_birth:
@@ -59,8 +62,10 @@ def get_sim(use_simplified_birth=True):
                      healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
-                     )
+                     epi.Epi(resourcefilepath=resourcefilepath),
+                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
+                     tb.Tb(resourcefilepath=resourcefilepath),
+        )
     else:
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                      pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
@@ -72,7 +77,9 @@ def get_sim(use_simplified_birth=True):
                      healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                     epi.Epi(resourcefilepath=resourcefilepath),
                      hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
+                     tb.Tb(resourcefilepath=resourcefilepath),
                      # Disable check to avoid error due to lack of Contraception module
                      check_all_dependencies=False,
                      )
@@ -113,11 +120,12 @@ def start_sim_and_clear_event_queues(sim):
     return sim
 
 
-def test_basic_run_with_default_parameters():
+@pytest.mark.slow
+def test_basic_run_with_default_parameters(seed):
     """Run the HIV module with check and check dtypes consistency"""
     end_date = Date(2015, 12, 31)
 
-    sim = get_sim()
+    sim = get_sim(seed=seed)
     check_dtypes(sim)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
@@ -125,11 +133,11 @@ def test_basic_run_with_default_parameters():
     sim.modules['Hiv'].check_config_of_properties()
 
 
-def test_initialisation():
+def test_initialisation(seed):
     """check that the natural history plays out as expected for those that are infected at the beginning of the sim"""
 
     # get simulation and initialise the simulation:
-    sim = get_sim()
+    sim = get_sim(seed=seed)
     sim.modules['Hiv'].initialise_simulation(sim)
     df = sim.population.props
 
@@ -155,12 +163,12 @@ def test_initialisation():
         assert next_event_date >= sim.date
 
 
-def test_generation_of_new_infection():
+def test_generation_of_new_infection(seed):
     """Check that the generation of new infections is as expected.
     This occurs in the Main Polling Event.
     """
 
-    sim = get_sim()
+    sim = get_sim(seed=seed)
     pollevent = hiv.HivRegularPollingEvent(module=sim.modules['Hiv'])
     df = sim.population.props
 
@@ -198,14 +206,14 @@ def test_generation_of_new_infection():
     assert any_hiv_infection_event_in_queue()
 
 
-def test_generation_of_natural_history_process_no_art():
+def test_generation_of_natural_history_process_no_art(seed):
     """Check that:
     * New infections leads to a scheduled AIDS event
     * AIDS events lead to a scheduled AIDS death when no ART
     * The AIDS death event results in an actual death when no ART
     """
 
-    sim = get_sim()
+    sim = get_sim(seed=seed)
     df = sim.population.props
 
     # select an adult who is alive and not currently infected
@@ -242,13 +250,13 @@ def test_generation_of_natural_history_process_no_art():
     assert "AIDS_non_TB" == df.at[person_id, "cause_of_death"]
 
 
-def test_generation_of_natural_history_process_with_art_before_aids():
+def test_generation_of_natural_history_process_with_art_before_aids(seed):
     """Check that:
     * New infections leads to a scheduled AIDS event
     * If on ART before AIDS onset, the AIDS events does not do anything and does not lead to a scheduled AIDS death
     """
 
-    sim = get_sim()
+    sim = get_sim(seed=seed)
     df = sim.population.props
 
     # select an adult who is alive and not currently infected
@@ -279,14 +287,14 @@ def test_generation_of_natural_history_process_with_art_before_aids():
     assert "aids_symptoms" not in sim.modules['SymptomManager'].has_what(person_id)
 
 
-def test_generation_of_natural_history_process_with_art_after_aids():
+def test_generation_of_natural_history_process_with_art_after_aids(seed):
     """Check that:
     * New infections leads to a scheduled AIDS event
     * AIDS event leads to AIDS death scheduled
     * If on ART before AIDS death, the AIDS Death does not do anything and does not lead to an actual death
     """
 
-    sim = get_sim()
+    sim = get_sim(seed=seed)
     df = sim.population.props
 
     # select an adult who is alive and not currently infected
@@ -326,12 +334,12 @@ def test_generation_of_natural_history_process_with_art_after_aids():
     assert np.isnan(df.at[person_id, "cause_of_death"])
 
 
-def test_mtct_at_birth():
+def test_mtct_at_birth(seed):
     """Check that:
     * HIV infection events are created when the mother during breastfeeding
     """
 
-    sim = get_sim()
+    sim = get_sim(seed=seed)
 
     # Manipulate MTCT rates so that transmission always occurs at/before birth
     sim.modules['Hiv'].parameters["prob_mtct_treated"] = 1.0
@@ -353,12 +361,12 @@ def test_mtct_at_birth():
     assert sim.population.props.at[child_id, "hv_inf"]
 
 
-def test_mtct_during_breastfeeding_if_mother_infected_already():
+def test_mtct_during_breastfeeding_if_mother_infected_already(seed):
     """Check that:
     * HIV infection events are created during breastfeeding if the mother is HIV-positive (prior to the birth)
     """
 
-    sim = get_sim()
+    sim = get_sim(seed=seed)
 
     # Manipulate MTCT rates so that transmission always occurs following birth
     sim.modules['Hiv'].parameters["prob_mtct_treated"] = 0.0
@@ -393,12 +401,12 @@ def test_mtct_during_breastfeeding_if_mother_infected_already():
     assert sim.population.props.at[child_id, "hv_inf"]
 
 
-def test_mtct_during_breastfeeding_if_mother_infected_during_breastfeeding():
+def test_mtct_during_breastfeeding_if_mother_infected_during_breastfeeding(seed):
     """Check that:
     * HIV infection events are created during breastfeeding if the mother is infected _whilst_ breastfeeding.
     """
 
-    sim = get_sim()
+    sim = get_sim(seed=seed)
 
     # Manipulate MTCT rates so that transmission always occurs during bf is the mother is HIV-pos
     sim.modules['Hiv'].parameters["prob_mtct_treated"] = 0.0
@@ -435,10 +443,10 @@ def test_mtct_during_breastfeeding_if_mother_infected_during_breastfeeding():
     ])
 
 
-def test_test_and_refer_event_scheduled_by_main_event_poll():
+def test_test_and_refer_event_scheduled_by_main_event_poll(seed):
     """Check that the main event poll causes there to be event of the HSI_TestAndRefer"""
 
-    sim = get_sim()
+    sim = get_sim(seed=seed)
 
     # Simulate for 0 days so as to complete all the initialisation steps
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -466,13 +474,13 @@ def test_test_and_refer_event_scheduled_by_main_event_poll():
     )
 
 
-def test_aids_symptoms_lead_to_treatment_being_initiated():
+def test_aids_symptoms_lead_to_treatment_being_initiated(seed):
     """Check that if aids-symptoms onset then treatment can be initiated (even without spontaneous testing)"""
 
     # Set up simulation object in custom way:
     start_date = Date(2010, 1, 1)
     popsize = 1000
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -518,7 +526,7 @@ def test_aids_symptoms_lead_to_treatment_being_initiated():
 
     # Confirm that they have aids symptoms and an AIDS death schedule
     assert 'aids_symptoms' in sim.modules['SymptomManager'].has_what(person_id)
-    assert 1 == len([ev[0] for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsDeathEvent)])
+    assert 1 == len([ev[0] for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsTbDeathEvent)])
 
     # Run the health-seeking poll and run the GenericFirstApptLevel0 that is Created
     hsp = HealthSeekingBehaviourPoll(module=sim.modules['HealthSeekingBehaviour'])
@@ -532,14 +540,14 @@ def test_aids_symptoms_lead_to_treatment_being_initiated():
                      isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer)])
 
 
-def test_art_is_initiated_for_infants():
+def test_art_is_initiated_for_infants(seed):
     """Check that infant infected at birth, and tested, diagnosed and start ART"""
     # This test ensures that HIVTestAndRefer is scheduled for all newborns who
     # pass through the newborn HSI (i.e. their mother gave birth in a health facility). We therefore now assume that no
     # newborns born at home get HIV testing unless they interact with the health system at a different point
 
     # Create simulation object that uses the Newborn module:
-    sim = get_sim(use_simplified_birth=False)
+    sim = get_sim(seed=seed, use_simplified_birth=False)
 
     # Simulate for 0 days so as to complete all the initialisation steps
     sim = start_sim_and_clear_event_queues(sim)
@@ -549,6 +557,12 @@ def test_art_is_initiated_for_infants():
     sim.modules['Hiv'].parameters["prob_mtct_treated"] = 1.0
     sim.modules['Hiv'].parameters["prob_mtct_untreated"] = 1.0
     sim.modules['Hiv'].parameters["prob_mtct_incident_preg"] = 1.0
+
+    # change prob ART start after diagnosis
+    sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"]["value"] = 1.0
+
+    # Manipulate CFR for deaths due to not breathing at birth
+    sim.modules['NewbornOutcomes'].parameters['cfr_failed_to_transition'] = 0.0
 
     # Do a birth from a mother that is HIV-positive:
     df = sim.population.props
@@ -608,9 +622,9 @@ def test_art_is_initiated_for_infants():
     ])
 
 
-def test_hsi_testandrefer_and_circ():
+def test_hsi_testandrefer_and_circ(seed):
     """Test that the HSI for testing and referral to circumcision works as intended"""
-    sim = get_sim()
+    sim = get_sim(seed=seed)
     sim = start_sim_and_clear_event_queues(sim)
     sim = adjust_availability_of_consumables_for_hiv(sim, available=True)
 
@@ -644,9 +658,9 @@ def test_hsi_testandrefer_and_circ():
     assert df.at[person_id, "hv_number_tests"] > 0
 
 
-def test_hsi_testandrefer_and_behavchg():
+def test_hsi_testandrefer_and_behavchg(seed):
     """Test that the HSI for testing and behaviour change works as intended"""
-    sim = get_sim()
+    sim = get_sim(seed=seed)
     sim = start_sim_and_clear_event_queues(sim)
     sim = adjust_availability_of_consumables_for_hiv(sim, available=True)
 
@@ -672,9 +686,9 @@ def test_hsi_testandrefer_and_behavchg():
     assert df.at[person_id, "hv_number_tests"] > 0
 
 
-def test_hsi_testandrefer_and_prep():
+def test_hsi_testandrefer_and_prep(seed):
     """Test that the HSI for testing and referral to PrEP works as intended"""
-    sim = get_sim()
+    sim = get_sim(seed=seed)
     sim = start_sim_and_clear_event_queues(sim)
     sim = adjust_availability_of_consumables_for_hiv(sim, available=True)
 
@@ -748,16 +762,19 @@ def test_hsi_testandrefer_and_prep():
     ])
 
 
-def test_hsi_testandrefer_and_art():
+def test_hsi_testandrefer_and_art(seed):
     """Test that the HSI for testing and referral to ART works as intended
     Check that ART is stopped (and AIDS event scheduled) if person decides not to continue ART"""
-    sim = get_sim()
+    sim = get_sim(seed=seed)
 
     sim = start_sim_and_clear_event_queues(sim)
     sim = adjust_availability_of_consumables_for_hiv(sim, available=True)
 
     # Make the chance of being referred to ART following testing is 100%
     sim.modules['Hiv'].lm['lm_art'] = LinearModel.multiplicative()
+
+    # change prob ART start after diagnosis
+    sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"]["value"] = 1.0
 
     # Make sure that the person will continue to seek care
     sim.modules['Hiv'].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1.0
@@ -838,11 +855,11 @@ def test_hsi_testandrefer_and_art():
     ])
 
 
-def test_hsi_art_stopped_due_to_no_drug_available_and_no_restart():
+def test_hsi_art_stopped_due_to_no_drug_available_and_no_restart(seed):
     """Check that if drug not available at HSI, person will default off ART.
     If set not to restart, will have no further HSI"""
 
-    sim = get_sim()
+    sim = get_sim(seed=seed)
     sim = start_sim_and_clear_event_queues(sim)
 
     # make sure consumables for art are *NOT* available:
@@ -876,11 +893,11 @@ def test_hsi_art_stopped_due_to_no_drug_available_and_no_restart():
     ])
 
 
-def test_hsi_art_stopped_due_to_no_drug_available_but_will_restart():
+def test_hsi_art_stopped_due_to_no_drug_available_but_will_restart(seed):
     """Check that if drug not available at HSI, person will default off ART.
     If set not restart, will have a further HSI scheduled"""
 
-    sim = get_sim()
+    sim = get_sim(seed=seed)
     sim = start_sim_and_clear_event_queues(sim)
 
     # make sure consumables for art are *NOT* available:
@@ -914,11 +931,11 @@ def test_hsi_art_stopped_due_to_no_drug_available_but_will_restart():
     ])
 
 
-def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_and_no_restart():
+def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_and_no_restart(seed):
     # Make the health-system unavailable to run any HSI event
     start_date = Date(2010, 1, 1)
     popsize = 1000
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -1009,12 +1026,12 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_and_no_restart():
     ])
 
 
-def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_but_will_restart():
+def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_but_will_restart(seed):
     # Make the health-system unavailable to run any HSI event
 
     start_date = Date(2010, 1, 1)
     popsize = 1000
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -1105,11 +1122,11 @@ def test_hsi_art_stopped_if_healthsystem_cannot_run_hsi_but_will_restart():
     ])
 
 
-def test_use_dummy_version():
+def test_use_dummy_version(seed):
     """check that the dummy version of the HIV module works ok: provides the hv_inf property as a bool"""
     start_date = Date(2010, 1, 1)
     popsize = 1000
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -1125,3 +1142,47 @@ def test_use_dummy_version():
     df = sim.population.props
     assert df.dtypes['hv_inf'].name == 'bool'
     assert df.loc[df.is_alive, 'hv_inf'].all()
+
+
+def test_baseline_hiv_prevalence():
+    """
+    check baseline prevalence set correctly
+    """
+    start_date = Date(2010, 1, 1)
+    popsize = 100000
+    sim = Simulation(start_date=start_date, seed=0)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False)
+                 )
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+    df = sim.population.props
+
+    adult_prev_1549 = len(
+        df[df.hv_inf & df.is_alive & df.age_years.between(15, 49)]
+    ) / len(df[df.is_alive & df.age_years.between(15, 49)])
+    assert adult_prev_1549 > 0.1
+
+    female_prev_1549 = len(
+        df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")]
+    ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")])
+    assert female_prev_1549 > 0.11
+
+    male_prev_1549 = len(
+        df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")]
+    ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")])
+    assert male_prev_1549 > 0.08
+
+
+
+
+
+

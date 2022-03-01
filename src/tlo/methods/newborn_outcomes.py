@@ -1129,6 +1129,40 @@ class NewbornOutcomes(Module):
         :param child_id: child_id
         """
         df = self.sim.population.props
+
+        if mother_id == -1:
+            # The child has been born without a mother identified (from contraception.DirectBirth), so give the child
+            # the default properties:
+            child = {
+                'nb_is_twin': False,
+                'nb_twin_sibling_id': -1,
+                'nb_early_preterm': False,
+                'nb_late_preterm': False,
+                'nb_preterm_birth_disab': 'none',
+                'nb_congenital_anomaly': 'none',
+                'nb_early_onset_neonatal_sepsis': False,
+                'nb_inj_abx_neonatal_sepsis': False,
+                'nb_supp_care_neonatal_sepsis': False,
+                'nb_neonatal_sepsis_disab': 'none',
+                'nb_preterm_respiratory_distress': False,
+                'nb_not_breathing_at_birth': False,
+                'nb_received_neonatal_resus': False,
+                'nb_encephalopathy': 'none',
+                'nb_encephalopathy_disab': 'none',
+                'nb_retinopathy_prem': 'none',
+                'nb_low_birth_weight_status': 'normal_birth_weight',
+                'nb_size_for_gestational_age': 'average_for_gestational_age',
+                'nb_early_init_breastfeeding': False,
+                'nb_breastfeeding_status': 'none',
+                'nb_kangaroo_mother_care': False,
+                'nb_clean_birth': False,
+                'nb_received_cord_care': False,
+                'nb_death_after_birth': False,
+                'nb_death_after_birth_date': pd.NaT
+            }
+            df.loc[child_id, child.keys()] = child.values()
+            return
+
         params = self.parameters
         nci = self.newborn_care_info
 

@@ -42,7 +42,7 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def test_using_parameter_or_argument_to_set_service_availability():
+def test_using_parameter_or_argument_to_set_service_availability(seed):
     """
     Check that can set service_availability through argument or through parameter.
     Should be equal to what is specified by the parameter, but overwrite with what was provided in argument if an
@@ -50,7 +50,7 @@ def test_using_parameter_or_argument_to_set_service_availability():
     """
 
     # No specification with argument --> everything is available
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
@@ -60,7 +60,7 @@ def test_using_parameter_or_argument_to_set_service_availability():
     assert sim.modules['HealthSystem'].service_availability == ['*']
 
     # Editing parameters --> that is reflected in what is used
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     service_availability_params = ['HSI_that_begin_with_A*', 'HSI_that_begin_with_B*']
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
@@ -72,7 +72,7 @@ def test_using_parameter_or_argument_to_set_service_availability():
     assert sim.modules['HealthSystem'].service_availability == service_availability_params
 
     # Editing parameters, but with an argument provided to module --> argument over-writes parameter edits
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     service_availability_arg = ['HSI_that_begin_with_C*']
     service_availability_params = ['HSI_that_begin_with_A*', 'HSI_that_begin_with_B*']
     sim.register(
@@ -85,8 +85,9 @@ def test_using_parameter_or_argument_to_set_service_availability():
     assert sim.modules['HealthSystem'].service_availability == service_availability_arg
 
 
-def test_run_with_healthsystem_no_disease_modules_defined():
-    sim = Simulation(start_date=start_date, seed=0)
+@pytest.mark.slow
+def test_run_with_healthsystem_no_disease_modules_defined(seed):
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -107,7 +108,8 @@ def test_run_with_healthsystem_no_disease_modules_defined():
     check_dtypes(sim)
 
 
-def test_run_no_interventions_allowed(tmpdir):
+@pytest.mark.slow
+def test_run_no_interventions_allowed(tmpdir, seed):
     # There should be no events run or scheduled
 
     # Establish the simulation object
@@ -116,7 +118,7 @@ def test_run_no_interventions_allowed(tmpdir):
         "directory": tmpdir,
         "custom_levels": {"*": logging.INFO}
     }
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     # Get ready for temporary log-file
     # Define the service availability as null
@@ -158,12 +160,13 @@ def test_run_no_interventions_allowed(tmpdir):
     assert not any(sim.population.props['mi_status'] == 'P')  # No cures
 
 
-def test_run_in_mode_0_with_capacity(tmpdir):
+@pytest.mark.slow
+def test_run_in_mode_0_with_capacity(tmpdir, seed):
     # Events should run and there be no squeeze factors
     # (Mode 0 -> No Constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -199,12 +202,13 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
-def test_run_in_mode_0_no_capacity(tmpdir):
+@pytest.mark.slow
+def test_run_in_mode_0_no_capacity(tmpdir, seed):
     # Every events should run (no did_not_run) and no squeeze factors
     # (Mode 0 -> No Constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -240,12 +244,13 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
-def test_run_in_mode_1_with_capacity(tmpdir):
+@pytest.mark.slow
+def test_run_in_mode_1_with_capacity(tmpdir, seed):
     # All events should run with some zero squeeze factors
     # (Mode 1 -> elastic constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -281,12 +286,13 @@ def test_run_in_mode_1_with_capacity(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
-def test_run_in_mode_1_with_no_capacity(tmpdir):
+@pytest.mark.slow
+def test_run_in_mode_1_with_no_capacity(tmpdir, seed):
     # Events should run but with high squeeze factors
     # (Mode 1 -> elastic constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -324,12 +330,13 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
-def test_run_in_mode_2_with_capacity(tmpdir):
+@pytest.mark.slow
+def test_run_in_mode_2_with_capacity(tmpdir, seed):
     # All events should run
     # (Mode 2 -> hard constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -365,14 +372,15 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.slow
 @pytest.mark.group2
-def test_run_in_mode_2_with_no_capacity(tmpdir):
+def test_run_in_mode_2_with_no_capacity(tmpdir, seed):
     # No individual level events should run and the log should contain events with a flag showing that all individual
     # events did not run. Population level events should have run.
     # (Mode 2 -> hard constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -411,13 +419,14 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
 
 
 # todo - need some better tests for consumables
-def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
+@pytest.mark.slow
+def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir, seed):
     # Events should run and there be no squeeze factors
     # (Mode 0 -> No Constraints)
     # Ignoring consumables constraints --> all requests for consumables granted
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -453,12 +462,13 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.slow
 @pytest.mark.group2
-def test_run_in_with_hs_disabled(tmpdir):
+def test_run_in_with_hs_disabled(tmpdir, seed):
     # All events should run but no logging from healthsystem
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -498,12 +508,13 @@ def test_run_in_with_hs_disabled(tmpdir):
     assert any(['HSIEventWrapper' in str(ev_name) for ev_name in list_of_ev_name])
 
 
-def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
+@pytest.mark.slow
+def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir, seed):
     # All events should run
     # (Mode 2 -> hard constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -537,7 +548,8 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
-def test_all_appt_types_can_run():
+@pytest.mark.slow
+def test_all_appt_types_can_run(seed):
     """Check that if an appointment type is declared as one that can run at a facility-type of level `x` that it can
     run at the level for persons in any district."""
     # todo - repeat for actual and funded and see if we get the right level of appt_availability
@@ -571,7 +583,7 @@ def test_all_appt_types_can_run():
                 # is not at all available.
                 self.this_hsi_event_ran = True
 
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules and simulate for 0 days
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -640,7 +652,7 @@ def test_all_appt_types_can_run():
     assert 0 == len(error_msg)
 
 
-def test_use_get_consumables():
+def test_use_get_consumables(seed):
     """Test that the helper function 'get_consumables' in the base class of the HSI works as expected."""
     # todo - check that this is coming out in log correctly
 
@@ -670,7 +682,7 @@ def test_use_get_consumables():
             pass
 
     # Create simulation with the HealthSystem and DummyModule
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),

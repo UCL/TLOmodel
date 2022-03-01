@@ -10,7 +10,6 @@ import numpy as np
 from tlo import Date, logging
 from tlo.methods import (
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     epi,
     healthburden,
@@ -65,7 +64,6 @@ class TestScenario(BaseScenario):
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
-            dx_algorithm_child.DxAlgorithmChild(resourcefilepath=self.resources),
             epi.Epi(resourcefilepath=self.resources),
             hiv.Hiv(resourcefilepath=self.resources),
             tb.Tb(resourcefilepath=self.resources),
