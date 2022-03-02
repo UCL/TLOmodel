@@ -43,20 +43,20 @@ class TestShorterTreatmentScenario(BaseScenario):
     def modules(self):
         return [
             demography.Demography(resourcefilepath=self.resources),
-            enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            epi.Epi(resourcefilepath=self.resources),
-            healthburden.HealthBurden(resourcefilepath=self.resources),
-            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(resourcefilepath=self.resources, disable=False, service_availability=['*']),
             simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
+            enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
+            healthsystem.HealthSystem(resourcefilepath=self.resources, disable=False, service_availability=['*']),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
+            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
+            healthburden.HealthBurden(resourcefilepath=self.resources),
+            epi.Epi(resourcefilepath=self.resources),
             hiv.Hiv(resourcefilepath=self.resources),
             tb.Tb(resourcefilepath=self.resources),
         ]
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'Tb': {'scenario': [0, 5][draw_number]}
+            'Tb': {'scenario': [0, 4][draw_number]}
         }
 
 
