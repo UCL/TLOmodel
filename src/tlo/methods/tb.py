@@ -358,6 +358,9 @@ class Tb(Module):
         "prob_tx_success_5_14": Parameter(
             Types.REAL, "Probability of treatment success for children aged 5-14 years"
         ),
+        "prob_tx_success_0_16_shorter": Parameter(
+            Types.REAL, "Probability of treatment success for children aged 0-16 years on shorter treatment regimen"
+        ),
         # ------------------ testing rates ------------------ #
         "rate_testing_general_pop": Parameter(
             Types.REAL,
