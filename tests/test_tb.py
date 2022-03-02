@@ -837,3 +837,151 @@ def test_cause_of_death():
     assert False is bool(df.at[person_id1, "is_alive"])
     assert sim.date == df.at[person_id1, "date_of_death"]
     assert "AIDS_TB" == df.at[person_id1, "cause_of_death"]
+
+
+def test_scenario_4_shorter_treatment_option():
+    """
+    run scenario 4 SHINE trial
+    - check children with smear negative tb are assigned to shorter treatment via xray referral
+    - check children with smear negative tb are assigned to shorter treatment via screening referral
+    - check follow up is scheduled 1-month after starting treatment
+    - check shorter treatment option ends at 4-months
+    """
+
+    sim = get_sim(use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+
+    # make population
+    popsize = 10
+    sim.make_initial_population(n=popsize)
+
+    # run scenario 4
+    sim.modules['Tb'].parameters["scenario"] = 4
+    sim.modules['Tb'].parameters["scenario_start_date"] = sim.date
+
+    # make clinical diagnosis perfect
+    sim.modules['Tb'].parameters["sens_xray_smear_negative"] = 1.0
+    sim.modules['Tb'].parameters["spec_xray_smear_negative"] = 1.0
+    sim.modules['Tb'].parameters["sens_sputum_smear_negative"] = 1.0
+    sim.modules['Tb'].parameters["spec_sputum_smear_negative"] = 1.0
+
+    # simulate for 0 days, just get everything set up (dxtests etc)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+
+    # --- CHECK CHILDREN WITH SMEAR NEGATIVE TB ARE ASSIGNED TO SHORTER TREATMENT VIA XRAY REFERRAL --
+    # create child aged <5 years with smear negative active tb
+    person_id_0 = 0
+    df.at[person_id_0, 'age_exact_years'] = 2
+    df.at[person_id_0, 'age_years'] = 2
+    df.at[person_id_0, 'tb_inf'] = 'active'
+    df.at[person_id_0, 'tb_date_active'] = sim.date
+    df.at[person_id_0, 'tb_strain'] = 'ds'
+    df.at[person_id_0, 'tb_smear'] = False
+
+    # assign symptoms
+    symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+
+    for symptom in symptom_list:
+        sim.modules["SymptomManager"].change_symptom(
+            person_id=person_id_0,
+            symptom_string=symptom,
+            add_or_remove="+",
+            disease_module=sim.modules['Tb'],
+            duration_in_days=None,
+        )
+
+    assert set(sim.modules['SymptomManager'].has_what(person_id_0)) == symptom_list
+
+    # run tb screening and refer event
+    screening_and_refer = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id_0, module=sim.modules['Tb'])
+    screening_and_refer.apply(person_id=person_id_0, squeeze_factor=0)
+
+    # check tb xray level 1b event is scheduled and run
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id_0) if
+        isinstance(ev[1], tb.HSI_Tb_Xray_level1b)
+    ][0]
+
+    assert date_event == sim.date
+
+    xray_level1b = tb.HSI_Tb_Xray_level1b(person_id=person_id_0, module=sim.modules['Tb'])
+    xray_level1b.apply(person_id=person_id_0, squeeze_factor=0)
+
+    assert df.at[person_id_0, 'tb_ever_tested']
+    assert df.at[person_id_0, 'tb_diagnosed']
+    assert not df.at[person_id_0, 'tb_diagnosed_mdr']
+
+    # check start treatment event is scheduled and run
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id_0) if
+        isinstance(ev[1], tb.HSI_Tb_StartTreatment)
+    ][0]
+
+    assert date_event == sim.date
+
+    start_treatment = tb.HSI_Tb_StartTreatment(person_id=person_id_0, module=sim.modules['Tb'])
+    start_treatment.apply(person_id=person_id_0, squeeze_factor=0)
+
+    assert df.at[person_id_0, 'tb_on_treatment']
+    assert df.at[person_id_0, 'tb_treatment_regimen'] == "tb_tx_child_shorter"
+
+    # --- CHECK CHILDREN WITH SMEAR NEGATIVE TB ARE ASSIGNED TO SHORTER TREATMENT OPTION VIA SCREENING REFERRAL ---
+    # create child aged 5-16 years with smear negative active tb
+    person_id_1 = 1
+    df.at[person_id_1, 'age_exact_years'] = 8
+    df.at[person_id_1, 'age_years'] = 8
+    df.at[person_id_1, 'tb_inf'] = 'active'
+    df.at[person_id_1, 'tb_date_active'] = sim.date
+    df.at[person_id_1, 'tb_strain'] = 'ds'
+    df.at[person_id_1, 'tb_smear'] = False
+
+    # assign symptoms
+    symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+
+    for symptom in symptom_list:
+        sim.modules["SymptomManager"].change_symptom(
+            person_id=person_id_1,
+            symptom_string=symptom,
+            add_or_remove="+",
+            disease_module=sim.modules['Tb'],
+            duration_in_days=None,
+        )
+
+    assert set(sim.modules['SymptomManager'].has_what(person_id_1)) == symptom_list
+
+    # run tb screening and refer event
+    screening_and_refer = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id_1, module=sim.modules['Tb'])
+    screening_and_refer.apply(person_id=person_id_1, squeeze_factor=0)
+
+    # check start treatment event is scheduled and run
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id_1) if
+        isinstance(ev[1], tb.HSI_Tb_StartTreatment)
+    ][0]
+
+    assert date_event == sim.date
+
+    start_treatment = tb.HSI_Tb_StartTreatment(person_id=person_id_1, module=sim.modules['Tb'])
+    start_treatment.apply(person_id=person_id_1, squeeze_factor=0)
+
+    assert df.at[person_id_1, 'tb_on_treatment']
+    assert df.at[person_id_1, 'tb_treatment_regimen'] == "tb_tx_child_shorter"
+
+    # --- CHECK FOLLOW UP IS SCHEDULED 1 MONTH AFTER STARTING TREATMENT ---
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id_0) if
+        isinstance(ev[1], tb.HSI_Tb_FollowUp)
+    ][0]
+
+    assert date_event == sim.date + pd.DateOffset(months=1)
+
+    # --- CHECK SHORTER TREATMENT OPTION ENDS AT 4-MONTHS ---
+    # run tb end treatment event
+    sim.date = Date(2010, 5, 2)
+    tx_end_treatment = tb.TbEndTreatmentEvent(module=sim.modules['Tb'])
+    tx_end_treatment.apply(sim.population)
+
+    assert df.at[person_id_0, 'tb_ever_treated']
+    assert not df.at[person_id_0, 'tb_on_treatment']
+    assert not df.at[person_id_0, 'tb_treated_mdr']

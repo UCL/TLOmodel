@@ -311,9 +311,17 @@ class Tb(Module):
             Types.REAL, "specificity of Xpert test in smear negative TB cases"),
         "spec_xpert_smear_positive": Parameter(
             Types.REAL, "specificity of Xpert test in smear positive TB cases"),
+        "sens_sputum_smear_negative": Parameter(
+            Types.REAL,
+            "sensitivity of sputum smear microscopy in sputum negative cases",
+        ),
         "sens_sputum_smear_positive": Parameter(
             Types.REAL,
             "sensitivity of sputum smear microscopy in sputum positive cases",
+        ),
+        "spec_sputum_smear_negative": Parameter(
+            Types.REAL,
+            "specificity of sputum smear microscopy in sputum negative cases",
         ),
         "spec_sputum_smear_positive": Parameter(
             Types.REAL,
@@ -1008,8 +1016,8 @@ class Tb(Module):
             tb_sputum_test_smear_negative=DxTest(
                 property='tb_inf',
                 target_categories=["active"],
-                sensitivity=0.0,
-                specificity=0.0,
+                sensitivity=p["sens_sputum_smear_negative"],
+                specificity=p["spec_sputum_smear_negative"],
                 item_codes=self.item_codes_for_consumables_required['sputum_test']
             )
         )
