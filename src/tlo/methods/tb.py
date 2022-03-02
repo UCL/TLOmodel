@@ -1752,6 +1752,20 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
 
         ].index
 
+        # children aged 0-16 on shorter treatment
+        ds_tx_failure0_16_shorter_tx_idx = df.loc[
+            df.is_alive
+            & (df.tb_strain == "ds")
+            & df.tb_on_treatment
+            & (df.tb_treatment_regimen == "tb_tx_child_shorter")
+            & (
+                now
+                > (df.tb_date_treated + pd.DateOffset(months=p["shine_treatment_length"]))
+            )
+            & (df.age_years.between(0, 16))
+            & (random_var < (1 - p["prob_tx_success_0_16_shorter"]))
+            ].index
+
         # join indices of failing cases together
         tx_failure = (
             list(ds_tx_failure0_4_idx)
@@ -1759,6 +1773,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
             + list(ds_tx_failure_adult_idx)
             + list(failure_in_mdr_with_ds_tx_idx)
             + list(failure_due_to_mdr_idx)
+            + list(ds_tx_failure0_16_shorter_tx_idx)
         )
 
         if tx_failure:
