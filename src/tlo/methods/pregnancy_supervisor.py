@@ -1824,6 +1824,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # We assume women who seek care will present to a form of Maternal Assessment Unit- not through normal A&E
         for person in care_seeking.loc[care_seeking].index:
 
+            # Determine if care seeking is delayed
+            pregnancy_helper_functions.check_if_delayed_careseeking(self, person)
+
             from tlo.methods.care_of_women_during_pregnancy import (
                 HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment,
             )

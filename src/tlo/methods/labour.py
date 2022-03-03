@@ -365,6 +365,14 @@ class Labour(Module):
 
         'probability_delivery_hospital': Parameter(
             Types.LIST, 'probability of delivering in a hospital'),
+        'prob_delay_one_two_fd': Parameter(
+            Types.LIST, ''),
+        'squeeze_threshold_for_delay_three_bemonc': Parameter(
+            Types.LIST, ''),
+        'squeeze_threshold_for_delay_three_cemonc': Parameter(
+            Types.LIST, ''),
+        'squeeze_threshold_for_delay_three_pn': Parameter(
+            Types.LIST, ''),
 
         # PNC CHECK...
         'prob_timings_pnc': Parameter(
@@ -475,27 +483,33 @@ class Labour(Module):
         'treatment_effect_cs_still_birth': Parameter(
             Types.LIST, 'effect of caesarean section delivery on risk of intrapartum still birth'),
 
-        # SQUEEZE FACTOR THRESHOLDS...
-        'squeeze_threshold_proph_ints': Parameter(
-            Types.LIST, 'squeeze factor threshold below which prophylactic interventions for birth cant be given'),
-        'squeeze_threshold_treatment_spe': Parameter(
-            Types.LIST, 'squeeze factor threshold below which treatment for severe pre-eclampsia cant be given'),
-        'squeeze_threshold_treatment_ol': Parameter(
-            Types.LIST, 'squeeze factor threshold below which treatment for obstructed labour cant be given'),
-        'squeeze_threshold_treatment_sep': Parameter(
-            Types.LIST, 'squeeze factor threshold below which treatment for maternal sepsis cant be given'),
-        'squeeze_threshold_treatment_htn': Parameter(
-            Types.LIST, 'squeeze factor threshold below which treatment for hypertension cant be given'),
-        'squeeze_threshold_treatment_ec': Parameter(
-            Types.LIST, 'squeeze factor threshold below which treatment for eclampsia cant be given'),
-        'squeeze_threshold_treatment_ur': Parameter(
-            Types.LIST, 'squeeze factor threshold below which treatment for uterine rupture cant be given'),
-        'squeeze_threshold_treatment_aph': Parameter(
-            Types.LIST, 'squeeze factor threshold below which treatment for antepartum haemorrhage cant be given'),
-        'squeeze_threshold_treatment_pph': Parameter(
-            Types.LIST, 'squeeze factor threshold below which treatment for antepartum haemorrhage cant be given'),
-        'squeeze_threshold_amtsl': Parameter(
-            Types.LIST, 'squeeze factor threshold below which treatment for amtsl cant be given'),
+        # HEALTH CARE WORKER AVAILABILITY AND COMPETENCE...
+        'prob_hcw_avail_iv_abx': Parameter(
+            Types.LIST, ''),
+        'prob_hcw_avail_uterotonic': Parameter(
+            Types.LIST, ''),
+        'prob_hcw_avail_anticonvulsant': Parameter(
+            Types.LIST, ''),
+        'prob_hcw_avail_man_r_placenta': Parameter(
+            Types.LIST, ''),
+        'prob_hcw_avail_avd': Parameter(
+            Types.LIST, ''),
+        'prob_hcw_avail_blood_tran': Parameter(
+            Types.LIST, ''),
+        'prob_hcw_avail_surg': Parameter(
+            Types.LIST, ''),
+
+        'mean_hcw_competence_hc': Parameter(
+            Types.LIST, ''),
+        'mean_hcw_competence_hp': Parameter(
+            Types.LIST, ''),
+
+        # EFFECT OF DELAYS...
+        'treatment_effect_modifier_all_delays': Parameter(
+            Types.LIST, ''),
+        'treatment_effect_modifier_one_delay': Parameter(
+            Types.LIST, ''),
+
         'prob_intervention_delivered_sep_assessment_pnc': Parameter(
             Types.LIST, 'probability a woman will be assessed for infection during PNC given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
@@ -1080,6 +1094,7 @@ class Labour(Module):
         received_abx_for_prom = mni[person_id]['abx_for_prom_given']
         amtsl_given = mni[person_id]['amtsl_given']
         delivery_setting = mni[person_id]['delivery_setting']
+        delay = mni[person_id]['experienced_delay']
 
         if mni[person_id]['birth_weight'] == 'macrosomia':
             macrosomia = True
@@ -1094,7 +1109,8 @@ class Labour(Module):
                                                      received_blood_transfusion=has_rbt,
                                                      amtsl_given=amtsl_given,
                                                      macrosomia=macrosomia,
-                                                     delivery_setting=delivery_setting)[person_id]
+                                                     delivery_setting=delivery_setting,
+                                                     delay=delay)[person_id]
 
     def reset_due_date(self, id_or_index, new_due_date):
         """
@@ -1463,6 +1479,10 @@ class Labour(Module):
         # If she hasn't died from any complications, we reset some key properties that resolve after risk of death
         # has been applied
         else:
+
+            # Reset delay property
+            mni[individual_id]['experienced_delay'].clear()
+
             if df.at[individual_id, 'pn_htn_disorders'] == 'eclampsia':
                 df.at[individual_id, 'pn_htn_disorders'] = 'severe_pre_eclamp'
 
@@ -1585,6 +1605,27 @@ class Labour(Module):
     # The function is only called if the squeeze factor of the HSI calling the function is below a set 'threshold' for
     # each intervention. Thresholds will vary between intervention
 
+    def check_emonc_signal_function_will_run(self, sf, f_lvl):
+        """
+        This function runs a check against parameters describing the mean availability of HCWs capable of delivering
+        this intervention in the health system and the mean HCW competence to determine if a EmONC signal function of
+        interest will run (pending consumable check)
+        :param sf: (str) signal function
+        :param f_lvl: (str) facility level
+        :return: bool True or False
+        """
+        params = self.current_parameters
+
+        if f_lvl == '1a':
+            competence = params['mean_hcw_competence_hc']
+        else:
+            competence = params['mean_hcw_competence_hp']
+
+        if (self.rng.random_sample() < params[f'prob_hcw_avail_{sf}']) and (self.rng.random_sample() < competence):
+            return True
+        else:
+            return False
+
     def prophylactic_labour_interventions(self, hsi_event):
         """
         This function houses prophylactic interventions delivered by a Skilled Birth Attendant to women in labour.
@@ -1611,6 +1652,10 @@ class Labour(Module):
                     mni[person_id]['abx_for_prom_given'] = True
 
                 else:
+                    # Run HCW check
+                    sf_check = self.check_emonc_signal_function_will_run(sf='iv_abx',
+                                                                         f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
                     # If she has not already receive antibiotics, we check for consumables
                     avail = hsi_event.get_consumables(item_codes=cons['abx_for_prom'],
                                                       optional_item_codes=cons['iv_drug_equipment'])
@@ -1618,7 +1663,7 @@ class Labour(Module):
                     # Then query if these consumables are available during this HSI And provide if available.
                     # Antibiotics for from reduce risk of newborn sepsis within the first
                     # week of life
-                    if avail:
+                    if avail and sf_check:
                         mni[person_id]['abx_for_prom_given'] = True
 
             # ------------------------------ STEROIDS FOR PRETERM LABOUR -------------------------------
@@ -1626,6 +1671,7 @@ class Labour(Module):
             if mni[person_id]['labour_state'] == 'early_preterm_labour' or \
                mni[person_id]['labour_state'] == 'late_preterm_labour':
 
+                # todo: condition using EMONC data
                 avail = hsi_event.get_consumables(item_codes=cons['antenatal_steroids'],
                                                   optional_item_codes=cons['iv_drug_equipment'])
 
@@ -1650,6 +1696,7 @@ class Labour(Module):
         delivery_modes = ['vaginal', 'avd', 'cs']
         mode = self.rng.choice(delivery_modes, p=params[f'prob_delivery_modes_{complication}'])
 
+        # todo: should only happen if cons avail
         if mode == 'avd':
             mni[person_id]['mode_of_delivery'] = 'instrumental'
 
@@ -1688,13 +1735,17 @@ class Labour(Module):
             if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none') and (labour_stage == 'ip'):
                 self.determine_delivery_mode_in_spe_or_ec(person_id, 'spe')
 
+            # Run HCW check
+            sf_check = self.check_emonc_signal_function_will_run(sf='anticonvulsant',
+                                                                 f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
             # Define the required consumables
             avail = hsi_event.get_consumables(item_codes=cons['magnesium_sulfate'],
                                               optional_item_codes=cons['eclampsia_management_optional'])
 
             # If the consumables are available - the intervention is delivered. IV magnesium reduces the
             # probability that a woman with severe pre-eclampsia will experience eclampsia in labour
-            if avail:
+            if avail and sf_check:
                 df.at[person_id, 'la_severe_pre_eclampsia_treatment'] = True
 
     def assessment_and_treatment_of_hypertension(self, hsi_event):
@@ -1756,13 +1807,17 @@ class Labour(Module):
         elif (df.at[person_id, 'ps_htn_disorders'] == 'eclampsia') or (df.at[person_id, 'pn_htn_disorders'] ==
                                                                        'eclampsia'):
 
+            # Run HCW check
+            sf_check = self.check_emonc_signal_function_will_run(sf='anticonvulsant',
+                                                                 f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
             avail = hsi_event.get_consumables(item_codes=cons['magnesium_sulfate'],
                                               optional_item_codes=cons['eclampsia_management_optional'])
 
             if (labour_stage == 'ip') and (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none'):
                 self.determine_delivery_mode_in_spe_or_ec(person_id, 'ec')
 
-            if avail:
+            if avail and sf_check:
                 # Treatment with magnesium reduces a womans risk of death from eclampsia
                 df.at[person_id, 'la_eclampsia_treatment'] = True
 
@@ -1792,11 +1847,15 @@ class Labour(Module):
             avail_forceps = hsi_event.get_consumables(item_codes=cons['forceps'])
             avail_vacuum = hsi_event.get_consumables(item_codes=cons['vacuum'])
 
+            # run HCW check
+            sf_check = self.check_emonc_signal_function_will_run(sf='avd',
+                                                                 f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
             # We assume women with CPD cannot be delivered via AVD and will require a caesarean
             if not mni[person_id]['cpd']:
                 # If the general package is available AND the facility has the correct tools to carry out the
                 # delivery then it can occur
-                if avail_forceps or avail_vacuum:
+                if (avail_forceps or avail_vacuum) and sf_check:
 
                     # If AVD was successful then we record the mode of delivery. We use this variable to reduce
                     # risk of intrapartum still birth when applying risk in the death event
@@ -1806,7 +1865,7 @@ class Labour(Module):
                     else:
                         # If unsuccessful, this woman will require a caesarean section
                         mni[person_id]['referred_for_cs'] = True
-                        mni[person_id]['cs_indication'] = 'ol_failed_avd'
+                        mni[person_id]['cs_indication'] = 'ol_failed_avd'  # todo: update?
                         logger.info(key='cs_ol', data={'person': person_id})
 
             else:
@@ -1839,11 +1898,15 @@ class Labour(Module):
                  (df.at[person_id, 'ac_admitted_for_immediate_delivery'] != 'none')) or
                (labour_stage == 'pp' and df.at[person_id, 'pn_sepsis_late_postpartum'])):
 
+                # run HCW check
+                sf_check = self.check_emonc_signal_function_will_run(sf='iv_abx',
+                                                                     f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
                 avail = hsi_event.get_consumables(item_codes=cons['maternal_sepsis_core'],
                                                   optional_item_codes=cons['maternal_sepsis_optional'])
 
                 # If delivered this intervention reduces a womans risk of dying from sepsis
-                if avail:
+                if avail and sf_check:
                     df.at[person_id, 'la_sepsis_treatment'] = True
 
     def assessment_and_plan_for_antepartum_haemorrhage(self, hsi_event):
@@ -1918,9 +1981,13 @@ class Labour(Module):
             avail = hsi_event.get_consumables(item_codes=cons['amtsl'],
                                               optional_item_codes=cons['iv_drug_equipment'])
 
+            # run HCW check
+            sf_check = self.check_emonc_signal_function_will_run(sf='uterotonic',
+                                                                 f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
             # This treatment reduces a womans risk of developing uterine atony AND retained placenta, both of which are
             # preceding causes of postpartum haemorrhage
-            if avail:
+            if avail and sf_check:
                 mni[person_id]['amtsl_given'] = True
 
     def assessment_and_treatment_of_pph_uterine_atony(self, hsi_event):
@@ -1944,8 +2011,11 @@ class Labour(Module):
 
             avail = hsi_event.get_consumables(item_codes=cons['pph_core'],
                                               optional_item_codes=cons['pph_optional'])
+            # run HCW check
+            sf_check = self.check_emonc_signal_function_will_run(sf='uterotonic',
+                                                                 f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
 
-            if avail:
+            if avail and sf_check:
 
                 # We apply a probability that this treatment will stop a womans bleeding in the first instance
                 # meaning she will not require further treatment
@@ -1986,9 +2056,13 @@ class Labour(Module):
             # intervention doesnt require consumables
             hsi_event.get_consumables(item_codes=self.item_codes_lab_consumables['pph_optional'])
 
+            # run HCW check
+            sf_check = self.check_emonc_signal_function_will_run(sf='man_r_placenta',
+                                                                 f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
             # Similar to uterotonics we apply a probability that this intervention will successfully stop
             # bleeding to ensure some women go on to require further care
-            if params['prob_successful_manual_removal_placenta'] > self.rng.random_sample():
+            if sf_check and (params['prob_successful_manual_removal_placenta'] > self.rng.random_sample()):
 
                 df.at[person_id, 'la_postpartum_haem'] = False
                 mni[person_id]['retained_placenta'] = False
@@ -2013,29 +2087,33 @@ class Labour(Module):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         cons = self.item_codes_lab_consumables
 
+        # We log the log the required consumables and condition the surgery happening on the availability of the
+        # first consumable in this package, the anaesthetic required for the surgery
+        avail = hsi_event.get_consumables(item_codes=cons['obstetric_surgery_core'],
+                                          optional_item_codes=cons['obstetric_surgery_optional'])
+
+        # run HCW check
+        sf_check = self.check_emonc_signal_function_will_run(sf='surg',
+                                                             f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
         if not mni[person_id]['retained_placenta']:
 
             # We apply a probability that surgical techniques will be effective
             treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
 
-            # We log the log the required consumables and condition the surgery happening on the availability of the
-            # first consumable in this package, the anaesthetic required for the surgery
-            avail = hsi_event.get_consumables(item_codes=cons['obstetric_surgery_core'],
-                                              optional_item_codes=cons['obstetric_surgery_optional'])
-
             # And store the treatment which will dramatically reduce risk of death
-            if treatment_success_pph and avail:
+            if treatment_success_pph and avail and sf_check:
                 self.pph_treatment.set(person_id, 'surgery')
 
             # If the treatment is unsuccessful then women will require a hysterectomy to stop the bleeding
-            elif not treatment_success_pph and avail:
-
+            elif not treatment_success_pph and avail and sf_check:
                 self.pph_treatment.set(person_id, 'hysterectomy')
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         # Next we apply the effect of surgical treatment for women with retained placenta
-        elif mni[person_id]['retained_placenta'] and not self.pph_treatment.has_all(person_id, 'manual_removal_'
-                                                                                               'placenta'):
+        elif (mni[person_id]['retained_placenta'] and not self.pph_treatment.has_all(person_id,
+                                                                                     'manual_removal_placenta')
+              and sf_check and avail):
 
             self.pph_treatment.set(person_id, 'surgery')
 
@@ -2055,8 +2133,11 @@ class Labour(Module):
         # Check consumables
         avail = hsi_event.get_consumables(item_codes=cons['blood_transfusion'],
                                           optional_item_codes=cons['iv_drug_equipment'])
+        # check HCW
+        sf_check = self.check_emonc_signal_function_will_run(sf='blood_tran',
+                                                             f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
 
-        if avail:
+        if avail and sf_check:
             mni[person_id]['received_blood_transfusion'] = True
 
             # We assume that anaemia is corrected by blood transfusion
@@ -2407,6 +2488,9 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
+            # Determine if the labouring woman will be delayed in attending for facility delivery
+            pregnancy_helper_functions.check_if_delayed_careseeking(self, individual_id)
+
             # ======================================== SCHEDULING BIRTH AND DEATH EVENTS ============================
             # We schedule all women to move through both the death and birth event.
 
@@ -2480,6 +2564,9 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
                     mni[individual_id]['sought_care_for_complication'] = True
                     mni[individual_id]['sought_care_labour_phase'] = 'intrapartum'
+
+                    # Assume all women who develop complications at home incur effect of delay
+                    mni[individual_id]['experienced_delay'].append(1)
 
                     # We assume women present to the health system through the generic a&e appointment
                     from tlo.methods.hsi_generic_first_appts import (
@@ -2573,6 +2660,10 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
         if df.at[individual_id, 'la_intrapartum_still_birth'] or mni[individual_id]['single_twin_still_birth']:
             logger.info(key='intrapartum_stillbirth', data={'mother_id': individual_id,
                                                             'date_of_ip_stillbirth': self.sim.date})
+
+        # Finally reset delay property
+        if individual_id in mni:
+            mni[individual_id]['experienced_delay'].clear()
 
 
 class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
@@ -2748,6 +2839,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # Next we check this woman has the right characteristics to be at this event
         self.module.labour_characteristics_checker(person_id)
 
+        # Log potential error
         if mni[person_id]['delivery_setting'] == 'home_birth':
             logger.debug(key='error', data=f'Mother {person_id} is receiving SBA with delivery setting as home birth')
 
@@ -2760,6 +2852,11 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         elif df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'avd_now':
             mni[person_id]['mode_of_delivery'] = 'instrumental'
 
+        # and then if the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
+        # of death if complications occur)
+        pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id,
+                                                                  hsi_type='bemonc')
+
         # LOG CONSUMABLES FOR DELIVERY...
         # We assume all deliveries require this basic package of consumables
         avail = self.get_consumables(item_codes=cons['delivery_core'],
@@ -2771,17 +2868,14 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
 
         # ===================================== PROPHYLACTIC CARE ===================================================
         # The following function manages the consumables and administration of prophylactic interventions in labour
-        # (clean delivery practice, antibiotics for PROM, steroids for preterm labour). This intervention, like all
-        # other in the event will only occur if the squeeze factor is below a preset threshold
+        # (clean delivery practice, antibiotics for PROM, steroids for preterm labour)
 
-        if squeeze_factor < params['squeeze_threshold_proph_ints']:
-            self.module.prophylactic_labour_interventions(self)
+        self.module.prophylactic_labour_interventions(self)
 
         # ================================= PROPHYLACTIC MANAGEMENT PRE-ECLAMPSIA  ==============================
         # Next we see if women with severe pre-eclampsia will be identified and treated, reducing their risk of
         # eclampsia
-        if squeeze_factor < params['squeeze_threshold_treatment_spe']:
-            self.module.assessment_and_treatment_of_severe_pre_eclampsia_mgso4(self, 'ip')
+        self.module.assessment_and_treatment_of_severe_pre_eclampsia_mgso4(self, 'ip')
 
         # ===================================== APPLYING COMPLICATION INCIDENCE =======================================
         # Following administration of prophylaxis we assess if this woman will develop any complications during labour.
@@ -2809,33 +2903,22 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # Next, women in labour are assessed for complications and treatment delivered if a need is identified and
         # consumables are available
 
-        if squeeze_factor < params['squeeze_threshold_treatment_ol']:
-            self.module.assessment_and_treatment_of_obstructed_labour_via_avd(self)
-
-        if squeeze_factor < params['squeeze_threshold_treatment_sep']:
-            self.module.assessment_and_treatment_of_maternal_sepsis(self, 'ip')
-
-        if squeeze_factor < params['squeeze_threshold_treatment_htn']:
-            self.module.assessment_and_treatment_of_hypertension(self)
-
-        if squeeze_factor < params['squeeze_threshold_treatment_aph']:
-            self.module.assessment_and_plan_for_antepartum_haemorrhage(self)
-
-        if squeeze_factor < params['squeeze_threshold_treatment_ec']:
-            self.module.assessment_and_treatment_of_eclampsia(self, 'ip')
-
-        # Uterine rupture follows the same pattern as antepartum haemorrhage
-        if squeeze_factor < params['squeeze_threshold_treatment_ur']:
-            self.module.assessment_for_referral_uterine_rupture(self)
+        self.module.assessment_and_treatment_of_obstructed_labour_via_avd(self)
+        self.module.assessment_and_treatment_of_maternal_sepsis(self, 'ip')
+        self.module.assessment_and_treatment_of_hypertension(self)
+        self.module.assessment_and_plan_for_antepartum_haemorrhage(self)
+        self.module.assessment_and_treatment_of_eclampsia(self, 'ip')
+        self.module.assessment_for_referral_uterine_rupture(self)
 
         # -------------------------- Active Management of the third stage of labour ----------------------------------
         # Prophylactic treatment to prevent postpartum bleeding is applied
-        if not mni[person_id]['sought_care_for_complication'] and (squeeze_factor < params['squeeze_threshold_amtsl']):
+        if not mni[person_id]['sought_care_for_complication']:
             self.module.active_management_of_the_third_stage_of_labour(self)
 
         # -------------------------- Caesarean section/AVD for un-modelled reason ------------------------------------
         # We apply a probability to women who have not already been allocated to undergo assisted/caesarean delivery
         # that they will require assisted/caesarean delivery to capture indications which are not explicitly modelled
+        # TODO: should only have avd if avail- shecule through this
         if not mni[person_id]['referred_for_cs'] and (not mni[person_id]['mode_of_delivery'] == 'instrumental'):
             if self.module.rng.random_sample() < params['residual_prob_caesarean']:
                 mni[person_id]['referred_for_cs'] = True
@@ -2934,17 +3017,21 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
 
         df.at[person_id, 'la_pn_checks_maternal'] += 1
 
+        # If the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
+        # of death if complications occur)
+        pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id, hsi_type='pn')
+
         # Perform assessments and treatment for each of the major complications that can occur after birth
         self.module.assessment_and_treatment_of_eclampsia(self, 'pp')
         self.module.assessment_and_treatment_of_pph_retained_placenta(self)
         self.module.assessment_and_treatment_of_pph_uterine_atony(self)
 
-        if self.module.rng.random_sample() < params['prob_intervention_delivered_sep_assessment_pnc']:
-            self.module.assessment_and_treatment_of_maternal_sepsis(self, 'pp')
+        # if self.module.rng.random_sample() < params['prob_intervention_delivered_sep_assessment_pnc']:
+        self.module.assessment_and_treatment_of_maternal_sepsis(self, 'pp')
 
-        if self.module.rng.random_sample() < params['prob_intervention_delivered_bp_pnc']:
-            self.module.assessment_and_treatment_of_severe_pre_eclampsia_mgso4(self, 'pp')
-            self.module.assessment_and_treatment_of_hypertension(self)
+        # if self.module.rng.random_sample() < params['prob_intervention_delivered_bp_pnc']:
+        self.module.assessment_and_treatment_of_severe_pre_eclampsia_mgso4(self, 'pp')
+        self.module.assessment_and_treatment_of_hypertension(self)
 
         if self.module.rng.random_sample() < params['prob_intervention_delivered_anaemia_assessment_pnc']:
             self.module.assessment_and_treatment_of_anaemia(self)
@@ -3004,6 +3091,11 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         params = self.module.current_parameters
         cons = self.module.item_codes_lab_consumables
 
+        # If the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
+        # of death if complications occur)
+        pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id,
+                                                                  hsi_type='cemonc')
+
         # We use the variable self.timing to differentiate between women sent to this event during labour and women
         # sent after labour
 
@@ -3017,7 +3109,11 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
             avail = self.get_consumables(item_codes=cons['caesarean_delivery_core'],
                                          optional_item_codes=cons['caesarean_delivery_optional'])
 
-            if avail:
+            # We check that the HCW will deliver the intervention
+            sf_check = self.module.check_emonc_signal_function_will_run(sf='surg',
+                                                                        f_lvl=self.ACCEPTED_FACILITY_LEVEL)
+
+            if avail and sf_check:
                 person = df.loc[person_id]
                 logger.info(key='caesarean_delivery', data=person.to_dict())
                 logger.info(key='cs_indications', data={'id': person_id,
@@ -3040,16 +3136,19 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
             avail = self.get_consumables(item_codes=cons['obstetric_surgery_core'],
                                          optional_item_codes=cons['obstetric_surgery_optional'])
 
+            sf_check = self.module.check_emonc_signal_function_will_run(sf='surg',
+                                                                        f_lvl=self.ACCEPTED_FACILITY_LEVEL)
+
             # We apply a probability that repair surgery will be successful which will reduce risk of death from
             # uterine rupture
             treatment_success_ur = params['success_rate_uterine_repair'] > self.module.rng.random_sample()
 
-            if avail and treatment_success_ur:
+            if avail and treatment_success_ur and sf_check:
                 df.at[person_id, 'la_uterine_rupture_treatment'] = True
 
             # Unsuccessful repair will lead to this woman requiring a hysterectomy. Hysterectomy will also reduce risk
             # of death from uterine rupture but leads to permanent infertility in the simulation
-            elif avail and not treatment_success_ur:
+            elif avail and sf_check and not treatment_success_ur:
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         # ============================= SURGICAL MANAGEMENT OF POSTPARTUM HAEMORRHAGE==================================

@@ -21,6 +21,7 @@ def predict_for_dataframe(self, df, rng=None, **externals):
     return result
 """
 import pandas as pd
+from tlo.methods import pregnancy_helper_functions
 
 
 def predict_parity(self, df, rng=None, **externals):
@@ -154,7 +155,10 @@ def predict_sepsis_death(self, df, rng=None, **externals):
     result = params['cfr_pp_sepsis']
 
     if person['la_sepsis_treatment']:
-        result *= params['sepsis_treatment_effect_md']
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            externals['delay'], 'sepsis_treatment_effect_md', params)
+
+        result *= treatment_effect
 
     return pd.Series(data=[result], index=df.index)
 
@@ -170,9 +174,16 @@ def predict_eclampsia_death(self, df, rng=None, **externals):
     result = params['cfr_eclampsia']
 
     if person['la_eclampsia_treatment'] or person['ac_mag_sulph_treatment']:
-        result *= params['eclampsia_treatment_effect_md']
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            externals['delay'], 'eclampsia_treatment_effect_md', params)
+
+        result *= treatment_effect
+
     if person['la_maternal_hypertension_treatment'] or person['ac_iv_anti_htn_treatment']:
-        result *= params['anti_htns_treatment_effect_md']
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            externals['delay'], 'anti_htns_treatment_effect_md', params)
+
+        result *= treatment_effect
 
     # caller expects a series to be returned
     return pd.Series(data=[result], index=df.index)
@@ -188,7 +199,10 @@ def predict_severe_pre_eclamp_death(self, df, rng=None, **externals):
     result = params['cfr_severe_pre_eclamp']
 
     if person['la_maternal_hypertension_treatment'] or person['ac_iv_anti_htn_treatment']:
-        result *= params['anti_htns_treatment_effect_md']
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            externals['delay'], 'anti_htns_treatment_effect_md', params)
+
+        result *= treatment_effect
 
     # caller expects a series to be returned
     return pd.Series(data=[result], index=df.index)
@@ -242,9 +256,16 @@ def predict_antepartum_haem_death(self, df, rng=None, **externals):
     result = params['cfr_aph']
 
     if externals['received_blood_transfusion']:
-        result *= params['aph_bt_treatment_effect_md']
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            externals['delay'], 'aph_bt_treatment_effect_md', params)
+
+        result *= treatment_effect
+
     if externals['mode_of_delivery'] == 'caesarean_section':
-        result *= params['aph_cs_treatment_effect_md']
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            externals['delay'], 'aph_cs_treatment_effect_md', params)
+
+        result *= treatment_effect
 
     # caller expects a series to be returned
     return pd.Series(data=[result], index=df.index)
@@ -307,9 +328,17 @@ def predict_postpartum_haem_pp_death(self, df, rng=None, **externals):
     result = params['cfr_pp_pph']
 
     if ('surgery' in treatment) or ('hysterectomy' in treatment):  # todo: replace bitset property with bool?
-        result *= params['pph_treatment_effect_surg_md']
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            externals['delay'], 'pph_treatment_effect_surg_md', params)
+
+        result *= treatment_effect
+
     if externals['received_blood_transfusion']:
-        result *= params['pph_bt_treatment_effect_md']
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            externals['delay'], 'pph_bt_treatment_effect_md', params)
+
+        result *= treatment_effect
+
     if person['ps_anaemia_in_pregnancy'] or person['pn_anaemia_following_pregnancy']:
         result *= params['rr_pph_death_anaemia']
 
@@ -346,9 +375,16 @@ def predict_uterine_rupture_death(self, df, rng=None, **externals):
     result = params['cfr_uterine_rupture']
 
     if person['la_uterine_rupture_treatment'] or person['la_has_had_hysterectomy']:
-        result *= params['ur_repair_treatment_effect_md']
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            externals['delay'], 'ur_repair_treatment_effect_md', params)
+
+        result *= treatment_effect
+
     if externals['received_blood_transfusion']:
-        result *= params['ur_treatment_effect_bt_md']
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            externals['delay'], 'ur_treatment_effect_bt_md', params)
+
+        result *= treatment_effect
 
     return pd.Series(data=[result], index=df.index)
 
@@ -384,9 +420,16 @@ def predict_intrapartum_still_birth(self, df, rng=None, **externals):
         result *= params['rr_still_birth_multiple_pregnancy']
 
     if externals['mode_of_delivery'] == 'caesarean_section':
-        result *= params['treatment_effect_cs_still_birth']
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            externals['delay'], 'treatment_effect_cs_still_birth', params)
+
+        result *= treatment_effect
+
     if externals['mode_of_delivery'] == 'instrumental':
-        result *= params['treatment_effect_avd_still_birth']
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            externals['delay'], 'treatment_effect_avd_still_birth', params)
+
+        result *= treatment_effect
 
     return pd.Series(data=[result], index=df.index)
 

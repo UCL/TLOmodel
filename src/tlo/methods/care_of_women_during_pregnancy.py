@@ -131,6 +131,9 @@ class CareOfWomenDuringPregnancy(Module):
             Types.LIST, 'sensitivity of a blood test to detect syphilis'),
         'specificity_blood_test_syphilis': Parameter(
             Types.LIST, 'specificity of a blood test to detect syphilis'),
+
+        'squeeze_threshold_for_delay_three_an': Parameter(
+            Types.LIST, ''),
     }
 
     PROPERTIES = {
@@ -1265,8 +1268,11 @@ class CareOfWomenDuringPregnancy(Module):
         avail = hsi_event.get_consumables(item_codes=cons['blood_transfusion'],
                                           optional_item_codes=cons['iv_drug_equipment'])
 
+        sf_check = self.sim.modules['Labour'].check_emonc_signal_function_will_run(
+            sf='blood_tran', f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
         # If the blood is available we assume the intervention can be delivered
-        if avail:
+        if avail and sf_check:
 
             # If the woman is receiving blood due to anaemia we apply a probability that a transfusion of 2 units
             # RBCs will correct this woman's severe anaemia
@@ -1339,8 +1345,12 @@ class CareOfWomenDuringPregnancy(Module):
         avail = hsi_event.get_consumables(item_codes=cons['magnesium_sulfate'],
                                           optional_item_codes=cons['eclampsia_management_optional'])
 
+        # check HCW will deliver intervention
+        sf_check = self.sim.modules['Labour'].check_emonc_signal_function_will_run(
+            sf='anticonvulsant', f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
         # If available deliver the treatment
-        if avail:
+        if avail and sf_check:
             df.at[individual_id, 'ac_mag_sulph_treatment'] = True
 
     def antibiotics_for_prom(self, individual_id, hsi_event):
@@ -1356,7 +1366,10 @@ class CareOfWomenDuringPregnancy(Module):
         avail = hsi_event.get_consumables(item_codes=cons['abx_for_prom'],
                                           optional_item_codes=cons['iv_drug_equipment'])
 
-        if avail:
+        sf_check = self.sim.modules['Labour'].check_emonc_signal_function_will_run(
+            sf='iv_abx', f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
+        if avail and sf_check:
             df.at[individual_id, 'ac_received_abx_for_prom'] = True
 
     def ectopic_pregnancy_treatment_doesnt_run(self, hsi_event):
@@ -2214,6 +2227,10 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             return
 
         if mother.is_pregnant and not mother.la_currently_in_labour and not mother.hs_is_inpatient:
+
+            # check if she will experience delayed care
+            pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id,
+                                                                      hsi_type='an')
 
             # The event represents inpatient care delivered within the antenatal ward at a health facility. Therefore
             # it is assumed that women with a number of different complications could be sent to this HSI for treatment.
