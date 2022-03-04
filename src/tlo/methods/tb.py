@@ -1272,7 +1272,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 0:
             return
 
-        if scenario == 1:
+        if (scenario == 1) | (scenario == 3):
 
             # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
             self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = 0.1
@@ -1293,9 +1293,42 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             p["first_line_test"] = "xpert"
             p["second_line_test"] = "sputum"
 
+        # health system constraints
+        if scenario == 2:
+            # drop viral suppression for all PLHIV
+            self.sim.modules["Hiv"].parameters["prob_viral_suppression"]["virally_suppressed_on_art"] = 80
+
+            # lower tb treatment success rates
+            self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = 0.6
+            self.sim.modules["Tb"].parameters["prob_tx_success_mdr"] = 0.6
+            self.sim.modules["Tb"].parameters["prob_tx_success_0_4"] = 0.6
+            self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = 0.6
+            self.sim.modules["Tb"].parameters["prob_tx_success_shorter"] = 0.6
+
+        # improve preventive measures
         if scenario == 3:
+
+            # reduce risk of HIV - applies to whole adult population
+            self.sim.modules["Hiv"].parameters["beta"] = self.sim.modules["Hiv"].parameters["beta"] * 0.9
+
+            # increase PrEP coverage for FSW after HIV test
+            self.sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] = 0.5
+
+            # prep poll for AGYW - target to highest risk
+            # increase retention to 75% for FSW and AGYW
+            self.sim.modules["Hiv"].parameters["prob_prep_for_agyw"] = 0.1
+            self.sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] = 0.75
+
+            # increase probability of VMMC after hiv test
+            self.sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] = 0.25
+
             # change IPT eligibility for TB contacts to all years
             p["age_eligibility_for_ipt"] = 100
+
+            # increase coverage of IPT
+            # todo check this works
+            p["ipt_coverage"]["coverage_plhiv"] = 0.6
+            p["ipt_coverage"]["coverage_paediatric"] = 0.8  # this will apply to contacts of all ages
 
 
 class TbRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
