@@ -1293,7 +1293,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             p["first_line_test"] = "xpert"
             p["second_line_test"] = "sputum"
 
-        if scenario == 2:
+        if scenario == 3:
             # change IPT eligibility for TB contacts to all years
             p["age_eligibility_for_ipt"] = 100
 
@@ -2512,7 +2512,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
         if any(x in self.module.symptom_list for x in persons_symptoms):
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_Start_or_Continue_Ipt(person_id=person_id, module=self.module),
+                HSI_Tb_ScreeningAndRefer(person_id=person_id, module=self.module),
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(days=14),
                 priority=0,
@@ -2520,7 +2520,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
 
         else:
             # Check/log use of consumables, and give IPT if available
-            # NB. If materials not available, it is assumed that no IPT is given and no further referral is offered
+            # if not available, reschedule IPT start
             if self.get_consumables(
                         item_codes=self.module.item_codes_for_consumables_required["tb_ipt"]
             ):
@@ -2532,6 +2532,13 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                 self.sim.schedule_event(
                     Tb_DecisionToContinueIPT(self.module, person_id),
                     self.sim.date + DateOffset(months=6),
+                )
+            else:
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Tb_Start_or_Continue_Ipt(person_id=person_id, module=self.module),
+                    topen=self.sim.date,
+                    tclose=self.sim.date + pd.DateOffset(days=14),
+                    priority=0,
                 )
 
 
