@@ -56,7 +56,7 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            "filename": "scenario1",
+            "filename": "scenario2",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
@@ -76,7 +76,7 @@ class TestScenario(BaseScenario):
                 resourcefilepath=self.resources,
                 service_availability=["*"],  # all treatment allowed
                 mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
-                cons_availability="all",  # mode for consumable constraints (if ignored, all consumables available)
+                cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
                 ignore_priority=True,  # do not use the priority information in HSI event to schedule
                 capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
                 disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
@@ -91,10 +91,12 @@ class TestScenario(BaseScenario):
             tb.Tb(resourcefilepath=self.resources),
         ]
 
+    # todo need to limit consumables availability
     def draw_parameters(self, draw_number, rng):
+
         return {
             'Tb': {
-                'scenario': 1,
+                'scenario': 2,
             },
         }
 

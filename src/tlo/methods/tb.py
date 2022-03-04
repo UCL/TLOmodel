@@ -1295,6 +1295,18 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
 
         # health system constraints
         if scenario == 2:
+
+            # set consumables availability to 0.6 for all required cons in hiv/tb modules
+            hiv_item_codes = set()
+            for f in self.sim.modules['Hiv'].item_codes_for_consumables_required.values():
+                hiv_item_codes = hiv_item_codes.union(f.keys())
+            self.sim.modules["HealthSystem"].prob_item_codes_available.loc[hiv_item_codes] = 0.6
+
+            tb_item_codes = set()
+            for f in self.sim.modules['Tb'].item_codes_for_consumables_required.values():
+                tb_item_codes = tb_item_codes.union(f.keys())
+            self.sim.modules["HealthSystem"].prob_item_codes_available.loc[tb_item_codes] = 0.6
+
             # drop viral suppression for all PLHIV
             self.sim.modules["Hiv"].parameters["prob_viral_suppression"]["virally_suppressed_on_art"] = 80
 

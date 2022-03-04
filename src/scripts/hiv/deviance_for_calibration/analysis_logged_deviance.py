@@ -33,8 +33,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 1000
+end_date = Date(2024, 1, 1)
+popsize = 100
 
 # set up the log config
 log_config = {
@@ -78,6 +78,20 @@ sim.register(
     tb.Tb(resourcefilepath=resourcefilepath),
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
+
+# todo change
+sim.modules["Tb"].parameters["scenario"] = 3
+
+# hiv_item_codes = set()
+# for f in sim.modules['Hiv'].item_codes_for_consumables_required.values():
+#     hiv_item_codes = hiv_item_codes.union(f.keys())
+# sim.modules["HealthSystem"].prob_item_codes_available.loc[hiv_item_codes] = 0.6
+#
+# tb_item_codes = set()
+# for f in sim.modules['Tb'].item_codes_for_consumables_required.values():
+#     tb_item_codes = tb_item_codes.union(f.keys())
+# sim.modules["HealthSystem"].prob_item_codes_available.loc[tb_item_codes] = 0.6
+
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

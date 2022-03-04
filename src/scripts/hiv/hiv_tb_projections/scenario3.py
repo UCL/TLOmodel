@@ -56,7 +56,7 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            "filename": "scenario1",
+            "filename": "scenario3",
             "directory": "./outputs",
             "custom_levels": {
                 "*": logging.WARNING,
@@ -94,7 +94,7 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'Tb': {
-                'scenario': 1,
+                'scenario': 3,
             },
         }
 
