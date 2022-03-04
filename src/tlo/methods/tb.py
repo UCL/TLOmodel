@@ -116,6 +116,7 @@ class Tb(Module):
         "tb_treatment_regimen": Property(
             Types.CATEGORICAL,
             categories=[
+                "none",
                 "tb_tx_adult",
                 "tb_tx_child",
                 "tb_tx_child_shorter",
@@ -311,17 +312,9 @@ class Tb(Module):
             Types.REAL, "specificity of Xpert test in smear negative TB cases"),
         "spec_xpert_smear_positive": Parameter(
             Types.REAL, "specificity of Xpert test in smear positive TB cases"),
-        "sens_sputum_smear_negative": Parameter(
-            Types.REAL,
-            "sensitivity of sputum smear microscopy in sputum negative cases",
-        ),
         "sens_sputum_smear_positive": Parameter(
             Types.REAL,
             "sensitivity of sputum smear microscopy in sputum positive cases",
-        ),
-        "spec_sputum_smear_negative": Parameter(
-            Types.REAL,
-            "specificity of sputum smear microscopy in sputum negative cases",
         ),
         "spec_sputum_smear_positive": Parameter(
             Types.REAL,
@@ -358,8 +351,8 @@ class Tb(Module):
         "prob_tx_success_5_14": Parameter(
             Types.REAL, "Probability of treatment success for children aged 5-14 years"
         ),
-        "prob_tx_success_0_16_shorter": Parameter(
-            Types.REAL, "Probability of treatment success for children aged 0-16 years on shorter treatment regimen"
+        "prob_tx_success_shorter": Parameter(
+            Types.REAL, "Probability of treatment success for children aged <16 years on shorter regimen"
         ),
         # ------------------ testing rates ------------------ #
         "rate_testing_general_pop": Parameter(
@@ -386,8 +379,8 @@ class Tb(Module):
         "mdr_treatment_length": Parameter(
             Types.REAL, "length of treatment for mdr-tb in months"
         ),
-        "shine_treatment_length": Parameter(
-            Types.REAL, "length of treatment for shorter treatment option of children with minimal tb in months"
+        "child_shorter_treatment_length": Parameter(
+            Types.REAL, "length of treatment for shorter paediatric regimen in months"
         ),
         "prob_retained_ipt_6_months": Parameter(
             Types.REAL,
@@ -956,7 +949,7 @@ class Tb(Module):
         # ------------------ treatment status ------------------ #
         df["tb_on_treatment"] = False
         df["tb_date_treated"] = pd.NaT
-        df["tb_treatment_regimen"] = None
+        df["tb_treatment_regimen"].values[:] = "none"
         df["tb_ever_treated"] = False
         df["tb_treatment_failure"] = False
 
@@ -1019,8 +1012,8 @@ class Tb(Module):
             tb_sputum_test_smear_negative=DxTest(
                 property='tb_inf',
                 target_categories=["active"],
-                sensitivity=p["sens_sputum_smear_negative"],
-                specificity=p["spec_sputum_smear_negative"],
+                sensitivity=0.0,
+                specificity=0.0,
                 item_codes=self.item_codes_for_consumables_required['sputum_test']
             )
         )
@@ -1141,7 +1134,7 @@ class Tb(Module):
         # ------------------ treatment status ------------------ #
         df.at[child_id, "tb_on_treatment"] = False
         df.at[child_id, "tb_date_treated"] = pd.NaT
-        df.at[child_id, "tb_treatment_regimen"] = None
+        df.at[child_id, "tb_treatment_regimen"] = "none"
         df.at[child_id, "tb_treatment_failure"] = False
         df.at[child_id, "tb_ever_treated"] = False
 
@@ -1154,6 +1147,10 @@ class Tb(Module):
             df.at[child_id, "hv_art"] = "not"
 
         # if mother is diagnosed with TB, give IPT to infant
+        mother_id = mother_id if mother_id != -1 else self.rng.choice(
+            df.index[df.is_alive & (df.sex == "F") & (df.age_years > 16)])
+        assert mother_id != -1
+
         if df.at[mother_id, "tb_diagnosed"]:
             event = HSI_Tb_Start_or_Continue_Ipt(self, person_id=child_id)
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -1624,26 +1621,22 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ---------------------- treatment end: first case ds-tb (6 months) ---------------------- #
         # end treatment for new tb (ds) cases
-        # defined as a current ds-tb cases with property tb_ever_treated as false
         end_ds_tx_idx = df.loc[
             df.is_alive
             & df.tb_on_treatment
-            & ~df.tb_treated_mdr
+            & ((df.tb_treatment_regimen == "tb_tx_adult") | (df.tb_treatment_regimen == "tb_tx_child"))
             & (
                 now
                 > (df.tb_date_treated + pd.DateOffset(months=p["ds_treatment_length"]))
             )
-            & ~df.tb_ever_treated
         ].index
 
         # ---------------------- treatment end: retreatment ds-tb (7 months) ---------------------- #
         # end treatment for retreatment cases
-        # defined as a current ds-tb cases with property tb_ever_treated as true
-        # has completed full tb treatment course previously
         end_ds_retx_idx = df.loc[
             df.is_alive
             & df.tb_on_treatment
-            & ~df.tb_treated_mdr
+            & ((df.tb_treatment_regimen == "tb_retx_adult") | (df.tb_treatment_regimen == "tb_retx_child"))
             & (
                 now
                 > (
@@ -1651,132 +1644,92 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
                     + pd.DateOffset(months=p["ds_retreatment_length"])
                 )
             )
-            & df.tb_ever_treated
         ].index
 
         # ---------------------- treatment end: mdr-tb (24 months) ---------------------- #
         # end treatment for mdr-tb cases
         end_mdr_tx_idx = df.loc[
             df.is_alive
-            & df.tb_treated_mdr
+            & df.tb_on_treatment
+            & (df.tb_treatment_regimen == "tb_mdrtx")
             & (
                 now
                 > (df.tb_date_treated + pd.DateOffset(months=p["mdr_treatment_length"]))
             )
         ].index
 
-        # ---------------------- treatment end: shorter child treatment (4 months) ---------------------- #
-        # end treatment for children on shorter treatment option (shine trial)
-        end_tx_child_shorter_idx = df.loc[
+        # ---------------------- treatment end: shorter paediatric regimen ---------------------- #
+        # end treatment for paediatric cases on 4 month regimen
+        end_tx_shorter_idx = df.loc[
             df.is_alive
             & df.tb_on_treatment
-            & (df.tb_treatment_regimen == 'tb_tx_child_shorter')
+            & (df.tb_treatment_regimen == "tb_tx_child_shorter")
             & (
                 now
-                > (df.tb_date_treated + pd.DateOffset(months=p["shine_treatment_length"]))
+                > (df.tb_date_treated + pd.DateOffset(months=p["child_shorter_treatment_length"]))
             )
-            & ~df.tb_ever_treated
-            ].index
+        ].index
 
         # join indices
         end_tx_idx = end_ds_tx_idx.union(end_ds_retx_idx)
         end_tx_idx = end_tx_idx.union(end_mdr_tx_idx)
-        end_tx_idx = end_tx_idx.union(end_tx_child_shorter_idx)
+        end_tx_idx = end_tx_idx.union(end_tx_shorter_idx)
 
         # ---------------------- treatment failure ---------------------- #
         # sample some to have treatment failure
+        # assume all retreatment cases will cure
         random_var = rng.random_sample(size=len(df))
 
         # children aged 0-4 ds-tb
         ds_tx_failure0_4_idx = df.loc[
-            df.is_alive
-            & (df.tb_strain == "ds")
-            & df.tb_on_treatment
-            & ~df.tb_treated_mdr
-            & (
-                now
-                > (df.tb_date_treated + pd.DateOffset(months=p["ds_treatment_length"]))
-            )
+            (df.index.isin(end_ds_tx_idx))
             & (df.age_years < 5)
             & (random_var < (1 - p["prob_tx_success_0_4"]))
         ].index
 
         # children aged 5-14 ds-tb
         ds_tx_failure5_14_idx = df.loc[
-            df.is_alive
-            & (df.tb_strain == "ds")
-            & df.tb_on_treatment
-            & ~df.tb_treated_mdr
-            & (
-                now
-                > (df.tb_date_treated + pd.DateOffset(months=p["ds_treatment_length"]))
-            )
+            (df.index.isin(end_ds_tx_idx))
             & (df.age_years.between(5, 14))
             & (random_var < (1 - p["prob_tx_success_5_14"]))
         ].index
 
+        # children aged <16 and on shorter regimen
+        ds_tx_failure_shorter_idx = df.loc[
+            (df.index.isin(end_tx_shorter_idx))
+            & (df.age_years < 16)
+            & (random_var < (1 - p["prob_tx_success_shorter"]))
+        ].index
+
         # adults ds-tb
         ds_tx_failure_adult_idx = df.loc[
-            df.is_alive
-            & (df.tb_strain == "ds")
-            & df.tb_on_treatment
-            & ~df.tb_treated_mdr
-            & (
-                now
-                > (df.tb_date_treated + pd.DateOffset(months=p["ds_treatment_length"]))
-            )
+            (df.index.isin(end_ds_tx_idx))
             & (df.age_years >= 15)
             & (random_var < (1 - p["prob_tx_success_ds"]))
         ].index
 
         # all mdr cases on ds tx will fail
         failure_in_mdr_with_ds_tx_idx = df.loc[
-            df.is_alive
-            & df.tb_on_treatment
-            & ~df.tb_treated_mdr
-            & (
-                now
-                > (df.tb_date_treated + pd.DateOffset(months=p["ds_treatment_length"]))
-            )
+            (df.index.isin(end_ds_tx_idx))
             & (df.tb_strain == "mdr")
         ].index
 
         # some mdr cases on mdr treatment will fail
         failure_due_to_mdr_idx = df.loc[
-            df.is_alive
-            & df.tb_on_treatment
-            & df.tb_treated_mdr
-            & (
-                now
-                > (df.tb_date_treated + pd.DateOffset(months=p["mdr_treatment_length"]))
-            )
+            (df.index.isin(end_mdr_tx_idx))
             & (df.tb_strain == "mdr")
             & (random_var < (1 - p["prob_tx_success_mdr"]))
 
         ].index
 
-        # children aged 0-16 on shorter treatment
-        ds_tx_failure0_16_shorter_tx_idx = df.loc[
-            df.is_alive
-            & (df.tb_strain == "ds")
-            & df.tb_on_treatment
-            & (df.tb_treatment_regimen == "tb_tx_child_shorter")
-            & (
-                now
-                > (df.tb_date_treated + pd.DateOffset(months=p["shine_treatment_length"]))
-            )
-            & (df.age_years.between(0, 16))
-            & (random_var < (1 - p["prob_tx_success_0_16_shorter"]))
-            ].index
-
         # join indices of failing cases together
         tx_failure = (
             list(ds_tx_failure0_4_idx)
             + list(ds_tx_failure5_14_idx)
+            + list(ds_tx_failure_shorter_idx)
             + list(ds_tx_failure_adult_idx)
             + list(failure_in_mdr_with_ds_tx_idx)
             + list(failure_due_to_mdr_idx)
-            + list(ds_tx_failure0_16_shorter_tx_idx)
         )
 
         if tx_failure:
@@ -1800,7 +1753,7 @@ class TbEndTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[end_tx_idx, "tb_diagnosed"] = False
         df.loc[end_tx_idx, "tb_on_treatment"] = False
         df.loc[end_tx_idx, "tb_treated_mdr"] = False
-        df.loc[end_tx_idx, "tb_treatment_regimen"] = None
+        df.loc[end_tx_idx, "tb_treatment_regimen"] = "none"
         # this will indicate that this person has had one complete course of tb treatment
         # subsequent infections will be classified as retreatment
         df.loc[end_tx_idx, "tb_ever_treated"] = True

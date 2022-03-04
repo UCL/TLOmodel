@@ -2,6 +2,7 @@
 import os
 import shutil
 
+
 def on_html_collect_pages(app):
     for f in app.builder.config.rawfiles:
         src = os.path.join(app.srcdir, f)

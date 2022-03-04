@@ -32,12 +32,11 @@ import pandas as pd
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata, demography
+from tlo.methods import Metadata, demography, tb
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.methods.tb import HSI_Tb_ScreeningAndRefer
 from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
@@ -952,6 +951,11 @@ class Hiv(Module):
 
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
+        # if mother_id set to -1 by contraception DirectBirth, randomly sample from female pop
+        mother_id = mother_id if mother_id != -1 else self.rng.choice(
+            df.index[df.is_alive & (df.sex == "F") & (df.age_years > 16)])
+        assert mother_id != -1
+
         mother = df.loc[mother_id]
 
         mother_infected_prior_to_pregnancy = mother.hv_inf & (
@@ -1000,7 +1004,6 @@ class Hiv(Module):
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
                     self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
-
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(person_id=mother_id, module=self, referred_from='ANC_routine'),
                     priority=1,
@@ -1012,7 +1015,6 @@ class Hiv(Module):
             if mother.hv_diagnosed and \
                 df.at[child_id, "is_alive"] and (
                     self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
-
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(person_id=child_id, module=self, referred_from='Infant_testing'),
                     priority=1,
@@ -1898,7 +1900,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # also screen for tb
                     if "Tb" in self.sim.modules:
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
-                            HSI_Tb_ScreeningAndRefer(
+                            tb.HSI_Tb_ScreeningAndRefer(
                                 person_id=person_id, module=self.sim.modules["Tb"]
                             ),
                             topen=self.sim.date,
@@ -2132,7 +2134,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # also screen for tb
         if "Tb" in self.sim.modules:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_ScreeningAndRefer(
+                tb.HSI_Tb_ScreeningAndRefer(
                     person_id=person_id, module=self.sim.modules["Tb"]
                 ),
                 topen=self.sim.date,

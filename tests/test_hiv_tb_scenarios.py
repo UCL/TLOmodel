@@ -1,7 +1,7 @@
 """ Tests for setting up the HIV and TB scenarios used for projections """
 
-from pathlib import Path
 import os
+from pathlib import Path
 
 import pandas as pd
 
@@ -450,16 +450,3 @@ def test_check_tb_test_under_each_scenario():
 
     test_for_hiv_positive = sim.modules["Tb"].select_tb_test(hiv_pos_person)
     assert test_for_hiv_positive == "xpert"
-
-
-
-
-
-
-
-
-
-
-
-
-
