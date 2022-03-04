@@ -2171,7 +2171,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 ),
                 topen=self.sim.date + pd.DateOffset(days=1),
                 tclose=self.sim.date + pd.DateOffset(days=15),
-                priority=1,
+                priority=0,
             )
 
         # also screen for tb
@@ -2540,7 +2540,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "art_coverage_adult_VL_suppression": art_cov_vs_adult,
                 "art_coverage_child": art_cov_children,
                 "art_coverage_child_VL_suppression": art_cov_vs_children,
-                "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
+                "prop_adults_exposed_tgo_behav_intv": prop_adults_exposed_to_behav_intv,
                 "prop_fsw_on_prep": prop_fsw_on_prep,
                 "prop_men_circ": prop_men_circ,
             },

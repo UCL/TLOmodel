@@ -2,16 +2,16 @@
 This file defines a batch run through which the hiv and tb modules are run across a grid of parameter values
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/deviance_for_calibration/baseline_runs.py
+tlo scenario-run --draw-only src/scripts/hiv/hiv_tb_projections/scenario3.py
 
 Test the scenario starts running without problems:
-tlo scenario-run src/scripts/hiv/deviance_for_calibration/baseline_runs.py
+tlo scenario-run src/scripts/hiv/hiv_tb_projections/scenario3.py
 
 or execute a single run:
-tlo scenario-run src/scripts/hiv/deviance_for_calibration/baseline_runs.py --draw 0 0
+tlo scenario-run src/scripts/hiv/hiv_tb_projections/scenario3.py --draw 0 0
 
 Run on the batch system using:
-tlo batch-submit src/scripts/hiv/deviance_for_calibration/baseline_runs.py
+tlo batch-submit src/scripts/hiv/hiv_tb_projections/scenario3.py
 
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
@@ -49,10 +49,10 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = randint(0, 5000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2030, 1, 1)
+        self.end_date = Date(2035, 1, 1)
         self.pop_size = 760000
-        self.number_of_draws = 5
-        self.runs_per_draw = 1
+        self.number_of_draws = 1
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {

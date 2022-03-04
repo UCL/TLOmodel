@@ -33,8 +33,10 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2024, 1, 1)
-popsize = 100
+end_date = Date(2018, 1, 1)
+popsize = 5000
+
+scenario = 2
 
 # set up the log config
 log_config = {
@@ -80,7 +82,8 @@ sim.register(
 )
 
 # todo change
-sim.modules["Tb"].parameters["scenario"] = 3
+sim.modules["Tb"].parameters["scenario"] = scenario
+# sim.modules["Tb"].parameters["scenario_start_date"] = "01/07/2010"
 
 # hiv_item_codes = set()
 # for f in sim.modules['Hiv'].item_codes_for_consumables_required.values():
@@ -104,3 +107,9 @@ output = parse_log_file(sim.log_filepath)
 with open(outputpath / "default_run.pickle", "wb") as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(output, f, pickle.HIGHEST_PROTOCOL)
+
+
+cov_over_time = output["tlo.methods.hiv"]["hiv_program_coverage"]
+cov_over_time = cov_over_time.set_index("date")
+# Percent of all HIV+ on ART
+print(cov_over_time["art_coverage_adult"])

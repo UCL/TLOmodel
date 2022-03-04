@@ -1300,7 +1300,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             hiv_item_codes = set()
             for f in self.sim.modules['Hiv'].item_codes_for_consumables_required.values():
                 hiv_item_codes = hiv_item_codes.union(f.keys())
-            self.sim.modules["HealthSystem"].prob_item_codes_available.loc[hiv_item_codes] = 0.6
+            self.sim.modules["HealthSystem"].prob_item_codes_available.loc[hiv_item_codes] = 0.75
 
             tb_item_codes = set()
             for f in self.sim.modules['Tb'].item_codes_for_consumables_required.values():
