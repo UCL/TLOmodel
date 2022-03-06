@@ -274,17 +274,10 @@ class NewbornOutcomes(Module):
         'treatment_effect_kmc': Parameter(
             Types.LIST, 'treatment effect of kangaroo mother care on preterm mortality'),
 
-        # SQUEEZE THRESHOLDS...
-        'squeeze_threshold_essential_newborn_care': Parameter(
-            Types.LIST, 'squeeze factor threshold below which essential newborn care can be given'),
-        'squeeze_threshold_kmc': Parameter(
-            Types.LIST, 'squeeze factor threshold below which essential kangaroo mother care can be given'),
-        'squeeze_threshold_assist_with_breast_feeding': Parameter(
-            Types.LIST, 'squeeze factor threshold below which assistance with breastfeeding can be given'),
-        'squeeze_threshold_neonatal_resus': Parameter(
-            Types.LIST, 'squeeze factor threshold below which neonatal resuscitation can be given'),
-        'squeeze_threshold_sepsis_treatment': Parameter(
-            Types.LIST, 'squeeze factor threshold below which sepsis treatment can be given'),
+        'squeeze_threshold_for_delay_three_nb_care': Parameter(
+            Types.LIST, 'squeeze factor value over which an individual within a newborn HSI is said to experience '
+                        'type 3 delay i.e. delay in receiving appropriate care'),
+
     }
 
     PROPERTIES = {
@@ -979,9 +972,13 @@ class NewbornOutcomes(Module):
             # Required consumables are defined
             avail = hsi_event.get_consumables(item_codes=self.item_codes_nb_consumables['resuscitation'])
 
+            # Run HCW check
+            sf_check = self.sim.modules['Labour'].check_emonc_signal_function_will_run(
+                sf='neo_resus',  f_lvl=hsi_event.ACCEPTED_FACILITY_LEVEL)
+
             # Then, if the consumables are available,resuscitation is started. We assume this is delayed in
             # deliveries that are not attended
-            if avail:
+            if avail and sf_check:
                 df.at[person_id, 'nb_received_neonatal_resus'] = True
             else:
                 self.apply_risk_of_encephalopathy(person_id, timing='after_birth')
@@ -1221,7 +1218,8 @@ class NewbornOutcomes(Module):
                              'cause_of_death_after_birth': [],
                              'sepsis_postnatal': False,
                              'passed_through_week_one': False,
-                             'will_receive_pnc': 'none'}
+                             'will_receive_pnc': 'none',
+                             'third_delay': False}
 
             if mni[mother_id]['clean_birth_practices']:
                 df.at[child_id, 'nb_clean_birth'] = True
@@ -1425,8 +1423,11 @@ class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(HSI_Event, I
         if not df.at[person_id, 'is_alive']:
             return
 
-        if squeeze_factor < params['squeeze_threshold_neonatal_resus']:
-            self.module.assessment_and_initiation_of_neonatal_resus(self)
+        # Check for delay due to high squeeze
+        if squeeze_factor > params['squeeze_threshold_for_delay_three_nb_care']:
+            nci[person_id]['third_delay'] = True
+
+        self.module.assessment_and_initiation_of_neonatal_resus(self)
 
         if not nci[person_id]['will_receive_pnc'] == 'early':
             self.module.set_death_status(person_id)
@@ -1463,7 +1464,6 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
     def apply(self, person_id, squeeze_factor):
         nci = self.module.newborn_care_info
         df = self.sim.population.props
-        params = self.module.current_parameters
 
         if not df.at[person_id, 'is_alive'] or df.at[person_id, 'nb_death_after_birth'] or (person_id not in nci):
             return
@@ -1500,20 +1500,17 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
             facility_type_code = self.module.rng.choice(['hc', 'hp'])
 
         # First the newborn is assessed for sepsis and treated if needed
-        if squeeze_factor < params['squeeze_threshold_sepsis_treatment']:
-            self.module.assessment_and_treatment_newborn_sepsis(self, facility_type_code)
+        self.module.assessment_and_treatment_newborn_sepsis(self, facility_type_code)
 
         # Next, interventions pertaining to essential newborn care
         if df.at[person_id, 'nb_pnc_check'] == 1:
-            if squeeze_factor < params['squeeze_threshold_essential_newborn_care']:
-                self.module.essential_newborn_care(self)
+            self.module.essential_newborn_care(self)
 
             # ...and invitation of kangaroo mother care for small infants
-            if squeeze_factor < params['squeeze_threshold_kmc']:
-                self.module.kangaroo_mother_care(self)
+            self.module.kangaroo_mother_care(self)
 
-                # Finally these newborns will receive  HIV screening if at risk
-                self.module.hiv_screening_for_at_risk_newborns(person_id)
+            # Finally these newborns will receive  HIV screening if at risk
+            self.module.hiv_screening_for_at_risk_newborns(person_id)
 
         self.module.set_death_status(person_id)
 

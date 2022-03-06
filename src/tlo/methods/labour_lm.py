@@ -156,7 +156,7 @@ def predict_sepsis_death(self, df, rng=None, **externals):
 
     if person['la_sepsis_treatment']:
         treatment_effect = pregnancy_helper_functions.get_treatment_effect(
-            externals['delay'], 'sepsis_treatment_effect_md', params)
+            externals['delay_one_two'], externals['delay_three'], 'sepsis_treatment_effect_md', params)
 
         result *= treatment_effect
 
@@ -175,13 +175,13 @@ def predict_eclampsia_death(self, df, rng=None, **externals):
 
     if person['la_eclampsia_treatment'] or person['ac_mag_sulph_treatment']:
         treatment_effect = pregnancy_helper_functions.get_treatment_effect(
-            externals['delay'], 'eclampsia_treatment_effect_md', params)
+            externals['delay_one_two'], externals['delay_three'], 'eclampsia_treatment_effect_md', params)
 
         result *= treatment_effect
 
     if person['la_maternal_hypertension_treatment'] or person['ac_iv_anti_htn_treatment']:
         treatment_effect = pregnancy_helper_functions.get_treatment_effect(
-            externals['delay'], 'anti_htns_treatment_effect_md', params)
+            externals['delay_one_two'], externals['delay_three'], 'anti_htns_treatment_effect_md', params)
 
         result *= treatment_effect
 
@@ -200,7 +200,7 @@ def predict_severe_pre_eclamp_death(self, df, rng=None, **externals):
 
     if person['la_maternal_hypertension_treatment'] or person['ac_iv_anti_htn_treatment']:
         treatment_effect = pregnancy_helper_functions.get_treatment_effect(
-            externals['delay'], 'anti_htns_treatment_effect_md', params)
+            externals['delay_one_two'], externals['delay_three'], 'anti_htns_treatment_effect_md', params)
 
         result *= treatment_effect
 
@@ -257,13 +257,13 @@ def predict_antepartum_haem_death(self, df, rng=None, **externals):
 
     if externals['received_blood_transfusion']:
         treatment_effect = pregnancy_helper_functions.get_treatment_effect(
-            externals['delay'], 'aph_bt_treatment_effect_md', params)
+            externals['delay_one_two'], externals['delay_three'], 'aph_bt_treatment_effect_md', params)
 
         result *= treatment_effect
 
     if externals['mode_of_delivery'] == 'caesarean_section':
         treatment_effect = pregnancy_helper_functions.get_treatment_effect(
-            externals['delay'], 'aph_cs_treatment_effect_md', params)
+            externals['delay_one_two'], externals['delay_three'], 'aph_cs_treatment_effect_md', params)
 
         result *= treatment_effect
 
@@ -329,13 +329,13 @@ def predict_postpartum_haem_pp_death(self, df, rng=None, **externals):
 
     if ('surgery' in treatment) or ('hysterectomy' in treatment):  # todo: replace bitset property with bool?
         treatment_effect = pregnancy_helper_functions.get_treatment_effect(
-            externals['delay'], 'pph_treatment_effect_surg_md', params)
+            externals['delay_one_two'], externals['delay_three'], 'pph_treatment_effect_surg_md', params)
 
         result *= treatment_effect
 
     if externals['received_blood_transfusion']:
         treatment_effect = pregnancy_helper_functions.get_treatment_effect(
-            externals['delay'], 'pph_bt_treatment_effect_md', params)
+            externals['delay_one_two'], externals['delay_three'], 'pph_bt_treatment_effect_md', params)
 
         result *= treatment_effect
 
@@ -376,13 +376,13 @@ def predict_uterine_rupture_death(self, df, rng=None, **externals):
 
     if person['la_uterine_rupture_treatment'] or person['la_has_had_hysterectomy']:
         treatment_effect = pregnancy_helper_functions.get_treatment_effect(
-            externals['delay'], 'ur_repair_treatment_effect_md', params)
+            externals['delay_one_two'], externals['delay_three'], 'ur_repair_treatment_effect_md', params)
 
         result *= treatment_effect
 
     if externals['received_blood_transfusion']:
         treatment_effect = pregnancy_helper_functions.get_treatment_effect(
-            externals['delay'], 'ur_treatment_effect_bt_md', params)
+            externals['delay_one_two'], externals['delay_three'], 'ur_treatment_effect_bt_md', params)
 
         result *= treatment_effect
 
@@ -421,13 +421,13 @@ def predict_intrapartum_still_birth(self, df, rng=None, **externals):
 
     if externals['mode_of_delivery'] == 'caesarean_section':
         treatment_effect = pregnancy_helper_functions.get_treatment_effect(
-            externals['delay'], 'treatment_effect_cs_still_birth', params)
+            externals['delay_one_two'], externals['delay_three'], 'treatment_effect_cs_still_birth', params)
 
         result *= treatment_effect
 
     if externals['mode_of_delivery'] == 'instrumental':
         treatment_effect = pregnancy_helper_functions.get_treatment_effect(
-            externals['delay'], 'treatment_effect_avd_still_birth', params)
+            externals['delay_one_two'], externals['delay_three'], 'treatment_effect_avd_still_birth', params)
 
         result *= treatment_effect
 

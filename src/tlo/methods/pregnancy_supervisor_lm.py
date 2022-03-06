@@ -1,4 +1,5 @@
 import pandas as pd
+from tlo.methods import pregnancy_helper_functions
 
 
 def preterm_labour(self, df, rng=None, **externals):
@@ -73,16 +74,21 @@ def ectopic_pregnancy_death(self, df, rng=None, **externals):
 
 def induced_abortion_death(self, df, rng=None, **externals):
     """
-    Population level linear model which returns a df containing the probability of death following induced abortion
+    Individual level linear model which returns a df containing the probability of death following induced abortion
     for a subset of the population following onset of disease and potential treatment. Risk of death is only modified in
     the presence of treatment
     """
+    person = df.iloc[0]
     params = self.parameters
-    result = pd.Series(data=params['prob_induced_abortion_death'], index=df.index)
+    result = params['prob_induced_abortion_death']
 
-    result[df.ac_received_post_abortion_care] *= params['treatment_effect_post_abortion_care']
+    if person['ac_received_post_abortion_care']:
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            externals['delay_one_two'], externals['delay_three'], 'treatment_effect_post_abortion_care', params)
 
-    return result
+        result *= treatment_effect
+
+    return pd.Series(data=[result], index=df.index)
 
 
 def spontaneous_abortion(self, df, rng=None, **externals):
@@ -111,16 +117,21 @@ def spontaneous_abortion(self, df, rng=None, **externals):
 
 def spontaneous_abortion_death(self, df, rng=None, **externals):
     """
-    Population level linear model which returns a df containing the probability of death following spontaneous abortion
+    Individual level linear model which returns a df containing the probability of death following spontaneous abortion
     for a subset of the population following onset of disease and potential treatment. Risk of death is only modified in
     the presence of treatment
     """
+    person = df.iloc[0]
     params = self.parameters
-    result = pd.Series(data=params['prob_spontaneous_abortion_death'], index=df.index)
+    result = params['prob_spontaneous_abortion_death']
 
-    result[df.ac_received_post_abortion_care] *= params['treatment_effect_post_abortion_care']
+    if person['ac_received_post_abortion_care']:
+        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
+            externals['delay_one_two'], externals['delay_three'], 'treatment_effect_post_abortion_care', params)
 
-    return result
+        result *= treatment_effect
+
+    return pd.Series(data=[result], index=df.index)
 
 
 def maternal_anaemia(self, df, rng=None, **externals):

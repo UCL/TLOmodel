@@ -106,6 +106,9 @@ def run_sim_for_0_days_get_mother_id(sim):
     df = sim.population.props
     women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
     mother_id = women_repro.index[0]
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
+
     return mother_id
 
 
@@ -590,7 +593,9 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     # set key pregnancy characteristics
     df.at[mother_id, 'is_pregnant'] = True
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 22
-    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'severe_anaemia_resolution': pd.NaT}
+    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'severe_anaemia_resolution': pd.NaT,
+                                                                             'delay_one_two': False,
+                                                                             'delay_three': False}
 
     # Set anaemia status
     df.at[mother_id, 'ps_anaemia_in_pregnancy'] = 'severe'
@@ -647,6 +652,12 @@ def test_initiation_of_treatment_for_hypertensive_disorder_during_antenatal_inpa
     mother_id = run_sim_for_0_days_get_mother_id(sim)
 
     updated_mother_id = int(mother_id)
+
+    # set key parameters
+    params = sim.modules['Labour'].current_parameters
+    params['mean_hcw_competence_hc'] = 1
+    params['mean_hcw_competence_hp'] = 1
+    params['prob_hcw_avail_anticonvulsant'] = 1
 
     # set key pregnancy characteristics
     df = sim.population.props
@@ -777,6 +788,12 @@ def test_initiation_of_treatment_for_prom_with_or_without_chorioamnionitis_durin
     sim = register_all_modules(seed)
     mother_id = run_sim_for_0_days_get_mother_id(sim)
     updated_mother_id = int(mother_id)
+
+    # set key parameters
+    params = sim.modules['Labour'].current_parameters
+    params['mean_hcw_competence_hc'] = 1
+    params['mean_hcw_competence_hp'] = 1
+    params['prob_hcw_avail_iv_abx'] = 1
 
     # set key pregnancy characteristics
     df = sim.population.props
@@ -912,7 +929,12 @@ def test_scheduling_and_treatment_effect_of_post_abortion_care(seed):
     # set key pregnancy characteristics
     df = sim.population.props
     df.at[mother_id, 'is_pregnant'] = False
-    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'delete_mni': False}
+
+    # set key parameters
+    params = sim.modules['Labour'].current_parameters
+    params['mean_hcw_competence_hc'] = 1
+    params['mean_hcw_competence_hp'] = 1
+    params['prob_hcw_avail_retained_prod'] = 1
 
     # set complications
     sim.modules['PregnancySupervisor'].abortion_complications.set([mother_id], 'haemorrhage')
@@ -975,9 +997,6 @@ def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management(se
     df.at[mother_id, 'is_pregnant'] = True
     df.at[mother_id, 'ps_ectopic_pregnancy'] = 'not_ruptured'
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 8
-    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'delete_mni': False}
-
-    # Check treatment for not ruptured ectopic pregnancy
 
     # set prob care seeking to 1
     sim.modules['PregnancySupervisor'].current_parameters['prob_care_seeking_ectopic_pre_rupture'] = 1

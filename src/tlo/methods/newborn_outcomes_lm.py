@@ -106,7 +106,12 @@ def predict_not_breathing_at_birth_death(self, df, rng=None, **externals):
     result = params['cfr_failed_to_transition']
 
     if person['nb_received_neonatal_resus']:
-        result *= params['treatment_effect_resuscitation']
+        if externals['delay']:
+            treatment_effect = 1 - ((1 - params['treatment_effect_resuscitation']) * 0.75)
+        else:
+            treatment_effect = params['treatment_effect_resuscitation']
+
+        result *= treatment_effect
 
     return pd.Series(data=[result], index=df.index)
 
@@ -155,6 +160,11 @@ def predict_respiratory_distress_death(self, df, rng=None, **externals):
     result = params['cfr_respiratory_distress_syndrome']
 
     if person['nb_received_neonatal_resus']:
-        result *= params['treatment_effect_resuscitation_preterm']
+        if externals['delay']:
+            treatment_effect = 1 - ((1 - params['treatment_effect_resuscitation_preterm']) * 0.75)
+        else:
+            treatment_effect = params['treatment_effect_resuscitation_preterm']
+
+        result *= treatment_effect
 
     return pd.Series(data=[result], index=df.index)

@@ -699,7 +699,7 @@ class PostnatalSupervisor(Module):
 
             # check if care seeking is delayed
             if self.rng.random_sample() < self.sim.modules['Labour'].current_parameters['prob_delay_one_two_fd']:
-                mni[person]['experienced_delay'].append(1)
+                mni[person]['delay_one_two'] = True
 
             postnatal_check = HSI_Labour_ReceivesPostnatalCheck(
                 self.sim.modules['Labour'], person_id=person)
@@ -1179,7 +1179,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                                                                       params['prob_care_seeking_postnatal_emergency']):
 
                 # If care will be sought, check if they experience delay seeking care
-                pregnancy_helper_functions.check_if_delayed_careseeking(self, individual_id)
+                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id)
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     pnc_one_maternal, priority=0, topen=self.sim.date, tclose=self.sim.date + pd.DateOffset(days=1))

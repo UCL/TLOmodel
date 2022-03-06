@@ -366,13 +366,17 @@ class Labour(Module):
         'probability_delivery_hospital': Parameter(
             Types.LIST, 'probability of delivering in a hospital'),
         'prob_delay_one_two_fd': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'probability a woman seeking care during pregnancy will experience a type 1 or 2 delay when '
+                        'choosing to seek care (i.e. she is delayed in reaching the facility'),
         'squeeze_threshold_for_delay_three_bemonc': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'squeeze factor value over which an individual within a EMoNC HSI is said to experience type 3'
+                        ' delay i.e. delay in receiving appropriate care'),
         'squeeze_threshold_for_delay_three_cemonc': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'squeeze factor value over which an individual within a CEMoNC HSI is said to experience type 3'
+                        ' delay i.e. delay in receiving appropriate car1e'),
         'squeeze_threshold_for_delay_three_pn': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'squeeze factor value over which an individual within a postnatal HSI is said to experience '
+                        'type 3 delay i.e. delay in receiving appropriate care'),
 
         # PNC CHECK...
         'prob_timings_pnc': Parameter(
@@ -485,37 +489,46 @@ class Labour(Module):
 
         # HEALTH CARE WORKER AVAILABILITY AND COMPETENCE...
         'prob_hcw_avail_iv_abx': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - parenteral antibiotics'),
         'prob_hcw_avail_uterotonic': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - parenteral uterotonics'),
         'prob_hcw_avail_anticonvulsant': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - parenteral anticonvulsants'),
         'prob_hcw_avail_man_r_placenta': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - manual removal of retained placenta'),
         'prob_hcw_avail_avd': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - assisted vaginal delivery'),
         'prob_hcw_avail_blood_tran': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - blood transfusion'),
         'prob_hcw_avail_surg': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - obstetric surgery'),
+        'prob_hcw_avail_retained_prod': Parameter(
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - removal of retained products of conception'),
+        'prob_hcw_avail_neo_resus': Parameter(
+            Types.LIST, 'average probability that a health facility providing EmONC care has a HCW available that can'
+                        ' delivery signal function - neonatal resuscitation'),
 
         'mean_hcw_competence_hc': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'mean competence of HCW at delivering EmONC care at a health centre. A draw below this level '
+                        'prevents intervention delivery'),
         'mean_hcw_competence_hp': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'mean competence of HCW at delivering EmONC care at a hospital. A draw below this level '
+                        'prevents intervention delivery'),
 
         # EFFECT OF DELAYS...
         'treatment_effect_modifier_all_delays': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'factor by which treatment effectiveness is reduced in the presences of multiple delays'),
         'treatment_effect_modifier_one_delay': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'factor by which treatment effectiveness is reduced in the presences of one delays'),
 
-        'prob_intervention_delivered_sep_assessment_pnc': Parameter(
-            Types.LIST, 'probability a woman will be assessed for infection during PNC given that the HSI has ran '
-                        'and the consumables are available (proxy for clinical quality)'),
-        'prob_intervention_delivered_bp_pnc': Parameter(
-            Types.LIST, 'probability a woman will have their BP checked during PNC given that the HSI has ran '
-                        'and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_anaemia_assessment_pnc': Parameter(
             Types.LIST, 'probability a woman will have their Hb levels checked during PNC given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
@@ -1094,7 +1107,8 @@ class Labour(Module):
         received_abx_for_prom = mni[person_id]['abx_for_prom_given']
         amtsl_given = mni[person_id]['amtsl_given']
         delivery_setting = mni[person_id]['delivery_setting']
-        delay = mni[person_id]['experienced_delay']
+        delay_one_two = mni[person_id]['delay_one_two']
+        delay_three = mni[person_id]['delay_three']
 
         if mni[person_id]['birth_weight'] == 'macrosomia':
             macrosomia = True
@@ -1110,7 +1124,8 @@ class Labour(Module):
                                                      amtsl_given=amtsl_given,
                                                      macrosomia=macrosomia,
                                                      delivery_setting=delivery_setting,
-                                                     delay=delay)[person_id]
+                                                     delay_one_two=delay_one_two,
+                                                     delay_three=delay_three)[person_id]
 
     def reset_due_date(self, id_or_index, new_due_date):
         """
@@ -1481,7 +1496,8 @@ class Labour(Module):
         else:
 
             # Reset delay property
-            mni[individual_id]['experienced_delay'].clear()
+            mni[individual_id]['delay_one_two'] = False
+            mni[individual_id]['delay_three'] = False
 
             if df.at[individual_id, 'pn_htn_disorders'] == 'eclampsia':
                 df.at[individual_id, 'pn_htn_disorders'] = 'severe_pre_eclamp'
@@ -1680,12 +1696,13 @@ class Labour(Module):
                 if avail:
                     mni[person_id]['corticosteroids_given'] = True
 
-    def determine_delivery_mode_in_spe_or_ec(self, person_id, complication):
+    def determine_delivery_mode_in_spe_or_ec(self, person_id, hsi_event, complication):
         """
         This function is called following treatment for either severe pre-eclampsia or eclampsia during labour and
         determines if women with these conditions will undergo vaginal, assisted vaginal or caesarean section due to
          their complication
         :param person_id: mothers individual id
+        :param hsi_event: HSI event
         :param complication: (STR) severe_pre_eclamp OR eclampsia
         """
         params = self.current_parameters
@@ -1696,9 +1713,8 @@ class Labour(Module):
         delivery_modes = ['vaginal', 'avd', 'cs']
         mode = self.rng.choice(delivery_modes, p=params[f'prob_delivery_modes_{complication}'])
 
-        # todo: should only happen if cons avail
         if mode == 'avd':
-            mni[person_id]['mode_of_delivery'] = 'instrumental'
+            self.assessment_for_assisted_vaginal_delivery(hsi_event, for_spe=True)
 
         elif mode == 'cs':
             mni[person_id]['referred_for_cs'] = True
@@ -1733,7 +1749,7 @@ class Labour(Module):
 
             # Determine if this person will deliver vaginally or via caesarean
             if (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none') and (labour_stage == 'ip'):
-                self.determine_delivery_mode_in_spe_or_ec(person_id, 'spe')
+                self.determine_delivery_mode_in_spe_or_ec(person_id, hsi_event, 'spe')
 
             # Run HCW check
             sf_check = self.check_emonc_signal_function_will_run(sf='anticonvulsant',
@@ -1815,19 +1831,20 @@ class Labour(Module):
                                               optional_item_codes=cons['eclampsia_management_optional'])
 
             if (labour_stage == 'ip') and (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'none'):
-                self.determine_delivery_mode_in_spe_or_ec(person_id, 'ec')
+                self.determine_delivery_mode_in_spe_or_ec(person_id, hsi_event, 'ec')
 
             if avail and sf_check:
                 # Treatment with magnesium reduces a womans risk of death from eclampsia
                 df.at[person_id, 'la_eclampsia_treatment'] = True
 
-    def assessment_and_treatment_of_obstructed_labour_via_avd(self, hsi_event):
+    def assessment_for_assisted_vaginal_delivery(self, hsi_event, for_spe):
         """
         This function represents the diagnosis and management of obstructed labour during labour. This function
         defines the required consumables and administers the intervention if available. The intervention in this
         function is assisted vaginal delivery. It is called by either HSI_Labour_PresentsForSkilledBirthAttendanceIn
         Labour
         :param hsi_event: HSI event in which the function has been called:
+        :param for_spe: BOOL if this function is applied to woman with severe pre-eclampsia
         (STR) 'hc' == health centre, 'hp' == hospital
         """
         df = self.sim.population.props
@@ -1841,7 +1858,7 @@ class Labour(Module):
            (df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'caesarean_future'):
             return
 
-        elif df.at[person_id, 'la_obstructed_labour']:
+        elif df.at[person_id, 'la_obstructed_labour'] or for_spe:
             # Define the consumables...
             hsi_event.get_consumables(item_codes=cons['obstructed_labour'])
             avail_forceps = hsi_event.get_consumables(item_codes=cons['forceps'])
@@ -2489,7 +2506,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
             # Determine if the labouring woman will be delayed in attending for facility delivery
-            pregnancy_helper_functions.check_if_delayed_careseeking(self, individual_id)
+            pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id)
 
             # ======================================== SCHEDULING BIRTH AND DEATH EVENTS ============================
             # We schedule all women to move through both the death and birth event.
@@ -2566,7 +2583,7 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                     mni[individual_id]['sought_care_labour_phase'] = 'intrapartum'
 
                     # Assume all women who develop complications at home incur effect of delay
-                    mni[individual_id]['experienced_delay'].append(1)
+                    mni[individual_id]['delay_one_two'] = True
 
                     # We assume women present to the health system through the generic a&e appointment
                     from tlo.methods.hsi_generic_first_appts import (
@@ -2663,7 +2680,8 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
 
         # Finally reset delay property
         if individual_id in mni:
-            mni[individual_id]['experienced_delay'].clear()
+            mni[individual_id]['delay_one_two'] = False
+            mni[individual_id]['delay_three'] = False
 
 
 class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
@@ -2850,7 +2868,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             mni[person_id]['referred_for_cs'] = True
 
         elif df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'avd_now':
-            mni[person_id]['mode_of_delivery'] = 'instrumental'
+            self.module.assessment_for_assisted_vaginal_delivery(self, for_spe=True)
 
         # and then if the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
         # of death if complications occur)
@@ -2903,7 +2921,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # Next, women in labour are assessed for complications and treatment delivered if a need is identified and
         # consumables are available
 
-        self.module.assessment_and_treatment_of_obstructed_labour_via_avd(self)
+        self.module.assessment_for_assisted_vaginal_delivery(self, for_spe=False)
         self.module.assessment_and_treatment_of_maternal_sepsis(self, 'ip')
         self.module.assessment_and_treatment_of_hypertension(self)
         self.module.assessment_and_plan_for_antepartum_haemorrhage(self)
@@ -2918,13 +2936,12 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # -------------------------- Caesarean section/AVD for un-modelled reason ------------------------------------
         # We apply a probability to women who have not already been allocated to undergo assisted/caesarean delivery
         # that they will require assisted/caesarean delivery to capture indications which are not explicitly modelled
-        # TODO: should only have avd if avail- shecule through this
         if not mni[person_id]['referred_for_cs'] and (not mni[person_id]['mode_of_delivery'] == 'instrumental'):
             if self.module.rng.random_sample() < params['residual_prob_caesarean']:
                 mni[person_id]['referred_for_cs'] = True
                 mni[person_id]['cs_indication'] = 'other'
             elif self.module.rng.random_sample() < params['residual_prob_avd']:
-                mni[person_id]['mode_of_delivery'] = 'instrumental'
+                self.module.assessment_for_assisted_vaginal_delivery(self, for_spe=True)
 
         # ========================================== SCHEDULING CEMONC CARE =========================================
         # Finally women who require additional treatment have the appropriate HSI scheduled to deliver further care
@@ -3026,10 +3043,8 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         self.module.assessment_and_treatment_of_pph_retained_placenta(self)
         self.module.assessment_and_treatment_of_pph_uterine_atony(self)
 
-        # if self.module.rng.random_sample() < params['prob_intervention_delivered_sep_assessment_pnc']:
         self.module.assessment_and_treatment_of_maternal_sepsis(self, 'pp')
 
-        # if self.module.rng.random_sample() < params['prob_intervention_delivered_bp_pnc']:
         self.module.assessment_and_treatment_of_severe_pre_eclampsia_mgso4(self, 'pp')
         self.module.assessment_and_treatment_of_hypertension(self)
 

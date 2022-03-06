@@ -133,7 +133,8 @@ class CareOfWomenDuringPregnancy(Module):
             Types.LIST, 'specificity of a blood test to detect syphilis'),
 
         'squeeze_threshold_for_delay_three_an': Parameter(
-            Types.LIST, ''),
+            Types.LIST, 'squeeze factor value over which an individual within a antenatal HSI is said to experience '
+                        'type 3 delay i.e. delay in receiving appropriate care'),
     }
 
     PROPERTIES = {
@@ -665,12 +666,15 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
         individual_id = hsi_event.target
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         if df.at[individual_id, 'is_pregnant'] and not df.at[individual_id, 'la_currently_in_labour']:
             logger.debug(key='message', data=f'HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment: did not'
                                              f' run for person {individual_id}')
 
             self.sim.modules['PregnancySupervisor'].apply_risk_of_death_from_monthly_complications(individual_id)
+            mni[individual_id]['delay_one_two'] = False
+            mni[individual_id]['delay_three'] = False
 
     # ================================= INTERVENTIONS DELIVERED DURING ANC ============================================
     # The following functions contain the interventions that are delivered as part of routine ANC contacts. Functions
@@ -2454,6 +2458,9 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
                 self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
                                         admission_date)
+            else:
+                mni[person_id]['delay_one_two'] = False
+                mni[person_id]['delay_three'] = False
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare: did not run')
@@ -2626,9 +2633,18 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
                                                                      'other', first=True):
             return
 
+        # Determine if there will be a delay due to high squeeze
+        pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id,
+                                                                  hsi_type='an')
+
         # Request baseline PAC consumables
         baseline_cons = self.get_consumables(item_codes=cons['post_abortion_care_core'],
                                              optional_item_codes=cons['post_abortion_care_optional'])
+
+        # Check HCW availability
+        sf_check = self.sim.modules['Labour'].check_emonc_signal_function_will_run(sf='retained_prod',
+                                                                                   f_lvl=self.ACCEPTED_FACILITY_LEVEL)
+
         # todo: add equipment for uterine evacuation for TLO version 2.0
         # todo: specify key consumables instead of groups (await calibration)
 
@@ -2641,7 +2657,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
                 optional_item_codes=cons['post_abortion_care_sepsis_optional']
             )
 
-            if cons_for_sepsis_pac and baseline_cons:
+            if cons_for_sepsis_pac and baseline_cons and sf_check:
                 df.at[person_id, 'ac_received_post_abortion_care'] = True
 
         elif abortion_complications.has_any([person_id], 'haemorrhage', first=True):
@@ -2654,14 +2670,14 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             cons_for_shock = self.get_consumables(
                 item_codes=cons['post_abortion_care_shock'])
 
-            if cons_for_haemorrhage and cons_for_shock and baseline_cons:
+            if cons_for_haemorrhage and cons_for_shock and baseline_cons and sf_check:
                 df.at[person_id, 'ac_received_post_abortion_care'] = True
 
         elif abortion_complications.has_any([person_id], 'injury', first=True):
             cons_for_shock = self.get_consumables(
                 item_codes=cons['post_abortion_care_shock'])
 
-            if cons_for_shock and baseline_cons:
+            if cons_for_shock and baseline_cons and sf_check:
                 df.at[person_id, 'ac_received_post_abortion_care'] = True
 
         elif abortion_complications.has_any([person_id], 'other', first=True) and baseline_cons:

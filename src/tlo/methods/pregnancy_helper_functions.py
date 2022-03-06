@@ -119,8 +119,11 @@ def check_if_delayed_careseeking(self, individual_id):
     """
     mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-    if self.module.rng.random_sample() < self.sim.modules['Labour'].current_parameters['prob_delay_one_two_fd']:
-        mni[individual_id]['experienced_delay'].append(1)
+    if individual_id not in mni:
+        return
+
+    if self.rng.random_sample() < self.sim.modules['Labour'].current_parameters['prob_delay_one_two_fd']:
+        mni[individual_id]['delay_one_two'] = False
 
 
 def check_if_delayed_care_delivery(self, squeeze_factor, individual_id, hsi_type):
@@ -136,30 +139,26 @@ def check_if_delayed_care_delivery(self, squeeze_factor, individual_id, hsi_type
 
     mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-    if self == self.sim.modules['PostnatalSupervisor']:
-        params = self.sim.modules['Labour'].current_parameters
-    else:
-        params = self.current_parameters
-
-    if squeeze_factor > params[f'squeeze_threshold_for_delay_three_{hsi_type}']:
-        mni[individual_id]['experienced_delay'].append(3)
+    if squeeze_factor > self.current_parameters[f'squeeze_threshold_for_delay_three_{hsi_type}']:
+        mni[individual_id]['delay_three'] = False
 
 
-def get_treatment_effect(delay, treatment_effect, params):
+def get_treatment_effect(delay_one_two, delay_three, treatment_effect, params):
     """
     Returns a requested treatment effect which may be modified if care was delayed
-    :param delay: BOOL, if a delay in care was experienced
+    :param delay_one_two: BOOL, if delay 1/2 has occurred
+    :param delay_three: BOOL, if a delay 3 has occurred
     :param treatment_effect: STR, parameter housing the treatment effect
     :param params: module parameters
     :return: Treatment effect to be used in the linear model
     """
 
     # If they have experienced all delays, treatment effectiveness is reduced by greater amount
-    if 1 and 3 in delay:
+    if delay_one_two and delay_three:
         treatment_effect = 1 - ((1 - params[treatment_effect]) * params['treatment_effect_modifier_all_delays'])
 
     # Otherwise, if only one type of delay is experience the treatment effect is reduced by a lesser amount
-    elif 1 or 3 in delay:
+    elif delay_one_two or delay_three:
         treatment_effect = 1 - ((1 - params[treatment_effect]) * params['treatment_effect_modifier_one_delay'])
 
     # If no delays occurred, maximum treatment effectiveness is applied
@@ -349,7 +348,7 @@ def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
         for cause in causes:
             if f'{cause}_death' in self.nb_linear_models.keys():
                 risk = {cause: self.nb_linear_models[f'{cause}_death'].predict(
-                    df.loc[[individual_id]])[individual_id]}
+                    df.loc[[individual_id]], delay=nci[individual_id]['third_delay'])[individual_id]}
             else:
                 risk = {cause: params[f'cfr_{cause}']}
 
@@ -367,11 +366,11 @@ def update_mni_dictionary(self, individual_id):
     mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
     df = self.sim.population.props
 
-    assert df.at[individual_id, 'is_pregnant']
-
     if self == self.sim.modules['PregnancySupervisor']:
 
-        mni[individual_id] = {'experienced_delay': [],
+        mni[individual_id] = {'experienced_delay': [0],
+                              'delay_one_two': False,
+                              'delay_three': False,
                               'delete_mni': False,  # if True, mni deleted in report_daly_values function
                               'abortion_onset': pd.NaT,
                               'abortion_haem_onset': pd.NaT,

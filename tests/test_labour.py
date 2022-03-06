@@ -292,6 +292,12 @@ def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesa
     df = sim.population.props
     df.at[mother_id, 'ac_admitted_for_immediate_delivery'] = 'caesarean_now'
 
+    # set key parameters
+    params = sim.modules['Labour'].current_parameters
+    params['mean_hcw_competence_hc'] = 1.0
+    params['mean_hcw_competence_hp'] = 1.0
+    params['prob_hcw_avail_surg'] = 1.0
+
     # Run the labour onset, check she will correctly deliver at a hospital level facility
     labour_onset = labour.LabourOnsetEvent(individual_id=mother_id, module=sim.modules['Labour'])
     labour_onset.apply(mother_id)
@@ -503,6 +509,16 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
     df = sim.population.props
 
+    # set key parameters
+    params = sim.modules['Labour'].current_parameters
+    params['mean_hcw_competence_hc'] = 1.0
+    params['mean_hcw_competence_hp'] = 1.0
+    params['prob_hcw_avail_iv_abx'] = 1.0
+    params['prob_hcw_avail_uterotonic'] = 1.0
+    params['prob_hcw_avail_anticonvulsant'] = 1.0
+    params['prob_hcw_avail_avd'] = 1.0
+    params['prob_hcw_avail_man_r_placenta'] = 1.0
+
     # create a dummy hsi event that the treatment functions will call
     from tlo.events import IndividualScopeEventMixin
     from tlo.methods.healthsystem import HSI_Event
@@ -544,14 +560,14 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['cpd'] = True
 
     # Run the event and check she has correctly been referred for caesarean
-    sim.modules['Labour'].assessment_and_treatment_of_obstructed_labour_via_avd(hsi_event=hsi_event)
+    sim.modules['Labour'].assessment_for_assisted_vaginal_delivery(hsi_event=hsi_event, for_spe=False)
     assert mni[mother_id]['referred_for_cs']
 
     # Remove CPD as a cause and set probability of AVD being successful to 1, call the function and check she has
     # undergone instrumental delivery
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['cpd'] = False
     params['prob_successful_assisted_vaginal_delivery'] = 1.0
-    sim.modules['Labour'].assessment_and_treatment_of_obstructed_labour_via_avd(hsi_event=hsi_event)
+    sim.modules['Labour'].assessment_for_assisted_vaginal_delivery(hsi_event=hsi_event, for_spe=False)
     assert (mni[mother_id]['mode_of_delivery'] == 'instrumental')
 
     # Next set the women to have sepsis and check she is treated
@@ -637,7 +653,13 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
 
     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
     df = sim.population.props
+
+    # set key parameters
     params = sim.modules['Labour'].current_parameters
+    params['mean_hcw_competence_hc'] = 1.0
+    params['mean_hcw_competence_hp'] = 1.0
+    params['prob_hcw_avail_surg'] = 1.0
+    params['prob_hcw_avail_blood_tran'] = 1.0
 
     # Run labour onset event to update additional variables
     labour_onset = labour.LabourOnsetEvent(individual_id=mother_id, module=sim.modules['Labour'])
