@@ -265,14 +265,17 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id):
                     risk = {cause: self.la_linear_models['postpartum_haemorrhage_death'].predict(
                         df.loc[[individual_id]],
                         received_blood_transfusion=mni[individual_id]['received_blood_transfusion'],
-                        delay=mni[individual_id]['experienced_delay'])[individual_id]}
+                        delay_one_two=mni[individual_id]['delay_one_two'],
+                        delay_three=mni[individual_id]['delay_three']
+                    )[individual_id]}
                 else:
                     risk = {cause: self.la_linear_models[f'{cause}_death'].predict(
                         df.loc[[individual_id]],
                         received_blood_transfusion=mni[individual_id]['received_blood_transfusion'],
                         mode_of_delivery=mni[individual_id]['mode_of_delivery'],
                         chorio_in_preg=mni[individual_id]['chorio_in_preg'],
-                        delay=mni[individual_id]['experienced_delay'])[individual_id]}
+                        delay_one_two=mni[individual_id]['delay_one_two'],
+                        delay_three=mni[individual_id]['delay_three'])[individual_id]}
                 risks.update(risk)
 
             elif self == self.sim.modules['PostnatalSupervisor']:
