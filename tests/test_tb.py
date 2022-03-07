@@ -864,6 +864,10 @@ def test_shorter_paediatric_treatment():
     sim.modules['Tb'].parameters["sens_xpert_smear_negative"] = 1.0
     sim.modules['Tb'].parameters["spec_xpert_smear_negative"] = 1.0
 
+    # make clinical diagnosis perfect
+    sim.modules['Tb'].parameters["sens_clinical"] = 1.0
+    sim.modules['Tb'].parameters["spec_clinical"] = 1.0
+
     # simulate for 0 days, just get everything set up (dxtests etc)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
@@ -947,7 +951,14 @@ def test_shorter_paediatric_treatment():
     screening_and_refer.apply(person_id=person_id_1, squeeze_factor=0)
 
     assert df.at[person_id_1, 'tb_ever_tested']
-    assert not df.at[person_id_1, 'tb_diagnosed']
+    assert df.at[person_id_1, 'tb_diagnosed']
+
+    # run start treatment event
+    start_treatment = tb.HSI_Tb_StartTreatment(person_id=person_id_1, module=sim.modules['Tb'])
+    start_treatment.apply(person_id=person_id_1, squeeze_factor=0)
+
+    assert df.at[person_id_1, 'tb_on_treatment']
+    assert df.at[person_id_1, 'tb_treatment_regimen'] == "tb_tx_child_shorter"
 
     # create person
     person_id_2 = 2
