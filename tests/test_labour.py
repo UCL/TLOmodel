@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-from tlo.analysis.utils import parse_log_file
 
 from tlo import Date, Simulation
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     care_of_women_during_pregnancy,
     contraception,
@@ -18,8 +18,8 @@ from tlo.methods import (
     labour,
     newborn_outcomes,
     postnatal_supervisor,
-    pregnancy_supervisor,
     pregnancy_helper_functions,
+    pregnancy_supervisor,
     symptommanager,
 )
 

@@ -1,5 +1,6 @@
 from tlo import Date, logging
 from tlo.methods import (
+    cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
     demography,
@@ -15,7 +16,6 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
-    cardio_metabolic_disorders
 )
 from tlo.scenario import BaseScenario
 

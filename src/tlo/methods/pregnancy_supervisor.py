@@ -3,10 +3,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging, util, Date
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging, util
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
-from tlo.methods import Metadata, labour, pregnancy_supervisor_lm, pregnancy_helper_functions
+from tlo.methods import Metadata, labour, pregnancy_helper_functions, pregnancy_supervisor_lm
 from tlo.methods.causes import Cause
 from tlo.util import BitsetHandler
 
@@ -865,7 +865,7 @@ class PregnancySupervisor(Module):
         # Import the HSIs
         from tlo.methods.care_of_women_during_pregnancy import (
             HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact,
-            HSI_CareOfWomenDuringPregnancy_FocusedANCVisit
+            HSI_CareOfWomenDuringPregnancy_FocusedANCVisit,
         )
 
         # Now the correct ANC HSI is scheduled depending on the ANC contact schedule that has been provided via

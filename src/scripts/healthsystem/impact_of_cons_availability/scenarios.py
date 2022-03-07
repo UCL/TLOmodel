@@ -12,6 +12,7 @@ or locally using:
 
 from tlo import Date, logging
 from tlo.methods import (
+    alri,
     bladder_cancer,
     breast_cancer,
     cardio_metabolic_disorders,
@@ -29,38 +30,43 @@ from tlo.methods import (
     hiv,
     labour,
     malaria,
+    measles,
     newborn_outcomes,
     oesophagealcancer,
     other_adult_cancers,
     postnatal_supervisor,
     pregnancy_supervisor,
     prostate_cancer,
+    rti,
+    stunting,
     symptommanager,
+    wasting,
 )
 from tlo.scenario import BaseScenario
 
 
-class LongRun(BaseScenario):
+class ImpactOfConsumablesAvailability(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2010, 1, 1)
-        self.pop_size = 1_000  # <- recommended population size for the runs
+        self.end_date = Date(2014, 12, 31)
+        self.pop_size = 10_000  # <- recommended population size for the runs
         self.number_of_draws = 3  # <- one scenario
         self.runs_per_draw = 1  # <- repeated this many times
 
     def log_configuration(self):
         return {
-            'filename': 'long_run',  # <- (specified only for local running)
+            'filename': 'impact_of_consumables_availability',  # <- (specified only for local running)
             'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
-                '*': logging.INFO,
+                '*': logging.WARNING,
+                'tlo.methods.demography': logging.INFO,
+                'tlo.methods.healthburden': logging.INFO,
             }
         }
 
     def modules(self):
-        # todo add things here!
         return [
             # Core Modules
             demography.Demography(resourcefilepath=self.resources),
@@ -83,10 +89,15 @@ class LongRun(BaseScenario):
 
             # - Conditions of Early Childhood
             diarrhoea.Diarrhoea(resourcefilepath=self.resources),
+            alri.Alri(resourcefilepath=self.resources),
+            stunting.Stunting(resourcefilepath=self.resources),
+            wasting.Wasting(resourcefilepath=self.resources),
 
             # - Communicable Diseases
             hiv.Hiv(resourcefilepath=self.resources),
             malaria.Malaria(resourcefilepath=self.resources),
+            measles.Measles(resourcefilepath=self.resources),
+            # todo - add TB
 
             # - Non-Communicable Conditions
             # -- Cancers
@@ -96,10 +107,11 @@ class LongRun(BaseScenario):
             other_adult_cancers.OtherAdultCancer(resourcefilepath=self.resources),
             prostate_cancer.ProstateCancer(resourcefilepath=self.resources),
 
-            # -- Caridometabolic Diorders
+            # -- Cardio-metabolic Disorders
             cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
 
-            # -- Injuries (Forthcoming)
+            # -- Injuries
+            rti.RTI(resourcefilepath=self.resources),
 
             # -- Other Non-Communicable Conditions
             depression.Depression(resourcefilepath=self.resources),

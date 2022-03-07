@@ -3,8 +3,9 @@
  postnatal supervisor, newborn outcomes) , allowing for faster runnning when these are not required. The main assumption
  is that every pregnancy results in a birth."""
 
-import pandas as pd
 import ast
+
+import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent

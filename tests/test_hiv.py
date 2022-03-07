@@ -20,8 +20,8 @@ from tlo.methods import (
     labour,
     newborn_outcomes,
     postnatal_supervisor,
-    pregnancy_supervisor,
     pregnancy_helper_functions,
+    pregnancy_supervisor,
     simplified_births,
     symptommanager,
 )

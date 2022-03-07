@@ -3,8 +3,8 @@ This file stores any functions that are called from multiple different modules i
 module suite
 """
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def get_list_of_items(self, item_list):
