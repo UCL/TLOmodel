@@ -17,9 +17,9 @@ Data from OpenLMIS includes closing balance, quantity received, quantity dispens
 for each month by facility.
 
 """
+
 import calendar
 import datetime
-# Import Statements and initial declarations
 from collections import defaultdict
 from pathlib import Path
 
@@ -27,10 +27,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from tlo.methods.consumables import check_format_of_consumables_file
+
 # Set local Dropbox source
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    'C:/Users/sm2511/Dropbox/Thanzi la Onse'
-    # '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE'
+    # 'C:/Users/sm2511/Dropbox/Thanzi la Onse'
+    '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE'
 )
 
 path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/consumables raw files/"
@@ -47,6 +49,7 @@ outputfilepath = Path("./outputs")
 resourcefilepath = Path("./resources")
 path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
 
+
 # Define necessary functions
 def change_colnames(df, NameChangeList):  # Change column names
     ColNames = df.columns
@@ -57,6 +60,8 @@ def change_colnames(df, NameChangeList):  # Change column names
     df.columns = ColNames2
     return df
 
+
+# %%
 # 1. DATA IMPORT AND CLEANING ##
 #########################################################################################
 
@@ -187,17 +192,26 @@ for m in range(2, 13):
     lmis_df_wide_flat.loc[cond1 & ~cond2 & cond3, [('data_source', months_dict[m])]] = 'lmis_interpolation_rule1'
 
     if months_dict[m] in months_dict31:
-        lmis_df_wide_flat.loc[cond1 & ~cond2 & cond3, [('stkout_days', months_dict[m])]] = (lmis_df_wide_flat[(
-            'amc', months_dict[m])] - lmis_df_wide_flat[('closing_bal', months_dict[m - 1])] - lmis_df_wide_flat[(
-                'received', months_dict[m])]) / lmis_df_wide_flat[('amc', months_dict[m])] * 31
+        lmis_df_wide_flat.loc[cond1 & ~cond2 & cond3, [('stkout_days', months_dict[m])]] = \
+            (
+                lmis_df_wide_flat[('amc', months_dict[m])]
+                - lmis_df_wide_flat[('closing_bal', months_dict[m - 1])]
+                - lmis_df_wide_flat[('received', months_dict[m])]
+            ) / lmis_df_wide_flat[('amc', months_dict[m])] * 31
     elif months_dict[m] in months_dict30:
-        lmis_df_wide_flat.loc[cond1 & ~cond2 & cond3, [('stkout_days', months_dict[m])]] = (lmis_df_wide_flat[(
-            'amc', months_dict[m])] - lmis_df_wide_flat[('closing_bal', months_dict[m - 1])] - lmis_df_wide_flat[(
-                'received', months_dict[m])]) / lmis_df_wide_flat[('amc', months_dict[m])] * 30
+        lmis_df_wide_flat.loc[cond1 & ~cond2 & cond3, [('stkout_days', months_dict[m])]] = \
+            (
+                lmis_df_wide_flat[('amc', months_dict[m])]
+                - lmis_df_wide_flat[('closing_bal', months_dict[m - 1])]
+                - lmis_df_wide_flat[('received', months_dict[m])]
+            ) / lmis_df_wide_flat[('amc', months_dict[m])] * 30
     else:
-        lmis_df_wide_flat.loc[cond1 & ~cond2 & cond3, [('stkout_days', months_dict[m])]] = (lmis_df_wide_flat[(
-            'amc', months_dict[m])] - lmis_df_wide_flat[('closing_bal', months_dict[m - 1])] - lmis_df_wide_flat[(
-                'received', months_dict[m])]) / lmis_df_wide_flat[('amc', months_dict[m])] * 28
+        lmis_df_wide_flat.loc[cond1 & ~cond2 & cond3, [('stkout_days', months_dict[m])]] = \
+            (
+                lmis_df_wide_flat[('amc', months_dict[m])]
+                - lmis_df_wide_flat[('closing_bal', months_dict[m - 1])]
+                - lmis_df_wide_flat[('received', months_dict[m])]
+            ) / lmis_df_wide_flat[('amc', months_dict[m])] * 28
 
 count_stkout_entries = lmis_df_wide_flat['stkout_days'].count(axis=1).sum()
 print(count_stkout_entries, "stockout entries after first interpolation")
@@ -321,7 +335,7 @@ stkout_df = stkout_df.groupby(
                          'consumable_reporting_freq': 'first',
                          'consumables_reported_in_mth': 'first'})
 
-# 2.iii. For substitable drugs (within consumable_name_tlo), collapse by taking the product of stkout_prop (OR
+# 2.iii. For substitutable drugs (within consumable_name_tlo), collapse by taking the product of stkout_prop (OR
 # condition).
 # This represents Pr(all substitutes with the item code are stocked out)
 stkout_df['stkout_prop'] = 1 - stkout_df['available_prop']
@@ -374,8 +388,7 @@ unmatched_consumables = pd.merge(unmatched_consumables, matched_consumables[['it
 unmatched_consumables = unmatched_consumables[unmatched_consumables['item_y'].isna()]
 
 # ** Extract stock availability data from HHFA and clean data **
-hhfa_df = pd.read_excel(open(path_to_files_in_the_tlo_dropbox / 'ResourceFile_hhfa_consumables.xlsx', 'rb'),
-                        sheet_name='hhfa_data')
+hhfa_df = pd.read_excel(path_to_files_in_the_tlo_dropbox / 'ResourceFile_hhfa_consumables.xlsx', sheet_name='hhfa_data')
 
 # Use the ratio of availability rates between levels 1b on one hand and levels 2 and 3 on the other to extrapolate
 # availability rates for levels 2 and 3 from the HHFA data
@@ -402,10 +415,10 @@ for var in ['available_prop_hhfa_Facility_level_2', 'available_prop_hhfa_Facilit
 
 # Add further assumptions on consumable availability from other sources
 assumptions_df = pd.read_excel(open(path_to_files_in_the_tlo_dropbox / 'ResourceFile_hhfa_consumables.xlsx', 'rb'),
-                        sheet_name='availability_assumptions')
+                               sheet_name='availability_assumptions')
 assumptions_df = assumptions_df[['item_code', 'available_prop_Facility_level_0',
-     'available_prop_Facility_level_1a', 'available_prop_Facility_level_1b',
-     'available_prop_Facility_level_2', 'available_prop_Facility_level_3']]
+                                 'available_prop_Facility_level_1a', 'available_prop_Facility_level_1b',
+                                 'available_prop_Facility_level_2', 'available_prop_Facility_level_3']]
 
 # Merge HHFA data with the list of unmatched consumables from the TLO model
 unmatched_consumables_df = pd.merge(unmatched_consumables, hhfa_df, how='left', on='item_code')
@@ -418,7 +431,8 @@ for level in ['0', '1a', '1b', '2', '3']:
 
     cond = unmatched_consumables_df['available_prop_Facility_level_' + level].notna()
     unmatched_consumables_df.loc[cond, 'data_source'] = 'other'
-    unmatched_consumables_df.loc[cond, 'available_prop_hhfa_Facility_level_' + level] = unmatched_consumables_df['available_prop_Facility_level_' + level]
+    unmatched_consumables_df.loc[cond, 'available_prop_hhfa_Facility_level_' + level] = unmatched_consumables_df[
+        'available_prop_Facility_level_' + level]
 
 unmatched_consumables_df = unmatched_consumables_df[
     ['module_name', 'item_code', 'consumable_name_tlo_x', 'available_prop_hhfa_Facility_level_0',
@@ -470,8 +484,8 @@ cond_RH = (stkout_df['category'].str.contains('care_of_women_during_pregnancy'))
           (stkout_df['category'].str.contains('labour'))
 cond_newborn = (stkout_df['category'].str.contains('newborn'))
 cond_childhood = (stkout_df['category'] == 'acute lower respiratory infections') | \
-                (stkout_df['category'] == 'measles') | \
-                (stkout_df['category'] == 'diarrhoea')
+                 (stkout_df['category'] == 'measles') | \
+                 (stkout_df['category'] == 'diarrhoea')
 cond_rti = stkout_df['category'] == 'road traffic injuries'
 cond_cancer = stkout_df['category'].str.contains('cancer')
 cond_ncds = (stkout_df['category'] == 'epilepsy') | \
@@ -522,8 +536,9 @@ districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Popu
 fac_levels = {'0', '1a', '1b', '2', '3', '4'}
 
 sf = stkout_df[['item_code', 'month', 'district', 'fac_type_tlo', 'available_prop']].dropna()
-sf.loc[sf.month == 'Aggregate', 'month'] = 'January' # Assign arbitrary month to data only available at aggregate level
-sf.loc[sf.district == 'Aggregate', 'district'] = 'Balaka' # Assign arbitrary district to data only available at aggregate level
+sf.loc[sf.month == 'Aggregate', 'month'] = 'January'  # Assign arbitrary month to data only available at aggregate level
+sf.loc[sf.district == 'Aggregate', 'district'] = 'Balaka'  \
+    # Assign arbitrary district to data only available at # aggregate level
 sf = sf.drop(index=sf.index[(sf.month == 'NA') | (sf.district == 'NA')])
 sf.month = sf.month.map(dict(zip(calendar.month_name[1:13], range(1, 13))))
 sf.item_code = sf.item_code.astype(int)
@@ -642,6 +657,8 @@ full_set_interpolated = full_set * np.nan
 for fac in fac_ids:
     for item in item_codes:
 
+        print(f"Now doing: fac={fac}, item={item}")
+
         # Get records of the availability of this item in this facility.
         _monthly_records = full_set.loc[(fac, slice(None), item)].copy()
 
@@ -676,7 +693,8 @@ for fac in fac_ids:
 assert not pd.isnull(full_set_interpolated).any().any()
 
 # --- Check that the exported file has the properties required of it by the model code. --- #
-check_format_of_consumables_file(df=full_set_interpolated .reset_index())
+check_format_of_consumables_file(df=full_set_interpolated.reset_index(), fac_ids=fac_ids)
+
 
 # %%
 # Save
@@ -685,7 +703,7 @@ full_set_interpolated.reset_index().to_csv(
     index=False
 )
 
-
+# %%
 # 8. CALIBRATION TO HHFA DATA, 2018/19 ##
 #########################################################################################
 # --- 8.1 Prepare calibration dataframe --- ##

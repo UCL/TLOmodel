@@ -13,6 +13,7 @@ from tlo.events import IndividualScopeEventMixin
 from tlo.methods import Metadata, demography, healthsystem
 from tlo.methods.consumables import (
     Consumables,
+    check_format_of_consumables_file,
     create_dummy_data_for_cons_availability,
     get_item_code_from_item_name,
     get_item_codes_from_package_name,
@@ -354,30 +355,14 @@ def test_outputs_to_log(tmpdir):
 # Checks involving the actual ResourceFile used by default in the simulations
 # ----------------------------------------------------------------------------
 
-def check_format_of_consumables_file(df):
-    """Check that we have a complete set of estimates, for every region & facility_type, as defined in the model."""
-    months = set(range(1, 13))
-    item_codes = set(df.item_code.unique())
-
-    assert set(df.columns) == {'Facility_ID', 'month', 'item_code', 'available_prop'}
-
-    # Check that all permutations of Facility_ID, month and item_code are present
-    pd.testing.assert_index_equal(
-        df.set_index(['Facility_ID', 'month', 'item_code']).index,
-        pd.MultiIndex.from_product([fac_ids, months, item_codes], names=['Facility_ID', 'month', 'item_code']),
-        check_order=False
-    )
-
-    # Check that every entry for a probability is a float on [0,1]
-    assert (df.available_prop <= 1.0).all() and (df.available_prop >= 0.0).all()
-    assert not pd.isnull(df.available_prop).any()
-
 
 def test_check_format_of_consumables_file():
     """Run the check on the file used by default for the Consumables data"""
-    check_format_of_consumables_file(pd.read_csv(
-        resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_availability_small.csv'
-    ))
+    check_format_of_consumables_file(
+        pd.read_csv(
+            resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_availability_small.csv'),
+        fac_ids=fac_ids
+    )
 
 
 @pytest.mark.slow
