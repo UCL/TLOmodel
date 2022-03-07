@@ -1338,7 +1338,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             p["age_eligibility_for_ipt"] = 100
 
             # increase coverage of IPT
-            # todo check this works
             p["ipt_coverage"]["coverage_plhiv"] = 0.6
             p["ipt_coverage"]["coverage_paediatric"] = 0.8  # this will apply to contacts of all ages
 

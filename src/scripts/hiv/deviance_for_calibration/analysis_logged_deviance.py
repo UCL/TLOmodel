@@ -33,10 +33,10 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2018, 1, 1)
-popsize = 5000
+end_date = Date(2020, 1, 1)
+popsize = 10000
 
-scenario = 2
+scenario = 1
 
 # set up the log config
 log_config = {
@@ -85,16 +85,6 @@ sim.register(
 sim.modules["Tb"].parameters["scenario"] = scenario
 # sim.modules["Tb"].parameters["scenario_start_date"] = "01/07/2010"
 
-# hiv_item_codes = set()
-# for f in sim.modules['Hiv'].item_codes_for_consumables_required.values():
-#     hiv_item_codes = hiv_item_codes.union(f.keys())
-# sim.modules["HealthSystem"].prob_item_codes_available.loc[hiv_item_codes] = 0.6
-#
-# tb_item_codes = set()
-# for f in sim.modules['Tb'].item_codes_for_consumables_required.values():
-#     tb_item_codes = tb_item_codes.union(f.keys())
-# sim.modules["HealthSystem"].prob_item_codes_available.loc[tb_item_codes] = 0.6
-
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
@@ -109,7 +99,3 @@ with open(outputpath / "default_run.pickle", "wb") as f:
     pickle.dump(output, f, pickle.HIGHEST_PROTOCOL)
 
 
-cov_over_time = output["tlo.methods.hiv"]["hiv_program_coverage"]
-cov_over_time = cov_over_time.set_index("date")
-# Percent of all HIV+ on ART
-print(cov_over_time["art_coverage_adult"])

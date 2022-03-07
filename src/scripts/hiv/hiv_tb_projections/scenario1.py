@@ -16,9 +16,6 @@ tlo batch-submit src/scripts/hiv/hiv_tb_projections/scenario1.py
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
 
-21st Feb
-Job ID: baseline_runs-2022-02-21T171625Z
-
 Download result files for a completed job:
 tlo batch-download baseline_runs-2022-02-08T164813Z
 
@@ -50,7 +47,7 @@ class TestScenario(BaseScenario):
         self.seed = randint(0, 5000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2035, 1, 1)
-        self.pop_size = 760000
+        self.pop_size = 250000
         self.number_of_draws = 1
         self.runs_per_draw = 5
 
