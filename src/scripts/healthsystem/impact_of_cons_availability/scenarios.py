@@ -57,7 +57,7 @@ class ImpactOfConsumablesAvailability(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'impact_of_consumables_availability',  # <- (specified only for local running)
+            'filename': 'impact_of_consumables_availability',
             'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
