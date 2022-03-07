@@ -128,6 +128,12 @@ class HealthSystem(Module):
             Types.DATA_FRAME, 'Data imported from the OneHealth Tool on consumable items, packages and costs.'),
         'availability_estimates': Parameter(
             Types.DATA_FRAME, 'Estimated availability of consumables in the LMIS dataset.'),
+        'cons_availability': Parameter(
+            Types.STRING,
+            "Availability of consumables. If 'default' then use the availability specified in the ResourceFile; if "
+            "'none', then let no consumable be  ever be available; if 'all', then all consumables are always available."
+            " When using 'all' or 'none', requests for consumables are not logged. NB. This parameter is over-ridden"
+            "if an argument is provided to the module initialiser."),
 
         # Infrastructure and Equipment
         'BedCapacity': Parameter(
@@ -135,7 +141,8 @@ class HealthSystem(Module):
 
         # Service Availability
         'Service_Availability': Parameter(
-            Types.LIST, 'List of services to be available.')
+            Types.LIST, 'List of services to be available. NB. This parameter is over-ridden if an argument is provided'
+                        ' to the module initialiser.')
     }
 
     PROPERTIES = {
@@ -150,7 +157,7 @@ class HealthSystem(Module):
         resourcefilepath: Optional[Path] = None,
         service_availability: Optional[List[str]] = None,
         mode_appt_constraints: int = 0,
-        cons_availability: str = 'default',
+        cons_availability: Optional[str] = None,
         ignore_priority: bool = False,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = 'funded_plus',
@@ -239,9 +246,8 @@ class HealthSystem(Module):
         if record_hsi_event_details:
             self.hsi_event_details = set()
 
-        # Determine what the the `availability` parameter in the Consumables class should be: it should be `all`
-        # if the HealthSystem is disabled.
-        self._cons_availability = 'all' if self.disable else cons_availability
+        # Store the argument provided for cons_availability
+        self.arg_cons_availability = cons_availability
 
         # Create the Diagnostic Test Manager to store and manage all Diagnostic Test
         self.dx_manager = DxManager(self)
@@ -288,6 +294,9 @@ class HealthSystem(Module):
             path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_Items_and_Packages.csv')
         self.parameters['availability_estimates'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_availability_small.csv')
+        self.load_parameters_from_dataframe(pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_parameters.csv'
+        ))
 
         # Data on the number of beds available of each type by facility_id
         self.parameters['BedCapacity'] = pd.read_csv(
@@ -302,7 +311,7 @@ class HealthSystem(Module):
         self.bed_days.pre_initialise_population()
         self.consumables = Consumables(data=self.parameters['availability_estimates'],
                                        rng=self.rng,
-                                       availability=self._cons_availability)
+                                       availability=self.get_cons_availability())
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -521,7 +530,7 @@ class HealthSystem(Module):
 
     def set_service_availability(self):
         """Set service availability. (Should be equal to what is specified by the parameter, but overwrite with what was
-         provided in arguement if an argument was specified -- provided for backward compatibility.)"""
+         provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
 
         if self.arg_service_availabily is None:
             service_availability = self.parameters['Service_Availability']
@@ -536,6 +545,28 @@ class HealthSystem(Module):
                     data=f"Running Health System With the Following Service Availability: "
                          f"{self.service_availability}"
                     )
+
+    def get_cons_availability(self):
+        """Set consumables availability. (Should be equal to what is specified by the parameter, but overwrite with
+        what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
+
+        if self.arg_cons_availability is None:
+            _cons_availability = self.parameters['cons_availability']
+        else:
+            _cons_availability = self.arg_cons_availability
+
+        # For logical consistency, when the HealthSystem is disabled, cons_availability should be 'all', irrespective of
+        # what arguments/parameters are provided.
+        if self.disable:
+            _cons_availability = 'all'
+
+        # Log the service_availability
+        logger.info(key="message",
+                    data=f"Running Health System With the Following Consumables Availability: "
+                         f"{_cons_availability}"
+                    )
+
+        return _cons_availability
 
     def schedule_hsi_event(
         self, hsi_event, priority, topen, tclose=None, do_hsi_event_checks=True
