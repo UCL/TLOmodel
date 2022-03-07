@@ -296,6 +296,10 @@ class Hiv(Module):
             Types.REAL,
             "Probability that a FSW will start PrEP, if HIV-negative, following testing",
         ),
+        "prob_prep_for_agyw": Parameter(
+            Types.REAL,
+            "Probability that adolescent girls / young women will start PrEP",
+        ),
         "prob_circ_after_hiv_test": Parameter(
             Types.REAL,
             "Probability that a male will be circumcised, if HIV-negative, following testing",
@@ -1003,7 +1007,7 @@ class Hiv(Module):
             # usually performed by care_of_women_during_pregnancy module
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
-                    self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
+                self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(person_id=mother_id, module=self, referred_from='ANC_routine'),
                     priority=1,
@@ -1014,7 +1018,7 @@ class Hiv(Module):
             # if mother known HIV+, schedule test for infant in 6 weeks (EI
             if mother.hv_diagnosed and \
                 df.at[child_id, "is_alive"] and (
-                    self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
+                self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(person_id=child_id, module=self, referred_from='Infant_testing'),
                     priority=1,
@@ -1520,6 +1524,47 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 ),  # (to occur before next polling)
             )
 
+        # ----------------------------------- PrEP poll for AGYW -----------------------------------
+        # select highest risk agyw
+        agyw_idx = df.loc[
+            df.is_alive
+            & ~df.hv_diagnosed
+            & df.age_years.between(15, 30)
+            & (df.sex == "F")
+            & ~df.hv_is_on_prep
+            ].index
+
+        rr_of_infection_in_agyw = self.module.lm["rr_of_infection"].predict(
+            df.loc[agyw_idx]
+        )
+        # scale to equal 1 then multiply by prob of prep
+        # highest risk AGYW will have highest probability of getting prep
+        mean_risk = rr_of_infection_in_agyw.mean()
+        scaled_risk = rr_of_infection_in_agyw / mean_risk
+        overall_risk_and_prob_of_prep = scaled_risk * p["prob_prep_for_agyw"]
+
+        # give prep
+        give_prep = df.loc[(
+                               self.module.rng.random_sample(len(overall_risk_and_prob_of_prep))
+                               < overall_risk_and_prob_of_prep)
+                           & df.is_alive
+                           & ~df.hv_diagnosed
+                           & df.age_years.between(15, 30)
+                           & (df.sex == "F")
+                           & ~df.hv_is_on_prep
+                           ].index
+
+        for person in give_prep:
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
+                                                        module=self.module),
+                priority=1,
+                topen=self.sim.date,
+                tclose=self.sim.date + pd.DateOffset(
+                    months=self.frequency.months
+                )
+            )
+
 
 # ---------------------------------------------------------------------------
 #   Natural History Events
@@ -1655,12 +1700,12 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         # Do nothing if person is now on ART and VL suppressed (non VL suppressed has no effect)
         # only if no current TB infection
         if (df.at[person_id, "hv_art"] == "on_VL_suppressed") and (
-                df.at[person_id, "tb_inf"] != "active"):
+            df.at[person_id, "tb_inf"] != "active"):
             return
 
         # off ART, no TB infection
         if (df.at[person_id, "hv_art"] != "on_VL_suppressed") and (
-                df.at[person_id, "tb_inf"] != "active"):
+            df.at[person_id, "tb_inf"] != "active"):
             # cause is HIV (no TB)
             self.sim.modules["Demography"].do_death(
                 individual_id=person_id,
@@ -1741,10 +1786,9 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
         m = self.module
 
-        # If the person is no longer alive, and sex worker and not diagnosed, they will not continue on PrEP
+        # If the person is no longer alive or has been diagnosed with hiv, they will not continue on PrEP
         if (
             (not person["is_alive"])
-            or (not person["li_is_sexworker"])
             or (person["hv_diagnosed"])
         ):
             return
@@ -2007,10 +2051,9 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
-        # Do not run if the person is not alive, or is not currently a sex worker, or is diagnosed
+        # Do not run if the person is not alive or is diagnosed with hiv
         if (
             (not person["is_alive"])
-            or (not person["li_is_sexworker"])
             or (person["hv_diagnosed"])
         ):
             return
@@ -2128,7 +2171,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 ),
                 topen=self.sim.date + pd.DateOffset(days=1),
                 tclose=self.sim.date + pd.DateOffset(days=15),
-                priority=1,
+                priority=0,
             )
 
         # also screen for tb
@@ -2497,7 +2540,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "art_coverage_adult_VL_suppression": art_cov_vs_adult,
                 "art_coverage_child": art_cov_children,
                 "art_coverage_child_VL_suppression": art_cov_vs_children,
-                "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
+                "prop_adults_exposed_tgo_behav_intv": prop_adults_exposed_to_behav_intv,
                 "prop_fsw_on_prep": prop_fsw_on_prep,
                 "prop_men_circ": prop_men_circ,
             },
