@@ -11,7 +11,7 @@ or execute a single run:
 tlo scenario-run src/scripts/hiv/hiv_tb_projections/scenario1.py --draw 0 0
 
 Run on the batch system using:
-tlo batch-submit src/scripts/hiv/hiv_tb_projections/scenario1.py
+tlo batch-submit src/scripts/hiv/deviance_for_calibration/baseline_runs.py
 
 Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
