@@ -17,10 +17,10 @@ Display information about a job:
 tlo batch-job tlo_q1_demo-123 --tasks
 
 21st Feb
-Job ID: baseline_runs-2022-02-21T171625Z
+Job ID: scenario2-2022-03-07T185547Z
 
 Download result files for a completed job:
-tlo batch-download baseline_runs-2022-02-08T164813Z
+tlo batch-download scenario2-2022-03-07T185547Z
 
 """
 

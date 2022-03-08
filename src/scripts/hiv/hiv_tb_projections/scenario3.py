@@ -20,7 +20,7 @@ tlo batch-job tlo_q1_demo-123 --tasks
 Job ID: baseline_runs-2022-02-21T171625Z
 
 Download result files for a completed job:
-tlo batch-download baseline_runs-2022-02-08T164813Z
+tlo batch-download scenario3-2022-03-07T185637Z
 
 """
 
