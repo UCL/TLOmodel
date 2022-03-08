@@ -358,6 +358,7 @@ class HealthSystem(Module):
     def on_simulation_end(self):
         """Put out to the log the information from the tracker of the last day of the simulation"""
         self.bed_days.on_simulation_end()
+        self.consumables.on_simulation_end()
 
     def process_human_resources_files(self):
         """Create the data-structures needed from the information read into the parameters."""

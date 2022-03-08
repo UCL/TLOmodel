@@ -39,6 +39,7 @@ class Consumables:
         self._cons_available_today = None  # Index for the item_codes available
         self._is_available = None  # Dict of sets giving the set of item_codes available, by facility_id
         self._is_unknown_item_available = None  # Whether an unknown item is available, by facility_id
+        self._not_recognised_item_codes = set()  # The item codes requested but which are not recognised.
 
         self._process_consumables_df(data)
 
@@ -101,9 +102,7 @@ class Consumables:
 
         # Issue warning if any item_code is not recognised.
         if not self.item_codes.issuperset(item_codes.keys()):
-            for _i in item_codes.keys():
-                if _i not in self.item_codes:
-                    warnings.warn(UserWarning(f"Item_Code {_i} is not recognised."))
+            self._not_recognised_item_codes.add((treatment_id, tuple(set(item_codes.keys()) - self.item_codes)))
 
         # Determine availability of consumables:
         if self.cons_availability == 'all':
@@ -140,6 +139,17 @@ class Consumables:
             else:
                 avail.update({_i: self._is_unknown_item_available[facility_id]})
         return avail
+
+    def on_simulation_end(self):
+        """Do tasks at the end of the simulation: Raise warnings and enter to log about item_codes not recognised."""
+        if self._not_recognised_item_codes:
+            warnings.warn(UserWarning(f"Item_Codes were not recognised./n"
+                                      f"{self._not_recognised_item_codes}"))
+            for _treatment_id, _item_codes in self._not_recognised_item_codes:
+                logger.info(
+                    key="item_codes_not_recognised",
+                    data={_treatment_id if _treatment_id is not None else "": list(_item_codes)}
+                )
 
 
 def get_item_codes_from_package_name(lookup_df: pd.DataFrame, package: str) -> dict:
