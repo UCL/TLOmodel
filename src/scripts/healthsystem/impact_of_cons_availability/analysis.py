@@ -7,23 +7,27 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from scripts.calibration_analyses.analysis_scripts.analysis_demography_calibrations import agegrplookup, calperiodlookup
 from tlo.analysis.utils import (
     extract_params,
     extract_results,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    summarize, make_age_grp_types, make_calendar_period_type,
+    summarize,
+    create_age_range_lookup,
+    make_age_grp_types,
+    make_age_grp_lookup,
+    make_calendar_period_lookup,
+    make_calendar_period_type,
 )
 
-outputspath = Path('./outputs')
+outputspath = Path('./outputs/tbh03@ic.ac.uk')
 
 
 # %% Gathering basic information
 
-# 0) Find results_folder associated with a given batch_file and get most recent
-results_folder = get_scenario_outputs('impact_of_consumables_availability.py', outputspath)[-1]
+# Find results_folder associated with a given batch_file and get most recent
+results_folder = get_scenario_outputs('scenarios.py', outputspath)[-1]
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -40,13 +44,18 @@ params = extract_params(results_folder)
 def _extract_deaths_by_age_group_and_time_period(_df: pd.DataFrame) -> pd.Series:
     """Construct a series with index age-range/time-period and value of the number of deaths from the `death` dataframe
     logged in `tlo.methods.demography`."""
-    # todo add do grouping by time period too
-    _df = _df.reset_index()
+
+    _, agegrplookup = make_age_grp_lookup()
+    _, calperiodlookup = make_calendar_period_lookup()
+
     _df['Age_Grp'] = _df['age'].map(agegrplookup).astype(make_age_grp_types())
-    _df['Period'] = _df['year'].map(calperiodlookup).astype(make_calendar_period_type())
+    _df['Period'] = pd.to_datetime(_df['date']).dt.year.map(calperiodlookup).astype(make_calendar_period_type())
     _df = _df.rename(columns={'sex': 'Sex'})
-    _df = _df.drop(columns=['age', 'year']).groupby(['Period', 'Sex', 'Age_Grp']).sum()
-    return _df.assign(year=_df['date'].dt.year).groupby(['sex', 'year', 'age'])['person_id'].count()
+
+    breakdown_by_age_sex_period = _df.groupby(['Sex', 'Age_Grp', 'Period'])['person_id'].count()
+    breakdown_by_period = _df.groupby(['Period'])['person_id'].count()
+
+    return breakdown_by_period
 
 
 deaths_extracted = extract_results(
@@ -57,7 +66,7 @@ deaths_extracted = extract_results(
     do_scaling=True
 )
 
-deaths_summarized = summarize(deaths_extracted)
+deaths_summarized = summarize(deaths_extracted, only_mean=True)
 
 
 # %% Creating some plots:
