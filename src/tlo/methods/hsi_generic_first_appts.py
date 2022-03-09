@@ -77,6 +77,13 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
         if not df.at[person_id, 'is_alive']:
             return
 
+        if 'Alri' in self.sim.modules:
+            # check that person is not on treatment for the current episode
+            if df.loc[person_id, 'ri_on_treatment'] and (
+                df.loc[person_id, 'ri_start_of_current_episode'] <= self.sim.date <=
+                    df.loc[person_id, 'ri_end_of_current_episode']):
+                return
+
         do_at_generic_first_appt_non_emergency(hsi_event=self, squeeze_factor=squeeze_factor)
 
 
@@ -117,6 +124,13 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         if not df.at[person_id, 'is_alive']:
             return
+
+        if 'Alri' in self.sim.modules:
+            # check that person is not on treatment for the current episode
+            if df.loc[person_id, 'ri_on_treatment'] and (
+                df.loc[person_id, 'ri_start_of_current_episode'] <= self.sim.date <=
+                    df.loc[person_id, 'ri_end_of_current_episode']):
+                return
 
         do_at_generic_first_appt_emergency(hsi_event=self, squeeze_factor=squeeze_factor)
 
@@ -470,7 +484,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
         )
         schedule_hsi(event, priority=1, topen=sim.date)
 
-    if (age < 5) and set(symptoms).intersection({'cough', 'difficult_breathing', 'danger_signs'}):
+    if (age < 5) and (('cough' in symptoms) or ('difficult_breathing' in symptoms)):
         if 'Alri' in sim.modules:
             sim.modules['Alri'].assess_and_classify_cough_or_difficult_breathing_level(
                 person_id=person_id, hsi_event=hsi_event)
