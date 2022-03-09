@@ -4,7 +4,6 @@
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 from tlo.analysis.utils import (
@@ -13,12 +12,11 @@ from tlo.analysis.utils import (
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    summarize,
-    create_age_range_lookup,
-    make_age_grp_types,
     make_age_grp_lookup,
+    make_age_grp_types,
     make_calendar_period_lookup,
     make_calendar_period_type,
+    summarize,
 )
 
 outputspath = Path('./outputs/tbh03@ic.ac.uk')
@@ -27,7 +25,7 @@ outputspath = Path('./outputs/tbh03@ic.ac.uk')
 # %% Gathering basic information
 
 # Find results_folder associated with a given batch_file and get most recent
-results_folder = get_scenario_outputs('scenarios.py', outputspath)[-1]
+results_folder = get_scenario_outputs('impact_of_consumables_availability.py', outputspath)[-1]
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -52,7 +50,7 @@ def _extract_deaths_by_age_group_and_time_period(_df: pd.DataFrame) -> pd.Series
     _df['Period'] = pd.to_datetime(_df['date']).dt.year.map(calperiodlookup).astype(make_calendar_period_type())
     _df = _df.rename(columns={'sex': 'Sex'})
 
-    breakdown_by_age_sex_period = _df.groupby(['Sex', 'Age_Grp', 'Period'])['person_id'].count()
+    # breakdown_by_age_sex_period = _df.groupby(['Sex', 'Age_Grp', 'Period'])['person_id'].count()
     breakdown_by_period = _df.groupby(['Period'])['person_id'].count()
 
     return breakdown_by_period
@@ -67,61 +65,27 @@ deaths_extracted = extract_results(
 )
 
 deaths_summarized = summarize(deaths_extracted, only_mean=True)
-
+deaths_summarized = deaths_summarized.loc[deaths_summarized.index.isin(('2010-2014', '2015-2019'))]
 
 # %% Creating some plots:
 
-param_name = 'HealthSystem:cons_availability'  # name of parameter that varies
-
-# i) bar plot to summarize as the value at the end of the run
-propinf_end = propinf.iloc[[-1]]
-
-height = propinf_end.loc[:, (slice(None), "mean")].iloc[0].values
-lower_upper = np.array(list(zip(
-    propinf_end.loc[:, (slice(None), "lower")].iloc[0].values,
-    propinf_end.loc[:, (slice(None), "upper")].iloc[0].values
-))).transpose()
-
-yerr = abs(lower_upper - height)
-
-xvals = range(info['number_of_draws'])
-xlabels = [
-    round(params.loc[(params.module_param == param_name)][['value']].loc[draw].value, 3)
-    for draw in range(info['number_of_draws'])
-]
-
 fig, ax = plt.subplots()
-ax.bar(
-    x=xvals,
-    height=propinf_end.loc[:, (slice(None), "mean")].iloc[0].values,
-    yerr=yerr
-)
-ax.set_xticks(xvals)
-ax.set_xticklabels(xlabels)
-plt.xlabel(param_name)
-plt.show()
+for i, _p in enumerate(params.values):
+    central_val = deaths_summarized[(i, 'mean')].values / deaths_summarized[(0, 'mean')].values
+    lower_val = deaths_summarized[(i, 'lower')].values/deaths_summarized[(0, 'lower')].values
+    upper_val = deaths_summarized[(i, 'upper')].values/deaths_summarized[(0, 'upper')].values
+    # todo - this form of constructing the intervals on the ratio is not right: just an approximation for now!
 
-# ii) plot to show time-series (means)
-for draw in range(info['number_of_draws']):
-    plt.plot(
-        propinf.loc[:, (draw, "mean")].index, propinf.loc[:, (draw, "mean")].values,
-        label=f"{param_name}={round(params.loc[(params.module_param == param_name)][['value']].loc[draw].value, 3)}"
+    ax.plot(
+        deaths_summarized.index, central_val,
+        label=_p
     )
-plt.xlabel(propinf.index.name)
-plt.legend()
-plt.show()
-
-# iii) banded plot to show variation across runs
-draw = 0
-plt.plot(propinf.loc[:, (draw, "mean")].index, propinf.loc[:, (draw, "mean")].values, 'b')
-plt.fill_between(
-    propinf.loc[:, (draw, "mean")].index,
-    propinf.loc[:, (draw, "lower")].values,
-    propinf.loc[:, (draw, "upper")].values,
-    color='b',
-    alpha=0.5,
-    label=f"{param_name}={round(params.loc[(params.module_param == param_name)][['value']].loc[draw].value, 3)}"
-)
-plt.xlabel(propinf.index.name)
-plt.legend()
-plt.show()
+    ax.fill_between(
+        deaths_summarized.index, lower_val, upper_val, alpha=0.5
+    )
+ax.set_xlabel('Time period')
+ax.set_ylabel('Total deaths (Normalised to calibration)')
+ax.set_ylim((0, 1.5))
+ax.legend(loc='lower left')
+fig.tight_layout()
+fig.show()

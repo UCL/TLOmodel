@@ -37,7 +37,6 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     prostate_cancer,
-    rti,
     stunting,
     symptommanager,
     wasting,
@@ -112,6 +111,7 @@ class ImpactOfConsumablesAvailability(BaseScenario):
 
             # -- Injuries
             # rti.RTI(resourcefilepath=self.resources),
+            # todo - add RTI when it works reliably
 
             # -- Other Non-Communicable Conditions
             depression.Depression(resourcefilepath=self.resources),
@@ -124,6 +124,7 @@ class ImpactOfConsumablesAvailability(BaseScenario):
                 'cons_availability': ['default', 'none', 'all'][draw_number]
                 }
         }
+
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
