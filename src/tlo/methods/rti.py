@@ -2427,9 +2427,9 @@ class RTI(Module):
     def do_rti_diagnosis_and_treatment(self, person_id):
         """Things to do upon a person presenting at a Non-Emergency Generic HSI if they have an injury."""
         df = self.sim.population.props
-        persons_injuries = df.loc[person_id, self.sim.modules['RTI'].INJURY_COLUMNS]
+        persons_injuries = df.loc[person_id, RTI.INJURY_COLUMNS]
         if pd.isnull(df.at[person_id, 'cause_of_death']) and not df.at[person_id, 'rt_diagnosed']:
-            if len(set(self.sim.modules['RTI'].INJURIES_REQ_IMAGING).intersection(persons_injuries)) > 0:
+            if len(set(RTI.INJURIES_REQ_IMAGING).intersection(persons_injuries)) > 0:
                 self.rti_ask_for_imaging(person_id)
             df.at[person_id, 'rt_diagnosed'] = True
             self.rti_do_when_diagnosed(person_id=person_id)
