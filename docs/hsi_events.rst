@@ -11,5 +11,7 @@ type codes).
 A facility level specified as ? indicates the appropriate facility level is determined
 dynamically when running the model.
 
+This information can also be downloaded as a :download:`CSV file <hsi_events.csv>`.
+
 
 .. include:: _hsi_events.rst
