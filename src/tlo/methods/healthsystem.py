@@ -31,6 +31,7 @@ logger.setLevel(logging.INFO)
 logger_summary = logging.getLogger(f"{__name__}.summary")
 logger_summary.setLevel(logging.INFO)
 
+
 class FacilityInfo(NamedTuple):
     """Information about a specific health facility."""
     id: int

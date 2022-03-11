@@ -767,7 +767,6 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
                                                            tclose=None,
                                                            priority=0)
 
-
     sim = Simulation(start_date=start_date, seed=seed, log_config={
         'filename': 'tmpfile',
         'directory': tmpdir,
