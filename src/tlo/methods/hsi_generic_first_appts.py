@@ -57,7 +57,6 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel0'
         self.ACCEPTED_FACILITY_LEVEL = '0'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         """Run the actions required during the HSI."""
@@ -76,7 +75,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        assert module.name in ['HealthSeekingBehaviour', 'Labour', 'PregnancySupervisor']
+        assert module.name in ['HealthSeekingBehaviour', 'Labour', 'PregnancySupervisor', 'RTI']
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
@@ -131,6 +130,10 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
             topen=hsi_event.sim.date,
             tclose=None,
             priority=0)
+
+    if 'injury' in symptoms:
+        if 'RTI' in sim.modules:
+            sim.modules['RTI'].do_rti_diagnosis_and_treatment(person_id)
 
     if age < 5:
         # ----------------------------------- CHILD < 5 -----------------------------------
@@ -425,3 +428,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             person_id=person_id
         )
         schedule_hsi(event, priority=1, topen=sim.date)
+
+    if 'severe_trauma' in symptoms:
+        if 'RTI' in sim.modules:
+            sim.modules['RTI'].do_rti_diagnosis_and_treatment(person_id=person_id)

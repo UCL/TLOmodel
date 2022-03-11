@@ -29,7 +29,7 @@ except NameError:
     resourcefilepath = './resources'
 
 
-def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseeking_behaviour():
+def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseeking_behaviour(seed):
     """test that a symptom that gives healthcare seeking results in generic HSI scheduled."""
 
     class DummyDisease(Module):
@@ -59,7 +59,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -95,7 +95,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
     assert not any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
 
 
-def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthcareseeking_behaviour():
+def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthcareseeking_behaviour(seed):
     """test that a symptom that should not give healthseeeking does not give heaslth seeking."""
 
     class DummyDisease(Module):
@@ -127,7 +127,7 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -163,7 +163,7 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
     assert not any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
 
 
-def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_healthcareseeking_behaviour():
+def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_healthcareseeking_behaviour(seed):
     """test that a symptom that give emergency healthcare seeking results in emergency HSI scheduled."""
 
     class DummyDisease(Module):
@@ -195,7 +195,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -231,10 +231,10 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
     assert any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
 
 
-def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules():
+def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules(seed):
     """there should be no generic HSI if there are no spurious symptoms or disease module"""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -257,10 +257,10 @@ def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules()
     assert not any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
 
 
-def test_healthcareseeking_occurs_with_spurious_symptoms_only():
+def test_healthcareseeking_occurs_with_spurious_symptoms_only(seed):
     """spurious symptoms should generate non-emergency HSI"""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -298,10 +298,10 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_only():
         assert 0 < len(sim.modules['SymptomManager'].has_what(person))
 
 
-def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules():
+def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules(seed):
     """Mockitis and Chronic Syndrome should lead to there being emergency and non-emergency generic HSI"""
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
