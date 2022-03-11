@@ -5,6 +5,7 @@ It maintains a current record of the availability and usage of beds in the healt
 
 """
 import pandas as pd
+import numpy as np
 
 from tlo import Property, Types, logging
 
@@ -78,16 +79,23 @@ class BedDays:
         """Put out to the log the information from the tracker of the last day of the simulation"""
         self.log_yesterday_info_from_all_bed_trackers()
 
-    def initialise_beddays_tracker(self):
+    def initialise_beddays_tracker(self, model_to_data_popsize_ratio=1.0):
         """Initialise the bed days tracker:
         Create a dataframe for each type of beds that give the total number of beds currently available in each facility
          (rows) by the date during the simulation (columns).
 
         The current implementation assumes that bed capacity is held constant throughout the simulation; but it could be
          changed through modifications here.
+
+         :param: `capabilities_coefficient` is the scaler needed to reduce the number of beds available according to the
+         size of the model population relative to the real population size.
         """
 
-        capacity = self.hs_module.parameters['BedCapacity'].set_index('Facility_ID')
+        scaled_capacity = (
+            self.hs_module.parameters['BedCapacity'].set_index('Facility_ID')
+            * model_to_data_popsize_ratio
+        ).apply(np.ceil).astype(int)
+
         max_number_of_bed_days = self.days_until_last_day_of_bed_tracker
 
         end_date = self.hs_module.sim.start_date + pd.DateOffset(days=max_number_of_bed_days)
@@ -97,10 +105,10 @@ class BedDays:
         for bed_type in self.bed_types:
             df = pd.DataFrame(
                 index=date_range,  # <- Days in the simulation
-                columns=capacity.index,  # <- Facility_ID
+                columns=scaled_capacity.index,  # <- Facility_ID
                 data=1
             )
-            df = df.mul(capacity[bed_type], axis=1)
+            df = df.mul(scaled_capacity[bed_type], axis=1)
             assert not df.isna().any().any()
             self.bed_tracker[bed_type] = df
 

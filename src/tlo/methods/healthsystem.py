@@ -296,7 +296,7 @@ class HealthSystem(Module):
             self.capabilities_coefficient = self.sim.modules['Demography'].initial_model_to_data_popsize_ratio
 
         # Set the tracker in preparation for the simulation
-        self.bed_days.initialise_beddays_tracker()
+        self.bed_days.initialise_beddays_tracker(self.sim.modules['Demography'].initial_model_to_data_popsize_ratio)
 
         # Capture list of disease modules:
         self.recognised_modules_names = [
