@@ -865,4 +865,8 @@ def test_bed_days_association_with_appt_footprint():
            _add_inpatient_admission_to_appt_footprint(footprint_with_inpatient_admission_wrongly)
 
 
+
 # todo test that `get_inpatient_appts` works as expected
+
+
+

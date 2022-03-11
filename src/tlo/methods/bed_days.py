@@ -28,17 +28,22 @@ class BedDays:
 
     def __init__(self, hs_module):
         self.hs_module = hs_module
+
         # Number of days to the last day of bed_tracker
         self.days_until_last_day_of_bed_tracker = 150
 
-        # a dictionary to create a footprint according to facility bed days capacity
+        # A dictionary to create a footprint according to facility bed days capacity
         self.available_footprint = {}
 
-        # a dictionary to track inpatient bed days
+        # A dictionary to track inpatient bed days
         self.bed_tracker = dict()
         self.list_of_cols_with_internal_dates = dict()
 
-        self.bed_types = list()  # List of bed-types
+        # List of bed-types
+        self.bed_types = list()
+
+        # Internal store of the number of beds by facility and bed_type that is scaled to the model population size.
+        self._scaled_capacity = None
 
     def get_bed_types(self):
         """Helper function to get the bed_types from the resource file imported to parameter 'BedCapacity' of the
@@ -79,6 +84,14 @@ class BedDays:
         """Put out to the log the information from the tracker of the last day of the simulation"""
         self.log_yesterday_info_from_all_bed_trackers()
 
+    def set_scaled_capacity(self, model_to_data_popsize_ratio):
+        """Set the internal `_scaled_capacity` variable to represent the number of beds available of each type in each
+         facility, after scaling according to the model population relative to the real population size. """
+        self._scaled_capacity = (
+            self.hs_module.parameters['BedCapacity'].set_index('Facility_ID')
+            * model_to_data_popsize_ratio
+        ).apply(np.ceil).astype(int)
+
     def initialise_beddays_tracker(self, model_to_data_popsize_ratio=1.0):
         """Initialise the bed days tracker:
         Create a dataframe for each type of beds that give the total number of beds currently available in each facility
@@ -91,24 +104,20 @@ class BedDays:
          size of the model population relative to the real population size.
         """
 
-        scaled_capacity = (
-            self.hs_module.parameters['BedCapacity'].set_index('Facility_ID')
-            * model_to_data_popsize_ratio
-        ).apply(np.ceil).astype(int)
+        # Set the internal `_scaled_capacity` variable to reflect the model population size.
+        self.set_scaled_capacity(model_to_data_popsize_ratio)
 
         max_number_of_bed_days = self.days_until_last_day_of_bed_tracker
-
         end_date = self.hs_module.sim.start_date + pd.DateOffset(days=max_number_of_bed_days)
-
         date_range = pd.date_range(self.hs_module.sim.start_date, end_date, freq='D')
 
         for bed_type in self.bed_types:
             df = pd.DataFrame(
                 index=date_range,  # <- Days in the simulation
-                columns=scaled_capacity.index,  # <- Facility_ID
+                columns=self._scaled_capacity.index,  # <- Facility_ID
                 data=1
             )
-            df = df.mul(scaled_capacity[bed_type], axis=1)
+            df = df.mul(self._scaled_capacity[bed_type], axis=1)
             assert not df.isna().any().any()
             self.bed_tracker[bed_type] = df
 
@@ -129,7 +138,7 @@ class BedDays:
             self.move_each_tracker_by_one_day()
 
     def move_each_tracker_by_one_day(self):
-        bed_capacity = self.hs_module.parameters['BedCapacity']
+        bed_capacity = self._scaled_capacity
 
         for bed_type, tracker in self.bed_tracker.items():
             start_date = min(tracker.index)
@@ -409,10 +418,10 @@ class BedDays:
         return {**appt_footprint, **IN_PATIENT_ADMISSION}
 
     def get_inpatient_appts(self) -> dict:
-        """Return a dict of the {<facility_id>: APPT_FOOTPRINT} giving the total APPT_FOOTPRINT required for the
-        servicing of the in-patients (in beds of any types), by Facility_ID."""
+        """Return a dict of the form {<facility_id>: APPT_FOOTPRINT} giving the total APPT_FOOTPRINT required for the
+        servicing of the in-patients (in beds of any types) for each Facility_ID."""
 
-        bed_capacity = self.hs_module.parameters['BedCapacity'].set_index('Facility_ID')
+        bed_capacity = self._scaled_capacity
 
         total_inpatients = pd.DataFrame([
             (bed_capacity[_bed_type] - self.bed_tracker[_bed_type].loc[self.hs_module.sim.date]).to_dict()
@@ -421,6 +430,9 @@ class BedDays:
 
         def multiply_footprint(_footprint, _num):
             """Multiply the number of appointments of each type in a footprint by a number"""
-            return {k: v * _num for k, v in _footprint}
+            return {appt_type: num_needed * _num for appt_type, num_needed in _footprint.items()}
 
-        return {k: multiply_footprint(IN_PATIENT_DAY, v) for k, v in total_inpatients.items()}
+        return {
+            fac_id: multiply_footprint(IN_PATIENT_DAY, num_inpatients)
+            for fac_id, num_inpatients in total_inpatients.items()
+        }

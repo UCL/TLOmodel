@@ -1160,8 +1160,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # 0) Refresh information ready for new day:
         self.module.bed_days.processing_at_start_of_new_day()
         self.module.consumables.processing_at_start_of_new_day(self.sim.date)
-        _ = self.module.bed_days.get_inpatient_appts()
-
+        inpatient_appts = self.module.bed_days.get_inpatient_appts()
 
         # - Create hold-over list (will become a heapq). This will hold events that cannot occur today before they are
         #  added back to the heapq
@@ -1233,9 +1232,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         current_capabilities = self.module.get_capabilities_today()
 
         # 3.1) Subtract from the current_capabilities the time required to service the in-patient appointments
-        # (inpatient_appts).
+        # (`inpatient_appts`).
         # todo - this is pending the refactor of healthsystem (because currently haven't got the helper functions to
         #  enable this).
+        # todo - need to use  `get_appt_footprint_as_time_request`
+        print("this!")
 
         if not list_of_individual_hsi_event_tuples_due_today:
             # Empty counter for log_current_capabilities call below
