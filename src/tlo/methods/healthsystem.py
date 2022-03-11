@@ -23,9 +23,13 @@ from tlo.methods import Metadata
 from tlo.methods.bed_days import BedDays
 from tlo.methods.dxmanager import DxManager
 
+# Get logger for the standard (detailed) outputs.
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# Get logger for the summary outputs.
+logger_summary = logging.getLogger(f"{__name__}.summary")
+logger_summary.setLevel(logging.INFO)
 
 class FacilityInfo(NamedTuple):
     """Information about a specific health facility."""
@@ -1126,6 +1130,12 @@ class HealthSystem(Module):
         logger.info(key='Capacity',
                     data=log_capacity,
                     description='daily summary of utilisation and capacity of health system resources')
+
+        logger_summary.info(
+            key='fraction_time_used_across_all_facilities',
+            data={'fraction_time_used_across_all_facilities': fraction_time_used_across_all_facilities},
+            description='Fraction of Time Used Across All Facilities and All Cadres'
+        )
 
     def remove_beddays_footprint(self, person_id):
         # removing bed_days from a particular individual if any

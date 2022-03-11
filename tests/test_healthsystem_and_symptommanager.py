@@ -731,3 +731,62 @@ def test_use_get_consumables(seed):
         item_codes={item_code_is_available[0]: 10, item_code_not_available[0]: 10},
         return_individual_results=True
     )
+
+
+def test_two_loggers_in_healthsystem(seed, tmpdir):
+    """Check that two different loggers are used by the HealthSystem for more/less detailed logged information."""
+
+    # Create a dummy disease module (to be the parent of the dummy HSI)
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            sim.modules['HealthSystem'].schedule_hsi_event(HSI_Dummy(self, person_id=0),
+                                                           topen=self.sim.date,
+                                                           tclose=None,
+                                                           priority=0)
+
+    # Create a dummy HSI event:
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
+            self.ACCEPTED_FACILITY_LEVEL = '0'
+
+        def apply(self, person_id, squeeze_factor):
+            # Schedule another occurrence of itself tomorrow.
+            sim.modules['HealthSystem'].schedule_hsi_event(self,
+                                                           topen=self.sim.date + pd.DateOffset(days=1),
+                                                           tclose=None,
+                                                           priority=0)
+
+
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
+        'filename': 'tmpfile',
+        'directory': tmpdir,
+        'custom_levels': {
+            "tlo.methods.healthsystem": logging.INFO,
+            "tlo.methods.healthsystem.summary": logging.INFO
+        }
+    })
+
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        DummyModule(),
+        sort_modules=False,
+        check_all_dependencies=False
+    )
+    sim.make_initial_population(n=1000)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=7))
+    log = parse_log_file(sim.log_filepath)
+
+    assert "tlo.methods.healthsystem" in log
+    assert "tlo.methods.healthsystem.summary" in log
