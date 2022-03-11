@@ -79,23 +79,22 @@ def parse_log_file(log_filepath, level=logging.INFO):
 
 def write_log_to_excel(filename, log_dataframes):
     """Takes the output of parse_log_file() and creates an Excel file from dataframes"""
-    sheets = list()
+    metadata = list()
     sheet_count = 0
-    metadata = log_dataframes['_metadata']
-    for module, key_df in log_dataframes.items():
-        if module != '_metadata':
-            for key, df in key_df.items():
+    for module, dataframes in log_dataframes.items():
+        for key, dataframe in dataframes.items():
+            if key != '_metadata':
                 sheet_count += 1
-                sheets.append([module, key, sheet_count, metadata[module][key]['description']])
+                metadata.append([module, key, sheet_count, dataframes['_metadata'][module][key]['description']])
 
     writer = pd.ExcelWriter(filename)
-    index = pd.DataFrame(data=sheets, columns=['module', 'key', 'sheet', 'description'])
+    index = pd.DataFrame(data=metadata, columns=['module', 'key', 'sheet', 'description'])
     index.to_excel(writer, sheet_name='Index')
 
     sheet_count = 0
-    for module, key_df in log_dataframes.items():
-        if module != '_metadata':
-            for key, df in key_df.items():
+    for module, dataframes in log_dataframes.items():
+        for key, df in dataframes.items():
+            if key != '_metadata':
                 sheet_count += 1
                 df.to_excel(writer, sheet_name=f'Sheet {sheet_count}')
     writer.save()
