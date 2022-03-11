@@ -85,6 +85,7 @@ class Labour(Module):
     }
 
     PARAMETERS = {
+        # n.b. Parameters are stored as LIST variables due to containing values to match both 2010 and 2015 data.
 
         #  PARITY AT BASELINE...
         'intercept_parity_lr2010': Parameter(

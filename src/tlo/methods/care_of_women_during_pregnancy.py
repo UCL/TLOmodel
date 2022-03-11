@@ -65,6 +65,8 @@ class CareOfWomenDuringPregnancy(Module):
 
     PARAMETERS = {
 
+        # n.b. Parameters are stored as LIST variables due to containing values to match both 2010 and 2015 data.
+
         # CARE SEEKING...
         'prob_anc_continues': Parameter(
             Types.LIST, 'probability a woman will return for a subsequent ANC appointment'),
@@ -479,7 +481,7 @@ class CareOfWomenDuringPregnancy(Module):
                 logger.debug(key='error', data=f'Mother {mother_id} attended >8 ANC visits during her pregnancy')
 
             # We log the total number of ANC contacts a woman has undergone at the time of birth via this dictionary
-            if 'ga_anc_one' in mni[mother_id].keys():
+            if 'ga_anc_one' in mni[mother_id]:
                 ga_anc_one = mni[mother_id]['ga_anc_one']
             else:
                 ga_anc_one = 0
@@ -673,8 +675,9 @@ class CareOfWomenDuringPregnancy(Module):
                                              f' run for person {individual_id}')
 
             self.sim.modules['PregnancySupervisor'].apply_risk_of_death_from_monthly_complications(individual_id)
-            mni[individual_id]['delay_one_two'] = False
-            mni[individual_id]['delay_three'] = False
+            if df.at[individual_id, 'is_alive']:
+                mni[individual_id]['delay_one_two'] = False
+                mni[individual_id]['delay_three'] = False
 
     # ================================= INTERVENTIONS DELIVERED DURING ANC ============================================
     # The following functions contain the interventions that are delivered as part of routine ANC contacts. Functions
@@ -2190,6 +2193,7 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
         self.module.call_if_maternal_emergency_assessment_cant_run(self)
 
     def did_not_run(self):
+        df = self.sim.population.props
         self.module.call_if_maternal_emergency_assessment_cant_run(self)
         return False
 
@@ -2464,6 +2468,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare: did not run')
+        return False
 
     def not_available(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare: cannot not run'
@@ -2685,6 +2690,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement: did not run')
+        return False
 
     def not_available(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement: cannot not run '

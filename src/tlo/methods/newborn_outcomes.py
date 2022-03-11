@@ -91,6 +91,8 @@ class NewbornOutcomes(Module):
     }
 
     PARAMETERS = {
+        # n.b. Parameters are stored as LIST variables due to containing values to match both 2010 and 2015 data.
+
         # CARE SEEKING
         'prob_care_seeking_for_complication': Parameter(
             Types.LIST, 'baseline probability that a mother will seek care for an unwell neonate following delivery'),
@@ -1385,9 +1387,11 @@ class NewbornOutcomes(Module):
         :param hsi_event: HSI event in which the function has been called:
         """
         person_id = hsi_event.target
+        nci = self.newborn_care_info
         logger.debug(key='message', data=f'HSI_NewbornOutcomes_ReceivesPostnatalCheck did not run for '
                                          f'{person_id}')
-        self.set_death_status(person_id)
+        if person_id in nci:
+            self.set_death_status(person_id)
 
 
 class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(HSI_Event, IndividualScopeEventMixin):

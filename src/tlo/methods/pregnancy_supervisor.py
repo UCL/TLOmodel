@@ -66,6 +66,8 @@ class PregnancySupervisor(Module):
     }
 
     PARAMETERS = {
+        # n.b. Parameters are stored as LIST variables due to containing values to match both 2010 and 2015 data.
+
         # ECTOPIC PREGNANCY...
         'prob_ectopic_pregnancy': Parameter(
             Types.LIST, 'probability of ectopic pregnancy'),

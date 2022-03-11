@@ -1156,8 +1156,3 @@ def test_focused_anc_scheduling(seed):
     hsi_events = health_system.find_events_for_person(person_id=updated_mother_id)
     hsi_events_class_list = [e.__class__ for d, e in hsi_events]
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit not in hsi_events_class_list
-
-
-# TODO: test treatment effects work as expected? (some of this is done in preg sup test)
-# todo: test when probabilities/consumables are blocked/reduced
-# todo: test when women of different gestations arrive at ANC

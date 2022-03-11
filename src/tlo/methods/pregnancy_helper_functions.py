@@ -371,8 +371,7 @@ def update_mni_dictionary(self, individual_id):
 
     if self == self.sim.modules['PregnancySupervisor']:
 
-        mni[individual_id] = {'experienced_delay': [0],
-                              'delay_one_two': False,
+        mni[individual_id] = {'delay_one_two': False,
                               'delay_three': False,
                               'delete_mni': False,  # if True, mni deleted in report_daly_values function
                               'abortion_onset': pd.NaT,

@@ -67,6 +67,9 @@ class PostnatalSupervisor(Module):
     }
 
     PARAMETERS = {
+
+        # n.b. Parameters are stored as LIST variables due to containing values to match both 2010 and 2015 data.
+
         # OBSTETRIC FISTULA
         'prob_obstetric_fistula': Parameter(
             Types.LIST, 'probability of a woman developing an obstetric fistula after birth'),
@@ -772,7 +775,8 @@ class PostnatalSupervisor(Module):
         # Here we apply risk of late onset neonatal sepsis (sepsis onsetting after day 7) to newborns
         onset_sepsis = self.apply_linear_model(
             self.pn_linear_models['late_onset_neonatal_sepsis'],
-            df.loc[df['is_alive'] & ~df['nb_death_after_birth'] & (df['age_days'] > upper_and_lower_day_limits[0]) &
+            df.loc[df['is_alive'] & (df['mother_id'] != -1) & ~df['nb_death_after_birth'] &
+                   (df['age_days'] > upper_and_lower_day_limits[0]) &
                    (df['age_days'] < upper_and_lower_day_limits[1]) & (df['date_of_birth'] > self.sim.start_date) &
                    ~df['hs_is_inpatient']])
 
