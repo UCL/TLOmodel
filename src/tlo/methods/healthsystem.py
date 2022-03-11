@@ -297,10 +297,6 @@ class HealthSystem(Module):
         if self.capabilities_coefficient is None:
             self.capabilities_coefficient = self.sim.modules['Demography'].initial_model_to_data_popsize_ratio
 
-        # Make the facilities
-
-
-
         # Set the tracker in preparation for the simulation
         self.bed_days.initialise_beddays_tracker()
 
@@ -1170,22 +1166,12 @@ class HealthSystem(Module):
         return pd.unique(consumables.loc[consumables["Items"] == item, "Item_Code"])[0]
 
 
-class Facility:
-    """This class represents one particular Facility and the human resources, consumables, and beds it has available."""
-    def __init__(self, facility_id):
-        self.facility_id = facility_id
-
-        # Define the container for calls for health system interaction events
-        self.HSI_EVENT_QUEUE = []
-        self.hsi_event_queue_counter = 0  # Counter to help with the sorting in the heapq
-
-
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
     This is the HealthSystemScheduler. It is an event that occurs every day, inspects the calls on the healthsystem
     and commissions event to occur that are consistent with the healthsystem's capabilities for the following day, given
     assumptions about how this decision is made.
-    The overall Prioritation algorithm is:
+    The overall Prioritization algorithm is:
         * Look at events in order (the order is set by the heapq: see schedule_event
         * Ignore is the current data is before topen
         * Remove and do nothing if tclose has expired
@@ -1353,7 +1339,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         assert self.module.appt_footprint_is_valid(actual_appt_footprint)
 
                         # Update load factors:
-                        updated_call = self.module._get_appt_footprint_as_time_request(facility=event._facility_id, appt_footprint=actual_appt_footprint)
+                        updated_call = self.module._get_appt_footprint_as_time_request(
+                            facility=event._facility_id,
+                            appt_footprint=actual_appt_footprint
+                        )
                         original_call = footprints_of_all_individual_level_hsi_event[ev_num]
                         footprints_of_all_individual_level_hsi_event[ev_num] = updated_call
                         total_footprint -= original_call
