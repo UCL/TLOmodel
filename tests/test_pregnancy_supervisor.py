@@ -162,7 +162,6 @@ def test_run_core_modules_high_volumes_of_pregnancy_hsis_cant_run(seed, tmpdir):
                  hiv.DummyHivModule(),
                  )
 
-    register_modules(sim)
     sim.make_initial_population(n=5000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
     sim.simulate(end_date=Date(2011, 1, 1))
