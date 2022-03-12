@@ -21,7 +21,7 @@ def test_parse_log():
     output = parse_log_file(log_file)
 
     assert 'tlo.methods.epilepsy' in output
-    assert set(output['tlo.methods.epilepsy'].keys()) == {'incidence_epilepsy', 'epilepsy_logging'}
+    assert set(output['tlo.methods.epilepsy'].keys()) == {'incidence_epilepsy', 'epilepsy_logging', '_metadata'}
 
 
 def test_flattening_and_unflattening_multiindex(tmpdir):
