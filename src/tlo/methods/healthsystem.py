@@ -845,15 +845,14 @@ class HealthSystem(Module):
         if self.ignore_priority:
             priority = 0
 
-        # Check if healthsystem is disabled/disable_and_reject_all and, if so, schedule a wrapped event.
+        # Check if healthsystem is disabled/disable_and_reject_all and, if so, schedule a wrapped event:
         if self.disable and (not self.disable_and_reject_all):
-            # If healthsystem is disabled (meaning that HSI can still run), ...
-            #   ... put a wrapped event straight into the normal simulation scheduler.
+            # If healthsystem is disabled (meaning that HSI can still run), schedule for the `run` method on `topen`.
             self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=True), topen)
             return
 
         if self.disable_and_reject_all:
-            # If healthsystem is disabled the HSI will never run: schedule for the "never_ran" method for `tclose`.
+            # If healthsystem is disabled the HSI will never run: schedule for the `never_ran` method on `tclose`.
             self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tclose)
             return
 
@@ -864,10 +863,8 @@ class HealthSystem(Module):
             self.hsi_event_checks(hsi_event)
 
         # Check that this request is allowable under current policy (i.e. included in service_availability).
-        allowed = self.check_if_treamtment_id_is_allowed(hsi_event.TREATMENT_ID)
-
-        if not allowed:
-            # HSI is not available under the services_available parameter: run the HSI's 'never_ran' method on the date
+        if not self.is_treatment_id_allowed(hsi_event.TREATMENT_ID):
+            # HSI is not allowable under the services_available parameter: run the HSI's 'never_ran' method on the date
             # of tclose.
             self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tclose)
 
@@ -925,7 +922,7 @@ class HealthSystem(Module):
                 f"which it is not possible: {hsi_event.TREATMENT_ID}"
             )
 
-    def is_treatment_is_allowed(self, treatment_id: str) -> bool:
+    def is_treatment_id_allowed(self, treatment_id: str) -> bool:
         """Determine if a treatment_id (specified as a string) can be run (i.e., is within the allowable set of
          treatments, given by `self.service_availability`."""
 
