@@ -1,6 +1,7 @@
 """
 General utility functions for TLO analysis
 """
+from collections.abc import Mapping
 import json
 import os
 import pickle
@@ -74,7 +75,7 @@ def parse_log_file(log_filepath, level=logging.INFO):
         file_handle.close()
 
     # return an object that accepts as an argument a dictionary containing paths to split logfiles
-    return LogsDict(module_name_to_filehandle)
+    return LogsDict({name: handle.name for name, handle in module_name_to_filehandle.items()})
 
 
 def write_log_to_excel(filename, log_dataframes):
@@ -495,7 +496,7 @@ def unflatten_flattened_multi_index_in_logging(_x: pd.DataFrame) -> pd.DataFrame
     return _y
 
 
-class LogsDict(dict):
+class LogsDict(Mapping):
     """Parses module-specific log files and returns Pandas dataframes.
 
         The dictionary returned has the format::
@@ -532,7 +533,7 @@ class LogsDict(dict):
         if key in self._logfile_names_and_paths:
             # check if key is found in cache
             if key not in self._results_cache:
-                result_df = _parse_log_file_inner_loop(self._logfile_names_and_paths[key].name)
+                result_df = _parse_log_file_inner_loop(self._logfile_names_and_paths[key])
                 # get metadata for the selected log file and merge it all with the selected key
                 result_df[key]['_metadata'] = result_df['_metadata']
                 if not cache:  # check if caching is disallowed
@@ -592,3 +593,9 @@ class LogsDict(dict):
 
     def __unicode__(self):
         raise NotImplementedError
+
+    def __getstate__(self):
+        # Ensure all items cached before pickling
+        for key in self.keys():
+            self.__getitem__(key, cache=True)
+        return self.__dict__
