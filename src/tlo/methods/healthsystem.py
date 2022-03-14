@@ -855,7 +855,7 @@ class HealthSystem(Module):
         assert topen >= self.sim.date
 
         # Check that priority is in valid range
-        assert priority in {0, 1, 2}
+        assert priority in (0, 1, 2)
 
         # Check that topen is strictly before tclose
         assert topen < tclose
@@ -863,7 +863,7 @@ class HealthSystem(Module):
         # If there are bed-days specified, add (if needed) the in-patient admission Appointment Type.
         # (HSI that require a bed for one or more days always need such an appointment, but this may have been
         # missed in the declaration of the `EXPECTED_APPPT_FOOTPRINT` in the HSI.)
-        # todo move to put somewhereelse
+        # todo ** move to put somewhereelse: like initialise? ***
         if sum(hsi_event.BEDDAYS_FOOTPRINT.values()):
             hsi_event.EXPECTED_APPT_FOOTPRINT = self.bed_days.add_inpatient_admission_to_appt_footprint(
                 hsi_event.EXPECTED_APPT_FOOTPRINT)
