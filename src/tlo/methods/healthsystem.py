@@ -8,7 +8,7 @@
 import datetime
 import heapq as hp
 from collections import Counter, defaultdict
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable
 from itertools import repeat
 from pathlib import Path
 from typing import List, NamedTuple, Optional, Tuple, Union
@@ -251,9 +251,9 @@ class HSI_Event:
         * Set the facility_id
         * Compute appt-footprint time requirements
         """
+        health_system = self.sim.modules['HealthSystem']
 
         if not isinstance(self.target, tlo.population.Population):
-            health_system = self.sim.modules['HealthSystem']
             self._facility_id = health_system.get_facility_info(self)
 
             # Write the time requirements for staff of the appointments to the HSI:
@@ -261,23 +261,22 @@ class HSI_Event:
                 appt_footprint=self.EXPECTED_APPT_FOOTPRINT, facility=self._facility_id
             )
 
-            # Check that event (if individual level) is able to run with this configuration
-            # of officers (i.e. check that this does not demand officers that are never
-            # available at a particular facility). This is run irrespective of the value of
-            # _do_hsi_event_checks as the appointment footprint time request depends on the
-            # district of residence of the HSI event's target and so the time requests can
-            # differ for each instance of an HSI_Event subclass even when their other
-            # attributes are shared.
-            if not isinstance(hsi_event.target, tlo.population.Population):
-                footprint = hsi_event._cached_time_requests
-                if not self._officers_with_availability.issuperset(footprint.keys()):
-                    logger.warning(
-                        key="message",
-                        data=(
-                            "The expected footprint is not possible with the configuration "
-                            f"of officers: {hsi_event.TREATMENT_ID}."
-                        )
-                    )
+        _ = self._check_if_appt_footprint_can_run()
+
+    def _check_if_appt_footprint_can_run(self):
+        """Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
+        this does not demand officers that are _never_ available), and issue warning if not."""
+        health_system = self.sim.modules['HealthSystem']
+        if not isinstance(self.target, tlo.population.Population):
+            if health_system._officers_with_availability.issuperset(self._cached_time_requests.keys()):
+                return True
+            else:
+                logger.warning(
+                    key="message",
+                    data=(f"The expected footprint of {self.TREATMENT_ID} is not possible with the configuration of "
+                          f"officers.")
+                )
+                return False
 
 
 class HSIEventWrapper(Event):
@@ -743,7 +742,7 @@ class HealthSystem(Module):
         # Create dataframe containing background information about facility and officer types
         facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
         officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values)
-        # todo - <-- avoid use of the file or define differnetly?
+        # todo - <-- avoid use of the file or define differently?
 
         # # naming to be not with _ within the name of an oficer
         facs = list()
@@ -814,7 +813,7 @@ class HealthSystem(Module):
         priority: int,
         topen: datetime.datetime,
         tclose: Optional[datetime.datetime] = None,
-        do_hsi_event_checks: bool =True
+        do_hsi_event_checks: bool = True
     ):
         """
         Schedule a health system interaction (HSI) event.
@@ -880,19 +879,12 @@ class HealthSystem(Module):
 
             # Create a tuple to go into the heapq
             # (NB. the sorting is done ascending and by the order of the items in the tuple)
-            # Pos 0: priority,
-            # Pos 1: topen,
-            # Pos 2: hsi_event_queue_counter,
-            # Pos 3: tclose,
-            # Pos 4: the hsi_event itself
-
             new_request = HSIEventQueueItem(
                 priority, topen, self.hsi_event_queue_counter, tclose, hsi_event
             )
             self.hsi_event_queue_counter += 1
 
             hp.heappush(self.HSI_EVENT_QUEUE, new_request)
-
 
     def hsi_event_checks(self, hsi_event):
         """Check the integrity of an HSI_Event."""
@@ -951,7 +943,7 @@ class HealthSystem(Module):
             return True
         elif treatment_id.startswith('GenericFirstAppt'):
             # GenericAppts --> allowable
-            allowed = True
+            return True
         else:
             # If a stub_* is explicitly included --> allowed
             for s in self.service_availability:
