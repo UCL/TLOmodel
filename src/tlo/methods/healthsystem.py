@@ -5,7 +5,7 @@
 # - let the logger give times of each hcw
 # - bed days parameterization and use of HR capacity attaching automatically to beddays
 # """
-
+import datetime
 import heapq as hp
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Sequence
@@ -65,6 +65,256 @@ class HSIEventQueueItem(NamedTuple):
     # Define HSI_Event type as string to avoid NameError exception as HSI_Event defined
     # later in module (see https://stackoverflow.com/a/36286947/4798943)
     hsi_event: 'HSI_Event'
+
+
+class HSI_Event:
+    """Base HSI event class, from which all others inherit.
+
+    Concrete subclasses should also inherit from one of the EventMixin classes
+    defined below, and implement at least an `apply` and `did_not_run` method.
+    """
+
+    def __init__(self, module, *args, **kwargs):
+        """Create a new event.
+
+        Note that just creating an event does not schedule it to happen; that
+        must be done by calling Simulation.schedule_event.
+
+        :param module: the module that created this event.
+            All subclasses of Event take this as the first argument in their
+            constructor, but may also take further keyword arguments.
+        """
+        self.module = module
+        self.sim = module.sim
+        self.target = None  # Overwritten by the mixin
+        # This is needed so mixin constructors are called
+        super().__init__(*args, **kwargs)
+
+        # Defaults for the HSI information:
+        self.TREATMENT_ID = ''
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.ACCEPTED_FACILITY_LEVEL = None
+        self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
+
+        # Private information about this HSI
+        self._received_info_about_bed_days = None
+        self._cached_time_requests = {}
+        self._facility_id = None
+
+    @property
+    def bed_days_allocated_to_this_event(self):
+        if self._received_info_about_bed_days is None:
+            # default to the footprint if no information about bed-days is received
+            return self.BEDDAYS_FOOTPRINT
+
+        return self._received_info_about_bed_days
+
+    def apply(self, squeeze_factor=0.0, *args, **kwargs):
+        """Apply this event to the population.
+
+        Must be implemented by subclasses.
+
+        """
+        raise NotImplementedError
+
+    def did_not_run(self, *args, **kwargs):
+        """Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+        to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.
+        """
+        logger.debug(key="message", data=f"{self.__class__.__name__}: did not run.")
+        return True
+
+    def never_ran(self):
+        """Called when this event is was entered to the HSI Event Queue, but was never run.
+        """
+        logger.debug(key="message", data=f"{self.__class__.__name__}: was never run.")
+
+    def post_apply_hook(self):
+        """Impose the bed-days footprint (if target of the HSI is a person_id)"""
+        if isinstance(self.target, int):
+            self.module.sim.modules['HealthSystem'].bed_days.impose_beddays_footprint(
+                person_id=self.target,
+                footprint=self.bed_days_allocated_to_this_event
+            )
+
+    def run(self, squeeze_factor):
+        """Make the event happen."""
+        updated_appt_footprint = self.apply(self.target, squeeze_factor)
+        self.post_apply_hook()
+        return updated_appt_footprint
+
+    def get_consumables(self,
+                        item_codes: Union[None, np.integer, int, list, set, dict] = None,
+                        optional_item_codes: Union[None, np.integer, int, list, set, dict] = None,
+                        to_log: Optional[bool] = True,
+                        return_individual_results: Optional[bool] = False
+                        ) -> Union[bool, dict]:
+        """Function to allow for getting and checking of entire set of consumables. All requests for consumables should
+        use this function.
+        :param item_codes: The item code(s) (and quantities) of the consumables that are requested and which determine
+        the summary result for availability/non-availability. This can be an `int` (the item_code needed [assume
+        quantity=1]), a `list` or `set` (the collection  of item_codes [for each assuming quantity=1]), or a `dict`
+        (with key:value pairs `<item_code>:<quantity>`).
+        :param optional_item_codes: The item code(s) (and quantities) of the consumables that are requested and which do
+         not determine the summary result for availability/non-availability. (Same format as `item_codes`). This is
+         useful when a large set of items may be used, but the viability of a subsequent operation depends only on a
+         subset.
+        :param return_individual_results: If True returns a `dict` giving the availability of each item_code requested
+        (otherwise gives a `bool` indicating if all the item_codes requested are available).
+        :param to_log: If True, logs the request.
+        :returns A `bool` indicating whether every item is available, or a `dict` indicating the availability of each
+         item.
+        Note that disease module can use the `get_item_codes_from_package_name` and `get_item_code_from_item_name`
+         methods in the `HealthSystem` module to find item_codes.
+        """
+
+        def _return_item_codes_in_dict(item_codes: Union[None, np.integer, int, list, set, dict]) -> dict:
+            """Convert an argument for 'item_codes` (provided as int, list, set or dict) into the format
+            dict(<item_code>:quantity)."""
+
+            if item_codes is None:
+                return {}
+
+            if isinstance(item_codes, (int, np.integer)):
+                return {int(item_codes): 1}
+
+            elif isinstance(item_codes, list):
+                if not all([isinstance(i, (int, np.integer)) for i in item_codes]):
+                    raise ValueError("item_codes must be integers")
+                return {int(i): 1 for i in item_codes}
+
+            elif isinstance(item_codes, dict):
+                if not all(
+                    [(isinstance(code, (int, np.integer)) and isinstance(quantity, (int, np.integer)))
+                     for code, quantity in item_codes.items()]
+                ):
+                    raise ValueError("item_codes must be integers and quantities must be integers.")
+                return {int(i): int(q) for i, q in item_codes.items()}
+
+            else:
+                raise ValueError("The item_codes are given in an unrecognised format")
+
+        _item_codes = _return_item_codes_in_dict(item_codes)
+        _optional_item_codes = _return_item_codes_in_dict(optional_item_codes)
+
+        # Checking the availability and logging:
+        rtn = self.sim.modules['HealthSystem']._request_consumables(
+            hsi_event=self, item_codes={**_item_codes, **_optional_item_codes}, to_log=to_log)
+
+        # Return result in expected format:
+        if not return_individual_results:
+            # Determine if all results for all the `item_codes` are True (discarding results from optional_item_codes).
+            return all([v for k, v in rtn.items() if k in _item_codes])
+        else:
+            return rtn
+
+    def make_beddays_footprint(self, dict_of_beddays):
+        """Helper function to make a correctly-formed 'bed-days footprint'"""
+
+        # get blank footprint
+        footprint = self.sim.modules['HealthSystem'].bed_days.get_blank_beddays_footprint()
+
+        # do checks on the dict_of_beddays provided.
+        assert isinstance(dict_of_beddays, dict)
+        assert all((k in footprint.keys()) for k in dict_of_beddays.keys())
+        assert all(isinstance(v, (float, int)) for v in dict_of_beddays.values())
+
+        # make footprint (defaulting to zero where a type of bed-days is not specified)
+        for k, v in dict_of_beddays.items():
+            footprint[k] = v
+
+        return footprint
+
+    def is_all_beddays_allocated(self):
+        """Check if the entire footprint requested is allocated"""
+        return all(
+            self.bed_days_allocated_to_this_event[k] == self.BEDDAYS_FOOTPRINT[k] for k in self.BEDDAYS_FOOTPRINT
+        )
+
+    def make_appt_footprint(self, dict_of_appts):
+        """Helper function to make appointment footprint in format expected downstream.
+
+        Should be passed a dictionary keyed by appointment type codes with non-negative
+        values.
+        """
+        health_system = self.sim.modules['HealthSystem']
+        if health_system.appt_footprint_is_valid(dict_of_appts):
+            return Counter(dict_of_appts)
+
+        raise ValueError(
+            "Argument to make_appt_footprint should be a dictionary keyed by "
+            "appointment type code strings in Appt_Types_Table with non-negative "
+            "values"
+        )
+
+    def _initialise(self):
+        """Initialise the HSI:
+        * Set the facility_id
+        * Compute appt-footprint time requirements
+        """
+
+        if not isinstance(self.target, tlo.population.Population):
+            health_system = self.sim.modules['HealthSystem']
+            self._facility_id = health_system.get_facility_info(self)
+
+            # Write the time requirements for staff of the appointments to the HSI:
+            self._cached_time_requests = health_system._get_appt_footprint_as_time_request(
+                appt_footprint=self.EXPECTED_APPT_FOOTPRINT, facility=self._facility_id
+            )
+
+            # Check that event (if individual level) is able to run with this configuration
+            # of officers (i.e. check that this does not demand officers that are never
+            # available at a particular facility). This is run irrespective of the value of
+            # _do_hsi_event_checks as the appointment footprint time request depends on the
+            # district of residence of the HSI event's target and so the time requests can
+            # differ for each instance of an HSI_Event subclass even when their other
+            # attributes are shared.
+            if not isinstance(hsi_event.target, tlo.population.Population):
+                footprint = hsi_event._cached_time_requests
+                if not self._officers_with_availability.issuperset(footprint.keys()):
+                    logger.warning(
+                        key="message",
+                        data=(
+                            "The expected footprint is not possible with the configuration "
+                            f"of officers: {hsi_event.TREATMENT_ID}."
+                        )
+                    )
+
+
+class HSIEventWrapper(Event):
+    """This is wrapper that contains an HSI event.
+
+    It is used:
+     1) When the healthsystem is in mode 'disabled=True' such that HSI events sent to the health system scheduler are
+     passed to the main simulation scheduler for running on the date of `topen`. (Note, it is run with
+     squeeze_factor=0.0.)
+     2) When the healthsytsem is in mode `diable_and_reject_all=True` such that HSI are not run but the `never_ran`
+     method is run on the date of `tclose`.
+     3) When an HSI has been submitted to `schedule_hsi_event` but the service is not available.
+    """
+
+    def __init__(self, hsi_event, run_hsi=True, *args, **kwargs):
+        super().__init__(hsi_event.module, *args, **kwargs)
+        self.hsi_event = hsi_event
+        self.target = hsi_event.target
+        self.run_hsi = run_hsi  # True to call the HSI's `run` method; False to call the HSI's `never_ran` method
+
+    def run(self):
+        """Do the appropriate action on the HSI event"""
+
+        # Check that the person is still alive (this check normally happens in the HealthSystemScheduler and silently
+        # do not run the HSI event)
+
+        if isinstance(self.hsi_event.target, tlo.population.Population) or (
+            self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']
+        ):
+
+            if self.run_hsi:
+                # Run the event (with 0 squeeze_factor) and ignore the output
+                _ = self.hsi_event.run(squeeze_factor=0.0)
+            else:
+                self.hsi_event.never_ran()
 
 
 def _accepts_argument(function: callable, argument: str) -> bool:
@@ -544,7 +794,7 @@ class HealthSystem(Module):
 
     def set_service_availability(self):
         """Set service availability. (Should be equal to what is specified by the parameter, but overwrite with what was
-         provided in arguement if an argument was specified -- provided for backward compatibility.)"""
+         provided in argument if an argument was specified -- provided for backward compatibility.)"""
 
         if self.arg_service_availabily is None:
             service_availability = self.parameters['Service_Availability']
@@ -561,23 +811,26 @@ class HealthSystem(Module):
                     )
 
     def schedule_hsi_event(
-        self, hsi_event, priority, topen, tclose=None, do_hsi_event_checks=True
+        self,
+        hsi_event: HSI_Event,
+        priority: int,
+        topen: datetime.datetime,
+        tclose: Optional[datetime.datetime] = None,
+        do_hsi_event_checks: bool =True
     ):
         """
         Schedule a health system interaction (HSI) event.
 
         :param hsi_event: The HSI event to be scheduled.
-        :param priority: The priority for the HSI event (0 (highest), 1 or 2 (lowest)
-        :param topen: The earliest date at which the HSI event should run
-        :param tclose: The latest date at which the HSI event should run. Set to one
-           week after ``topen`` if ``None``.
-        :param do_hsi_event_checks: Whether to perform sanity checks on the passed
-            ``hsi_event`` argument to check that it constitutes a valid HSI event. This
-            is intended for allowing disabling of these checks when scheduling multiple
-            HSI events of the same ``HSI_Event`` subclass together, in which case
-            typically performing these checks for each individual HSI event of the
-            shared type will be redundant.
+        :param priority: The priority for the HSI event: 0 (highest), 1 or 2 (lowest)
+        :param topen: The earliest date at which the HSI event should run.
+        :param tclose: The latest date at which the HSI event should run. Set to one week after ``topen`` if ``None``.
+        :param do_hsi_event_checks: Whether to perform sanity checks on the passed ``hsi_event`` argument to check that
+         it constitutes a valid HSI event. This is intended for allowing disabling of these checks when scheduling
+         multiple HSI events of the same ``HSI_Event`` subclass together, in which case typically performing these
+         checks for each individual HSI event of the shared type will be redundant.
         """
+
         # If there is no specified tclose time then set this to a week after topen
         if tclose is None:
             tclose = topen + DateOffset(days=7)
@@ -591,10 +844,14 @@ class HealthSystem(Module):
         # Check that topen is strictly before tclose
         assert topen < tclose
 
-        # Check if healthsystem is disabled/disable_and_reject_all, and scheduled a the event with appropriate wrapper.
+        # If ignoring the priority in scheduling, then over-write the provided priority information with 0.
+        if self.ignore_priority:
+            priority = 0
+
+        # Check if healthsystem is disabled/disable_and_reject_all and, if so, schedule a wrapped event.
         if self.disable and (not self.disable_and_reject_all):
-            # If healthsystem is disabled (but HSI can still run), ...
-            #   ... put this event straight into the normal simulation scheduler.
+            # If healthsystem is disabled (meaning that HSI can still run), ...
+            #   ... put a wrapped event straight into the normal simulation scheduler.
             self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=True), topen)
             return
 
@@ -603,113 +860,25 @@ class HealthSystem(Module):
             self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tclose)
             return
 
-        # Check that this is a legitimate health system interaction (HSI) event
-        # These checks are only performed when the flag `do_hsi_event_checks` is set
-        # to ``True`` to allow disabling when the checks are redundant for example when
-        # scheduling multiple HSI events of same `HSI_Event` subclass
+        # Check that this is a legitimate health system interaction (HSI) event.
+        # These checks are only performed when the flag `do_hsi_event_checks` is set to ``True`` to allow disabling
+        # when the checks are redundant for example when scheduling multiple HSI events of same `HSI_Event` subclass.
         if do_hsi_event_checks:
+            self.hsi_event_checks(hsi_event)
 
-            assert isinstance(hsi_event, HSI_Event)
+        # Check that this request is allowable under current policy (i.e. included in service_availability).
+        allowed = self.check_if_treamtment_id_is_allowed(hsi_event.TREATMENT_ID)
 
-            # Check that non-empty treatment ID specified (required for both population
-            # and individual scoped events)
-            assert hsi_event.TREATMENT_ID != ''
+        if not allowed:
+            # HSI is not available under the services_available parameter: run the HSI's 'never_ran' method on the date
+            # of tclose.
+            self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tclose)
 
-            if not isinstance(hsi_event.target, tlo.population.Population):
-                # This is an individual-scoped HSI event.
-                # It must have EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT,
-                # ACCEPTED_FACILITY_LEVELS and ALERT_OTHER_DISEASES defined
-
-                # Correct formatted EXPECTED_APPT_FOOTPRINT
-                assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT)
-
-                # That it has an acceptable 'ACCEPTED_FACILITY_LEVEL' attribute
-                assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels, \
-                    f"In the HSI with TREATMENT_ID={hsi_event.TREATMENT_ID}, the ACCEPTED_FACILITY_LEVEL (=" \
-                    f"{hsi_event.ACCEPTED_FACILITY_LEVEL}) is not recognised."
-
-                self.bed_days.check_beddays_footprint_format(hsi_event.BEDDAYS_FOOTPRINT)
-
-                # That it has a list for the other disease that will be alerted when it
-                # is run and that this make sense
-                assert isinstance(hsi_event.ALERT_OTHER_DISEASES, Sequence)
-
-                if len(hsi_event.ALERT_OTHER_DISEASES) > 0:
-                    if not (hsi_event.ALERT_OTHER_DISEASES[0] == '*'):
-                        for d in hsi_event.ALERT_OTHER_DISEASES:
-                            assert d in self.recognised_modules_names
-
-                # Check that this can accept the squeeze argument
-                assert _accepts_argument(hsi_event.run, 'squeeze_factor')
-
-                # Check that at least one type of appointment is required
-                assert len(hsi_event.EXPECTED_APPT_FOOTPRINT) > 0, (
-                    'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
-                )
-                # Check that the event does not request an appointment at a facility
-                # level which is not possible
-                appt_type_to_check_list = hsi_event.EXPECTED_APPT_FOOTPRINT.keys()
-                facility_appt_types = self._appt_type_by_facLevel[
-                    hsi_event.ACCEPTED_FACILITY_LEVEL
-                ]
-                assert facility_appt_types.issuperset(appt_type_to_check_list), (
-                    f"An appointment type has been requested at a facility level for "
-                    f"which it is not possible: {hsi_event.TREATMENT_ID}"
-                )
-
-        # Check that event (if individual level) is able to run with this configuration
-        # of officers (i.e. check that this does not demand officers that are never
-        # available at a particular facility). This is run irrespective of the value of
-        # _do_hsi_event_checks as the appointment footprint time request depends on the
-        # district of residence of the HSI event's target and so the time requests can
-        # differ for each instance of an HSI_Event subclass even when their other
-        # attributes are shared
-        if not isinstance(hsi_event.target, tlo.population.Population):
-            footprint = hsi_event._cached_time_requests
-            if not self._officers_with_availability.issuperset(footprint.keys()):
-                logger.warning(
-                    key="message",
-                    data=(
-                        "The expected footprint is not possible with the configuration "
-                        f"of officers: {hsi_event.TREATMENT_ID}."
-                    )
-                )
-
-        # Check that this request is allowable under current policy (i.e. included in
-        # service_availability)
-        allowed = False
-        if not self.service_availability:  # it's an empty list
-            allowed = False
-        elif self.service_availability[0] == '*':  # it's the overall wild-card, do anything
-            allowed = True
-        elif hsi_event.TREATMENT_ID in self.service_availability:
-            allowed = True
-        elif hsi_event.TREATMENT_ID is None:
-            allowed = True  # (if no treatment_id it can pass)
-        elif hsi_event.TREATMENT_ID.startswith('GenericFirstAppt'):
-            allowed = True  # allow all GenericFirstAppts
         else:
-            # check to see if anything provided given any wildcards
-            for s in self.service_availability:
-                if '*' in s:
-                    stub = s.split('*')[0]
-                    if hsi_event.TREATMENT_ID.startswith(stub):
-                        allowed = True
-                        break
+            # The HSI is allowed and will be added to the HSI_EVENT_QUEUE.
 
-        #  Manipulate the priority level if needed
-        # If ignoring the priority in scheduling, then over-write the provided priority information
-        if self.ignore_priority:
-            priority = 0  # set all event to priority 0
-        # This is where could attach a different priority score according to the treatment_id (and other things)
-        # in order to examine the influence of the prioritisation score.
-
-        # If all is correct and the hsi event is allowed then add this request to the queue of HSI_EVENT_QUEUE
-        if allowed:
-
-            if not isinstance(hsi_event.target, tlo.population.Population):
-                # Let the HSI gather information about itself (facility_id and appt-footprint time requirements)
-                hsi_event._initialise()
+            # Let the HSI gather information about itself (facility_id and appt-footprint time requirements)
+            hsi_event._initialise()
 
             # Create a tuple to go into the heapq
             # (NB. the sorting is done ascending and by the order of the items in the tuple)
@@ -726,21 +895,82 @@ class HealthSystem(Module):
 
             hp.heappush(self.HSI_EVENT_QUEUE, new_request)
 
-            logger.debug(
-                key="message",
-                data=f"HealthSystem.schedule_event >> "
-                     f"HSI has been added to the queue: {hsi_event.TREATMENT_ID} for person: {hsi_event.target}"
+
+    def hsi_event_checks(self, hsi_event):
+        """Check the integrity of an HSI_Event."""
+        assert isinstance(hsi_event, HSI_Event)
+
+        # Check that non-empty treatment ID specified
+        assert hsi_event.TREATMENT_ID != ''
+
+        if not isinstance(hsi_event.target, tlo.population.Population):
+            # This is an individual-scoped HSI event.
+            # It must have EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT and ACCEPTED_FACILITY_LEVELS.
+
+            # Correct formatted EXPECTED_APPT_FOOTPRINT
+            assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT)
+
+            # That it has an acceptable 'ACCEPTED_FACILITY_LEVEL' attribute
+            assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels, \
+                f"In the HSI with TREATMENT_ID={hsi_event.TREATMENT_ID}, the ACCEPTED_FACILITY_LEVEL (=" \
+                f"{hsi_event.ACCEPTED_FACILITY_LEVEL}) is not recognised."
+
+            self.bed_days.check_beddays_footprint_format(hsi_event.BEDDAYS_FOOTPRINT)
+
+            # That it has a list for the other disease that will be alerted when it
+            # is run and that this make sense
+            assert isinstance(hsi_event.ALERT_OTHER_DISEASES, Sequence)
+
+            if len(hsi_event.ALERT_OTHER_DISEASES) > 0:
+                if not (hsi_event.ALERT_OTHER_DISEASES[0] == '*'):
+                    for d in hsi_event.ALERT_OTHER_DISEASES:
+                        assert d in self.recognised_modules_names
+
+            # Check that this can accept the squeeze argument
+            assert _accepts_argument(hsi_event.run, 'squeeze_factor')
+
+            # Check that at least one type of appointment is required
+            assert len(hsi_event.EXPECTED_APPT_FOOTPRINT) > 0, (
+                'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
+            )
+            # Check that the event does not request an appointment at a facility
+            # level which is not possible
+            appt_type_to_check_list = hsi_event.EXPECTED_APPT_FOOTPRINT.keys()
+            facility_appt_types = self._appt_type_by_facLevel[
+                hsi_event.ACCEPTED_FACILITY_LEVEL
+            ]
+            assert facility_appt_types.issuperset(appt_type_to_check_list), (
+                f"An appointment type has been requested at a facility level for "
+                f"which it is not possible: {hsi_event.TREATMENT_ID}"
             )
 
+    def is_treatment_is_allowed(self, treatment_id: str) -> bool:
+        """Determine if a treatment_id (specified as a string) can be run (i.e., is within the allowable set of
+         treatments, given by `self.service_availability`."""
+
+        if not self.service_availability:
+            # Empty list --> nothing is allowable
+            return False
+        elif self.service_availability[0] == '*':
+            # Wildcard --> everything is allowed
+            return True
+        elif treatment_id is None:
+            # Treatment_id is None --> allowed
+            return True
+        elif treatment_id in self.service_availability:
+            # Explicit inclusion of this treatment_id --> allowed
+            return True
+        elif treatment_id.startswith('GenericFirstAppt'):
+            # GenericAppts --> allowable
+            allowed = True
         else:
-            # HSI is not available under the services_available parameter: run the HSI's 'never_ran' method on the date
-            # of tclose.
-            self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tclose)
-            logger.debug(
-                key="message",
-                data=f"A request was made for a service but it was not included in the service_availability list:"
-                     f" {hsi_event.TREATMENT_ID}"
-            )
+            # If a stub_* is explicitly included --> allowed
+            for s in self.service_availability:
+                if '*' in s:
+                    stub = s.split('*')[0]
+                    if treatment_id.TREATMENT_ID.startswith(stub):
+                        return True
+        return False
 
     def schedule_batch_of_individual_hsi_events(
         self, hsi_event_class, person_ids, priority, topen, tclose=None, **event_kwargs
@@ -1387,233 +1617,3 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             current_capabilities=current_capabilities,
             total_footprint=total_footprint
         )
-
-
-class HSI_Event:
-    """Base HSI event class, from which all others inherit.
-
-    Concrete subclasses should also inherit from one of the EventMixin classes
-    defined below, and implement at least an `apply` and `did_not_run` method.
-    """
-
-    def __init__(self, module, *args, **kwargs):
-        """Create a new event.
-
-        Note that just creating an event does not schedule it to happen; that
-        must be done by calling Simulation.schedule_event.
-
-        :param module: the module that created this event.
-            All subclasses of Event take this as the first argument in their
-            constructor, but may also take further keyword arguments.
-        """
-        self.module = module
-        self.sim = module.sim
-        self.target = None  # Overwritten by the mixin
-        # This is needed so mixin constructors are called
-        super().__init__(*args, **kwargs)
-
-        # Defaults for the HSI information:
-        self.TREATMENT_ID = ''
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-        self.ACCEPTED_FACILITY_LEVEL = None
-        self.ALERT_OTHER_DISEASES = []
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
-
-        # Private information about this HSI
-        self._received_info_about_bed_days = None
-        self._cached_time_requests = {}
-        self._facility_id = None
-
-    @property
-    def bed_days_allocated_to_this_event(self):
-        if self._received_info_about_bed_days is None:
-            # default to the footprint if no information about bed-days is received
-            return self.BEDDAYS_FOOTPRINT
-
-        return self._received_info_about_bed_days
-
-    def apply(self, squeeze_factor=0.0, *args, **kwargs):
-        """Apply this event to the population.
-
-        Must be implemented by subclasses.
-
-        """
-        raise NotImplementedError
-
-    def did_not_run(self, *args, **kwargs):
-        """Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
-        to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.
-        """
-        logger.debug(key="message", data=f"{self.__class__.__name__}: did not run.")
-        return True
-
-    def never_ran(self):
-        """Called when this event is was entered to the HSI Event Queue, but was never run.
-        """
-        logger.debug(key="message", data=f"{self.__class__.__name__}: was never run.")
-
-    def post_apply_hook(self):
-        """Impose the bed-days footprint (if target of the HSI is a person_id)"""
-        if isinstance(self.target, int):
-            self.module.sim.modules['HealthSystem'].bed_days.impose_beddays_footprint(
-                person_id=self.target,
-                footprint=self.bed_days_allocated_to_this_event
-            )
-
-    def run(self, squeeze_factor):
-        """Make the event happen."""
-        updated_appt_footprint = self.apply(self.target, squeeze_factor)
-        self.post_apply_hook()
-        return updated_appt_footprint
-
-    def get_consumables(self,
-                        item_codes: Union[None, np.integer, int, list, set, dict] = None,
-                        optional_item_codes: Union[None, np.integer, int, list, set, dict] = None,
-                        to_log: Optional[bool] = True,
-                        return_individual_results: Optional[bool] = False
-                        ) -> Union[bool, dict]:
-        """Function to allow for getting and checking of entire set of consumables. All requests for consumables should
-        use this function.
-        :param item_codes: The item code(s) (and quantities) of the consumables that are requested and which determine
-        the summary result for availability/non-availability. This can be an `int` (the item_code needed [assume
-        quantity=1]), a `list` or `set` (the collection  of item_codes [for each assuming quantity=1]), or a `dict`
-        (with key:value pairs `<item_code>:<quantity>`).
-        :param optional_item_codes: The item code(s) (and quantities) of the consumables that are requested and which do
-         not determine the summary result for availability/non-availability. (Same format as `item_codes`). This is
-         useful when a large set of items may be used, but the viability of a subsequent operation depends only on a
-         subset.
-        :param return_individual_results: If True returns a `dict` giving the availability of each item_code requested
-        (otherwise gives a `bool` indicating if all the item_codes requested are available).
-        :param to_log: If True, logs the request.
-        :returns A `bool` indicating whether every item is available, or a `dict` indicating the availability of each
-         item.
-        Note that disease module can use the `get_item_codes_from_package_name` and `get_item_code_from_item_name`
-         methods in the `HealthSystem` module to find item_codes.
-        """
-
-        def _return_item_codes_in_dict(item_codes: Union[None, np.integer, int, list, set, dict]) -> dict:
-            """Convert an argument for 'item_codes` (provided as int, list, set or dict) into the format
-            dict(<item_code>:quantity)."""
-
-            if item_codes is None:
-                return {}
-
-            if isinstance(item_codes, (int, np.integer)):
-                return {int(item_codes): 1}
-
-            elif isinstance(item_codes, list):
-                if not all([isinstance(i, (int, np.integer)) for i in item_codes]):
-                    raise ValueError("item_codes must be integers")
-                return {int(i): 1 for i in item_codes}
-
-            elif isinstance(item_codes, dict):
-                if not all(
-                    [(isinstance(code, (int, np.integer)) and isinstance(quantity, (int, np.integer)))
-                     for code, quantity in item_codes.items()]
-                ):
-                    raise ValueError("item_codes must be integers and quantities must be integers.")
-                return {int(i): int(q) for i, q in item_codes.items()}
-
-            else:
-                raise ValueError("The item_codes are given in an unrecognised format")
-
-        _item_codes = _return_item_codes_in_dict(item_codes)
-        _optional_item_codes = _return_item_codes_in_dict(optional_item_codes)
-
-        # Checking the availability and logging:
-        rtn = self.sim.modules['HealthSystem']._request_consumables(
-            hsi_event=self, item_codes={**_item_codes, **_optional_item_codes}, to_log=to_log)
-
-        # Return result in expected format:
-        if not return_individual_results:
-            # Determine if all results for all the `item_codes` are True (discarding results from optional_item_codes).
-            return all([v for k, v in rtn.items() if k in _item_codes])
-        else:
-            return rtn
-
-    def make_beddays_footprint(self, dict_of_beddays):
-        """Helper function to make a correctly-formed 'bed-days footprint'"""
-
-        # get blank footprint
-        footprint = self.sim.modules['HealthSystem'].bed_days.get_blank_beddays_footprint()
-
-        # do checks on the dict_of_beddays provided.
-        assert isinstance(dict_of_beddays, dict)
-        assert all((k in footprint.keys()) for k in dict_of_beddays.keys())
-        assert all(isinstance(v, (float, int)) for v in dict_of_beddays.values())
-
-        # make footprint (defaulting to zero where a type of bed-days is not specified)
-        for k, v in dict_of_beddays.items():
-            footprint[k] = v
-
-        return footprint
-
-    def is_all_beddays_allocated(self):
-        """Check if the entire footprint requested is allocated"""
-        return all(
-            self.bed_days_allocated_to_this_event[k] == self.BEDDAYS_FOOTPRINT[k] for k in self.BEDDAYS_FOOTPRINT
-        )
-
-    def make_appt_footprint(self, dict_of_appts):
-        """Helper function to make appointment footprint in format expected downstream.
-
-        Should be passed a dictionary keyed by appointment type codes with non-negative
-        values.
-        """
-        health_system = self.sim.modules['HealthSystem']
-        if health_system.appt_footprint_is_valid(dict_of_appts):
-            return Counter(dict_of_appts)
-
-        raise ValueError(
-            "Argument to make_appt_footprint should be a dictionary keyed by "
-            "appointment type code strings in Appt_Types_Table with non-negative "
-            "values"
-        )
-
-    def _initialise(self):
-        """Initialise the HSI:
-        * Set the facility_id
-        * Compute appt-footprint time requirements
-        """
-        health_system = self.sim.modules['HealthSystem']
-        self._facility_id = health_system.get_facility_info(self)
-
-        # Write the time requirements for staff of the appointments to the HSI:
-        self._cached_time_requests = health_system._get_appt_footprint_as_time_request(
-            appt_footprint=self.EXPECTED_APPT_FOOTPRINT, facility=self._facility_id
-        )
-
-
-class HSIEventWrapper(Event):
-    """This is wrapper that contains an HSI event.
-
-    It is used:
-     1) When the healthsystem is in mode 'disabled=True' such that HSI events sent to the health system scheduler are
-     passed to the main simulation scheduler for running on the date of `topen`. (Note, it is run with
-     squeeze_factor=0.0.)
-     2) When the healthsytsem is in mode `diable_and_reject_all=True` such that HSI are not run but the `never_ran`
-     method is run on the date of `tclose`.
-     3) When an HSI has been submitted to `schedule_hsi_event` but the service is not available.
-    """
-
-    def __init__(self, hsi_event, run_hsi=True, *args, **kwargs):
-        super().__init__(hsi_event.module, *args, **kwargs)
-        self.hsi_event = hsi_event
-        self.target = hsi_event.target
-        self.run_hsi = run_hsi  # True to call the HSI's `run` method; False to call the HSI's `never_ran` method
-
-    def run(self):
-        """Do the appropriate action on the HSI event"""
-
-        # Check that the person is still alive (this check normally happens in the HealthSystemScheduler and silently
-        # do not run the HSI event)
-
-        if isinstance(self.hsi_event.target, tlo.population.Population) or (
-            self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']
-        ):
-
-            if self.run_hsi:
-                # Run the event (with 0 squeeze_factor) and ignore the output
-                _ = self.hsi_event.run(squeeze_factor=0.0)
-            else:
-                self.hsi_event.never_ran()
