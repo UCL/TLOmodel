@@ -1,5 +1,5 @@
-﻿"""
-This file set ups the health system resources for each district, each region, and also national level.
+"""
+This file sets up the health system resources for each district, each region, and also national level.
 
 It defines 7 levels for facility types, i.e., Facility_Levels = [0,1a,1b,2,3,4,5].
 
@@ -47,20 +47,20 @@ resourcefilepath = Path('./resources')
 path_to_dropbox = Path(
     '/Users/jdbb1/Dropbox/Thanzi La Onse')  # <-- point to the TLO dropbox locally
 
-# LOCATION OF INPUT FILES:
 workingfile = (path_to_dropbox /
-               '05 - Resources' /
-               'Module-healthsystem' /
-               'chai ehp resource use data' /
-               'ORIGINAL' /
-               'Optimization model import_Malawi_20180315 v10.xlsx')
+               '05 - Resources' / 'Module-healthsystem' / 'chai ehp resource use data' / 'ORIGINAL' /
+               'Malawi optimization model import_2022-02-11.xlsx')
+
+working_file_old = (path_to_dropbox /
+                    '05 - Resources' / 'Module-healthsystem' / 'chai ehp resource use data' / 'ORIGINAL' /
+                    'Optimization model import_Malawi_20180315 v10.xlsx')
+
 path_to_auxiliaryfiles = (path_to_dropbox /
                           '05 - Resources' /
                           'Module-healthsystem' /
                           'chai ehp resource use data' /
                           'Auxiliary CHAI Data from CHAI HR Team 12 Sep 2021')
 
-# OUTPUT RESOURCE_FILES TO:
 outputlocation = resourcefilepath / 'healthsystem'
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -79,15 +79,15 @@ for d in pop_by_district.index:
 # pop_by_district.to_csv(outputlocation / 'organisation' / 'ResourceFile_District_Population_Data.csv', index=True)
 
 # ---------------------------------------------------------------------------------------------------------------------
-# *** Below we generate staffing tables: fund_staffing_table for funded/established staff, and\
+# *** Below we generate staffing tables: fund_staffing_table for established staff, and\
 # curr_staffing_table for current staff
 # Before generating the tables, we need to prepare wb_import, officer_types_table, and\
 # make assumptions of curr_staff_return distribution and fund_staff_return distribution using Auxiliary CHAI Data
 
 # --- wb_import for staff information
 
-# Import all of the 'CurrentStaff' sheet, including both data of current and funded staff
-wb_import = pd.read_excel(workingfile, sheet_name='CurrentStaff', header=None)
+# Import all of the 'Staff' sheet, including both data of current and funded staff
+wb_import = pd.read_excel(workingfile, sheet_name='Staff', header=None)
 
 # --- officer_types_table
 # Make dataframe summarising the officer types and the officer codes:
@@ -670,9 +670,9 @@ for i in range(63):
 # compare_staff_distribution.to_csv(outputlocation / 'ResourceFile_Staff_Distribution_Compare.csv', index=False)
 
 # ***
-# --- fund_staffing_table for funded/established staff
+# --- fund_staffing_table for established staff
 # Extract just the section about "Funded TOTAl Staff'
-wb_extract = wb_import.loc[3:37, 64:84]
+wb_extract = wb_import.loc[3:39, 64:84]
 wb_extract = wb_extract.drop([4, 5])
 wb_extract.columns = wb_extract.iloc[0]
 wb_extract = wb_extract.drop([3])
@@ -681,10 +681,10 @@ wb_extract.fillna(0, inplace=True)  # replace all null values with zero values
 
 # Add in the column to the dataframe for the labels that distinguishes whether
 # these officers are allocated to the district-or-lower levels or one of the key hospitals.
-labels = wb_import.loc[6:37, 0].reset_index(drop=True)
+labels = wb_import.loc[6:39, 0].reset_index(drop=True)
 is_distlevel = labels.copy()
-is_distlevel[0:27] = True  # for district-or-lower levels
-is_distlevel[27:] = False  # for CenHos-or-above levels
+is_distlevel[0:28] = True  # for district-or-lower levels
+is_distlevel[28:] = False  # for CenHos-or-above levels
 
 wb_extract.loc[:, 'District_Or_Hospital'] = labels
 wb_extract.loc[:, 'Is_DistrictLevel'] = is_distlevel
@@ -692,40 +692,46 @@ wb_extract.loc[:, 'Is_DistrictLevel'] = is_distlevel
 # Finished import from the CHAI excel:
 fund_staffing_table = wb_extract.copy()
 
-# There are a large number of officer_types EO1 (DCSA/Comm Health Workers) at HQ level, which is non-sensible
-# Therefore, re-distribute these evenly to the districts.
-extra_CHW = fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing',
-                                    fund_staffing_table.columns[fund_staffing_table.columns == 'E01']].values[0][0]
-fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing',
-                        fund_staffing_table.columns[fund_staffing_table.columns == 'E01']] = 0
-extra_CHW_per_district = int(np.floor(extra_CHW / fund_staffing_table['Is_DistrictLevel'].sum()))
-fund_staffing_table.loc[fund_staffing_table['Is_DistrictLevel'], 'E01'] = \
-    fund_staffing_table.loc[fund_staffing_table['Is_DistrictLevel'], 'E01'] + \
-    extra_CHW_per_district
-
-# The imported staffing table suggest that there is 1 Dental officer (D01) in each district,
-# but the TimeBase data (below) suggest that no appointment occurring at a district-level Facility can incur
-# the time such an officer. Therefore reallocate the D01 officers to the Referral Hospitals
-extra_D01 = fund_staffing_table.loc[
-    ~fund_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']),
-    fund_staffing_table.columns[fund_staffing_table.columns == 'D01']].sum().values[0]
-fund_staffing_table.loc[~fund_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']),
-                        fund_staffing_table.columns[fund_staffing_table.columns == 'D01']] = 0
-extra_D01_per_referralhosp = extra_D01 / 4  # divided by 4 CenHos
-fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']), 'D01'] = \
-    fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']), 'D01'] + \
-    extra_D01_per_referralhosp
+# The imported staffing table suggest that there is some Dental officer (D01) in most districts,
+# but the Time_Curr data (below) suggest that D01 is only needed at central hospitals (not yet validated by CHAI).
+# This potential inconsistency can be solved by re-allocating D01 from districts to central hospitals, but
+# currently we do not do such reallocation to reduce the assumptions we have to make;
+# Also because the central/referral hospitals have Dental officer allocated to meet dental service demand,
+# thus no risk of not able to meet such demand at level 3.
 
 # *** Only for funded_plus ********************************************************************************************
-# Since districts Balaka,Machinga,Mwanza,Neno,Ntchisi,Salima and central hospitals have 0 C01, while C01 is \
-# required by Mental appts at level 1b, level 2 and level 3, we move some C01 from 'HQ or missing' to them. \
-# To achieve this, we evenly distribute 30 C01 at HQ to all districts and central hospitals (27 DisHos, 4 CenHos)
-C01_at_HQ = fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'C01'].values
-extra_C01_per_district_CenHos = C01_at_HQ / 31
-fund_staffing_table.loc[~fund_staffing_table['District_Or_Hospital'].isin(['HQ or missing']), 'C01'] = (
-    fund_staffing_table.loc[~fund_staffing_table['District_Or_Hospital'].isin(['HQ or missing']), 'C01'] +
-    extra_C01_per_district_CenHos)
-fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'C01'] = 0
+# Districts Balaka/Machinga/Mwanza/Neno (4 in South), Nkhata Bay (1 in North), Ntchisi/ Salima (2 in Central)
+# have 0 mental health staff C01 in establishment,
+# whereas C01 is required by mental health appts at level 1b, level 2 and level 3.
+# To fix this inconsistency, we have to move at least 1 C01 to each of these districts from the referral hospitals.
+# (QECH and ZCH in South, MCH in North, KCH in Central; ZCH has no C01)
+# non_c01_district_idx = fund_staffing_table[(fund_staffing_table['C01'] == 0) &
+#                                            (fund_staffing_table['Is_DistrictLevel'])].index
+# non_c01_districts = pd.DataFrame(fund_staffing_table.loc[non_c01_district_idx, 'District_Or_Hospital'])
+# non_c01_districts['Region'] = pop_by_district.loc[non_c01_districts['District_Or_Hospital'], 'Region'].values
+# fund_staffing_table.loc[non_c01_district_idx, 'C01'] = 1
+# fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'QECH', 'C01'] = (
+#     fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'QECH', 'C01'] - 4
+# )
+# fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'MCH', 'C01'] = (
+#     fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'MCH', 'C01'] - 1
+# )
+# fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'KCH', 'C01'] = (
+#     fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'KCH', 'C01'] - 2
+# )
+# *********************************************************************************************************************
+
+# *** Only for funded_plus ********************************************************************************************
+# In the funded staff table, it does not make sense that Likoma has no DCSA staff,
+# whereas all other district has at least 250 DCSA staff
+# As CHAI indicates Likoma's data is mostly bounded into Nhkata Bay,
+# we draw some DCSA from Nhkata Bay to Likoma using population as the weight
+# idx_likoma = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Likoma'].index
+# idx_nkhatabay = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Nkhata Bay'].index
+# fund_staffing_table.loc[idx_likoma, 'E01'] = fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] * (
+#     pop_by_district.loc['Likoma', 'Count'] / pop_by_district.loc['Nkhata Bay', 'Count'])
+# fund_staffing_table.loc[idx_nkhatabay, 'E01'] = (
+#     fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] - fund_staffing_table.loc[idx_likoma, 'E01'].values[0])
 # *********************************************************************************************************************
 
 # Sort out which are district allocations and which are central hospitals and above
@@ -733,7 +739,7 @@ fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'HQ or mi
 # We assign HQ to HQ; KCH as RefHos in Central region; MCH as RefHos in Northern region;
 # QECH and ZCH as RefHos in Southern region (QECH is in Southwest and ZCH is in Southeast).
 fund_staffing_table.loc[
-    fund_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'District_Or_Hospital'] = 'Headquarter'
+    fund_staffing_table['District_Or_Hospital'] == 'HQ', 'District_Or_Hospital'] = 'Headquarter'
 fund_staffing_table.loc[
     fund_staffing_table['District_Or_Hospital'] == 'KCH', 'District_Or_Hospital'] = 'Referral Hospital_Central'
 fund_staffing_table.loc[
@@ -746,6 +752,8 @@ fund_staffing_table.loc[
     fund_staffing_table['District_Or_Hospital'] == 'ZCH', 'District_Or_Hospital'] = 'Referral Hospital_Southern'
 # fund_staffing_table.loc[
 # fund_staffing_table['District_Or_Hospital'] == 'ZCH', 'District_Or_Hospital'] = 'Referral Hospital_Southeast'
+fund_staffing_table.loc[
+    fund_staffing_table['District_Or_Hospital'] == 'ZMH', 'District_Or_Hospital'] = 'Zomba Mental Hospital'
 
 # Group the referral hospitals QECH and ZCH as Referral Hospital_Southern
 Is_DistrictLevel = fund_staffing_table['Is_DistrictLevel'].values  # Save the column 'Is_DistrictLevel' first
@@ -753,42 +761,14 @@ fund_staffing_table = pd.DataFrame(
     fund_staffing_table.groupby(by=['District_Or_Hospital'], sort=False).sum()).reset_index()
 fund_staffing_table.insert(1, 'Is_DistrictLevel', Is_DistrictLevel[:-1])  # Add the column 'Is_DistrictLevel'
 
-# Add a row for Zomba Mental Hospital with 3 C01 mental health staff
-# (according to data in 2018-03-09 Facility-level establishment MOH & CHAM)
-# (This is much less than the current 12 C01.)
-fund_ZMH = pd.DataFrame(columns=fund_staffing_table.columns.copy())
-fund_ZMH.loc[0, 'District_Or_Hospital'] = 'Zomba Mental Hospital'
-fund_ZMH.loc[0, 'Is_DistrictLevel'] = False
-fund_ZMH.loc[0, 'C01'] = 3
-# Alternatively, if consider all potential cadres from compiled staff return
-# fund_cadres_ZMH = pd.DataFrame(index = [0], columns = ['M01','M02','M03','N01','N02','C01','P02','L02'],
-#                          data = np.array([[2,13,14,8,30,3,1,1]]))
-# for col in fund_cadres_ZMH.columns:
-#    fund_ZMH.loc[0,col] = fund_cadres_ZMH.loc[0,col].copy()
-
-# Concat
-fund_staffing_table = pd.concat([fund_staffing_table, fund_ZMH])
-fund_staffing_table.reset_index(drop=True, inplace=True)
-fund_staffing_table.fillna(0, inplace=True)
-
-# File 2018-03-09 Facility-level establishment MOH & CHAM indicates that ZMH is assigned to Zomba District,
-# We therefore subtract the 3 C01 staff from Zomba District.
-fund_idx_ZombaDist = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Zomba'].index
-fund_staffing_table.loc[fund_idx_ZombaDist, 'C01'] = \
-    fund_staffing_table.loc[fund_idx_ZombaDist, 'C01'] - fund_ZMH.loc[0, 'C01']
-# Alternatively, if consider all potential cadres from compiled staff return
-# fund_staffing_table.loc[fund_idx_ZombaDist, :] =\
-# fund_staffing_table.loc[fund_idx_ZombaDist, :] - fund_ZMH.loc[0,:]
-
-# Check that fund_staffing_table.loc[fund_idx_ZombaDist, :] >=0
-assert (fund_staffing_table.loc[fund_idx_ZombaDist, 'M01':'R04'].values >= 0).all()
+# Check that in fund_staffing_table every staff count entry >= 0
+assert (fund_staffing_table.loc[:, 'M01':'R04'].values >= 0).all()
 
 # The following districts are not in the CHAI data because they are included within other districts.
 # For now, we will say that the division of staff between these cities and the wide district (where they are included)
-# is consistent with the population recorded for them.
+# is consistent with the population recorded for them (Malawi 2018 census),
 # i.e., to use population-based weights to reallocate staff
 
-# Add in Likoma (part Nkhata Bay)
 # Add in Lilongwe City (part of Lilongwe)
 # Add in Mzuzu City (part of Mziba) ASSUMED
 # Add in Zomba City (part of Zomba)
@@ -796,7 +776,6 @@ assert (fund_staffing_table.loc[fund_idx_ZombaDist, 'M01':'R04'].values >= 0).al
 
 # create mapping: the new districts : super_district
 split_districts = (
-    ('Likoma', 'Nkhata Bay'),
     ('Lilongwe City', 'Lilongwe'),
     ('Mzuzu City', 'Mzimba'),
     ('Zomba City', 'Zomba'),
@@ -820,7 +799,7 @@ for i in np.arange(0, len(split_districts)):
     total_staff = fund_staffing_table.loc[
         fund_staffing_table['District_Or_Hospital'] == super_district, cols].values.squeeze()
 
-    # get the weight; The original weights w0 for the 5 new districts in order are 0.05,0.60,0.24,0.14,1.77(> 1)
+    # get the weight; The original weights w0 for the 4 new districts in order are 0.60,0.24,0.14,1.77(> 1)
     w0 = pop_by_district.loc[new_district, 'Count'] / pop_by_district.loc[super_district, 'Count']
     if w0 < 1:
         w = w0
@@ -875,15 +854,15 @@ fund_staffing_table = district_faclevel.merge(fund_staffing_table, how='outer')
 # Before split, update the funded C01 distributions at levels 1a, 1b and 2 using CHAI Optimal Workforce estimates. \
 # This is because funded C01 are all at level 1b (100%), meanwhile appt time base requires C01 at level 2. \
 # CHAI Optimal Workforce locates C01 47.92% at level 1b and 52.08% at level 2, which seems more sensible.
-idx_c01_level_1b = fund_staff_distribution[
-    (fund_staff_distribution['Cadre_Code'] == 'C01') &
-    (fund_staff_distribution['Facility_Level'] == 'Facility_Level_1b')].index
-fund_staff_distribution.loc[idx_c01_level_1b, 'Proportion_Fund'] = 0.4792
-
-idx_c01_level_2 = fund_staff_distribution[
-    (fund_staff_distribution['Cadre_Code'] == 'C01') &
-    (fund_staff_distribution['Facility_Level'] == 'Facility_Level_2')].index
-fund_staff_distribution.loc[idx_c01_level_2, 'Proportion_Fund'] = 0.5208
+# idx_c01_level_1b = fund_staff_distribution[
+#     (fund_staff_distribution['Cadre_Code'] == 'C01') &
+#     (fund_staff_distribution['Facility_Level'] == 'Facility_Level_1b')].index
+# fund_staff_distribution.loc[idx_c01_level_1b, 'Proportion_Fund'] = 0.4792
+#
+# idx_c01_level_2 = fund_staff_distribution[
+#     (fund_staff_distribution['Cadre_Code'] == 'C01') &
+#     (fund_staff_distribution['Facility_Level'] == 'Facility_Level_2')].index
+# fund_staff_distribution.loc[idx_c01_level_2, 'Proportion_Fund'] = 0.5208
 # *********************************************************************************************************************
 
 # Split
@@ -912,6 +891,8 @@ fund_staffing_table.loc[128:132, 'Facility_Level'] = ['Facility_Level_5', 'Facil
                                                       'Facility_Level_3', 'Facility_Level_3',
                                                       'Facility_Level_4']
 
+# Check that in fund_staffing_table every staff count entry >= 0
+assert (fund_staffing_table.loc[:, 'M01':'R04'].values >= 0).all()
 # fund_staffing_table ready!
 
 # Save the table without column 'Is_DistrictLevel'; staff counts in floats
@@ -924,7 +905,7 @@ fund_staffing_table_to_save = fund_staffing_table.drop(columns='Is_DistrictLevel
 # ***
 # --- Creating curr_staffing_table and curr_staff_list for current staff
 # Extract the section about "Current TOTAl Staff'
-hcw_curr_extract = wb_import.loc[3:37, 1:21]
+hcw_curr_extract = wb_import.loc[3:39, 1:21]
 hcw_curr_extract = hcw_curr_extract.drop([4, 5])
 hcw_curr_extract.columns = hcw_curr_extract.iloc[0]
 hcw_curr_extract = hcw_curr_extract.drop([3])
@@ -942,25 +923,14 @@ curr_staffing_table = hcw_curr_extract.copy()
 # Check the cadre columns of curr_staffing_table is identical to fund_staffing_table
 assert set(curr_staffing_table.columns[0:21]) == set(fund_staffing_table.columns[-21:])
 
-# For curr_staffing_table, reallocating D01 from districts to referral hospitals
-# Treat KCH, MCH, QECH, ZCH as referral hospitals
+# For curr_staffing_table, do not re-allocate Dental officer with the same reason above for established staff
+
 # The operation of reallocating E01 in HQ to districts is not needed for curr_staffing_table,
 # as no. of E01 in curr_staffing_table at HQ is zero.
 
-curr_extra_D01 = curr_staffing_table.loc[
-    ~curr_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']), curr_staffing_table.columns[
-        curr_staffing_table.columns == 'D01']].sum().values[0]
-curr_staffing_table.loc[
-    ~curr_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']), curr_staffing_table.columns[
-        curr_staffing_table.columns == 'D01']] = 0
-curr_extra_D01_per_referralhosp = curr_extra_D01 / 4
-curr_staffing_table.loc[curr_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']), 'D01'] = \
-    curr_staffing_table.loc[curr_staffing_table['District_Or_Hospital'].isin(['KCH', 'MCH', 'QECH', 'ZCH']), 'D01'] + \
-    curr_extra_D01_per_referralhosp
-
 # For curr_staffing_table, sort out the districts and central hospitals
 curr_staffing_table.loc[
-    curr_staffing_table['District_Or_Hospital'] == 'HQ or missing', 'District_Or_Hospital'] = 'Headquarter'
+    curr_staffing_table['District_Or_Hospital'] == 'HQ', 'District_Or_Hospital'] = 'Headquarter'
 curr_staffing_table.loc[
     curr_staffing_table['District_Or_Hospital'] == 'KCH', 'District_Or_Hospital'] = 'Referral Hospital_Central'
 curr_staffing_table.loc[
@@ -969,6 +939,8 @@ curr_staffing_table.loc[
     curr_staffing_table['District_Or_Hospital'] == 'QECH', 'District_Or_Hospital'] = 'Referral Hospital_Southern'
 curr_staffing_table.loc[
     curr_staffing_table['District_Or_Hospital'] == 'ZCH', 'District_Or_Hospital'] = 'Referral Hospital_Southern'
+curr_staffing_table.loc[
+    curr_staffing_table['District_Or_Hospital'] == 'ZMH', 'District_Or_Hospital'] = 'Zomba Mental Hospital'
 
 # Group the referral hospitals QECH and ZCH as Referral Hospital_Southern
 Is_DistrictLevel = curr_staffing_table['Is_DistrictLevel'].values  # Save the column 'Is_DistrictLevel' first
@@ -976,41 +948,24 @@ curr_staffing_table = pd.DataFrame(
     curr_staffing_table.groupby(by=['District_Or_Hospital'], sort=False).sum()).reset_index()
 curr_staffing_table.insert(1, 'Is_DistrictLevel', Is_DistrictLevel[:-1])  # Add the column 'Is_DistrictLevel'
 
-# Add a row for Zomba Mental Hospital, which has 12 mental health staff according to compiled staff return
-curr_ZMH = pd.DataFrame(columns=curr_staffing_table.columns.copy())
-curr_ZMH.loc[0, 'District_Or_Hospital'] = 'Zomba Mental Hospital'
-curr_ZMH.loc[0, 'Is_DistrictLevel'] = False
-curr_ZMH.loc[0, 'C01'] = 12
-# Alternatively, if consider all potential cadres from compiled staff return
-# curr_cadres_ZMH = pd.DataFrame(index = [0], columns = ['M01','M02','N01','N02','C01','P02','P03'],
-#                          data = np.array([[2,5,19,27,12,1,1]]))
-# for col in curr_cadres_ZMH.columns:
-#    curr_ZMH.loc[0,col] = curr_cadres_ZMH.loc[0,col].copy()
+# No need to add a row for Zomba Mental Hospital, as the updated CHAI data has this row for ZMH.
+# Check that in curr_staffing_table each staff count entry >=0
+assert (curr_staffing_table.loc[:, 'M01':'R04'].values >= 0).all()
 
-curr_staffing_table = pd.concat([curr_staffing_table, curr_ZMH])
-curr_staffing_table.reset_index(drop=True, inplace=True)
-curr_staffing_table.fillna(0, inplace=True)
+# Split staff to 5 special districts;
+# for current staff, we include Likoma here because CHAI has no current staff allocated in Likoma
+# (CHAI team they will allocate some staff to Likoma but not yet done)
+split_districts = (
+    ('Likoma', 'Nkhata Bay'),
+    ('Lilongwe City', 'Lilongwe'),
+    ('Mzuzu City', 'Mzimba'),
+    ('Zomba City', 'Zomba'),
+    ('Blantyre City', 'Blantyre')
+)
 
-# For Zomba district, there are 12 mental health staff C01;
-# However, compiled staff return does not record any C01 in Zomba district;
-# We therefore assume that its 12 C01 are from Zomba Mental Hospital.
-curr_idx_ZombaDist = curr_staffing_table[curr_staffing_table['District_Or_Hospital'] == 'Zomba'].index
-curr_staffing_table.loc[curr_idx_ZombaDist, 'C01'] = \
-    curr_staffing_table.loc[curr_idx_ZombaDist, 'C01'] - curr_ZMH.loc[0, 'C01']
-# Alternatively, if consider all potential cadres from compiled staff return
-# curr_staffing_table.loc[curr_idx_ZombaDist, :] = curr_staffing_table.loc[curr_idx_ZombaDist, :] - curr_ZMH.loc[0,:]
-
-# Check that curr_staffing_table.loc[curr_idx_ZombaDist, :] >=0
-assert (curr_staffing_table.loc[curr_idx_ZombaDist, 'M01':'R04'].values >= 0).all()
-
-# Similarly split staff to 5 special districts as done for funded staff
-# split_districts = (
-#    ('Likoma', 'Nkhata Bay'),
-#    ('Lilongwe City', 'Lilongwe'),
-#    ('Mzuzu City', 'Mzimba'),
-#    ('Zomba City', 'Zomba'),
-#    ('Blantyre City', 'Blantyre')
-# )
+# drop the original placeholder row for Likoma
+curr_staffing_table.drop([9], inplace=True)
+curr_staffing_table.reset_index(inplace=True, drop=True)
 
 for i in np.arange(0, len(split_districts)):
     new_district = split_districts[i][0]
@@ -1122,15 +1077,14 @@ Facility_Levels = [0, '1a', '1b', 2, 3, 4, 5]
 #                   'District Hospital', 'DHO', 'Referral Hospital', 'Zomba Mental Hospital']
 # Facility_Types_Levels = dict(zip(Facility_Types, Facility_Levels))
 
-
 # Create empty dataframe that will be the Master Facilities List (mfl)
 mfl = pd.DataFrame(columns=['Facility_Level', 'District', 'Region'])
 
 pop_districts = pop['District'].values  # array; the 'pop_districts' used in previous lines is a DataFrame
 pop_regions = pd.unique(pop['Region'])
 
-# Each district is assigned with a set of community level facs, a set of primary level facs,
-# and a set of second level facs.
+# Each district is assigned with a set of community level facs (0), a set of primary level facs (1a, 1b),
+# and a set of second level facs (2).
 # Therefore, the total sets of facs is 4 * no. of districts + 3 (RefHos per Region) + 1 (HQ) + 1 (ZMH) \
 # = 4 * 32 + 5 = 133
 for d in pop_districts:
@@ -1201,8 +1155,8 @@ assert len(facilities_by_district) == len(pop_districts) * len(Facility_Levels)
 #                               index=False)
 
 # ---------------------------------------------------------------------------------------------------------------------
-# *** Now look at the types of appointments
-sheet = pd.read_excel(workingfile, sheet_name='Time_Base', header=None)
+# *** Now look at the types of appointments from the sheet 'Time_Curr'
+sheet = pd.read_excel(workingfile, sheet_name='Time_Curr', header=None)
 
 # get rid of the junk rows
 trimmed = sheet.loc[[7, 8, 9, 11, 12, 14, 15, 17, 18, 20, 21, 23, 24, 26, 27]]
@@ -1211,10 +1165,14 @@ data_import = pd.DataFrame(data=trimmed.iloc[1:, 2:].values, columns=trimmed.ilo
 data_import = data_import.dropna(axis='columns', how='all')  # get rid of the 'spacer' columns
 data_import = data_import.fillna(0)
 
-# get rid of records for which there is no call on time of any type of officer
+# get rid of records for which there is no call on time of any type of officer at any fac type
 data_import = data_import.drop(columns=data_import.columns[data_import.sum() == 0])
 
-# We note that the DCSA (CHW) never has a time requirement and that no appointments can be serviced at the HealthPost.
+# Note that in the updated 'Time_Curr', Disp has no time requirements at all for medical assistant M03,
+# which is different from the previous version
+assert data_import.loc['Disp', :].sum() == 0
+
+# Note that the DCSA (CHW) never has a time requirement and that no appointments can be serviced at the HealthPost.
 # We remedy this by inserting a new type of appointment, which only the DCSA can service, \
 # and the time taken is 10 minutes.
 new_appt_for_CHW = pd.Series(index=data_import.index,
@@ -1238,21 +1196,19 @@ new_appt_for_CHW = pd.Series(index=data_import.index,
                              ])
 
 data_import = pd.concat([data_import, new_appt_for_CHW], axis=1)
+assert data_import.loc['HP', :].sum() == 10.0
 
-# Add service times for DHOs, which has quite a few data in 'Incidence_Curr', by copying the data of DisHos
-new_rows_for_DHO = pd.DataFrame(index=['DHO', 'DHO_Per'], columns=data_import.columns.copy(),
-                                data=data_import.loc[['DisHos', 'DisHos_Per'], :].copy().values)
+# We now do not add service time for DHO as we think DHO does not deliver services directly
+# Also, DHO itself in both DHIS2 and CHAI updated data does not have service record
 
-# Add service times (Mental OPD and Mental Clinic Visit) for Zomba Mental Hospital, by copying data of CenHos
+# Add service times for Zomba Mental Hospital, by copying mental health appointment data of CenHos
+# (Assuming ZMH only provide mental health services)
 new_rows_for_ZMH = pd.DataFrame(index=['ZMH', 'ZMH_Per'], columns=data_import.columns.copy(),
                                 data=0)
 new_rows_for_ZMH.loc[:, ['C01_MentOPD', 'C01_MentClinic']] = data_import.loc[
     ['CenHos', 'CenHos_Per'], ['C01_MentOPD', 'C01_MentClinic']].copy().values
-# If consider all potential cadres from compiled staff return and all associated services
-# new_rows_for_ZMH = pd.DataFrame(index=['ZMH','ZMH_Per'],columns=data_import.columns.copy(),
-#                               data=data_import.loc[['CenHos','CenHos_Per'],:].copy().values)
 
-data_import = pd.concat([data_import, new_rows_for_DHO, new_rows_for_ZMH])
+data_import = pd.concat([data_import, new_rows_for_ZMH])
 
 # data_import ready!
 
@@ -1341,7 +1297,6 @@ HQ_ExpecTime.loc[:] = np.nan
 
 # level 2
 District_Hospital_ExpecTime = data_import.loc['DisHos'] * data_import.loc['DisHos_Per']
-DHO_ExpecTime = data_import.loc['DHO'] * data_import.loc['DHO_Per']
 
 # level 1b
 Community_Hospital_ExpecTime = data_import.loc['ComHos'] * data_import.loc['ComHos_Per']
@@ -1349,23 +1304,21 @@ Community_Hospital_ExpecTime = data_import.loc['ComHos'] * data_import.loc['ComH
 # level 1a
 Urban_HealthCentre_ExpecTime = data_import.loc['UrbHC'] * data_import.loc['UrbHC_Per']
 Rural_HealthCentre_ExpecTime = data_import.loc['RurHC'] * data_import.loc['RurHC_Per']
-Disp_ExpecTime = data_import.loc['Disp'] * data_import.loc['Disp_Per']
 
 # level 0
 HealthPost_ExpecTime = data_import.loc['HP'] * data_import.loc['HP_Per']
 
-# Average time for levels 2 and 1a, which have data for more than 1 facility types
-Avg_Level2_ExpectTime = (District_Hospital_ExpecTime + DHO_ExpecTime) / 2  # Identical to DisHos Expected Time
-Avg_Level1a_ExpectTime = (Disp_ExpecTime + Urban_HealthCentre_ExpecTime + Rural_HealthCentre_ExpecTime) / 3
+# Average time for levels 1a, which have data for more than 1 facility types
+Avg_Level1a_ExpectTime = (Urban_HealthCentre_ExpecTime + Rural_HealthCentre_ExpecTime) / 2
 
 # Assemble
 X = pd.DataFrame({
     5: HQ_ExpecTime,  # (Headquarter)
     4: ZMH_ExpectTime,  # (Zomba Mental Hospital)
     3: Central_Hospital_ExpecTime,  # (our "Referral Hospital" at region level)
-    2: Avg_Level2_ExpectTime,  # (DHO and DisHos at second level )
+    2: District_Hospital_ExpecTime,  # (DisHos at second level )
     '1b': Community_Hospital_ExpecTime,  # (ComHos at primary level)
-    '1a': Avg_Level1a_ExpectTime,  # (UrbHC,RurHC and Disp at primary level)
+    '1a': Avg_Level1a_ExpectTime,  # (UrbHC,RurHC at primary level)
     0: HealthPost_ExpecTime  # (HP at community level)
 })
 
@@ -1399,8 +1352,12 @@ appt_time_table_coarse = pd.DataFrame(
 ).reset_index()
 
 # Save
-appt_time_table_coarse.to_csv(outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv',
-                              index=False)
+# ApptTimeTable.to_csv(
+#     outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv',
+#     index=False)
+appt_time_table_coarse.to_csv(
+    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv',
+    index=False)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # *** Create a table that determines what kind of appointment can be serviced in each Facility Level
@@ -1526,52 +1483,147 @@ FacLevel_By_Officer = FacLevel_By_Officer.add_prefix('Facility_Level_')
 # First, read-in the number of working hours and days for each type of officer
 
 pft_sheet = pd.read_excel(workingfile, sheet_name='PFT', header=None)
-officer_types_import = pft_sheet.iloc[2, np.arange(2, 23)]
+officer_types_import = pft_sheet.iloc[3, np.arange(2, 23)]
 
 assert set(officer_types_import) == set(officer_types_table['Officer_Type_Code'])
 assert len(officer_types_import) == len(officer_types_table['Officer_Type_Code'])
 
-# patient facing hours daily at hospitals
-hours_hospital = pft_sheet.iloc[38, np.arange(2, 23)]
-
-# patient facing hours daily at health centres
-work_mins_hc = pft_sheet.iloc[26, np.arange(2, 23)]
-admin_mins_hc = pft_sheet.iloc[34, np.arange(2, 23)]
-hours_hc = (work_mins_hc - admin_mins_hc) / 60
-
 # Total working days per year
-days_per_year_men = pft_sheet.iloc[15, np.arange(2, 23)]
-days_per_year_women = pft_sheet.iloc[16, np.arange(2, 23)]
-days_per_year_pregwomen = pft_sheet.iloc[17, np.arange(2, 23)]
+days_per_year_men = pft_sheet.iloc[16, np.arange(2, 23)]
+days_per_year_women = pft_sheet.iloc[17, np.arange(2, 23)]
+days_per_year_pregwomen = pft_sheet.iloc[18, np.arange(2, 23)]
 
 # Percents of men, nonpregnant women, and pregnant women
-fr_men = pft_sheet.iloc[53, np.arange(2, 23)]
-fr_pregwomen = pft_sheet.iloc[55, np.arange(2, 23)] * pft_sheet.iloc[57, np.arange(2, 23)]
-fr_nonpregwomen = pft_sheet.iloc[55, np.arange(2, 23)] * (1 - pft_sheet.iloc[57, np.arange(2, 23)])
+fr_men = pft_sheet.iloc[66, np.arange(2, 23)]
+fr_pregwomen = pft_sheet.iloc[71, np.arange(2, 23)]
+fr_nonpregwomen = pft_sheet.iloc[68, np.arange(2, 23)] - pft_sheet.iloc[71, np.arange(2, 23)]
 
 # Total average working days
 workingdays = (fr_men * days_per_year_men) + (fr_nonpregwomen * days_per_year_women) + (
     fr_pregwomen * days_per_year_pregwomen)
 
-# --- patient facing time
-# Average mins per year, Average hours per day, Average number of mins per day in Malawi
+# patient facing (i.e. non-admin working) minutes and hours daily at
+# district hospitals, community hospitals, health centres
+mins_daily_dishos = pft_sheet.iloc[37, np.arange(2, 23)]
+hrs_daily_dishos = mins_daily_dishos / 60
 
-mins_per_day_hospital = hours_hospital * 60
-mins_per_day_hc = hours_hc * 60
+mins_daily_comhos = pft_sheet.iloc[42, np.arange(2, 23)]
+hrs_daily_comhos = mins_daily_comhos / 60
 
-mins_per_year_hospital = mins_per_day_hospital * workingdays
-mins_per_year_hc = mins_per_day_hc * workingdays
+mins_daily_hc = pft_sheet.iloc[46, np.arange(2, 23)]
+hrs_daily_hc = mins_daily_hc / 60
 
-av_mins_per_day_hospital = mins_per_year_hospital / 365.25
-av_mins_per_day_hc = mins_per_year_hc / 365.25
+# Total mins per year, Average number of mins per day at
+# district hospitals, community hospitals, health centres
+mins_yearly_dishos = mins_daily_dishos * workingdays
+mins_yearly_comhos = mins_daily_comhos * workingdays
+mins_yearly_hc = mins_daily_hc * workingdays
 
-# PFT - hospital and health centre individually
+av_mins_daily_dishos = mins_yearly_dishos / 365.25
+av_mins_daily_comhos = mins_yearly_comhos / 365.25
+av_mins_daily_hc = mins_yearly_hc / 365.25
+
+# PFT - dishos, comhos, hc individual columns
+# note that the average is calculated on 365.25 days (not the working days) per year
 HosHC_patient_facing_time = pd.DataFrame(
-    {'Officer_Type_Code': officer_types_import, 'Working_Days_Per_Year': workingdays,
-     'Hospital_Hours_Per_Day': hours_hospital, 'HC_Hours_Per_Day': hours_hc,
-     'Hospital_Av_Mins_Per_Day': av_mins_per_day_hospital,
-     'HC_Av_Mins_Per_Day': av_mins_per_day_hc}
+    {'Officer_Type_Code': officer_types_import,
+     'DisHos_Av_Mins_Per_Day': av_mins_daily_dishos,
+     'ComHos_Av_Mins_Per_Day': av_mins_daily_comhos,
+     'HC_Av_Mins_Per_Day': av_mins_daily_hc,
+     'Total_Av_Working_Days': workingdays,
+     'DisHos_Hrs_Per_Day': hrs_daily_dishos,
+     'ComHos_Hrs_Per_Day': hrs_daily_comhos,
+     'HC_Hrs_Per_Day': hrs_daily_hc
+     }
 ).reset_index(drop=True)
+
+# The new PFT has no minutes for M01 at health centres,
+# but in Time_Curr, IPAdmissions/RMNCH/... appointments at Urban HCs all need time from M01.
+# We therefore assume the minutes for M01 at HCs are the average of those at DisHos and CenHos,
+# to solve inconsistency between PFT and Time_Curr
+HosHC_patient_facing_time.loc[0, 'HC_Av_Mins_Per_Day'] = (
+                                                             HosHC_patient_facing_time.loc[
+                                                                 0, 'DisHos_Av_Mins_Per_Day'] +
+                                                             HosHC_patient_facing_time.loc[0, 'ComHos_Av_Mins_Per_Day']
+                                                         ) / 2
+
+# How to deal with cadres (DCSA, Dental, Mental, Radiography) that do not have minutes at all in PFT,
+# whereas they have time requirements in Time_Curr?
+# (Compared to old PFT sheet,
+# the new PFT has updated all info on available working days/non-admin daily minutes/portion of male/female/pregfemale)
+# A quick fix is to use the average daily minutes of those cadres from old PFT table;
+# The info required to calculate these minutes will be from the old PFT table.
+pft_old = pd.read_excel(working_file_old, sheet_name='PFT', header=None)
+
+officer_types_old = pft_old.iloc[2, np.arange(2, 23)]
+assert set(officer_types_old) == set(officer_types_table['Officer_Type_Code'])
+assert len(officer_types_old) == len(officer_types_table['Officer_Type_Code'])
+
+# Total working days per year
+days_men_old = pft_old.iloc[15, np.arange(2, 23)]
+days_women_old = pft_old.iloc[16, np.arange(2, 23)]
+days_pregwomen_old = pft_old.iloc[17, np.arange(2, 23)]
+
+# Percents of men, nonpregnant women, and pregnant women
+fr_men_old = pft_old.iloc[53, np.arange(2, 23)]
+fr_pregwomen_old = pft_old.iloc[55, np.arange(2, 23)] * pft_old.iloc[57, np.arange(2, 23)]
+fr_nonpregwomen_old = pft_old.iloc[55, np.arange(2, 23)] * (1 - pft_old.iloc[57, np.arange(2, 23)])
+
+# Total average working days
+working_days_old = (fr_men_old * days_men_old) + (fr_nonpregwomen_old * days_women_old) + (
+    fr_pregwomen_old * days_pregwomen_old)
+
+# patient facing (i.e. non-admin working) minutes and hours daily at
+# hospitals and health centres
+mins_daily_hos_old = pft_old.iloc[36, np.arange(2, 23)]
+hrs_daily_hos_old = mins_daily_hos_old / 60
+
+mins_daily_hc_old = pft_old.iloc[26, np.arange(2, 23)] - pft_old.iloc[34, np.arange(2, 23)]
+hrs_daily_hc_old = mins_daily_hc_old / 60
+
+# Total mins per year, Average number of mins per day at
+# hospitals and health centres
+mins_yearly_hos_old = mins_daily_hos_old * working_days_old
+av_mins_daily_hos_old = mins_yearly_hos_old / 365.25
+
+mins_yearly_hc_old = mins_daily_hc_old * working_days_old
+av_mins_daily_hc_old = mins_yearly_hc_old / 365.25
+
+# PFT - DisHos, ComHos, HC individually
+# DisHos and ComHos both use hos data
+HosHC_patient_facing_time_old = pd.DataFrame(
+    {'Officer_Type_Code': officer_types_old,
+     'DisHos_Av_Mins_Per_Day': av_mins_daily_hos_old,
+     'ComHos_Av_Mins_Per_Day': av_mins_daily_hos_old,
+     'HC_Av_Mins_Per_Day': av_mins_daily_hc_old,
+     'Total_Av_Working_Days': working_days_old,
+     'DisHos_Hrs_Per_Day': hrs_daily_hos_old,
+     'ComHos_Hrs_Per_Day': hrs_daily_hos_old,
+     'HC_Hrs_Per_Day': hrs_daily_hc_old
+     }
+).reset_index(drop=True)
+
+# check the new and old tables have same columns and officers (in the same order)
+assert (HosHC_patient_facing_time_old['Officer_Type_Code'] == HosHC_patient_facing_time['Officer_Type_Code']).all()
+assert (HosHC_patient_facing_time_old.columns == HosHC_patient_facing_time.columns).all()
+
+# check new and old pft difference
+HosHC_pft_diff = pd.DataFrame(columns=HosHC_patient_facing_time.columns)
+HosHC_pft_diff['Officer_Type_Code'] = HosHC_patient_facing_time['Officer_Type_Code'].values
+HosHC_pft_diff.iloc[:, 1:] = (
+    (HosHC_patient_facing_time.iloc[:, 1:].values -
+     HosHC_patient_facing_time_old.iloc[:, 1:].values) /
+    HosHC_patient_facing_time_old.iloc[:, 1:].values
+)
+HosHC_pft_diff = HosHC_pft_diff.append(HosHC_pft_diff.iloc[:, 1:].mean(axis=0), ignore_index=True)
+
+# save
+# HosHC_pft_diff.to_csv(
+#     outputlocation / 'human_resources' / 'definitions' / 'New_Old_PFT_Difference.csv',
+#     index=False)
+
+# now add the old data of those blanks cadres to the updated PFT table
+HosHC_patient_facing_time.iloc[11:, :] = HosHC_patient_facing_time_old.iloc[11:, :].copy()
 
 # PFT table ready!
 
@@ -1590,12 +1642,17 @@ for i in funded_daily_minutes.index:
             t = (funded_staff_floats.loc[i, officer] *
                  HosHC_patient_facing_time.loc[HosHC_patient_facing_time['Officer_Type_Code'] == officer,
                                                'HC_Av_Mins_Per_Day'])
-            funded_daily_minutes.loc[i, officer] = t.values
-        else:  # Levels 1b, 2, and above; Hospital minutes
+            funded_daily_minutes.loc[i, officer] = t.values[0]
+        elif the_level == 'Facility_Level_1b':  # Level 1b; ComHos minutes
             t = (funded_staff_floats.loc[i, officer] *
                  HosHC_patient_facing_time.loc[HosHC_patient_facing_time['Officer_Type_Code'] == officer,
-                                               'Hospital_Av_Mins_Per_Day'])
-            funded_daily_minutes.loc[i, officer] = t.values
+                                               'ComHos_Av_Mins_Per_Day'])
+            funded_daily_minutes.loc[i, officer] = t.values[0]
+        else:  # Levels 2 and above; DisHos and CenHos minutes
+            t = (funded_staff_floats.loc[i, officer] *
+                 HosHC_patient_facing_time.loc[HosHC_patient_facing_time['Officer_Type_Code'] == officer,
+                                               'DisHos_Av_Mins_Per_Day'])
+            funded_daily_minutes.loc[i, officer] = t.values[0]
 
 # Long format
 funded_staff_floats = pd.melt(funded_staff_floats, id_vars=['District_Or_Hospital', 'Facility_Level'],
@@ -1608,7 +1665,8 @@ funded_daily_capability = funded_daily_minutes.merge(funded_staff_floats, how='l
 # Reset facility level column to exclude 'Facility_Level_'
 funded_daily_capability['Facility_Level'] = \
     funded_daily_capability['Facility_Level'].str.split(pat='_', expand=True).iloc[:, 2]
-# Drop row with zero minutes (also zero staff counts)
+# Drop row with zero or nan minutes (due to either zero staff counts or nan daily minutes)
+funded_daily_capability.fillna(0, inplace=True)
 funded_daily_capability.drop(
     index=funded_daily_capability[funded_daily_capability['Total_Mins_Per_Day'] == 0].index, inplace=True)
 # Reset index
@@ -1644,9 +1702,6 @@ funded_daily_capability_coarse = pd.DataFrame(
         ['Facility_ID', 'Facility_Name', 'Facility_Level', 'District', 'Region', 'Officer_Category'],
         dropna=False).sum()
 ).reset_index()
-# Drop columns of officer types
-funded_daily_capability_coarse.drop(columns=['Officer_Type_Code', 'Officer_Type'], inplace=True)
-funded_daily_capability_coarse.reset_index(drop=True, inplace=True)
 
 # --- Daily capability for current staff; staff counts in floats
 # For float staff counts, calculate total minutes per day
@@ -1660,12 +1715,17 @@ for i in curr_daily_minutes.index:
             t = (curr_staff_floats.loc[i, officer] *
                  HosHC_patient_facing_time.loc[HosHC_patient_facing_time['Officer_Type_Code'] == officer,
                                                'HC_Av_Mins_Per_Day'])
-            curr_daily_minutes.loc[i, officer] = t.values
-        else:  # Levels 1b, 2, and above; Hospital minutes
+            curr_daily_minutes.loc[i, officer] = t.values[0]
+        elif the_level == 'Facility_Level_1b':  # Level 1b; ComHos minutes
             t = (curr_staff_floats.loc[i, officer] *
                  HosHC_patient_facing_time.loc[HosHC_patient_facing_time['Officer_Type_Code'] == officer,
-                                               'Hospital_Av_Mins_Per_Day'])
-            curr_daily_minutes.loc[i, officer] = t.values
+                                               'ComHos_Av_Mins_Per_Day'])
+            curr_daily_minutes.loc[i, officer] = t.values[0]
+        else:  # Levels 2 and above; DisHos and CenHos minutes
+            t = (curr_staff_floats.loc[i, officer] *
+                 HosHC_patient_facing_time.loc[HosHC_patient_facing_time['Officer_Type_Code'] == officer,
+                                               'DisHos_Av_Mins_Per_Day'])
+            curr_daily_minutes.loc[i, officer] = t.values[0]
 
 # Long format
 curr_staff_floats = pd.melt(curr_staff_floats, id_vars=['District_Or_Hospital', 'Facility_Level'],
@@ -1679,6 +1739,7 @@ curr_daily_capability = curr_daily_minutes.merge(curr_staff_floats, how='left')
 curr_daily_capability['Facility_Level'] = \
     curr_daily_capability['Facility_Level'].str.split(pat='_', expand=True).iloc[:, 2]
 # Drop row with zero minutes (also zero staff counts)
+curr_daily_capability.fillna(0, inplace=True)
 curr_daily_capability.drop(
     index=curr_daily_capability[curr_daily_capability['Total_Mins_Per_Day'] == 0].index, inplace=True)
 # Reset index
@@ -1714,26 +1775,21 @@ curr_daily_capability_coarse = pd.DataFrame(
         ['Facility_ID', 'Facility_Name', 'Facility_Level', 'District', 'Region', 'Officer_Category'],
         dropna=False).sum()
 ).reset_index()
-# Drop columns of officer types
-curr_daily_capability_coarse.drop(columns=['Officer_Type_Code', 'Officer_Type'], inplace=True)
-curr_daily_capability_coarse.reset_index(drop=True, inplace=True)
 
 # Save
-# HosHC_patient_facing_time.to_csv(
-#     outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Patient_Facing_Time.csv', index=False)
-
-# Need to # two lines below when generate funded_plus capability
-# funded_daily_capability_coarse.to_csv(
-#     outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Daily_Capabilities.csv', index=False)
-
-# *** Only for funded_plus ********************************************************************************************
-funded_daily_capability_coarse.to_csv(
-    outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv', index=False)
-# *********************************************************************************************************************
-
 curr_daily_capability_coarse.to_csv(
     outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Daily_Capabilities.csv', index=False)
 
+# Need to # following lines below when generate funded_plus capability
+funded_daily_capability_coarse.to_csv(
+    outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Daily_Capabilities.csv', index=False)
+
+# *** Only for funded_plus ********************************************************************************************
+# funded_daily_capability_coarse.to_csv(
+#     outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv', index=False)
+
+
+# *********************************************************************************************************************
 
 # ---------------------------------------------------------------------------------------------------------------------
 # final check that for an appointment required at a particular level (in Appt_Time_Table), \
@@ -1801,15 +1857,38 @@ def all_appts_can_run(capability):
 
     return appt_have_or_miss_capability
 
-
 # Save results for funded
+# Need to # following lines below when generate funded_plus capability
 # appt_have_or_miss_capability_funded = all_appts_can_run(funded_daily_capability_coarse)
 # appt_have_or_miss_capability_funded.to_csv(
 #     outputlocation / 'human_resources' / 'funded' / 'appt_have_or_miss_capability.csv', index=False)
+
+# *** Only for funded_plus ********************************************************************************************
+# appt_have_or_miss_capability_funded = all_appts_can_run(funded_daily_capability_coarse)
 # appt_have_or_miss_capability_funded.to_csv(
 #     outputlocation / 'human_resources' / 'funded_plus' / 'appt_have_or_miss_capability.csv', index=False)
+# *********************************************************************************************************************
 
 # Save results for actual
 # appt_have_or_miss_capability_actual = all_appts_can_run(curr_daily_capability_coarse)
 # appt_have_or_miss_capability_actual.to_csv(
 #     outputlocation / 'human_resources' / 'actual' / 'appt_have_or_miss_capability.csv', index=False)
+
+
+# compare actual and funded capabilities
+funded_daily_capability_compare = funded_daily_capability_coarse.drop(columns=['Facility_ID', 'Facility_Name'],
+                                                                      inplace=False).copy()
+funded_daily_capability_compare.set_index(['Facility_Level', 'District', 'Region', 'Officer_Category'], inplace=True)
+funded_daily_capability_compare.rename(columns={'Total_Mins_Per_Day': 'Funded_Total_Mins_Per_Day',
+                                                'Staff_Count': 'Funded_Staff_Count'}, inplace=True)
+curr_daily_capability_compare = curr_daily_capability_coarse.drop(columns=['Facility_ID', 'Facility_Name'],
+                                                                  inplace=False).copy()
+curr_daily_capability_compare.set_index(['Facility_Level', 'District', 'Region', 'Officer_Category'], inplace=True)
+curr_daily_capability_compare.rename(columns={'Total_Mins_Per_Day': 'Curr_Total_Mins_Per_Day',
+                                              'Staff_Count': 'Curr_Staff_Count'}, inplace=True)
+diff_capability = funded_daily_capability_compare.join(curr_daily_capability_compare, how='outer')
+diff_capability.fillna(0, inplace=True)
+diff_capability['Diff_Staff_Count'] = diff_capability['Funded_Staff_Count'] - diff_capability['Curr_Staff_Count']
+diff_capability['Diff_Total_Mins_Per_Day'] = (diff_capability['Funded_Total_Mins_Per_Day'] -
+                                              diff_capability['Curr_Total_Mins_Per_Day'])
+diff_capability.reset_index(drop=False, inplace=True)
