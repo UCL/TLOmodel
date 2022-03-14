@@ -87,14 +87,12 @@ class HSI_Event:
         self.module = module
         self.sim = module.sim
         self.target = None  # Overwritten by the mixin
-        # This is needed so mixin constructors are called
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)  # Call the mixin's constructors
 
         # Defaults for the HSI information:
         self.TREATMENT_ID = ''
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = None
-        self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
 
         # Private information about this HSI
@@ -917,15 +915,6 @@ class HealthSystem(Module):
 
             self.bed_days.check_beddays_footprint_format(hsi_event.BEDDAYS_FOOTPRINT)
 
-            # That it has a list for the other disease that will be alerted when it
-            # is run and that this make sense
-            assert isinstance(hsi_event.ALERT_OTHER_DISEASES, Sequence)
-
-            if len(hsi_event.ALERT_OTHER_DISEASES) > 0:
-                if not (hsi_event.ALERT_OTHER_DISEASES[0] == '*'):
-                    for d in hsi_event.ALERT_OTHER_DISEASES:
-                        assert d in self.recognised_modules_names
-
             # Check that this can accept the squeeze argument
             assert _accepts_argument(hsi_event.run, 'squeeze_factor')
 
@@ -1022,32 +1011,6 @@ class HealthSystem(Module):
             k in self._appointment_types and v > 0
             for k, v in appt_footprint.items()
         )
-
-    def broadcast_healthsystem_interaction(self, hsi_event):
-        """
-        This will alert disease modules than a treatment_id is occurring to a particular person.
-        :param hsi_event: the health system interaction event
-        """
-
-        if not hsi_event.ALERT_OTHER_DISEASES:  # it's an empty list
-            # There are no disease modules to alert, so do nothing
-            pass
-
-        else:
-            # Alert some disease modules
-
-            if hsi_event.ALERT_OTHER_DISEASES[0] == '*':
-                alert_modules = self.recognised_modules_names
-            else:
-                alert_modules = hsi_event.ALERT_OTHER_DISEASES
-
-            # Alert each of the modules
-            for module_name in alert_modules:
-                # Don't notify originating module
-                if not hsi_event.module.name == module_name:
-                    self.sim.modules[module_name].on_hsi_alert(
-                        person_id=hsi_event.target, treatment_id=hsi_event.TREATMENT_ID
-                    )
 
     def get_capabilities_today(self) -> pd.Series:
         """
