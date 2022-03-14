@@ -162,7 +162,7 @@ def test_scenario_ipt_expansion():
 
     # run HSI_Tb_ScreeningAndRefer for person 1
     # check ages again of those scheduled for HSI_Tb_Start_or_Continue_Ipt
-    assert "tb_sputum_test" in sim.modules["HealthSystem"].dx_manager.dx_tests
+    assert "tb_sputum_test_smear_positive" in sim.modules["HealthSystem"].dx_manager.dx_tests
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
@@ -231,7 +231,7 @@ def test_scenario_ipt_expansion():
         )
 
     # run diagnosis (HSI_Tb_ScreeningAndRefer) for person 0
-    assert "tb_sputum_test" in sim.modules["HealthSystem"].dx_manager.dx_tests
+    assert "tb_sputum_test_smear positive" in sim.modules["HealthSystem"].dx_manager.dx_tests
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
@@ -281,7 +281,7 @@ def test_scenario_ipt_expansion():
 
     # run HSI_Tb_ScreeningAndRefer for person 3
     # check ages again of those scheduled for HSI_Tb_Start_or_Continue_Ipt
-    assert "tb_sputum_test" in sim.modules["HealthSystem"].dx_manager.dx_tests
+    assert "tb_sputum_test_smear_positive" in sim.modules["HealthSystem"].dx_manager.dx_tests
     screening_appt = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id,
                                                  module=sim.modules['Tb'])
     screening_appt.apply(person_id=person_id, squeeze_factor=0.0)
