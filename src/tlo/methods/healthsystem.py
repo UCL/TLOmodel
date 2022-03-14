@@ -259,7 +259,15 @@ class HSI_Event:
         health_system = self.sim.modules['HealthSystem']
 
         if not isinstance(self.target, tlo.population.Population):
-            self._facility_id = health_system.get_facility_info(self)
+            # Get the facility_id at which this HSI will occur
+            self._facility_id = health_system.get_facility_info_for_hsi(self) # todo let this be Facility_Info
+
+            # If there are bed-days specified, add (if needed) the in-patient admission Appointment Type.
+            # (HSI that require a bed for one or more days always need such an appointment, but this may have been
+            # missed in the declaration of the `EXPECTED_APPPT_FOOTPRINT` in the HSI.)
+            if sum(self.BEDDAYS_FOOTPRINT.values()):
+                self.EXPECTED_APPT_FOOTPRINT = health_system.bed_days.add_inpatient_admission_to_appt_footprint(
+                    self.EXPECTED_APPT_FOOTPRINT)
 
             # Write the time requirements for staff of the appointments to the HSI:
             self._cached_time_requests = health_system._get_appt_footprint_as_time_request(
@@ -317,6 +325,18 @@ class HSIEventWrapper(Event):
                 _ = self.hsi_event.run(squeeze_factor=0.0)
             else:
                 self.hsi_event.never_ran()
+
+
+class HSI_Inpatient_Care(HSI_Event):
+    """This is the HSI Event that represents the use of Bed-Days for in-patients."""
+    def __init__(self, module, facility_id, appt_footprint):
+        super().__init__(module, person_id=None)
+        self.TREATMENT_ID = "InpatientCare"  # todo - make this allowable under services
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint(appt_footprint)
+        self._facility_id = facility_id
+
+    def apply(self, person_id, squeeze_factor):
+        pass
 
 
 def _accepts_argument(function: callable, argument: str) -> bool:
@@ -510,6 +530,9 @@ class HealthSystem(Module):
         # Create pointer for the HealthSystemScheduler event
         self.healthsystemscheduler = None
 
+        # Create the pointers to various structures of the facilities
+        self._all_facilities = None
+
     def read_parameters(self, data_folder):
 
         path_to_resourcefiles_for_healthsystem = Path(self.resourcefilepath) / 'healthsystem'
@@ -666,8 +689,16 @@ class HealthSystem(Module):
         districts_in_region = self.sim.modules['Demography'].parameters['districts_in_region']
         all_districts = set(self.sim.modules['Demography'].parameters['district_num_to_district_name'].values())
 
+        all_facilities = dict()
         facilities_per_level_and_district = {_facility_level: {} for _facility_level in self._facility_levels}
         for facility_tuple in self.parameters['Master_Facilities_List'].itertuples():
+
+            all_facilities[facility_tuple.Facility_ID] = FacilityInfo(
+                        id=facility_tuple.Facility_ID,
+                        name=facility_tuple.Facility_Name,
+                        level=facility_tuple.Facility_Level,
+                        region=facility_tuple.Region
+                    )
 
             if pd.notnull(facility_tuple.District):
                 # A facility that is specific to a district:
@@ -711,6 +742,7 @@ class HealthSystem(Module):
             for _facility_level in self._facility_levels
         ), "There is not one of each facility type available to each district."
 
+        self._all_facilities = all_facilities
         self._facilities_for_each_district = facilities_per_level_and_district
 
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
@@ -859,14 +891,6 @@ class HealthSystem(Module):
 
         # Check that topen is strictly before tclose
         assert topen < tclose
-
-        # If there are bed-days specified, add (if needed) the in-patient admission Appointment Type.
-        # (HSI that require a bed for one or more days always need such an appointment, but this may have been
-        # missed in the declaration of the `EXPECTED_APPPT_FOOTPRINT` in the HSI.)
-        # todo ** move to put somewhereelse: like initialise? ***
-        if sum(hsi_event.BEDDAYS_FOOTPRINT.values()):
-            hsi_event.EXPECTED_APPT_FOOTPRINT = self.bed_days.add_inpatient_admission_to_appt_footprint(
-                hsi_event.EXPECTED_APPT_FOOTPRINT)
 
         # If ignoring the priority in scheduling, then over-write the provided priority information with 0.
         if self.ignore_priority:
@@ -1057,48 +1081,52 @@ class HealthSystem(Module):
         """
         raise Exception('Do not use get_prob_seek_care().')
 
-    def get_facility_info(self, hsi_event) -> FacilityInfo:
+    def get_facility_info_for_hsi(self, hsi_event: HSI_Event) -> FacilityInfo:
         """Helper function to find the facility at which an HSI event will take place"""
         # Gather information about the HSI event
-        the_district = self.sim.population.props.at[
-            hsi_event.target, 'district_of_residence']
+        the_district = self.sim.population.props.at[hsi_event.target, 'district_of_residence']
         the_level = hsi_event.ACCEPTED_FACILITY_LEVEL
 
         # Return the (one) health_facility available to this person (based on their
         # district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL
         return self._facilities_for_each_district[the_level][the_district]
 
-    def _get_appt_footprint_as_time_request(self, facility, appt_footprint):
+    def _get_appt_footprint_as_time_request(self, facility: Union[int, FacilityInfo], appt_footprint):
         """
         This will take an APPT_FOOTPRINT and return the required appointments in terms of the
         time required of each Officer Type in each Facility ID.
         The index will identify the Facility ID and the Officer Type in the same format
         as is used in Daily_Capabilities.
-        :params facility_id: The facility_id at which the appointment occurs
+        :params facility: The facility_id, or Facility_Info tuple that identifies where the appointment occurs
         :param appt_footprint: The actual appt footprint (optional) if different
             to that in the HSI event.
         :return: A Counter that gives the times required for each officer-type in each facility_ID, where this time
          is non-zero.
         """
-        # Accumulate appointment times for specified footprint using times from
-        # appointment times table
+        # Accumulate appointment times for specified footprint using times from appointment times table
         # Appointment times for each facility and officer combination
         appt_times = self._appt_times
+
+        # Get Facility_Info (via looking-up Facility_ID if the Facility_ID is provided)
+        if not isinstance(facility, FacilityInfo):
+            facility = self._all_facilities[facility]
+        facility_level = facility.level
+        facility_id = facility.id
 
         appt_footprint_times = Counter()
         for appt_type in appt_footprint:
             try:
-                appt_info_list = appt_times[facility.level][appt_type]
+                appt_info_list = appt_times[facility_level][appt_type]
             except KeyError as e:
                 raise KeyError(
                     f"The time needed for an appointment is not defined for the specified facility level: "
                     f"appt_type={appt_type}, "
-                    f"facility_level={facility.level}."
+                    f"facility_level={facility_level}."
                 ) from e
 
             for appt_info in appt_info_list:
                 appt_footprint_times[
-                    f"FacilityID_{facility.id}_Officer_{appt_info.officer_type}"
+                    f"FacilityID_{facility_id}_Officer_{appt_info.officer_type}"
                 ] += appt_info.time_taken
 
         return appt_footprint_times
@@ -1205,6 +1233,7 @@ class HealthSystem(Module):
         if self.store_hsi_events_that_have_run:
             log_info['date'] = self.sim.date
             self.store_of_hsi_events_that_have_run.append(log_info)
+
         if self.record_hsi_event_details:
             self.hsi_event_details.add(
                 HSIEventDetails(
@@ -1326,7 +1355,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # 0) Refresh information ready for new day:
         self.module.bed_days.processing_at_start_of_new_day()
         self.module.consumables.processing_at_start_of_new_day(self.sim.date)
-        inpatient_appts = self.module.bed_days.get_inpatient_appts()
 
         # - Create hold-over list (will become a heapq). This will hold events that cannot occur today before they are
         #  added back to the heapq
@@ -1397,16 +1425,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # 3) Get the capabilities that are available today and prepare dataframe to store all the calls for today
         current_capabilities = self.module.get_capabilities_today()
 
-        # 3.1) Subtract from the current_capabilities the time required to service the in-patient appointments
-        # (`inpatient_appts`).
-        # todo - this is pending the refactor of healthsystem (because currently haven't got the helper functions to
-        #  enable this).
-        # todo - need to use  `get_appt_footprint_as_time_request`
-        print("this!")
-
         if not list_of_individual_hsi_event_tuples_due_today:
             # Empty counter for log_current_capabilities call below
             total_footprint = Counter()
+
         else:
             # 4) Examine total call on health officers time from the HSI events that are due today
 
@@ -1476,13 +1498,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                         # Update load factors:
                         updated_call = self.module._get_appt_footprint_as_time_request(
-                            facility=event._facility_id,
+                            facility_id=event._facility_id,
                             appt_footprint=actual_appt_footprint
                         )
                         original_call = footprints_of_all_individual_level_hsi_event[ev_num]
                         footprints_of_all_individual_level_hsi_event[ev_num] = updated_call
                         total_footprint -= original_call
                         total_footprint += updated_call
+
                         if self.module.mode_appt_constraints != 0:
                             # only need to recompute squeeze factors if running with constraints
                             # i.e. mode != 0

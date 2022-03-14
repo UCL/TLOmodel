@@ -21,6 +21,7 @@ IN_PATIENT_ADMISSION = {'IPAdmission': 1}
 IN_PATIENT_DAY = {'InpatientDays': 1}
 
 
+
 class BedDays:
     """
     The BedDays class. This is expected to be registered in the HealthSystem module.
@@ -126,16 +127,35 @@ class BedDays:
         * Refresh inpatient status
         * Log yesterday's usage of beds
         * Move the tracker by one day
+        * Schedule an HSI for today that represents the care of in-patients
         """
         # Refresh the hs_in_patient status
         self.refresh_in_patient_status()
 
+        # Move tracker by one day
         # NB. This is skipped on the first day of the simulation as there is nothing to log from yesterday and the
         # tracker is already set.
-
         if self.hs_module.sim.date != self.hs_module.sim.start_date:
             self.log_yesterday_info_from_all_bed_trackers()
             self.move_each_tracker_by_one_day()
+
+        # Schedule an HSI for today that represents the care of in-patients
+        inpatients = self.get_inpatient_person_ids()
+        if inpatients:
+            for _fac_id, _footprint in inpatient_appts.items():
+                self.hs_module.schedule_hsi_event(
+                    self.hsi_event_for_inpatient_care(facility_id=_fac_id, appt_footprint=_footprint)
+                )
+
+    def hsi_event_for_inpatient_care(self, facility_id: int, appt_footprint: dict):
+        """Return an HSI event with the specified appointment footprint"""
+        from tlo.methods.healthsystem import HSI_Inpatient_Care
+
+        return HSI_Inpatient_Care(module=self.hs_module,
+                                  facility_id=facility_id,
+                                  appt_footprint=appt_footprint)
+        # todo - make sure this is allowable under 'service_availability'
+
 
     def move_each_tracker_by_one_day(self):
         bed_capacity = self._scaled_capacity
@@ -436,3 +456,11 @@ class BedDays:
             fac_id: multiply_footprint(IN_PATIENT_DAY, num_inpatients)
             for fac_id, num_inpatients in total_inpatients.items()
         }
+
+        # Or get the person_ids
+        # df = self.hs_module.sim.population.props
+        # return df.index[df.hs_is_inpatient].to_list()
+
+        # todo - What we want is to create an HSI for each in patient in each facility, tied to the person_id and the facility
+        # But we haven't got a record of which person is in which facility.
+

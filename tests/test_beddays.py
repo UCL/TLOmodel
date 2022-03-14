@@ -844,7 +844,7 @@ def test_bed_days_allocation_information_is_provided_to_HSI(seed):
     assert {'bed_A': 1, 'bed_B': 5} == sim.modules['DummyModule'].hsi_event._received_info_about_bed_days
 
 
-def test_bed_days_association_with_appt_footprint():
+def test_in_patient_admission_included_in_appt_footprint_if_any_bed_days():
     """Check that helper function works which adds the in-patient admission appointment type to the APPT_FOOTPRINT. """
     _add_inpatient_admission_to_appt_footprint = BedDays(hs_module=None).add_inpatient_admission_to_appt_footprint
 
@@ -865,8 +865,61 @@ def test_bed_days_association_with_appt_footprint():
            _add_inpatient_admission_to_appt_footprint(footprint_with_inpatient_admission_wrongly)
 
 
+def test_in_patient_appt_included_for_each_in_patient(tmpdir, seed):
+    """Check that in-patient appointments are used for each in-patient."""
 
-# todo test that `get_inpatient_appts` works as expected
+    # Create and run a simulation that includes in-patients
+    _bed_type = bed_types[0]
 
+    class DummyModule(Module):
+        METADATA = {Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            # Schedule person_id=0 to attend care on day 3rd January
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Dummy(self, person_id=0),
+                topen=Date(2010, 1, 3),
+                tclose=None,
+                priority=0)
+
+    # Create a dummy HSI with one type of Bed Day specified - but no inpatient admission/care appointments specified.
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.ACCEPTED_FACILITY_LEVEL = '2'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({_bed_type: 5})
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    # Create simulation with the health system and DummyModule
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
+        'filename': 'temp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "tlo.methods.healthsystem": logging.INFO,
+        }
+    })
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        DummyModule()
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=100))
+    check_dtypes(sim)
+
+    # Load the logged tracker for general beds
+    log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
+    log[_bed_type]
+    # todo- this!!
 
 
