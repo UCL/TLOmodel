@@ -708,13 +708,8 @@ class HealthSystem(Module):
         if allowed:
 
             if not isinstance(hsi_event.target, tlo.population.Population):
-                # Write the facility_id at which this HSI will occur:
-                hsi_event._facility_id = self.get_facility_info(hsi_event)
-
-                # Write the time requirements for staff of the appointments to the HSI:
-                hsi_event._cached_time_requests = self._get_appt_footprint_as_time_request(
-                    appt_footprint=hsi_event.EXPECTED_APPT_FOOTPRINT, facility=hsi_event._facility_id
-                )
+                # Let the HSI gather information about itself (facility_id and appt-footprint time requirements)
+                hsi_event._initialise()
 
             # Create a tuple to go into the heapq
             # (NB. the sorting is done ascending and by the order of the items in the tuple)
@@ -738,15 +733,9 @@ class HealthSystem(Module):
             )
 
         else:
-            # HSI is not available under the services_available parameter: call the hsi's not_available() method if it
-            # exists:
-            try:
-                hsi_event.not_available()
-                # TODO: should the healthsystem call this at the time that the HSI was intended to be run (i.e topen)?
-
-            except AttributeError:
-                pass
-
+            # HSI is not available under the services_available parameter: run the HSI's 'never_ran' method on the date
+            # of tclose.
+            self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tclose)
             logger.debug(
                 key="message",
                 data=f"A request was made for a service but it was not included in the service_availability list:"
@@ -1463,13 +1452,6 @@ class HSI_Event:
         """
         logger.debug(key="message", data=f"{self.__class__.__name__}: was never run.")
 
-    def not_available(self):
-        """Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
-         parameter service_availability.
-        """
-        logger.debug(key="message", data=f"{self.__class__.__name__}: was not admitted to the HSI queue because the "
-                                         f"service is not available.")
-
     def post_apply_hook(self):
         """Impose the bed-days footprint (if target of the HSI is a person_id)"""
         if isinstance(self.target, int):
@@ -1591,9 +1573,15 @@ class HSI_Event:
     def _initialise(self):
         """Initialise the HSI:
         * Set the facility_id
-        * Compute time requirements
+        * Compute appt-footprint time requirements
         """
-        # todo this one!
+        health_system = self.sim.modules['HealthSystem']
+        self._facility_id = health_system.get_facility_info(self)
+
+        # Write the time requirements for staff of the appointments to the HSI:
+        self._cached_time_requests = health_system._get_appt_footprint_as_time_request(
+            appt_footprint=self.EXPECTED_APPT_FOOTPRINT, facility=self._facility_id
+        )
 
 
 class HSIEventWrapper(Event):
@@ -1605,6 +1593,7 @@ class HSIEventWrapper(Event):
      squeeze_factor=0.0.)
      2) When the healthsytsem is in mode `diable_and_reject_all=True` such that HSI are not run but the `never_ran`
      method is run on the date of `tclose`.
+     3) When an HSI has been submitted to `schedule_hsi_event` but the service is not available.
     """
 
     def __init__(self, hsi_event, run_hsi=True, *args, **kwargs):
