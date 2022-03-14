@@ -1007,23 +1007,23 @@ class Hiv(Module):
             # usually performed by care_of_women_during_pregnancy module
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
-                self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Hiv_TestAndRefer(person_id=mother_id, module=self, referred_from='ANC_routine'),
-                    priority=1,
-                    topen=self.sim.date,
-                    tclose=None,
+                    self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
+                        self.sim.modules["HealthSystem"].schedule_hsi_event(
+                            hsi_event=HSI_Hiv_TestAndRefer(person_id=mother_id, module=self, referred_from='ANC_routine'),
+                            priority=1,
+                            topen=self.sim.date,
+                            tclose=None,
                 )
 
             # if mother known HIV+, schedule test for infant in 6 weeks (EI
             if mother.hv_diagnosed and \
                 df.at[child_id, "is_alive"] and (
-                self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Hiv_TestAndRefer(person_id=child_id, module=self, referred_from='Infant_testing'),
-                    priority=1,
-                    topen=self.sim.date + pd.DateOffset(weeks=6),
-                    tclose=None,
+                    self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
+                        self.sim.modules["HealthSystem"].schedule_hsi_event(
+                            hsi_event=HSI_Hiv_TestAndRefer(person_id=child_id, module=self, referred_from='Infant_testing'),
+                            priority=1,
+                            topen=self.sim.date + pd.DateOffset(weeks=6),
+                            tclose=None,
                 )
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -1700,12 +1700,12 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         # Do nothing if person is now on ART and VL suppressed (non VL suppressed has no effect)
         # only if no current TB infection
         if (df.at[person_id, "hv_art"] == "on_VL_suppressed") and (
-            df.at[person_id, "tb_inf"] != "active"):
+                df.at[person_id, "tb_inf"] != "active"):
             return
 
         # off ART, no TB infection
         if (df.at[person_id, "hv_art"] != "on_VL_suppressed") and (
-            df.at[person_id, "tb_inf"] != "active"):
+                df.at[person_id, "tb_inf"] != "active"):
             # cause is HIV (no TB)
             self.sim.modules["Demography"].do_death(
                 individual_id=person_id,

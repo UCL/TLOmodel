@@ -909,7 +909,7 @@ class Tb(Module):
         # previously diagnosed/treated or hiv+ -> xpert
         # assume ~60% have access to Xpert, some data in 2019 NTP report but not exact proportions
         if person["tb_ever_treated"] or person["hv_diagnosed"]:
-            test = p["second_line_test"]
+            test = "xpert"
 
         return (
             "xpert"

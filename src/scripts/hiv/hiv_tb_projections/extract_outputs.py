@@ -2,9 +2,7 @@
 from pathlib import Path
 
 from tlo.analysis.utils import (
-    extract_params,
     extract_results,
-    get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
     summarize,
@@ -46,7 +44,7 @@ capacity = extract_results(
         results_folder,
         module="tlo.methods.healthsystem",
         key="Capacity",
-    column="XXXXX",
+        column="XXXXX",
         custom_generate_series=(
             lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['Frac_Time_Used_Overall'].mean()
         ),
@@ -88,7 +86,6 @@ hsi = extract_results(
 # plt.title(f"HSI by Module")
 # #plt.savefig(make_file_name('HSI_per_module'))
 # plt.show()
-
 
 
 # ---------------------------------- PLOTS ---------------------------------------
