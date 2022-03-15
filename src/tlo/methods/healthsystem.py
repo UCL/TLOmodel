@@ -505,6 +505,7 @@ class HealthSystem(Module):
             self.hsi_event_details = set()
 
         # Store the argument provided for cons_availability
+        assert cons_availability in (None, 'default', 'all', 'none')
         self.arg_cons_availability = cons_availability
 
         # Create the Diagnostic Test Manager to store and manage all Diagnostic Test
