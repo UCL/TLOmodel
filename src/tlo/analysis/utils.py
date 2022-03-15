@@ -1,10 +1,10 @@
 """
 General utility functions for TLO analysis
 """
-from collections.abc import Mapping
 import json
 import os
 import pickle
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Dict, Optional, TextIO
 
