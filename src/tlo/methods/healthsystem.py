@@ -940,20 +940,6 @@ class HealthSystem(Module):
                 f"which it is not possible: TREATMENT_ID={hsi_event.TREATMENT_ID}"
             )
 
-            # Check that at least one type of appointment is required
-            assert len(hsi_event.EXPECTED_APPT_FOOTPRINT) > 0, (
-                'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
-            )
-            # Check that the event does not request an appointment at a facility
-            # level which is not possible
-            appt_type_to_check_list = hsi_event.EXPECTED_APPT_FOOTPRINT.keys()
-            facility_appt_types = self._appt_type_by_facLevel[
-                hsi_event.ACCEPTED_FACILITY_LEVEL
-            ]
-            assert facility_appt_types.issuperset(appt_type_to_check_list), (
-                f"An appointment type has been requested at a facility level for "
-                f"which it is not possible: {hsi_event.TREATMENT_ID}"
-            )
 
     def is_treatment_id_allowed(self, treatment_id: str) -> bool:
         """Determine if a treatment_id (specified as a string) can be run (i.e., is within the allowable set of
