@@ -1008,22 +1008,30 @@ class Hiv(Module):
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
                     self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
-                        self.sim.modules["HealthSystem"].schedule_hsi_event(
-                            hsi_event=HSI_Hiv_TestAndRefer(person_id=mother_id, module=self, referred_from='ANC_routine'),
-                            priority=1,
-                            topen=self.sim.date,
-                            tclose=None,
+
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_TestAndRefer(
+                        person_id=mother_id,
+                        module=self,
+                        referred_from='ANC_routine'),
+                    priority=1,
+                    topen=self.sim.date,
+                    tclose=None,
                 )
 
             # if mother known HIV+, schedule test for infant in 6 weeks (EI
             if mother.hv_diagnosed and \
                 df.at[child_id, "is_alive"] and (
                     self.rng.random_sample() < params["prob_anc_test_at_delivery"]):
-                        self.sim.modules["HealthSystem"].schedule_hsi_event(
-                            hsi_event=HSI_Hiv_TestAndRefer(person_id=child_id, module=self, referred_from='Infant_testing'),
-                            priority=1,
-                            topen=self.sim.date + pd.DateOffset(weeks=6),
-                            tclose=None,
+
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_TestAndRefer(
+                        person_id=child_id,
+                        module=self,
+                        referred_from='Infant_testing'),
+                    priority=1,
+                    topen=self.sim.date + pd.DateOffset(weeks=6),
+                    tclose=None,
                 )
 
     def on_hsi_alert(self, person_id, treatment_id):
