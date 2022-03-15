@@ -515,7 +515,7 @@ class LogsDict(Mapping):
                 ...
             } 
     """
-            
+   
     def __init__(self, file_names_and_paths):
         super().__init__()
         # initialise class with module-specific log files paths
