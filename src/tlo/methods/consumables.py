@@ -166,7 +166,7 @@ def get_item_code_from_item_name(lookup_df: pd.DataFrame, item: str) -> int:
     return int(pd.unique(lookup_df.loc[lookup_df["Items"] == item, "Item_Code"])[0])
 
 
-def create_dummy_data_for_cons_availability(intrinsic_availability: Optional[Dict[int, bool]] = None,
+def create_dummy_data_for_cons_availability(intrinsic_availability: Optional[Dict[int, float]] = None,
                                             months: Optional[List[int]] = None,
                                             facility_ids: Optional[List[int]] = None,
                                             ) -> pd.DataFrame:

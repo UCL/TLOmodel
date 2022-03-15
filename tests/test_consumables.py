@@ -317,7 +317,7 @@ def test_use_get_consumables_by_hsi_method_get_consumables():
 
 def test_outputs_to_log(tmpdir):
     """Check that logging from Consumables is as expected."""
-    intrinsic_availability = {0: True, 1: False}
+    intrinsic_availability = {0: 1.0, 1: 0.0}
 
     sim = get_sim_with_dummy_module_registered(
         data=create_dummy_data_for_cons_availability(
