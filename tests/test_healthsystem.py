@@ -32,8 +32,8 @@ end_date = Date(2012, 1, 1)
 popsize = 200
 
 
-# Simply test whether the system runs under multiple configurations of the healthsystem
-# NB. Running the dummy Mockitits and ChronicSyndrome modules test all aspects of the healthsystem module.
+# Test whether the system runs under multiple configurations of the healthsystem. (Running the dummy Mockitits and
+# ChronicSyndrome modules is intended to test all aspects of the healthsystem module.)
 
 def check_dtypes(simulation):
     # check types of columns

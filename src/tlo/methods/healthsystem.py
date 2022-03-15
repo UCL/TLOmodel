@@ -1387,7 +1387,7 @@ class HSI_Event:
         # Checking the availability and logging:
         rtn = hs_module.consumables._request_consumables(item_codes={**_item_codes, **_optional_item_codes},
                                                          to_log=_to_log,
-                                                         facility_id=self.facility_info.id,
+                                                         facility_info=self.facility_info,
                                                          treatment_id=self.TREATMENT_ID)
 
         # Return result in expected format:
@@ -1452,6 +1452,7 @@ class HSI_Event:
                 appt_footprint=self.EXPECTED_APPT_FOOTPRINT,
             )
 
+        # Do checks
         _ = self._check_if_appt_footprint_can_run()
 
     def _check_if_appt_footprint_can_run(self):
