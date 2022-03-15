@@ -1,27 +1,47 @@
 """
 
-This file sets up the data regarding the consumables that may be used in the course of an appointment.
+This file sets up the data regarding the consumables that may be used in the course of an HSI.
 
-The file is provided by Mathias Arnold and derives from the EHP work.
+Two files are used:
+* A data extraction from the original EHP work (provided to us by Matthoas Arnold)
+* A data extraction from the OneHealth tool (provided to us by the Palladium Health Group)
+
+In addition - some bespoke item codes are added here with our own specific definitions attached.
+
+We use these to create `ResourceFile_Consumables_Items_and_Packages.csv`, which provides the definitions of the
+`item_code` and `package_code` and estimates of unit costs.
 
 """
+
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-# EHP Consumables list
-workingfile = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-healthsystem/From Matthias Arnold/ORIGINAL_Intervention input.xlsx'
+# Set local Dropbox source
+path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
+    '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE')
 
-# OUTPUT RESOURCE_FILES TO:
-resourcefilepath = '/Users/tbh03/PycharmProjects/TLOmodel/resources/'
+resourcefilepath = Path("./resources")
+path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
+
+
+# EHP Consumables list  # todo - organise this in the dropbox
+path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/consumables raw files/"
+
+workingfile_ehp_consumables = path_to_dropbox / \
+              "05 - Resources/Module-healthsystem/From Matthias Arnold/ORIGINAL_Intervention input.xlsx"
+
+workingfile_one_health = path_to_dropbox / \
+                         "07 - Data/OneHealth projection files/OneHealth commodities.xlsx"
+
 
 # ----------
 # ----------
 # ----------
 # ----------
 
-wb_import = pd.read_excel(workingfile, sheet_name='Intervention input costs', header=None)
+wb_import = pd.read_excel(workingfile_ehp_consumables, sheet_name='Intervention input costs', header=None)
 
 # Drop the top row and first column as these were blank
 
@@ -156,15 +176,14 @@ wb = wb[['Intervention_Cat',
 
 assert not pd.isnull(wb).any().any()
 
+
 # ----------
 # Now looking at the OneHealth file (29-5-19 Slack Msg from Tara: this comes from Palladium Grp originally)
-# This file should be the essentially the same as the file that has been imported already but with some
+# This file should be essentially the same as the file that has been imported already but with some
 # crucial additions - things that were omitted from the EHP list Matthias provided.
 
-onehealthfile = workingfile = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/07 - Data/\
-OneHealth projection files/OneHealth commodities.xlsx'
 
-oh = pd.read_excel(workingfile, sheet='consumables')
+oh = pd.read_excel(workingfile_one_health, sheet_name='comsumables')
 oh.columns = oh.loc[0]
 oh = oh.drop(index=0)
 # take only the values for 2010 as the values are the same in all the years
@@ -208,19 +227,91 @@ cons = pd.concat([wb, only_in_oh], axis=0, ignore_index=True, sort=False)
 # --------------
 
 
-# Finally augment the file to indicate the availability of each items according to Facility_Level
-# Columns will be created indicating availability at each Facility_Level
-# 0: not available
-# 1: always available
-# (0.0, 1.0): available with this probability [this is representing stock-outs]
+# --------------
+# Now, add in new bespoke definitions of item_codes:
 
-# As we do not know anything about this yet, for now follow a simple rule.
-# This should be much better informed
+"""
+This is the text that was originally pasted at the bottom of the resource file:
 
-cons['Available_Facility_Level_0'] = 0.85
-cons['Available_Facility_Level_1'] = 0.90
-cons['Available_Facility_Level_2'] = 0.95
-cons['Available_Facility_Level_3'] = 0.99
+Added by JC,Misc,-99,"Forceps, obstetric",2669,1.0,0.0,0.85,0.9,0.95,0.99,0.9  XXX
+Added by JC,Misc,-99,"Vacuum, obstetric",2670,1.0,0.0,0.85,0.9,0.95,0.99,0.9 XX
+Added by TM,Misc,-99,First-line ART regimen: adult,2671,1.0,0.0,0.85,0.9,0.95,0.99,0.9 XX
+Added by TM,Misc,-99,First line ART regimen: older child,2672,1.0,0.0,0.85,0.9,0.95,0.99,0.9
+Added by TM,Misc,-99,First line ART regimen: young child,2673,1.0,0.0,0.85,0.9,0.95,0.99,0.9
+Added by TM,Misc,-99,Pre-exposure prophlaxis for HIV,2674,1.0,0.0,0.85,0.9,0.95,0.99,0.9
+
+"""
+
+cons = cons.append({
+    'Intervention_Cat': "Added by JC",
+    'Intervention_Pkg': "Misc",
+    'Intervention_Pkg_Code': -99,
+    'Items': "Forceps, obstetric",
+    'Item_Code': 2669,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': 1.0},
+    ignore_index=True
+)
+
+cons = cons.append({
+    'Intervention_Cat': "Added by JC",
+    'Intervention_Pkg': "Misc",
+    'Intervention_Pkg_Code': -99,
+    'Items': "Vacuum, obstetric",
+    'Item_Code': 2670,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': 1.0},
+    ignore_index=True
+)
+
+cons = cons.append({
+    'Intervention_Cat': "Added by TM",
+    'Intervention_Pkg': "Misc",
+    'Intervention_Pkg_Code': -99,
+    'Items': "First-line ART regimen: adult",
+    'Item_Code': 2671,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': 1.0},
+    ignore_index=True
+)
+
+cons = cons.append({
+    'Intervention_Cat': "Added by TM",
+    'Intervention_Pkg': "Misc",
+    'Intervention_Pkg_Code': -99,
+    'Items': "First line ART regimen: older child",
+    'Item_Code': 2672,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': 1.0},
+    ignore_index=True
+)
+
+cons = cons.append({
+    'Intervention_Cat': "Added by TM",
+    'Intervention_Pkg': "Misc",
+    'Intervention_Pkg_Code': -99,
+    'Items': "First line ART regimen: young child",
+    'Item_Code': 2673,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': 1.0},
+    ignore_index=True
+)
+
+cons = cons.append({
+    'Intervention_Cat': "Added by TM",
+    'Intervention_Pkg': "Misc",
+    'Intervention_Pkg_Code': -99,
+    'Items': "Pre-exposure prophlaxis for HIV",
+    'Item_Code': 2674,
+    'Expected_Units_Per_Case': 1.0,
+    'Unit_Cost': 1.0},
+    ignore_index=True
+)
+
+# --------------
+# --------------
+# --------------
+# --------------
 
 # Save:
-cons.to_csv(resourcefilepath + 'ResourceFile_Consumables.csv')
+cons.to_csv(path_for_new_resourcefiles / 'ResourceFile_Consumables_Items_and_Packages.csv', index=False)
