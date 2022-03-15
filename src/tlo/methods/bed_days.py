@@ -139,22 +139,22 @@ class BedDays:
             self.log_yesterday_info_from_all_bed_trackers()
             self.move_each_tracker_by_one_day()
 
-        # Schedule an HSI for today that represents the care of in-patients
-        inpatients = self.get_inpatient_person_ids()
-        if inpatients:
-            for _fac_id, _footprint in inpatient_appts.items():
-                self.hs_module.schedule_hsi_event(
-                    self.hsi_event_for_inpatient_care(facility_id=_fac_id, appt_footprint=_footprint)
-                )
+        # # Schedule an HSI for today that represents the care of in-patients
+        # inpatients = self.get_inpatient_person_ids()
+        # if inpatients:
+        #     for _fac_id, _footprint in inpatient_appts.items():
+        #         self.hs_module.schedule_hsi_event(
+        #             self.hsi_event_for_inpatient_care(facility_id=_fac_id, appt_footprint=_footprint)
+        #         )
 
-    def hsi_event_for_inpatient_care(self, facility_id: int, appt_footprint: dict):
-        """Return an HSI event with the specified appointment footprint"""
-        from tlo.methods.healthsystem import HSI_Inpatient_Care
-
-        return HSI_Inpatient_Care(module=self.hs_module,
-                                  facility_id=facility_id,
-                                  appt_footprint=appt_footprint)
-        # todo - make sure this is allowable under 'service_availability'
+    # def hsi_event_for_inpatient_care(self, facility_id: int, appt_footprint: dict):
+    #     """Return an HSI event with the specified appointment footprint"""
+    #     from tlo.methods.healthsystem import HSI_Inpatient_Care
+    #
+    #     return HSI_Inpatient_Care(module=self.hs_module,
+    #                               facility_id=facility_id,
+    #                               appt_footprint=appt_footprint)
+    #     # todo - make sure this is allowable under 'service_availability'
 
 
     def move_each_tracker_by_one_day(self):
@@ -446,7 +446,7 @@ class BedDays:
         total_inpatients = pd.DataFrame([
             (bed_capacity[_bed_type] - self.bed_tracker[_bed_type].loc[self.hs_module.sim.date]).to_dict()
             for _bed_type in self.bed_types
-        ]).sum().to_dict()
+        ]).sum()
 
         def multiply_footprint(_footprint, _num):
             """Multiply the number of appointments of each type in a footprint by a number"""
@@ -454,13 +454,12 @@ class BedDays:
 
         return {
             fac_id: multiply_footprint(IN_PATIENT_DAY, num_inpatients)
-            for fac_id, num_inpatients in total_inpatients.items()
+            for fac_id, num_inpatients in total_inpatients[total_inpatients > 0].to_dict().items()
         }
 
         # Or get the person_ids
         # df = self.hs_module.sim.population.props
         # return df.index[df.hs_is_inpatient].to_list()
-
         # todo - What we want is to create an HSI for each in patient in each facility, tied to the person_id and the facility
         # But we haven't got a record of which person is in which facility.
 

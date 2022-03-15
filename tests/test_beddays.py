@@ -918,8 +918,27 @@ def test_in_patient_appt_included_for_each_in_patient(tmpdir, seed):
     check_dtypes(sim)
 
     # Load the logged tracker for general beds
-    log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
-    log[_bed_type]
-    # todo- this!!
+    log_hsi = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event']
+    log_hsi.index = pd.to_datetime(log_hsi.date)
+    y = log_hsi['Number_By_Appt_Type_Code'].explode()
+    x = pd.crosstab(y.index, y.values)
+
+    assert {'IPAdmission', 'InpatientDays', 'Over5OPD'} == set(x.columns)
+    pd.testing.assert_series_equal(
+        x['Over5OPD'], pd.Series(index=pd.date_range(Date(2010, 1, 3), Date(2010, 1, 7)), data=[1, 0, 0, 0, 0]),
+        check_dtype=False, check_names=False, check_freq=False
+    )
+    pd.testing.assert_series_equal(
+        x['IPAdmission'], pd.Series(index=pd.date_range(Date(2010, 1, 3), Date(2010, 1, 7)), data=[1, 0, 0, 0, 0]),
+        check_dtype=False, check_names=False, check_freq=False
+    )
+    pd.testing.assert_series_equal(
+        x['InpatientDays'], pd.Series(index=pd.date_range(Date(2010, 1, 3), Date(2010, 1, 7)), data=[1, 1, 1, 1, 1]),
+        check_dtype=False, check_names=False, check_freq=False
+    )
+
+    # todo - generalise this wrt dates!
+    # todo- this with two different overlappping in-patient stays
+    # clean-up code ... and submit!
 
 

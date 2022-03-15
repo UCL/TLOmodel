@@ -327,16 +327,16 @@ class HSIEventWrapper(Event):
                 self.hsi_event.never_ran()
 
 
-class HSI_Inpatient_Care(HSI_Event):
-    """This is the HSI Event that represents the use of Bed-Days for in-patients."""
-    def __init__(self, module, facility_id, appt_footprint):
-        super().__init__(module, person_id=None)
-        self.TREATMENT_ID = "InpatientCare"  # todo - make this allowable under services
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint(appt_footprint)
-        self._facility_id = facility_id
-
-    def apply(self, person_id, squeeze_factor):
-        pass
+# class HSI_Inpatient_Care(HSI_Event, PopulationScopeEventMixin):
+#     """This is the HSI Event that represents the use of Bed-Days for in-patients."""
+#     def __init__(self, module, facility_id, appt_footprint):
+#         super().__init__(module, person_id=None)
+#         self.TREATMENT_ID = "InpatientCare"  # todo - make this allowable under services
+#         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint(appt_footprint)
+#         self._facility_id = facility_id
+#
+#     def apply(self, population):
+#         pass
 
 
 def _accepts_argument(function: callable, argument: str) -> bool:
@@ -1191,14 +1191,15 @@ class HealthSystem(Module):
 
         return squeeze_factor_per_hsi_event
 
-    def log_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True):
+    def record_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True):
         """
-        This will write to the log with a record that this HSI event has occured.
+        Record the processing of an HSI event.
         If this is an individual-level HSI event, it will also record the actual appointment footprint
         :param hsi_event: The hsi event (containing the initial expectations of footprints)
         :param actual_appt_footprint: The actual appt footprint to log (if individual event)
         :param squeeze_factor: The squueze factor (if individual event)
         """
+        # todo - refactor this!!
 
         if isinstance(hsi_event.target, tlo.population.Population):
             # Population HSI-Event
@@ -1226,9 +1227,13 @@ class HealthSystem(Module):
 
         log_info['did_run'] = did_run
 
-        logger.info(key="HSI_Event",
-                    data=log_info,
-                    description="record of each HSI event")
+        self.write_to_hsi_log(
+            treatment_id=log_info['TREATMENT_ID'],
+            number_by_appt_type_code=log_info['Number_By_Appt_Type_Code'],
+            person_id=log_info['Person_ID'],
+            squeeze_factor=log_info['Squeeze_Factor'],
+            did_run=log_info['did_run']
+        )
 
         if self.store_hsi_events_that_have_run:
             log_info['date'] = self.sim.date
@@ -1251,6 +1256,26 @@ class HealthSystem(Module):
                     beddays_footprint=tuple(sorted(hsi_event.BEDDAYS_FOOTPRINT.items()))
                 )
             )
+
+    def write_to_hsi_log(self,
+                         treatment_id,
+                         number_by_appt_type_code,
+                         person_id,
+                         squeeze_factor,
+                         did_run
+                         ):
+        """Write the log `HSI_Event` with one entry per HSI event."""
+        logger.info(key="HSI_Event",
+                    data={
+                        'TREATMENT_ID': treatment_id,
+                        'Number_By_Appt_Type_Code': number_by_appt_type_code,
+                        'Person_ID': person_id,
+                        'Squeeze_Factor': squeeze_factor,
+                        'did_run': did_run
+                    },
+                    description="record of each HSI event"
+                    )
+
 
     def log_current_capabilities(self, current_capabilities, total_footprint):
         """
@@ -1355,6 +1380,26 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # 0) Refresh information ready for new day:
         self.module.bed_days.processing_at_start_of_new_day()
         self.module.consumables.processing_at_start_of_new_day(self.sim.date)
+        inpatient_appts = self.module.bed_days.get_inpatient_appts()
+
+        # Compute footprint that arise from in-patient bed-days.
+        inpatient_footprints = Counter()
+        inpatient_appt_total = Counter()
+        for _fac_id, _footprint in inpatient_appts.items():
+            inpatient_footprints.update(self.module._get_appt_footprint_as_time_request(_fac_id, _footprint))
+            inpatient_appt_total.update(_footprint)
+
+        # Write the log that these in-patient appointments were needed:
+        if inpatient_appt_total:
+            self.module.write_to_hsi_log(
+                treatment_id='Inpatient_Care',
+                number_by_appt_type_code=dict(inpatient_appt_total),
+                person_id=-1,
+                squeeze_factor=0.0,
+                did_run=True
+            )
+        # todo - this in-patient care is "force" to occur and we cannot tell the person_id that is used. In a future
+        #  version of the HealthSystem code, these limitations could be overcome.
 
         # - Create hold-over list (will become a heapq). This will hold events that cannot occur today before they are
         #  added back to the heapq
@@ -1420,16 +1465,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
             pop_level_hsi_event = pop_level_hsi_event_tuple.hsi_event
             pop_level_hsi_event.run(squeeze_factor=0)
-            self.module.log_hsi_event(hsi_event=pop_level_hsi_event)
+            self.module.record_hsi_event(hsi_event=pop_level_hsi_event)
 
         # 3) Get the capabilities that are available today and prepare dataframe to store all the calls for today
         current_capabilities = self.module.get_capabilities_today()
 
-        if not list_of_individual_hsi_event_tuples_due_today:
-            # Empty counter for log_current_capabilities call below
-            total_footprint = Counter()
+        # Define the total footprint of all calls today, which begins with those due to in-patient care.
+        total_footprint = inpatient_footprints
 
-        else:
+        if list_of_individual_hsi_event_tuples_due_today:
             # 4) Examine total call on health officers time from the HSI events that are due today
 
             # For all events in 'list_of_individual_hsi_event_tuples_due_today',
@@ -1442,7 +1486,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             ]
 
             # Compute total appointment footprint across all events
-            total_footprint = Counter()
             for footprint in footprints_of_all_individual_level_hsi_event:
                 # Counter.update method when called with dict-like argument adds counts
                 # from argument to Counter object called from
@@ -1519,7 +1562,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         actual_appt_footprint = event.EXPECTED_APPT_FOOTPRINT
 
                     # Write to the log
-                    self.module.log_hsi_event(
+                    self.module.record_hsi_event(
                         hsi_event=event,
                         actual_appt_footprint=actual_appt_footprint,
                         squeeze_factor=squeeze_factor,
@@ -1540,7 +1583,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         hp.heappush(hold_over, list_of_individual_hsi_event_tuples_due_today[ev_num])
 
                     # Log that the event did not run
-                    self.module.log_hsi_event(
+                    self.module.record_hsi_event(
                         hsi_event=event,
                         actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
                         squeeze_factor=squeeze_factor,
