@@ -514,7 +514,9 @@ class LogsDict(Mapping):
                                    <log key 6>: <pandas dataframe>
                                  },
                 ...
-            } """
+            } 
+    """
+            
     def __init__(self, file_names_and_paths):
         super().__init__()
         # initialise class with module-specific log files paths
@@ -522,10 +524,6 @@ class LogsDict(Mapping):
 
         # create a dictionary that will contain cached data
         self._results_cache: Dict[str, Dict] = dict()
-
-    def __setitem__(self, key, item):
-        # restrict resetting of dictionary items
-        raise NotImplementedError
 
     def __getitem__(self, key, cache=True):
         # check if the requested key is found in a dictionary containing module name and log file paths. if key
@@ -554,23 +552,11 @@ class LogsDict(Mapping):
             module_specific_logs = self.__getitem__(key, cache=False)
             yield key, module_specific_logs
 
-    def update(self, *args, **kwargs):
-        raise NotImplementedError
-
     def __repr__(self):
         return repr(self._logfile_names_and_paths)
 
     def __len__(self):
         return len(self._logfile_names_and_paths)
-
-    def __delitem__(self, key):
-        raise NotImplementedError
-
-    def clear(self):
-        raise NotImplementedError
-
-    def copy(self):
-        raise NotImplementedError
 
     def keys(self):
         # return dictionary keys
@@ -582,17 +568,8 @@ class LogsDict(Mapping):
             module_specific_logs = self.__getitem__(key, cache=False)
             yield module_specific_logs
 
-    def pop(self, *args):
-        raise NotImplementedError
-
-    def __cmp__(self, dict_):
-        raise NotImplementedError
-
     def __iter__(self):
-        raise NotImplementedError
-
-    def __unicode__(self):
-        raise NotImplementedError
+        return iter(self._logfile_names_and_paths)
 
     def __getstate__(self):
         # Ensure all items cached before pickling
