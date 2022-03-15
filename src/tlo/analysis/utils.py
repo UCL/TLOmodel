@@ -36,12 +36,11 @@ def _parse_log_file_inner_loop(filepath, level: int = logging.INFO):
     return output_logs
 
 
-def parse_log_file(log_filepath, level=logging.INFO):
+def parse_log_file(log_filepath):
     """Parses logged output from a TLO run, split it into smaller logfiles and returns a class containing paths to
     these split logfiles.
 
     :param log_filepath: file path to log file
-    :param level: logging level to be parsed for structured logging
     :return: a class containing paths to split logfiles
     """
     print(f'Processing log file {log_filepath}')
