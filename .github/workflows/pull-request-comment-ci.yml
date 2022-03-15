@@ -14,3 +14,4 @@ jobs:
       keyword: scaled-sim
       commands: tox -v -e profile
       description: Profiled scale run of model
+      timeout-minutes: 8640
