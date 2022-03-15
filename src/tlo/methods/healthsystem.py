@@ -329,16 +329,6 @@ class HSIEventWrapper(Event):
                 self.hsi_event.never_ran()
 
 
-# class HSI_Inpatient_Care(HSI_Event, PopulationScopeEventMixin):
-#     """This is the HSI Event that represents the use of Bed-Days for in-patients."""
-#     def __init__(self, module, facility_id, appt_footprint):
-#         super().__init__(module, person_id=None)
-#         self.TREATMENT_ID = "InpatientCare"  # todo - make this allowable under services
-#         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint(appt_footprint)
-#         self._facility_id = facility_id
-#
-#     def apply(self, population):
-#         pass
 
 
 def _accepts_argument(function: callable, argument: str) -> bool:
