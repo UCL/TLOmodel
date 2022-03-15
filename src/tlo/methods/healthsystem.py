@@ -26,6 +26,9 @@ from tlo.methods.dxmanager import DxManager
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+logger_summary = logging.getLogger(f"{__name__}.summary")
+logger_summary.setLevel(logging.INFO)
+
 
 class FacilityInfo(NamedTuple):
     """Information about a specific health facility."""
@@ -241,6 +244,28 @@ class HealthSystem(Module):
 
         # Create pointer for the HealthSystemScheduler event
         self.healthsystemscheduler = None
+
+        # aggregated outputs: consumables
+        keys = ["date",
+                "treatment_id",
+                "availability",
+                ]
+        # initialise empty dict with set keys
+        self.annual_consumables_log = {k: [] for k in keys}
+
+        # aggregated outputs: hsi
+        keys = ["date",
+                "treatment_id",
+                "actual_appt_footprint",
+                ]
+        # initialise empty dict with set keys
+        self.annual_hsi_log = {k: [] for k in keys}
+        # logger.info
+        # aggregated outputs: fraction HCW time used
+        keys = ["date",
+                "Frac_Time_Used_Overall",
+                ]
+        self.capacity_logs = {k: [] for k in keys}
 
     def read_parameters(self, data_folder):
 
@@ -1006,6 +1031,11 @@ class HealthSystem(Module):
                         description="Record of each consumable item that is requested."
                         )
 
+            self.annual_consumables_log["date"] += [self.sim.date.year]
+            self.annual_consumables_log["treatment_id"] += [hsi_event.TREATMENT_ID]
+            # todo get availability of all cons required
+            self.annual_consumables_log["availability"] += [hsi_event.TREATMENT_ID]
+
         # Return the result of the check on availability
         return available
 
@@ -1069,6 +1099,11 @@ class HealthSystem(Module):
                     data=log_info,
                     description="record of each HSI event")
 
+        self.annual_hsi_log["date"].append(self.sim.date.year)
+        self.annual_hsi_log["treatment_id"].append(hsi_event.TREATMENT_ID)
+        appt_name, appt_value = list(actual_appt_footprint.items())[0]
+        self.annual_hsi_log["actual_appt_footprint"].append(appt_name)
+
         if self.store_hsi_events_that_have_run:
             log_info['date'] = self.sim.date
             self.store_of_hsi_events_that_have_run.append(log_info)
@@ -1126,6 +1161,9 @@ class HealthSystem(Module):
         logger.info(key='Capacity',
                     data=log_capacity,
                     description='daily summary of utilisation and capacity of health system resources')
+
+        self.capacity_logs["date"] = self.sim.date.year
+        self.capacity_logs["treatment_id"] = fraction_time_used_across_all_facilities
 
     def remove_beddays_footprint(self, person_id):
         # removing bed_days from a particular individual if any
