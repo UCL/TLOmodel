@@ -941,7 +941,6 @@ class HealthSystem(Module):
                 f"which it is not possible: TREATMENT_ID={hsi_event.TREATMENT_ID}"
             )
 
-
     def is_treatment_id_allowed(self, treatment_id: str) -> bool:
         """Determine if a treatment_id (specified as a string) can be run (i.e., is within the allowable set of
          treatments, given by `self.service_availability`."""
