@@ -75,7 +75,10 @@ def bundle(seed):
             pass
 
     hsi_event = HSI_Dummy(module=sim.modules['Mockitis'], person_id=0)
-    hsi_event._facility_id = 0
+    hsi_event.initialise()
+    # Force that the Facility_ID associated is facility_id=0 (as this is the facility for which availability of
+    #  consumables is manipulated in the below).
+    hsi_event.facility_info = sim.modules['HealthSystem']._facility_by_facility_id[0]
 
     # Update Consumables module with  consumable codes that are always and never available
     item_code_for_consumable_that_is_not_available = 0

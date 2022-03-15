@@ -219,15 +219,15 @@ def get_dummy_hsi_event_instance(module, facility_id=None):
     """Make an HSI Event that runs for person_id=0 in a particular facility_id and requests consumables,
     and for which its parent is the identified module."""
 
+    _facility_level = find_level_of_facility_id(facility_id)
+
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
             self.TREATMENT_ID = 'Dummy'
-            self.ACCEPTED_FACILITY_LEVEL = find_level_of_facility_id(facility_id)
+            self.ACCEPTED_FACILITY_LEVEL = _facility_level
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1}) \
                 if self.ACCEPTED_FACILITY_LEVEL == '0' else self.make_appt_footprint({'Over5OPD': 1})
-
-            self.ALERT_OTHER_DISEASES = []
             self._facility_id = facility_id
 
         def apply(self, person_id, squeeze_factor):
@@ -238,7 +238,10 @@ def get_dummy_hsi_event_instance(module, facility_id=None):
                 return_individual_results=False
             )
 
-    return HSI_Dummy(module=module, person_id=0)
+    hsi_dummy = HSI_Dummy(module=module, person_id=0)
+    hsi_dummy.initialise()
+    hsi_dummy.facility_info = module.sim.modules['HealthSystem']._facility_by_facility_id[facility_id]
+    return hsi_dummy
 
 
 def test_use_get_consumables_by_hsi_method_get_consumables():
