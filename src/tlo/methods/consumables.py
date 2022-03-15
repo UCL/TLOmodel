@@ -65,7 +65,7 @@ class Consumables:
         month = date.month
         availability_this_month = self._prob_item_codes_available.loc[(month, slice(None), slice(None))]
         items_available_this_month = availability_this_month.index[
-            availability_this_month.values > self._rng.rand(len(availability_this_month))
+            availability_this_month.values > self._rng.random_sample(len(availability_this_month))
             ]
 
         # Convert to dict-of-sets to enable checking of item_code availability.
@@ -166,7 +166,7 @@ def get_item_code_from_item_name(lookup_df: pd.DataFrame, item: str) -> int:
     return int(pd.unique(lookup_df.loc[lookup_df["Items"] == item, "Item_Code"])[0])
 
 
-def create_dummy_data_for_cons_availability(intrinsic_availability: Optional[Dict[int, bool]] = None,
+def create_dummy_data_for_cons_availability(intrinsic_availability: Optional[Dict[int, float]] = None,
                                             months: Optional[List[int]] = None,
                                             facility_ids: Optional[List[int]] = None,
                                             ) -> pd.DataFrame:
@@ -213,5 +213,3 @@ def check_format_of_consumables_file(df, fac_ids):
     # Check that every entry for a probability is a float on [0,1]
     assert (df.available_prop <= 1.0).all() and (df.available_prop >= 0.0).all()
     assert not pd.isnull(df.available_prop).any()
-
-    print("Checks on consumables file passed.")
