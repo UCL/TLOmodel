@@ -1656,3 +1656,42 @@ class HSIEventWrapper(Event):
                 _ = self.hsi_event.run(squeeze_factor=0.0)
             else:
                 self.hsi_event.never_ran()
+
+
+# ---------------------------------------------------------------------------
+#   Logging
+# ---------------------------------------------------------------------------
+
+
+class HSLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        """ Log Current status of the population, every year
+        """
+
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+        # get some summary statistics
+        df = population.props
+        now = self.sim.date
+
+        # ------------------------------------ SUMMARIES ------------------------------------
+        # aggregate data passed to dicts for each year
+
+        # consumables
+
+        # HSIs
+
+        # fraction HCW time used - this is daily
+
+        logger_summary.info(
+            key="health_system_annual_logs",
+            description="summary of health system usage each year"
+            data={
+                "consumables": consumables,
+                "HSIs": HSIs,
+                "capacity_used" capacity,
+            },
+        )
+
