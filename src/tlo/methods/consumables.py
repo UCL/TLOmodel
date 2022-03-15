@@ -88,7 +88,8 @@ class Consumables:
         else:
             return default_return_value
 
-    def _request_consumables(self, facility_info: 'FacilityInfo',
+    def _request_consumables(self,
+                             facility_info: 'FacilityInfo',  # noqa: F821
                              item_codes: dict,
                              to_log: bool = True,
                              treatment_id: Optional[str] = None
@@ -133,7 +134,10 @@ class Consumables:
         # Return the result of the check on availability
         return available
 
-    def _lookup_availability_of_consumables(self, facility_info: 'FacilityInfo', item_codes: dict) -> dict:
+    def _lookup_availability_of_consumables(self,
+                                            facility_info: 'FacilityInfo',   # noqa: F821
+                                            item_codes: dict
+                                            ) -> dict:
         """Lookup whether a particular item_code is in the set of available items for that facility (in
         `self._is_available`). If any code is not recognised, use the `_is_unknown_item_available`."""
         avail = dict()

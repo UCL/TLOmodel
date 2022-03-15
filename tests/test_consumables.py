@@ -27,6 +27,7 @@ mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "Resource
 fac_ids = set(mfl.loc[mfl.Facility_Level != '5'].Facility_ID)
 facility_info_0 = namedtuple('FacilityInfo', ['id'])(0)
 
+
 def find_level_of_facility_id(facility_id: int) -> str:
     """Returns the level of a Facility_ID"""
     return mfl.set_index('Facility_ID').loc[facility_id].Facility_Level
