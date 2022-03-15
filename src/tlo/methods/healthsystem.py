@@ -1348,7 +1348,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         inpatient_footprints = Counter()
         inpatient_appt_total = Counter()
         for _fac_id, _footprint in inpatient_appts.items():
-            inpatient_footprints.update(self.module._get_appt_footprint_as_time_request(_fac_id, _footprint))
+            inpatient_footprints.update(self.module.get_appt_footprint_as_time_request(
+                facility_info=self.module._facility_by_facility_id[_fac_id], appt_footprint=_footprint)
+            )
             inpatient_appt_total.update(_footprint)
 
         # Write the log that these in-patient appointments were needed:
