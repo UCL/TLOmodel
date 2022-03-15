@@ -846,30 +846,35 @@ def test_bed_days_allocation_information_is_provided_to_HSI(seed):
 
 def test_in_patient_admission_included_in_appt_footprint_if_any_bed_days():
     """Check that helper function works which adds the in-patient admission appointment type to the APPT_FOOTPRINT. """
-    _add_inpatient_admission_to_appt_footprint = BedDays(hs_module=None).add_inpatient_admission_to_appt_footprint
+    add_first_day_inpatient_appts_to_footprint = BedDays(hs_module=None).add_first_day_inpatient_appts_to_footprint
 
-    footprint_without_inpatient_admission = {'Under5OPD': 1}
-    footprint_with_inpatient_admission = {'Under5OPD': 1, 'IPAdmission': 1}
-    footprint_with_inpatient_admission_wrongly = {'Under5OPD': 1, 'IPAdmission': 99}
+    footprint_with_inpatient_admission_and_inpatient_day = {'Under5OPD': 1, 'IPAdmission': 1, 'InpatientDays': 1}
 
     # If in-patient admission appointment is present already, no change is made:
-    assert footprint_with_inpatient_admission == \
-           _add_inpatient_admission_to_appt_footprint(footprint_with_inpatient_admission)
+    assert footprint_with_inpatient_admission_and_inpatient_day == \
+           add_first_day_inpatient_appts_to_footprint(footprint_with_inpatient_admission_and_inpatient_day)
 
-    # If in-patient admission appointment is not present, is it added:
-    assert footprint_with_inpatient_admission == \
-           _add_inpatient_admission_to_appt_footprint(footprint_without_inpatient_admission)
+    # If in-patient admission or in-patient appointment is not present, is it added:
+    assert footprint_with_inpatient_admission_and_inpatient_day == \
+           add_first_day_inpatient_appts_to_footprint({'Under5OPD': 1})
+    assert footprint_with_inpatient_admission_and_inpatient_day == \
+           add_first_day_inpatient_appts_to_footprint({'Under5OPD': 1, 'IPAdmission': 1})
+    assert footprint_with_inpatient_admission_and_inpatient_day == \
+           add_first_day_inpatient_appts_to_footprint({'Under5OPD': 1, 'InpatientDays': 1})
 
     # If the in-patient admission is wrong, then it is corrected:
-    assert footprint_with_inpatient_admission == \
-           _add_inpatient_admission_to_appt_footprint(footprint_with_inpatient_admission_wrongly)
+    assert footprint_with_inpatient_admission_and_inpatient_day == \
+           add_first_day_inpatient_appts_to_footprint({'Under5OPD': 1, 'IPAdmission': 99, 'InpatientDays': 99})
 
 
-def test_in_patient_appt_included_for_each_in_patient(tmpdir, seed):
-    """Check that in-patient appointments are used for each in-patient."""
+def test_in_patient_appt_included_for_each_in_patient_overlapping(tmpdir, seed):
+    """Check that in-patient appointments (admission and in-patients) are used correctly for in-patients."""
 
     # Create and run a simulation that includes in-patients
     _bed_type = bed_types[0]
+    date_of_admission = Date(2010, 1, 3)
+    dur_stay_in_days = 5
+    date_of_discharge = date_of_admission + pd.DateOffset(days=dur_stay_in_days - 1)
 
     class DummyModule(Module):
         METADATA = {Metadata.USES_HEALTHSYSTEM}
@@ -881,10 +886,17 @@ def test_in_patient_appt_included_for_each_in_patient(tmpdir, seed):
             pass
 
         def initialise_simulation(self, sim):
-            # Schedule person_id=0 to attend care on day 3rd January
+            # Schedule person_id=0 to attend care on `date_of_admission`
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Dummy(self, person_id=0),
-                topen=Date(2010, 1, 3),
+                topen=date_of_admission,
+                tclose=None,
+                priority=0)
+
+            # Schedule person_id=1 to attend care on `date_of_admission`
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Dummy(self, person_id=1),
+                topen=date_of_admission,
                 tclose=None,
                 priority=0)
 
@@ -895,7 +907,7 @@ def test_in_patient_appt_included_for_each_in_patient(tmpdir, seed):
             self.TREATMENT_ID = 'Dummy'
             self.ACCEPTED_FACILITY_LEVEL = '2'
             self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({_bed_type: 5})
+            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({_bed_type: dur_stay_in_days})
 
         def apply(self, person_id, squeeze_factor):
             pass
@@ -920,25 +932,21 @@ def test_in_patient_appt_included_for_each_in_patient(tmpdir, seed):
     # Load the logged tracker for general beds
     log_hsi = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']['HSI_Event']
     log_hsi.index = pd.to_datetime(log_hsi.date)
-    y = log_hsi['Number_By_Appt_Type_Code'].explode()
-    x = pd.crosstab(y.index, y.values)
+    appts_freq_by_date = log_hsi[
+        'Number_By_Appt_Type_Code'].apply(pd.Series).fillna(0).astype(int).groupby(level=0).sum()
 
-    assert {'IPAdmission', 'InpatientDays', 'Over5OPD'} == set(x.columns)
+    assert {'IPAdmission', 'InpatientDays', 'Over5OPD'} == set(appts_freq_by_date.columns)
+
+    ser = pd.Series(index=pd.date_range(date_of_admission, date_of_discharge), data=0)
     pd.testing.assert_series_equal(
-        x['Over5OPD'], pd.Series(index=pd.date_range(Date(2010, 1, 3), Date(2010, 1, 7)), data=[1, 0, 0, 0, 0]),
+        appts_freq_by_date['Over5OPD'], ser.where(ser.index != date_of_admission, 2),
         check_dtype=False, check_names=False, check_freq=False
     )
     pd.testing.assert_series_equal(
-        x['IPAdmission'], pd.Series(index=pd.date_range(Date(2010, 1, 3), Date(2010, 1, 7)), data=[1, 0, 0, 0, 0]),
+        appts_freq_by_date['IPAdmission'], ser.where(ser.index != date_of_admission, 2),
         check_dtype=False, check_names=False, check_freq=False
     )
     pd.testing.assert_series_equal(
-        x['InpatientDays'], pd.Series(index=pd.date_range(Date(2010, 1, 3), Date(2010, 1, 7)), data=[1, 1, 1, 1, 1]),
+        appts_freq_by_date['InpatientDays'], ser.replace({0: 2}),
         check_dtype=False, check_names=False, check_freq=False
     )
-
-    # todo - generalise this wrt dates!
-    # todo- this with two different overlappping in-patient stays
-    # clean-up code ... and submit!
-
-

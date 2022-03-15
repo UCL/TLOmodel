@@ -3,8 +3,8 @@
 # - streamline input arguments
 # - let the level of the appointment be in the log
 # - let the logger give times of each hcw
-# - bed days parameterization and use of HR capacity attaching automatically to beddays
 # """
+
 import datetime
 import heapq as hp
 from collections import Counter, defaultdict
@@ -260,13 +260,15 @@ class HSI_Event:
 
         if not isinstance(self.target, tlo.population.Population):
             # Get the facility_id at which this HSI will occur
-            self._facility_id = health_system.get_facility_info_for_hsi(self) # todo let this be Facility_Info
+            self._facility_id = health_system.get_facility_info_for_hsi(self)  # todo let this be Facility_Info
 
-            # If there are bed-days specified, add (if needed) the in-patient admission Appointment Type.
-            # (HSI that require a bed for one or more days always need such an appointment, but this may have been
+            # If there are bed-days specified, add (if needed) the in-patient admission and in-patient day Appointment
+            # Types.
+            # (HSI that require a bed for one or more days always need such appointments, but this may have been
             # missed in the declaration of the `EXPECTED_APPPT_FOOTPRINT` in the HSI.)
+            # NB. The in-patient day Apppointment time is automatically applied on subsequent days.
             if sum(self.BEDDAYS_FOOTPRINT.values()):
-                self.EXPECTED_APPT_FOOTPRINT = health_system.bed_days.add_inpatient_admission_to_appt_footprint(
+                self.EXPECTED_APPT_FOOTPRINT = health_system.bed_days.add_first_day_inpatient_appts_to_footprint(
                     self.EXPECTED_APPT_FOOTPRINT)
 
             # Write the time requirements for staff of the appointments to the HSI:
@@ -1276,7 +1278,6 @@ class HealthSystem(Module):
                     description="record of each HSI event"
                     )
 
-
     def log_current_capabilities(self, current_capabilities, total_footprint):
         """
         This will log the percentage of the current capabilities that is used at each Facility Type
@@ -1380,9 +1381,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # 0) Refresh information ready for new day:
         self.module.bed_days.processing_at_start_of_new_day()
         self.module.consumables.processing_at_start_of_new_day(self.sim.date)
-        inpatient_appts = self.module.bed_days.get_inpatient_appts()
 
-        # Compute footprint that arise from in-patient bed-days.
+        # 1) Compute footprint that arise from in-patient bed-days
+        inpatient_appts = self.module.bed_days.get_inpatient_appts()
         inpatient_footprints = Counter()
         inpatient_appt_total = Counter()
         for _fac_id, _footprint in inpatient_appts.items():
@@ -1398,8 +1399,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 squeeze_factor=0.0,
                 did_run=True
             )
-        # todo - this in-patient care is "force" to occur and we cannot tell the person_id that is used. In a future
-        #  version of the HealthSystem code, these limitations could be overcome.
 
         # - Create hold-over list (will become a heapq). This will hold events that cannot occur today before they are
         #  added back to the heapq
@@ -1470,7 +1469,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # 3) Get the capabilities that are available today and prepare dataframe to store all the calls for today
         current_capabilities = self.module.get_capabilities_today()
 
-        # Define the total footprint of all calls today, which begins with those due to in-patient care.
+        # Define the total footprint of all calls today, which begins with those due to existing in-patients.
         total_footprint = inpatient_footprints
 
         if list_of_individual_hsi_event_tuples_due_today:

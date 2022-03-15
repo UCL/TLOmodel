@@ -4,8 +4,8 @@ This is the Bed days class.
 It maintains a current record of the availability and usage of beds in the healthcare system.
 
 """
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from tlo import Property, Types, logging
 
@@ -16,10 +16,9 @@ from tlo import Property, Types, logging
 logger = logging.getLogger('tlo.methods.healthsystem')
 
 # Define the appointment types that should be associated with the use of bed-days (of any type), for a given number of
-# patients
+# patients.
 IN_PATIENT_ADMISSION = {'IPAdmission': 1}
 IN_PATIENT_DAY = {'InpatientDays': 1}
-
 
 
 class BedDays:
@@ -138,24 +137,6 @@ class BedDays:
         if self.hs_module.sim.date != self.hs_module.sim.start_date:
             self.log_yesterday_info_from_all_bed_trackers()
             self.move_each_tracker_by_one_day()
-
-        # # Schedule an HSI for today that represents the care of in-patients
-        # inpatients = self.get_inpatient_person_ids()
-        # if inpatients:
-        #     for _fac_id, _footprint in inpatient_appts.items():
-        #         self.hs_module.schedule_hsi_event(
-        #             self.hsi_event_for_inpatient_care(facility_id=_fac_id, appt_footprint=_footprint)
-        #         )
-
-    # def hsi_event_for_inpatient_care(self, facility_id: int, appt_footprint: dict):
-    #     """Return an HSI event with the specified appointment footprint"""
-    #     from tlo.methods.healthsystem import HSI_Inpatient_Care
-    #
-    #     return HSI_Inpatient_Care(module=self.hs_module,
-    #                               facility_id=facility_id,
-    #                               appt_footprint=appt_footprint)
-    #     # todo - make sure this is allowable under 'service_availability'
-
 
     def move_each_tracker_by_one_day(self):
         bed_capacity = self._scaled_capacity
@@ -432,10 +413,10 @@ class BedDays:
                 df.loc[df.is_alive, exit_cols] >= self.hs_module.sim.date)).any(axis=1)
 
     @staticmethod
-    def add_inpatient_admission_to_appt_footprint(appt_footprint):
-        """Return an APPT_FOOTPRINT with the addition (if not already present) of the in-patient admission appointment.
-        """
-        return {**appt_footprint, **IN_PATIENT_ADMISSION}
+    def add_first_day_inpatient_appts_to_footprint(appt_footprint):
+        """Return an APPT_FOOTPRINT with the addition (if not already present) of the in-patient admission appointment
+        and the in-patient day appointment type (for the first day of the in-patient stay)."""
+        return {**appt_footprint, **IN_PATIENT_ADMISSION, **IN_PATIENT_DAY}
 
     def get_inpatient_appts(self) -> dict:
         """Return a dict of the form {<facility_id>: APPT_FOOTPRINT} giving the total APPT_FOOTPRINT required for the
@@ -456,10 +437,7 @@ class BedDays:
             fac_id: multiply_footprint(IN_PATIENT_DAY, num_inpatients)
             for fac_id, num_inpatients in total_inpatients[total_inpatients > 0].to_dict().items()
         }
-
-        # Or get the person_ids
-        # df = self.hs_module.sim.population.props
-        # return df.index[df.hs_is_inpatient].to_list()
-        # todo - What we want is to create an HSI for each in patient in each facility, tied to the person_id and the facility
-        # But we haven't got a record of which person is in which facility.
-
+        # NB. As we haven't got a record of which person is in which bed, we cannot associate a person with a particular
+        # set of appointments associated for in-patient bed-days (after the first). This could be accomplished by
+        # changing the way BedDays stores internally the information about in-patients and creating HSI for the
+        # in-patients.
