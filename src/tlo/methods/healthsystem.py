@@ -1054,7 +1054,7 @@ class HealthSystem(Module):
         time required of each Officer Type in each Facility ID.
         The index will identify the Facility ID and the Officer Type in the same format
         as is used in Daily_Capabilities.
-        :params facility: The FacilityInfo describing the facility at which the appointment occurs
+        :params facility_info: The FacilityInfo describing the facility at which the appointment occurs
         :param appt_footprint: The actual appt footprint (optional) if different to that in the HSI event.
         :return: A Counter that gives the times required for each officer-type in each facility_ID, where this time
          is non-zero.
