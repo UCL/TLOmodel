@@ -20,10 +20,16 @@ on:
         description: The shell command(s) to run to execute test
         required: true
         type: string
+      timeout-minutes:
+        description: The timeout in minutes to halt job after
+        required: false
+        type: number
+        default: 360
 
 jobs:
   run_test_on_keyword_and_reply_with_result:
     runs-on: ${{ inputs.runs-on }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
     if: github.event.issue.pull_request && github.event.comment.body == format('/run {0}', inputs.keyword)
     steps:
     - name: Check permissions of commenting user
