@@ -1970,7 +1970,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             # this selects a test for the person
             # if selection is xpert, will check for availability and return sputum if xpert not available
             test = self.module.select_tb_test(person_id)
-            assert test is not None
+            assert test in ["sputum", "xpert"]
 
             if test == "sputum":
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
