@@ -260,7 +260,7 @@ class HSI_Event:
 
         if not isinstance(self.target, tlo.population.Population):
             # Get the facility_id at which this HSI will occur
-            self._facility_id = health_system.get_facility_info_for_hsi(self)  # todo let this be Facility_Info
+            self._facility_id = health_system.get_facility_info_for_hsi(self).id
 
             # If there are bed-days specified, add (if needed) the in-patient admission and in-patient day Appointment
             # Types.
@@ -273,7 +273,7 @@ class HSI_Event:
 
             # Write the time requirements for staff of the appointments to the HSI:
             self._cached_time_requests = health_system._get_appt_footprint_as_time_request(
-                appt_footprint=self.EXPECTED_APPT_FOOTPRINT, facility=self._facility_id
+                appt_footprint=self.EXPECTED_APPT_FOOTPRINT, facility_id=self._facility_id
             )
 
         _ = self._check_if_appt_footprint_can_run()
@@ -695,34 +695,24 @@ class HealthSystem(Module):
         facilities_per_level_and_district = {_facility_level: {} for _facility_level in self._facility_levels}
         for facility_tuple in self.parameters['Master_Facilities_List'].itertuples():
 
-            all_facilities[facility_tuple.Facility_ID] = FacilityInfo(
+            _facility_info = FacilityInfo(
                         id=facility_tuple.Facility_ID,
                         name=facility_tuple.Facility_Name,
                         level=facility_tuple.Facility_Level,
                         region=facility_tuple.Region
                     )
 
+            all_facilities[facility_tuple.Facility_ID] = _facility_info
+
             if pd.notnull(facility_tuple.District):
                 # A facility that is specific to a district:
-                facilities_per_level_and_district[facility_tuple.Facility_Level][facility_tuple.District] = \
-                    FacilityInfo(
-                        id=facility_tuple.Facility_ID,
-                        name=facility_tuple.Facility_Name,
-                        level=facility_tuple.Facility_Level,
-                        region=facility_tuple.Region
-                    )
+                facilities_per_level_and_district[facility_tuple.Facility_Level][facility_tuple.District] = _facility_info
 
             elif pd.isnull(facility_tuple.District) and pd.notnull(facility_tuple.Region):
                 # A facility that is specific to region (and not a district):
                 for _district in districts_in_region[facility_tuple.Region]:
                     facilities_per_level_and_district[facility_tuple.Facility_Level][_district] = \
-                        FacilityInfo(
-                            id=facility_tuple.Facility_ID,
-                            name=facility_tuple.Facility_Name,
-                            level=facility_tuple.Facility_Level,
-                            region=facility_tuple.Region
-                        )
-
+                        _facility_info
             elif (
                 pd.isnull(facility_tuple.District) and
                 pd.isnull(facility_tuple.Region) and
@@ -730,13 +720,7 @@ class HealthSystem(Module):
             ):
                 # A facility that is National (not specific to a region or a district) (ignoring level 5 (headquarters))
                 for _district in all_districts:
-                    facilities_per_level_and_district[facility_tuple.Facility_Level][_district] = \
-                        FacilityInfo(
-                            id=facility_tuple.Facility_ID,
-                            name=facility_tuple.Facility_Name,
-                            level=facility_tuple.Facility_Level,
-                            region=facility_tuple.Region
-                        )
+                    facilities_per_level_and_district[facility_tuple.Facility_Level][_district] = _facility_info
 
         # Check that there is facility of every level for every district:
         assert all(
@@ -1093,32 +1077,27 @@ class HealthSystem(Module):
         # district), which is accepted by the hsi_event.ACCEPTED_FACILITY_LEVEL
         return self._facilities_for_each_district[the_level][the_district]
 
-    def _get_appt_footprint_as_time_request(self, facility: Union[int, FacilityInfo], appt_footprint):
+    def _get_appt_footprint_as_time_request(self, facility_id: int, appt_footprint):
         """
         This will take an APPT_FOOTPRINT and return the required appointments in terms of the
         time required of each Officer Type in each Facility ID.
         The index will identify the Facility ID and the Officer Type in the same format
         as is used in Daily_Capabilities.
-        :params facility: The facility_id, or Facility_Info tuple that identifies where the appointment occurs
+        :params facility: The facility_id (int), or Facility_Info tuple that identifies where the appointment occurs
         :param appt_footprint: The actual appt footprint (optional) if different
             to that in the HSI event.
         :return: A Counter that gives the times required for each officer-type in each facility_ID, where this time
          is non-zero.
         """
         # Accumulate appointment times for specified footprint using times from appointment times table
-        # Appointment times for each facility and officer combination
-        appt_times = self._appt_times
 
-        # Get Facility_Info (via looking-up Facility_ID if the Facility_ID is provided)
-        if not isinstance(facility, FacilityInfo):
-            facility = self._all_facilities[facility]
-        facility_level = facility.level
-        facility_id = facility.id
+        # Get Facility_Info
+        facility_level = self._all_facilities[facility_id].level
 
         appt_footprint_times = Counter()
         for appt_type in appt_footprint:
             try:
-                appt_info_list = appt_times[facility_level][appt_type]
+                appt_info_list = self._appt_times[facility_level][appt_type]
             except KeyError as e:
                 raise KeyError(
                     f"The time needed for an appointment is not defined for the specified facility level: "
