@@ -323,7 +323,7 @@ def make_simulation_health_system_disabled(seed):
 
 
 # helper function to run the sim with the healthcare system disabled
-def make_simulation_health_system_functional(seed, cons_availability='default'):
+def make_simulation_health_system_functional(seed, cons_availability='all'):
     """Make the simulation with the healthcare system enabled and no cons constraints
     """
     sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
@@ -428,9 +428,10 @@ def test_if_no_health_system_and_high_risk_of_death(seed):
 
         p = sim.modules['CardioMetabolicDisorders'].parameters
 
-        # increase annual probability of onset and death
-        p[f'{event}_onset']["baseline_annual_probability"] = 1
-        p[f'{event}_death']["baseline_annual_probability"] = 1
+        # increase annual probability of onset and death (values > 1 to ensure probability is still greater than 1.0
+        #  after accounting for protective characteristics).
+        p[f'{event}_onset']["baseline_annual_probability"] = 10_000.0
+        p[f'{event}_death']["baseline_annual_probability"] = 10_000.0
 
         # simulate for one year
         sim.simulate(end_date=Date(year=2011, month=1, day=1))
@@ -486,9 +487,10 @@ def test_if_medication_prevents_all_death(seed):
 
         p = sim.modules['CardioMetabolicDisorders'].parameters
 
-        # increase annual probability of onset & probability of death
-        p[f'{event}_onset']["baseline_annual_probability"] = 1
-        p[f'{event}_death']["baseline_annual_probability"] = 1
+        # increase annual probability of onset & probability of death ((values > 1 to ensure probability is still
+        #  greater than 1.0 after accounting for protective characteristics).
+        p[f'{event}_onset']["baseline_annual_probability"] = 10_000.0
+        p[f'{event}_death']["baseline_annual_probability"] = 10_000.0
 
         # set probability of treatment working to 1
         p[f'{event}_hsi']["pr_treatment_works"] = 1
@@ -525,15 +527,14 @@ def test_symptoms(seed):
 
     # Set incidence of hypertension very high and incidence of all other conditions to 0, set initial prevalence of
     # other conditions to 0
-
-    p['diabetes_onset']["baseline_annual_probability"] = float('inf')
-    p['diabetes_symptoms']['diabetes_symptoms'] = 10000
-    p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = float('inf')
-    p['chronic_ischemic_hd_symptoms']['chronic_ischemic_hd_symptoms'] = 10000
-    p['chronic_lower_back_pain_onset']["baseline_annual_probability"] = float('inf')
-    p['chronic_lower_back_pain_symptoms']['chronic_lower_back_pain_symptoms'] = 10000
-    p['chronic_kidney_disease_onset']["baseline_annual_probability"] = float('inf')
-    p['chronic_kidney_disease_symptoms']['chronic_kidney_disease_symptoms'] = 10000
+    p['diabetes_onset']["baseline_annual_probability"] = 10_000.0
+    p['diabetes_symptoms']['diabetes_symptoms'] = 10_000.0
+    p['chronic_ischemic_hd_onset']["baseline_annual_probability"] = 10_000.0
+    p['chronic_ischemic_hd_symptoms']['chronic_ischemic_hd_symptoms'] = 10_000.0
+    p['chronic_lower_back_pain_onset']["baseline_annual_probability"] = 10_000.0
+    p['chronic_lower_back_pain_symptoms']['chronic_lower_back_pain_symptoms'] = 10_000.0
+    p['chronic_kidney_disease_onset']["baseline_annual_probability"] = 10_000.0
+    p['chronic_kidney_disease_symptoms']['chronic_kidney_disease_symptoms'] = 10_000.0
 
     sim.make_initial_population(n=100)
     sim.simulate(end_date=Date(year=2011, month=1, day=1))
@@ -568,13 +569,6 @@ def test_hsi_investigation_not_following_symptoms(seed):
 
         # make initial population
         sim.make_initial_population(n=50)
-
-        # make sure any consumables for DX tests always available
-        parameters = sim.modules['CardioMetabolicDisorders'].parameters
-        test_item_code = parameters[f'{condition}_hsi'].get('test_item_code')
-        if test_item_code is not None:
-            test_item_code = test_item_code.astype(int)
-            sim.modules["HealthSystem"].prob_item_codes_available.loc[test_item_code] = 1
 
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
@@ -620,13 +614,6 @@ def test_hsi_investigation_following_symptoms(seed):
 
         # make initial population
         sim.make_initial_population(n=50)
-
-        # make sure any consumables for DX tests always available
-        parameters = sim.modules['CardioMetabolicDisorders'].parameters
-        test_item_code = parameters[f'{condition}_hsi'].get('test_item_code')
-        if test_item_code is not None:
-            test_item_code = test_item_code.astype(int)
-            sim.modules["HealthSystem"].prob_item_codes_available.loc[test_item_code] = 1
 
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
@@ -687,12 +674,6 @@ def test_hsi_weight_loss_and_medication(seed):
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
 
-        # set availability probability of consumables required for HSI event to 1
-        hsi_item_code = p[f'{condition}_hsi'].get('medication_item_code').astype(int)
-        if hsi_item_code is not None:
-            sim.modules["HealthSystem"].prob_item_codes_available.loc[hsi_item_code] = 1
-            sim.modules["HealthSystem"].determine_availability_of_consumables_today()
-
         df = sim.population.props
 
         # Get target person and make them have condition and diagnosed but not on medication yet
@@ -751,10 +732,6 @@ def test_hsi_emergency_events(seed):
         p = sim.modules['CardioMetabolicDisorders'].parameters
         p[f'{event}_hsi']["pr_treatment_works"] = 1
 
-        # change relevant consumables to always be available
-        emergency_medication_item_code = p[f'{event}_hsi']['emergency_medication_item_code'].astype(int)
-        sim.modules["HealthSystem"].prob_item_codes_available.loc[emergency_medication_item_code] = 1
-
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
 
@@ -805,10 +782,6 @@ def test_no_availability_of_consumables_for_conditions(seed):
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
 
-        # Make consumables not available
-        sim.modules['HealthSystem'].prob_item_codes_available *= 0.0
-        sim.modules['HealthSystem'].determine_availability_of_consumables_today()
-
         df = sim.population.props
 
         # Get target person and make them have condition, diagnosed and on medication
@@ -837,7 +810,7 @@ def test_no_availability_of_consumables_for_events(seed):
 
         # Make probability of death 100%
         p = sim.modules['CardioMetabolicDisorders'].parameters
-        p[f'{event}_death']["baseline_annual_probability"] = 1
+        p[f'{event}_death']["baseline_annual_probability"] = 10_000.0
         # (Use very high value to ensure that risk will be >1 for all individuals (this is the intercept term to a
         # linear model).
 
@@ -846,10 +819,6 @@ def test_no_availability_of_consumables_for_events(seed):
 
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
-
-        # Make consumables not available
-        sim.modules['HealthSystem'].prob_item_codes_available *= 0.0
-        sim.modules['HealthSystem'].determine_availability_of_consumables_today()
 
         df = sim.population.props
 
