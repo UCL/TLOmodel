@@ -1438,7 +1438,7 @@ class HSI_Event:
 
     def initialise(self):
         """Initialise the HSI:
-        * Set the facility_id
+        * Set the facility_info
         * Compute appt-footprint time requirements
         """
         health_system = self.sim.modules['HealthSystem']
