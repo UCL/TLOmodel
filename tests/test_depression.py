@@ -246,7 +246,9 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir, seed):
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable_and_reject_all=True),
+                                           mode_appt_constraints=2,
+                                           cons_availability='all',
+                                           capabilities_coefficient=0.0),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -279,6 +281,14 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir, seed):
 
     df = sim.population.props
 
+    output = parse_log_file(sim.log_filepath)
+
     # Check that there have been been no some cases of talking Therapy and anti-depressants
     assert 0 == df['de_ever_talk_ther'].sum()
     assert 0 == df['de_on_antidepr'].sum()
+
+    hsi = output['tlo.methods.healthsystem']['HSI_Event']
+    assert 0 == hsi['did_run'].sum()
+
+    # Check no antidepresants used
+    assert 'Consumables' not in output['tlo.methods.healthsystem']
