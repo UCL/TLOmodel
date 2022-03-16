@@ -432,10 +432,8 @@ class BedDays:
         """Return a dict of the form {<facility_id>: APPT_FOOTPRINT} giving the total APPT_FOOTPRINT required for the
         servicing of the in-patients (in beds of any types) for each Facility_ID."""
 
-        bed_capacity = self._scaled_capacity
-
         total_inpatients = pd.DataFrame([
-            (bed_capacity[_bed_type] - self.bed_tracker[_bed_type].loc[self.hs_module.sim.date]).to_dict()
+            (self._scaled_capacity[_bed_type] - self.bed_tracker[_bed_type].loc[self.hs_module.sim.date]).to_dict()
             for _bed_type in self.bed_types
         ]).sum()
 
