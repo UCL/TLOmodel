@@ -875,7 +875,6 @@ class HealthSystem(Module):
 
         return _beds_availability
 
-
     def schedule_hsi_event(
         self,
         hsi_event: 'HSI_Event',
