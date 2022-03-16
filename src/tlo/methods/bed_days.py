@@ -26,7 +26,7 @@ class BedDays:
     The BedDays class. This is expected to be registered in the HealthSystem module.
     """
 
-    def __init__(self, hs_module):
+    def __init__(self, hs_module, availability: str = 'default'):
         self.hs_module = hs_module
 
         # Number of days to the last day of bed_tracker
@@ -42,7 +42,10 @@ class BedDays:
         # List of bed-types
         self.bed_types = list()
 
-        # Internal store of the number of beds by facility and bed_type that is scaled to the model population size.
+        self.availability = availability
+
+        # Internal store of the number of beds by facility and bed_type that is scaled to the model population size (if
+        #  the HealthSystem is not running in mode `disable=True`).
         self._scaled_capacity = None
 
     def get_bed_types(self):
@@ -87,9 +90,16 @@ class BedDays:
     def set_scaled_capacity(self, model_to_data_popsize_ratio):
         """Set the internal `_scaled_capacity` variable to represent the number of beds available of each type in each
          facility, after scaling according to the model population relative to the real population size. """
+
+        if self.availability == 'all':
+            _scaling_factor = 1.0
+        elif self.availability == 'none':
+            _scaling_factor = 0.0
+        else:
+            _scaling_factor = model_to_data_popsize_ratio
+
         self._scaled_capacity = (
-            self.hs_module.parameters['BedCapacity'].set_index('Facility_ID')
-            * model_to_data_popsize_ratio
+            self.hs_module.parameters['BedCapacity'].set_index('Facility_ID') * _scaling_factor
         ).apply(np.ceil).astype(int)
 
     def initialise_beddays_tracker(self, model_to_data_popsize_ratio=1.0):
