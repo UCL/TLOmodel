@@ -149,22 +149,22 @@ class BedDays:
             self.move_each_tracker_by_one_day()
 
     def move_each_tracker_by_one_day(self):
-        bed_capacity = self._scaled_capacity
 
         for bed_type, tracker in self.bed_tracker.items():
             start_date = min(tracker.index)
 
-            # reset all the columns for the earliest entry - it's going to become the new day
-            tracker.loc[start_date] = bed_capacity.loc[bed_capacity.index[0], bed_type]
+            # reset all the columns for the start_date with the values of `bed_capacity` - this row is going to become
+            # the new day (at the end of the tracker)
+            tracker.loc[start_date] = self._scaled_capacity[bed_type]
 
             # make new index
             end_date = max(tracker.index)  # get the latest day in the dataframe
-            new_day = end_date + pd.DateOffset(days=1)  # the new day is the next day
+            new_day = end_date + pd.DateOffset(days=1)  # the new day is the next day after the last in the tracker
             new_index = list(tracker.index)
             new_index[0] = new_day  # the earliest day is replaced with the next day
             new_index = pd.DatetimeIndex(new_index)
 
-            # update the index
+            # update the index and sort the index (will put the 'new_day' at the end of the index).
             tracker = tracker.set_index(new_index).sort_index()
 
             # save the updated tracker
