@@ -39,15 +39,13 @@ def test_beddays_in_isolation(tmpdir, seed):
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
     )
 
-    # call HealthSystem Module to initialise BedDays class
-    hs = sim.modules['HealthSystem']
-
     # Update BedCapacity data with a simple table:
     level2_facility_ids = [128, 129, 130]  # <-- the level 2 facilities for each region
     cap_bedtype1 = 5
     cap_bedtype2 = 100
 
     # create a simple bed capacity dataframe
+    hs = sim.modules['HealthSystem']
     hs.parameters['BedCapacity'] = pd.DataFrame(
         data={
             'Facility_ID': level2_facility_ids,
@@ -56,8 +54,8 @@ def test_beddays_in_isolation(tmpdir, seed):
         }
     )
 
-    # Create a 21 day simulation
-    days_sim = hs.bed_days.days_until_last_day_of_bed_tracker
+    # Create a 21-day simulation
+    days_sim = 21
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=days_sim))
 
@@ -71,18 +69,18 @@ def test_beddays_in_isolation(tmpdir, seed):
 
     sim.date = start_date
     hs.bed_days.impose_beddays_footprint(person_id=person_id, footprint=footprint)
-    tracker = hs.bed_days.bed_tracker['bedtype1'][hs.bed_days.get_facility_id_for_beds(person_id)]
+    tracker = hs.bed_days.bed_tracker['bedtype1'][hs.bed_days.get_facility_id_for_beds(person_id)][0: days_sim]
 
     # check if impose footprint works as expected
-    assert ([cap_bedtype1 - 1] * dur_bedtype1 + [cap_bedtype1] * (days_sim + 1 - dur_bedtype1) == tracker.values).all()
+    assert ([cap_bedtype1 - 1] * dur_bedtype1 + [cap_bedtype1] * (days_sim - dur_bedtype1) == tracker.values).all()
 
     # 2) cause someone to die and relieve their footprint from the bed-days tracker
     hs.bed_days.remove_beddays_footprint(person_id)
-    assert ([cap_bedtype1] * (days_sim + 1) == tracker.values).all()
+    assert ([cap_bedtype1] * days_sim == tracker.values).all()
 
     # 3) check that removing bed-days from a person without bed-days does nothing
     hs.bed_days.remove_beddays_footprint(2)
-    assert ([cap_bedtype1] * (days_sim + 1) == tracker.values).all()
+    assert ([cap_bedtype1] * days_sim == tracker.values).all()
 
 
 def check_dtypes(simulation):
@@ -257,7 +255,7 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
         METADATA = {Metadata.USES_HEALTHSYSTEM}
 
         def read_parameters(self, data_folder):
-            # get 21 day bed days tracking period
+            # set 21 day bed days tracking period
             self.parameters['tracking_period'] = 21
 
         def initialise_population(self, population):
@@ -335,7 +333,7 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
     })
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, beds_availability='all'),
         DummyModule()
     )
     sim.make_initial_population(n=100)
@@ -585,8 +583,8 @@ def test_the_use_of_beds_from_multiple_facilities(seed):
         }
     )
 
-    # Create a simulation that has the same duration as the window of the tracker
-    days_sim = hs.bed_days.days_until_last_day_of_bed_tracker
+    # Create a 21-day simulation
+    days_sim = 21
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=days_sim))
 
@@ -619,11 +617,13 @@ def test_the_use_of_beds_from_multiple_facilities(seed):
         _fac_id = person_info[_person_id][1]
 
         # check if impose footprint works as expected
-        tracker = hs.bed_days.bed_tracker['bedtype1'][_fac_id]
+        tracker = hs.bed_days.bed_tracker['bedtype1'][_fac_id][0: days_sim]
 
-        assert ([bedtype1_capacity.loc[bedtype1_capacity.index[_person_id]] - 1] * bedtype1_dur + [
-            bedtype1_capacity.loc[bedtype1_capacity.index[_person_id]]] * (
-                    days_sim + 1 - bedtype1_dur) == tracker.values).all()
+        assert (
+            [bedtype1_capacity.loc[bedtype1_capacity.index[_person_id]] - 1] * bedtype1_dur
+            + [bedtype1_capacity.loc[bedtype1_capacity.index[_person_id]]] * (days_sim - bedtype1_dur)
+            == tracker.values
+        ).all()
 
     # -- Check that there is an error if there is demand for beddays in a region for which no capacity is defined
     # person 2 is in the Southern region for which no beddays capacity is defimed
@@ -654,10 +654,8 @@ def test_bed_days_allocation_to_HSI(seed):
                 'bed_B': 1,
             }
         )
-        # Re-initialise the Bed-days instance (so that these new parameter are used)
-        hs.bed_days = BedDays(hs)
 
-        # Simulate for 0 days to get everything established
+        # Simulate for 0 days to get everything initialised
         sim.make_initial_population(n=1)
         sim.simulate(end_date=start_date)
         return sim
@@ -832,8 +830,6 @@ def test_bed_days_allocation_information_is_provided_to_HSI(seed):
             'bed_B': 1,
         }
     )
-    # Re-initialise the Bed-days instance (so that these new parameter are used)
-    hs.bed_days = BedDays(hs)
 
     # Simulate
     sim.make_initial_population(n=1)
