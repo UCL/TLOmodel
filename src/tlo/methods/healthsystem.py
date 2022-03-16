@@ -405,6 +405,11 @@ class HealthSystem(Module):
         # Infrastructure and Equipment
         'BedCapacity': Parameter(
             Types.DATA_FRAME, "Data on the number of beds available of each type by facility_id"),
+        'beds_availability': Parameter(
+            Types.STRING,
+            "Availability of beds. If 'default' then use the availability specified in the ResourceFile; if "
+            "'none', then let no beds be  ever be available; if 'all', then all beds are always available. NB. This "
+            "parameter is over-ridden if an argument is provided to the module initialiser."),
 
         # Service Availability
         'Service_Availability': Parameter(
@@ -425,6 +430,7 @@ class HealthSystem(Module):
         service_availability: Optional[List[str]] = None,
         mode_appt_constraints: int = 0,
         cons_availability: Optional[str] = None,
+        beds_availability: Optional[str] = None,
         ignore_priority: bool = False,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = 'funded_plus',
@@ -445,6 +451,8 @@ class HealthSystem(Module):
         :param cons_availability: If 'default' then use the availability specified in the ResourceFile; if 'none', then
         let no consumable be ever be available; if 'all', then all consumables are always available. When using 'all'
         or 'none', requests for consumables are not logged.
+        :param beds_availability: If 'default' then use the availability specified in the ResourceFile; if 'none', then
+        let no beds be ever be available; if 'all', then all beds are always available.
         :param ignore_priority: If ``True`` do not use the priority information in HSI
             event to schedule
         :param capabilities_coefficient: Multiplier for the capabilities of health
@@ -517,11 +525,14 @@ class HealthSystem(Module):
         assert cons_availability in (None, 'default', 'all', 'none')
         self.arg_cons_availability = cons_availability
 
+        assert beds_availability in (None, 'default', 'all', 'none')
+        self.arg_beds_availability = beds_availability
+
         # Create the Diagnostic Test Manager to store and manage all Diagnostic Test
         self.dx_manager = DxManager(self)
 
-        # Create the instance of BedDays to record usage of in-patient bed days
-        self.bed_days = BedDays(self)
+        # Create the pointer that will be to the instance of BedDays used to track in-patient bed days
+        self.bed_days = None
 
         # Create the pointer that will be to the instance of Consumables used to determine availability of consumables.
         self.consumables = None
@@ -532,6 +543,11 @@ class HealthSystem(Module):
     def read_parameters(self, data_folder):
 
         path_to_resourcefiles_for_healthsystem = Path(self.resourcefilepath) / 'healthsystem'
+
+        # Read parmaters for overall performance of the HealthSystem
+        self.load_parameters_from_dataframe(pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'ResourceFile_HealthSystem_parameters.csv'
+        ))
 
         # Load basic information about the organization of the HealthSystem
         self.parameters['Master_Facilities_List'] = pd.read_csv(
@@ -562,21 +578,21 @@ class HealthSystem(Module):
             path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_Items_and_Packages.csv')
         self.parameters['availability_estimates'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_availability_small.csv')
-        self.load_parameters_from_dataframe(pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_parameters.csv'
-        ))
 
         # Data on the number of beds available of each type by facility_id
         self.parameters['BedCapacity'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'infrastructure_and_equipment' / 'ResourceFile_Bed_Capacity.csv')
 
-        # Set default parameter for Service Availability (everything available)
-        self.parameters['Service_Availability'] = ['*']
-
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
         self.process_human_resources_files()
+
+        # Initialise the BedDays class
+        self.bed_days = BedDays(hs_module=self,
+                                availability=self.get_beds_availability())
         self.bed_days.pre_initialise_population()
+
+        # Initialise the Consumables class
         self.consumables = Consumables(data=self.parameters['availability_estimates'],
                                        rng=self.rng,
                                        availability=self.get_cons_availability())
@@ -593,9 +609,6 @@ class HealthSystem(Module):
         self.bed_days.initialise_beddays_tracker(
             model_to_data_popsize_ratio=self.sim.modules['Demography'].initial_model_to_data_popsize_ratio
         )
-
-        # Set the consumables modules in preparation for the simulation
-        self.consumables.processing_at_start_of_new_day(sim.date)
 
         # Set the consumables modules in preparation for the simulation
         self.consumables.processing_at_start_of_new_day(sim.date)
@@ -818,7 +831,7 @@ class HealthSystem(Module):
                          f"{self.service_availability}"
                     )
 
-    def get_cons_availability(self):
+    def get_cons_availability(self) -> str:
         """Set consumables availability. (Should be equal to what is specified by the parameter, but overwrite with
         what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
 
@@ -839,6 +852,29 @@ class HealthSystem(Module):
                     )
 
         return _cons_availability
+
+    def get_beds_availability(self) -> str:
+        """Set beds availability. (Should be equal to what is specified by the parameter, but overwrite with
+        what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
+
+        if self.arg_beds_availability is None:
+            _beds_availability = self.parameters['beds_availability']
+        else:
+            _beds_availability = self.arg_beds_availability
+
+        # For logical consistency, when the HealthSystem is disabled, beds_availability should be 'all', irrespective of
+        # what arguments/parameters are provided.
+        if self.disable:
+            _beds_availability = 'all'
+
+        # Log the service_availability
+        logger.info(key="message",
+                    data=f"Running Health System With the Following Beds Availability: "
+                         f"{_beds_availability}"
+                    )
+
+        return _beds_availability
+
 
     def schedule_hsi_event(
         self,
